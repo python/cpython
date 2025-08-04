@@ -1,0 +1,13 @@
+matemp() function is unsafe,so I use safety function.
+bandit tool:
+```
+Issue: [B306:blacklist] Use of insecure and deprecated function (mktemp).
+Severity: Medium Confidence: High
+CWE: CWE-377 (https://cwe.mitre.org/data/definitions/377.html)
+More Info: https://bandit.readthedocs.io/en/1.8.6/blacklists/blacklist_calls.html#b306-mktemp-q
+Location: C:\Users\Administrator\Desktop\cpython\lib\asyncio\windows_utils.py:34:14
+33 """Like os.pipe() but with overlapped support and using handles not fds."""
+34 address = tempfile.mktemp(
+35 prefix=r'\.\pipe\python-pipe-{:d}-{:d}-'.format(
+36 os.getpid(), next(_mmap_counter)))
+```
