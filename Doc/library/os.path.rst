@@ -94,7 +94,7 @@ the :mod:`glob` module.)
       Any iterable can now be passed, rather than just sequences.
 
 
-.. function:: commonprefix(list)
+.. function:: commonprefix(list, /)
 
    Return the longest path prefix (taken character-by-character) that is a
    prefix of all paths in  *list*.  If *list* is empty, return the empty string
@@ -199,14 +199,14 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: getatime(path)
+.. function:: getatime(path, /)
 
    Return the time of last access of *path*.  The return value is a floating-point number giving
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
 
 
-.. function:: getmtime(path)
+.. function:: getmtime(path, /)
 
    Return the time of last modification of *path*.  The return value is a floating-point number
    giving the number of seconds since the epoch (see the  :mod:`time` module).
@@ -216,7 +216,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: getctime(path)
+.. function:: getctime(path, /)
 
    Return the system's ctime which, on some systems (like Unix) is the time of the
    last metadata change, and, on others (like Windows), is the creation time for *path*.
@@ -228,7 +228,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: getsize(path)
+.. function:: getsize(path, /)
 
    Return the size, in bytes, of *path*.  Raise :exc:`OSError` if the file does
    not exist or is inaccessible.
@@ -351,7 +351,7 @@ the :mod:`glob` module.)
    .. versionadded:: 3.13
 
 
-.. function:: join(path, *paths)
+.. function:: join(path, /, *paths)
 
    Join one or more path segments intelligently.  The return value is the
    concatenation of *path* and all members of *\*paths*, with exactly one
@@ -402,7 +402,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: realpath(path, *, strict=False)
+.. function:: realpath(path, /, *, strict=False)
 
    Return the canonical path of the specified filename, eliminating any symbolic
    links encountered in the path (if they are supported by the operating
@@ -424,6 +424,8 @@ the :mod:`glob` module.)
    re-raised.
    In particular, :exc:`FileNotFoundError` is raised if *path* does not exist,
    or another :exc:`OSError` if it is otherwise inaccessible.
+   If *strict* is :data:`ALL_BUT_LAST`, the last component of the path
+   is allowed to be missing, but all other errors are raised.
 
    If *strict* is :py:data:`os.path.ALLOW_MISSING`, errors other than
    :exc:`FileNotFoundError` are re-raised (as with ``strict=True``).
@@ -448,14 +450,21 @@ the :mod:`glob` module.)
       The *strict* parameter was added.
 
    .. versionchanged:: next
-      The :py:data:`~os.path.ALLOW_MISSING` value for the *strict* parameter
-      was added.
+      The :data:`ALL_BUT_LAST` and :data:`ALLOW_MISSING` values for
+      the *strict* parameter was added.
+
+.. data:: ALL_BUT_LAST
+
+   Special value used for the *strict* argument in :func:`realpath`.
+
+   .. versionadded:: next
 
 .. data:: ALLOW_MISSING
 
    Special value used for the *strict* argument in :func:`realpath`.
 
    .. versionadded:: next
+
 
 .. function:: relpath(path, start=os.curdir)
 
@@ -471,7 +480,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: samefile(path1, path2)
+.. function:: samefile(path1, path2, /)
 
    Return ``True`` if both pathname arguments refer to the same file or directory.
    This is determined by the device number and i-node number and raises an
@@ -498,7 +507,7 @@ the :mod:`glob` module.)
       Accepts a :term:`path-like object`.
 
 
-.. function:: samestat(stat1, stat2)
+.. function:: samestat(stat1, stat2, /)
 
    Return ``True`` if the stat tuples *stat1* and *stat2* refer to the same file.
    These structures may have been returned by :func:`os.fstat`,
