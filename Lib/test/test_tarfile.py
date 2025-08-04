@@ -1717,6 +1717,16 @@ class StreamWriteTest(WriteTestBase, unittest.TestCase):
         finally:
             os.umask(original_umask)
 
+    def test_pathlike_name(self):
+        expected_name = os.path.abspath(tmpname)
+        tarpath = os_helper.FakePath(tmpname)
+
+        for func in (tarfile.open, tarfile.TarFile.open):
+            with self.subTest():
+                with func(tarpath, self.mode) as tar:
+                    self.assertEqual(tar.name, expected_name)
+                os_helper.unlink(tmpname)
+
 
 class GzipStreamWriteTest(GzipTest, StreamWriteTest):
     def test_source_directory_not_leaked(self):
