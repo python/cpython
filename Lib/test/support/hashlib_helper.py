@@ -123,21 +123,9 @@ class _HashInfoItem:
 
     def __init__(self, fullname=None, *, strict=False):
         module_name, member_name = _parse_fullname(fullname, strict=strict)
-        self._fullname = fullname
-        self._module_name = module_name
-        self._member_name = member_name
-
-    @property
-    def fullname(self):
-        return self._fullname
-
-    @property
-    def module_name(self):
-        return self._module_name
-
-    @property
-    def member_name(self):
-        return self._member_name
+        self.fullname = fullname
+        self.module_name = module_name
+        self.member_name = member_name
 
     def import_module(self, *, strict=False):
         """Import the described module.
@@ -171,12 +159,7 @@ class _HashInfoBase:
     """
 
     def __init__(self, canonical_name):
-        self._canonical_name = canonical_name
-
-    @property
-    def canonical_name(self):
-        """The canonical hash name."""
-        return self._canonical_name
+        self.canonical_name = canonical_name
 
     def __getitem__(self, implementation):
         try:
@@ -325,22 +308,21 @@ class _HashInfo:
 
     def __init__(
         self,
-        name,
+        canonical_name,
         builtin_object_type_fullname,
         openssl_object_type_fullname,
         builtin_method_fullname,
         openssl_method_fullname=None,
         hashlib_method_fullname=None,
     ):
-        self.name = name
-
+        self.canonical_name = canonical_name
         self.type = _HashTypeInfo(
-            name,
+            canonical_name,
             builtin_object_type_fullname,
             openssl_object_type_fullname,
         )
         self.func = _HashFuncInfo(
-            name,
+            canonical_name,
             builtin_method_fullname,
             openssl_method_fullname,
             hashlib_method_fullname,
