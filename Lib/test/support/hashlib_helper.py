@@ -695,14 +695,15 @@ def _openssl_hash(digestname, /, **kwargs):
     or SkipTest is raised if none exists.
     """
     assert isinstance(digestname, str), digestname
-    fullname = f"_hashlib.openssl_{digestname}"
+    method_name = f"openssl_{digestname}"
+    fullname = f"_hashlib.{method_name}"
     try:
         # re-import '_hashlib' in case it was mocked
         _hashlib = importlib.import_module("_hashlib")
     except ImportError as exc:
         raise SkipNoHash(fullname, "openssl") from exc
     try:
-        constructor = getattr(_hashlib, f"openssl_{digestname}", None)
+        constructor = getattr(_hashlib, method_name, None)
     except AttributeError as exc:
         raise SkipNoHash(fullname, "openssl") from exc
     try:
