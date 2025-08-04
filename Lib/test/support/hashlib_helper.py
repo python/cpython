@@ -281,9 +281,11 @@ class _HashTypeInfo(_HashInfoBase):
 
         On error, return None if *allow_skip* is false, or raise SkipNoHash.
         """
-        module = self[implementation].import_module()
+        target = self[implementation]
+        module = target.import_module()
         if allow_skip and module is None:
-            raise SkipNoHash(self.canonical_name, implementation)
+            reason = f"cannot import module {target.module_name}"
+            raise SkipNoHash(self.canonical_name, implementation, reason)
         return module
 
     def import_object_type(self, implementation, *, allow_skip=False):
@@ -291,10 +293,11 @@ class _HashTypeInfo(_HashInfoBase):
 
         On error, return None if *allow_skip* is false, or raise SkipNoHash.
         """
-        member = self[implementation].import_member()
+        target = self[implementation]
+        member = target.import_member()
         if allow_skip and member is None:
-            raise SkipNoHash(self.name, implementation, interface="class")
-        assert isinstance(member, type | None), member
+            reason = f"cannot import class {target.fullname}"
+            raise SkipNoHash(self.canonical_name, implementation, reason)
         return member
 
 
@@ -604,11 +607,17 @@ def requires_builtin_hmac():
 class SkipNoHash(unittest.SkipTest):
     """A SkipTest exception raised when a hash is not available."""
 
-    def __init__(self, digestname, implementation=None, interface=None):
+    def __init__(self, digestname, implementation=None, reason=None):
         parts = ["missing", implementation, f"hash algorithm {digestname!r}"]
-        if interface is not None:
-            parts.append(f"for {interface}")
+        if reason is not None:
+            parts.insert(0, f"{reason}: ")
         super().__init__(" ".join(filter(None, parts)))
+
+
+class SkipNoHashInCall(SkipNoHash):
+
+    def __init__(self, func, digestname, implementation=None):
+        super().__init__(digestname, implementation, f"cannot use {func}")
 
 
 def _hashlib_new(digestname, openssl, /, **kwargs):
@@ -630,8 +639,7 @@ def _hashlib_new(digestname, openssl, /, **kwargs):
     try:
         module.new(digestname, **kwargs)
     except ValueError as exc:
-        interface = f"{module.__name__}.new"
-        raise SkipNoHash(digestname, interface=interface) from exc
+        raise SkipNoHashInCall(f"{module.__name__}.new", digestname) from exc
     return functools.partial(module.new, digestname)
 
 
@@ -676,7 +684,7 @@ def _openssl_new(digestname, /, **kwargs):
     try:
         _hashlib.new(digestname, **kwargs)
     except ValueError as exc:
-        raise SkipNoHash(digestname, interface="_hashlib.new") from exc
+        raise SkipNoHashInCall("_hashlib.new", digestname) from exc
     return functools.partial(_hashlib.new, digestname)
 
 
