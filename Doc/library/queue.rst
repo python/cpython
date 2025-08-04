@@ -256,9 +256,10 @@ until empty or terminated immediately with a hard shutdown.
    raise :exc:`ShutDown`.
 
    If *immediate* is true, the queue is terminated immediately.
-   The queue is drained to be completely empty.  All callers of
-   :meth:`~Queue.join` are unblocked regardless of the number
-   of unfinished tasks.  Blocked callers of :meth:`~Queue.get`
+   The queue is drained to be completely empty and the count
+   of unfinished tasks is reduced by the number of tasks drained.
+   If unfinished tasks is zero, callers of :meth:`~Queue.join`
+   are unblocked.  Also, blocked callers of :meth:`~Queue.get`
    are unblocked and will raise :exc:`ShutDown` because the
    queue is empty.
 
