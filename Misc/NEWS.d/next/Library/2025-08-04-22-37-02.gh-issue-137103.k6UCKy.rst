@@ -1,0 +1,3 @@
+Make ``check_circular`` faster by skipping ``PyDict_Contains`` and comparing
+dict size before and after adding an item and using ``_KnownHash`` functions
+to calculate the hash only once.
