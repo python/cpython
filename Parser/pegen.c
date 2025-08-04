@@ -611,7 +611,6 @@ expr_ty _PyPegen_soft_keyword_token(Parser *p) {
     for (char **keyword = p->soft_keywords; *keyword != NULL; keyword++) {
         if (strlen(*keyword) == (size_t)size &&
             strncmp(*keyword, the_token, (size_t)size) == 0) {
-        if (strncmp(*keyword, the_token, size) == 0) {
             return _PyPegen_name_from_token(p, t);
         }
     }
