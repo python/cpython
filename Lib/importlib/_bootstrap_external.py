@@ -295,9 +295,10 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         head = _path_abspath(head)
 
         # Strip initial drive from a Windows path. We know we have an absolute
-        # path here, so the first part of the check rules out a POSIX path that
+        # path here, so the second part of the check rules out a POSIX path that
         # happens to contain a colon at the second character.
-        if head[0] not in path_separators and head[1] == ':':
+        # Slicing avoids issues with an empty (or short) `head`.
+        if head[1:2] == ':' and head[0:1] not in path_separators:
             head = head[2:]
 
         # Strip initial path separator from `head` to complete the conversion
