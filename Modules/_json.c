@@ -1730,8 +1730,9 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (ident != NULL) {
-        if (_PyDict_DelItem_KnownHash(s->markers, ident, ident_hash))
+        if (_PyDict_DelItem_KnownHash(s->markers, ident, ident_hash)) {
             goto bail;
+        }
         Py_CLEAR(ident);
     }
     if (s->indent != Py_None && !first) {
@@ -1816,8 +1817,9 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
         }
     }
     if (ident != NULL) {
-        if (_PyDict_DelItem_KnownHash(s->markers, ident, ident_hash))
+        if (_PyDict_DelItem_KnownHash(s->markers, ident, ident_hash)) {
             goto bail;
+        }
         Py_CLEAR(ident);
     }
 
