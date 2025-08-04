@@ -357,9 +357,8 @@ or the last :keyword:`!except*` clause has run.
 
 After all :keyword:`!except*` clauses execute, the group of unhandled exceptions
 is merged with any exceptions that were raised or re-raised from within
-:keyword:`!except*` clauses. This merged exception group propagates on.
+:keyword:`!except*` clauses. This merged exception group propagates on.::
 
- and before the :keyword:`!finally`
    >>> try:
    ...     raise ExceptionGroup("eg",
    ...         [ValueError(1), TypeError(2), OSError(3), OSError(4)])
