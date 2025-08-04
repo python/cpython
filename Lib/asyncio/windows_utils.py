@@ -32,7 +32,7 @@ _mmap_counter = itertools.count()
 
 def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
     """Like os.pipe() but with overlapped support and using handles not fds."""
-    pipename = f'python-pipe-{os.getpid()}-{uuid.uuid4()}'
+    pipename = f'python-pipe-{os.getpid()}-{uuid.uuid4().hex}'
     address = fr'\\.\pipe\{pipename}'
 
     if duplex:
