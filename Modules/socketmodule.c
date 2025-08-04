@@ -334,6 +334,8 @@ typedef struct {
 
 /* IMPORTANT: make sure the list ordered by descending build_number */
 static FlagRuntimeInfo win_runtime_flags[] = {
+    /* available starting with Windows 10 1803 */
+    {17134, "AF_UNIX"},
     /* available starting with Windows 10 1709 */
     {16299, "TCP_KEEPIDLE"},
     {16299, "TCP_KEEPINTVL"},

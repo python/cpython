@@ -94,8 +94,11 @@ typedef int socklen_t;
 # include <hvsocket.h>
 #endif /* MS_WINDOWS */
 
+#define HAVE_AFUNIX_H 1
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
+#elif HAVE_AFUNIX_H
+# include <afunix.h>
 #else
 # undef AF_UNIX
 #endif
