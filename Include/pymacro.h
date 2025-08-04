@@ -87,11 +87,11 @@
 #endif
 
 
-// _Py_ANONYMOUS: modifier for declaring an anonymous struct/union.
+// _Py_ANONYMOUS: modifier for declaring an anonymous union.
 // Usage: _Py_ANONYMOUS union { ... };
 // Standards/compiler support:
-// - nothing needed in C++
-// - nothing needed in C11 and above
+// - C++ allows anonymous unions, but not structs
+// - C11 and above allows anonymous unions and structs
 // - MSVC has warning(disable: 4201) "nonstandard extension used : nameless
 //   struct/union". This is specific enough that we disable it for all of
 //   Python.h.
