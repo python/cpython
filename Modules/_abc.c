@@ -847,6 +847,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         _abc_data *scls_impl;
         int scls_is_abc = _get_optional_impl(state, scls, &scls_impl);
         if (scls_is_abc < 0) {
+            Py_DECREF(scls);
             goto end;
         }
         if (scls_is_abc > 0) {
