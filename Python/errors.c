@@ -1453,6 +1453,7 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
 {
     assert(file != NULL);
     assert(!Py_IsNone(file));
+
     if (obj != NULL && obj != Py_None) {
         if (err_msg != NULL && err_msg != Py_None) {
             if (PyFile_WriteObject(err_msg, file, Py_PRINT_RAW) < 0) {
