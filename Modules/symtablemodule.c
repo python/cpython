@@ -16,14 +16,18 @@ _symtable.symtable
     filename:  object(converter='PyUnicode_FSDecoder')
     startstr:  str
     /
+    *
+    flags: int = 0
+    feature_version: int = 0
 
 Return symbol and scope dictionaries used internally by compiler.
 [clinic start generated code]*/
 
 static PyObject *
 _symtable_symtable_impl(PyObject *module, PyObject *source,
-                        PyObject *filename, const char *startstr)
-/*[clinic end generated code: output=59eb0d5fc7285ac4 input=9dd8a50c0c36a4d7]*/
+                        PyObject *filename, const char *startstr, int flags,
+                        int feature_version)
+/*[clinic end generated code: output=1e766ac3387e156a input=5ccfb94e8a19a975]*/
 {
     struct symtable *st;
     PyObject *t;
@@ -31,7 +35,14 @@ _symtable_symtable_impl(PyObject *module, PyObject *source,
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     PyObject *source_copy = NULL;
 
-    cf.cf_flags = PyCF_SOURCE_IS_UTF8;
+    cf.cf_flags = flags | PyCF_SOURCE_IS_UTF8;
+    if (feature_version >= 0 && (flags & PyCF_ONLY_AST)) {
+        cf.cf_feature_version = feature_version;
+    }
+    if (flags & ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_COMPILE_MASK)) {
+        PyErr_SetString(PyExc_ValueError, "_symtable.symtable(): unrecognised flags");
+        return NULL;
+    }
 
     const char *str = _Py_SourceAsString(source, "symtable", "string or bytes", &cf, &source_copy);
     if (str == NULL) {

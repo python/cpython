@@ -131,6 +131,15 @@ SyntaxError: duplicate parameter 'x' in function definition"""
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
 
+    def test_runsource_shows_syntax_error_for_failed_symtable_checks(self):
+        # Some checks cannot be performed by AST parsing only.
+        # See https://github.com/python/cpython/issues/137376.
+        console = InteractiveColoredConsole()
+        source = "x = 1; global x; x = 2"
+        with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
+            console.runsource(source)
+            mock_showsyntaxerror.assert_called_once()
+
     def test_runsource_survives_null_bytes(self):
         console = InteractiveColoredConsole()
         source = "\x00\n"

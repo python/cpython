@@ -948,6 +948,7 @@ extern "C" {
     INIT_ID(fd), \
     INIT_ID(fd2), \
     INIT_ID(fdel), \
+    INIT_ID(feature_version), \
     INIT_ID(fget), \
     INIT_ID(fields), \
     INIT_ID(file), \

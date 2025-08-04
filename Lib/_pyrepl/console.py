@@ -20,10 +20,12 @@
 from __future__ import annotations
 
 import _colorize
+import _symtable
 
 from abc import ABC, abstractmethod
 import ast
 import code
+import codeop
 import linecache
 from dataclasses import dataclass, field
 import os.path
@@ -211,6 +213,17 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         except (OverflowError, ValueError):
             self.showsyntaxerror(filename, source=source)
             return False
+
+        try:
+            # validate stuff that cannot be validated with AST parsing only
+            flags = self.compile.compiler.flags
+            flags &= ~codeop.PyCF_DONT_IMPLY_DEDENT
+            flags &= ~codeop.PyCF_ALLOW_INCOMPLETE_INPUT
+            _symtable.symtable(source, filename, "exec", flags=flags)
+        except (SyntaxError, OverflowError, ValueError):
+            self.showsyntaxerror(filename, source=source)
+            return False
+
         if tree.body:
             *_, last_stmt = tree.body
         for stmt in tree.body:
