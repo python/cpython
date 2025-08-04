@@ -69,7 +69,7 @@ approach rather useless.
 Asynchronous Functions and Coroutines
 =====================================
 
-This is a regular 'ol Python function::
+This is a basic, boring Python function::
 
    def hello_printer():
        print(
