@@ -545,20 +545,24 @@ jobs:
     - name: Tests
       run: xvfb-run make test
 
-  build-tsan:
-    name: >-
-      Thread sanitizer
-      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
+  build-san:
+    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
+      Sanitizers${{ '' }}
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
       fail-fast: false
       matrix:
+        check-name:
+        - Thread
         free-threading:
         - false
         - true
-    uses: ./.github/workflows/reusable-tsan.yml
+        sanitizer:
+        - TSan
+    uses: ./.github/workflows/reusable-san.yml
     with:
+      sanitizer: ${{ matrix.sanitizer }}
       config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
@@ -619,7 +623,7 @@ jobs:
     - build-wasi
     - test-hypothesis
     - build-asan
-    - build-tsan
+    - build-san
     - cifuzz
     if: always()
 
@@ -651,7 +655,7 @@ jobs:
             build-wasi,
             test-hypothesis,
             build-asan,
-            build-tsan,
+            build-san,
             '
             || ''
           }}
