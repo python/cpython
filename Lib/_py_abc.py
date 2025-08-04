@@ -67,7 +67,7 @@ class ABCMeta(type):
             # This would create a cycle, which is bad for the algorithm below
             raise RuntimeError("Refusing to create an inheritance cycle")
         cls._abc_registry.add(subclass)
-        ABCMeta._abc_invalidation_counter += 1 # Invalidate negative cache
+        ABCMeta._abc_invalidation_counter += 1  # Invalidate negative cache
         return subclass
 
     def _dump_registry(cls, file=None):
