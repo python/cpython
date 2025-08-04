@@ -14,6 +14,7 @@ from inspect import isabstract
 
 def test_factory(abc_ABCMeta, abc_get_cache_token):
     class TestLegacyAPI(unittest.TestCase):
+
         def test_abstractproperty_basics(self):
             @abc.abstractproperty
             def foo(self): pass
@@ -558,8 +559,32 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             with self.assertRaisesRegex(CustomError, exc_msg):
                 issubclass(int, S)
 
-        def test_subclasshook(self):
+        def test_issubclass_bad_class(self):
             class A(metaclass=abc.ABCMeta):
+                pass
+
+            A._abc_impl = 1
+            error_msg = "_abc_impl is set to a wrong type"
+            with self.assertRaisesRegex(TypeError, error_msg):
+                issubclass(A, A)
+
+            class B(metaclass=_py_abc.ABCMeta):
+                pass
+
+            B._abc_cache = 1
+            error_msg = "argument of type 'int' is not a container or iterable"
+            with self.assertRaisesRegex(TypeError, error_msg):
+                issubclass(B, B)
+
+            class C(metaclass=_py_abc.ABCMeta):
+                pass
+
+            C._abc_negative_cache = 1
+            with self.assertRaisesRegex(TypeError, error_msg):
+                issubclass(C, C)
+
+        def test_subclasshook(self):
+            class A(metaclass=abc_ABCMeta):
                 @classmethod
                 def __subclasshook__(cls, C):
                     if cls is A:
@@ -575,6 +600,26 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 spam = 42
             self.assertNotIsSubclass(C, A)
             self.assertNotIsSubclass(C, (A,))
+
+        def test_subclasshook_exception(self):
+            # Check that issubclass() propagates exceptions raised by
+            # __subclasshook__.
+            class CustomError(Exception): ...
+            exc_msg = "exception from __subclasshook__"
+            class A(metaclass=abc_ABCMeta):
+                @classmethod
+                def __subclasshook__(cls, C):
+                    raise CustomError(exc_msg)
+            with self.assertRaisesRegex(CustomError, exc_msg):
+                issubclass(A, A)
+            class B(A):
+                pass
+            with self.assertRaisesRegex(CustomError, exc_msg):
+                issubclass(B, A)
+            class C:
+                pass
+            with self.assertRaisesRegex(CustomError, exc_msg):
+                issubclass(C, A)
 
         def test_all_new_methods_are_called(self):
             class A(metaclass=abc_ABCMeta):
