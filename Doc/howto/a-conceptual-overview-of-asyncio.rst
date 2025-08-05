@@ -52,7 +52,7 @@ This process repeats indefinitely.
 Even if the queue is empty, the event loop continues to cycle (somewhat
 aimlessly).
 
-Effective execution relies on tasks sharing well; a greedy job could hog
+Effective execution relies on tasks sharing well and cooperating; a greedy job could hog
 control and leave the other tasks to starve, rendering the overall event loop
 approach rather useless.
 
@@ -96,7 +96,8 @@ Calling it creates and returns a :ref:`coroutine <coroutine>` object.
         f"By the way, my lucky number is: {magic_number}."
        )
 
-Note that calling it does not execute the function::
+Calling the async function, `loudmouth_penguin`, does not execute the print statement;
+instead, it creates a coroutine object::
 
    >>> loudmouth_penguin(magic_number=3)
    <coroutine object loudmouth_penguin at 0x104ed2740>
@@ -134,7 +135,7 @@ one::
        ...
 
 Similar to a coroutine function, calling a generator function does not run it.
-Instead, it provides a generator object::
+Instead, it creates a generator object::
 
    >>> get_random_number()
    <generator object get_random_number at 0x1048671c0>
@@ -262,7 +263,7 @@ and how to make your own asynchronous operators.
 coroutine.send(), await, yield and StopIteration
 ================================================
 
-:mod:`!asyncio` leverages 4 components to pass around control.
+:mod:`!asyncio` leverages four components to pass around control.
 
 :meth:`coroutine.send(arg) <generator.send>` is the method used to start or
 resume a coroutine.
@@ -342,9 +343,9 @@ That might sound odd to you. You might be thinking:
 
    2. What about a ``yield from`` within the coroutine function to a (plain)
    generator?
-   ``SyntaxError: yield from not allowed in a coroutine.``
+   It causes the following error: ``SyntaxError: yield from not allowed in a coroutine.``
    This was intentionally designed for the sake of simplicity -- mandating only
-   one way of using coroutines. Originally ``yield`` was actually barred as well,
+   one way of using coroutines. Initially ``yield`` was barred as well,
    but was re-accepted to allow for async generators.
    Despite that, ``yield from`` and ``await`` effectively do the same thing.
 
