@@ -717,12 +717,12 @@ def requires_builtin_hashdigest(canonical_name, *, usedforsecurity=True):
     )
 
 
-def requires_builtin_hashes(*ignored, usedforsecurity=True):
+def requires_builtin_hashes(*, exclude=(), usedforsecurity=True):
     """Decorator raising SkipTest if one HACL* hashing algorithm is missing."""
     return _chain_decorators((
         _make_requires_builtin_hashdigest_decorator(
             info.builtin, usedforsecurity=usedforsecurity
-        ) for info in _iter_hash_func_info(ignored)
+        ) for info in _iter_hash_func_info(exclude)
     ))
 
 
@@ -1058,18 +1058,18 @@ def block_algorithm(name, *, allow_openssl=False, allow_builtin=False):
 
 
 @contextlib.contextmanager
-def block_openssl_algorithms(*ignored):
-    """Block OpenSSL implementations, except those given in *ignored*."""
+def block_openssl_algorithms(*, exclude=()):
+    """Block OpenSSL implementations, except those given in *exclude*."""
     with contextlib.ExitStack() as stack:
-        for name in CANONICAL_DIGEST_NAMES.difference(ignored):
+        for name in CANONICAL_DIGEST_NAMES.difference(exclude):
             stack.enter_context(block_algorithm(name, allow_builtin=True))
         yield
 
 
 @contextlib.contextmanager
-def block_builtin_algorithms(*ignored):
-    """Block HACL* implementations, except those given in *ignored*."""
+def block_builtin_algorithms(*, exclude=()):
+    """Block HACL* implementations, except those given in *exclude*."""
     with contextlib.ExitStack() as stack:
-        for name in CANONICAL_DIGEST_NAMES.difference(ignored):
+        for name in CANONICAL_DIGEST_NAMES.difference(exclude):
             stack.enter_context(block_algorithm(name, allow_openssl=True))
         yield
