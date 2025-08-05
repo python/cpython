@@ -8863,7 +8863,7 @@ fi
           LTOCFLAGS="-flto"
           ;;
         *)
-          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
+          LTOFLAGS="-flto=auto -fuse-linker-plugin -ffat-lto-objects"
           ;;
       esac
       ;;
