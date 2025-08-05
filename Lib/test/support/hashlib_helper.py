@@ -985,9 +985,11 @@ def _block_builtin_hmac_constructor(name):
     if (wrapped := info.import_member()) is None:
         # function shouldn't exist for this implementation
         return contextlib.nullcontext()
+
     @functools.wraps(wrapped)
     def wrapper(key, obj):
         raise ValueError(f"blocked hash name: {name}")
+
     _ensure_wrapper_signature(wrapper, wrapped)
     return unittest.mock.patch(info.fullname, wrapper)
 
