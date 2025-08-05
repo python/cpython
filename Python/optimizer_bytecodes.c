@@ -362,6 +362,7 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(value);
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
             sym_set_const(value, Py_None);
