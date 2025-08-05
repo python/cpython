@@ -10,7 +10,7 @@ preserve
 
 PyDoc_STRVAR(_symtable_symtable__doc__,
 "symtable($module, source, filename, startstr, /, *, flags=0,\n"
-"         feature_version=0)\n"
+"         feature_version=-1)\n"
 "--\n"
 "\n"
 "Return symbol and scope dictionaries used internally by compiler.");
@@ -60,7 +60,7 @@ _symtable_symtable(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *filename;
     const char *startstr;
     int flags = 0;
-    int feature_version = 0;
+    int feature_version = -1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -106,4 +106,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=71571c035470d288 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f30a99893fa9de05 input=a9049054013a1b77]*/

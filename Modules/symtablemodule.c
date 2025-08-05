@@ -18,7 +18,7 @@ _symtable.symtable
     /
     *
     flags: int = 0
-    feature_version: int = 0
+    feature_version: int = -1
 
 Return symbol and scope dictionaries used internally by compiler.
 [clinic start generated code]*/
@@ -27,7 +27,7 @@ static PyObject *
 _symtable_symtable_impl(PyObject *module, PyObject *source,
                         PyObject *filename, const char *startstr, int flags,
                         int feature_version)
-/*[clinic end generated code: output=1e766ac3387e156a input=5ccfb94e8a19a975]*/
+/*[clinic end generated code: output=1e766ac3387e156a input=03e9deda7ab5a9d7]*/
 {
     struct symtable *st;
     PyObject *t;
