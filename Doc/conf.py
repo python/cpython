@@ -567,9 +567,7 @@ ogp_social_cards = {  # Used when matplotlib is installed
     'image': '_static/og-image.png',
     'line_color': '#3776ab',
 }
-ogp_custom_meta_tags = (
-    '<meta name="theme-color" content="#3776ab">',
-)
+ogp_custom_meta_tags = ('<meta name="theme-color" content="#3776ab">',)
 if 'create-social-cards' not in tags:  # noqa: F821
     # Define a static preview image when not creating social cards
     ogp_image = '_static/og-image.png'
