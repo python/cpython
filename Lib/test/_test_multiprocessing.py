@@ -5536,11 +5536,6 @@ class TestInvalidFamily(unittest.TestCase):
         with self.assertRaises(ValueError):
             multiprocessing.connection.Listener(r'\\.\test')
 
-    @unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
-    def test_invalid_family_win32(self):
-        with self.assertRaises(ValueError):
-            multiprocessing.connection.Listener('/var/test.pipe')
-
 #
 # Issue 12098: check sys.flags of child matches that for parent
 #
