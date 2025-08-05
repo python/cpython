@@ -367,7 +367,7 @@ like a status light (red, yellow or green) or indicator.
 :class:`asyncio.Task` subclasses :class:`asyncio.Future` in order to gain
 these various capabilities.
 The prior section said tasks store a list of callbacks, which wasn't entirely
-correct.
+accurate.
 It's actually the ``Future`` class that implements this logic which ``Task``
 inherits.
 
