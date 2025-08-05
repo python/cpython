@@ -630,6 +630,14 @@ class SerializeTests(unittest.TestCase):
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
 
+    def test_open_with_bytes_path(self):
+        path = os.fsencode(TESTFN)
+        self.addCleanup(unlink, path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(path)) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
