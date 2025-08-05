@@ -640,7 +640,7 @@ strings only contain ASCII characters.
 
 Other than the *ensure_ascii* parameter, this module is defined strictly in
 terms of conversion between Python objects and
-:class:`Unicode strings <str>`, and thus does not otherwise directly address
+:class:`strings <str>`, and thus does not otherwise directly address
 the issue of character encodings.
 
 The RFC prohibits adding a byte order mark (BOM) to the start of a JSON text,
