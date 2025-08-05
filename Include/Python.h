@@ -2,10 +2,6 @@
 // C extensions should only #include <Python.h>, and not include directly
 // the other Python header files included by <Python.h>.
 
-// Note: If the included standard headers change, please update the documentation
-// (including the documentation for C extensions) accordingly.
-
-
 #ifndef Py_PYTHON_H
 #define Py_PYTHON_H
 
@@ -20,6 +16,7 @@
 
 
 // Include standard header files
+// When changing these files, remember to update Doc/extending/extending.rst.
 #include <assert.h>               // assert()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX

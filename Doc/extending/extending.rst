@@ -77,33 +77,35 @@ the module and a copyright notice if you like).
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
 ``PY``, except those defined in standard header files.
 
-For backward compatibility, :file:`Python.h` includes several standard header files.
-C extensions should include the standard headers that they use, and should not rely
-on these implicit includes.
-If using the limited C API version 3.13 or newer, the implicit includes are:
+.. tip::
 
-* ``<assert.h>``
-* ``<intrin.h>`` (on Windows)
-* ``<inttypes.h>``
-* ``<limits.h>``
-* ``<math.h>``
-* ``<stdarg.h>``
-* ``<wchar.h>``
-* ``<sys/types.h>`` (if present)
+   For backward compatibility, :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   If using the limited C API version 3.13 or newer, the implicit includes are:
 
-If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.12 or older,
-the headers below are also included:
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
 
-* ``<ctype.h>``
-* ``<unistd.h>`` (on POSIX)
+   If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.12 or older,
+   the headers below are also included:
 
-If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.10 or older,
-the headers below are also included:
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
 
-* ``<errno.h>``
-* ``<stdio.h>``
-* ``<stdlib.h>``
-* ``<string.h>``
+   If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.10 or older,
+   the headers below are also included:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
 
 The next thing we add to our module file is the C function that will be called
 when the Python expression ``spam.system(string)`` is evaluated (we'll see
