@@ -1,2 +1,2 @@
 Get rid of any possibility of a name conflict for named pipes in
-:mod:`miltiprocessing` and :mod:`asyncio` on Windows, no matter how small.
+:mod:`multiprocessing` and :mod:`asyncio` on Windows, no matter how small.
