@@ -430,31 +430,17 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
-                                                 sym_get_const(ctx, right),
-                                                 oparg >> 5);
-            if (tmp == NULL) {
-                goto error;
-            }
-            assert(PyBool_Check(tmp));
-            assert(_Py_IsImmortal(tmp));
-            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
-            res = sym_new_const(ctx, tmp);
-            Py_DECREF(tmp);
-        }
-        else {
-            res = sym_new_type(ctx, &PyBool_Type);
-        }
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        res = sym_new_type(ctx, &PyBool_Type);
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
     op(_COMPARE_OP_STR, (left, right -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyBool_Type);
     }
 

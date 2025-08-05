@@ -1065,8 +1065,15 @@ or with dictionaries as mapping tables. The following table lists the codecs by
 name, together with a few common aliases, and the languages for which the
 encoding is likely used. Neither the list of aliases nor the list of languages
 is meant to be exhaustive. Notice that spelling alternatives that only differ in
-case or use a hyphen instead of an underscore are also valid aliases; therefore,
-e.g. ``'utf-8'`` is a valid alias for the ``'utf_8'`` codec.
+case or use a hyphen instead of an underscore are also valid aliases
+because they are equivalent when normalized by
+:func:`~encodings.normalize_encoding`. For example, ``'utf-8'`` is a valid
+alias for the ``'utf_8'`` codec.
+
+.. note::
+
+   The below table lists the most common aliases, for a complete list
+   refer to the source :source:`aliases.py <Lib/encodings/aliases.py>` file.
 
 On Windows, ``cpXXX`` codecs are available for all code pages.
 But only codecs listed in the following table are guarantead to exist on
@@ -1474,6 +1481,36 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 
 .. versionchanged:: 3.4
    Restoration of the aliases for the binary transforms.
+
+
+.. _standalone-codec-functions:
+
+Standalone Codec Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following functions provide encoding and decoding functionality similar to codecs,
+but are not available as named codecs through :func:`codecs.encode` or :func:`codecs.decode`.
+They are used internally (for example, by :mod:`pickle`) and behave similarly to the
+``string_escape`` codec that was removed in Python 3.
+
+.. function:: codecs.escape_encode(input, errors=None)
+
+   Encode *input* using escape sequences. Similar to how :func:`repr` on bytes
+   produces escaped byte values.
+
+   *input* must be a :class:`bytes` object.
+
+   Returns a tuple ``(output, length)`` where *output* is a :class:`bytes`
+   object and *length* is the number of bytes consumed.
+
+.. function:: codecs.escape_decode(input, errors=None)
+
+   Decode *input* from escape sequences back to the original bytes.
+
+   *input* must be a :term:`bytes-like object`.
+
+   Returns a tuple ``(output, length)`` where *output* is a :class:`bytes`
+   object and *length* is the number of bytes consumed.
 
 
 .. _text-transforms:
