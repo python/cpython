@@ -96,7 +96,7 @@ Calling it creates and returns a :ref:`coroutine <coroutine>` object.
         f"By the way, my lucky number is: {magic_number}."
        )
 
-Calling the async function, `loudmouth_penguin`, does not execute the print statement;
+Calling the async function, ``loudmouth_penguin``, does not execute the print statement;
 instead, it creates a coroutine object::
 
    >>> loudmouth_penguin(magic_number=3)
