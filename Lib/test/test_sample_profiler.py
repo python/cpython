@@ -1723,12 +1723,11 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             self.assertIsNotNone(profiler.unwinder.get_stack_trace())
             proc.kill()
             proc.wait()
-            # ValueError on MacOS (yeah I know), ProcessLookupError on Linux and Windows
-            self.assertRaises((ValueError, ProcessLookupError), profiler.unwinder.get_stack_trace)
+            self.assertRaises(ProcessLookupError, profiler.unwinder.get_stack_trace)
 
         # Exit the context manager to ensure the process is terminated
         self.assertFalse(profiler._is_process_running())
-        self.assertRaises((ValueError, ProcessLookupError), profiler.unwinder.get_stack_trace)
+        self.assertRaises(ProcessLookupError, profiler.unwinder.get_stack_trace)
 
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_esrch_signal_handling(self):
