@@ -73,6 +73,7 @@ struct trampoline_api_st {
     int (*free_state)(void* state);
     void *state;
     Py_ssize_t code_padding;
+    Py_ssize_t code_alignment;
 };
 #endif
 
@@ -128,8 +129,6 @@ struct _atexit_runtime_state {
 
 //###################
 // interpreter atexit
-
-typedef void (*atexit_datacallbackfunc)(void *);
 
 typedef struct atexit_callback {
     atexit_datacallbackfunc func;
@@ -944,6 +943,7 @@ struct _is {
     bool jit;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
+    struct _PyExecutorObject *cold_executor;
     int executor_deletion_list_remaining_capacity;
     size_t trace_run_counter;
     _rare_events rare_events;

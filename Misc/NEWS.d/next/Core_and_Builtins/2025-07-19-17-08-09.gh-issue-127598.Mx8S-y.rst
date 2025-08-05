@@ -1,0 +1,2 @@
+Improve :exc:`ModuleNotFoundError` by adding flavour text to the exception when the
+:option:`-S` option is passed. Patch by Andrea Mattei.

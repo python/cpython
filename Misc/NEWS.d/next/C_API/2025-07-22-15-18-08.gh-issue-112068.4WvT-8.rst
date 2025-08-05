@@ -1,0 +1,1 @@
+Revert support of nullable arguments in :c:func:`PyArg_Parse`.

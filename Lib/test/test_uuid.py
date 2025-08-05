@@ -1140,6 +1140,23 @@ class BaseTestUUID:
         weak = weakref.ref(strong)
         self.assertIs(strong, weak())
 
+
+class CommandLineTestCases:
+    uuid = None  # to be defined in subclasses
+
+    def do_test_standalone_uuid(self, version):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+        output = stdout.getvalue().strip()
+        u = self.uuid.UUID(output)
+        self.assertEqual(output, str(u))
+        self.assertEqual(u.version, version)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid1"])
+    def test_cli_uuid1(self):
+        self.do_test_standalone_uuid(1)
+
     @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
     @mock.patch('sys.stderr', new_callable=io.StringIO)
     def test_cli_namespace_required_for_uuid3(self, mock_err):
@@ -1214,13 +1231,25 @@ class BaseTestUUID:
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 5)
 
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid6"])
+    def test_cli_uuid6(self):
+        self.do_test_standalone_uuid(6)
 
-class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid7"])
+    def test_cli_uuid7(self):
+        self.do_test_standalone_uuid(7)
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid8"])
+    def test_cli_uuid8(self):
+        self.do_test_standalone_uuid(8)
+
+
+class TestUUIDWithoutExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
 
 
 @unittest.skipUnless(c_uuid, 'requires the C _uuid module')
-class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
+class TestUUIDWithExtModule(CommandLineTestCases, BaseTestUUID, unittest.TestCase):
     uuid = c_uuid
 
     def check_has_stable_libuuid_extractable_node(self):

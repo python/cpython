@@ -256,9 +256,17 @@ def _type_repr(obj):
     return _lazy_annotationlib.type_repr(obj)
 
 
-def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
+def _collect_type_parameters(
+    args,
+    *,
+    enforce_default_ordering: bool = True,
+    validate_all: bool = False,
+):
     """Collect all type parameters in args
     in order of first appearance (lexicographic order).
+
+    Having an explicit `Generic` or `Protocol` base class determines
+    the exact parameter order.
 
     For example::
 
@@ -266,6 +274,9 @@ def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
         >>> T = TypeVar('T')
         >>> _collect_type_parameters((T, Callable[P, T]))
         (~T, ~P)
+        >>> _collect_type_parameters((list[T], Generic[P, T]))
+        (~P, ~T)
+
     """
     # required type parameter cannot appear after parameter with default
     default_encountered = False
@@ -297,6 +308,17 @@ def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
                                         ' follows type parameter with a default')
 
                 parameters.append(t)
+        elif (
+            not validate_all
+            and isinstance(t, _GenericAlias)
+            and t.__origin__ in (Generic, Protocol)
+        ):
+            # If we see explicit `Generic[...]` or `Protocol[...]` base classes,
+            # we need to just copy them as-is.
+            # Unless `validate_all` is passed, in this case it means that
+            # we are doing a validation of `Generic` subclasses,
+            # then we collect all unique parameters to be able to inspect them.
+            parameters = t.__parameters__
         else:
             if _is_unpacked_typevartuple(t):
                 type_var_tuple_encountered = True
@@ -407,6 +429,17 @@ def _tp_cache(func=None, /, *, typed=False):
     return decorator
 
 
+def _rebuild_generic_alias(alias: GenericAlias, args: tuple[object, ...]) -> GenericAlias:
+    is_unpacked = alias.__unpacked__
+    if _should_unflatten_callable_args(alias, args):
+        t = alias.__origin__[(args[:-1], args[-1])]
+    else:
+        t = alias.__origin__[args]
+    if is_unpacked:
+        t = Unpack[t]
+    return t
+
+
 def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
     import warnings
 
@@ -426,20 +459,14 @@ class _Sentinel:
         return '<sentinel>'
 
 
-_sentinel = _Sentinel()
-
-
-def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
-               format=None, owner=None):
+def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
+               format=None, owner=None, parent_fwdref=None):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
-    if type_params is _sentinel:
-        _deprecation_warning_for_no_type_params_passed("typing._eval_type")
-        type_params = ()
     if isinstance(t, _lazy_annotationlib.ForwardRef):
         # If the forward_ref has __forward_module__ set, evaluate() infers the globals
         # from the module, and it will probably pick better than the globals we have here.
@@ -451,28 +478,23 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
     if isinstance(t, (_GenericAlias, GenericAlias, Union)):
         if isinstance(t, GenericAlias):
             args = tuple(
-                _make_forward_ref(arg) if isinstance(arg, str) else arg
+                _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
-            is_unpacked = t.__unpacked__
-            if _should_unflatten_callable_args(t, args):
-                t = t.__origin__[(args[:-1], args[-1])]
-            else:
-                t = t.__origin__[args]
-            if is_unpacked:
-                t = Unpack[t]
+        else:
+            args = t.__args__
 
         ev_args = tuple(
             _eval_type(
                 a, globalns, localns, type_params, recursive_guard=recursive_guard,
                 format=format, owner=owner,
             )
-            for a in t.__args__
+            for a in args
         )
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
-            return GenericAlias(t.__origin__, ev_args)
+            return _rebuild_generic_alias(t, ev_args)
         if isinstance(t, Union):
             return functools.reduce(operator.or_, ev_args)
         else:
@@ -936,7 +958,12 @@ def TypeIs(self, parameters):
     return _GenericAlias(self, (item,))
 
 
-def _make_forward_ref(code, **kwargs):
+def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
+    if parent_fwdref is not None:
+        if parent_fwdref.__forward_module__ is not None:
+            kwargs['module'] = parent_fwdref.__forward_module__
+        if parent_fwdref.__owner__ is not None:
+            kwargs['owner'] = parent_fwdref.__owner__
     forward_ref = _lazy_annotationlib.ForwardRef(code, **kwargs)
     # For compatibility, eagerly compile the forwardref's code.
     forward_ref.__forward_code__
@@ -1001,6 +1028,7 @@ def evaluate_forward_ref(
         recursive_guard=_recursive_guard | {forward_ref.__forward_arg__},
         format=format,
         owner=owner,
+        parent_fwdref=forward_ref,
     )
 
 
@@ -1150,20 +1178,22 @@ def _generic_init_subclass(cls, *args, **kwargs):
     if error:
         raise TypeError("Cannot inherit from plain Generic")
     if '__orig_bases__' in cls.__dict__:
-        tvars = _collect_type_parameters(cls.__orig_bases__)
+        tvars = _collect_type_parameters(cls.__orig_bases__, validate_all=True)
         # Look for Generic[T1, ..., Tn].
         # If found, tvars must be a subset of it.
         # If not found, tvars is it.
         # Also check for and reject plain Generic,
         # and reject multiple Generic[...].
         gvars = None
+        basename = None
         for base in cls.__orig_bases__:
             if (isinstance(base, _GenericAlias) and
-                    base.__origin__ is Generic):
+                    base.__origin__ in (Generic, Protocol)):
                 if gvars is not None:
                     raise TypeError(
                         "Cannot inherit from Generic[...] multiple times.")
                 gvars = base.__parameters__
+                basename = base.__origin__.__name__
         if gvars is not None:
             tvarset = set(tvars)
             gvarset = set(gvars)
@@ -1171,7 +1201,7 @@ def _generic_init_subclass(cls, *args, **kwargs):
                 s_vars = ', '.join(str(t) for t in tvars if t not in gvarset)
                 s_args = ', '.join(str(g) for g in gvars)
                 raise TypeError(f"Some type variables ({s_vars}) are"
-                                f" not listed in Generic[{s_args}]")
+                                f" not listed in {basename}[{s_args}]")
             tvars = gvars
     cls.__parameters__ = tuple(tvars)
 
@@ -1860,7 +1890,9 @@ def _allow_reckless_class_checks(depth=2):
     The abc and functools modules indiscriminately call isinstance() and
     issubclass() on the whole MRO of a user class, which may contain protocols.
     """
-    return _caller(depth) in {'abc', 'functools', None}
+    # gh-136047: When `_abc` module is not available, `_py_abc` is required to
+    # allow `_py_abc.ABCMeta` fallback.
+    return _caller(depth) in {'abc', '_py_abc', 'functools', None}
 
 
 _PROTO_ALLOWLIST = {
@@ -2404,7 +2436,7 @@ def _strip_annotations(t):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
-        return GenericAlias(t.__origin__, stripped_args)
+        return _rebuild_generic_alias(t, stripped_args)
     if isinstance(t, Union):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:

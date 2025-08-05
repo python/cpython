@@ -2164,7 +2164,7 @@ class datetime(date):
         By default, the fractional part is omitted if self.microsecond == 0.
 
         If self.tzinfo is not None, the UTC offset is also attached, giving
-        giving a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
+        a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
 
         Optional argument sep specifies the separator between date and
         time, default 'T'.
