@@ -54,6 +54,7 @@ extern "C" {
 #  include <mach/mach.h>
 #  include <mach/mach_vm.h>
 #  include <mach/machine.h>
+#  include <mach/task_info.h>
 #  include <sys/mman.h>
 #  include <sys/proc.h>
 #  include <sys/sysctl.h>
@@ -1061,7 +1062,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
                 "0x%lx (size %zu): insufficient permissions",
                 handle->pid, remote_address, len);
             break;
-        case KERN_INVALID_ARGUMENT:
+        case KERN_INVALID_ARGUMENT: {
             // Perform a task_info check to see if the invalid argument is due
             // to the process being terminated
             task_basic_info_data_t task_basic_info;
@@ -1080,6 +1081,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
                     handle->pid, remote_address, len);
             }
             break;
+        }
         case KERN_NO_SPACE:
         case KERN_MEMORY_ERROR:
             PyErr_Format(PyExc_ProcessLookupError,
