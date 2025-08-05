@@ -964,7 +964,9 @@ class ContextTests(unittest.TestCase):
 
     def test_set_groups(self):
         ctx = ssl.create_default_context()
-        self.assertIsNone(ctx.set_groups('P-256:X25519'))
+        # Use '?' for X25519 as the latter is not allowed if
+        # OpenSSL has been built with FIPS module support.
+        self.assertIsNone(ctx.set_groups('P-256:?X25519'))
         self.assertRaises(ssl.SSLError, ctx.set_groups, 'P-256:xxx')
 
     @unittest.skipUnless(CAN_GET_AVAILABLE_OPENSSL_GROUPS,
