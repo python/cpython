@@ -1849,6 +1849,23 @@ class ThreadingExceptionTests(BaseTestCase):
             t.start()
             t.join()
 
+    def test_dummy_thread_on_interpreter_shutdown(self):
+        # GH-130522: When `threading` held a reference to itself and then a
+        # _DummyThread() object was created, destruction of the dummy thread
+        # would emit an unraisable exception at shutdown, due to a lock being
+        # destroyed.
+        code = """if True:
+        import sys
+        import threading
+
+        threading.x = sys.modules[__name__]
+        x = threading._DummyThread()
+        """
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b"")
+        self.assertEqual(err, b"")
+
 
 class ThreadRunFail(threading.Thread):
     def run(self):
