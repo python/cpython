@@ -752,45 +752,18 @@ class HashFunctionsTrait:
         self.is_valid_digest_name(digestname)
         self.skipTest(f"missing hash function: {digestname}")
 
-    @property
-    def md5(self):
-        return self._find_constructor("md5")
+    md5 = property(lambda self: self._find_constructor("md5"))
+    sha1 = property(lambda self: self._find_constructor("sha1"))
 
-    @property
-    def sha1(self):
-        return self._find_constructor("sha1")
+    sha224 = property(lambda self: self._find_constructor("sha224"))
+    sha256 = property(lambda self: self._find_constructor("sha256"))
+    sha384 = property(lambda self: self._find_constructor("sha384"))
+    sha512 = property(lambda self: self._find_constructor("sha512"))
 
-    @property
-    def sha224(self):
-        return self._find_constructor("sha224")
-
-    @property
-    def sha256(self):
-        return self._find_constructor("sha256")
-
-    @property
-    def sha384(self):
-        return self._find_constructor("sha384")
-
-    @property
-    def sha512(self):
-        return self._find_constructor("sha512")
-
-    @property
-    def sha3_224(self):
-        return self._find_constructor("sha3_224")
-
-    @property
-    def sha3_256(self):
-        return self._find_constructor("sha3_256")
-
-    @property
-    def sha3_384(self):
-        return self._find_constructor("sha3_384")
-
-    @property
-    def sha3_512(self):
-        return self._find_constructor("sha3_512")
+    sha3_224 = property(lambda self: self._find_constructor("sha3_224"))
+    sha3_256 = property(lambda self: self._find_constructor("sha3_256"))
+    sha3_384 = property(lambda self: self._find_constructor("sha3_384"))
+    sha3_512 = property(lambda self: self._find_constructor("sha3_512"))
 
 
 class NamedHashFunctionsTrait(HashFunctionsTrait):
@@ -801,7 +774,7 @@ class NamedHashFunctionsTrait(HashFunctionsTrait):
 
     def _find_constructor(self, digestname):
         self.is_valid_digest_name(digestname)
-        return digestname
+        return str(digestname)  # ensure that we are an exact string
 
 
 class OpenSSLHashFunctionsTrait(HashFunctionsTrait):
