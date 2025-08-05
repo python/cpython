@@ -114,14 +114,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
 #endif
 
-#ifdef Py_GIL_DISABLED
-#  define LOCK_INTERNED(interp) PyMutex_Lock(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex))
-#  define UNLOCK_INTERNED(interp) PyMutex_Unlock(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex))
-#else
-#  define LOCK_INTERNED(interp)
-#  define UNLOCK_INTERNED(interp)
-#endif
-
 static inline char* _PyUnicode_UTF8(PyObject *op)
 {
     return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
@@ -15993,13 +15985,13 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
 
-    LOCK_INTERNED(interp);
+    FT_MUTEX_LOCK(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex));
     PyObject *t;
     {
         int res = PyDict_SetDefaultRef(interned, s, s, &t);
         if (res < 0) {
             PyErr_Clear();
-            UNLOCK_INTERNED(interp);
+            FT_MUTEX_UNLOCK(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex));
             return s;
         }
         else if (res == 1) {
@@ -16009,7 +16001,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
                     PyUnicode_CHECK_INTERNED(t) == SSTATE_INTERNED_MORTAL) {
                 immortalize_interned(t);
             }
-            UNLOCK_INTERNED(interp);
+            FT_MUTEX_UNLOCK(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex));
             return t;
         }
         else {
@@ -16042,7 +16034,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         immortalize_interned(s);
     }
 
-    UNLOCK_INTERNED(interp);
+    FT_MUTEX_UNLOCK(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex));
     return s;
 }
 

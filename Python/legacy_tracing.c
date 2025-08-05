@@ -20,13 +20,6 @@ typedef struct _PyLegacyEventHandler {
 
 #define _PyLegacyEventHandler_CAST(op)  ((_PyLegacyEventHandler *)(op))
 
-#ifdef Py_GIL_DISABLED
-#define LOCK_SETUP()    PyMutex_Lock(&_PyRuntime.ceval.sys_trace_profile_mutex);
-#define UNLOCK_SETUP()  PyMutex_Unlock(&_PyRuntime.ceval.sys_trace_profile_mutex);
-#else
-#define LOCK_SETUP()
-#define UNLOCK_SETUP()
-#endif
 /* The Py_tracefunc function expects the following arguments:
  *   obj: the trace object (PyObject *)
  *   frame: the current frame (PyFrameObject *)
@@ -509,9 +502,9 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 
     // needs to be decref'd outside of the lock
     PyObject *old_profileobj;
-    LOCK_SETUP();
+    FT_MUTEX_LOCK(&_PyRuntime.ceval.sys_trace_profile_mutex);
     Py_ssize_t profiling_threads = setup_profile(tstate, func, arg, &old_profileobj);
-    UNLOCK_SETUP();
+    FT_MUTEX_UNLOCK(&_PyRuntime.ceval.sys_trace_profile_mutex);
     Py_XDECREF(old_profileobj);
 
     uint32_t events = 0;
@@ -605,10 +598,10 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     }
     // needs to be decref'd outside of the lock
     PyObject *old_traceobj;
-    LOCK_SETUP();
+    FT_MUTEX_LOCK(&_PyRuntime.ceval.sys_trace_profile_mutex);
     assert(tstate->interp->sys_tracing_threads >= 0);
     Py_ssize_t tracing_threads = setup_tracing(tstate, func, arg, &old_traceobj);
-    UNLOCK_SETUP();
+    FT_MUTEX_UNLOCK(&_PyRuntime.ceval.sys_trace_profile_mutex);
     Py_XDECREF(old_traceobj);
     if (tracing_threads < 0) {
         return -1;
