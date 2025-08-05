@@ -13,9 +13,9 @@ from _colorize import ANSIColors
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector
 
-FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-MAX_STARTUP_ATTEMPTS = 5
-STARTUP_RETRY_DELAY_SECONDS = 0.1
+_FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+_MAX_STARTUP_ATTEMPTS = 5
+_STARTUP_RETRY_DELAY_SECONDS = 0.1
 
 
 class SampleProfiler:
@@ -23,7 +23,7 @@ class SampleProfiler:
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
-        if FREE_THREADED_BUILD:
+        if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
                 self.pid, all_threads=self.all_threads
             )
@@ -543,7 +543,7 @@ def _validate_collapsed_format_args(args, parser):
 
 
 def wait_for_process_and_sample(pid, sort_value, args):
-    for attempt in range(MAX_STARTUP_ATTEMPTS):
+    for attempt in range(_MAX_STARTUP_ATTEMPTS):
         try:
             sample(
                 pid,
@@ -559,11 +559,11 @@ def wait_for_process_and_sample(pid, sort_value, args):
             )
             break
         except RuntimeError:
-            if attempt < MAX_STARTUP_ATTEMPTS - 1:
+            if attempt < _MAX_STARTUP_ATTEMPTS - 1:
                 print("Waiting for process to start...")
-                time.sleep(STARTUP_RETRY_DELAY_SECONDS)
+                time.sleep(_STARTUP_RETRY_DELAY_SECONDS)
             else:
-                raise RuntimeError("Process failed to start after maximum retries")
+                raise RuntimeError("Process failed to start after maximum retries") from None
 
 
 def main():
@@ -779,9 +779,9 @@ def main():
         )
     elif args.module or args.script:
         if args.module:
-            cmd = [sys.executable, "-m", *args.module]
+            cmd = (sys.executable, "-m", *args.module)
         else:
-            cmd = [sys.executable, *args.script]
+            cmd = (sys.executable, *args.script)
 
         process = subprocess.Popen(cmd)
 
