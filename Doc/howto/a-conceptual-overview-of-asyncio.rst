@@ -160,7 +160,7 @@ Tasks
 Roughly speaking, :ref:`tasks <asyncio-task-obj>` are coroutines (not coroutine
 functions) tied to an event loop.
 A task also maintains a list of callback functions whose importance will become
-clear in a moment when we discuss ``await``.
+clear in a moment when we discuss :keyword:`await`.
 The recommended way to create tasks is via :func:`asyncio.create_task`.
 Creating a task automatically adds it to the event loop's queue of tasks.
 
@@ -277,8 +277,8 @@ If the coroutine is being used for the first time (as opposed to being resumed)
 to the caller.
 In the example below, the ``yield``, on line 3, is called by
 ``... = await rock`` on line 11.
-Generally, ``await`` calls the :meth:`~object.__await__` method of the given
-object.
+More broadly speaking, ``await`` calls the :meth:`~object.__await__` method of
+the given object.
 ``await`` also does one more very special thing: it propagates (or "passes
 along") any ``yield``\ s it receives up the call-chain.
 In this case, that's back to ``... = coroutine.send(None)`` on line 16.
