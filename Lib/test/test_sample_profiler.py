@@ -1768,7 +1768,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with([sys.executable, "-m", "mymodule"])
+            mock_popen.assert_called_once_with((sys.executable, "-m", "mymodule"))
             mock_sample.assert_called_once_with(
                 12345,
                 sort=2,  # default sort (sort_value from args.sort)
@@ -1798,9 +1798,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with([
+            mock_popen.assert_called_once_with((
                 sys.executable, "-m", "mymodule", "arg1", "arg2", "--flag"
-            ])
+            ))
             mock_sample.assert_called_once_with(
                 12345,
                 sort=2,
@@ -1830,7 +1830,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with([sys.executable, "myscript.py"])
+            mock_popen.assert_called_once_with((sys.executable, "myscript.py"))
             mock_sample.assert_called_once_with(
                 12345,
                 sort=2,
@@ -1860,9 +1860,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with([
+            mock_popen.assert_called_once_with((
                 sys.executable, "myscript.py", "arg1", "arg2", "--flag"
-            ])
+            ))
 
     def test_cli_mutually_exclusive_pid_module(self):
         test_args = ["profile.sample", "-p", "12345", "-m", "mymodule"]
@@ -1959,9 +1959,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with([
+            mock_popen.assert_called_once_with((
                 sys.executable, "myscript.py", "scriptarg"
-            ])
+            ))
             # Verify profiler options were passed correctly
             mock_sample.assert_called_once_with(
                 12345,
@@ -2006,9 +2006,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with([
+            mock_popen.assert_called_once_with((
                 sys.executable, "-m", "mymodule", "arg1",
-            ])
+            ))
 
     def test_cli_complex_script_arguments(self):
         test_args = [
@@ -2029,10 +2029,10 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with([
+            mock_popen.assert_called_once_with((
                 sys.executable, "script.py",
                 "--input", "file.txt", "-v", "--output=/tmp/out", "positional",
-            ])
+            ))
 
     def test_cli_collapsed_format_validation(self):
         """Test that CLI properly validates incompatible options with collapsed format."""
