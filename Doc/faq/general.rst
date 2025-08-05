@@ -13,215 +13,112 @@ General Information
 ===================
 
 What is Python?
----------------
+===============
 
-Python is an interpreted, interactive, object-oriented programming language.  It
-incorporates modules, exceptions, dynamic typing, very high level dynamic data
-types, and classes.  It supports multiple programming paradigms beyond
-object-oriented programming, such as procedural and functional programming.
-Python combines remarkable power with very clear syntax. It has interfaces to
-many system calls and libraries, as well as to various window systems, and is
-extensible in C or C++.  It is also usable as an extension language for
-applications that need a programmable interface. Finally, Python is portable:
-it runs on many Unix variants including Linux and macOS, and on Windows.
+Python is an interpreted, interactive, object-oriented programming language. It features modules, exceptions, dynamic typing, very high-level dynamic data types, and classes. Beyond object-oriented programming, it supports multiple paradigms such as procedural and functional programming. Python combines remarkable power with very clear syntax. It offers interfaces to many system calls and libraries, as well as various window systems, and is extensible in C or C++. Additionally, it can serve as an extension language for applications requiring a programmable interface. Finally, Python is portable: it runs on numerous Unix variants including Linux and macOS, as well as on Windows.
 
-To find out more, start with :ref:`tutorial-index`.  The `Beginner's Guide to
-Python <https://wiki.python.org/moin/BeginnersGuide>`_ links to other
-introductory tutorials and resources for learning Python.
-
+To learn more, start with :ref:`tutorial-index`. The Beginner's Guide to Python links to other introductory tutorials and resources for learning Python.
 
 What is the Python Software Foundation?
----------------------------------------
+=======================================
 
-The Python Software Foundation is an independent non-profit organization that
-holds the copyright on Python versions 2.1 and newer.  The PSF's mission is to
-advance open source technology related to the Python programming language and to
-publicize the use of Python.  The PSF's home page is at
-https://www.python.org/psf/.
+The Python Software Foundation (PSF) is an independent non-profit organization that holds the copyright for Python versions 2.1 and newer. The PSF's mission is to advance open source technology related to Python and to promote the use of the language. The PSF's homepage is at https://www.python.org/psf/.
 
-Donations to the PSF are tax-exempt in the US.  If you use Python and find it
-helpful, please contribute via `the PSF donation page
-<https://www.python.org/psf/donations/>`_.
-
+Donations to the PSF are tax-exempt in the US. If you use Python and find it helpful, please consider contributing via the PSF donation page.
 
 Are there copyright restrictions on the use of Python?
-------------------------------------------------------
+======================================================
 
-You can do anything you want with the source, as long as you leave the
-copyrights in and display those copyrights in any documentation about Python
-that you produce.  If you honor the copyright rules, it's OK to use Python for
-commercial use, to sell copies of Python in source or binary form (modified or
-unmodified), or to sell products that incorporate Python in some form.  We would
-still like to know about all commercial use of Python, of course.
+You may do anything you wish with the source code, provided you retain the copyrights and display them in any documentation you produce about Python. Complying with these copyright rules allows you to use Python commercially, sell copies of Python (in source or binary form, modified or unmodified), or sell products that incorporate Python in some form. Nonetheless, the PSF appreciates being informed about all commercial uses of Python.
 
-See `the license page <https://docs.python.org/3/license.html>`_ to find further
-explanations and the full text of the PSF License.
+For further details and the full text of the PSF License, see the license page.
 
-The Python logo is trademarked, and in certain cases permission is required to
-use it.  Consult `the Trademark Usage Policy
-<https://www.python.org/psf/trademarks/>`__ for more information.
-
+The Python logo is trademarked, and in some cases, permission is required to use it. Consult the Trademark Usage Policy for more information.
 
 Why was Python created in the first place?
-------------------------------------------
+==========================================
 
-Here's a *very* brief summary of what started it all, written by Guido van
-Rossum:
+Here's a very brief summary of what started it all, written by Guido van Rossum:
 
-   I had extensive experience with implementing an interpreted language in the
-   ABC group at CWI, and from working with this group I had learned a lot about
-   language design.  This is the origin of many Python features, including the
-   use of indentation for statement grouping and the inclusion of
-   very-high-level data types (although the details are all different in
-   Python).
+::
 
-   I had a number of gripes about the ABC language, but also liked many of its
-   features.  It was impossible to extend the ABC language (or its
-   implementation) to remedy my complaints -- in fact its lack of extensibility
-   was one of its biggest problems.  I had some experience with using Modula-2+
-   and talked with the designers of Modula-3 and read the Modula-3 report.
-   Modula-3 is the origin of the syntax and semantics used for exceptions, and
-   some other Python features.
+    I had extensive experience with implementing an interpreted language in the ABC group at CWI, and from working with this group I had learned a lot about language design. This is the origin of many Python features, including the use of indentation for statement grouping and the inclusion of very-high-level data types (although the details are all different in Python).
 
-   I was working in the Amoeba distributed operating system group at CWI.  We
-   needed a better way to do system administration than by writing either C
-   programs or Bourne shell scripts, since Amoeba had its own system call
-   interface which wasn't easily accessible from the Bourne shell.  My
-   experience with error handling in Amoeba made me acutely aware of the
-   importance of exceptions as a programming language feature.
+    I had a number of gripes about the ABC language, but also liked many of its features. It was impossible to extend the ABC language (or its implementation) to remedy my complaints -- in fact its lack of extensibility was one of its biggest problems. I had some experience with using Modula-2+ and talked with the designers of Modula-3 and read the Modula-3 report. Modula-3 is the origin of the syntax and semantics used for exceptions, and some other Python features.
 
-   It occurred to me that a scripting language with a syntax like ABC but with
-   access to the Amoeba system calls would fill the need.  I realized that it
-   would be foolish to write an Amoeba-specific language, so I decided that I
-   needed a language that was generally extensible.
+    I was working in the Amoeba distributed operating system group at CWI. We needed a better way to do system administration than by writing either C programs or Bourne shell scripts, since Amoeba had its own system call interface which wasn't easily accessible from the Bourne shell. My experience with error handling in Amoeba made me acutely aware of the importance of exceptions as a programming language feature.
 
-   During the 1989 Christmas holidays, I had a lot of time on my hand, so I
-   decided to give it a try.  During the next year, while still mostly working
-   on it in my own time, Python was used in the Amoeba project with increasing
-   success, and the feedback from colleagues made me add many early
-   improvements.
+    It occurred to me that a scripting language with a syntax like ABC but with access to the Amoeba system calls would fill the need. I realized that it would be foolish to write an Amoeba-specific language, so I decided that I needed a language that was generally extensible.
 
-   In February 1991, after just over a year of development, I decided to post to
-   USENET.  The rest is in the ``Misc/HISTORY`` file.
+    During the 1989 Christmas holidays, I had a lot of time on my hand, so I decided to give it a try. During the next year, while still mostly working on it in my own time, Python was used in the Amoeba project with increasing success, and the feedback from colleagues made me add many early improvements.
 
+    In February 1991, after just over a year of development, I decided to post to USENET. The rest is in the Misc/HISTORY file.
 
 What is Python good for?
-------------------------
+========================
 
-Python is a high-level general-purpose programming language that can be applied
-to many different classes of problems.
+Python is a high-level, general-purpose programming language that can be applied to many different classes of problems.
 
-The language comes with a large standard library that covers areas such as
-string processing (regular expressions, Unicode, calculating differences between
-files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP),
-software engineering (unit testing, logging, profiling, parsing
-Python code), and operating system interfaces (system calls, filesystems, TCP/IP
-sockets).  Look at the table of contents for :ref:`library-index` to get an idea
-of what's available.  A wide variety of third-party extensions are also
-available.  Consult `the Python Package Index <https://pypi.org>`_ to
-find packages of interest to you.
-
-
-.. _faq-version-numbering-scheme:
+It includes a large standard library covering areas such as string processing (regular expressions, Unicode, calculating differences between files), internet protocols (HTTP, FTP, SMTP, XML-RPC, POP, IMAP), software engineering (unit testing, logging, profiling, parsing Python code), and operating system interfaces (system calls, filesystems, TCP/IP sockets). Refer to the table of contents at :ref:`library-index` for an overview of available modules. Additionally, a wide variety of third-party extensions exist. Consult the Python Package Index to find packages relevant to your needs.
 
 How does the Python version numbering scheme work?
---------------------------------------------------
+==================================================
 
 Python versions are numbered "A.B.C" or "A.B":
 
-* *A* is the major version number -- it is only incremented for really major
-  changes in the language.
-* *B* is the minor version number -- it is incremented for less earth-shattering
-  changes.
-* *C* is the micro version number -- it is incremented for each bugfix release.
+- **A** is the major version number — incremented only for significant language changes.
+- **B** is the minor version number — incremented for less drastic changes.
+- **C** is the micro version number — incremented for each bugfix release.
 
-Not all releases are bugfix releases.  In the run-up to a new feature release, a
-series of development releases are made, denoted as alpha, beta, or release
-candidate.  Alphas are early releases in which interfaces aren't yet finalized;
-it's not unexpected to see an interface change between two alpha releases.
-Betas are more stable, preserving existing interfaces but possibly adding new
-modules, and release candidates are frozen, making no changes except as needed
-to fix critical bugs.
+Not all releases are bugfixes. Before a new feature release, development releases occur as alpha, beta, or release candidates:
 
-Alpha, beta and release candidate versions have an additional suffix:
+- **Alphas** are early releases where interfaces may still change.
+- **Betas** are more stable, preserving existing interfaces while possibly adding new modules.
+- **Release candidates** are frozen except for critical bug fixes.
 
-* The suffix for an alpha version is "aN" for some small number *N*.
-* The suffix for a beta version is "bN" for some small number *N*.
-* The suffix for a release candidate version is "rcN" for some small number *N*.
+Alpha, beta, and release candidate versions have suffixes:
 
-In other words, all versions labeled *2.0aN* precede the versions labeled
-*2.0bN*, which precede versions labeled *2.0rcN*, and *those* precede 2.0.
+- Alpha versions end with "aN", where N is a small number.
+- Beta versions end with "bN".
+- Release candidates end with "rcN".
 
-You may also find version numbers with a "+" suffix, e.g. "2.2+".  These are
-unreleased versions, built directly from the CPython development repository.  In
-practice, after a final minor release is made, the version is incremented to the
-next minor version, which becomes the "a0" version, e.g. "2.4a0".
+Thus, versions labeled `2.0aN` precede `2.0bN`, which precede `2.0rcN`, and all precede the final `2.0`.
 
-See the `Developer's Guide
-<https://devguide.python.org/developer-workflow/development-cycle/>`__
-for more information about the development cycle, and
-:pep:`387` to learn more about Python's backward compatibility policy.  See also
-the documentation for :data:`sys.version`, :data:`sys.hexversion`, and
-:data:`sys.version_info`.
+You may also see version numbers with a "+" suffix, e.g. `2.2+`, which indicate unreleased versions built directly from the CPython development repository. Typically, after a final minor release, the version increments to the next minor with an "a0" suffix (e.g., `2.4a0`).
 
+See the Developer's Guide for more about the development cycle, and PEP 387 for Python's backward compatibility policy. Also see documentation for :data:`sys.version`, :data:`sys.hexversion`, and :data:`sys.version_info`.
 
 How do I obtain a copy of the Python source?
---------------------------------------------
+============================================
 
-The latest Python source distribution is always available from python.org, at
-https://www.python.org/downloads/.  The latest development sources can be obtained
-at https://github.com/python/cpython/.
+The latest Python source distribution is always available from python.org at https://www.python.org/downloads/. The latest development sources can be found at https://github.com/python/cpython/.
 
-The source distribution is a gzipped tar file containing the complete C source,
-Sphinx-formatted documentation, Python library modules, example programs, and
-several useful pieces of freely distributable software.  The source will compile
-and run out of the box on most UNIX platforms.
+The source distribution is a gzipped tar file containing the complete C source, Sphinx-formatted documentation, Python library modules, example programs, and several useful pieces of freely distributable software. It compiles and runs out of the box on most UNIX platforms.
 
-Consult the `Getting Started section of the Python Developer's Guide
-<https://devguide.python.org/setup/>`__ for more
-information on getting the source code and compiling it.
-
+Consult the Getting Started section of the Python Developer's Guide for more information on obtaining and compiling the source code.
 
 How do I get documentation on Python?
--------------------------------------
+=====================================
 
-The standard documentation for the current stable version of Python is available
-at https://docs.python.org/3/.  PDF, plain text, and downloadable HTML versions are
-also available at https://docs.python.org/3/download.html.
+The standard documentation for the current stable Python version is available at https://docs.python.org/3/. PDF, plain text, and downloadable HTML versions are available at https://docs.python.org/3/download.html.
 
-The documentation is written in reStructuredText and processed by `the Sphinx
-documentation tool <https://www.sphinx-doc.org/>`__.  The reStructuredText source for
-the documentation is part of the Python source distribution.
-
+The documentation is written in reStructuredText and processed by the Sphinx documentation tool. The reStructuredText source files are included in the Python source distribution.
 
 I've never programmed before. Is there a Python tutorial?
----------------------------------------------------------
+========================================================
 
-There are numerous tutorials and books available.  The standard documentation
-includes :ref:`tutorial-index`.
+Numerous tutorials and books exist. The standard documentation includes :ref:`tutorial-index`.
 
-Consult `the Beginner's Guide <https://wiki.python.org/moin/BeginnersGuide>`_ to
-find information for beginning Python programmers, including lists of tutorials.
-
+Consult the Beginner's Guide for information tailored to new Python programmers, including tutorial lists.
 
 Is there a newsgroup or mailing list devoted to Python?
--------------------------------------------------------
+======================================================
 
-There is a newsgroup, :newsgroup:`comp.lang.python`, and a mailing list,
-`python-list <https://mail.python.org/mailman/listinfo/python-list>`_.  The
-newsgroup and mailing list are gatewayed into each other -- if you can read news
-it's unnecessary to subscribe to the mailing list.
-:newsgroup:`comp.lang.python` is high-traffic, receiving hundreds of postings
-every day, and Usenet readers are often more able to cope with this volume.
+Yes, there is a newsgroup, :newsgroup:`comp.lang.python`, and a mailing list, python-list. These are gatewayed into each other — if you can read newsgroups, subscribing to the mailing list is unnecessary. :newsgroup:`comp.lang.python` is high-traffic, receiving hundreds of posts daily, and Usenet readers often manage this volume well.
 
-Announcements of new software releases and events can be found in
-comp.lang.python.announce, a low-traffic moderated list that receives about five
-postings per day.  It's available as `the python-announce mailing list
-<https://mail.python.org/mailman3/lists/python-announce-list.python.org/>`_.
+Announcements of new releases and events appear in `comp.lang.python.announce`, a low-traffic moderated list with about five postings daily. It is also available as the python-announce mailing list.
 
-More info about other mailing lists and newsgroups
-can be found at https://www.python.org/community/lists/.
-
+More information about other mailing lists and newsgroups can be found at https://www.python.org/community/lists/.
 
 How do I get a beta test version of Python?
 -------------------------------------------
