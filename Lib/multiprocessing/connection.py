@@ -12,6 +12,7 @@ __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 import errno
 import io
 import os
+import random
 import sys
 import socket
 import struct
@@ -75,7 +76,7 @@ def arbitrary_address(family):
     elif family == 'AF_UNIX':
         return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
-        return fr'\\.\pipe\pyc-{os.getpid()}-{next(tempfile._get_candidate_names())}'
+        return r'\\.\pipe\pyc-' + random.randbytes(8).hex()
     else:
         raise ValueError('unrecognized family')
 

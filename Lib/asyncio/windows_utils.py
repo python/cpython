@@ -8,8 +8,8 @@ if sys.platform != 'win32':  # pragma: no cover
 import _winapi
 import msvcrt
 import os
+import random
 import subprocess
-import tempfile
 import warnings
 
 
@@ -48,12 +48,10 @@ def pipe(*, duplex=False, overlapped=(True, True), bufsize=BUFSIZE):
     else:
         flags_and_attribs = 0
 
-    prefix = fr'\\.\pipe\python-pipe-{os.getpid()}-'
-    names = tempfile._get_candidate_names()
     h1 = h2 = None
     try:
         while True:
-            address = prefix + next(names)
+            address = r'\\.\pipe\python-pipe-' + random.randbytes(8).hex()
             try:
                 h1 = _winapi.CreateNamedPipe(
                     address, openmode, _winapi.PIPE_WAIT,
