@@ -54,17 +54,10 @@ class SampleProfiler:
                     stack_frames = self.unwinder.get_stack_trace()
                     collector.collect(stack_frames)
                 except ProcessLookupError:
+                    duration_sec = current_time - start_time
                     break
                 except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
                     errors += 1
-                except ValueError as e:
-                    # Process is waiting to be reaped by the parent (us)
-                    if self._is_process_running():
-                        duration_sec = (
-                            current_time - start_time
-                        )
-                        break
-                    raise e from None
                 except Exception as e:
                     if not self._is_process_running():
                         break
@@ -549,11 +542,11 @@ def _validate_collapsed_format_args(args, parser):
         args.outfile = f"collapsed.{args.pid}.txt"
 
 
-def wait_for_process_and_sample(process_pid, sort_value, args):
+def wait_for_process_and_sample(pid, sort_value, args):
     for attempt in range(MAX_STARTUP_ATTEMPTS):
         try:
             sample(
-                process_pid,
+                pid,
                 sort=sort_value,
                 sample_interval_usec=args.interval,
                 duration_sec=args.duration,
