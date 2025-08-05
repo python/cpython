@@ -3342,21 +3342,22 @@ sock_setsockopt(PyObject *self, PyObject *args)
     PyObject *optval;
 
     if (!PyArg_ParseTuple(args, "iiO|I:setsockopt",
-			  &level, &optname, &optval, &optlen)) {
-	return NULL;
+                          &level, &optname, &optval, &optlen))
+    {
+        return NULL;
     }
 
     arglen = PyTuple_Size(args);
     if (arglen == 3 && optval == Py_None) {
         PyErr_Format(PyExc_TypeError,
-                        "setsockopt() requires 4 arguments when the third argument is None",
-                        arglen);
+                     "setsockopt() requires 4 arguments when the third argument is None",
+                     arglen);
         return NULL;
     }
     if (arglen == 4 && optval != Py_None) {
         PyErr_Format(PyExc_TypeError,
-                        "setsockopt() only takes 4 arguments when the third argument is None (got %T)",
-                        optval);
+                     "setsockopt() only takes 4 arguments when the third argument is None (got %T)",
+                     optval);
         return NULL;
     }
 
@@ -3364,9 +3365,9 @@ sock_setsockopt(PyObject *self, PyObject *args)
     if (s->sock_family == AF_VSOCK) {
         if (!PyIndex_Check(optval)) {
             PyErr_Format(PyExc_TypeError,
-                            "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
-                            optval);
-	}
+                         "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
+                         optval);
+        }
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
         if (!PyArg_Parse(optval, "K", &vflag)) {
@@ -3374,7 +3375,7 @@ sock_setsockopt(PyObject *self, PyObject *args)
         }
         // level should always be set to AF_VSOCK
         res = setsockopt(get_sock_fd(s), level, optname,
-                     (void*)&vflag, sizeof vflag);
+                         (void*)&vflag, sizeof vflag);
         goto done;
     }
 #endif
@@ -3417,8 +3418,8 @@ sock_setsockopt(PyObject *self, PyObject *args)
         if (buffer.len > INT_MAX) {
             PyBuffer_Release(&buffer);
             PyErr_Format(PyExc_OverflowError,
-                            "socket option is larger than %i bytes",
-                            INT_MAX);
+                         "socket option is larger than %i bytes",
+                         INT_MAX);
             return NULL;
         }
         res = setsockopt(get_sock_fd(s), level, optname,
@@ -3431,8 +3432,8 @@ sock_setsockopt(PyObject *self, PyObject *args)
     }
 
     PyErr_Format(PyExc_TypeError,
-                    "socket option should be int, bytes-like object or None (got %T)",
-                    optval);
+                 "socket option should be int, bytes-like object or None (got %T)",
+                 optval);
     return NULL;
 
 done:
