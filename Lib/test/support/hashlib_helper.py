@@ -66,7 +66,7 @@ class Implementation(enum.StrEnum):
     hashlib = enum.auto()
 
 
-class HashId(enum.StrEnum):
+class _HashId(enum.StrEnum):
     """Enumeration containing the canonical digest names.
 
     Those names should only be used by hashlib.new() or hmac.new().
@@ -106,10 +106,10 @@ class HashId(enum.StrEnum):
         return self.startswith("blake2")
 
 
-CANONICAL_DIGEST_NAMES = frozenset(map(str, HashId.__members__))
+CANONICAL_DIGEST_NAMES = frozenset(map(str, _HashId.__members__))
 NON_HMAC_DIGEST_NAMES = frozenset((
-    HashId.shake_128, HashId.shake_256,
-    HashId.blake2s, HashId.blake2b,
+    _HashId.shake_128, _HashId.shake_256,
+    _HashId.blake2s, _HashId.blake2b,
 ))
 
 
@@ -331,112 +331,112 @@ class _HashInfo:
 
 
 _HASHINFO_DATABASE = MappingProxyType({
-    HashId.md5: _HashInfo(
-        HashId.md5,
+    _HashId.md5: _HashInfo(
+        _HashId.md5,
         "_md5.MD5Type",
         "_hashlib.HASH",
         "_md5.md5",
         "_hashlib.openssl_md5",
         "hashlib.md5",
     ),
-    HashId.sha1: _HashInfo(
-        HashId.sha1,
+    _HashId.sha1: _HashInfo(
+        _HashId.sha1,
         "_sha1.SHA1Type",
         "_hashlib.HASH",
         "_sha1.sha1",
         "_hashlib.openssl_sha1",
         "hashlib.sha1",
     ),
-    HashId.sha224: _HashInfo(
-        HashId.sha224,
+    _HashId.sha224: _HashInfo(
+        _HashId.sha224,
         "_sha2.SHA224Type",
         "_hashlib.HASH",
         "_sha2.sha224",
         "_hashlib.openssl_sha224",
         "hashlib.sha224",
     ),
-    HashId.sha256: _HashInfo(
-        HashId.sha256,
+    _HashId.sha256: _HashInfo(
+        _HashId.sha256,
         "_sha2.SHA256Type",
         "_hashlib.HASH",
         "_sha2.sha256",
         "_hashlib.openssl_sha256",
         "hashlib.sha256",
     ),
-    HashId.sha384: _HashInfo(
-        HashId.sha384,
+    _HashId.sha384: _HashInfo(
+        _HashId.sha384,
         "_sha2.SHA384Type",
         "_hashlib.HASH",
         "_sha2.sha384",
         "_hashlib.openssl_sha384",
         "hashlib.sha384",
     ),
-    HashId.sha512: _HashInfo(
-        HashId.sha512,
+    _HashId.sha512: _HashInfo(
+        _HashId.sha512,
         "_sha2.SHA512Type",
         "_hashlib.HASH",
         "_sha2.sha512",
         "_hashlib.openssl_sha512",
         "hashlib.sha512",
     ),
-    HashId.sha3_224: _HashInfo(
-        HashId.sha3_224,
+    _HashId.sha3_224: _HashInfo(
+        _HashId.sha3_224,
         "_sha3.sha3_224",
         "_hashlib.HASH",
         "_sha3.sha3_224",
         "_hashlib.openssl_sha3_224",
         "hashlib.sha3_224",
     ),
-    HashId.sha3_256: _HashInfo(
-        HashId.sha3_256,
+    _HashId.sha3_256: _HashInfo(
+        _HashId.sha3_256,
         "_sha3.sha3_256",
         "_hashlib.HASH",
         "_sha3.sha3_256",
         "_hashlib.openssl_sha3_256",
         "hashlib.sha3_256",
     ),
-    HashId.sha3_384: _HashInfo(
-        HashId.sha3_384,
+    _HashId.sha3_384: _HashInfo(
+        _HashId.sha3_384,
         "_sha3.sha3_384",
         "_hashlib.HASH",
         "_sha3.sha3_384",
         "_hashlib.openssl_sha3_384",
         "hashlib.sha3_384",
     ),
-    HashId.sha3_512: _HashInfo(
-        HashId.sha3_512,
+    _HashId.sha3_512: _HashInfo(
+        _HashId.sha3_512,
         "_sha3.sha3_512",
         "_hashlib.HASH",
         "_sha3.sha3_512",
         "_hashlib.openssl_sha3_512",
         "hashlib.sha3_512",
     ),
-    HashId.shake_128: _HashInfo(
-        HashId.shake_128,
+    _HashId.shake_128: _HashInfo(
+        _HashId.shake_128,
         "_sha3.shake_128",
         "_hashlib.HASHXOF",
         "_sha3.shake_128",
         "_hashlib.openssl_shake_128",
         "hashlib.shake_128",
     ),
-    HashId.shake_256: _HashInfo(
-        HashId.shake_256,
+    _HashId.shake_256: _HashInfo(
+        _HashId.shake_256,
         "_sha3.shake_256",
         "_hashlib.HASHXOF",
         "_sha3.shake_256",
         "_hashlib.openssl_shake_256",
         "hashlib.shake_256",
     ),
-    HashId.blake2s: _HashInfo(
-        HashId.blake2s,
+    _HashId.blake2s: _HashInfo(
+        _HashId.blake2s,
         "_blake2.blake2s",
         "_hashlib.HASH",
         "_blake2.blake2s",
         None,
         "hashlib.blake2s",
     ),
-    HashId.blake2b: _HashInfo(
-        HashId.blake2b,
+    _HashId.blake2b: _HashInfo(
+        _HashId.blake2b,
         "_blake2.blake2b",
         "_hashlib.HASH",
         "_blake2.blake2b",
@@ -469,21 +469,21 @@ def _iter_hash_func_info(excluded):
 # There is currently no OpenSSL one-shot named function and there will likely
 # be none in the future.
 _HMACINFO_DATABASE = {
-    HashId(canonical_name): _HashInfoItem(f"_hmac.compute_{canonical_name}")
+    _HashId(canonical_name): _HashInfoItem(f"_hmac.compute_{canonical_name}")
     for canonical_name in CANONICAL_DIGEST_NAMES
 }
 # Neither HACL* nor OpenSSL supports HMAC over XOFs.
-_HMACINFO_DATABASE[HashId.shake_128] = _HashInfoItem()
-_HMACINFO_DATABASE[HashId.shake_256] = _HashInfoItem()
+_HMACINFO_DATABASE[_HashId.shake_128] = _HashInfoItem()
+_HMACINFO_DATABASE[_HashId.shake_256] = _HashInfoItem()
 # Strictly speaking, HMAC-BLAKE is meaningless as BLAKE2 is already a
 # keyed hash function. However, as it's exposed by HACL*, we test it.
-_HMACINFO_DATABASE[HashId.blake2s] = _HashInfoItem('_hmac.compute_blake2s_32')
-_HMACINFO_DATABASE[HashId.blake2b] = _HashInfoItem('_hmac.compute_blake2b_32')
+_HMACINFO_DATABASE[_HashId.blake2s] = _HashInfoItem('_hmac.compute_blake2s_32')
+_HMACINFO_DATABASE[_HashId.blake2b] = _HashInfoItem('_hmac.compute_blake2b_32')
 _HMACINFO_DATABASE = MappingProxyType(_HMACINFO_DATABASE)
 assert _HMACINFO_DATABASE.keys() == CANONICAL_DIGEST_NAMES
 
 
-def get_hmac_func_info(name):
+def get_hmac_item_info(name):
     info = _HMACINFO_DATABASE[name]
     assert isinstance(info, _HashInfoItem), info
     return info
@@ -536,6 +536,16 @@ def _ensure_wrapper_signature(wrapper, wrapped):
             f"  expect: {wrapped_sig}\n"
             f"  actual: {wrapper_sig}"
         )
+
+
+def _make_conditional_decorator(test, /, *test_args, **test_kwargs):
+    def decorator_func(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            test(*test_args, **test_kwargs)
+            return func(*args, **kwargs)
+        return wrapper
+    return functools.partial(_decorate_func_or_class, decorator_func)
 
 
 def requires_openssl_hashlib():
@@ -657,16 +667,6 @@ def _openssl_hash(digestname, /, **kwargs):
     return constructor
 
 
-def _make_requires_hashdigest_decorator(test, /, *test_args, **test_kwargs):
-    def decorator_func(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            test(*test_args, **test_kwargs)
-            return func(*args, **kwargs)
-        return wrapper
-    return functools.partial(_decorate_func_or_class, decorator_func)
-
-
 def requires_hashdigest(digestname, openssl=None, *, usedforsecurity=True):
     """Decorator raising SkipTest if a hashing algorithm is not available.
 
@@ -684,7 +684,7 @@ def requires_hashdigest(digestname, openssl=None, *, usedforsecurity=True):
     ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
     ValueError: unsupported hash type md4
     """
-    return _make_requires_hashdigest_decorator(
+    return _make_conditional_decorator(
         _hashlib_new, digestname, openssl, usedforsecurity=usedforsecurity
     )
 
@@ -694,14 +694,14 @@ def requires_openssl_hashdigest(digestname, *, usedforsecurity=True):
 
     The hashing algorithm may be missing or blocked by a strict crypto policy.
     """
-    return _make_requires_hashdigest_decorator(
+    return _make_conditional_decorator(
         _openssl_new, digestname, usedforsecurity=usedforsecurity
     )
 
 
 def _make_requires_builtin_hashdigest_decorator(item, *, usedforsecurity=True):
     assert isinstance(item, _HashInfoItem), item
-    return _make_requires_hashdigest_decorator(
+    return _make_conditional_decorator(
         _builtin_hash,
         item.module_name,
         item.member_name,
@@ -739,24 +739,13 @@ class HashFunctionsTrait:
     implementation of HMAC).
     """
 
-    DIGEST_NAMES = [
-        'md5', 'sha1',
-        'sha224', 'sha256', 'sha384', 'sha512',
-        'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
-    ]
-
     # Default 'usedforsecurity' to use when checking a hash function.
     # When the trait properties are callables (e.g., _md5.md5) and
     # not strings, they must be called with the same 'usedforsecurity'.
     usedforsecurity = True
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        assert CANONICAL_DIGEST_NAMES.issuperset(cls.DIGEST_NAMES)
-
     def is_valid_digest_name(self, digestname):
-        self.assertIn(digestname, self.DIGEST_NAMES)
+        self.assertIn(digestname, _HashId)
 
     def _find_constructor(self, digestname):
         # By default, a missing algorithm skips the test that uses it.
@@ -922,7 +911,7 @@ def _block_builtin_hash_new(name):
     """Block a buitin-in hash name from the hashlib.new() interface."""
     assert isinstance(name, str), name
     assert name.lower() == name, f"invalid name: {name}"
-    assert name in HashId, f"invalid hash: {name}"
+    assert name in _HashId, f"invalid hash: {name}"
 
     # Re-import 'hashlib' in case it was mocked
     hashlib = importlib.import_module('hashlib')
@@ -947,7 +936,7 @@ def _block_builtin_hash_new(name):
     return unittest.mock.patch.multiple(
         hashlib,
         __get_builtin_constructor=get_builtin_constructor_mock,
-        __builtin_constructor_cache=builtin_constructor_cache_mock
+        __builtin_constructor_cache=builtin_constructor_cache_mock,
     )
 
 
@@ -1018,7 +1007,7 @@ def _block_builtin_hash_constructor(name):
 
 def _block_builtin_hmac_constructor(name):
     """Block explicit HACL* HMAC constructors."""
-    info = get_hmac_func_info(name)
+    info = get_hmac_item_info(name)
     assert info.module_name is None or info.module_name == "_hmac", info
     if (wrapped := info.import_member()) is None:
         # function shouldn't exist for this implementation
