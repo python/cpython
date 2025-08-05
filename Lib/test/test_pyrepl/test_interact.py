@@ -5,7 +5,7 @@ import warnings
 from unittest.mock import patch
 from textwrap import dedent
 
-from test.support import force_not_colorized
+from test.support import captured_stdout, force_not_colorized
 
 from _pyrepl.console import InteractiveColoredConsole
 from _pyrepl.simple_interact import _more_lines
@@ -134,11 +134,7 @@ SyntaxError: duplicate parameter 'x' in function definition"""
     def test_runsource_shows_syntax_error_for_failed_symtable_checks(self):
         # Some checks cannot be performed by AST parsing only.
         # See https://github.com/python/cpython/issues/137376.
-        console = InteractiveColoredConsole()
-        source = "x = 1; global x; x = 2"
-        with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
-            console.runsource(source)
-            mock_showsyntaxerror.assert_called_once()
+        self._test_runsource_error("x = 1; global x; x = 2")
 
     def test_runsource_survives_null_bytes(self):
         console = InteractiveColoredConsole()
@@ -162,26 +158,46 @@ SyntaxError: duplicate parameter 'x' in function definition"""
         self.assertEqual(f.getvalue(), "{'x': <class 'int'>}\n")
 
     def test_future_annotations(self):
-        console = InteractiveColoredConsole()
-        source = dedent("""\
-        from __future__ import annotations
-        def g(x: int): ...
-        print(g.__annotations__)
-        """)
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            result = console.runsource(source)
-        self.assertFalse(result)
-        self.assertEqual(f.getvalue(), "{'x': 'int'}\n")
+        self._test_runsource_future(
+            "from __future__ import annotations",
+            ["def g(x: int): ...", "print(g.__annotations__)"],
+            "{'x': 'int'}\n",
+        )
 
     def test_future_barry_as_flufl(self):
+        self._test_runsource_future(
+            "from __future__ import barry_as_FLUFL",
+            ["""print("black" <> 'blue')"""],
+            "True\n",
+        )
+
+    def _test_runsource_error(self, buggy_source):
         console = InteractiveColoredConsole()
-        f = io.StringIO()
-        with contextlib.redirect_stdout(f):
-            result = console.runsource("from __future__ import barry_as_FLUFL\n")
-            result = console.runsource("""print("black" <> 'blue')\n""")
-        self.assertFalse(result)
-        self.assertEqual(f.getvalue(), "True\n")
+        with patch.object(console, "showsyntaxerror") as handler:
+            result = console.runsource(buggy_source)
+            handler.assert_called_once()
+
+    def _test_runsource_future(self, future_statement, statements, expected):
+        """Run future_statement + statements.
+
+        This checks whether a standalone future statement remains active
+        for the entire session lifetime.
+        """
+        with self.subTest("standalone source"):
+            console = InteractiveColoredConsole()
+            source = "\n".join([future_statement, *statements])
+            with captured_stdout() as stdout:
+                result = console.runsource(source)
+            self.assertFalse(result)
+            self.assertEqual(stdout.getvalue(), expected)
+
+        with self.subTest("__future__ executed separtely"):
+            console = InteractiveColoredConsole()
+            with captured_stdout() as stdout:
+                result = console.runsource(future_statement)
+                result = console.runsource("\n".join(statements))
+            self.assertFalse(result)
+            self.assertEqual(stdout.getvalue(), expected)
 
 
 class TestMoreLines(unittest.TestCase):
