@@ -14,8 +14,8 @@
 The :mod:`fractions` module provides support for rational number arithmetic.
 
 
-A Fraction instance can be constructed from a pair of integers, from
-another rational number, or from a string.
+A Fraction instance can be constructed from a pair of rational numbers, from
+a single number, or from a string.
 
 .. class:: Fraction(numerator=0, denominator=1)
            Fraction(other_fraction)
@@ -25,7 +25,7 @@ another rational number, or from a string.
 
    The first version requires that *numerator* and *denominator* are instances
    of :class:`numbers.Rational` and returns a new :class:`Fraction` instance
-   with value ``numerator/denominator``. If *denominator* is ``0``, it
+   with a value equal to ``numerator/denominator``. If *denominator* is zero, it
    raises a :exc:`ZeroDivisionError`. The second version requires that
    *other_fraction* is an instance of :class:`numbers.Rational` and returns a
    :class:`Fraction` instance with the same value.  The next two versions accept
@@ -116,7 +116,8 @@ another rational number, or from a string.
 
    .. attribute:: denominator
 
-      Denominator of the Fraction in lowest term.
+      Denominator of the Fraction in lowest terms.
+      Guaranteed to be positive.
 
 
    .. method:: as_integer_ratio()
