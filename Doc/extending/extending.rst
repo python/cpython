@@ -75,12 +75,37 @@ the module and a copyright notice if you like).
    See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
 
 All user-visible symbols defined by :file:`Python.h` have a prefix of ``Py`` or
-``PY``, except those defined in standard header files. For convenience, and
-since they are used extensively by the Python interpreter, ``"Python.h"``
-includes a few standard header files: ``<stdio.h>``, ``<string.h>``,
-``<errno.h>``, and ``<stdlib.h>``.  If the latter header file does not exist on
-your system, it declares the functions :c:func:`malloc`, :c:func:`free` and
-:c:func:`realloc` directly.
+``PY``, except those defined in standard header files.
+
+.. tip::
+
+   For backward compatibility, :file:`Python.h` includes several standard header files.
+   C extensions should include the standard headers that they use,
+   and should not rely on these implicit includes.
+   If using the limited C API version 3.13 or newer, the implicit includes are:
+
+   * ``<assert.h>``
+   * ``<intrin.h>`` (on Windows)
+   * ``<inttypes.h>``
+   * ``<limits.h>``
+   * ``<math.h>``
+   * ``<stdarg.h>``
+   * ``<wchar.h>``
+   * ``<sys/types.h>`` (if present)
+
+   If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.12 or older,
+   the headers below are also included:
+
+   * ``<ctype.h>``
+   * ``<unistd.h>`` (on POSIX)
+
+   If :c:macro:`Py_LIMITED_API` is not defined, or is set to version 3.10 or older,
+   the headers below are also included:
+
+   * ``<errno.h>``
+   * ``<stdio.h>``
+   * ``<stdlib.h>``
+   * ``<string.h>``
 
 The next thing we add to our module file is the C function that will be called
 when the Python expression ``spam.system(string)`` is evaluated (we'll see
