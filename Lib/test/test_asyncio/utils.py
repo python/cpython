@@ -200,8 +200,6 @@ def _run_test_server(*, address, use_ssl=False, server_cls, server_ssl_cls):
 if hasattr(socket, 'AF_UNIX'):
 
     class UnixHTTPServer(socketserver.UnixStreamServer, HTTPServer):
-        if sys.platform == 'win32':
-            allow_reuse_address = False
 
         def server_bind(self):
             socketserver.UnixStreamServer.server_bind(self)
