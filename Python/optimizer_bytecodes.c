@@ -398,6 +398,7 @@ dummy_func(void) {
     }
 
     op(_UNARY_NEGATIVE, (value -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(value);
         if (sym_is_compact_int(value)) {
             res = sym_new_compact_int(ctx);
         }
