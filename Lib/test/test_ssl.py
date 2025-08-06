@@ -49,6 +49,7 @@ PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
+CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
@@ -964,8 +965,14 @@ class ContextTests(unittest.TestCase):
 
     def test_set_groups(self):
         ctx = ssl.create_default_context()
-        self.assertIsNone(ctx.set_groups('P-256:X25519'))
-        self.assertRaises(ssl.SSLError, ctx.set_groups, 'P-256:xxx')
+        # We use P-256 and P-384 (FIPS 186-4) that are alloed by OpenSSL
+        # even if FIPS module is enabled. Ignoring unknown groups is only
+        # supported since OpenSSL 3.3.
+        self.assertIsNone(ctx.set_groups('P-256:P-384'))
+
+        self.assertRaises(ssl.SSLError, ctx.set_groups, 'P-256:foo')
+        if CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS:
+            self.assertIsNone(ctx.set_groups('P-256:?foo'))
 
     @unittest.skipUnless(CAN_GET_AVAILABLE_OPENSSL_GROUPS,
                          "OpenSSL version doesn't support getting groups")

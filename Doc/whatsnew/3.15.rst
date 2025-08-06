@@ -183,7 +183,7 @@ Other language changes
   compatibility between versions of Python, ensure that an explicit ``encoding``
   argument is always provided. The :ref:`opt-in encoding warning <io-encoding-warning>`
   can be used to identify code that may be affected by this change.
-  The special special ``encoding='locale'`` argument uses the current locale
+  The special ``encoding='locale'`` argument uses the current locale
   encoding, and has been supported since Python 3.10.
 
   To retain the previous behaviour, Python's UTF-8 mode may be disabled with
@@ -199,6 +199,10 @@ Other language changes
 
 * Several error messages incorrectly using the term "argument" have been corrected.
   (Contributed by Stan Ulbrych in :gh:`133382`.)
+
+* Unraisable exceptions are now highlighted with color by default. This can be
+  controlled by :ref:`environment variables <using-on-controlling-color>`.
+  (Contributed by Peter Bierma in :gh:`134170`.)
 
 
 New modules
@@ -476,6 +480,15 @@ typing
   longer supported. Use ``class TD(TypedDict): pass``
   or ``TD = TypedDict("TD", {})`` instead.
   (Contributed by Bénédikt Tran in :gh:`133823`.)
+
+* Code like ``class ExtraTypeVars(P1[S], Protocol[T, T2]): ...`` now raises
+  a :exc:`TypeError`, because ``S`` is not listed in ``Protocol`` parameters.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
+
+* Code like ``class B2(A[T2], Protocol[T1, T2]): ...`` now correctly handles
+  type parameters order: it is ``(T1, T2)``, not ``(T2, T1)``
+  as it was incorrectly infered in runtime before.
+  (Contributed by Nikita Sobolev in :gh:`137191`.)
 
 
 wave
