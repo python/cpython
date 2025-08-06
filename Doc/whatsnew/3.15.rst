@@ -234,6 +234,14 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+glob
+----
+
+* Reduce the number of system calls in :func:`glob.glob` and :func:`~glob.iglob`,
+  thereby improving the speed of globbing operations by 20-80%.
+  (Contributed by Barney Gale in :gh:`116380`.)
+
+
 hashlib
 -------
 

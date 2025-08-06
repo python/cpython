@@ -5,7 +5,7 @@ import shutil
 import sys
 import unittest
 
-from test.support import is_wasi, Py_DEBUG
+from test.support import is_wasi, Py_DEBUG, infinite_recursion
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
 
@@ -175,20 +175,18 @@ class GlobTests(unittest.TestCase):
             self.assertEqual(glob.glob(self.norm('Z*Z') + sep), [])
             self.assertEqual(glob.glob(self.norm('ZZZ') + sep), [])
             self.assertEqual(glob.glob(self.norm('aaa') + sep),
-                             [self.norm('aaa') + sep])
-            # Preserving the redundant separators is an implementation detail.
+                             [self.norm('aaa') + os.sep])
+            # Redundant separators are preserved and normalized
             self.assertEqual(glob.glob(self.norm('aaa') + sep*2),
-                             [self.norm('aaa') + sep*2])
+                             [self.norm('aaa') + os.sep*2])
             # When there is a wildcard pattern which ends with a pathname
             # separator, glob() doesn't blow.
             # The result should end with the pathname separator.
-            # Normalizing the trailing separator is an implementation detail.
             eq = self.assertSequencesEqual_noorder
             eq(glob.glob(self.norm('aa*') + sep),
                [self.norm('aaa') + os.sep, self.norm('aab') + os.sep])
-            # Stripping the redundant separators is an implementation detail.
             eq(glob.glob(self.norm('aa*') + sep*2),
-               [self.norm('aaa') + os.sep, self.norm('aab') + os.sep])
+               [self.norm('aaa') + os.sep*2, self.norm('aab') + os.sep*2])
 
     def test_glob_bytes_directory_with_trailing_slash(self):
         # Same as test_glob_directory_with_trailing_slash, but with a
@@ -198,16 +196,16 @@ class GlobTests(unittest.TestCase):
             self.assertEqual(glob.glob(os.fsencode(self.norm('Z*Z') + sep)), [])
             self.assertEqual(glob.glob(os.fsencode(self.norm('ZZZ') + sep)), [])
             self.assertEqual(glob.glob(os.fsencode(self.norm('aaa') + sep)),
-               [os.fsencode(self.norm('aaa') + sep)])
+               [os.fsencode(self.norm('aaa') + os.sep)])
             self.assertEqual(glob.glob(os.fsencode(self.norm('aaa') + sep*2)),
-               [os.fsencode(self.norm('aaa') + sep*2)])
+               [os.fsencode(self.norm('aaa') + os.sep*2)])
             eq = self.assertSequencesEqual_noorder
             eq(glob.glob(os.fsencode(self.norm('aa*') + sep)),
                [os.fsencode(self.norm('aaa') + os.sep),
                 os.fsencode(self.norm('aab') + os.sep)])
             eq(glob.glob(os.fsencode(self.norm('aa*') + sep*2)),
-               [os.fsencode(self.norm('aaa') + os.sep),
-                os.fsencode(self.norm('aab') + os.sep)])
+               [os.fsencode(self.norm('aaa') + os.sep*2),
+                os.fsencode(self.norm('aab') + os.sep*2)])
 
     @skip_unless_symlink
     def test_glob_symlinks(self):
@@ -324,7 +322,11 @@ class GlobTests(unittest.TestCase):
         with change_cwd(self.tempdir):
             join = os.path.join
             eq(glob.glob('**', recursive=True), [join(*i) for i in full])
+            eq(glob.glob(join('**', '**'), recursive=True),
+                [join(*i) for i in full])
             eq(glob.glob(join('**', ''), recursive=True),
+                [join(*i) for i in dirs])
+            eq(glob.glob(join('**', '**', ''), recursive=True),
                 [join(*i) for i in dirs])
             eq(glob.glob(join('**', '*'), recursive=True),
                 [join(*i) for i in full])
@@ -391,6 +393,15 @@ class GlobTests(unittest.TestCase):
             p = os.path.join(p, 'd')
             for it in iters:
                 self.assertEqual(next(it), p)
+
+    def test_glob_above_recursion_limit(self):
+        depth = 30
+        base = os.path.join(self.tempdir, 'deep')
+        p = os.path.join(base, *(['d']*depth))
+        os.makedirs(p)
+        pattern = os.path.join(base, '**', 'd')
+        with infinite_recursion(depth - 5):
+            glob.glob(pattern, recursive=True)
 
     def test_translate_matching(self):
         match = re.compile(glob.translate('*')).match
