@@ -239,10 +239,7 @@ class TaskTableOutputFormat(StrEnum):
     csv = auto()
 
 
-def display_awaited_by_tasks_table(
-        pid: int,
-        format: TaskTableOutputFormat | str = TaskTableOutputFormat.table
-    ) -> None:
+def display_awaited_by_tasks_table(pid, *, format=TaskTableOutputFormat.table):
     """Build and print a table of all pending tasks under `pid`."""
 
     tasks = _get_awaited_by_tasks(pid)
