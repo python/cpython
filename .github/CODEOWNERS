@@ -5,7 +5,7 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # Azure Pipelines
-.azure-pipelines.yml/         @AA-Turner
+.azure-pipelines/             @AA-Turner
 
 # GitHub & related scripts
 .github/**                    @ezio-melotti @hugovk @AA-Turner
