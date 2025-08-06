@@ -1065,15 +1065,21 @@ class BlockFinder:
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started and not self.indecorator:
-            # skip any decorators
-            if token == "@":
-                self.indecorator = True
-            # look for the first "def", "class" or "lambda"
-            elif token in ("def", "class", "lambda"):
-                if token == "lambda":
+            if type != tokenize.INDENT:
+                # skip any decorators
+                if token == "@":
+                    self.indecorator = True
+                elif token == "async":
+                    pass
+                # look for the first "def", "class" or "lambda"
+                elif token in ("def", "class", "lambda"):
+                    if token == "lambda":
+                        self.islambda = True
+                    self.started = True
+                else:
                     self.islambda = True
-                self.started = True
-            self.passline = True    # skip to the end of the line
+                    self.started = True
+                self.passline = True    # skip to the end of the line
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
