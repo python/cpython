@@ -1,7 +1,6 @@
 import argparse
 import ast
 import asyncio
-import asyncio.tools
 import concurrent.futures
 import contextvars
 import inspect
@@ -11,6 +10,9 @@ import sys
 import threading
 import types
 import warnings
+from asyncio.tools import (TaskTableOutputFormat,
+                           display_awaited_by_tasks_table,
+                           display_awaited_by_tasks_tree)
 
 from _colorize import get_theme
 from _pyrepl.console import InteractiveColoredConsole
@@ -153,7 +155,7 @@ if __name__ == '__main__':
         "ps", help="Display a table of all pending tasks in a process"
     )
     ps.add_argument("pid", type=int, help="Process ID to inspect")
-    formats = [fmt.value for fmt in asyncio.tools.TaskTableOutputFormat]
+    formats = [fmt.value for fmt in TaskTableOutputFormat]
     ps.add_argument("--format", choices=formats, default="table")
     pstree = subparsers.add_parser(
         "pstree", help="Display a tree of all pending tasks in a process"
@@ -162,10 +164,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     match args.command:
         case "ps":
-            asyncio.tools.display_awaited_by_tasks_table(args.pid, args.format)
+            display_awaited_by_tasks_table(args.pid, format=args.format)
             sys.exit(0)
         case "pstree":
-            asyncio.tools.display_awaited_by_tasks_tree(args.pid)
+            display_awaited_by_tasks_tree(args.pid)
             sys.exit(0)
         case None:
             pass  # continue to the interactive shell
