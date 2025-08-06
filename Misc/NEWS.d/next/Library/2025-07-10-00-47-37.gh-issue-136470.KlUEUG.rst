@@ -1,0 +1,2 @@
+Correct :class:`concurrent.futures.InterpreterPoolExecutor`'s default thread
+name.

@@ -1,0 +1,1 @@
+Enable color help by default in :mod:`argparse`.

@@ -91,7 +91,7 @@ class Tier2Emitter(Emitter):
         self.emit("}\n")
         return not always_true(first_tkn)
 
-    def exit_if(  # type: ignore[override]
+    def exit_if(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,

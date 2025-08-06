@@ -4748,7 +4748,26 @@ class MiscTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             _suggestions._generate_suggestions(MyList(), "")
 
+    def test_no_site_package_flavour(self):
+        code = """import boo"""
+        _, _, stderr = assert_python_failure('-S', '-c', code)
 
+        self.assertIn(
+            (b"Site initialization is disabled, did you forget to "
+                b"add the site-packages directory to sys.path?"), stderr
+        )
+
+        code = """
+            import sys
+            sys.stdlib_module_names = sys.stdlib_module_names + ("boo",)
+            import boo
+        """
+        _, _, stderr = assert_python_failure('-S', '-c', code)
+
+        self.assertNotIn(
+            (b"Site initialization is disabled, did you forget to "
+                b"add the site-packages directory to sys.path?"), stderr
+        )
 
 
 class TestColorizedTraceback(unittest.TestCase):

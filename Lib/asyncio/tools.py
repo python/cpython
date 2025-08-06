@@ -1,12 +1,11 @@
 """Tools to analyze tasks running in asyncio programs."""
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import csv
 from itertools import count
 from enum import Enum, StrEnum, auto
 import sys
 from _remote_debugging import RemoteUnwinder, FrameInfo
-
 
 class NodeType(Enum):
     COROUTINE = 1
@@ -242,10 +241,7 @@ class TaskTableOutputFormat(StrEnum):
     # https://www.youtube.com/watch?v=RrsVi1P6n0w
 
 
-def display_awaited_by_tasks_table(
-        pid: int,
-        format: TaskTableOutputFormat | str = TaskTableOutputFormat.table
-    ) -> None:
+def display_awaited_by_tasks_table(pid, *, format=TaskTableOutputFormat.table):
     """Build and print a table of all pending tasks under `pid`."""
 
     tasks = _get_awaited_by_tasks(pid)
@@ -254,17 +250,37 @@ def display_awaited_by_tasks_table(
     if format == TaskTableOutputFormat.table:
         _display_awaited_by_tasks_table(table)
     else:
-        _display_awaited_by_tasks_csv(table, format)
+        _display_awaited_by_tasks_csv(table, format=format)
 
 
-def _display_awaited_by_tasks_table(table) -> None:
-    # Print the table in a simple tabular format
-    print(
-        f"{'tid':<10} {'task id':<20} {'task name':<20} {'coroutine stack':<50} {'awaiter chain':<50} {'awaiter name':<15} {'awaiter id':<15}"
-    )
-    print("-" * 180)
+_row_header = ('tid', 'task id', 'task name', 'coroutine stack',
+               'awaiter chain', 'awaiter name', 'awaiter id')
+
+
+def _display_awaited_by_tasks_table(table):
+    """Print the table in a simple tabular format."""
+    print(_fmt_table_row(*_row_header))
+    print('-' * 180)
     for row in table:
-        print(f"{row[0]:<10} {row[1]:<20} {row[2]:<20} {row[3]:<50} {row[4]:<50} {row[5]:<15} {row[6]:<15}")
+        print(_fmt_table_row(*row))
+
+
+def _fmt_table_row(tid, task_id, task_name, coro_stack,
+                   awaiter_chain, awaiter_name, awaiter_id):
+    # Format a single row for the table format
+    return (f'{tid:<10} {task_id:<20} {task_name:<20} {coro_stack:<50} '
+            f'{awaiter_chain:<50} {awaiter_name:<15} {awaiter_id:<15}')
+
+
+def _display_awaited_by_tasks_csv(table, *, format):
+    """Print the table in CSV format"""
+    if format == TaskTableOutputFormat.csv:
+        delimiter = ','
+    else:
+        raise ValueError(f"Unknown output format: {format}")
+    csv_writer = csv.writer(sys.stdout, delimiter=delimiter)
+    csv_writer.writerow(_row_header)
+    csv_writer.writerows(table)
 
 
 def _display_awaited_by_tasks_csv(table, format: TaskTableOutputFormat) -> None:

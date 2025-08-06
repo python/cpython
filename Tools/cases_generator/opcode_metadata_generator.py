@@ -242,14 +242,10 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
             assert name2 in analysis.instructions, f"{name2} doesn't match any instr"
             instr1 = analysis.instructions[name1]
             instr2 = analysis.instructions[name2]
-            assert (
-                len(instr1.parts) == 1
-            ), f"{name1} is not a good superinstruction part"
-            assert (
-                len(instr2.parts) == 1
-            ), f"{name2} is not a good superinstruction part"
-            expansions.append((instr1.parts[0].name, "OPARG_TOP", 0))
-            expansions.append((instr2.parts[0].name, "OPARG_BOTTOM", 0))
+            for part in instr1.parts:
+                expansions.append((part.name, "OPARG_TOP", 0))
+            for part in instr2.parts:
+                expansions.append((part.name, "OPARG_BOTTOM", 0))
         elif not is_viable_expansion(inst):
             continue
         else:

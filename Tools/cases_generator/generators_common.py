@@ -106,8 +106,9 @@ class Emitter:
     out: CWriter
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
+    cannot_escape: bool
 
-    def __init__(self, out: CWriter, labels: dict[str, Label]):
+    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False):
         self._replacers = {
             "EXIT_IF": self.exit_if,
             "DEOPT_IF": self.deopt_if,
@@ -127,6 +128,7 @@ class Emitter:
         }
         self.out = out
         self.labels = labels
+        self.cannot_escape = cannot_escape
 
     def dispatch(
         self,
@@ -238,7 +240,8 @@ class Emitter:
         next(tkn_iter)
         self._print_storage("DECREF_INPUTS", storage)
         try:
-            storage.close_inputs(self.out)
+            if not self.cannot_escape:
+                storage.close_inputs(self.out)
         except StackError as ex:
             raise analysis_error(ex.args[0], tkn)
         except Exception as ex:
@@ -476,7 +479,7 @@ class Emitter:
         reachable = True
         tkn = stmt.contents[-1]
         try:
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not self.cannot_escape:
                 escape = uop.properties.escaping_calls[stmt]
                 if escape.kills is not None:
                     self.stackref_kill(escape.kills, storage, True)
@@ -513,7 +516,7 @@ class Emitter:
                         self.out.emit(tkn)
                 else:
                     self.out.emit(tkn)
-            if stmt in uop.properties.escaping_calls:
+            if stmt in uop.properties.escaping_calls and not self.cannot_escape:
                 self.emit_reload(storage)
             return reachable, None, storage
         except StackError as ex:

@@ -262,9 +262,11 @@ class GCTests(unittest.TestCase):
             #    finalizer.
             def __del__(self):
 
-                # 5. Create a weakref to `func` now. If we had created
-                #    it earlier, it would have been cleared by the
-                #    garbage collector before calling the finalizers.
+                # 5. Create a weakref to `func` now. In previous
+                #    versions of Python, this would avoid having it
+                #    cleared by the garbage collector before calling
+                #    the finalizers.  Now, weakrefs get cleared after
+                #    calling finalizers.
                 self[1].ref = weakref.ref(self[0])
 
                 # 6. Drop the global reference to `latefin`. The only
@@ -293,14 +295,18 @@ class GCTests(unittest.TestCase):
         #    which will find `cyc` and `func` as garbage.
         gc.collect()
 
-        # 9. Previously, this would crash because `func_qualname`
-        #    had been NULL-ed out by func_clear().
+        # 9. Previously, this would crash because the weakref
+        #    created in the finalizer revealed the function after
+        #    `tp_clear` was called and `func_qualname`
+        #    had been NULL-ed out by func_clear().  Now, we clear
+        #    weakrefs to unreachable objects before calling `tp_clear`
+        #    but after calling finalizers.
         print(f"{func=}")
         """
-        # We're mostly just checking that this doesn't crash.
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
-        self.assertRegex(stdout, rb"""\A\s*func=<function  at \S+>\s*\z""")
+        # The `func` global is None because the weakref was cleared.
+        self.assertRegex(stdout, rb"""\A\s*func=None""")
         self.assertFalse(stderr)
 
     @refcount_test
@@ -726,6 +732,9 @@ class GCTests(unittest.TestCase):
         self.assertIn(b"ResourceWarning: gc: 2 uncollectable objects at "
                       b"shutdown; use", stderr)
         self.assertNotIn(b"<X 'first'>", stderr)
+        one_line_re = b"gc: uncollectable <X 0x[0-9A-Fa-f]+>"
+        expected_re = one_line_re + b"\r?\n" + one_line_re
+        self.assertNotRegex(stderr, expected_re)
         # With DEBUG_UNCOLLECTABLE, the garbage list gets printed
         stderr = run_command(code % "gc.DEBUG_UNCOLLECTABLE")
         self.assertIn(b"ResourceWarning: gc: 2 uncollectable objects at "
@@ -733,6 +742,8 @@ class GCTests(unittest.TestCase):
         self.assertTrue(
             (b"[<X 'first'>, <X 'second'>]" in stderr) or
             (b"[<X 'second'>, <X 'first'>]" in stderr), stderr)
+        # we expect two lines with uncollectable objects
+        self.assertRegex(stderr, expected_re)
         # With DEBUG_SAVEALL, no additional message should get printed
         # (because gc.garbage also contains normally reclaimable cyclic
         # references, and its elements get printed at runtime anyway).

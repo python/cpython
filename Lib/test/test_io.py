@@ -9,6 +9,7 @@
 # * test_univnewlines - tests universal newline support
 # * test_largefile - tests operations on a file greater than 2**32 bytes
 #     (only enabled with -ulargefile)
+# * test_free_threading/test_io - tests thread safety of io objects
 
 ################################################################################
 # ATTENTION TEST WRITERS!!!
