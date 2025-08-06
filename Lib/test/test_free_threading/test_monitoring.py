@@ -194,6 +194,32 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
         self.set = not self.set
 
 
+@threading_helper.requires_working_threading()
+class SetProfileAllThreadsMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
+    """Uses threading.setprofile_all_threads and repeatedly toggles instrumentation on and off"""
+
+    def setUp(self):
+        self.set = False
+        self.called = False
+
+    def after_test(self):
+        self.assertTrue(self.called)
+
+    def tearDown(self):
+        threading.setprofile_all_threads(None)
+
+    def trace_func(self, frame, event, arg):
+        self.called = True
+        return self.trace_func
+
+    def during_threads(self):
+        if self.set:
+            threading.setprofile_all_threads(self.trace_func)
+        else:
+            threading.setprofile_all_threads(None)
+        self.set = not self.set
+
+
 class TraceBuf:
     def __init__(self):
         self.traces = []
