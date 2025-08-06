@@ -48,6 +48,9 @@ Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
+CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
+CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
+CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
@@ -960,6 +963,25 @@ class ContextTests(unittest.TestCase):
             len(intersection), 2, f"\ngot: {sorted(names)}\nexpected: {sorted(expected)}"
         )
 
+    def test_set_groups(self):
+        ctx = ssl.create_default_context()
+        # We use P-256 and P-384 (FIPS 186-4) that are alloed by OpenSSL
+        # even if FIPS module is enabled. Ignoring unknown groups is only
+        # supported since OpenSSL 3.3.
+        self.assertIsNone(ctx.set_groups('P-256:P-384'))
+
+        self.assertRaises(ssl.SSLError, ctx.set_groups, 'P-256:foo')
+        if CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS:
+            self.assertIsNone(ctx.set_groups('P-256:?foo'))
+
+    @unittest.skipUnless(CAN_GET_AVAILABLE_OPENSSL_GROUPS,
+                         "OpenSSL version doesn't support getting groups")
+    def test_get_groups(self):
+        ctx = ssl.create_default_context()
+        # By default, only return official IANA names.
+        self.assertNotIn('P-256', ctx.get_groups())
+        self.assertIn('P-256', ctx.get_groups(include_aliases=True))
+
     def test_options(self):
         # Test default SSLContext options
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1238,6 +1260,25 @@ class ContextTests(unittest.TestCase):
             ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_exception)
         # Make sure the password function isn't called if it isn't needed
         ctx.load_cert_chain(CERTFILE, password=getpass_exception)
+
+    @threading_helper.requires_working_threading()
+    def test_load_cert_chain_thread_safety(self):
+        # gh-134698: _ssl detaches the thread state (and as such,
+        # releases the GIL and critical sections) around expensive
+        # OpenSSL calls. Unfortunately, OpenSSL structures aren't
+        # thread-safe, so executing these calls concurrently led
+        # to crashes.
+        ctx = ssl.create_default_context()
+
+        def race():
+            ctx.load_cert_chain(CERTFILE)
+
+        threads = [threading.Thread(target=race) for _ in range(8)]
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+
+            self.assertIsNone(cm.exc_value)
 
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -2701,6 +2742,8 @@ def server_params_test(client_context, server_context, indata=b"FOO\n",
                 'session_reused': s.session_reused,
                 'session': s.session,
             })
+            if CAN_GET_SELECTED_OPENSSL_GROUP:
+                stats.update({'group': s.group()})
             s.close()
         stats['server_alpn_protocols'] = server.selected_alpn_protocols
         stats['server_shared_ciphers'] = server.shared_ciphers
@@ -3851,6 +3894,8 @@ class ThreadedTests(unittest.TestCase):
                 with self.assertRaises(OSError):
                     s.connect((HOST, server.port))
         self.assertIn("NO_SHARED_CIPHER", server.conn_errors[0])
+        self.assertIsNone(s.cipher())
+        self.assertIsNone(s.group())
 
     def test_version_basic(self):
         """
@@ -4121,6 +4166,38 @@ class ThreadedTests(unittest.TestCase):
         server_context.set_ecdh_curve("secp384r1")
         server_context.set_ciphers("ECDHE:!eNULL:!aNULL")
         server_context.minimum_version = ssl.TLSVersion.TLSv1_2
+        with self.assertRaises(ssl.SSLError):
+            server_params_test(client_context, server_context,
+                               chatty=True, connectionchatty=True,
+                               sni_name=hostname)
+
+    def test_groups(self):
+        # server secp384r1, client auto
+        client_context, server_context, hostname = testing_context()
+
+        server_context.set_groups("secp384r1")
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+        if CAN_GET_SELECTED_OPENSSL_GROUP:
+            self.assertEqual(stats['group'], "secp384r1")
+
+        # server auto, client secp384r1
+        client_context, server_context, hostname = testing_context()
+        client_context.set_groups("secp384r1")
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+        if CAN_GET_SELECTED_OPENSSL_GROUP:
+            self.assertEqual(stats['group'], "secp384r1")
+
+        # server / client curve mismatch
+        client_context, server_context, hostname = testing_context()
+        client_context.set_groups("prime256v1")
+        server_context.set_groups("secp384r1")
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
         with self.assertRaises(ssl.SSLError):
             server_params_test(client_context, server_context,
                                chatty=True, connectionchatty=True,
