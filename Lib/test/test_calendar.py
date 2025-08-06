@@ -695,6 +695,26 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
         except locale.Error:
             raise unittest.SkipTest('cannot set the en_US locale')
+            
+    def test_locale_calendar_shorter_day_names(self):
+        locale_tested = False
+        for locale_name in [
+                'french', 'fr_FR.UTF-8', 
+                'malay', 'ms_MY.UTF-8', 
+                'norwegian', 'nb_NO.UTF-8', 
+                'danish', 'da_DK.UTF-8'
+            ]:
+            try:
+                cal = calendar.LocaleTextCalendar(locale=locale_name)
+                week_header_split = lambda width: cal.formatweekheader(width).split()
+                self.assertEqual(week_header_split(8), week_header_split(9))
+                locale_tested = True
+                break
+            except locale.Error:
+                continue
+
+        if not locale_tested:
+            raise unittest.SkipTest('cannot set the locale to a language with short weekday names')
 
     def test_locale_calendar_formatmonthname(self):
         try:
