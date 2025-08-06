@@ -1618,7 +1618,7 @@ class TestUopsOptimization(unittest.TestCase):
         def testfunc(n):
             x = 0
             for i in range(n):
-                a = 1  # This will make -1, which is definitely immortal
+                a = 1
                 result = -a
                 if result < 0:
                     x += 1
@@ -1646,6 +1646,23 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_UNARY_NOT", uops)
+        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_unary_invert_pop_top_load_const_inline_borrow(self):
+        def testfunc(n):
+            x = 0
+            for i in range(n):
+                a = 0
+                result = ~a
+                if result < 0:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_UNARY_INVERT", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_replace_with_true_pop_top_load_const_inline_borrow(self):
