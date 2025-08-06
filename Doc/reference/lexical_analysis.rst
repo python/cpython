@@ -1085,8 +1085,8 @@ Formal grammar for f-strings
 
 F-strings are handled partly by the :term:`lexical analyzer`, which produces the
 tokens :py:data:`~token.FSTRING_START`, :py:data:`~token.FSTRING_MIDDLE`
-and :py:data:`~token.FSTRING_END`, and the parser, which handles expressions
-in the replacement field.
+and :py:data:`~token.FSTRING_END`, and partly by the parser, which handles
+expressions in the replacement field.
 The exact way the work is split is a CPython implementation detail.
 
 Correspondingly, the f-string grammar is a mix of
@@ -1108,6 +1108,12 @@ Whitespace is significant in these situations:
      The expression is not handled in the tokenization phase; it is
      retrieved from the source code using locations of the ``{`` token
      and the token after ``=``.
+
+
+The ``FSTRING_MIDDLE`` definition uses
+:ref:`negative lookaheads <lexical-lookaheads>` (``!``)
+to indicate special characters (backslash, newline, ``{``, ``}``) and
+sequences (``f_quote``).
 
 .. grammar-snippet:: python-grammar
    :group: python-grammar
@@ -1142,6 +1148,15 @@ Whitespace is significant in these situations:
    f_expression:
       | ','.(`conditional_expression` | "*" `or_expr`)+ [","]
       | `yield_expression`
+
+.. note::
+
+   In the above grammar snippet, the ``f_quote`` and ``FSTRING_MIDDLE`` rules
+   are context-sensitive -- they depend on the contents of ``FSTRING_START``
+   of the nearest enclosing ``fstring``.
+
+   Constructing a more traditional formal grammar from this template is left
+   as an exercise for the reader.
 
 
 .. _t-strings:
