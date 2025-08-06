@@ -170,8 +170,9 @@ to specify the event loop.
 
 ::
 
+   coroutine = loudmouth_penguin(magic_number=5)
    # This creates a Task object and puts it on the event loop's queue.
-   task = asyncio.create_task(coro=loudmouth_penguin(magic_number=5))
+   task = asyncio.create_task(coroutine)
 
 Earlier, we manually created the event loop and set it to run forever.
 In practice, it's recommended to use (and common to see) :func:`asyncio.run`,
