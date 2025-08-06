@@ -104,14 +104,17 @@ class _safe_key:
                     (str(type(other.obj)), id(other.obj)))
 
 
-def _safe_tuple(t):
+def _safe_tuple_by_key(t):
     "Helper function for comparing 2-tuples"
     return _safe_key(t[0]), _safe_key(t[1])
 
+def _safe_tuple_by_value(t):
+    "Helper function for comparing 2-tuples"
+    return _safe_key(t[1]), _safe_key(t[0])
 
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *,
-                 compact=False, sort_dicts=True, underscore_numbers=False):
+                 compact=False, sort_dicts=True, sort_dicts_by_key=True, underscore_numbers=False):
         """Handle pretty printing operations onto a stream using a set of
         configured parameters.
 
@@ -155,6 +158,10 @@ class PrettyPrinter:
             self._stream = _sys.stdout
         self._compact = bool(compact)
         self._sort_dicts = sort_dicts
+        if sort_dicts_by_key:
+            self._safe_tuple = _safe_tuple_by_key
+        else:
+            self._safe_tuple = _safe_tuple_by_value
         self._underscore_numbers = underscore_numbers
 
     def pprint(self, object):
@@ -226,7 +233,7 @@ class PrettyPrinter:
         length = len(object)
         if length:
             if self._sort_dicts:
-                items = sorted(object.items(), key=_safe_tuple)
+                items = sorted(object.items(), key=self._safe_tuple)
             else:
                 items = object.items()
             self._format_dict_items(items, stream, indent, allowance + 1,
@@ -251,7 +258,7 @@ class PrettyPrinter:
     def _pprint_dict_view(self, object, stream, indent, allowance, context, level):
         """Pretty print dict views (keys, values, items)."""
         if isinstance(object, self._dict_items_view):
-            key = _safe_tuple
+            key = self._safe_tuple
         else:
             key = _safe_key
         write = stream.write
@@ -638,7 +645,7 @@ class PrettyPrinter:
             append = components.append
             level += 1
             if self._sort_dicts:
-                items = sorted(object.items(), key=_safe_tuple)
+                items = sorted(object.items(), key=self._safe_tuple)
             else:
                 items = object.items()
             for k, v in items:
@@ -695,7 +702,7 @@ class PrettyPrinter:
                 return _recursion(object), False, True
             key = _safe_key
             if issubclass(typ, (self._dict_items_view, _collections.abc.ItemsView)):
-                key = _safe_tuple
+                key = self._safe_tuple
             if hasattr(object, "_mapping"):
                 # Dispatch formatting to the view's _mapping
                 mapping_repr, readable, recursive = self.format(
