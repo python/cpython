@@ -4,7 +4,6 @@ import re
 import shutil
 import sys
 import unittest
-import warnings
 
 from test.support import is_wasi, Py_DEBUG
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
