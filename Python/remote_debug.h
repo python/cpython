@@ -1075,7 +1075,7 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
                     "Process %d is no longer accessible (process terminated)",
                     handle->pid);
             } else {
-                PyErr_Format(PyExc_PermissionError,
+                PyErr_Format(PyExc_ValueError,
                     "Invalid argument to mach_vm_read_overwrite for PID %d at "
                     "address 0x%lx (size %zu) - check memory permissions",
                     handle->pid, remote_address, len);
