@@ -366,7 +366,8 @@ That snippet produces this output:
    Coroutine main() finished and provided value: 23.
 
 It's worth pausing for a moment here and making sure you followed the various
-ways that control flow and values were passed.
+ways that control flow and values were passed. A lot of important ideas were
+covered and it's worth ensuring your understanding is firm.
 
 The only way to yield (or effectively cede control) from a coroutine is to
 ``await`` an object that ``yield``\ s in its ``__await__`` method.
