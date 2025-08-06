@@ -1,0 +1,3 @@
+Fix a crash that can occur in free-threading builds when
+``sys._setprofileallthreads`` or ``sys._settraceallthreads`` changes the
+profile function underneath a running thread.
