@@ -12,7 +12,7 @@ You might be curious about some key :mod:`!asyncio` concepts.
 You'll be comfortably able to answer these questions by the end of this
 article:
 
-- What's happening behind the scenes when an object is ``await``\ ed?
+- What's happening behind the scenes when an object is awaited?
 - How does :mod:`!asyncio` differentiate between a task which doesn't need
   CPU-time (such as a network request or file read) as opposed to a task that
   does (such as computing n-factorial)?
@@ -201,15 +201,15 @@ different ways::
    await task
    await coroutine
 
-Unfortunately, it does matter which type of object is ``await``\ ed.
+Unfortunately, it does matter which type of object is awaited.
 
-``await``\ ing a task will cede control from the current task or coroutine to
+awaiting a task will cede control from the current task or coroutine to
 the event loop.
 In the process of relinquishing control, the task that's giving up control
-adds a callback to the ``await``\ ed task's list of callbacks indicating it
-should resume the current task/coroutine when it (the ``await``\ ed one)
+adds a callback to the awaited task's list of callbacks indicating it
+should resume the current task/coroutine when it (the awaited one)
 finishes.
-In other words, when that ``await``\ ed task finishes, the original task is
+In other words, when that awaited task finishes, the original task is
 added back to the event loops queue.
 
 This is a basic, yet reliable mental model.
@@ -218,7 +218,7 @@ In part 2, we'll walk through the details that make this possible.
 
 **Unlike tasks, awaiting a coroutine does not hand control back to the event
 loop!**
-Wrapping a coroutine in a task first, then ``await``\ ing that would cede
+Wrapping a coroutine in a task first, then awaiting that would cede
 control.
 The behavior of ``await coroutine`` is effectively the same as invoking a
 regular, synchronous Python function.
@@ -243,7 +243,7 @@ Consider this program::
 
 The first statement in the coroutine ``main()`` creates ``task_b`` and places
 it on the event loop's queue.
-Then, ``coro_a()`` is repeatedly ``await``\ ed. Control never cedes to the
+Then, ``coro_a()`` is repeatedly awaited. Control never cedes to the
 event loop which is why we see the output of all three ``coro_a()``
 invocations before ``coro_b()``'s output:
 
@@ -404,7 +404,7 @@ We'll go through an example of how you could leverage a future to create your
 own variant of asynchronous sleep (``async_sleep``) which mimics
 :func:`asyncio.sleep`.
 
-This snippet puts a few tasks on the event loop's queue and then ``await``\ s a
+This snippet puts a few tasks on the event loop's queue and then awaits a
 coroutine wrapped in a task: ``async_sleep(3)``.
 We want that task to finish only after three seconds have elapsed, but without
 preventing other tasks from running.
