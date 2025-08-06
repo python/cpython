@@ -1345,7 +1345,7 @@ class TracebackException:
                 continue
 
             # Limit the number of valid tokens to consider to not spend
-            # to much time in this function
+            # too much time in this function
             tokens_left_to_process -= 1
             if tokens_left_to_process < 0:
                 break
