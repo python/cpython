@@ -801,6 +801,18 @@ Special functions
    Return the `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_ at
    *x*.
 
+    Example::
+   
+      >>> math.gamma(5)      # factorial(n-1) for integer n
+      24.0
+      >>> math.gamma(2.5)    # fractional values
+      1.329340388179137
+      >>> math.gamma(-1.5)   # negative inputs
+      2.363271801207354
+      >>> math.gamma(0)      # pole at zero
+      Traceback (most recent call last):
+          ...
+      ValueError: math domain error
    .. versionadded:: 3.2
 
 
@@ -808,6 +820,19 @@ Special functions
 
    Return the natural logarithm of the absolute value of the Gamma
    function at *x*.
+
+    Example::
+   
+      >>> math.lgamma(5)     # log(factorial(4))
+      3.1780538303479458
+      >>> math.lgamma(10.5)  # fractional values
+      13.458901694870227
+      >>> math.lgamma(-0.5)  # negative inputs
+      1.2655121234846454
+      >>> math.lgamma(0)     # pole at zero
+      Traceback (most recent call last):
+          ...
+      ValueError: math domain error
 
    .. versionadded:: 3.2
 
