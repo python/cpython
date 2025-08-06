@@ -173,7 +173,22 @@ to specify the event loop.
    # This creates a Task object and puts it on the event loop's queue.
    task = asyncio.create_task(coro=loudmouth_penguin(magic_number=5))
 
+Earlier, we manually created the event loop and set it to run forever.
+In practice, it's recommended to use (and common to see) :func:`asyncio.run`,
+which takes care of managing the event loop and ensuring the provided
+coroutine finishes before advancing.
+For example, many async programs follow this setup::
 
+   import asyncio
+
+   async def main():
+       ...
+
+   if __name__ == "__main__":
+       asyncio.run(main())
+       # The program will not reach the following print statement until the
+       # coroutine main() finishes.
+       print("coroutine main() is done!")
 
 =====
 await
