@@ -514,7 +514,7 @@ Module constants
    This constant is only available if Python was compiled with SQLite
    3.24.0 or greater.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 .. data:: threadsafety
 
