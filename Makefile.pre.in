@@ -3106,6 +3106,11 @@ config.status:	$(srcdir)/configure
 Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
+Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
+	$$(dirname $$(dirname $(CC)))/bin/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
+
+Python/emscripten_trampoline.o: $(srcdir)/Python/emscripten_trampoline.c Python/emscripten_trampoline_inner.wasm
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
