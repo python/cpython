@@ -156,6 +156,10 @@ class ResourceTest(unittest.TestCase):
         (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
         for value in -5, -2**31, -2**32-5, -2**63, -2**64-5, -2**1000:
             with self.subTest(value=value):
+                # This test assumes that the values don't map to RLIM_INFINITY,
+                # though Posix doesn't guarantee it.
+                self.assertNotEqual(value, resource.RLIM_INFINITY)
+
                 self.assertRaises(ValueError, resource.setrlimit, resource.RLIMIT_FSIZE, (value, max))
                 self.assertRaises(ValueError, resource.setrlimit, resource.RLIMIT_FSIZE, (cur, value))
 
