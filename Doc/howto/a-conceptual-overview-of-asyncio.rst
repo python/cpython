@@ -173,6 +173,8 @@ to specify the event loop.
    # This creates a Task object and puts it on the event loop's queue.
    task = asyncio.create_task(coro=loudmouth_penguin(magic_number=5))
 
+
+
 =====
 await
 =====
@@ -394,7 +396,7 @@ preventing other tasks from running.
 ::
 
    async def other_work():
-       print("I am worker. Work work.")
+       print("I like work. Work work.")
 
    async def main():
        # Add a few other tasks to the event loop, so there's something
@@ -477,9 +479,9 @@ Here is the full program's output:
 
    $ python custom-async-sleep.py
    Beginning asynchronous sleep at time: 14:52:22.
-   I am worker. Work work.
-   I am worker. Work work.
-   I am worker. Work work.
+   I like work. Work work.
+   I like work. Work work.
+   I like work. Work work.
    Done asynchronous sleep at time: 14:52:25.
 
 You might feel this implementation of asynchronous sleep was unnecessarily
