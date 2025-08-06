@@ -204,14 +204,31 @@ different ways::
 In a crucial way, the behavior of ``await`` depends on the type of object
 being awaited.
 
-awaiting a task will cede control from the current task or coroutine to
+Awaiting a task will cede control from the current task or coroutine to
 the event loop.
-In the process of relinquishing control, the task that's giving up control
-adds a callback to the awaited task's list of callbacks indicating it
-should resume the current task/coroutine when it (the awaited one)
-finishes.
-In other words, when that awaited task finishes, the original task is
-added back to the event loops queue.
+In the process of relinquishing control a few important things happen.
+We'll use the following code example to illustrate::
+
+   async def plant_a_tree():
+       dig_the_hole_task = asyncio.create_task(dig_the_hole())
+       await dig_the_hole_task
+
+       # Other instructions associated with planting a tree.
+       ...
+
+In this example, imagine the event loop has passed control to the start of the
+coroutine ``plant_a_tree()``.
+As seen above, that coroutine creates a task, then awaits it.
+The ``await dig_the_hole_task`` instruction adds a callback, which will resume
+``plant_a_tree()``, to the ``dig_the_hole_task`` object's list of callbacks.
+Eventually, the event loop will pass control to the ``dig_the_hole_task``
+and the task will finish whatever it needs to do.
+Once the task finishes, it will add the various callbacks to the event loop,
+in this case, a call to resume ``plant_a_tree()``.
+
+Generally speaking, when the awaited task finishes (``dig_the_hole_task``),
+the original task or coroutine (``plant_a_tree()``) is added back to the event
+loops queue to be resumed.
 
 This is a basic, yet reliable mental model.
 In practice, it's slightly more complex, but not by much.
