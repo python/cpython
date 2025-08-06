@@ -5,7 +5,7 @@ import sys
 from _remote_debugging import RemoteUnwinder, FrameInfo
 from collections import defaultdict
 from enum import Enum, StrEnum, auto
-from itertools import chain, count
+from itertools import count
 
 
 class NodeType(Enum):
