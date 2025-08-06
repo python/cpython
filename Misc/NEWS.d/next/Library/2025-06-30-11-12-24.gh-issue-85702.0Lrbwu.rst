@@ -1,3 +1,0 @@
-If ``zoneinfo._common.load_tzdata`` is given a package without a resource a
-:exc:`zoneinfo.ZoneInfoNotFoundError` is raised rather than a :exc:`PermissionError`.
-Patch by Victor Stinner.
