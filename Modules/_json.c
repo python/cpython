@@ -1695,7 +1695,6 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
 {
     /* Encode Python dict dct a JSON term */
     PyObject *ident = NULL;
-    PyObject *items = NULL;
     bool first = true;
 
     if (PyDict_GET_SIZE(dct) == 0) {
@@ -1732,8 +1731,9 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (s->sort_keys || !PyDict_CheckExact(dct)) {
-        items = PyMapping_Items(dct);
+        PyObject *items = PyMapping_Items(dct);
         if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0)) {
+            Py_XDECREF(items);
             goto bail;
         }
 
@@ -1742,9 +1742,8 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
         result = _encoder_iterate_mapping_lock_held(s, writer, &first, dct,
                     items, indent_level, indent_cache, separator);
         Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
-        Py_CLEAR(items);
+        Py_DECREF(items);
         if (result < 0) {
-            Py_XDECREF(items);
             goto bail;
         }
 
@@ -1777,7 +1776,6 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     return 0;
 
 bail:
-    Py_XDECREF(items);
     Py_XDECREF(ident);
     return -1;
 }
