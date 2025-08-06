@@ -305,7 +305,7 @@ Installation path functions
    mix with those by the other.
 
    End users should not use this function, but :func:`get_default_scheme` and
-   :func:`get_preferred_scheme()` instead.
+   :func:`get_preferred_scheme` instead.
 
    .. versionadded:: 3.10
 
@@ -376,7 +376,7 @@ Other functions
 
    This is used mainly to distinguish platform-specific build directories and
    platform-specific built distributions.  Typically includes the OS name and
-   version and the architecture (as supplied by 'os.uname()'), although the
+   version and the architecture (as supplied by :func:`os.uname`), although the
    exact information included depends on the OS; e.g., on Linux, the kernel
    version isn't particularly important.
 
@@ -388,7 +388,8 @@ Other functions
 
    Windows will return one of:
 
-   - win-amd64 (64bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+   - win-amd64 (64-bit Windows on AMD64, aka x86_64, Intel64, and EM64T)
+   - win-arm64 (64-bit Windows on ARM64, aka AArch64)
    - win32 (all others - specifically, sys.platform is returned)
 
    macOS can return:
@@ -428,9 +429,10 @@ Other functions
    Return the path of :file:`Makefile`.
 
 .. _sysconfig-cli:
+.. _using-sysconfig-as-a-script:
 
-Using :mod:`sysconfig` as a script
-----------------------------------
+Command-line usage
+------------------
 
 You can use :mod:`sysconfig` as a script with Python's *-m* option:
 

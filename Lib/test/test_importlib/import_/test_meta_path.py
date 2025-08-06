@@ -43,7 +43,7 @@ class CallingOrder:
                 self.assertIsNone(importlib._bootstrap._find_spec('nothing',
                                                                   None))
                 self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[-1].category, ImportWarning))
+                self.assertIsSubclass(w[-1].category, ImportWarning)
 
 
 (Frozen_CallingOrder,

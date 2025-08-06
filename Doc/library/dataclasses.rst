@@ -121,10 +121,13 @@ Module contents
      :meth:`!__le__`, :meth:`!__gt__`, or :meth:`!__ge__`, then
      :exc:`TypeError` is raised.
 
-   - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
-     is generated according to how *eq* and *frozen* are set.
+   - *unsafe_hash*: If true, force ``dataclasses`` to create a
+     :meth:`~object.__hash__` method, even though it may not be safe to do so.
+     Otherwise, generate a :meth:`~object.__hash__` method according to how
+     *eq* and *frozen* are set.
+     The default value is ``False``.
 
-     :meth:`!__hash__` is used by built-in :meth:`hash()`, and when objects are
+     :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
      :meth:`!__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's
@@ -164,7 +167,7 @@ Module contents
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
-     parameters to the generated :meth:`~object.__init__` method (even if
+     non keyword-only parameters to the generated :meth:`~object.__init__` method (even if
      :meth:`!__init__` is not generated, see above).  If false, or if
      :attr:`!__match_args__` is already defined in the class, then
      :attr:`!__match_args__` will not be generated.
@@ -175,20 +178,25 @@ Module contents
      fields will be marked as keyword-only.  If a field is marked as
      keyword-only, then the only effect is that the :meth:`~object.__init__`
      parameter generated from a keyword-only field must be specified
-     with a keyword when :meth:`!__init__` is called.  There is no
-     effect on any other aspect of dataclasses.  See the
-     :term:`parameter` glossary entry for details.  Also see the
+     with a keyword when :meth:`!__init__` is called. See the :term:`parameter`
+     glossary entry for details.  Also see the
      :const:`KW_ONLY` section.
+
+     Keyword-only fields are not included in :attr:`!__match_args__`.
 
     .. versionadded:: 3.10
 
    - *slots*: If true (the default is ``False``), :attr:`~object.__slots__` attribute
      will be generated and new class will be returned instead of the original one.
      If :attr:`!__slots__` is already defined in the class, then :exc:`TypeError`
-     is raised. Calling no-arg :func:`super` in dataclasses using ``slots=True`` will result in
-     the following exception being raised:
-     ``TypeError: super(type, obj): obj must be an instance or subtype of type``.
-     The two-arg :func:`super` is a valid workaround. See :gh:`90562` for full details.
+     is raised.
+
+    .. warning::
+       Passing parameters to a base class :meth:`~object.__init_subclass__`
+       when using ``slots=True`` will result in a :exc:`TypeError`.
+       Either use ``__init_subclass__`` with no parameters
+       or use default values as a workaround.
+       See :gh:`91126` for full details.
 
     .. versionadded:: 3.10
 
@@ -204,7 +212,8 @@ Module contents
 
    - *weakref_slot*: If true (the default is ``False``), add a slot
      named "__weakref__", which is required to make an instance
-     weakref-able.  It is an error to specify ``weakref_slot=True``
+     :func:`weakref-able <weakref.ref>`.
+     It is an error to specify ``weakref_slot=True``
      without also specifying ``slots=True``.
 
     .. versionadded:: 3.11
@@ -226,7 +235,7 @@ Module contents
    follows a field with a default value.  This is true whether this
    occurs in a single class, or as a result of class inheritance.
 
-.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING)
+.. function:: field(*, default=MISSING, default_factory=MISSING, init=True, repr=True, hash=None, compare=True, metadata=None, kw_only=MISSING, doc=None)
 
    For common and simple use cases, no other functionality is
    required.  There are, however, some dataclass features that
@@ -265,10 +274,11 @@ Module contents
      string returned by the generated :meth:`~object.__repr__` method.
 
    - *hash*: This can be a bool or ``None``.  If true, this field is
-     included in the generated :meth:`~object.__hash__` method.  If ``None`` (the
-     default), use the value of *compare*: this would normally be
-     the expected behavior.  A field should be considered in the hash
-     if it's used for comparisons.  Setting this value to anything
+     included in the generated :meth:`~object.__hash__` method.  If false,
+     this field is excluded from the generated :meth:`~object.__hash__`.
+     If ``None`` (the default), use the value of *compare*: this would
+     normally be the expected behavior, since a field should be included
+     in the hash if it's used for comparisons.  Setting this value to anything
      other than ``None`` is discouraged.
 
      One possible reason to set ``hash=False`` but ``compare=True``
@@ -293,7 +303,13 @@ Module contents
      This is used when the generated :meth:`~object.__init__` method's
      parameters are computed.
 
+     Keyword-only fields are also not included in :attr:`!__match_args__`.
+
     .. versionadded:: 3.10
+
+   - *doc*: optional docstring for this field.
+
+    .. versionadded:: 3.14
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be
@@ -330,6 +346,15 @@ Module contents
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
+
+.. class:: InitVar
+
+   ``InitVar[T]`` type annotations describe variables that are :ref:`init-only
+   <dataclasses-init-only-variables>`. Fields annotated with :class:`!InitVar`
+   are considered pseudo-fields, and thus are neither returned by the
+   :func:`fields` function nor used in any way except adding them as
+   parameters to :meth:`~object.__init__` and an optional
+   :meth:`__post_init__`.
 
 .. function:: fields(class_or_instance)
 
@@ -390,7 +415,7 @@ Module contents
    :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, decorator=dataclass)
 
    Creates a new dataclass with name *cls_name*, fields as defined
    in *fields*, base classes as given in *bases*, and initialized
@@ -405,6 +430,11 @@ Module contents
    If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
+
+   The *decorator* parameter is a callable that will be used to create the dataclass.
+   It should take the class object as a first argument and the same keyword arguments
+   as :func:`@dataclass <dataclass>`. By default, the :func:`@dataclass <dataclass>`
+   function is used.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with :attr:`!__annotations__` can
@@ -428,6 +458,9 @@ Module contents
 
          def add_one(self):
              return self.x + 1
+
+   .. versionadded:: 3.14
+      Added the *decorator* parameter.
 
 .. function:: replace(obj, /, **changes)
 
@@ -579,8 +612,8 @@ Init-only variables
 
 Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
-if the type of a field is of type ``dataclasses.InitVar``.  If a field
-is an ``InitVar``, it is considered a pseudo-field called an init-only
+if the type of a field is of type :class:`InitVar`.  If a field
+is an :class:`InitVar`, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level :func:`fields` function.  Init-only fields are added as
 parameters to the generated :meth:`~object.__init__` method, and are passed to

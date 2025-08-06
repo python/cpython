@@ -15,6 +15,7 @@
 
 #ifdef HAVE_MP_SEMAPHORE
 
+// These match the values in Lib/multiprocessing/synchronize.py
 enum { RECURSIVE_MUTEX, SEMAPHORE };
 
 typedef struct {
@@ -26,6 +27,8 @@ typedef struct {
     int kind;
     char *name;
 } SemLockObject;
+
+#define _SemLockObject_CAST(op) ((SemLockObject *)(op))
 
 /*[python input]
 class SEM_HANDLE_converter(CConverter):
@@ -62,7 +65,7 @@ class _multiprocessing.SemLock "SemLockObject *" "&_PyMp_SemLockType"
 #define SEM_UNLINK(name) 0
 
 static int
-_GetSemaphoreValue(HANDLE handle, long *value)
+_GetSemaphoreValue(HANDLE handle, int *value)
 {
     long previous;
 
@@ -575,8 +578,9 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
 }
 
 static void
-semlock_dealloc(SemLockObject* self)
+semlock_dealloc(PyObject *op)
 {
+    SemLockObject *self = _SemLockObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     if (self->handle != SEM_FAILED)
@@ -717,7 +721,7 @@ _multiprocessing_SemLock___exit___impl(SemLockObject *self,
 }
 
 static int
-semlock_traverse(SemLockObject *s, visitproc visit, void *arg)
+semlock_traverse(PyObject *s, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(s));
     return 0;

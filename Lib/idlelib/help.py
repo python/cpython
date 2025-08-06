@@ -20,7 +20,7 @@ HelpFrame - Contain text, scrollbar, and table-of-contents.
 
 HelpWindow - Display HelpFrame in a standalone window.
 
-copy_strip - Copy idle.html to help.html, rstripping each line.
+copy_strip - Copy the text part of idle.html to help.html while rstripping each line.
 
 show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 """
@@ -54,7 +54,6 @@ class HelpParser(HTMLParser):
         self.text = text         # Text widget we're rendering into.
         self.tags = ''           # Current block level text tags to apply.
         self.chartags = ''       # Current character level text tags.
-        self.show = False        # Exclude html page navigation.
         self.hdrlink = False     # Exclude html header links.
         self.level = 0           # Track indentation level.
         self.pre = False         # Displaying preformatted text?
@@ -77,11 +76,7 @@ class HelpParser(HTMLParser):
             if a == 'class':
                 class_ = v
         s = ''
-        if tag == 'section' and attrs == [('id', 'idle')]:
-            self.show = True    # Start main content.
-        elif tag == 'div' and class_ == 'clearer':
-            self.show = False   # End main content.
-        elif tag == 'p' and self.prevtag and not self.prevtag[0]:
+        if tag == 'p' and self.prevtag and not self.prevtag[0]:
             # Begin a new block for <p> tags after a closed tag.
             # Avoid extra lines, e.g. after <pre> tags.
             lastline = self.text.get('end-1c linestart', 'end-1c')
@@ -112,31 +107,27 @@ class HelpParser(HTMLParser):
             s = '\n'
         elif tag == 'pre':
             self.pre = True
-            if self.show:
-                self.text.insert('end', '\n\n')
+            self.text.insert('end', '\n\n')
             self.tags = 'preblock'
         elif tag == 'a' and class_ == 'headerlink':
             self.hdrlink = True
         elif tag == 'h1':
             self.tags = tag
         elif tag in ['h2', 'h3']:
-            if self.show:
-                self.header = ''
-                self.text.insert('end', '\n\n')
+            self.header = ''
+            self.text.insert('end', '\n\n')
             self.tags = tag
-        if self.show:
-            self.text.insert('end', s, (self.tags, self.chartags))
+        self.text.insert('end', s, (self.tags, self.chartags))
         self.prevtag = (True, tag)
 
     def handle_endtag(self, tag):
         "Handle endtags in help.html."
         if tag in ['h1', 'h2', 'h3']:
             assert self.level == 0
-            if self.show:
-                indent = ('        ' if tag == 'h3' else
-                          '    ' if tag == 'h2' else
-                          '')
-                self.toc.append((indent+self.header, self.text.index('insert')))
+            indent = ('        ' if tag == 'h3' else
+                      '    ' if tag == 'h2' else
+                      '')
+            self.toc.append((indent+self.header, self.text.index('insert')))
             self.tags = ''
         elif tag in ['span', 'em']:
             self.chartags = ''
@@ -151,11 +142,13 @@ class HelpParser(HTMLParser):
 
     def handle_data(self, data):
         "Handle date segments in help.html."
-        if self.show and not self.hdrlink:
+        if not self.hdrlink:
             d = data if self.pre else data.replace('\n', ' ')
             if self.tags == 'h1':
                 try:
-                    self.hprefix = d[0:d.index(' ')]
+                    self.hprefix = d[:d.index(' ')]
+                    if not self.hprefix.isdigit():
+                        self.hprefix = ''
                 except ValueError:
                     self.hprefix = ''
             if self.tags in ['h1', 'h2', 'h3']:
@@ -251,7 +244,7 @@ class HelpWindow(Toplevel):
 
 
 def copy_strip():  # pragma: no cover
-    """Copy idle.html to idlelib/help.html, stripping trailing whitespace.
+    """Copy the text part of idle.html to idlelib/help.html while stripping trailing whitespace.
 
     Files with trailing whitespace cannot be pushed to the git cpython
     repository.  For 3.x (on Windows), help.html is generated, after
@@ -263,7 +256,7 @@ def copy_strip():  # pragma: no cover
 
     It can be worthwhile to occasionally generate help.html without
     touching idle.rst.  Changes to the master version and to the doc
-    build system may result in changes that should not changed
+    build system may result in changes that should not change
     the displayed text, but might break HelpParser.
 
     As long as master and maintenance versions of idle.rst remain the
@@ -276,10 +269,14 @@ def copy_strip():  # pragma: no cover
     src = join(abspath(dirname(dirname(dirname(__file__)))),
             'Doc', 'build', 'html', 'library', 'idle.html')
     dst = join(abspath(dirname(__file__)), 'help.html')
-    with open(src, 'rb') as inn,\
-         open(dst, 'wb') as out:
+
+    with open(src, 'r', encoding="utf-8") as inn, open(dst, 'w', encoding="utf-8") as out:
+        copy = False
         for line in inn:
-            out.write(line.rstrip() + b'\n')
+            if '<section id="idle">' in line: copy = True
+            if '<div class="clearer">' in line: break
+            if copy: out.write(line.strip() + '\n')
+
     print(f'{src} copied to {dst}')
 
 

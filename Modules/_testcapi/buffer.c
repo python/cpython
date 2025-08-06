@@ -11,6 +11,8 @@ typedef struct {
     Py_ssize_t references;
 } testBufObject;
 
+#define testBufObject_CAST(op)  ((testBufObject *)(op))
+
 static PyObject *
 testbuf_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -29,30 +31,34 @@ testbuf_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-testbuf_traverse(testBufObject *self, visitproc visit, void *arg)
+testbuf_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    testBufObject *self = testBufObject_CAST(op);
     Py_VISIT(self->obj);
     return 0;
 }
 
 static int
-testbuf_clear(testBufObject *self)
+testbuf_clear(PyObject *op)
 {
+    testBufObject *self = testBufObject_CAST(op);
     Py_CLEAR(self->obj);
     return 0;
 }
 
 static void
-testbuf_dealloc(testBufObject *self)
+testbuf_dealloc(PyObject *op)
 {
+    testBufObject *self = testBufObject_CAST(op);
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->obj);
-    Py_TYPE(self)->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static int
-testbuf_getbuf(testBufObject *self, Py_buffer *view, int flags)
+testbuf_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
+    testBufObject *self = testBufObject_CAST(op);
     int buf = PyObject_GetBuffer(self->obj, view, flags);
     if (buf == 0) {
         Py_SETREF(view->obj, Py_NewRef(self));
@@ -62,15 +68,16 @@ testbuf_getbuf(testBufObject *self, Py_buffer *view, int flags)
 }
 
 static void
-testbuf_releasebuf(testBufObject *self, Py_buffer *view)
+testbuf_releasebuf(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
+    testBufObject *self = testBufObject_CAST(op);
     self->references--;
     assert(self->references >= 0);
 }
 
 static PyBufferProcs testbuf_as_buffer = {
-    .bf_getbuffer = (getbufferproc) testbuf_getbuf,
-    .bf_releasebuffer = (releasebufferproc) testbuf_releasebuf,
+    .bf_getbuffer = testbuf_getbuf,
+    .bf_releasebuffer = testbuf_releasebuf,
 };
 
 static struct PyMemberDef testbuf_members[] = {
@@ -84,9 +91,9 @@ static PyTypeObject testBufType = {
     .tp_basicsize = sizeof(testBufObject),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_new = testbuf_new,
-    .tp_dealloc = (destructor) testbuf_dealloc,
-    .tp_traverse = (traverseproc) testbuf_traverse,
-    .tp_clear = (inquiry) testbuf_clear,
+    .tp_dealloc = testbuf_dealloc,
+    .tp_traverse = testbuf_traverse,
+    .tp_clear = testbuf_clear,
     .tp_as_buffer = &testbuf_as_buffer,
     .tp_members = testbuf_members
 };

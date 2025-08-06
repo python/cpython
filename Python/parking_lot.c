@@ -102,17 +102,47 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
         millis = INFINITE;
     }
     else {
-        millis = (DWORD) (timeout / 1000000);
+        PyTime_t div = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_TIMEOUT);
+        // Prevent overflow with clamping the result
+        if ((PyTime_t)PY_DWORD_MAX < div) {
+            millis = PY_DWORD_MAX;
+        }
+        else {
+            millis = (DWORD) div;
+        }
     }
-    wait = WaitForSingleObjectEx(sema->platform_sem, millis, FALSE);
+
+    HANDLE handles[2] = { sema->platform_sem, NULL };
+    HANDLE sigint_event = NULL;
+    DWORD count = 1;
+    if (_Py_IsMainThread()) {
+        // gh-135099: Wait on the SIGINT event only in the main thread. Other
+        // threads would ignore the result anyways, and accessing
+        // `_PyOS_SigintEvent()` from non-main threads may race with
+        // interpreter shutdown, which closes the event handle. Note that
+        // non-main interpreters will ignore the result.
+        sigint_event = _PyOS_SigintEvent();
+        if (sigint_event != NULL) {
+            handles[1] = sigint_event;
+            count = 2;
+        }
+    }
+    wait = WaitForMultipleObjects(count, handles, FALSE, millis);
     if (wait == WAIT_OBJECT_0) {
         res = Py_PARK_OK;
+    }
+    else if (wait == WAIT_OBJECT_0 + 1) {
+        assert(sigint_event != NULL);
+        ResetEvent(sigint_event);
+        res = Py_PARK_INTR;
     }
     else if (wait == WAIT_TIMEOUT) {
         res = Py_PARK_TIMEOUT;
     }
     else {
-        res = Py_PARK_INTR;
+        _Py_FatalErrorFormat(__func__,
+            "unexpected error from semaphore: %u (error: %u)",
+            wait, GetLastError());
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err;
@@ -201,8 +231,7 @@ _PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout, int detach)
     PyThreadState *tstate = NULL;
     if (detach) {
         tstate = _PyThreadState_GET();
-        if (tstate && _Py_atomic_load_int_relaxed(&tstate->state) ==
-                          _Py_THREAD_ATTACHED) {
+        if (tstate && _PyThreadState_IsAttached(tstate)) {
             // Only detach if we are attached
             PyEval_ReleaseThread(tstate);
         }

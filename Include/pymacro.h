@@ -15,12 +15,75 @@
 // MSVC makes static_assert a keyword in C11-17, contrary to the standards.
 //
 // In C++11 and C2x, static_assert is a keyword, redefining is undefined
-// behaviour. So only define if building as C (if __STDC_VERSION__ is defined),
-// not C++, and only for C11-17.
+// behaviour. So only define if building as C, not C++ (if __cplusplus is
+// not defined), and only for C11-17.
 #if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
-     && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
-     && __STDC_VERSION__ <= 201710L
+     && !defined(__cplusplus) && defined(__STDC_VERSION__) \
+     && __STDC_VERSION__ >= 201112L && __STDC_VERSION__ <= 201710L
 #  define static_assert _Static_assert
+#endif
+
+
+// _Py_ALIGNED_DEF(N, T): Define a variable/member with increased alignment
+//
+// `N`: the desired minimum alignment, an integer literal, number of bytes
+// `T`: the type of the defined variable
+//      (or a type with at least the defined variable's alignment)
+//
+// May not be used on a struct definition.
+//
+// Standards/compiler support for `alignas` alternatives:
+// - `alignas` is a keyword in C23 and C++11.
+// - `_Alignas` is a keyword in C11
+// - GCC & clang has __attribute__((aligned))
+//   (use that for older standards in pedantic mode)
+// - MSVC has __declspec(align)
+// - `_Alignas` is common C compiler extension
+// Older compilers may name `alignas` differently; to allow compilation on such
+// unsupported platforms, we don't redefine _Py_ALIGNED_DEF if it's already
+// defined. Note that defining it wrong (including defining it to nothing) will
+// cause ABI incompatibilities.
+//
+// Behavior of `alignas` alternatives:
+// - `alignas` & `_Alignas`:
+//   - Can be used multiple times; the greatest alignment applies.
+//   - It is an *error* if the combined effect of all `alignas` modifiers would
+//     decrease the alignment.
+//   - Takes types or numbers.
+//   - May not be used on a struct definition, unless also defining a variable.
+// - `__declspec(align)`:
+//   - Has no effect if it would decrease alignment.
+//   - Only takes an integer literal.
+//   - May be used on struct or variable definitions.
+//     However, when defining both the struct and the variable at once,
+//     `declspec(aligned)` causes compiler warning 5274 and possible ABI
+//     incompatibility.
+// - ` __attribute__((aligned))`:
+//   - Has no effect if it would decrease alignment.
+//   - Takes types or numbers
+//   - May be used on struct or variable definitions.
+#ifndef _Py_ALIGNED_DEF
+#    ifdef __cplusplus
+#        if __cplusplus >= 201103L
+#            define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
+#        elif defined(__GNUC__) || defined(__clang__)
+#            define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
+#        elif defined(_MSC_VER)
+#            define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
+#        else
+#            define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
+#        endif
+#    elif defined(_MSC_VER)
+#        define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
+#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+#        define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
+#    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#        define _Py_ALIGNED_DEF(N, T)  _Alignas(N) _Alignas(T) T
+#    elif (defined(__GNUC__) || defined(__clang__))
+#        define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
+#    else
+#        define _Py_ALIGNED_DEF(N, T) _Alignas(N) _Alignas(T) T
+#    endif
 #endif
 
 /* Minimum value between x and y */
@@ -46,7 +109,8 @@
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+     && !defined(__cplusplus) && !defined(_MSC_VER))
 #  define Py_BUILD_ASSERT_EXPR(cond) \
     ((void)sizeof(struct { int dummy; _Static_assert(cond, #cond); }), \
      0)
@@ -188,5 +252,15 @@
 // Use "<= 0" rather than "< 0" to prevent the compiler warning:
 // "comparison of unsigned expression in '< 0' is always false".
 #define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
+
+// Version helpers. These are primarily macros, but have exported equivalents.
+#define _Py_PACK_VERSION(X, Y) _Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 14)
+PyAPI_FUNC(uint32_t) Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial);
+PyAPI_FUNC(uint32_t) Py_PACK_VERSION(int x, int y);
+#define Py_PACK_FULL_VERSION _Py_PACK_FULL_VERSION
+#define Py_PACK_VERSION _Py_PACK_VERSION
+#endif // Py_LIMITED_API < 3.14
+
 
 #endif /* Py_PYMACRO_H */

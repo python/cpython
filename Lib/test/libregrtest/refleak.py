@@ -3,6 +3,7 @@ import sys
 import warnings
 from inspect import isabstract
 from typing import Any
+import linecache
 
 from test import support
 from test.support import os_helper
@@ -73,6 +74,11 @@ def runtest_refleak(test_name, test_func,
     ps = copyreg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
     zdc: dict[str, Any] | None
+    # Linecache holds a cache with the source of interactive code snippets
+    # (e.g. code typed in the REPL). This cache is not cleared by
+    # linecache.clearcache(). We need to save and restore it to avoid false
+    # positives.
+    linecache_data = linecache.cache.copy(), linecache._interactive_cache.copy() # type: ignore[attr-defined]
     try:
         import zipimport
     except ImportError:
@@ -122,10 +128,10 @@ def runtest_refleak(test_name, test_func,
 
     xml_filename = 'refleak-xml.tmp'
     result = None
-    dash_R_cleanup(fs, ps, pic, zdc, abcs)
-    support.gc_collect()
+    dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data)
 
     for i in rep_range:
+        support.gc_collect()
         current = refleak_helper._hunting_for_refleaks
         refleak_helper._hunting_for_refleaks = True
         try:
@@ -134,7 +140,7 @@ def runtest_refleak(test_name, test_func,
             refleak_helper._hunting_for_refleaks = current
 
         save_support_xml(xml_filename)
-        dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data)
         support.gc_collect()
 
         # Read memory statistics immediately after the garbage collection.
@@ -145,7 +151,7 @@ def runtest_refleak(test_name, test_func,
             # Use an internal-only keyword argument that mypy doesn't know yet
             _only_immortal=True)  # type: ignore[call-arg]
         alloc_after = getallocatedblocks() - interned_immortal_after
-        rc_after = gettotalrefcount() - interned_immortal_after * 2
+        rc_after = gettotalrefcount()
         fd_after = fd_count()
 
         rc_deltas[i] = get_pooled_int(rc_after - rc_before)
@@ -223,7 +229,7 @@ def runtest_refleak(test_name, test_func,
     return (failed, result)
 
 
-def dash_R_cleanup(fs, ps, pic, zdc, abcs):
+def dash_R_cleanup(fs, ps, pic, zdc, abcs, linecache_data):
     import copyreg
     import collections.abc
 
@@ -233,6 +239,11 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     copyreg.dispatch_table.update(ps)
     sys.path_importer_cache.clear()
     sys.path_importer_cache.update(pic)
+    lcache, linteractive = linecache_data
+    linecache._interactive_cache.clear()
+    linecache._interactive_cache.update(linteractive)
+    linecache.cache.clear()
+    linecache.cache.update(lcache)
     try:
         import zipimport
     except ImportError:
@@ -246,9 +257,13 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     abs_classes = filter(isabstract, abs_classes)
     for abc in abs_classes:
         for obj in abc.__subclasses__() + [abc]:
-            for ref in abcs.get(obj, set()):
-                if ref() is not None:
-                    obj.register(ref())
+            refs = abcs.get(obj, None)
+            if refs is not None:
+                obj._abc_registry_clear()
+                for ref in refs:
+                    subclass = ref()
+                    if subclass is not None:
+                        obj.register(subclass)
             obj._abc_caches_clear()
 
     # Clear caches
@@ -258,7 +273,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     sys._clear_internal_caches()
 
 
-def warm_caches():
+def warm_caches() -> None:
     # char cache
     s = bytes(range(256))
     for i in range(256):
