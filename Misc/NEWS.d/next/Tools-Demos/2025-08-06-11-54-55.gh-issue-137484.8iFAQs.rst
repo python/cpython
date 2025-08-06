@@ -1,0 +1,2 @@
+Have ``Tools/wasm/wasi`` put the build Python into a directory named after
+the build triple instead of "build".
