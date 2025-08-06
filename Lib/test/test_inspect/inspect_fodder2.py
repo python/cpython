@@ -369,3 +369,11 @@ class dc364:
 # line 369
 dc370 = dataclasses.make_dataclass('dc370', (('x', int), ('y', int)))
 dc371 = dataclasses.make_dataclass('dc370', (('x', int), ('y', int)), module=__name__)
+
+# line 373
+from inspect import currentframe
+def generator_frame():
+    loops = (
+        currentframe() for _ in [0]
+    )
+    return list(loops)[0]
