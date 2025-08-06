@@ -309,22 +309,6 @@ paused it.
 If the coroutine is being used for the first time (as opposed to being resumed)
 ``arg`` must be ``None``.
 
-:ref:`yield <yieldexpr>`, like usual, pauses execution and returns control
-to the caller.
-In the example below, the ``yield``, on line 3, is called by
-``... = await rock`` on line 11.
-More broadly speaking, ``await`` calls the :meth:`~object.__await__` method of
-the given object.
-``await`` also does one more very special thing: it propagates (or "passes
-along") any ``yield``\ s it receives up the call-chain.
-In this case, that's back to ``... = coroutine.send(None)`` on line 16.
-
-The coroutine is resumed via the ``coroutine.send(42)`` call on line 21.
-The coroutine picks back up from where it ``yield``\ ed (or paused) on line 3
-and executes the remaining statements in its body.
-When a coroutine finishes, it raises a :exc:`StopIteration` exception with the
-return value attached in the :attr:`~StopIteration.value` attribute.
-
 .. code-block::
    :linenos:
 
@@ -352,6 +336,22 @@ return value attached in the :attr:`~StopIteration.value` attribute.
    except StopIteration as e:
        returned_value = e.value
    print(f"Coroutine main() finished and provided value: {returned_value}.")
+
+:ref:`yield <yieldexpr>`, like usual, pauses execution and returns control
+to the caller.
+In the example above, the ``yield``, on line 3, is called by
+``... = await rock`` on line 11.
+More broadly speaking, ``await`` calls the :meth:`~object.__await__` method of
+the given object.
+``await`` also does one more very special thing: it propagates (or "passes
+along") any ``yield``\ s it receives up the call-chain.
+In this case, that's back to ``... = coroutine.send(None)`` on line 16.
+
+The coroutine is resumed via the ``coroutine.send(42)`` call on line 21.
+The coroutine picks back up from where it ``yield``\ ed (or paused) on line 3
+and executes the remaining statements in its body.
+When a coroutine finishes, it raises a :exc:`StopIteration` exception with the
+return value attached in the :attr:`~StopIteration.value` attribute.
 
 That snippet produces this output:
 
