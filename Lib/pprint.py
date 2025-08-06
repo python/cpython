@@ -105,11 +105,11 @@ class _safe_key:
 
 
 def _safe_tuple_by_key(t):
-    "Helper function for comparing 2-tuples"
+    "Helper function for comparing 2-tuples by first"
     return _safe_key(t[0]), _safe_key(t[1])
 
 def _safe_tuple_by_value(t):
-    "Helper function for comparing 2-tuples"
+    "Helper function for comparing 2-tuples by second"
     return _safe_key(t[1]), _safe_key(t[0])
 
 class PrettyPrinter:
@@ -135,7 +135,10 @@ class PrettyPrinter:
             If true, several items will be combined in one line.
 
         sort_dicts
-            If true, dict keys are sorted.
+            If true, dict are sorted by keys (default).
+
+        sort_dicts_by_key
+            If true, dict keys are sorted by keys, otherwise by values.
 
         underscore_numbers
             If true, digit groups are separated with underscores.
