@@ -112,37 +112,49 @@ class ResourceTest(unittest.TestCase):
         (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
         self.addCleanup(resource.setrlimit, resource.RLIMIT_FSIZE, (cur, max))
 
-        resource.setrlimit(resource.RLIMIT_FSIZE, (2**31-1, max))
-        self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**31-1, max))
-        resource.setrlimit(resource.RLIMIT_FSIZE, (2**31, max))
-        self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**31, max))
-        resource.setrlimit(resource.RLIMIT_FSIZE, (2**32-2, max))
-        self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**32-2, max))
+        def expected(cur):
+            if resource.RLIM_INFINITY < 0:
+                return [(cur, max), (resource.RLIM_INFINITY, max)]
+            elif resource.RLIM_INFINITY < cur:
+                return [(resource.RLIM_INFINITY, max)]
+            else:
+                return [(cur, max)]
+
+        resource.setrlimit(resource.RLIMIT_FSIZE, (2**31-5, max))
+        self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**31-5, max))
 
         try:
             resource.setrlimit(resource.RLIMIT_FSIZE, (2**32, max))
         except OverflowError:
-            pass
+            resource.setrlimit(resource.RLIMIT_FSIZE, (2**31, max))
+            self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**31))
+            resource.setrlimit(resource.RLIMIT_FSIZE, (2**32-5, max))
+            self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**32-5))
         else:
-            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**32, max))
-            resource.setrlimit(resource.RLIMIT_FSIZE, (2**63-1, max))
-            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**63-1, max))
+            self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**32))
+            resource.setrlimit(resource.RLIMIT_FSIZE, (2**31, max))
+            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**31, max))
+            resource.setrlimit(resource.RLIMIT_FSIZE, (2**32-5, max))
+            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**32-5, max))
+
+            resource.setrlimit(resource.RLIMIT_FSIZE, (2**63-5, max))
+            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**63-5, max))
             try:
                 resource.setrlimit(resource.RLIMIT_FSIZE, (2**63, max))
             except ValueError:
                 # There is a hard limit on macOS.
                 pass
             else:
-                self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**63, max))
-                resource.setrlimit(resource.RLIMIT_FSIZE, (2**64-2, max))
-                self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**64-2, max))
+                self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**63))
+                resource.setrlimit(resource.RLIMIT_FSIZE, (2**64-5, max))
+                self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**64-5))
 
     @unittest.skipIf(sys.platform == "vxworks",
                      "setting RLIMIT_FSIZE is not supported on VxWorks")
     @unittest.skipUnless(hasattr(resource, 'RLIMIT_FSIZE'), 'requires resource.RLIMIT_FSIZE')
     def test_fsize_negative(self):
         (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
-        for value in -2, -2**31, -2**32-1, -2**63, -2**64-1, -2**1000:
+        for value in -5, -2**31, -2**32-5, -2**63, -2**64-5, -2**1000:
             with self.subTest(value=value):
                 self.assertRaises(ValueError, resource.setrlimit, resource.RLIMIT_FSIZE, (value, max))
                 self.assertRaises(ValueError, resource.setrlimit, resource.RLIMIT_FSIZE, (cur, value))
