@@ -234,9 +234,9 @@ Lib/test/test_pydoc/          @AA-Turner
 **/*bdb*                      @gaogaotiantian
 
 # types
-Lib/test/test_types.py
-Lib/types.py
-Modules/_typesmodule.c
+Lib/test/test_types.py        @AA-Turner
+Lib/types.py                  @AA-Turner
+Modules/_typesmodule.c        @AA-Turner
 
 # Limited C API & stable ABI
 Tools/build/stable_abi.py     @encukou
