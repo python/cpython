@@ -1005,6 +1005,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(imag));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(importlib));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(in_fd));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(include_aliases));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(incoming));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(index));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(indexgroup));

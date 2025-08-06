@@ -143,7 +143,7 @@ integer, floating-point number, complex number) with the given value.  The value
 may be approximated in the case of floating-point and imaginary (complex)
 literals.
 See section :ref:`literals` for details.
-Seee section :ref:`string-concatenation` for details on ``strings``.
+See section :ref:`string-concatenation` for details on ``strings``.
 
 
 .. index::
@@ -164,36 +164,49 @@ String literal concatenation
 
 Multiple adjacent string or bytes literals (delimited by whitespace), possibly
 using different quoting conventions, are allowed, and their meaning is the same
-as their concatenation.  Thus, ``"hello" 'world'`` is equivalent to
-``"helloworld"``.
+as their concatenation::
+
+   >>> "hello" 'world'
+   "helloworld"
 
 Formally:
 
 .. grammar-snippet::
    :group: python-grammar
 
-   strings: ( `STRING` | fstring | tstring)+
+   strings: ( `STRING` | fstring)+ | tstring+
 
-Note that this feature is defined at the syntactical level, so it only works
-with literals.
+This feature is defined at the syntactical level, so it only works with literals.
 To concatenate string expressions at run time, the '+' operator may be used::
 
-   greeting = "Hello"
-   space = " "
-   name = "Blaise"
-   print(greeting + space + name)   # not: print(greeting space name)
+   >>> greeting = "Hello"
+   >>> space = " "
+   >>> name = "Blaise"
+   >>> print(greeting + space + name)   # not: print(greeting space name)
+   Hello Blaise
 
-Also note that literal concatenation can freely mix raw strings,
-triple-quoted strings, and formatted or template string literals.
-However, bytes literals may not be combined with string literals of any kind.
+Literal concatenation can freely mix raw strings, triple-quoted strings,
+and formatted string literals.
+For example::
+
+   >>> "Hello" r', ' f"{name}!"
+   "Hello, Blaise!"
 
 This feature can be used to reduce the number of backslashes
 needed, to split long strings conveniently across long lines, or even to add
-comments to parts of strings, for example::
+comments to parts of strings. For example::
 
    re.compile("[A-Za-z_]"       # letter or underscore
               "[A-Za-z0-9_]*"   # letter, digit or underscore
              )
+
+However, bytes literals may only be combined with other byte literals;
+not with string literals of any kind.
+Also, template string literals may only be combined with other template
+string literals::
+
+   >>> t"Hello" t"{name}!"
+   Template(strings=('Hello', '!'), interpolations=(...))
 
 
 .. _parenthesized:
