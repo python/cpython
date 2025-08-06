@@ -611,6 +611,12 @@ Opening network connections
      to bind the socket locally.  The *local_host* and *local_port*
      are looked up using :meth:`getaddrinfo`.
 
+     .. note::
+
+        On Windows, when using the proactor event loop with ``local_addr=None``,
+        an :exc:`OSError` with :attr:`!errno.WSAEINVAL` will be raised
+        when running it.
+
    * *remote_addr*, if given, is a ``(remote_host, remote_port)`` tuple used
      to connect the socket to a remote address.  The *remote_host* and
      *remote_port* are looked up using :meth:`getaddrinfo`.
