@@ -435,6 +435,11 @@ Glossary
       with :term:`abstract base classes <abstract base class>`.)  Instead, it
       typically employs :func:`hasattr` tests or :term:`EAFP` programming.
 
+   dunder
+      An informal short-hand for "double underscore", used when talking about a
+      :term:`special method`. For example, ``__init__`` is often pronounced
+      "dunder init".
+
    EAFP
       Easier to ask for forgiveness than permission.  This common Python coding
       style assumes the existence of valid keys or attributes and catches
@@ -1471,6 +1476,11 @@ Glossary
    virtual machine
       A computer defined entirely in software.  Python's virtual machine
       executes the :term:`bytecode` emitted by the bytecode compiler.
+
+   walrus operator
+      A light-hearted way to refer to the :ref:`assignment expression
+      <assignment-expressions>` operator ``:=`` because it looks a bit like a
+      walrus if you turn your head.
 
    Zen of Python
       Listing of Python design principles and philosophies that are helpful in
