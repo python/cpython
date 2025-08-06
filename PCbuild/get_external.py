@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import contextlib
+import io
 import os
 import pathlib
+import shutil
 import sys
 import time
 import urllib.error
@@ -10,28 +13,56 @@ import urllib.request
 import zipfile
 
 
-def retrieve_with_retries(download_location, output_path, reporthook,
-                          max_retries=7):
-    """Download a file with exponential backoff retry and save to disk."""
+# Mapping of binary dependency tag to GitHub release asset ID
+TAG_TO_ASSET_ID = {
+    "libffi-3.4.4": 280027073,
+    "openssl-bin-3.0.16.2": 280041244,
+    "tcltk-8.6.15.0": 280042163,
+    "nasm-2.11.06": 280042740,
+    "llvm-19.1.7.0": 280052497,
+}
+
+
+def request_with_retry(
+    request_func, *args, max_retries=7, err_msg="Request failed.", **kwargs,
+):
+    """Make a request using request_func with exponential backoff"""
     for attempt in range(max_retries + 1):
         try:
-            resp = urllib.request.urlretrieve(
-                download_location,
-                output_path,
-                reporthook=reporthook,
-            )
+            resp = request_func(*args, **kwargs)
         except (urllib.error.URLError, ConnectionError) as ex:
             if attempt == max_retries:
-                msg = f"Download from {download_location} failed."
-                raise OSError(msg) from ex
+                raise OSError(err_msg) from ex
             time.sleep(2.25**attempt)
         else:
             return resp
 
 
-def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
-    repo = f'cpython-{"bin" if binary else "source"}-deps'
-    url = f'https://github.com/{org}/{repo}/archive/{commit_hash}.zip'
+def retrieve_with_retries(download_location, output_path, reporthook):
+    """Download a file with retries."""
+    return request_with_retry(
+        urllib.request.urlretrieve,
+        download_location,
+        output_path,
+        reporthook,
+        err_msg=f"Download from {download_location} failed.",
+    )
+
+
+def get_with_retries(url, headers):
+    req = urllib.request.Request(
+        url=url,
+        headers=headers,
+        method="GET",
+    )
+    return request_with_retry(
+        urllib.request.urlopen, req, err_msg=f"Request to {url} failed.",
+        timeout=30,
+    )
+
+
+def fetch_zip(commit_hash, zip_dir, *, org='python', verbose):
+    url = f'https://github.com/{org}/cpython-source-deps/archive/{commit_hash}.zip'
     reporthook = None
     if verbose:
         reporthook = print
@@ -42,6 +73,44 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
         reporthook
     )
     return filename
+
+
+def fetch_release_asset(asset_id, output_path, org):
+    """Download a GitHub release asset.
+
+    Release assets need the Content-Type header set to
+    application/octet-stream, so we can't use urlretrieve. Code here is
+    based on urlretrieve
+    """
+    # TODO: digest/shasum checking
+    url = f"https://api.github.com/repos/{org}/cpython-bin-deps/releases/assets/{asset_id}"
+    with contextlib.closing(
+        get_with_retries(url, headers={"Accept": "application/octet-stream"})
+    ) as resp:
+        headers = resp.info()
+        if resp.status != 200:
+            raise RuntimeError("Failed to download asset")
+        read = 0
+        with open(output_path, 'wb') as fp:
+            while block := resp.read(io.DEFAULT_BUFFER_SIZE):
+                read += len(block)
+                fp.write(block)
+
+
+def fetch_release(tag, tarball_dir, *, org='python'):
+    tarball_dir.mkdir(exist_ok=True)
+    asset_id = TAG_TO_ASSET_ID.get(tag)
+    if asset_id is None:
+        raise ValueError(f"Unknown tag for binary dependencies {tag}")
+    output_path = tarball_dir / f'{tag}.tar.xz'
+    fetch_release_asset(asset_id, output_path, org)
+    return output_path
+
+
+def extract_tarball(externals_dir, tarball_path, tag):
+    output_path = externals_dir / tag
+    shutil.unpack_archive(os.fspath(tarball_path), os.fspath(output_path))
+    return output_path
 
 
 def extract_zip(externals_dir, zip_path):
@@ -67,15 +136,22 @@ def parse_args():
 
 def main():
     args = parse_args()
-    zip_path = fetch_zip(
-        args.tag,
-        args.externals_dir / 'zips',
-        org=args.organization,
-        binary=args.binary,
-        verbose=args.verbose,
-    )
+    if args.binary:
+        tarball_path = fetch_release(
+            args.tag,
+            args.externals_dir / 'tarballs',
+            org=args.organization,
+        )
+        extracted = extract_tarball(args.externals_dir, tarball_path, args.tag)
+    else:
+        zip_path = fetch_zip(
+            args.tag,
+            args.externals_dir / 'zips',
+            org=args.organization,
+            verbose=args.verbose,
+        )
+        extracted = extract_zip(args.externals_dir, zip_path)
     final_name = args.externals_dir / args.tag
-    extracted = extract_zip(args.externals_dir, zip_path)
     for wait in [1, 2, 3, 5, 8, 0]:
         try:
             extracted.replace(final_name)
