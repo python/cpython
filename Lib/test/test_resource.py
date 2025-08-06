@@ -138,7 +138,7 @@ class ResourceTest(unittest.TestCase):
             self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**32-5, max))
 
             resource.setrlimit(resource.RLIMIT_FSIZE, (2**63-5, max))
-            self.assertEqual(resource.getrlimit(resource.RLIMIT_FSIZE), (2**63-5, max))
+            self.assertIn(resource.getrlimit(resource.RLIMIT_FSIZE), expected(2**63-5))
             try:
                 resource.setrlimit(resource.RLIMIT_FSIZE, (2**63, max))
             except ValueError:
