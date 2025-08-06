@@ -14,7 +14,7 @@
 // - sys._stats_dump()
 //
 // Python must be built with ./configure --enable-pystats to define the
-// _PyStats_GET() function.
+// _PyStats_GET() macro.
 //
 // Define _PY_INTERPRETER macro to increment interpreter_increfs and
 // interpreter_decrefs. Otherwise, increment increfs and decrefs.
@@ -112,8 +112,11 @@ typedef struct _gc_stats {
 #ifdef Py_GIL_DISABLED
 // stats specific to free-threaded build
 typedef struct _ft_stats {
+    // number of times interpreter had to spin or park when trying to acquire a mutex
     uint64_t mutex_sleeps;
+    // number of times that the QSBR mechanism polled (compute read sequence value)
     uint64_t qsbr_polls;
+    // number of times stop-the-world mechanism was used
     uint64_t world_stops;
 } FTStats;
 #endif
@@ -189,25 +192,16 @@ typedef struct _stats {
     GCStats gc_stats[3]; // must match NUM_GENERATIONS
 } PyStats;
 
-
-#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
-extern _Py_thread_local PyStats *_Py_tss_stats;
-#endif
-
-// Export for most shared extensions, used via _PyStats_GET() static
-// inline function.
+// Export for most shared extensions
 PyAPI_FUNC(PyStats *) _PyStats_GetLocal(void);
 
-// Return pointer to the PyStats structure, NULL if recording is off.
-static inline PyStats*
-_PyStats_GET(void)
-{
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
-    return _Py_tss_stats;
+// use inline function version defined in cpython/pystate.h
+static inline PyStats* _PyThreadState_GetStatsFast(void);
+#define _PyStats_GET _PyThreadState_GetStatsFast
 #else
-    return _PyStats_GetLocal();
+#define _PyStats_GET _PyStats_GetLocal
 #endif
-}
 
 #define _Py_STATS_EXPR(expr) \
     do { \

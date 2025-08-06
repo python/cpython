@@ -3,6 +3,7 @@
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pylifecycle.h"     // _PyOS_URandomNonblock()
+#include "pycore_tstate.h"
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
 #include "pycore_uop_ids.h"         // MAX_UOP_ID
 #include "pycore_pystate.h"         // _PyThreadState_GET()
@@ -12,13 +13,14 @@
 
 #ifdef Py_STATS
 
-// Pointer to Thread-local stats structure, null if recording is off.
-_Py_thread_local PyStats *_Py_tss_stats;
-
 PyStats *
 _PyStats_GetLocal(void)
 {
-    return _Py_tss_stats;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate) {
+        return tstate->pystats;
+    }
+    return NULL;
 }
 
 #ifdef Py_GIL_DISABLED
@@ -582,11 +584,10 @@ stats_toggle_on_off(PyThreadState *tstate, int on)
         if (!ts->_status.active) {
             continue;
         }
-        _PyThreadStateImpl *ts_impl = (_PyThreadStateImpl *)ts;
         PyStats *s;
         if (interp->pystats_enabled) {
 #ifdef Py_GIL_DISABLED
-            s = ts_impl->pystats_struct;
+            s = ((_PyThreadStateImpl *)ts)->pystats_struct;
 #else
             s = ((PyThreadState *)tstate)->interp->pystats_struct;
 #endif
@@ -594,8 +595,7 @@ stats_toggle_on_off(PyThreadState *tstate, int on)
         else {
             s = NULL;
         }
-        // write to the tss variable for the 'ts' thread
-        *ts_impl->pystats_tss = s;
+        ts->pystats = s;
     }
     _PyEval_StartTheWorld(interp);
     return 0;
@@ -759,31 +759,28 @@ _PyStats_ThreadFini(_PyThreadStateImpl *tstate)
 }
 
 void
-_PyStats_Attach(_PyThreadStateImpl *tstate)
+_PyStats_Attach(_PyThreadStateImpl *tstate_impl)
 {
     PyStats *s;
-    PyInterpreterState *interp = ((PyThreadState *)tstate)->interp;
+    PyThreadState *tstate = (PyThreadState *)tstate_impl;
+    PyInterpreterState *interp = tstate->interp;
     if (FT_ATOMIC_LOAD_INT_RELAXED(interp->pystats_enabled)) {
 #ifdef Py_GIL_DISABLED
-        s = tstate->pystats_struct;
+        s = ((_PyThreadStateImpl *)tstate)->pystats_struct;
 #else
-        s = ((PyThreadState *)tstate)->interp->pystats_struct;
+        s = tstate->interp->pystats_struct;
 #endif
     }
     else {
         s = NULL;
     }
-    // use correct TSS variable for thread
-    tstate->pystats_tss = &_Py_tss_stats;
-    // write to the tss variable for the 'ts' thread
-    _Py_tss_stats = s;
+    tstate->pystats = s;
 }
 
 void
-_PyStats_Detach(_PyThreadStateImpl *tstate)
+_PyStats_Detach(_PyThreadStateImpl *tstate_impl)
 {
-    tstate->pystats_tss = NULL;
-    _Py_tss_stats = NULL;
+    ((PyThreadState *)tstate_impl)->pystats = NULL;
 }
 
 #endif // Py_STATS

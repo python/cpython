@@ -208,6 +208,10 @@ struct _ts {
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
+
+#ifdef Py_STATS
+    PyStats *pystats;  // pointer PyStats structure, NULL if recording is off
+#endif
 };
 
 /* other API */
@@ -229,6 +233,21 @@ PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
 // Reset tracing and profiling: enable them if a trace function or a profile
 // function is set, otherwise disable them.
 PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
+
+#ifdef Py_STATS
+#if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
+extern _Py_thread_local PyThreadState* _Py_tss_tstate;
+
+static inline PyStats*
+_PyThreadState_GetStatsFast(void)
+{
+    if (_Py_tss_tstate == NULL) {
+        return NULL; // no attached thread state
+    }
+    return _Py_tss_tstate->pystats;
+}
+#endif
+#endif // Py_STATS
 
 /* PyGILState */
 
