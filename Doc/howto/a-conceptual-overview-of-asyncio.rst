@@ -266,9 +266,9 @@ The event loop then works through its queue, calling ``coro_b()`` and then
    I am coro_a(). Hi!
    I am coro_a(). Hi!
 
-------------------------------------------------
-A conceptual overview part 2: the nuts and bolts
-------------------------------------------------
+----------------------------------
+How coroutines work under the hood
+----------------------------------
 
 Part 2 goes into detail on the mechanisms :mod:`!asyncio` uses to manage
 control flow.
