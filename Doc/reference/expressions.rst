@@ -174,7 +174,7 @@ Formally:
 .. grammar-snippet::
    :group: python-grammar
 
-   strings: ( `STRING` | fstring)+ | tstring+
+   strings: ( `STRING` | `fstring`)+ | `tstring`+
 
 This feature is defined at the syntactical level, so it only works with literals.
 To concatenate string expressions at run time, the '+' operator may be used::

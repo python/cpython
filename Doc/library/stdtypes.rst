@@ -2640,6 +2640,46 @@ replacement field. For example::
    >>> f'{one_third = :~>10}~'
    'one_third = ~~~~~~~1/3~'
 
+.. _stdtypes-tstrings:
+
+Template String Literals (t-strings)
+------------------------------------
+
+An :dfn:`t-string` (formally a :dfn:`template string literal`) is
+a string literal that is prefixed with ``t`` or ``T``.
+
+These strings follow the same syntax and evaluation rules as
+:ref:`formatted string literals <stdtypes-fstrings>`,
+with for the following differences:
+
+* Rather than evaluating to a ``str`` object, template string literals evaluate
+  to a :class:`string.templatelib.Template` object.
+
+* The :func:`format` protocol is not used.
+  Instead, the format specifier and conversions (if any) are passed to
+  a new :class:`~string.templatelib.Interpolation` object that is created
+  for each evaluated expression.
+  It is up to code that processes the resulting :class:`~string.templatelib.Template`
+  object to decide how to handle format specifiers and conversions.
+
+* Format specifiers containing nested replacement fields are evaluated eagerly,
+  prior to being passed to the :class:`~string.templatelib.Interpolation` object.
+  For instance, an interpolation of the form ``{amount:.{precision}f}`` will
+  evaluate the inner expression ``{precision}`` to determine the value of the
+  ``format_spec`` attribute.
+  If ``precision`` were to be ``2``, the resulting format specifier
+  would be ``'.2f'``.
+
+* When the equals sign ``'='`` is provided in an interpolation expression,
+  the text of the expression is appended to the literal string that precedes
+  the relevant interpolation.
+  This includes the equals sign and any surrounding whitespace.
+  The :class:`!Interpolation` instance for the expression will be created as
+  normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
+  be set to '``r``' (:func:`repr`) by default.
+  If an explicit conversion or format specifier are provided,
+  this will override the default behaviour.
+
 
 .. _old-string-formatting:
 

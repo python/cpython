@@ -1080,8 +1080,24 @@ even if they do not include expressions::
    * :meth:`str.format`, which uses a related format string mechanism.
 
 
+.. _t-strings:
+.. _template-string-literals:
+
+t-strings
+---------
+
+.. versionadded:: 3.14
+
+A :dfn:`template string literal` or :dfn:`t-string` is a string literal
+that is prefixed with '``t``' or '``T``'.
+These strings follow the same syntax rules as
+:ref:`formatted string literals <f-strings>`.
+For differences in evaluation rules, see the
+:ref:`Standard Library section on t-strings <stdtypes-tstrings>`
+
+
 Formal grammar for f-strings
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------------
 
 F-strings are handled partly by the :term:`lexical analyzer`, which produces the
 tokens :py:data:`~token.FSTRING_START`, :py:data:`~token.FSTRING_MIDDLE`
@@ -1115,7 +1131,7 @@ The ``FSTRING_MIDDLE`` definition uses
 to indicate special characters (backslash, newline, ``{``, ``}``) and
 sequences (``f_quote``).
 
-.. grammar-snippet:: python-grammar
+.. grammar-snippet::
    :group: python-grammar
 
    fstring:    `FSTRING_START` `fstring_middle`* `FSTRING_END`
@@ -1158,47 +1174,15 @@ sequences (``f_quote``).
    Constructing a more traditional formal grammar from this template is left
    as an exercise for the reader.
 
+The grammar for t-strings is identical to the one for f-strings, with *t*
+instead of *f* at the beginning of rule and token names and in the prefix.
 
-.. _t-strings:
-.. _template-string-literals:
+.. grammar-snippet::
+   :group: python-grammar
 
-t-strings
----------
+   tstring:    `TSTRING_START` `tstring_middle`* `TSTRING_END`
 
-.. versionadded:: 3.14
-
-A :dfn:`template string literal` or :dfn:`t-string` is a string literal
-that is prefixed with '``t``' or '``T``'.
-These strings follow the same syntax and evaluation rules as
-:ref:`formatted string literals <f-strings>`, with the following differences:
-
-* Rather than evaluating to a ``str`` object, template string literals evaluate
-  to a :class:`string.templatelib.Template` object.
-
-* The :func:`format` protocol is not used.
-  Instead, the format specifier and conversions (if any) are passed to
-  a new :class:`~string.templatelib.Interpolation` object that is created
-  for each evaluated expression.
-  It is up to code that processes the resulting :class:`~string.templatelib.Template`
-  object to decide how to handle format specifiers and conversions.
-
-* Format specifiers containing nested replacement fields are evaluated eagerly,
-  prior to being passed to the :class:`~string.templatelib.Interpolation` object.
-  For instance, an interpolation of the form ``{amount:.{precision}f}`` will
-  evaluate the inner expression ``{precision}`` to determine the value of the
-  ``format_spec`` attribute.
-  If ``precision`` were to be ``2``, the resulting format specifier
-  would be ``'.2f'``.
-
-* When the equals sign ``'='`` is provided in an interpolation expression,
-  the text of the expression is appended to the literal string that precedes
-  the relevant interpolation.
-  This includes the equals sign and any surrounding whitespace.
-  The :class:`!Interpolation` instance for the expression will be created as
-  normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
-  be set to '``r``' (:func:`repr`) by default.
-  If an explicit conversion or format specifier are provided,
-  this will override the default behaviour.
+   <rest of the t-string grammar is omitted; see above>
 
 
 .. _numbers:
