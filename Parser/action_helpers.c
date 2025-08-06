@@ -1404,7 +1404,15 @@ expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
     if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
         return NULL;
     }
-    PyObject* str = _PyPegen_decode_string(p, 0, bstr, bsize, tok);
+
+    // Check if we're inside a raw f-string for format spec decoding
+    int is_raw = 0;
+    if (INSIDE_FSTRING(p->tok)) {
+        tokenizer_mode *mode = TOK_GET_MODE(p->tok);
+        is_raw = mode->raw;
+    }
+
+    PyObject* str = _PyPegen_decode_string(p, is_raw, bstr, bsize, tok);
     if (str == NULL) {
         return NULL;
     }

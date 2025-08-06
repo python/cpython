@@ -1685,6 +1685,8 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
         case PY_MONITORING_EVENT_PY_RESUME:
         case PY_MONITORING_EVENT_JUMP:
         case PY_MONITORING_EVENT_BRANCH:
+        case PY_MONITORING_EVENT_BRANCH_LEFT:
+        case PY_MONITORING_EVENT_BRANCH_RIGHT:
         case PY_MONITORING_EVENT_LINE:
         case PY_MONITORING_EVENT_PY_YIELD:
             /* Setting f_lineno is allowed for the above events */

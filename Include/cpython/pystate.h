@@ -198,6 +198,9 @@ struct _ts {
 
     PyObject *current_executor;
 
+    /* Internal to the JIT */
+    struct _PyExitData *jit_exit;
+
     uint64_t dict_global_version;
 
     /* Used to store/retrieve `threading.local` keys/values for this thread */
