@@ -201,7 +201,8 @@ different ways::
    await task
    await coroutine
 
-Unfortunately, it does matter which type of object is awaited.
+In a crucial way, the behavior of ``await`` depends on the type of object
+being awaited.
 
 awaiting a task will cede control from the current task or coroutine to
 the event loop.
