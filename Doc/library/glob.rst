@@ -84,7 +84,7 @@ The :mod:`glob` module defines the following functions:
    .. versionchanged:: 3.11
       Added the *include_hidden* parameter.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: 3.15
       Matching path names are returned only once. In previous versions, this
       function may return duplicate path names if *pathname* contains multiple
       "``**``" patterns and *recursive* is true.
@@ -108,7 +108,7 @@ The :mod:`glob` module defines the following functions:
    .. versionchanged:: 3.11
       Added the *include_hidden* parameter.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: 3.15
       Matching path names are yielded only once. In previous versions, this
       function may yield duplicate path names if *pathname* contains multiple
       "``**``" patterns and *recursive* is true.
