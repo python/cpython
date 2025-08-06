@@ -1002,6 +1002,15 @@ def findsource(object):
         lnum = object.co_firstlineno - 1
         if lnum >= len(lines):
             raise OSError('lineno is out of bounds')
+        pat = re.compile(r'^(\s*def\s)|(\s*class\s)|(\s*async\s+def\s)|(.*(?<!\w)lambda(:|\s))|^(\s*@)')
+        while lnum > 0:
+            try:
+                line = lines[lnum]
+            except IndexError:
+                raise OSError('lineno is out of bounds')
+            if pat.match(line):
+                break
+            lnum = lnum - 1
         return lines, lnum
     raise OSError('could not find code object')
 
