@@ -3,7 +3,6 @@
 PYVER=@PYVER@
 PYTHON_ROOT="/Library/Frameworks/Python.framework/Versions/@PYVER@"
 
-set -e
 
 # Run from the installer, do some trickery to fetch the information
 # we need.
@@ -30,7 +29,6 @@ case "${BSH}" in
 
     # Drop privileges while writing files.
     su -m ${USER} <<EOFC
-    set -e
     # Create backup copy before patching
     if [ -f "${RC}" ]; then
         cp -fp "${RC}" "${RC}.pysave"
@@ -63,7 +61,6 @@ fish)
 
     # Drop privileges while writing files.
     su -m ${USER} <<EOFF
-    set -e
     mkdir -p "$CONFIG_DIR"
     if [ -f "${RC}" ]; then
         cp -fp "${RC}" "${RC}.pysave"
@@ -90,7 +87,6 @@ esac
 
 # Drop privileges while writing files.
 su -m ${USER} <<EOFS
-set -e
 # Create backup copy before patching
 if [ -f "${PR}" ]; then
     cp -fp "${PR}" "${PR}.pysave"
