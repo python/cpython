@@ -672,9 +672,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* #define HAVE_SYS_UN_H 1 */
 
 /* Define if you have the <afunix.h> header file.  */
-#if defined(NTDDI_WIN10_RS4) && (NTDDI_VERSION >= NTDDI_WIN10_RS4)
 #define HAVE_AFUNIX_H 1
-#endif
 
 /* Define if you have the <sys/utime.h> header file.  */
 /* #define HAVE_SYS_UTIME_H 1 */
