@@ -454,6 +454,25 @@ epub_exclude_files = ('index.xhtml', 'download.xhtml')
 # https://github.com/sphinx-doc/sphinx/issues/12359
 epub_use_index = False
 
+# translation tag
+# ---------------
+
+language_code = None
+for arg in sys.argv:
+    if arg.startswith('language='):
+        language_code = arg.split('=', 1)[1]
+
+if language_code:
+    tags.add('translation')  # noqa: F821
+
+    rst_epilog += f"""\
+.. _TRANSLATION_REPO: https://github.com/python/python-docs-{language_code}
+"""  # noqa: F821
+else:
+    rst_epilog += """\
+.. _TRANSLATION_REPO: https://github.com/python
+"""
+
 # Options for the coverage checker
 # --------------------------------
 
