@@ -1351,27 +1351,25 @@ Formally, imaginary literals are described by the following lexical definition:
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
 
 
+.. _delimiters:
 .. _operators:
 
-Operators
-=========
+Operators and delimiters
+========================
 
 .. index:: single: operators
 
-The following tokens are operators:
+The following tokens are operators -- they can be put between two
+:ref:`expressions <expressions>` (or in front of an expression)
+to make a larger expression.
 
 .. code-block:: none
 
 
-   +       -       *       **      /       //      %      @
-   <<      >>      &       |       ^       ~       :=
+   +       -       *       **      /       //      %
+   <<      >>      &       |       ^       ~
    <       >       <=      >=      ==      !=
-
-
-.. _delimiters:
-
-Delimiters
-==========
+   @       :=      .
 
 .. index:: single: delimiters
 
@@ -1380,9 +1378,11 @@ The following tokens serve as delimiters in the grammar:
 .. code-block:: none
 
    (       )       [       ]       {       }
-   ,       :       !       .       ;       @       =
+   ,       :       !       ;       =       ->
+   .       @
 
-The period can also occur in floating-point and imaginary literals.
+The period can also occur in floating-point and imaginary literals;
+the period and the ``@`` can also serve as operators.
 
 .. _lexical-ellipsis:
 
@@ -1393,13 +1393,13 @@ A sequence of three periods has a special meaning as an
 
    ...
 
-The following *augmented assignment operators* serve
+The following :ref:`augmented assignment <augassign>` operators serve
 lexically as delimiters, but also perform an operation:
 
 .. code-block:: none
 
-   ->      +=      -=      *=      /=      //=     %=
-   @=      &=      |=      ^=      >>=     <<=     **=
+   +=      -=      *=      **=     /=      //=     %=
+   <<=     >>=     &=      |=      ^=      @=
 
 The following printing ASCII characters have special meaning as part of other
 tokens or are otherwise significant to the lexical analyzer:
@@ -1415,3 +1415,150 @@ occurrence outside string literals and comments is an unconditional error:
 
    $       ?       `
 
+
+Summary of source characters
+============================
+
+.. list-table::
+   :widths: auto
+   :header-rows: 1
+
+   * * No.
+     * Symbol
+     * Meaning in Python
+   * * 0
+     * ``'\x00'``
+     * not a source character
+   * * 1-8
+     *
+     * control characters
+   * * 9
+     * ``'\t'``
+     * whitespace
+   * * 10
+     * ``'\n'``
+     * newline
+   * * 11
+     *
+     * control character
+   * * 12
+     * ``'\f'``
+     * whitespace
+   * * 13
+     * ``'\r'``
+     * newline
+   * * 14-31
+     *
+     * control characters
+   * * 32
+     * space
+     * whitespace
+   * * 33
+     * ``!``
+     * part of ``!=``
+   * * 34
+     * ``"``
+     * string quote
+   * * 35
+     * ``#``
+     * comment
+   * * 36
+     * ``$``
+     * unused symbol
+   * * 37
+     * ``%``
+     * operator
+   * * 38
+     * ``&``
+     * operator
+   * * 39
+     * ``'``
+     * string quote
+   * * 40
+     * ``(``
+     * delimiter
+   * * 41
+     * ``)``
+     * delimiter
+   * * 42
+     * ``*``
+     * operator
+   * * 43
+     * ``+``
+     * operator
+   * * 44
+     * ``,``
+     * delimiter
+   * * 45
+     * ``-``
+     * operator
+   * * 46
+     * ``.``
+     * operator, delimiter, part of number syntax
+   * * 47
+     * ``/``
+     * operator
+   * * 48-57
+     * ``0`` to ``9``
+     * part of number syntax, part of name syntax
+   * * 58
+     * ``:``
+     * delimiter
+   * * 59
+     * ``;``
+     * delimiter
+   * * 60
+     * ``<``
+     * operator
+   * * 61
+     * ``=``
+     * operator
+   * * 62
+     * ``>``
+     * operator
+   * * 63
+     * ``?``
+     * unused symbol
+   * * 64
+     * ``@``
+     * operator, delimiter
+   * * 65-90
+     * ``A`` to ``Z``
+     * part of name syntax
+   * * 91
+     * ``[``
+     * delimiter
+   * * 92
+     * ``\``
+     * operator
+   * * 93
+     * ``]``
+     * delimiter
+   * * 94
+     * ``^``
+     * operator
+   * * 95
+     * ``_``
+     * part of name syntax
+   * * 96
+     * .. this uses zero-width joiner characters to get a
+          literal backtick:
+
+       ``‍`‍``
+
+     * unused symbol
+   * * 97-122
+     * ``a`` to ``z``
+     * part of name syntax
+   * * 123
+     * ``{``
+     * delimiter
+   * * 124
+     * ``|``
+     * operator
+   * * 125
+     * ``}``
+     * delimiter
+   * * 126
+     * ``~``
+     * operator
