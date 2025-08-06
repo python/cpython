@@ -84,10 +84,10 @@ The :mod:`glob` module defines the following functions:
    .. versionchanged:: 3.11
       Added the *include_hidden* parameter.
 
-   .. versionchanged:: 3.15
-      Matching path names are returned only once. In previous versions, this
-      function may return duplicate path names if *pathname* contains multiple
-      "``**``" patterns and *recursive* is true.
+   .. versionchanged:: next
+      Matching path names are only returned once. In previous versions, this
+      function could have returned duplicate path names if *pathname*
+	  contained multiple "``**``" patterns and *recursive* was true.
 
 
 .. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
@@ -109,9 +109,9 @@ The :mod:`glob` module defines the following functions:
       Added the *include_hidden* parameter.
 
    .. versionchanged:: 3.15
-      Matching path names are yielded only once. In previous versions, this
-      function may yield duplicate path names if *pathname* contains multiple
-      "``**``" patterns and *recursive* is true.
+      Matching path names are only yielded once. In previous versions, this
+      function could have returned duplicate path names if *pathname*
+	  contained multiple "``**``" patterns and *recursive* was true.
 
 
 .. function:: escape(pathname)
