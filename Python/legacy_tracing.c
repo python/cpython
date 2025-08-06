@@ -484,13 +484,19 @@ setup_profile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject 
         }
     }
 
+    _PyEval_StopTheWorld(tstate->interp);
+
     int delta = (func != NULL) - (tstate->c_profilefunc != NULL);
     tstate->c_profilefunc = func;
     *old_profileobj = tstate->c_profileobj;
     tstate->c_profileobj = Py_XNewRef(arg);
     tstate->interp->sys_profiling_threads += delta;
     assert(tstate->interp->sys_profiling_threads >= 0);
-    return tstate->interp->sys_profiling_threads;
+    Py_ssize_t ret = tstate->interp->sys_profiling_threads;
+
+    _PyEval_StartTheWorld(tstate->interp);
+
+    return ret;
 }
 
 int
