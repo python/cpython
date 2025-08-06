@@ -164,6 +164,7 @@ Doc/c-api/module.rst          @ericsnowcurrently
 
 # Calendar
 Lib/calendar.py               @AA-Turner
+Lib/test/test_calendar.py     @AA-Turner
 
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
