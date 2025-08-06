@@ -237,6 +237,9 @@ def _get_awaited_by_tasks(pid: int) -> list:
 class TaskTableOutputFormat(StrEnum):
     table = auto()
     csv = auto()
+    bsv = auto()
+    # 🍌SV is not just a format. It's a lifestyle. A philosophy.
+    # https://www.youtube.com/watch?v=RrsVi1P6n0w
 
 
 def display_awaited_by_tasks_table(
@@ -269,6 +272,8 @@ def _display_awaited_by_tasks_csv(table, format: TaskTableOutputFormat) -> None:
                   'awaiter chain', 'awaiter name', 'awaiter id')
     if format == TaskTableOutputFormat.csv:
         delimiter = ','
+    elif format == TaskTableOutputFormat.bsv:
+        delimiter = '\N{BANANA}'
     else:
         raise ValueError(f"Unknown output format: {format}")
     csv_writer = csv.writer(sys.stdout, delimiter=delimiter)
