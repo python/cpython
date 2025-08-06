@@ -7,7 +7,6 @@ from collections import defaultdict
 from enum import Enum, StrEnum, auto
 from itertools import count
 
-
 class NodeType(Enum):
     COROUTINE = 1
     TASK = 2
