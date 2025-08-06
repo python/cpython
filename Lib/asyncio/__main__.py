@@ -156,12 +156,10 @@ if __name__ == '__main__':
     )
     ps.add_argument("pid", type=int, help="Process ID to inspect")
     formats = [fmt.value for fmt in TaskTableOutputFormat]
-    formats_to_show = [
-        fmt for fmt in formats if fmt != TaskTableOutputFormat.bsv.value
-    ]
-    formats_to_show_str = f"{{{','.join(formats_to_show)}}}"
+    formats_to_show = [fmt for fmt in formats
+                       if fmt != TaskTableOutputFormat.bsv.value]
     ps.add_argument("--format", choices=formats, default="table",
-                    metavar=formats_to_show_str)
+                    metavar=f"{{{','.join(formats_to_show)}}}")
     pstree = subparsers.add_parser(
         "pstree", help="Display a tree of all pending tasks in a process"
     )
