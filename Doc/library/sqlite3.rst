@@ -243,6 +243,7 @@ inserted data and retrieved values from it in multiple ways.
      * :ref:`sqlite3-converters`
      * :ref:`sqlite3-connection-context-manager`
      * :ref:`sqlite3-howto-row-factory`
+     * :ref:`sqlite3-howto-pragma-in-transaction`
 
    * :ref:`sqlite3-explanation` for in-depth background on transaction control.
 
@@ -1353,8 +1354,6 @@ Connection objects
         implying that :mod:`!sqlite3` ensures a transaction is always open.
         Use :meth:`commit` and :meth:`rollback` to close transactions.
 
-        This is the recommended value of :attr:`!autocommit`.
-
       * ``True``: Use SQLite's `autocommit mode`_.
         :meth:`commit` and :meth:`rollback` have no effect in this mode.
 
@@ -2429,6 +2428,34 @@ the context manager does nothing.
    couldn't add Python twice
 
 
+.. _sqlite3-howto-pragma-in-transaction:
+
+How to use ``PRAGMA`` statements in transactions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some ``PRAGMA`` statements have no effect within transactions.
+For example, a ``PRAGMA foreign_keys=ON`` query will silently fail
+if there is an open transaction.
+In order to safely use ``PRAGMA`` statements,
+ensure that there is no open transaction:
+
+* If :attr:`~Connection.autocommit` is ``True``
+  and a transaction was explicitly opened,
+  make sure to :meth:`~Cursor.execute` a ``COMMIT``
+  before executing the ``PRAGMA`` statement.
+* Else, temporarily disable implicit transaction control
+  using the :attr:`!autocommit` attribute
+  before executing the ``PRAGMA`` statement:
+
+.. testcode::
+
+   saved = cur.autocommit
+   conn.autocommit = True  # Disable implicit transaction control.
+   cursor.execute("PRAGMA foreign_keys=ON")
+   conn.autocommit = saved  # Restore the previous setting.
+
+
+
 .. _sqlite3-uri-tricks:
 
 How to work with SQLite URIs
@@ -2646,8 +2673,7 @@ the :attr:`Connection.autocommit` attribute,
 which should preferably be set using the *autocommit* parameter
 of :func:`connect`.
 
-It is suggested to set *autocommit* to ``False``,
-which implies :pep:`249`-compliant transaction control.
+Set *autocommit* to ``False`` for :pep:`249`-compliant transaction control.
 This means:
 
 * :mod:`!sqlite3` ensures that a transaction is always open,
@@ -2659,6 +2685,11 @@ This means:
 * Transactions should be rolled back explicitly using :meth:`!rollback`.
 * An implicit rollback is performed if the database is
   :meth:`~Connection.close`-ed with pending changes.
+
+.. note::
+
+  Some ``PRAGMA`` statements cannot be set when a transaction is open.
+  See :ref:`sqlite3-howto-pragma-in-transaction` for details.
 
 Set *autocommit* to ``True`` to enable SQLite's `autocommit mode`_.
 In this mode, :meth:`Connection.commit` and :meth:`Connection.rollback`
@@ -2715,6 +2746,11 @@ The underlying SQLite library autocommit mode can be queried using the
 The :meth:`~Cursor.executescript` method implicitly commits
 any pending transaction before execution of the given SQL script,
 regardless of the value of :attr:`~Connection.isolation_level`.
+
+.. note::
+
+  Some ``PRAGMA`` statements cannot be set when a transaction is open.
+  See :ref:`sqlite3-howto-pragma-in-transaction` for details.
 
 .. versionchanged:: 3.6
    :mod:`!sqlite3` used to implicitly commit an open transaction before DDL
