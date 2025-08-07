@@ -52,9 +52,9 @@ This process repeats indefinitely.
 Even if the queue is empty, the event loop continues to cycle (somewhat
 aimlessly).
 
-Effective execution relies on tasks sharing well and cooperating; a greedy job could hog
-control and leave the other tasks to starve, rendering the overall event loop
-approach rather useless.
+Effective execution relies on tasks sharing well and cooperating; a greedy job
+could hog control and leave the other jobs to starve, rendering the overall
+event loop approach rather useless.
 
 ::
 
