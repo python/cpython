@@ -15,7 +15,6 @@ Data members:
 */
 
 #include "Python.h"
-#include "pycore_abiinfo.h"       // _PyAbiInfo_GetInfo()
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
@@ -3640,6 +3639,56 @@ error:
     return NULL;
 }
 
+
+PyObject *
+make_abi_info(void)
+{
+    int res;
+    PyObject *abi_info, *value, *ns;
+    abi_info = PyDict_New();
+    if (abi_info == NULL) {
+        goto error;
+    }
+
+    value = PyLong_FromLong(sizeof(void *) * 8);
+    if (value == NULL) {
+        goto error;
+    }
+    res = PyDict_SetItemString(abi_info, "pointer_bits", value);
+    Py_DECREF(value);
+    if (res < 0) {
+        goto error;
+    }
+
+#ifdef Py_GIL_DISABLED
+    value = Py_True;
+#else
+    value = Py_False;
+#endif
+    res = PyDict_SetItemString(abi_info, "Py_GIL_DISABLED", value);
+    if (res < 0) {
+        goto error;
+    }
+
+#ifdef Py_DEBUG
+    value = Py_True;
+#else
+    value = Py_False;
+#endif
+    res = PyDict_SetItemString(abi_info, "Py_DEBUG", value);
+    if (res < 0) {
+        goto error;
+    }
+
+    ns = _PyNamespace_New(abi_info);
+    Py_DECREF(abi_info);
+    return ns;
+
+error:
+    Py_CLEAR(abi_info);
+    return NULL;
+}
+
 #ifdef __EMSCRIPTEN__
 
 PyDoc_STRVAR(emscripten_info__doc__,
@@ -3865,7 +3914,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     SET_SYS("thread_info", PyThread_GetInfo());
 
-    SET_SYS("abi_info", _PyAbiInfo_GetInfo());
+    SET_SYS("abi_info", make_abi_info());
 
     /* initialize asyncgen_hooks */
     if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,

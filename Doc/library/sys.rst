@@ -13,22 +13,18 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: abi_info
 
-   A :term:`named tuple` holding information about the ABI of the interpreter.
+   An object containing information about the ABI of the currently running
+   Python interpreter.  The following attributes are available in cpython:
 
-   .. attribute:: abi_info.pointer_bits
+   *pointer_bits* is the width of pointers in bits, as an integer, equivalent
+   to ``8 * sizeof(void *)``, i.e. usually ``32`` or ``64``.
 
-      The width of pointers in bits, as an integer.
-      Equivalent to ``8 * sizeof(void *)``, i.e. usually ``32`` or ``64``.
+   *Py_GIL_DISABLED* is a boolean indicating whether the interpreter was built
+   with the GIL disabled, i.e. with the :option:`--disable-gil` option,
+   aka free-threading.
 
-   .. attribute:: abi_info.Py_GIL_DISABLED
-
-      A boolean indicating whether the interpreter was built in with the GIL
-      disabled, i.e. with the :option:`--disable-gil` option, aka free-threading.
-
-   .. attribute:: abi_info.Py_DEBUG
-
-      A boolean indicating whether the interpreter was built in debug mode,
-      i.e. with the :option:`--with-pydebug` option.
+   *Py_DEBUG* is a boolean indicating whether the interpreter was built in
+   debug mode, i.e. with the :option:`--with-pydebug` option.
 
    .. versionadded:: next
 
