@@ -22,7 +22,7 @@ article:
 .. seealso::
 
    * The `guide <https://github.com/anordin95/a-conceptual-overview-of-asyncio/
-     tree/main>`_ that inspired this HOWTO article by Alexander Nordin.
+     tree/main>`_ that inspired this HOWTO article, by Alexander Nordin.
    * This in-depth `YouTube tutorial series <https://www.youtube.com/
      watch?v=Xbl7XjFYsN4&list=PLhNSoGM2ik6SIkVGXWBwerucXjgP1rHmB>`_ on
      ``asyncio`` created by core Python team member, Łukasz Lang.
