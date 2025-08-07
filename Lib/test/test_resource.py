@@ -200,6 +200,15 @@ class ResourceTest(unittest.TestCase):
         self.assertIsInstance(pagesize, int)
         self.assertGreaterEqual(pagesize, 0)
 
+    def test_contants(self):
+        self.assertIsInstance(resource.RLIM_INFINITY, int)
+        if sys.platform.startswith(('freebsd', 'solaris', 'sunos', 'aix')):
+            self.assertHasAttr(resource, 'RLIM_SAVED_CUR')
+            self.assertHasAttr(resource, 'RLIM_SAVED_MAX')
+        if hasattr(resource, 'RLIM_SAVED_CUR'):
+            self.assertIsInstance(resource.RLIM_SAVED_CUR, int)
+            self.assertIsInstance(resource.RLIM_SAVED_MAX, int)
+
     @unittest.skipUnless(sys.platform in ('linux', 'android'), 'Linux only')
     def test_linux_constants(self):
         for attr in ['MSGQUEUE', 'NICE', 'RTPRIO', 'RTTIME', 'SIGPENDING']:
@@ -207,7 +216,7 @@ class ResourceTest(unittest.TestCase):
                 self.assertIsInstance(getattr(resource, 'RLIMIT_' + attr), int)
 
     def test_freebsd_contants(self):
-        for attr in ['SWAP', 'SBSIZE', 'NPTS']:
+        for attr in ['SWAP', 'SBSIZE', 'NPTS', 'UMTXP', 'VMEM']:
             with contextlib.suppress(AttributeError):
                 self.assertIsInstance(getattr(resource, 'RLIMIT_' + attr), int)
 

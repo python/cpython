@@ -52,6 +52,18 @@ this module for those platforms.
    Constant used to represent the limit for an unlimited resource.
 
 
+.. data:: RLIM_SAVED_CUR
+.. data:: RLIM_SAVED_MAX
+
+   Constants used to represent the soft and hard limit values if they
+   cannot be represented in the ``rlim_t`` value in C.
+   On FreeBSD they are aliases of :data:`RLIM_INFINITY`.
+
+   .. availability:: Solaris, AIX, FreeBSD
+
+   .. versionadded:: next
+
+
 .. function:: getrlimit(resource)
 
    Returns a tuple ``(soft, hard)`` with the current soft and hard limits of
@@ -177,7 +189,7 @@ platform.
 
    The largest area of mapped memory which the process may occupy.
 
-   .. availability:: FreeBSD >= 11.
+   .. availability:: Solaris, FreeBSD.
 
 
 .. data:: RLIMIT_AS
@@ -230,6 +242,7 @@ platform.
 
    .. versionadded:: 3.4
 
+
 .. data:: RLIMIT_SBSIZE
 
    The maximum size (in bytes) of socket buffer usage for this user.
@@ -240,6 +253,7 @@ platform.
 
    .. versionadded:: 3.4
 
+
 .. data:: RLIMIT_SWAP
 
    The maximum size (in bytes) of the swap space that may be reserved or
@@ -249,17 +263,19 @@ platform.
    `tuning(7) <https://man.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
    for a complete description of this sysctl.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD >= 8.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_NPTS
 
    The maximum number of pseudo-terminals created by this user id.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD >= 8.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_KQUEUES
 
@@ -268,6 +284,36 @@ platform.
    .. availability:: FreeBSD >= 11.
 
    .. versionadded:: 3.10
+
+
+.. data:: RLIMIT_NTHR
+
+   The maximum number of threads for this user id, not counting the main
+   and kernel threads.
+
+   .. availability:: NetBSD >= 7.0.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_THREADS
+
+   The maximum number of threads each process can create.
+
+   .. availability:: AIX.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_UMTXP
+
+   The limit of the number of process-shared Posix thread library objects
+   allocated by user id.
+
+   .. availability:: FreeBSD >= 11.
+
+   .. versionadded:: next
+
 
 Resource Usage
 --------------
