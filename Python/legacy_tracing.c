@@ -739,7 +739,6 @@ _PyEval_SetTraceAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObje
     }
 
     PyObject *old_trace_objs = NULL;
-    int err = 0;
     _PyEval_StopTheWorld(interp);
     HEAD_LOCK(&_PyRuntime);
     Py_ssize_t num_thread_states = 0;
@@ -758,14 +757,17 @@ _PyEval_SetTraceAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObje
     }
     if (interp->sys_tracing_threads) {
         _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
-            err = maybe_set_opcode_trace(tstate);
+            int err = maybe_set_opcode_trace(tstate);
             if (err != 0) {
-                break;
+                HEAD_UNLOCK(&_PyRuntime);
+                _PyEval_StartTheWorld(interp);
+                Py_XDECREF(old_trace_objs);
+                return -1;
             }
         }
     }
     HEAD_UNLOCK(&_PyRuntime);
-    err = set_monitoring_trace_events(interp);
+    int err = set_monitoring_trace_events(interp);
     _PyEval_StartTheWorld(interp);
     Py_XDECREF(old_trace_objs);  // needs to be decref'd outside of stop-the-world
     return err;
