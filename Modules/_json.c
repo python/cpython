@@ -215,13 +215,9 @@ static PyObject *
 ascii_escape_unicode(PyObject *pystr)
 {
     /* Take a PyUnicode pystr and return a new ASCII-only escaped PyUnicode */
-    Py_ssize_t input_chars;
-    const void *input;
-    int kind;
-
-    input_chars = PyUnicode_GET_LENGTH(pystr);
-    input = PyUnicode_DATA(pystr);
-    kind = PyUnicode_KIND(pystr);
+    Py_ssize_t input_chars = PyUnicode_GET_LENGTH(pystr);
+    const void *input = PyUnicode_DATA(pystr);
+    int kind = PyUnicode_KIND(pystr);
 
     Py_ssize_t output_size = ascii_escape_size(input, kind, input_chars);
     if (output_size < 0) {
@@ -362,15 +358,10 @@ static PyObject *
 escape_unicode(PyObject *pystr)
 {
     /* Take a PyUnicode pystr and return a new escaped PyUnicode */
-    Py_ssize_t input_chars;
-    const void *input;
-    int kind;
-    Py_UCS4 maxchar;
-
-    maxchar = PyUnicode_MAX_CHAR_VALUE(pystr);
-    input_chars = PyUnicode_GET_LENGTH(pystr);
-    input = PyUnicode_DATA(pystr);
-    kind = PyUnicode_KIND(pystr);
+    Py_ssize_t input_chars = PyUnicode_GET_LENGTH(pystr);
+    const void *input = PyUnicode_DATA(pystr);
+    int kind = PyUnicode_KIND(pystr);
+    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(pystr);
 
     Py_ssize_t output_size = escape_size(input, kind, input_chars);
     if (output_size < 0) {
@@ -383,15 +374,10 @@ escape_unicode(PyObject *pystr)
 static int
 write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
 {
-    Py_ssize_t input_chars;
-    const void *input;
-    int kind;
-    Py_UCS4 maxchar;
-
-    maxchar = PyUnicode_MAX_CHAR_VALUE(pystr);
-    input_chars = PyUnicode_GET_LENGTH(pystr);
-    input = PyUnicode_DATA(pystr);
-    kind = PyUnicode_KIND(pystr);
+    Py_ssize_t input_chars = PyUnicode_GET_LENGTH(pystr);
+    const void *input = PyUnicode_DATA(pystr);
+    int kind = PyUnicode_KIND(pystr);
+    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(pystr);
 
     Py_ssize_t output_size = escape_size(input, kind, input_chars);
     if (output_size < 0) {
