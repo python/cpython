@@ -68,12 +68,12 @@ this module for those platforms.
 
    Sets new limits of consumption of *resource*. The *limits* argument must be a
    tuple ``(soft, hard)`` of two integers describing the new limits. A value of
-   :data:`~resource.RLIM_INFINITY` can be used to request a limit that is
+   :const:`~resource.RLIM_INFINITY` can be used to request a limit that is
    unlimited.
 
    Raises :exc:`ValueError` if an invalid resource is specified, if the new soft
    limit exceeds the hard limit, or if a process tries to raise its hard limit.
-   Specifying a limit of :data:`~resource.RLIM_INFINITY` when the hard or
+   Specifying a limit of :const:`~resource.RLIM_INFINITY` when the hard or
    system limit for that resource is not unlimited will result in a
    :exc:`ValueError`.  A process with the effective UID of super-user can
    request any valid limit value, including unlimited, but :exc:`ValueError`
@@ -83,7 +83,7 @@ this module for those platforms.
    ``setrlimit`` may also raise :exc:`error` if the underlying system call
    fails.
 
-   VxWorks only supports setting :data:`RLIMIT_NOFILE`.
+   VxWorks only supports setting :const:`RLIMIT_NOFILE`.
 
    .. audit-event:: resource.setrlimit resource,limits resource.setrlimit
 
@@ -181,8 +181,9 @@ platform.
 .. data:: RLIMIT_VMEM
 
    The largest area of mapped memory which the process may occupy.
+   Usually an alias of :const:`RLIMIT_AS`.
 
-   .. availability:: FreeBSD >= 11.
+   .. availability:: Solaris, FreeBSD, NetBSD.
 
 
 .. data:: RLIMIT_AS
@@ -235,15 +236,17 @@ platform.
 
    .. versionadded:: 3.4
 
+
 .. data:: RLIMIT_SBSIZE
 
    The maximum size (in bytes) of socket buffer usage for this user.
    This limits the amount of network memory, and hence the amount of mbufs,
    that this user may hold at any time.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD, NetBSD.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_SWAP
 
@@ -254,17 +257,19 @@ platform.
    `tuning(7) <https://man.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
    for a complete description of this sysctl.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD >= 8.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_NPTS
 
    The maximum number of pseudo-terminals created by this user id.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD >= 8.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_KQUEUES
 
@@ -273,6 +278,7 @@ platform.
    .. availability:: FreeBSD >= 11.
 
    .. versionadded:: 3.10
+
 
 Resource Usage
 --------------
