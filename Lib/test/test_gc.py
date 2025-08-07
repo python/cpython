@@ -309,6 +309,26 @@ class GCTests(unittest.TestCase):
         self.assertRegex(stdout, rb"""\A\s*func=None""")
         self.assertFalse(stderr)
 
+    def test_datetime_weakref_cycle(self):
+        # https://github.com/python/cpython/issues/132413
+        # If the weakref used by the datetime extension gets cleared by the GC (due to being
+        # in an unreachable cycle) then datetime functions would crash (get_module_state()
+        # was returning a NULL pointer).  This bug is fixed by clearing weakrefs without
+        # callbacks *after* running finalizers.
+        code = """if 1:
+        import _datetime
+        class C:
+            def __del__(self):
+                print('__del__ called')
+                _datetime.timedelta(days=1)  # crash?
+
+        l = [C()]
+        l.append(l)
+        """
+        rc, stdout, stderr = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.strip(), b'__del__ called')
+
     @refcount_test
     def test_frame(self):
         def f():
@@ -658,9 +678,8 @@ class GCTests(unittest.TestCase):
         gc.collect()
         self.assertEqual(len(ouch), 2)  # else the callbacks didn't run
         for x in ouch:
-            # If the callback resurrected one of these guys, the instance
-            # would be damaged, with an empty __dict__.
-            self.assertEqual(x, None)
+            # The weakref should be cleared before executing the callback.
+            self.assertIsNone(x)
 
     def test_bug21435(self):
         # This is a poor test - its only virtue is that it happened to
@@ -1335,6 +1354,7 @@ class GCTogglingTests(unittest.TestCase):
     def tearDown(self):
         gc.disable()
 
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
     def test_bug1055820c(self):
         # Corresponds to temp2c.py in the bug report.  This is pretty
         # elaborate.
@@ -1410,6 +1430,7 @@ class GCTogglingTests(unittest.TestCase):
             self.assertEqual(x, None)
 
     @gc_threshold(1000, 0, 0)
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
     def test_bug1055820d(self):
         # Corresponds to temp2d.py in the bug report.  This is very much like
         # test_bug1055820c, but uses a __del__ method instead of a weakref

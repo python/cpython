@@ -1689,9 +1689,7 @@ PyThreadState_Clear(PyThreadState *tstate)
           "PyThreadState_Clear: warning: thread still has a generator\n");
     }
 
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&_PyRuntime.ceval.sys_trace_profile_mutex);
-#endif
+    FT_MUTEX_LOCK(&_PyRuntime.ceval.sys_trace_profile_mutex);
 
     if (tstate->c_profilefunc != NULL) {
         tstate->interp->sys_profiling_threads--;
@@ -1702,9 +1700,7 @@ PyThreadState_Clear(PyThreadState *tstate)
         tstate->c_tracefunc = NULL;
     }
 
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&_PyRuntime.ceval.sys_trace_profile_mutex);
-#endif
+    FT_MUTEX_UNLOCK(&_PyRuntime.ceval.sys_trace_profile_mutex);
 
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
