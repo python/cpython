@@ -406,10 +406,11 @@ That might sound odd to you. You might be thinking:
 
    2. What about a :ref:`yield from <yieldexpr>` within the coroutine function to a (plain)
    generator?
-   It causes the following error: ``SyntaxError: yield from not allowed in a coroutine.``
+   That causes the error: ``SyntaxError: yield from not allowed in a coroutine.``
    This was intentionally designed for the sake of simplicity -- mandating only
-   one way of using coroutines. Initially ``yield`` was barred as well,
-   but was re-accepted to allow for async generators.
+   one way of using coroutines.
+   Initially ``yield`` was barred as well, but was re-accepted to allow for
+   async generators.
    Despite that, ``yield from`` and ``await`` effectively do the same thing.
 
 =======
