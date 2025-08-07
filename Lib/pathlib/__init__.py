@@ -558,8 +558,10 @@ class PurePath:
         # paths shouldn't match wildcards, so we change it to the empty string.
         path = str(self) if self.parts else ''
         pattern = str(pattern) if pattern.parts else ''
-        globber = _StringGlobber(self.parser.sep, case_sensitive,
-                                 recursive=True, include_hidden=True)
+        globber = _StringGlobber(sep=self.parser.sep,
+                                 case_sensitive=case_sensitive,
+                                 recursive=True,
+                                 include_hidden=True)
         return globber.compile(pattern)(path) is not None
 
     def match(self, path_pattern, *, case_sensitive=None):
@@ -581,7 +583,8 @@ class PurePath:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = _StringGlobber(self.parser.sep, case_sensitive)
+        globber = _StringGlobber(sep=self.parser.sep,
+                                 case_sensitive=case_sensitive)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -850,8 +853,11 @@ class Path(PurePath):
             case_pedantic = True
         parts = self._parse_pattern(pattern)
         recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = _StringGlobber(self.parser.sep, case_sensitive, case_pedantic,
-                                 recursive, include_hidden=True)
+        globber = _StringGlobber(sep=self.parser.sep,
+                                 case_sensitive=case_sensitive,
+                                 case_pedantic=case_pedantic,
+                                 recursive=recursive,
+                                 include_hidden=True)
         select = globber.selector(parts[::-1])
         root = str(self)
         paths = select(self.parser.join(root, ''))

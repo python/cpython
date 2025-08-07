@@ -169,7 +169,7 @@ class _GlobberBase:
     """Abstract class providing shell-style pattern matching and globbing.
     """
 
-    def __init__(self, sep=os.path.sep, case_sensitive=os.name != 'nt',
+    def __init__(self, *, sep=os.path.sep, case_sensitive=os.name != 'nt',
                  case_pedantic=False, recursive=False, include_hidden=False):
         self.sep = sep
         self.case_sensitive = case_sensitive
