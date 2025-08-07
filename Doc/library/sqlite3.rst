@@ -2450,9 +2450,9 @@ ensure that there is no open transaction:
 .. testcode::
 
    saved = cur.autocommit
-   conn.autocommit = True  # Disable implicit transaction control.
+   con.autocommit = True  # Disable implicit transaction control.
    cursor.execute("PRAGMA foreign_keys=ON")
-   conn.autocommit = saved  # Restore the previous setting.
+   con.autocommit = saved  # Restore the previous setting.
 
 
 
