@@ -46,7 +46,7 @@ It's the star of the show.
 It's like an orchestra conductor.
 It's behind the scenes managing resources.
 Some power is explicitly granted to it, but a lot of its ability to get things
-done comes from the respect and cooperation of its teammates.
+done comes from the respect and cooperation of its worker bees.
 
 In more technical terms, the event loop contains a queue of jobs to be run.
 Some jobs are added directly by you, and some indirectly by :mod:`!asyncio`.
