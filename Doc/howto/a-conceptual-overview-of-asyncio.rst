@@ -48,17 +48,19 @@ It's behind the scenes managing resources.
 Some power is explicitly granted to it, but a lot of its ability to get things
 done comes from the respect and cooperation of its worker bees.
 
-In more technical terms, the event loop contains a queue of jobs to be run.
+In more technical terms, the event loop contains a collection of jobs to be run.
 Some jobs are added directly by you, and some indirectly by :mod:`!asyncio`.
-The event loop pops a job from the queue and invokes it (or "gives it control"),
-similar to calling a function, and then that job runs.
+The event loop takes a job from its backlog of work and invokes it (or "gives
+it control"), similar to calling a function, and then that job runs.
 Once it pauses or completes, it returns control to the event loop.
-The event loop will then move on to the next job in its queue and invoke it.
+The event loop will then select another job from its pool and invoke it.
+You can *roughly* think of the collection of jobs as a queue: jobs are added and
+then processed one at a time, generally (but not always) in order.
 This process repeats indefinitely with the event loop cycling endlessly
 onwards.
-If the queue is empty, the event loop is smart enough to rest and avoid
-needlessly wasting CPU cycles, and will come back when there's more work
-to be done.
+If there are no more jobs pending execution, the event loop is smart enough to
+rest and avoid needlessly wasting CPU cycles, and will come back when there's
+more work to be done.
 
 Effective execution relies on tasks sharing well and cooperating; a greedy job
 could hog control and leave the other jobs to starve, rendering the overall
