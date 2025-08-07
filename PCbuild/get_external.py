@@ -2,7 +2,9 @@
 
 import argparse
 import contextlib
+import hashlib
 import io
+import json
 import os
 import pathlib
 import shutil
@@ -15,17 +17,16 @@ import zipfile
 
 # Mapping of binary dependency tag to GitHub release asset ID
 TAG_TO_ASSET_ID = {
-    "libffi-3.4.4": 280027073,
-    "openssl-bin-3.0.16.2": 280041244,
-    "tcltk-8.6.15.0": 280042163,
-    "nasm-2.11.06": 280042740,
-    "llvm-19.1.7.0": 280052497,
+    'libffi-3.4.4': 280027073,
+    'openssl-bin-3.0.16.2': 280041244,
+    'tcltk-8.6.15.0': 280042163,
+    'nasm-2.11.06': 280042740,
+    'llvm-19.1.7.0': 280052497,
 }
 
 
-def request_with_retry(
-    request_func, *args, max_retries=7, err_msg="Request failed.", **kwargs,
-):
+def request_with_retry(request_func, *args, max_retries=7,
+                       err_msg='Request failed.', **kwargs):
     """Make a request using request_func with exponential backoff"""
     for attempt in range(max_retries + 1):
         try:
@@ -45,19 +46,16 @@ def retrieve_with_retries(download_location, output_path, reporthook):
         download_location,
         output_path,
         reporthook,
-        err_msg=f"Download from {download_location} failed.",
+        err_msg=f'Download from {download_location} failed.',
     )
 
 
 def get_with_retries(url, headers):
-    req = urllib.request.Request(
-        url=url,
-        headers=headers,
-        method="GET",
-    )
+    req = urllib.request.Request(url=url, headers=headers, method='GET')
     return request_with_retry(
-        urllib.request.urlopen, req, err_msg=f"Request to {url} failed.",
-        timeout=30,
+        urllib.request.urlopen,
+        req,
+        err_msg=f'Request to {url} failed.'
     )
 
 
@@ -79,29 +77,36 @@ def fetch_release_asset(asset_id, output_path, org):
     """Download a GitHub release asset.
 
     Release assets need the Content-Type header set to
-    application/octet-stream, so we can't use urlretrieve. Code here is
-    based on urlretrieve
+    application/octet-stream to download the binary, so we can't use
+    urlretrieve. Code here is based on urlretrieve
     """
-    # TODO: digest/shasum checking
-    url = f"https://api.github.com/repos/{org}/cpython-bin-deps/releases/assets/{asset_id}"
+    url = f'https://api.github.com/repos/{org}/cpython-bin-deps/releases/assets/{asset_id}'
+    rest = get_with_retries(url,
+                            headers={'Accept': 'application/vnd.github+json'})
+    json_data = json.loads(rest.read())
+    hash_info = json_data['digest']
+    algorithm, hashsum = hash_info.split(':')
+    if algorithm != 'sha256':
+        raise RuntimeError(f'Unknown hash algorithm {algorithm} for asset {asset_id}')
     with contextlib.closing(
-        get_with_retries(url, headers={"Accept": "application/octet-stream"})
+        get_with_retries(url, headers={'Accept': 'application/octet-stream'})
     ) as resp:
-        headers = resp.info()
-        if resp.status != 200:
-            raise RuntimeError("Failed to download asset")
         read = 0
+        hasher = hashlib.sha256()
         with open(output_path, 'wb') as fp:
             while block := resp.read(io.DEFAULT_BUFFER_SIZE):
+                hasher.update(block)
                 read += len(block)
                 fp.write(block)
+        if hasher.hexdigest() != hashsum:
+            raise RuntimeError('Downloaded content hash did not match!')
 
 
 def fetch_release(tag, tarball_dir, *, org='python'):
     tarball_dir.mkdir(exist_ok=True)
     asset_id = TAG_TO_ASSET_ID.get(tag)
     if asset_id is None:
-        raise ValueError(f"Unknown tag for binary dependencies {tag}")
+        raise ValueError(f'Unknown tag for binary dependencies {tag}')
     output_path = tarball_dir / f'{tag}.tar.xz'
     fetch_release_asset(asset_id, output_path, org)
     return output_path
