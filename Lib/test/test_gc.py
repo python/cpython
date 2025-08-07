@@ -262,9 +262,11 @@ class GCTests(unittest.TestCase):
             #    finalizer.
             def __del__(self):
 
-                # 5. Create a weakref to `func` now. If we had created
-                #    it earlier, it would have been cleared by the
-                #    garbage collector before calling the finalizers.
+                # 5. Create a weakref to `func` now. In previous
+                #    versions of Python, this would avoid having it
+                #    cleared by the garbage collector before calling
+                #    the finalizers.  Now, weakrefs get cleared after
+                #    calling finalizers.
                 self[1].ref = weakref.ref(self[0])
 
                 # 6. Drop the global reference to `latefin`. The only
@@ -293,15 +295,39 @@ class GCTests(unittest.TestCase):
         #    which will find `cyc` and `func` as garbage.
         gc.collect()
 
-        # 9. Previously, this would crash because `func_qualname`
-        #    had been NULL-ed out by func_clear().
+        # 9. Previously, this would crash because the weakref
+        #    created in the finalizer revealed the function after
+        #    `tp_clear` was called and `func_qualname`
+        #    had been NULL-ed out by func_clear().  Now, we clear
+        #    weakrefs to unreachable objects before calling `tp_clear`
+        #    but after calling finalizers.
         print(f"{func=}")
         """
-        # We're mostly just checking that this doesn't crash.
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
-        self.assertRegex(stdout, rb"""\A\s*func=<function  at \S+>\s*\z""")
+        # The `func` global is None because the weakref was cleared.
+        self.assertRegex(stdout, rb"""\A\s*func=None""")
         self.assertFalse(stderr)
+
+    def test_datetime_weakref_cycle(self):
+        # https://github.com/python/cpython/issues/132413
+        # If the weakref used by the datetime extension gets cleared by the GC (due to being
+        # in an unreachable cycle) then datetime functions would crash (get_module_state()
+        # was returning a NULL pointer).  This bug is fixed by clearing weakrefs without
+        # callbacks *after* running finalizers.
+        code = """if 1:
+        import _datetime
+        class C:
+            def __del__(self):
+                print('__del__ called')
+                _datetime.timedelta(days=1)  # crash?
+
+        l = [C()]
+        l.append(l)
+        """
+        rc, stdout, stderr = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.strip(), b'__del__ called')
 
     @refcount_test
     def test_frame(self):
@@ -652,9 +678,8 @@ class GCTests(unittest.TestCase):
         gc.collect()
         self.assertEqual(len(ouch), 2)  # else the callbacks didn't run
         for x in ouch:
-            # If the callback resurrected one of these guys, the instance
-            # would be damaged, with an empty __dict__.
-            self.assertEqual(x, None)
+            # The weakref should be cleared before executing the callback.
+            self.assertIsNone(x)
 
     def test_bug21435(self):
         # This is a poor test - its only virtue is that it happened to
@@ -726,6 +751,9 @@ class GCTests(unittest.TestCase):
         self.assertIn(b"ResourceWarning: gc: 2 uncollectable objects at "
                       b"shutdown; use", stderr)
         self.assertNotIn(b"<X 'first'>", stderr)
+        one_line_re = b"gc: uncollectable <X 0x[0-9A-Fa-f]+>"
+        expected_re = one_line_re + b"\r?\n" + one_line_re
+        self.assertNotRegex(stderr, expected_re)
         # With DEBUG_UNCOLLECTABLE, the garbage list gets printed
         stderr = run_command(code % "gc.DEBUG_UNCOLLECTABLE")
         self.assertIn(b"ResourceWarning: gc: 2 uncollectable objects at "
@@ -733,6 +761,8 @@ class GCTests(unittest.TestCase):
         self.assertTrue(
             (b"[<X 'first'>, <X 'second'>]" in stderr) or
             (b"[<X 'second'>, <X 'first'>]" in stderr), stderr)
+        # we expect two lines with uncollectable objects
+        self.assertRegex(stderr, expected_re)
         # With DEBUG_SAVEALL, no additional message should get printed
         # (because gc.garbage also contains normally reclaimable cyclic
         # references, and its elements get printed at runtime anyway).
@@ -1355,6 +1385,7 @@ class GCTogglingTests(unittest.TestCase):
     def tearDown(self):
         gc.disable()
 
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
     def test_bug1055820c(self):
         # Corresponds to temp2c.py in the bug report.  This is pretty
         # elaborate.
@@ -1430,6 +1461,7 @@ class GCTogglingTests(unittest.TestCase):
             self.assertEqual(x, None)
 
     @gc_threshold(1000, 0, 0)
+    @unittest.skipIf(Py_GIL_DISABLED, "requires GC generations or increments")
     def test_bug1055820d(self):
         # Corresponds to temp2d.py in the bug report.  This is very much like
         # test_bug1055820c, but uses a __del__ method instead of a weakref
