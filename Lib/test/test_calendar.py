@@ -698,20 +698,23 @@ class CalendarTestCase(unittest.TestCase):
             
     def test_locale_calendar_shorter_day_names(self):
         locale_tested = False
-        for locale_name in [
-                'french', 'fr_FR.UTF-8', 
-                'malay', 'ms_MY.UTF-8', 
-                'norwegian', 'nb_NO.UTF-8', 
-                'danish', 'da_DK.UTF-8'
-            ]:
-            try:
-                cal = calendar.LocaleTextCalendar(locale=locale_name)
-                week_header_split = lambda width: cal.formatweekheader(width).split()
-                self.assertEqual(week_header_split(8), week_header_split(9))
-                locale_tested = True
-                break
-            except locale.Error:
-                continue
+        for locale_name in locale.locale_alias.keys():
+            if len(locale_name) < 16: # avoiding a crashing bug on older versions of Python on Windows
+                try:
+                    with calendar.different_locale(locale_name):
+                        max_length = max(map(len, (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))))
+
+                        cal = calendar.TextCalendar()
+                        week_header_split = lambda width: cal.formatweekheader(width).split()
+
+                        # Full weekday name should be used whenever the width is sufficient
+                        self.assertEqual(week_header_split(max_length), week_header_split(max_length + 10))
+                        # Any width shorter than the longest necessary should return abbreviations
+                        self.assertNotEqual(week_header_split(max_length), week_header_split(max_length - 1))
+
+                        locale_tested = True
+                except locale.Error:
+                    continue
 
         if not locale_tested:
             raise unittest.SkipTest('cannot set the locale to a language with short weekday names')
