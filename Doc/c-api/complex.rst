@@ -122,7 +122,7 @@ Complex Numbers as Python Objects
 
       The complex number value, using the C :c:type:`Py_complex` representation.
 
-      .. deprecated-removed:: next 3.17
+      .. deprecated-removed:: next 3.20
          Use instead :c:func:`PyComplex_AsCComplex` and
          :c:func:`PyComplex_FromCComplex` to access/set a Python complex
          number, using the C :c:type:`Py_complex` representation.
