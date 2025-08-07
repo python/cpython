@@ -15984,14 +15984,16 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     /* Do a setdefault on the per-interpreter cache. */
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
-
-    FT_MUTEX_LOCK(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex));
+#ifdef Py_GIL_DISABLED
+#  define INTERN_MUTEX &_Py_INTERP_CACHED_OBJECT(interp, interned_mutex)
+#endif
+    FT_MUTEX_LOCK(INTERN_MUTEX);
     PyObject *t;
     {
         int res = PyDict_SetDefaultRef(interned, s, s, &t);
         if (res < 0) {
             PyErr_Clear();
-            FT_MUTEX_UNLOCK(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex));
+            FT_MUTEX_UNLOCK(INTERN_MUTEX);
             return s;
         }
         else if (res == 1) {
@@ -16001,7 +16003,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
                     PyUnicode_CHECK_INTERNED(t) == SSTATE_INTERNED_MORTAL) {
                 immortalize_interned(t);
             }
-            FT_MUTEX_UNLOCK(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex));
+            FT_MUTEX_UNLOCK(INTERN_MUTEX);
             return t;
         }
         else {
@@ -16034,7 +16036,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         immortalize_interned(s);
     }
 
-    FT_MUTEX_UNLOCK(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex));
+    FT_MUTEX_UNLOCK(INTERN_MUTEX);
     return s;
 }
 
