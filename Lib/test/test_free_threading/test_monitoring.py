@@ -413,6 +413,38 @@ class MonitoringMisc(MonitoringTestMixin, TestCase):
 
         self.observe_threads(noop, buf)
 
+    def test_trace_concurrent(self):
+        # Test calling a function concurrently from a tracing and a non-tracing
+        # thread
+        b = threading.Barrier(2)
+
+        def func():
+            for _ in range(100):
+                pass
+
+        def noop():
+            pass
+
+        def bg_thread():
+            b.wait()
+            func()  # this may instrument `func`
+
+        def tracefunc(frame, event, arg):
+            # These calls run under tracing can race with the background thread
+            for _ in range(10):
+                func()
+            return tracefunc
+
+        t = Thread(target=bg_thread)
+        t.start()
+        try:
+            sys.settrace(tracefunc)
+            b.wait()
+            noop()
+        finally:
+            sys.settrace(None)
+        t.join()
+
 
 if __name__ == "__main__":
     unittest.main()
