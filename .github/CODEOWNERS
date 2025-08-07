@@ -181,6 +181,15 @@ Tools/wasm/wasi               @brettcannon
 # Interpreter Core
 # ----------------------------------------------------------------------------
 
+# AST
+Lib/_ast_unparse.py           @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/ast.py                    @isidentical @JelleZijlstra @eclips4 @tomasr8
+Lib/test/test_ast/            @eclips4 @tomasr8
+Parser/asdl.py                @isidentical @JelleZijlstra @eclips4 @tomasr8
+Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4 @tomasr8
+Python/ast.c                  @isidentical @JelleZijlstra @eclips4 @tomasr8
+Python/ast_preprocess.c       @isidentical @eclips4 @tomasr8
+
 # Built-in types
 Objects/call.c                @markshannon
 Objects/codeobject.c          @markshannon
@@ -206,19 +215,6 @@ Python/flowgraph.c            @markshannon @iritkatriel
 Python/instruction_sequence.c @iritkatriel
 Python/symtable.c             @JelleZijlstra @carljm
 
-# Core Modules
-**/*bltinmodule*              @ericsnowcurrently
-**/*sysmodule*                @ericsnowcurrently
-
-# AST
-Lib/_ast_unparse.py           @isidentical @JelleZijlstra @eclips4 @tomasr8
-Lib/ast.py                    @isidentical @JelleZijlstra @eclips4 @tomasr8
-Lib/test/test_ast/            @eclips4 @tomasr8
-Parser/asdl.py                @isidentical @JelleZijlstra @eclips4 @tomasr8
-Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4 @tomasr8
-Python/ast.c                  @isidentical @JelleZijlstra @eclips4 @tomasr8
-Python/ast_preprocess.c       @isidentical @eclips4 @tomasr8
-
 # Context variables & HAMT
 **/contextvars*                     @1st1
 **/*hamt*                           @1st1
@@ -226,6 +222,10 @@ Include/cpython/context.h           @1st1
 Include/internal/pycore_context.h   @1st1
 Lib/test/test_context.py            @1st1
 Python/context.c                    @1st1
+
+# Core Modules
+**/*bltinmodule*              @ericsnowcurrently
+**/*sysmodule*                @ericsnowcurrently
 
 # Exceptions
 Lib/test/test_except*.py      @iritkatriel
