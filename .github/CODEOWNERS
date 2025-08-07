@@ -485,24 +485,24 @@ Doc/library/itertools.rst     @rhettinger
 Lib/test/test_itertools.py    @rhettinger
 Modules/itertoolsmodule.c     @rhettinger
 
-# logging
+# Logging
 Doc/**/logging*               @vsajip
 Lib/logging/                  @vsajip
 Lib/test/test_logging.py      @vsajip
 
-# multiprocessing
+# Multiprocessing
 Doc/library/multiprocessing*.rst @gpshead
 Lib/multiprocessing/             @gpshead
 Lib/test/*multiprocessing.py     @gpshead
 Lib/test/test_multiprocessing*/  @gpshead
 Modules/_multiprocessing/        @gpshead
 
-# pathlib
+# Pathlib
 Doc/library/pathlib.rst       @barneygale
 Lib/pathlib/                  @barneygale
 Lib/test/test_pathlib/        @barneygale
 
-# pdb & bdb
+# Pdb & Bdb
 Doc/library/bdb.rst           @gaogaotiantian
 Doc/library/pdb.rst           @gaogaotiantian
 Lib/bdb.py                    @gaogaotiantian
@@ -550,7 +550,7 @@ Lib/sqlite3/                  @berkerpeksag @erlend-aasland
 Lib/test/test_sqlite3/        @berkerpeksag @erlend-aasland
 Modules/_sqlite/              @berkerpeksag @erlend-aasland
 
-# subprocess
+# Subprocess
 Lib/subprocess.py             @gpshead
 Lib/test/test_subprocess.py   @gpshead
 Modules/*subprocess*          @gpshead
@@ -560,7 +560,7 @@ Doc/library/tarfile.rst       @ethanfurman
 Lib/tarfile.py                @ethanfurman
 Lib/test/test_tarfile.py      @ethanfurman
 
-# Tomllib
+# TOML
 Doc/library/tomllib.rst       @encukou @hauntsaninja
 Lib/test/test_tomllib/        @encukou @hauntsaninja
 Lib/tomllib/                  @encukou @hauntsaninja
