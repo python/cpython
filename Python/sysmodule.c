@@ -15,6 +15,7 @@ Data members:
 */
 
 #include "Python.h"
+#include "pycore_abiinfo.h"       // _PyAbiInfo_GetInfo()
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_SetAsyncGenFinalizer()
@@ -3864,7 +3865,7 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     SET_SYS("thread_info", PyThread_GetInfo());
 
-    SET_SYS("abi_info", PyAbiInfo_GetInfo());
+    SET_SYS("abi_info", _PyAbiInfo_GetInfo());
 
     /* initialize asyncgen_hooks */
     if (_PyStructSequence_InitBuiltin(interp, &AsyncGenHooksType,

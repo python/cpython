@@ -26,7 +26,7 @@ static PyStructSequence_Desc abi_info_desc = {
 };
 
 PyObject *
-PyAbiInfo_GetInfo(void)
+_PyAbiInfo_GetInfo(void)
 {
     PyObject *abi_info, *value;
     int pos = 0;

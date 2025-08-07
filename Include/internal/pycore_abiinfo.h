@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+extern PyObject *_PyAbiInfo_GetInfo(void);
 extern PyStatus _PyAbiInfo_InitTypes(PyInterpreterState *);
 extern void _PyAbiInfo_FiniTypes(PyInterpreterState *interp);
 
