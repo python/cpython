@@ -1697,7 +1697,7 @@ math
 ----
 
 * Added more detailed error messages for domain errors in the module.
-  (Contributed by by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
+  (Contributed by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
 
 
 mimetypes
@@ -3034,7 +3034,6 @@ Porting to Python 3.14
   * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`
   * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`
   * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`
-  * ``_PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
   * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`
   * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`
   * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`
@@ -3048,6 +3047,7 @@ Porting to Python 3.14
   * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
   * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
   * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
+  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
 
   The `pythoncapi-compat project`_ can be used to get most of these new
   functions on Python 3.13 and older.
