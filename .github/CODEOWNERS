@@ -436,6 +436,7 @@ Lib/test/test_heapq.py        @rhettinger
 Modules/_heapqmodule.c        @rhettinger
 
 # HTML
+Doc/library/html*             @ezio-melotti
 Lib/html/                     @ezio-melotti
 Lib/_markupbase.py            @ezio-melotti
 Lib/test/test_html*.py        @ezio-melotti
