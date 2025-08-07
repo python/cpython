@@ -148,8 +148,8 @@ Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon
-Python/optimizer_analysis.c   @markshannon @Fidget-Spinner @tomasr8
-Python/optimizer_bytecodes.c  @markshannon @Fidget-Spinner @tomasr8
+Python/optimizer_analysis.c   @markshannon @tomasr8 @Fidget-Spinner
+Python/optimizer_bytecodes.c  @markshannon @tomasr8 @Fidget-Spinner
 Python/optimizer_symbols.c    @markshannon @tomasr8
 
 # Parser, Lexer, and Grammar
