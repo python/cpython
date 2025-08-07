@@ -1,9 +1,12 @@
-## CPython Mirror
+!!! If this is a backport PR (PR made against branches other than `master`),
+please ensure that the PR title is in the following format:
 
-https://github.com/python/cpython is a cpython mirror repository. Pull requests
-are not accepted on this repo and will be automatically closed.
+```
+[X.Y] <title from the original PR> (GH-NNNN)
+```
 
-### Submit patches at https://bugs.python.org
+Where: [X.Y] is the branch name, e.g. [3.7].
 
-For additional information about contributing to CPython, see the
-[developer's guide](https://docs.python.org/devguide/#contributing).
+GH-NNNN refers to the PR number from `master`.
+
+PLEASE: Remove this headline!!!

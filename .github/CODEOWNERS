@@ -1,0 +1,64 @@
+# See https://help.github.com/articles/about-codeowners/
+# for more info about CODEOWNERS file
+
+# It uses the same pattern rule for gitignore file
+# https://git-scm.com/docs/gitignore#_pattern_format
+
+# asyncio
+**/*asyncio*                  @1st1 @asvetlov
+
+# Core
+**/*context*                  @1st1
+**/*genobject*                @1st1
+**/*hamt*                     @1st1
+
+# Hashing
+**/*hashlib*                  @python/crypto-team
+**/*pyhash*                   @python/crypto-team
+
+# Import (including importlib).
+# Ignoring importlib.h so as to not get flagged on
+# all pull requests that change the emitted
+# bytecode.
+**/*import*.c                 @python/import-team
+**/*import*.py                @python/import-team
+
+
+# SSL
+**/*ssl*                      @python/crypto-team
+
+# CSPRNG
+Python/bootstrap_hash.c       @python/crypto-team
+
+# Email and related
+**/*mail*                     @python/email-team
+**/*smtp*                     @python/email-team
+**/*mime*                     @python/email-team
+**/*imap*                     @python/email-team
+**/*poplib*                   @python/email-team
+
+# subprocess
+**/*subprocess*               @gpshead
+
+# Windows
+/PC/                          @python/windows-team
+/PCbuild/                     @python/windows-team
+
+# Windows installer packages
+/Tools/msi/                   @python/windows-team
+/Tools/nuget/                 @python/windows-team
+
+**/*itertools*                @rhettinger
+**/*collections*              @rhettinger
+**/*random*                   @rhettinger
+**/*queue*                    @rhettinger
+**/*bisect*                   @rhettinger
+**/*heapq*                    @rhettinger
+**/*functools*                @ncoghlan @rhettinger
+**/*decimal*                  @rhettinger @skrah
+
+**/*dataclasses*              @ericvsmith
+
+**/*idlelib*                  @terryjreedy
+
+**/*typing*                   @gvanrossum @ilevkivskyi

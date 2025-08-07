@@ -17,6 +17,7 @@ import hashlib
 import inspect
 import io
 import itertools
+import numbers
 import os
 import pprint
 import re
@@ -3788,7 +3789,8 @@ class DSLParser:
                     py_default = 'None'
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
-                    (isinstance(expr, ast.UnaryOp) and not isinstance(expr.operand, ast.Num))):
+                      (isinstance(expr, ast.UnaryOp) and
+                       not (isinstance(expr.operand, ast.Constant) and isinstance(expr.operand.value, numbers.Number)))):
                     c_default = kwargs.get("c_default")
                     if not (isinstance(c_default, str) and c_default):
                         fail("When you specify an expression (" + repr(default) + ") as your default value,\nyou MUST specify a valid c_default.")
@@ -3866,7 +3868,7 @@ class DSLParser:
         self.function.parameters[parameter_name] = p
 
     def parse_converter(self, annotation):
-        if isinstance(annotation, ast.Str):
+        if isinstance(annotation, ast.Constant) and isinstance(expr.operand.value, str):
             return annotation.s, True, {}
 
         if isinstance(annotation, ast.Name):

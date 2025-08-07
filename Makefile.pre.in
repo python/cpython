@@ -721,6 +721,23 @@ regen-importlib: Programs/_freeze_importlib
 	    $(srcdir)/Python/importlib.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/importlib.h $(srcdir)/Python/importlib.h.new
 
+############################################################################
+# ABI
+
+.PHONY: regen-abidump
+regen-abidump: all
+	@$(MKDIR_P) $(srcdir)/Doc/data/
+	abidw "libpython$(LDVERSION).so" --no-architecture --out-file $(srcdir)/Doc/data/python$(LDVERSION).abi.new
+	@touch $(srcdir)/Doc/data/python$(LDVERSION).abi
+	@$(UPDATE_FILE) $(srcdir)/Doc/data/python$(LDVERSION).abi $(srcdir)/Doc/data/python$(LDVERSION).abi.new
+
+.PHONY: check-abidump
+check-abidump: all
+	abidiff $(srcdir)/Doc/data/python$(LDVERSION).abi "libpython$(LDVERSION).so" --drop-private-types --no-architecture --no-added-syms
+
+.PHONY: regen-limited-abi
+regen-limited-abi: all
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all
 
 ############################################################################
 # Regenerate all generated files

@@ -1,0 +1,129 @@
+name: Tests
+
+# Cancel in-progress runs for the same PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+
+jobs:
+  check_source:
+    name: 'Check for source changes'
+    runs-on: ubuntu-latest
+    outputs:
+      run_tests: ${{ steps.check.outputs.run_tests }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            fetch-depth: 1000
+      - name: Check for source changes
+        id: check
+        run: |
+          if [ -z "$GITHUB_BASE_REF" ]; then
+            echo "run_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            git fetch origin $GITHUB_BASE_REF --depth=1
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo "run_tests=true" >> "$GITHUB_OUTPUT" || true
+          fi
+
+  opensuse-tests:
+    name: '${{ matrix.name }} (openSUSE Leap)'
+    runs-on: ubuntu-latest
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    # Use a specific image version for reproducible builds
+    container:
+      image: opensuse/leap:15.6
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'Check ABI'
+            task: 'abi'
+          - name: 'Check Generated Files'
+            task: 'generated-files'
+          - name: 'Build and Test'
+            task: 'build-and-test'
+
+    env:
+      OPENSSL_VER: 1.1.1u
+
+    steps:
+
+    - name: Install Git and Tar
+      run: |
+        zypper ref
+        zypper -n install -y git-core tar
+
+    - uses: actions/checkout@v4
+
+    - name: Install All Dependencies
+      run: sh -x ./.github/workflows/posix-deps-zypp.sh
+
+    - name: 'Restore OpenSSL build'
+      if: matrix.task == 'build-and-test'
+      id: cache-openssl
+      uses: actions/cache@v4
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: opensuse-leap-multissl-openssl-${{ env.OPENSSL_VER }}
+
+    # === Steps for ABI Check ===
+    - name: Build CPython for ABI Check
+      if: matrix.task == 'abi'
+      env:
+        CFLAGS: -g3 -O0
+      run: |
+        ./configure --enable-shared --with-fpectl
+        make -j4
+
+    - name: Check for changes in the ABI
+      if: matrix.task == 'abi'
+      run: make check-abidump
+
+    # === Steps for Generated Files Check ===
+    - name: Build CPython for Generated Files Check
+      # if: matrix.task == 'generated-files'
+      if: false
+      run: |
+        ./configure --with-pydebug
+        make -j4 regen-all
+
+    - name: Check for changes in generated files
+      # if: matrix.task == 'generated-files'
+      if: false
+      run: |
+        if ! git diff --quiet; then
+          echo "Generated files are not up to date. Please run 'make regen-all' and commit the changes."
+          git status
+          git diff
+          exit 1
+        fi
+
+    - name: Check exported libpython symbols
+      # if: matrix.task == 'generated-files'
+      if: false
+      run: make smelly
+
+    # === Steps for Full Build and Test ===
+    - name: Install OpenSSL
+      if: matrix.task == 'build-and-test' && steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
+
+    - name: Configure CPython
+      if: matrix.task == 'build-and-test'
+      run: ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
+
+    - name: Build CPython
+      if: matrix.task == 'build-and-test'
+      run: make -j4
+
+    - name: Display build info
+      if: matrix.task == 'build-and-test'
+      run: make pythoninfo
+
+    - name: Run tests
+      if: matrix.task == 'build-and-test'
+      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
