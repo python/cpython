@@ -910,7 +910,6 @@ clear_pending_handling_thread(struct _pending_calls *pending)
     FT_MUTEX_LOCK(&pending->mutex);
     pending->handling_thread = NULL;
     FT_MUTEX_UNLOCK(&pending->mutex);
-    pending->handling_thread = NULL;
 }
 
 static int
