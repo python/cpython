@@ -1366,7 +1366,7 @@ Connection objects
       Changing :attr:`!autocommit` to ``False`` will open a new transaction,
       and changing it to ``True`` will commit any pending transaction.
 
-      .. seealso:
+      .. seealso::
 
          * :ref:`sqlite3-transaction-control-autocommit`
          * :ref:`sqlite3-howto-pragma-in-transaction`
