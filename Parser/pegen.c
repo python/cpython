@@ -5,6 +5,7 @@
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
 #include "pycore_runtime.h"     // _PyRuntime
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
+#include "pycore_pyatomic_ft_wrappers.h"
 #include <errcode.h>
 
 #include "lexer/lexer.h"

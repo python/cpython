@@ -16,7 +16,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // _PyUnicode_InternMortal()
-
+#include "pycore_pyatomic_ft_wrappers.h"
 
 static const char *codecs_builtin_error_handlers[] = {
     "strict", "ignore", "replace",
