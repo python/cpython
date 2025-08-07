@@ -8,11 +8,11 @@ typedef PyObject *(*TrampolineFunc)(int *success, PyCFunctionWithKeywords func,
                                     PyObject *arg1, PyObject *arg2,
                                     PyObject *arg3);
 
-EMSCRIPTEN_KEEPALIVE const char trampoline_inner_wasm[] = {
+EMSCRIPTEN_KEEPALIVE const char _PyEM_trampoline_inner_wasm[] = {
 #embed "Python/emscripten_trampoline_inner.wasm"
 };
 
-EMSCRIPTEN_KEEPALIVE const int trampoline_inner_wasm_length =
+EMSCRIPTEN_KEEPALIVE const int _PyEM_trampoline_inner_wasm_length =
     sizeof(trampoline_inner_wasm);
 
 // Offset of emscripten_count_args_function in _PyRuntimeState. There's a couple
@@ -49,8 +49,8 @@ function getPyEMTrampolinePtr() {
         return 0;
     }
     const code = HEAP8.subarray(
-        _trampoline_inner_wasm,
-        _trampoline_inner_wasm + HEAP32[_trampoline_inner_wasm_length / 4]);
+        __PyEM_trampoline_inner_wasm,
+        __PyEM_trampoline_inner_wasm + HEAP32[__PyEM_trampoline_inner_wasm_length / 4]);
     try {
         const mod = new WebAssembly.Module(code);
         const inst = new WebAssembly.Instance(mod, { e: { t: wasmTable } });
