@@ -163,6 +163,7 @@ extern "C" {
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) (void)(value += new_value)
 #define FT_MUTEX_LOCK(lock) do {} while (0)
 #define FT_MUTEX_UNLOCK(lock) do {} while (0)
+
 #endif
 
 #ifdef __cplusplus
