@@ -1,5 +1,5 @@
 # See https://help.github.com/articles/about-codeowners/
-# for more info about CODEOWNERS file
+# for further details about the .github/CODEOWNERS file.
 
 # It uses the same pattern rule for gitignore file
 # https://git-scm.com/docs/gitignore#_pattern_format
@@ -9,21 +9,43 @@
 # To exclude a file from ownership, add a line with only the file.
 # See the exclusions section at the end of the file for examples.
 
+# =======
+# Purpose
+# =======
+#
+# An entry in this file does not imply 'ownership', despite the name of the
+# file, but instead that those listed take an interest in that part of the
+# project, and would like to be notified of any proposed changes to it.
+# See also the Experts Index in the Python Developer's Guide:
+# https://devguide.python.org/core-developers/experts/
+#
 # =========
 # Structure
 # =========
 #
 # The CODEOWNERS file is organised by topic area.
 # Please add new entries in alphabetical order within the relevant section.
+# Where possible, keep related files together. For example, documentation,
+# code, and tests for a given item should all be listed in the same place.
+#
 # Top-level sections are:
 #
 # * Buildbots, Continuous Integration, and Testing
+#     e.g. project-wide configuration files, internal tools for use in CI,
+#     linting.
 # * Build System
-# * Interpreter Core
+#     e.g. the Makefile, autoconf.
 # * Documentation
+#     broader sections of documentation, documentation tools
 # * Other / Misc (Tools, Programs, Integration, etc)
+#     internal tools, integration with external systems,
+#     entries that don't fit elsewhere
 # * Platform Support
+#     relating to support for specific platforms
+# * Interpreter Core
+#     the grammar, parser, compiler, interpreter, etc
 # * Standard Library
+#     standard library modules & related files
 
 # ----------------------------------------------------------------------------
 # Buildbots, Continuous Integration, and Testing
@@ -44,6 +66,7 @@ Tools/build/verify_ensurepip_wheels.py @AA-Turner @pfmoore @pradyunsg
 # Patchcheck
 Tools/patchcheck/             @AA-Turner
 
+
 # ----------------------------------------------------------------------------
 # Build System
 # ----------------------------------------------------------------------------
@@ -53,6 +76,106 @@ configure*                    @erlend-aasland @corona10 @AA-Turner
 Makefile.pre.in               @erlend-aasland @AA-Turner
 Modules/Setup*                @erlend-aasland @AA-Turner
 Tools/build/regen-configure.sh @AA-Turner
+
+
+# ----------------------------------------------------------------------------
+# Documentation
+# ----------------------------------------------------------------------------
+
+# Internal Docs
+InternalDocs/                 @AA-Turner
+
+# Tools, Configuration, etc
+Doc/Makefile                  @AA-Turner @hugovk
+Doc/_static/                  @AA-Turner @hugovk
+Doc/conf.py                   @AA-Turner @hugovk
+Doc/make.bat                  @AA-Turner @hugovk
+Doc/requirements.txt          @AA-Turner @hugovk
+Doc/tools/                    @AA-Turner @hugovk
+
+# PR Previews
+.readthedocs.yml              @AA-Turner
+
+# Sections
+Doc/reference/                @willingc @AA-Turner
+Doc/whatsnew/                 @AA-Turner
+
+
+# ----------------------------------------------------------------------------
+# Other / Misc (Tools, Programs, Integration, etc)
+# ----------------------------------------------------------------------------
+
+# Argument Clinic
+Tools/clinic/                 @erlend-aasland @AA-Turner
+Lib/test/test_clinic.py       @erlend-aasland @AA-Turner
+Doc/howto/clinic.rst          @erlend-aasland @AA-Turner
+
+# C Analyser
+Tools/c-analyzer/             @ericsnowcurrently
+
+# Fuzzing
+Modules/_xxtestfuzz/          @ammaraskar
+
+# IDLE
+Doc/library/idle.rst          @terryjreedy
+Lib/idlelib/                  @terryjreedy
+Lib/turtledemo/               @terryjreedy
+
+# Limited C API & stable ABI
+Doc/c-api/stable.rst          @encukou
+Doc/data/*.abi                @encukou
+Misc/stable_abi.toml          @encukou
+Tools/build/stable_abi.py     @encukou
+
+# SBOM
+Misc/externals.spdx.json      @sethmlarson
+Misc/sbom.spdx.json           @sethmlarson
+Tools/build/generate_sbom.py  @sethmlarson
+
+
+# ----------------------------------------------------------------------------
+# Platform Support
+# ----------------------------------------------------------------------------
+
+# Android
+Android/                      @mhsmith @freakboy3742
+Doc/using/android.rst         @mhsmith @freakboy3742
+Lib/_android_support.py       @mhsmith @freakboy3742
+Lib/test/test_android.py      @mhsmith @freakboy3742
+
+# iOS
+Doc/using/ios.rst             @freakboy3742
+Lib/_ios_support.py           @freakboy3742
+iOS/                          @freakboy3742
+
+# macOS
+Mac/                          @python/macos-team
+Lib/_osx_support.py           @python/macos-team
+Lib/test/test__osx_support.py @python/macos-team
+
+# Windows
+PC/                           @python/windows-team
+PCbuild/                      @python/windows-team
+
+# Windows Launcher
+PC/launcher.c                 @python/windows-team @vsajip
+
+# Windows installer packages
+Tools/msi/                    @python/windows-team
+Tools/nuget/                  @python/windows-team
+
+# WebAssembly
+Tools/wasm/README.md          @brettcannon @freakboy3742
+
+# WebAssembly (Emscripten)
+Tools/wasm/config.site-wasm32-emscripten @freakboy3742
+Tools/wasm/emscripten         @freakboy3742
+
+# WebAssembly (WASI)
+Tools/wasm/wasi-env           @brettcannon
+Tools/wasm/wasi.py            @brettcannon
+Tools/wasm/wasi               @brettcannon
+
 
 # ----------------------------------------------------------------------------
 # Interpreter Core
@@ -112,6 +235,12 @@ Objects/exceptions.c          @iritkatriel
 Lib/test/test_getpath.py      @FFY00
 Modules/getpath*              @FFY00
 
+# Hashing / ``hash()`` and related
+Include/cpython/pyhash.h      @gpshead @picnixz @tiran
+Include/internal/pycore_pyhash.h @gpshead @picnixz @tiran
+Include/pyhash.h              @gpshead @picnixz @tiran
+Python/pyhash.c               @gpshead @picnixz @tiran
+
 # The import system (including importlib)
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
 Python/import.c               @brettcannon @ericsnowcurrently @ncoghlan @warsaw @kumaraditya303
@@ -145,6 +274,7 @@ Programs/python.c             @ericsnowcurrently
 Include/internal/pycore_jit.h @brandtbucher @savannahostrowski @diegorusso
 Python/jit.c                  @brandtbucher @savannahostrowski @diegorusso
 Tools/jit/                    @brandtbucher @savannahostrowski @diegorusso
+InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
 
 # Micro-op / μop / Tier 2 Optimiser
 Python/optimizer.c            @markshannon
@@ -185,8 +315,8 @@ Modules/_remote_debugging_module.c @pablogsal @ambv @1st1
 # Sub-Interpreters
 **/*crossinterp*              @ericsnowcurrently
 **/*interpreteridobject.*     @ericsnowcurrently
-Doc/library/concurrent.interpreters.rst  @ericsnowcurrently
-Lib/concurrent/futures/interpreter.py  @ericsnowcurrently
+Doc/library/concurrent.interpreters.rst @ericsnowcurrently
+Lib/concurrent/futures/interpreter.py @ericsnowcurrently
 Lib/concurrent/interpreters/  @ericsnowcurrently
 Lib/test/support/channels.py  @ericsnowcurrently
 Lib/test/test__interp*.py     @ericsnowcurrently
@@ -201,121 +331,7 @@ Objects/templateobject.c      @lysnikolaou
 # Tests
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_type_*.py       @JelleZijlstra
-Lib/test/test_capi/test_misc.py  @markshannon
-
-
-# ----------------------------------------------------------------------------
-# Documentation
-# ----------------------------------------------------------------------------
-
-# Internal Docs
-InternalDocs/                 @AA-Turner
-InternalDocs/asyncio.md       @1st1 @asvetlov @kumaraditya303 @willingc @AA-Turner
-InternalDocs/jit.md           @brandtbucher @savannahostrowski @diegorusso @AA-Turner
-
-# Tools, Configuration, etc
-Doc/Makefile                  @AA-Turner @hugovk
-Doc/_static/                  @AA-Turner @hugovk
-Doc/conf.py                   @AA-Turner @hugovk
-Doc/make.bat                  @AA-Turner @hugovk
-Doc/requirements.txt          @AA-Turner @hugovk
-Doc/tools/                    @AA-Turner @hugovk
-
-# PR Previews
-.readthedocs.yml              @AA-Turner
-
-# Sections
-Doc/reference/                @willingc @AA-Turner
-Doc/whatsnew/                 @AA-Turner
-
-
-# ----------------------------------------------------------------------------
-# Other / Misc (Tools, Programs, Integration, etc)
-# ----------------------------------------------------------------------------
-
-# Argument Clinic
-Tools/clinic/                 @erlend-aasland @AA-Turner
-Lib/test/test_clinic.py       @erlend-aasland @AA-Turner
-Doc/howto/clinic.rst          @erlend-aasland @AA-Turner
-
-# C Analyser
-Tools/c-analyzer/             @ericsnowcurrently
-
-# Fuzzing
-Modules/_xxtestfuzz/          @ammaraskar
-
-# Hashing & Cryptographic Primitives
-**/*hashlib*                  @gpshead @tiran @picnixz
-**/*hashopenssl*              @gpshead @tiran @picnixz
-**/*hmac*                     @gpshead @picnixz
-**/*pyhash*                   @gpshead @tiran @picnixz
-Modules/_hacl/                @gpshead @picnixz
-Modules/*blake*               @gpshead @tiran @picnixz
-Modules/*md5*                 @gpshead @tiran @picnixz
-Modules/*sha*                 @gpshead @tiran @picnixz
-
-# IDLE
-Doc/library/idle.rst          @terryjreedy
-Lib/idlelib/                  @terryjreedy
-Lib/turtledemo/               @terryjreedy
-
-# Limited C API & stable ABI
-Doc/c-api/stable.rst          @encukou
-Doc/data/*.abi                @encukou
-Misc/stable_abi.toml          @encukou
-Tools/build/stable_abi.py     @encukou
-
-# SBOM
-Misc/externals.spdx.json      @sethmlarson
-Misc/sbom.spdx.json           @sethmlarson
-Tools/build/generate_sbom.py  @sethmlarson
-
-# Libssl / TLS
-**/*ssl*                      @gpshead @picnixz
-
-
-# ----------------------------------------------------------------------------
-# Platform Support
-# ----------------------------------------------------------------------------
-
-# Android
-Android/                      @mhsmith @freakboy3742
-Doc/using/android.rst         @mhsmith @freakboy3742
-Lib/_android_support.py       @mhsmith @freakboy3742
-Lib/test/test_android.py      @mhsmith @freakboy3742
-
-# iOS
-Doc/using/ios.rst             @freakboy3742
-Lib/_ios_support.py           @freakboy3742
-iOS/                          @freakboy3742
-
-# macOS
-Mac/                          @python/macos-team
-Lib/_osx_support.py           @python/macos-team
-Lib/test/test__osx_support.py @python/macos-team
-
-# Windows
-PC/                           @python/windows-team
-PCbuild/                      @python/windows-team
-
-# Windows Launcher
-PC/launcher.c                 @python/windows-team @vsajip
-
-# Windows installer packages
-Tools/msi/                    @python/windows-team
-Tools/nuget/                  @python/windows-team
-
-# WebAssembly
-Tools/wasm/README.md          @brettcannon @freakboy3742
-
-# WebAssembly (Emscripten)
-Tools/wasm/config.site-wasm32-emscripten  @freakboy3742
-Tools/wasm/emscripten         @freakboy3742
-
-# WebAssembly (WASI)
-Tools/wasm/wasi-env           @brettcannon
-Tools/wasm/wasi.py            @brettcannon
-Tools/wasm/wasi               @brettcannon
+Lib/test/test_capi/test_misc.py @markshannon
 
 
 # ----------------------------------------------------------------------------
@@ -334,6 +350,7 @@ Lib/test/test_argparse.py     @savannahostrowski
 
 # Asyncio
 Doc/library/asyncio*.rst      @1st1 @asvetlov @kumaraditya303 @willingc
+InternalDocs/asyncio.md       @1st1 @asvetlov @kumaraditya303 @willingc @AA-Turner
 Lib/asyncio/                  @1st1 @asvetlov @kumaraditya303 @willingc
 Lib/test/test_asyncio/        @1st1 @asvetlov @kumaraditya303 @willingc
 Modules/_asynciomodule.c      @1st1 @asvetlov @kumaraditya303 @willingc
@@ -347,6 +364,16 @@ Modules/_bisectmodule.c       @rhettinger
 # Calendar
 Lib/calendar.py               @AA-Turner
 Lib/test/test_calendar.py     @AA-Turner
+
+# Cryptographic Primitives and Applications
+**/*hashlib*                  @gpshead @picnixz @tiran
+**/*hashopenssl*              @gpshead @picnixz @tiran
+**/*hmac*                     @gpshead @picnixz
+**/*ssl*                      @gpshead @picnixz
+Modules/_hacl/                @gpshead @picnixz
+Modules/*blake*               @gpshead @picnixz @tiran
+Modules/*md5*                 @gpshead @picnixz @tiran
+Modules/*sha*                 @gpshead @picnixz @tiran
 
 # Codecs
 Modules/cjkcodecs/            @corona10
@@ -440,7 +467,7 @@ Doc/library/html*             @ezio-melotti
 Lib/html/                     @ezio-melotti
 Lib/_markupbase.py            @ezio-melotti
 Lib/test/test_html*.py        @ezio-melotti
-Tools/build/parse_html5_entities.py   @ezio-melotti
+Tools/build/parse_html5_entities.py @ezio-melotti
 
 # importlib.metadata
 Doc/library/importlib.metadata.rst @jaraco @warsaw
@@ -476,12 +503,12 @@ Lib/pathlib/                  @barneygale
 Lib/test/test_pathlib/        @barneygale
 
 # pdb & bdb
-Doc/library/bdb.rst        @gaogaotiantian
-Doc/library/pdb.rst        @gaogaotiantian
-Lib/bdb.py                 @gaogaotiantian
-Lib/pdb.py                 @gaogaotiantian
-Lib/test/test_bdb.py       @gaogaotiantian
-Lib/test/test_pdb.py       @gaogaotiantian
+Doc/library/bdb.rst           @gaogaotiantian
+Doc/library/pdb.rst           @gaogaotiantian
+Lib/bdb.py                    @gaogaotiantian
+Lib/pdb.py                    @gaogaotiantian
+Lib/test/test_bdb.py          @gaogaotiantian
+Lib/test/test_pdb.py          @gaogaotiantian
 Lib/test/test_remote_pdb.py   @gaogaotiantian
 
 # Pydoc
@@ -552,7 +579,7 @@ Modules/_typesmodule.c        @AA-Turner
 
 # Unittest
 Lib/unittest/mock.py          @cjw296
-Lib/test/test_unittest/testmock/  @cjw296
+Lib/test/test_unittest/testmock/ @cjw296
 
 # Urllib
 **/*robotparser*              @berkerpeksag
@@ -582,8 +609,6 @@ Modules/_zstd/                @AA-Turner
 
 # Exclude Argument Clinic directories
 Modules/**/clinic/
-Modules/clinic/
-Objects/clinic/
-Objects/stringlib/clinic/
-PC/clinic/
-Python/clinic/
+Objects/**/clinic/
+PC/**/clinic/
+Python/**/clinic/
