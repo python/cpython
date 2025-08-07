@@ -12,7 +12,7 @@ EMSCRIPTEN_KEEPALIVE const char trampoline_inner_wasm[] = {
 #embed "Python/emscripten_trampoline_inner.wasm"
 };
 
-EMSCRIPTEN_KEEPALIVE int trampoline_inner_wasm_length =
+EMSCRIPTEN_KEEPALIVE const int trampoline_inner_wasm_length =
     sizeof(trampoline_inner_wasm);
 
 // Offset of emscripten_count_args_function in _PyRuntimeState. There's a couple
