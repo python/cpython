@@ -308,8 +308,8 @@ The design intentionally trades off some conceptual clarity around usage of
 ``await`` for improved performance.
 Each time a task is awaited, control needs to be passed all the way up the
 call stack to the event loop.
-That might sound minor, but in a large program with a deep callstack that
-overhead can add up to a meaningful performance drag.
+That might sound minor, but in a large program with many ``await``'s and a deep
+callstack that overhead can add up to a meaningful performance drag.
 
 ----------------------------------
 How coroutines work under the hood
