@@ -135,7 +135,7 @@ class LoaderTest(unittest.TestCase):
                          'test specific to Windows')
     def test_load_hasattr(self):
         # bpo-34816: shouldn't raise OSError
-        self.assertFalse(hasattr(ctypes.windll, 'test'))
+        self.assertNotHasAttr(ctypes.windll, 'test')
 
     @unittest.skipUnless(os.name == "nt",
                          'test specific to Windows')

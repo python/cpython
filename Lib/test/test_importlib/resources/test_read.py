@@ -1,7 +1,7 @@
 import unittest
 
 from importlib import import_module, resources
-from . import data01
+
 from . import util
 
 
@@ -51,8 +51,8 @@ class ReadTests:
         )
 
 
-class ReadDiskTests(ReadTests, unittest.TestCase):
-    data = data01
+class ReadDiskTests(ReadTests, util.DiskSetup, unittest.TestCase):
+    pass
 
 
 class ReadZipTests(ReadTests, util.ZipSetup, unittest.TestCase):
@@ -68,15 +68,12 @@ class ReadZipTests(ReadTests, util.ZipSetup, unittest.TestCase):
         self.assertEqual(result, bytes(range(4, 8)))
 
 
-class ReadNamespaceTests(ReadTests, unittest.TestCase):
-    def setUp(self):
-        from . import namespacedata01
-
-        self.data = namespacedata01
+class ReadNamespaceTests(ReadTests, util.DiskSetup, unittest.TestCase):
+    MODULE = 'namespacedata01'
 
 
 class ReadNamespaceZipTests(ReadTests, util.ZipSetup, unittest.TestCase):
-    ZIP_MODULE = 'namespacedata01'
+    MODULE = 'namespacedata01'
 
     def test_read_submodule_resource(self):
         submodule = import_module('namespacedata01.subdirectory')

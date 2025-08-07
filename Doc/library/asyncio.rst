@@ -99,6 +99,7 @@ You can experiment with an ``asyncio`` concurrent context in the :term:`REPL`:
    asyncio-subprocess.rst
    asyncio-queue.rst
    asyncio-exceptions.rst
+   asyncio-graph.rst
 
 .. toctree::
    :caption: Low-level APIs

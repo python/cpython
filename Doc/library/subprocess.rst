@@ -25,7 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -608,7 +608,7 @@ functions.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   value is a string, it will be looked up via :func:`grp.getgrnam` and
    the value in ``gr_gid`` will be used. If the value is an integer, it
    will be passed verbatim. (POSIX only)
 
@@ -618,7 +618,7 @@ functions.
    If *extra_groups* is not ``None``, the setgroups() system call will be
    made in the child process prior to the execution of the subprocess.
    Strings provided in *extra_groups* will be looked up via
-   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   :func:`grp.getgrnam` and the values in ``gr_gid`` will be used.
    Integer values will be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
@@ -626,7 +626,7 @@ functions.
 
    If *user* is not ``None``, the setreuid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   value is a string, it will be looked up via :func:`pwd.getpwnam` and
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
@@ -1524,6 +1524,24 @@ handling consistency are valid for these functions.
 
 Notes
 -----
+
+.. _subprocess-timeout-behavior:
+
+Timeout Behavior
+^^^^^^^^^^^^^^^^
+
+When using the ``timeout`` parameter in functions like :func:`run`,
+:meth:`Popen.wait`, or :meth:`Popen.communicate`,
+users should be aware of the following behaviors:
+
+1. **Process Creation Delay**: The initial process creation itself cannot be interrupted
+   on many platform APIs. This means that even when specifying a timeout, you are not
+   guaranteed to see a timeout exception until at least after however long process
+   creation takes.
+
+2. **Extremely Small Timeout Values**: Setting very small timeout values (such as a few
+   milliseconds) may result in almost immediate :exc:`TimeoutExpired` exceptions because
+   process creation and system scheduling inherently require time.
 
 .. _converting-argument-sequence:
 

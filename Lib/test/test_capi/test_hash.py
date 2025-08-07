@@ -78,6 +78,16 @@ class CAPITest(unittest.TestCase):
         VOID_P_MAX = -1 & (2 ** (8 * SIZEOF_VOID_P) - 1)
         self.assertEqual(hash_pointer(VOID_P_MAX), -2)
 
+    def test_hash_buffer(self):
+        hash_buffer = _testcapi.hash_buffer
+
+        def check(data):
+            self.assertEqual(hash_buffer(data), hash(data))
+
+        check(b'')
+        check(b'abc')
+        check(b'x' * 1024)
+
 
 if __name__ == "__main__":
     unittest.main()

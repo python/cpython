@@ -22,6 +22,7 @@ import logging
 import logging.handlers
 import logging.config
 
+
 import codecs
 import configparser
 import copy
@@ -60,7 +61,7 @@ import warnings
 import weakref
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from unittest.mock import patch
+from unittest.mock import call, Mock, patch
 from urllib.parse import urlparse, parse_qs
 from socketserver import (ThreadingUDPServer, DatagramRequestHandler,
                           ThreadingTCPServer, StreamRequestHandler)
@@ -680,9 +681,6 @@ class HandlerTest(BaseTest):
             os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat unlinked files."
-    )
     @threading_helper.requires_working_threading()
     @support.requires_resource('walltime')
     def test_race(self):
@@ -1038,7 +1036,7 @@ class TestTCPServer(ControlMixin, ThreadingTCPServer):
     """
 
     allow_reuse_address = True
-    allow_reuse_port = True
+    allow_reuse_port = False
 
     def __init__(self, addr, handler, poll_interval=0.5,
                  bind_and_activate=True):
@@ -1137,7 +1135,7 @@ class SMTPHandlerTest(BaseTest):
         self.assertEqual(mailfrom, 'me')
         self.assertEqual(rcpttos, ['you'])
         self.assertIn('\nSubject: Log\n', data)
-        self.assertTrue(data.endswith('\n\nHello \u2713'))
+        self.assertEndsWith(data, '\n\nHello \u2713')
         h.close()
 
     def process_message(self, *args):
@@ -2098,6 +2096,18 @@ class SysLogHandlerTest(BaseTest):
         self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
 
+    @patch('socket.socket')
+    def test_tcp_timeout(self, mock_socket):
+        instance_mock_sock = mock_socket.return_value
+        instance_mock_sock.connect.side_effect = socket.timeout
+
+        with self.assertRaises(socket.timeout):
+            logging.handlers.SysLogHandler(address=('localhost', 514),
+                                           socktype=socket.SOCK_STREAM,
+                                           timeout=1)
+
+        instance_mock_sock.close.assert_called()
+
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSysLogHandlerTest(SysLogHandlerTest):
 
@@ -2377,16 +2387,22 @@ class CustomQueueProtocol:
         return getattr(queue, attribute)
 
 class CustomQueueFakeProtocol(CustomQueueProtocol):
-    # An object implementing the Queue API (incorrect signatures).
+    # An object implementing the minimial Queue API for
+    # the logging module but with incorrect signatures.
+    #
     # The object will be considered a valid queue class since we
     # do not check the signatures (only callability of methods)
     # but will NOT be usable in production since a TypeError will
-    # be raised due to a missing argument.
-    def empty(self, x):
+    # be raised due to the extra argument in 'put_nowait'.
+    def put_nowait(self):
         pass
 
 class CustomQueueWrongProtocol(CustomQueueProtocol):
-    empty = None
+    put_nowait = None
+
+class MinimalQueueProtocol:
+    def put_nowait(self, x): pass
+    def get(self): pass
 
 def queueMaker():
     return queue.Queue()
@@ -3265,6 +3281,37 @@ class ConfigDictTest(BaseTest):
         }
     }
 
+    # Remove when deprecation ends.
+    class DeprecatedStrmHandler(logging.StreamHandler):
+        def __init__(self, strm=None):
+            super().__init__(stream=strm)
+
+    config_custom_handler_with_deprecated_strm_arg = {
+        "version": 1,
+        "formatters": {
+            "form1": {
+                "format": "%(levelname)s ++ %(message)s",
+            },
+        },
+        "handlers": {
+            "hand1": {
+                "class": DeprecatedStrmHandler,
+                "formatter": "form1",
+                "level": "NOTSET",
+                "stream": "ext://sys.stdout",
+            },
+        },
+        "loggers": {
+            "compiler.parser": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+            },
+        },
+        "root": {
+            "level": "WARNING",
+        },
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -3353,6 +3400,15 @@ class ConfigDictTest(BaseTest):
     def test_config5_ok(self):
         self.test_config1_ok(config=self.config5)
         self.check_handler('hand1', CustomHandler)
+
+    def test_deprecation_warning_custom_handler_with_strm_arg(self):
+        msg = (
+            "Support for custom logging handlers with the 'strm' argument "
+            "is deprecated and scheduled for removal in Python 3.16. "
+            "Define handlers with the 'stream' argument instead."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.test_config1_ok(config=self.config_custom_handler_with_deprecated_strm_arg)
 
     def test_config6_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config6)
@@ -3521,7 +3577,7 @@ class ConfigDictTest(BaseTest):
             self.assertEqual(h.foo, 'bar')
             self.assertEqual(h.terminator, '!\n')
             logging.warning('Exclamation')
-            self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
+            self.assertEndsWith(output.getvalue(), 'Exclamation!\n')
 
     def test_config15_ok(self):
 
@@ -3749,16 +3805,16 @@ class ConfigDictTest(BaseTest):
             'adict': {
                 'd': 'e', 'f': 3 ,
                 'alpha numeric 1 with spaces' : 5,
-                'aplha numeric 1 %( - © ©ß¯' : 9,
+                'alpha numeric 1 %( - © ©ß¯' : 9,
                 'alpha numeric ] 1 with spaces' : 15,
-                'aplha ]] numeric 1 %( - © ©ß¯]' : 19,
-                ' aplha [ numeric 1 %( - © ©ß¯] ' : 11,
-                ' aplha ' : 32,
+                'alpha ]] numeric 1 %( - © ©ß¯]' : 19,
+                ' alpha [ numeric 1 %( - © ©ß¯] ' : 11,
+                ' alpha ' : 32,
                 '' : 10,
                 'nest4' : {
                     'd': 'e', 'f': 3 ,
                     'alpha numeric 1 with spaces' : 5,
-                    'aplha numeric 1 %( - © ©ß¯' : 9,
+                    'alpha numeric 1 %( - © ©ß¯' : 9,
                     '' : 10,
                     'somelist' :  ('g', ('h', 'i'), 'j'),
                     'somedict' : {
@@ -3780,14 +3836,14 @@ class ConfigDictTest(BaseTest):
         self.assertEqual(bc.convert('cfg://adict.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[f]'), 3)
         self.assertEqual(bc.convert('cfg://adict[alpha numeric 1 with spaces]'), 5)
-        self.assertEqual(bc.convert('cfg://adict[aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[alpha numeric 1 %( - © ©ß¯]'), 9)
         self.assertEqual(bc.convert('cfg://adict[]'), 10)
         self.assertEqual(bc.convert('cfg://adict.nest4.d'), 'e')
         self.assertEqual(bc.convert('cfg://adict.nest4[d]'), 'e')
         self.assertEqual(bc.convert('cfg://adict[nest4].d'), 'e')
         self.assertEqual(bc.convert('cfg://adict[nest4][f]'), 3)
         self.assertEqual(bc.convert('cfg://adict[nest4][alpha numeric 1 with spaces]'), 5)
-        self.assertEqual(bc.convert('cfg://adict[nest4][aplha numeric 1 %( - © ©ß¯]'), 9)
+        self.assertEqual(bc.convert('cfg://adict[nest4][alpha numeric 1 %( - © ©ß¯]'), 9)
         self.assertEqual(bc.convert('cfg://adict[nest4][]'), 10)
         self.assertEqual(bc.convert('cfg://adict[nest4][somelist][0]'), 'g')
         self.assertEqual(bc.convert('cfg://adict[nest4][somelist][1][0]'), 'h')
@@ -3807,8 +3863,8 @@ class ConfigDictTest(BaseTest):
         self.assertRaises(ValueError, bc.convert, 'cfg://!')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[2]')
         self.assertRaises(KeyError, bc.convert, 'cfg://adict[alpha numeric ] 1 with spaces]')
-        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha ]] numeric 1 %( - © ©ß¯] ]')
-        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ aplha [ numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ alpha ]] numeric 1 %( - © ©ß¯] ]')
+        self.assertRaises(ValueError, bc.convert, 'cfg://adict[ alpha [ numeric 1 %( - © ©ß¯] ]')
 
     def test_namedtuple(self):
         # see bpo-39142
@@ -3946,56 +4002,70 @@ class ConfigDictTest(BaseTest):
             msg = str(ctx.exception)
             self.assertEqual(msg, "Unable to configure handler 'ah'")
 
+    def _apply_simple_queue_listener_configuration(self, qspec):
+        self.apply_config({
+            "version": 1,
+            "handlers": {
+                "queue_listener": {
+                    "class": "logging.handlers.QueueHandler",
+                    "queue": qspec,
+                },
+            },
+        })
+
     @threading_helper.requires_working_threading()
     @support.requires_subprocess()
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_does_not_create_multiprocessing_manager(self, manager):
-        # gh-120868, gh-121723
+        # gh-120868, gh-121723, gh-124653
 
-        from multiprocessing import Queue as MQ
-
-        q1 = {"()": "queue.Queue", "maxsize": -1}
-        q2 = MQ()
-        q3 = queue.Queue()
-        # CustomQueueFakeProtocol passes the checks but will not be usable
-        # since the signatures are incompatible. Checking the Queue API
-        # without testing the type of the actual queue is a trade-off
-        # between usability and the work we need to do in order to safely
-        # check that the queue object correctly implements the API.
-        q4 = CustomQueueFakeProtocol()
-
-        for qspec in (q1, q2, q3, q4):
-            self.apply_config(
-                {
-                    "version": 1,
-                    "handlers": {
-                        "queue_listener": {
-                            "class": "logging.handlers.QueueHandler",
-                            "queue": qspec,
-                        },
-                    },
-                }
-            )
-            manager.assert_not_called()
+        for qspec in [
+            {"()": "queue.Queue", "maxsize": -1},
+            queue.Queue(),
+            # queue.SimpleQueue does not inherit from queue.Queue
+            queue.SimpleQueue(),
+            # CustomQueueFakeProtocol passes the checks but will not be usable
+            # since the signatures are incompatible. Checking the Queue API
+            # without testing the type of the actual queue is a trade-off
+            # between usability and the work we need to do in order to safely
+            # check that the queue object correctly implements the API.
+            CustomQueueFakeProtocol(),
+            MinimalQueueProtocol(),
+        ]:
+            with self.subTest(qspec=qspec):
+                self._apply_simple_queue_listener_configuration(qspec)
+                manager.assert_not_called()
 
     @patch("multiprocessing.Manager")
     def test_config_queue_handler_invalid_config_does_not_create_multiprocessing_manager(self, manager):
         # gh-120868, gh-121723
 
         for qspec in [object(), CustomQueueWrongProtocol()]:
-            with self.assertRaises(ValueError):
-                self.apply_config(
-                    {
-                        "version": 1,
-                        "handlers": {
-                            "queue_listener": {
-                                "class": "logging.handlers.QueueHandler",
-                                "queue": qspec,
-                            },
-                        },
-                    }
-                )
-            manager.assert_not_called()
+            with self.subTest(qspec=qspec), self.assertRaises(ValueError):
+                self._apply_simple_queue_listener_configuration(qspec)
+                manager.assert_not_called()
+
+    @skip_if_tsan_fork
+    @support.requires_subprocess()
+    @unittest.skipUnless(support.Py_DEBUG, "requires a debug build for testing"
+                                           " assertions in multiprocessing")
+    def test_config_reject_simple_queue_handler_multiprocessing_context(self):
+        # multiprocessing.SimpleQueue does not implement 'put_nowait'
+        # and thus cannot be used as a queue-like object (gh-124653)
+
+        import multiprocessing
+
+        if support.MS_WINDOWS:
+            start_methods = ['spawn']
+        else:
+            start_methods = ['spawn', 'fork', 'forkserver']
+
+        for start_method in start_methods:
+            with self.subTest(start_method=start_method):
+                ctx = multiprocessing.get_context(start_method)
+                qspec = ctx.SimpleQueue()
+                with self.assertRaises(ValueError):
+                    self._apply_simple_queue_listener_configuration(qspec)
 
     @skip_if_tsan_fork
     @support.requires_subprocess()
@@ -4264,7 +4334,7 @@ class QueueHandlerTest(BaseTest):
         msg = self.next_message()
         self.que_logger.warning(msg)
         data = self.queue.get_nowait()
-        self.assertTrue(isinstance(data, logging.LogRecord))
+        self.assertIsInstance(data, logging.LogRecord)
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
 
@@ -4281,8 +4351,6 @@ class QueueHandlerTest(BaseTest):
         self.assertEqual(formatted_msg, log_record.msg)
         self.assertEqual(formatted_msg, log_record.message)
 
-    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
-                         'logging.handlers.QueueListener required for this test')
     def test_queue_listener(self):
         handler = TestHandler(support.Matcher())
         listener = logging.handlers.QueueListener(self.queue, handler)
@@ -4317,8 +4385,28 @@ class QueueHandlerTest(BaseTest):
         self.assertTrue(handler.matches(levelno=logging.CRITICAL, message='6'))
         handler.close()
 
-    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
-                         'logging.handlers.QueueListener required for this test')
+    def test_queue_listener_context_manager(self):
+        handler = TestHandler(support.Matcher())
+        with logging.handlers.QueueListener(self.queue, handler) as listener:
+            self.assertIsInstance(listener, logging.handlers.QueueListener)
+            self.assertIsNotNone(listener._thread)
+        self.assertIsNone(listener._thread)
+
+        # doesn't hurt to call stop() more than once.
+        listener.stop()
+        self.assertIsNone(listener._thread)
+
+    def test_queue_listener_multi_start(self):
+        handler = TestHandler(support.Matcher())
+        with logging.handlers.QueueListener(self.queue, handler) as listener:
+            self.assertRaises(RuntimeError, listener.start)
+
+        with listener:
+            self.assertRaises(RuntimeError, listener.start)
+
+        listener.start()
+        listener.stop()
+
     def test_queue_listener_with_StreamHandler(self):
         # Test that traceback and stack-info only appends once (bpo-34334, bpo-46755).
         listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
@@ -4333,8 +4421,6 @@ class QueueHandlerTest(BaseTest):
         self.assertEqual(self.stream.getvalue().strip().count('Traceback'), 1)
         self.assertEqual(self.stream.getvalue().strip().count('Stack'), 1)
 
-    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
-                         'logging.handlers.QueueListener required for this test')
     def test_queue_listener_with_multiple_handlers(self):
         # Test that queue handler format doesn't affect other handler formats (bpo-35726).
         self.que_hdlr.setFormatter(self.root_formatter)
@@ -4857,19 +4943,19 @@ class ExceptionTest(BaseTest):
         r.addHandler(h)
         try:
             raise RuntimeError('deliberate mistake')
-        except:
+        except RuntimeError:
             logging.exception('failed', stack_info=True)
         r.removeHandler(h)
         h.close()
         r = h.records[0]
-        self.assertTrue(r.exc_text.startswith('Traceback (most recent '
-                                              'call last):\n'))
-        self.assertTrue(r.exc_text.endswith('\nRuntimeError: '
-                                            'deliberate mistake'))
-        self.assertTrue(r.stack_info.startswith('Stack (most recent '
-                                              'call last):\n'))
-        self.assertTrue(r.stack_info.endswith('logging.exception(\'failed\', '
-                                            'stack_info=True)'))
+        self.assertStartsWith(r.exc_text,
+                'Traceback (most recent call last):\n')
+        self.assertEndsWith(r.exc_text,
+                '\nRuntimeError: deliberate mistake')
+        self.assertStartsWith(r.stack_info,
+                'Stack (most recent call last):\n')
+        self.assertEndsWith(r.stack_info,
+                "logging.exception('failed', stack_info=True)")
 
 
 class LastResortTest(BaseTest):
@@ -5212,8 +5298,8 @@ class LogRecordTest(BaseTest):
     def test_str_rep(self):
         r = logging.makeLogRecord({})
         s = str(r)
-        self.assertTrue(s.startswith('<LogRecord: '))
-        self.assertTrue(s.endswith('>'))
+        self.assertStartsWith(s, '<LogRecord: ')
+        self.assertEndsWith(s, '>')
 
     def test_dict_arg(self):
         h = RecordingHandler()
@@ -5335,7 +5421,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
 
     @support.requires_working_socket()
     def test_taskName_without_asyncio_imported(self):
@@ -5347,7 +5433,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
 
 
 class BasicConfigTest(unittest.TestCase):
@@ -5486,12 +5572,19 @@ class BasicConfigTest(unittest.TestCase):
         assertRaises = self.assertRaises
         handlers = [logging.StreamHandler()]
         stream = sys.stderr
+        formatter = logging.Formatter()
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
                                                       stream=stream)
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
                                                       handlers=handlers)
         assertRaises(ValueError, logging.basicConfig, stream=stream,
                                                       handlers=handlers)
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      format='%(message)s')
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      datefmt='%H:%M:%S')
+        assertRaises(ValueError, logging.basicConfig, formatter=formatter,
+                                                      style='%')
         # Issue 23207: test for invalid kwargs
         assertRaises(ValueError, logging.basicConfig, loglevel=logging.INFO)
         # Should pop both filename and filemode even if filename is None
@@ -5626,6 +5719,20 @@ class BasicConfigTest(unittest.TestCase):
             # didn't write anything due to the encoding error
             self.assertEqual(data, r'')
 
+    def test_formatter_given(self):
+        mock_formatter = Mock()
+        mock_handler = Mock(formatter=None)
+        with patch("logging.Formatter") as mock_formatter_init:
+            logging.basicConfig(formatter=mock_formatter, handlers=[mock_handler])
+        self.assertEqual(mock_handler.setFormatter.call_args_list, [call(mock_formatter)])
+        self.assertEqual(mock_formatter_init.call_count, 0)
+
+    def test_formatter_not_given(self):
+        mock_handler = Mock(formatter=None)
+        with patch("logging.Formatter") as mock_formatter_init:
+            logging.basicConfig(handlers=[mock_handler])
+        self.assertEqual(mock_formatter_init.call_count, 1)
+
     @support.requires_working_socket()
     def test_log_taskName(self):
         async def log_record():
@@ -5651,7 +5758,7 @@ class BasicConfigTest(unittest.TestCase):
                 data = f.read().strip()
             self.assertRegex(data, r'Task-\d+ - hello world')
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio.events._set_event_loop_policy(None)
             if handler:
                 handler.close()
 
@@ -5863,14 +5970,14 @@ class LoggerAdapterTest(unittest.TestCase):
         self.adapter.critical('foo should be here')
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
-        self.assertTrue(hasattr(record, 'foo'))
+        self.assertHasAttr(record, 'foo')
         self.assertEqual(record.foo, '1')
 
     def test_extra_not_merged_by_default(self):
         self.adapter.critical('foo should NOT be here', extra={'foo': 'nope'})
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
-        self.assertFalse(hasattr(record, 'foo'))
+        self.assertNotHasAttr(record, 'foo')
 
     def test_extra_merged(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
@@ -5880,8 +5987,8 @@ class LoggerAdapterTest(unittest.TestCase):
         self.adapter.critical('foo and bar should be here', extra={'bar': '2'})
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
-        self.assertTrue(hasattr(record, 'foo'))
-        self.assertTrue(hasattr(record, 'bar'))
+        self.assertHasAttr(record, 'foo')
+        self.assertHasAttr(record, 'bar')
         self.assertEqual(record.foo, '1')
         self.assertEqual(record.bar, '2')
 
@@ -5893,7 +6000,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.adapter.critical('foo shall be min', extra={'foo': '2'})
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
-        self.assertTrue(hasattr(record, 'foo'))
+        self.assertHasAttr(record, 'foo')
         self.assertEqual(record.foo, '2')
 
 
@@ -6607,18 +6714,19 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 p = '%s.log.' % prefix
                 for c in candidates:
                     d, fn = os.path.split(c)
-                    self.assertTrue(fn.startswith(p))
+                    self.assertStartsWith(fn, p)
             elif prefix.startswith('d.e'):
                 for c in candidates:
                     d, fn = os.path.split(c)
-                    self.assertTrue(fn.endswith('.log'), fn)
-                    self.assertTrue(fn.startswith(prefix + '.') and
-                                    fn[len(prefix) + 2].isdigit())
+                    self.assertEndsWith(fn, '.log')
+                    self.assertStartsWith(fn, prefix + '.')
+                    self.assertTrue(fn[len(prefix) + 2].isdigit())
             elif prefix == 'g':
                 for c in candidates:
                     d, fn = os.path.split(c)
-                    self.assertTrue(fn.endswith('.oldlog'))
-                    self.assertTrue(fn.startswith('g') and fn[1].isdigit())
+                    self.assertEndsWith(fn, '.oldlog')
+                    self.assertStartsWith(fn, 'g')
+                    self.assertTrue(fn[1].isdigit())
 
     def test_compute_files_to_delete_same_filename_different_extensions(self):
         # See GH-93205 for background
@@ -6653,10 +6761,10 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             rotator = rotators[i]
             candidates = rotator.getFilesToDelete()
             self.assertEqual(len(candidates), n_files - backupCount, candidates)
-            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\Z")
+            matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\z")
             for c in candidates:
                 d, fn = os.path.split(c)
-                self.assertTrue(fn.startswith(prefix+'.'))
+                self.assertStartsWith(fn, prefix+'.')
                 suffix = fn[(len(prefix)+1):]
                 self.assertRegex(suffix, matcher)
 

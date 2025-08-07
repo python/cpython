@@ -1,7 +1,5 @@
 {
-    "build": {
-        "dockerfile": "Dockerfile"
-    },
+    "image": "ghcr.io/python/devcontainer:2025.05.29.15334414373",
     "onCreateCommand": [
         // Install common tooling.
         "dnf",

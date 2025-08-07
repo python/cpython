@@ -38,10 +38,10 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     # line option '-i' and the process name set to '<stdin>'.
     # The directory of argv[0] must match the directory of the Python
     # executable for the Popen() call to python to succeed as the directory
-    # path may be used by Py_GetPath() to build the default module search
-    # path.
+    # path may be used by PyConfig_Get("module_search_paths") to build the
+    # default module search path.
     stdin_fname = os.path.join(os.path.dirname(sys.executable), "<stdin>")
-    cmd_line = [stdin_fname, '-E', '-i']
+    cmd_line = [stdin_fname, '-I', '-i']
     cmd_line.extend(args)
 
     # Set TERM=vt100, for the rationale see the comments in spawn_python() of
@@ -70,6 +70,7 @@ def run_on_interactive_mode(source):
     return output
 
 
+@support.force_not_colorized_test_class
 class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
@@ -187,6 +188,19 @@ class TestInteractiveInterpreter(unittest.TestCase):
         ]
         self.assertEqual(traceback_lines, expected_lines)
 
+    def test_runsource_show_syntax_error_location(self):
+        user_input = dedent("""def f(x, x): ...
+                            """)
+        p = spawn_repl()
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        expected_lines = [
+            '    def f(x, x): ...',
+            '             ^',
+            "SyntaxError: duplicate parameter 'x' in function definition"
+        ]
+        self.assertEqual(output.splitlines()[4:-1], expected_lines)
+
     def test_interactive_source_is_in_linecache(self):
         user_input = dedent("""
         def foo(x):
@@ -199,7 +213,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = dedent("""
         import linecache
-        print(linecache.cache['<stdin>-1'])
+        print(linecache._interactive_cache[linecache._make_key(foo.__code__)])
         """)
         p.stdin.write(user_input2)
         output = kill_python(p)
@@ -215,6 +229,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
                 f.write("exit(0)" + os.linesep)
 
             env = os.environ.copy()
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".asyncio_history")
             env["PYTHONSTARTUP"] = script
             subprocess.check_call(
                 [sys.executable, "-m", "asyncio"],
@@ -227,7 +242,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
     @unittest.skipUnless(pty, "requires pty")
     def test_asyncio_repl_is_ok(self):
         m, s = pty.openpty()
-        cmd = [sys.executable, "-m", "asyncio"]
+        cmd = [sys.executable, "-I", "-m", "asyncio"]
+        env = os.environ.copy()
         proc = subprocess.Popen(
             cmd,
             stdin=s,
@@ -235,7 +251,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             stderr=s,
             text=True,
             close_fds=True,
-            env=os.environ,
+            env=env,
         )
         os.close(s)
         os.write(m, b"await asyncio.sleep(0)\n")
@@ -256,8 +272,10 @@ class TestInteractiveInterpreter(unittest.TestCase):
             proc.kill()
             exit_code = proc.wait()
 
-        self.assertEqual(exit_code, 0)
+        self.assertEqual(exit_code, 0, "".join(output))
 
+
+@support.force_not_colorized_test_class
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
     def test_interactive_syntax_error_correct_line(self):
@@ -274,6 +292,51 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
             'SyntaxError: invalid syntax'
         ]
         self.assertEqual(traceback_lines, expected_lines)
+
+
+class TestAsyncioREPL(unittest.TestCase):
+    def test_multiple_statements_fail_early(self):
+        user_input = "1 / 0; print(f'afterwards: {1+1}')"
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertIn("ZeroDivisionError", output)
+        self.assertNotIn("afterwards: 2", output)
+
+    def test_toplevel_contextvars_sync(self):
+        user_input = dedent("""\
+        from contextvars import ContextVar
+        var = ContextVar("var", default="failed")
+        var.set("ok")
+        """)
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        user_input2 = dedent("""
+        print(f"toplevel contextvar test: {var.get()}")
+        """)
+        p.stdin.write(user_input2)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        expected = "toplevel contextvar test: ok"
+        self.assertIn(expected, output, expected)
+
+    def test_toplevel_contextvars_async(self):
+        user_input = dedent("""\
+        from contextvars import ContextVar
+        var = ContextVar('var', default='failed')
+        """)
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        user_input2 = "async def set_var(): var.set('ok')\n"
+        p.stdin.write(user_input2)
+        user_input3 = "await set_var()\n"
+        p.stdin.write(user_input3)
+        user_input4 = "print(f'toplevel contextvar test: {var.get()}')\n"
+        p.stdin.write(user_input4)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        expected = "toplevel contextvar test: ok"
+        self.assertIn(expected, output, expected)
 
 
 if __name__ == "__main__":

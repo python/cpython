@@ -835,11 +835,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             s = io.StringIO()
             print_tb(tb, 1, s)
-            self.assertTrue(s.getvalue().endswith(
+            self.assertEndsWith(s.getvalue(),
                 '    def do_raise(): raise TypeError\n'
                 '' if support.has_no_debug_ranges() else
                 '                    ^^^^^^^^^^^^^^^\n'
-            ))
+            )
         else:
             raise AssertionError("This ought to be impossible")
 
@@ -897,7 +897,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             "to run"
         )
 
-        # N.B.: We do alot of gymnastics below in the ZIP_STORED case to save
+        # N.B.: We do a lot of gymnastics below in the ZIP_STORED case to save
         # and reconstruct a sparse zip on systems that support sparse files.
         # Instead of creating a ~8GB zip file mainly consisting of null bytes
         # for every run of the test, we create the zip once and save off the
