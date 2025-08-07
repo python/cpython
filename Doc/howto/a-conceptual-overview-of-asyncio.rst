@@ -48,9 +48,11 @@ The event loop pops a job from the queue and invokes it (or "gives it control"),
 similar to calling a function, and then that job runs.
 Once it pauses or completes, it returns control to the event loop.
 The event loop will then move on to the next job in its queue and invoke it.
-This process repeats indefinitely.
-Even if the queue is empty, the event loop continues to cycle (somewhat
-aimlessly).
+This process repeats indefinitely with the event loop cycling endlessly
+onwards.
+If the queue is empty, the event loop is smart enough to rest and avoid
+needlessly wasting CPU cycles, and will come back when there's more work
+to be done.
 
 Effective execution relies on tasks sharing well and cooperating; a greedy job
 could hog control and leave the other jobs to starve, rendering the overall
@@ -232,7 +234,7 @@ the original task or coroutine (``plant_a_tree()``) is added back to the event
 loops queue to be resumed.
 
 This is a basic, yet reliable mental model.
-In practice, it's slightly more complex, but not by much.
+In practice, the control handoffs are slightly more complex, but not by much.
 In part 2, we'll walk through the details that make this possible.
 
 **Unlike tasks, awaiting a coroutine does not hand control back to the event
@@ -285,6 +287,18 @@ The event loop then works through its queue, calling ``coro_b()`` and then
    I am coro_a(). Hi!
    I am coro_a(). Hi!
    I am coro_a(). Hi!
+
+This behavior of ``await coroutine`` can trip a lot of people up!
+That example highlights how using only ``await coroutine`` could
+unintentionally hog control from other tasks and effectively stall the event
+loop.
+
+The design intentionally trades off some conceptual clarity around usage of
+``await`` for improved performance.
+Each time a task is awaited, control needs to be passed all the way up the
+call stack to the event loop.
+That might sound minor, but in a large program with a deep callstack that
+overhead can add up to a meaningful performance drag.
 
 ----------------------------------
 How coroutines work under the hood
