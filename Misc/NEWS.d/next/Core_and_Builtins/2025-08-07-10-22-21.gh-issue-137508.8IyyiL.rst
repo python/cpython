@@ -1,0 +1,2 @@
+:func:`list.remove` and :func:`list.index` now raise with more informative
+error messages.

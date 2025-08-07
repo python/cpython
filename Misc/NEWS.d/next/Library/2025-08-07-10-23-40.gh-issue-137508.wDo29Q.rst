@@ -1,0 +1,2 @@
+:meth:`multiprocessing.shared_memory.ShareableList` now rasies with a more
+informative error message.
