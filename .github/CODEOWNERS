@@ -580,17 +580,7 @@ Modules/_zstd/                @AA-Turner
 .mailmap
 
 # Exclude Argument Clinic directories
-Modules/_ctypes/clinic/
-Modules/_io/clinic/
-Modules/_multiprocessing/clinic/
-Modules/_sqlite/clinic/
-Modules/_sre/clinic/
-Modules/_ssl/clinic/
-Modules/_testcapi/clinic/
-Modules/_testinternalcapi/clinic/
-Modules/_testlimitedcapi/clinic/
-Modules/_zstd/clinic/
-Modules/cjkcodecs/clinic/
+Modules/**/clinic/
 Modules/clinic/
 Objects/clinic/
 Objects/stringlib/clinic/
