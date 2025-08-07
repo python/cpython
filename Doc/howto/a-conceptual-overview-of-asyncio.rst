@@ -231,7 +231,7 @@ As seen above, the coroutine creates a task and then awaits it.
 The ``await dig_the_hole_task`` instruction adds a callback, which will resume
 ``plant_a_tree()``, to the ``dig_the_hole_task`` object's list of callbacks.
 And then, the instruction cedes control to the event loop.
-Some time later, the event loop will pass control to the ``dig_the_hole_task``
+Some time later, the event loop will pass control to ``dig_the_hole_task``
 and the task will finish whatever it needs to do.
 Once the task finishes, it will add its various callbacks to the event loop,
 in this case, a call to resume ``plant_a_tree()``.
