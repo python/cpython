@@ -2455,7 +2455,6 @@ ensure that there is no open transaction:
    con.autocommit = saved  # Restore the previous setting.
 
 
-
 .. _sqlite3-uri-tricks:
 
 How to work with SQLite URIs
