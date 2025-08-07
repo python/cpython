@@ -559,9 +559,7 @@ class PurePath:
         path = str(self) if self.parts else ''
         pattern = str(pattern) if pattern.parts else ''
         globber = _StringGlobber(sep=self.parser.sep,
-                                 case_sensitive=case_sensitive,
-                                 recursive=True,
-                                 include_hidden=True)
+                                 case_sensitive=case_sensitive)
         return globber.compile(pattern)(path) is not None
 
     def match(self, path_pattern, *, case_sensitive=None):
@@ -856,8 +854,7 @@ class Path(PurePath):
         globber = _StringGlobber(sep=self.parser.sep,
                                  case_sensitive=case_sensitive,
                                  case_pedantic=case_pedantic,
-                                 recursive=recursive,
-                                 include_hidden=True)
+                                 recursive=recursive)
         select = globber.selector(parts[::-1])
         root = str(self)
         paths = select(self.parser.join(root, ''))

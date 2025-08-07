@@ -241,9 +241,7 @@ class _JoinablePath(ABC):
         """
         case_sensitive = self.parser.normcase('Aa') == 'Aa'
         globber = _PathGlobber(sep=self.parser.sep,
-                               case_sensitive=case_sensitive,
-                               recursive=True,
-                               include_hidden=True)
+                               case_sensitive=case_sensitive)
         match = globber.compile(pattern, altsep=self.parser.altsep)
         return match(vfspath(self)) is not None
 
@@ -313,9 +311,7 @@ class _ReadablePath(_JoinablePath):
             raise NotImplementedError("recurse_symlinks=False is unsupported")
         case_sensitive = self.parser.normcase('Aa') == 'Aa'
         globber = _PathGlobber(sep=self.parser.sep,
-                               case_sensitive=case_sensitive,
-                               recursive=True,
-                               include_hidden=True)
+                               case_sensitive=case_sensitive)
         select = globber.selector(parts)
         return select(self.joinpath(''))
 

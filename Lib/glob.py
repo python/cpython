@@ -170,7 +170,7 @@ class _GlobberBase:
     """
 
     def __init__(self, *, sep=os.path.sep, case_sensitive=os.name != 'nt',
-                 case_pedantic=False, recursive=False, include_hidden=False):
+                 case_pedantic=False, recursive=True, include_hidden=True):
         self.sep = sep
         self.case_sensitive = case_sensitive
         self.case_pedantic = case_pedantic
