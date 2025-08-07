@@ -255,6 +255,15 @@ http.client
   (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
 
 
+http.server
+-----------
+
+* Added support for HTTP single-part range requests on files to
+  :class:`~http.server.SimpleHTTPRequestHandler`, as specified in
+  :rfc:`9110#section-14`.
+  (Contributed by Andy Ling in :gh:`86809`.)
+
+
 math
 ----
 
@@ -515,6 +524,13 @@ Porting to Python 3.15
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
+Changes in the Python API
+-------------------------
+
+* The :meth:`BaseHTTPRequestHandler.send_error <http.server.BaseHTTPRequestHandler.send_error>`
+  method now has a new optional parameter *extra_headers*.
+  Subclasses should update their implementations to accept this new parameter.
+  (Contributed by Andy Ling in :gh:`86809`.)
 
 Build changes
 =============
