@@ -30,6 +30,16 @@ familiar with writing an extension before  attempting to embed Python in a real
 application.
 
 
+Language version compatibility
+==============================
+
+Python's C API is compatible with C11 and C++11 versions of C and C++.
+
+This is a lower limit: the C API does not require features from later
+C/C++ versions.
+You do *not* need to enable your compiler's "c11 mode".
+
+
 Coding standards
 ================
 
@@ -101,32 +111,10 @@ Useful macros
 =============
 
 Several useful macros are defined in the Python header files.  Many are
-defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
+defined closer to where they are useful (for example, :c:macro:`Py_RETURN_NONE`,
+:c:macro:`PyMODINIT_FUNC`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
-
-.. c:macro:: PyMODINIT_FUNC
-
-   Declare an extension module ``PyInit`` initialization function. The function
-   return type is :c:expr:`PyObject*`. The macro declares any special linkage
-   declarations required by the platform, and for C++ declares the function as
-   ``extern "C"``.
-
-   The initialization function must be named :samp:`PyInit_{name}`, where
-   *name* is the name of the module, and should be the only non-\ ``static``
-   item defined in the module file. Example::
-
-       static struct PyModuleDef spam_module = {
-           PyModuleDef_HEAD_INIT,
-           .m_name = "spam",
-           ...
-       };
-
-       PyMODINIT_FUNC
-       PyInit_spam(void)
-       {
-           return PyModule_Create(&spam_module);
-       }
 
 
 .. c:macro:: Py_ABS(x)
@@ -138,7 +126,7 @@ complete listing.
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
-   ignore it and decides to not inline the function.
+   ignore it and decide to not inline the function.
 
    It can be used to inline performance critical static inline functions when
    building Python in debug mode with function inlining disabled. For example,
@@ -769,20 +757,11 @@ found along :envvar:`PATH`.)  The user can override this behavior by setting the
 environment variable :envvar:`PYTHONHOME`, or insert additional directories in
 front of the standard path by setting :envvar:`PYTHONPATH`.
 
-.. index::
-   single: Py_GetPath (C function)
-   single: Py_GetPrefix (C function)
-   single: Py_GetExecPrefix (C function)
-   single: Py_GetProgramFullPath (C function)
-
 The embedding application can steer the search by setting
 :c:member:`PyConfig.program_name` *before* calling
 :c:func:`Py_InitializeFromConfig`. Note that
 :envvar:`PYTHONHOME` still overrides this and :envvar:`PYTHONPATH` is still
-inserted in front of the standard path.  An application that requires total
-control has to provide its own implementation of :c:func:`Py_GetPath`,
-:c:func:`Py_GetPrefix`, :c:func:`Py_GetExecPrefix`, and
-:c:func:`Py_GetProgramFullPath` (all defined in :file:`Modules/getpath.c`).
+inserted in front of the standard path.
 
 .. index:: single: Py_IsInitialized (C function)
 
@@ -816,14 +795,17 @@ frequently used builds will be described in the remainder of this section.
 
 Compiling the interpreter with the :c:macro:`!Py_DEBUG` macro defined produces
 what is generally meant by :ref:`a debug build of Python <debug-build>`.
-:c:macro:`!Py_DEBUG` is enabled in the Unix build by adding
-:option:`--with-pydebug` to the :file:`./configure` command.
-It is also implied by the presence of the
-not-Python-specific :c:macro:`!_DEBUG` macro.  When :c:macro:`!Py_DEBUG` is enabled
-in the Unix build, compiler optimization is disabled.
+
+On Unix, :c:macro:`!Py_DEBUG` can be enabled by adding :option:`--with-pydebug`
+to the :file:`./configure` command. This will also disable compiler optimization.
+
+On Windows, selecting a debug build (e.g., by passing the :option:`-d` option to
+:file:`PCbuild/build.bat`) automatically enables :c:macro:`!Py_DEBUG`.
+Additionally, the presence of the not-Python-specific :c:macro:`!_DEBUG` macro,
+when defined by the compiler, will also implicitly enable :c:macro:`!Py_DEBUG`.
 
 In addition to the reference count debugging described below, extra checks are
-performed, see :ref:`Python Debug Build <debug-build>`.
+performed. See :ref:`Python Debug Build <debug-build>` for more details.
 
 Defining :c:macro:`Py_TRACE_REFS` enables reference tracing
 (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
@@ -834,3 +816,41 @@ after every statement run by the interpreter.)
 
 Please refer to :file:`Misc/SpecialBuilds.txt` in the Python source distribution
 for more detailed information.
+
+
+.. _c-api-tools:
+
+Recommended third party tools
+=============================
+
+The following third party tools offer both simpler and more sophisticated
+approaches to creating C, C++ and Rust extensions for Python:
+
+* `Cython <https://cython.org/>`_
+* `cffi <https://cffi.readthedocs.io>`_
+* `HPy <https://hpyproject.org/>`_
+* `nanobind <https://github.com/wjakob/nanobind>`_ (C++)
+* `Numba <https://numba.pydata.org/>`_
+* `pybind11 <https://pybind11.readthedocs.io/>`_ (C++)
+* `PyO3 <https://pyo3.rs/>`_ (Rust)
+* `SWIG <https://www.swig.org>`_
+
+Using tools such as these can help avoid writing code that is tightly bound to
+a particular version of CPython, avoid reference counting errors, and focus
+more on your own code than on using the CPython API. In general, new versions
+of Python can be supported by updating the tool, and your code will often use
+newer and more efficient APIs automatically. Some tools also support compiling
+for other implementations of Python from a single set of sources.
+
+These projects are not supported by the same people who maintain Python, and
+issues need to be raised with the projects directly. Remember to check that the
+project is still maintained and supported, as the list above may become
+outdated.
+
+.. seealso::
+
+   `Python Packaging User Guide: Binary Extensions <https://packaging.python.org/guides/packaging-binary-extensions/>`_
+      The Python Packaging User Guide not only covers several available
+      tools that simplify the creation of binary extensions, but also
+      discusses the various reasons why creating an extension module may be
+      desirable in the first place.

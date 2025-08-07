@@ -78,7 +78,7 @@ Pending removal in Python 3.14
   :meth:`~pathlib.PurePath.relative_to`: passing additional arguments is
   deprecated.
 
-* :mod:`pkgutil`: :func:`!pkgutil.find_loader` and :func:!pkgutil.get_loader`
+* :mod:`pkgutil`: :func:`!pkgutil.find_loader` and :func:`!pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
   use :func:`importlib.util.find_spec` instead.
   (Contributed by Nikita Sobolev in :gh:`97850`.)

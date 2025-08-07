@@ -1,2 +1,0 @@
-Update :c:type:`PyASCIIObject` layout to handle interned field with the
-atomic operation. Patch by Donghee Na.

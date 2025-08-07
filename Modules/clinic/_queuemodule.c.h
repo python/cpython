@@ -55,7 +55,7 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
                             int block, PyObject *timeout);
 
 static PyObject *
-_queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_put(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -64,9 +64,11 @@ _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(item), &_Py_ID(block), &_Py_ID(timeout), },
     };
     #undef NUM_KEYWORDS
@@ -110,7 +112,7 @@ _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_
     timeout = args[2];
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _queue_SimpleQueue_put_impl(self, item, block, timeout);
+    return_value = _queue_SimpleQueue_put_impl((simplequeueobject *)self, item, block, timeout);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -133,7 +135,7 @@ static PyObject *
 _queue_SimpleQueue_put_nowait_impl(simplequeueobject *self, PyObject *item);
 
 static PyObject *
-_queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_put_nowait(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -142,9 +144,11 @@ _queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(item), },
     };
     #undef NUM_KEYWORDS
@@ -171,7 +175,7 @@ _queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py
     }
     item = args[0];
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _queue_SimpleQueue_put_nowait_impl(self, item);
+    return_value = _queue_SimpleQueue_put_nowait_impl((simplequeueobject *)self, item);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -200,7 +204,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
                             int block, PyObject *timeout_obj);
 
 static PyObject *
-_queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_get(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -209,9 +213,11 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *con
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(block), &_Py_ID(timeout), },
     };
     #undef NUM_KEYWORDS
@@ -253,7 +259,7 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *con
     timeout_obj = args[1];
 skip_optional_pos:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _queue_SimpleQueue_get_impl(self, cls, block, timeout_obj);
+    return_value = _queue_SimpleQueue_get_impl((simplequeueobject *)self, cls, block, timeout_obj);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -277,7 +283,7 @@ _queue_SimpleQueue_get_nowait_impl(simplequeueobject *self,
                                    PyTypeObject *cls);
 
 static PyObject *
-_queue_SimpleQueue_get_nowait(simplequeueobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_get_nowait(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
 
@@ -286,7 +292,7 @@ _queue_SimpleQueue_get_nowait(simplequeueobject *self, PyTypeObject *cls, PyObje
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _queue_SimpleQueue_get_nowait_impl(self, cls);
+    return_value = _queue_SimpleQueue_get_nowait_impl((simplequeueobject *)self, cls);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -306,13 +312,13 @@ static int
 _queue_SimpleQueue_empty_impl(simplequeueobject *self);
 
 static PyObject *
-_queue_SimpleQueue_empty(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
+_queue_SimpleQueue_empty(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    _return_value = _queue_SimpleQueue_empty_impl(self);
+    _return_value = _queue_SimpleQueue_empty_impl((simplequeueobject *)self);
     Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -336,13 +342,13 @@ static Py_ssize_t
 _queue_SimpleQueue_qsize_impl(simplequeueobject *self);
 
 static PyObject *
-_queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
+_queue_SimpleQueue_qsize(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     Py_ssize_t _return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    _return_value = _queue_SimpleQueue_qsize_impl(self);
+    _return_value = _queue_SimpleQueue_qsize_impl((simplequeueobject *)self);
     Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -352,4 +358,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=07b5742dca7692d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d3efe9df89997cf input=a9049054013a1b77]*/

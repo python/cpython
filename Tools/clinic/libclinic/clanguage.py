@@ -423,14 +423,14 @@ class CLanguage(Language):
 
         # HACK
         # when we're METH_O, but have a custom return converter,
-        # we use "impl_parameters" for the parsing function
+        # we use "parser_parameters" for the parsing function
         # because that works better.  but that means we must
         # suppress actually declaring the impl's parameters
         # as variables in the parsing function.  but since it's
         # METH_O, we have exactly one anyway, so we know exactly
         # where it is.
         if ("METH_O" in templates['methoddef_define'] and
-            '{impl_parameters}' in templates['parser_prototype']):
+            '{parser_parameters}' in templates['parser_prototype']):
             data.declarations.pop(0)
 
         full_name = f.full_name
@@ -475,6 +475,7 @@ class CLanguage(Language):
         else:
             template_dict['parse_arguments_comma'] = '';
         template_dict['impl_parameters'] = ", ".join(data.impl_parameters)
+        template_dict['parser_parameters'] = ", ".join(data.impl_parameters[1:])
         template_dict['impl_arguments'] = ", ".join(data.impl_arguments)
 
         template_dict['return_conversion'] = libclinic.format_escape("".join(data.return_conversion).rstrip())

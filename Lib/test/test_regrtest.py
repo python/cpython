@@ -42,6 +42,17 @@ if not support.has_subprocess_support:
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
+RESULT_REGEX = (
+    'passed',
+    'failed',
+    'skipped',
+    'interrupted',
+    'env changed',
+    'timed out',
+    'ran no tests',
+    'worker non-zero exit code',
+)
+RESULT_REGEX = fr'(?:{"|".join(RESULT_REGEX)})'
 
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
@@ -411,8 +422,7 @@ class ParseArgsTestCase(unittest.TestCase):
         # which has an unclear API
         with os_helper.EnvironmentVarGuard() as env:
             # Ignore SOURCE_DATE_EPOCH env var if it's set
-            if 'SOURCE_DATE_EPOCH' in env:
-                del env['SOURCE_DATE_EPOCH']
+            del env['SOURCE_DATE_EPOCH']
 
             regrtest = main.Regrtest(ns)
 
@@ -555,8 +565,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = (r'^%s\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
-                 % (LOG_PREFIX, self.TESTNAME_REGEX))
+        regex = (fr'^{LOG_PREFIX}\[ *[0-9]+(?:/ *[0-9]+)*\] '
+                 fr'({self.TESTNAME_REGEX}) {RESULT_REGEX}')
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
@@ -758,13 +768,16 @@ class BaseTestCase(unittest.TestCase):
             self.fail(msg)
         return proc
 
-    def run_python(self, args, **kw):
+    def run_python(self, args, isolated=True, **kw):
         extraargs = []
         if 'uops' in sys._xoptions:
             # Pass -X uops along
             extraargs.extend(['-X', 'uops'])
-        args = [sys.executable, *extraargs, '-X', 'faulthandler', '-I', *args]
-        proc = self.run_command(args, **kw)
+        cmd = [sys.executable, *extraargs, '-X', 'faulthandler']
+        if isolated:
+            cmd.append('-I')
+        cmd.extend(args)
+        proc = self.run_command(cmd, **kw)
         return proc.stdout
 
 
@@ -792,6 +805,7 @@ class CheckActualTests(BaseTestCase):
                            f'{", ".join(output.splitlines())}')
 
 
+@support.force_not_colorized_test_class
 class ProgramsTestCase(BaseTestCase):
     """
     Test various ways to run the Python test suite. Use options close
@@ -820,8 +834,8 @@ class ProgramsTestCase(BaseTestCase):
         self.check_executed_tests(output, self.tests,
                                   randomize=True, stats=len(self.tests))
 
-    def run_tests(self, args, env=None):
-        output = self.run_python(args, env=env)
+    def run_tests(self, args, env=None, isolated=True):
+        output = self.run_python(args, env=env, isolated=isolated)
         self.check_output(output)
 
     def test_script_regrtest(self):
@@ -863,7 +877,10 @@ class ProgramsTestCase(BaseTestCase):
         self.run_tests(args)
 
     def run_batch(self, *args):
-        proc = self.run_command(args)
+        proc = self.run_command(args,
+                                # gh-133711: cmd.exe uses the OEM code page
+                                # to display the non-ASCII current directory
+                                errors="backslashreplace")
         self.check_output(proc.stdout)
 
     @unittest.skipUnless(sysconfig.is_python_build(),
@@ -905,6 +922,7 @@ class ProgramsTestCase(BaseTestCase):
         self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
 
+@support.force_not_colorized_test_class
 class ArgsTestCase(BaseTestCase):
     """
     Test arguments of the Python test suite.
@@ -1183,7 +1201,7 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
-    @support.without_optimizer
+    @support.requires_jit_disabled
     def check_leak(self, code, what, *, run_workers=False):
         test = self.create_test('huntrleaks', code=code)
 
@@ -2052,7 +2070,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
                                   parallel=True,
-                                  stats=TestStats(1, 1, 0))
+                                  stats=TestStats(1, 2, 1))
 
     def _check_random_seed(self, run_workers: bool):
         # gh-109276: When -r/--randomize is used, random.seed() is called
@@ -2145,25 +2163,25 @@ class ArgsTestCase(BaseTestCase):
             import unittest
             from test import support
             try:
-                from _testinternalcapi import get_config
+                from _testcapi import config_get
             except ImportError:
-                get_config = None
+                config_get = None
 
             # WASI/WASM buildbots don't use -E option
             use_environment = (support.is_emscripten or support.is_wasi)
 
             class WorkerTests(unittest.TestCase):
-                @unittest.skipUnless(get_config is None, 'need get_config()')
+                @unittest.skipUnless(config_get is None, 'need config_get()')
                 def test_config(self):
-                    config = get_config()['config']
+                    config = config_get()
                     # -u option
-                    self.assertEqual(config['buffered_stdio'], 0)
+                    self.assertEqual(config_get('buffered_stdio'), 0)
                     # -W default option
-                    self.assertTrue(config['warnoptions'], ['default'])
+                    self.assertTrue(config_get('warnoptions'), ['default'])
                     # -bb option
-                    self.assertTrue(config['bytes_warning'], 2)
+                    self.assertTrue(config_get('bytes_warning'), 2)
                     # -E option
-                    self.assertTrue(config['use_environment'], use_environment)
+                    self.assertTrue(config_get('use_environment'), use_environment)
 
                 def test_python_opts(self):
                     # -u option
@@ -2261,7 +2279,6 @@ class ArgsTestCase(BaseTestCase):
     def test_xml(self):
         code = textwrap.dedent(r"""
             import unittest
-            from test import support
 
             class VerboseTests(unittest.TestCase):
                 def test_failed(self):
@@ -2295,6 +2312,50 @@ class ArgsTestCase(BaseTestCase):
         self.assertGreater(float(testcase.get('time')), 0)
         for out in testcase.iter('system-out'):
             self.assertEqual(out.text, r"abc \x1b def")
+
+    def test_nonascii(self):
+        code = textwrap.dedent(r"""
+            import unittest
+
+            class NonASCIITests(unittest.TestCase):
+                def test_docstring(self):
+                    '''docstring:\u20ac'''
+
+                def test_subtest(self):
+                    with self.subTest(param='subtest:\u20ac'):
+                        pass
+
+                def test_skip(self):
+                    self.skipTest('skipped:\u20ac')
+        """)
+        testname = self.create_test(code=code)
+
+        env = dict(os.environ)
+        env['PYTHONIOENCODING'] = 'ascii'
+
+        def check(output):
+            self.check_executed_tests(output, testname, stats=TestStats(3, 0, 1))
+            self.assertIn(r'docstring:\u20ac', output)
+            self.assertIn(r'skipped:\u20ac', output)
+
+        # Run sequentially
+        output = self.run_tests('-v', testname, env=env, isolated=False)
+        check(output)
+
+        # Run in parallel
+        output = self.run_tests('-j1', '-v', testname, env=env, isolated=False)
+        check(output)
+
+    def test_pgo_exclude(self):
+        # Get PGO tests
+        output = self.run_tests('--pgo', '--list-tests')
+        pgo_tests = output.strip().split()
+
+        # Exclude test_re
+        output = self.run_tests('--pgo', '--list-tests', '-x', 'test_re')
+        tests = output.strip().split()
+        self.assertNotIn('test_re', tests)
+        self.assertEqual(len(tests), len(pgo_tests) - 1)
 
 
 class TestUtils(unittest.TestCase):
@@ -2534,4 +2595,5 @@ class TestColorized(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    setup.setup_process()
     unittest.main()

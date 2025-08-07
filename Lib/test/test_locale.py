@@ -1,12 +1,18 @@
 from decimal import Decimal
-from test.support import verbose, is_android, is_emscripten, is_wasi
+from test.support import cpython_only, verbose, is_android, linked_to_musl, os_helper
 from test.support.warnings_helper import check_warnings
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from unittest import mock
 import unittest
 import locale
+import os
 import sys
 import codecs
+
+class LazyImportTest(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("locale", {"re", "warnings"})
 
 
 class BaseLocalizedTest(unittest.TestCase):
@@ -351,10 +357,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strcoll_with_diacritic(self):
@@ -362,10 +365,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strxfrm_with_diacritic(self):
@@ -387,6 +387,10 @@ class NormalizeTest(unittest.TestCase):
     def test_c(self):
         self.check('c', 'C')
         self.check('posix', 'C')
+
+    def test_c_utf8(self):
+        self.check('c.utf8', 'C.UTF-8')
+        self.check('C.UTF-8', 'C.UTF-8')
 
     def test_english(self):
         self.check('en', 'en_US.ISO8859-1')
@@ -483,13 +487,60 @@ class NormalizeTest(unittest.TestCase):
         self.check('jp_jp', 'ja_JP.eucJP')
 
 
+class TestRealLocales(unittest.TestCase):
+    def setUp(self):
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+
+    def test_getsetlocale_issue1813(self):
+        # Issue #1813: setting and getting the locale under a Turkish locale
+        try:
+            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
+        except locale.Error:
+            # Unsupported locale on this system
+            self.skipTest('test needs Turkish locale')
+        loc = locale.getlocale(locale.LC_CTYPE)
+        if verbose:
+            print('testing with %a' % (loc,), end=' ', flush=True)
+        try:
+            locale.setlocale(locale.LC_CTYPE, loc)
+        except locale.Error as exc:
+            # bpo-37945: setlocale(LC_CTYPE) fails with getlocale(LC_CTYPE)
+            # and the tr_TR locale on Windows. getlocale() builds a locale
+            # which is not recognize by setlocale().
+            self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
+        self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_setlocale_long_encoding(self):
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_CTYPE, 'English.%016d' % 1252)
+        locale.setlocale(locale.LC_CTYPE, 'English.%015d' % 1252)
+        loc = locale.setlocale(locale.LC_ALL)
+        self.assertIn('.1252', loc)
+        loc2 = loc.replace('.1252', '.%016d' % 1252, 1)
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_ALL, loc2)
+        loc2 = loc.replace('.1252', '.%015d' % 1252, 1)
+        locale.setlocale(locale.LC_ALL, loc2)
+
+        # gh-137273: Debug assertion failure on Windows for long encoding.
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_CTYPE, 'en_US.' + 'x'*16)
+        locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
+        loc = locale.setlocale(locale.LC_ALL)
+        self.assertIn('.UTF-8', loc)
+        loc2 = loc.replace('.UTF-8', '.' + 'x'*16, 1)
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_ALL, loc2)
+
+
 class TestMiscellaneous(unittest.TestCase):
     def test_defaults_UTF8(self):
         # Issue #18378: on (at least) macOS setting LC_CTYPE to "UTF-8" is
         # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
         # during interpreter startup (on macOS).
         import _locale
-        import os
 
         self.assertEqual(locale._parse_localename('UTF-8'), (None, 'UTF-8'))
 
@@ -499,25 +550,14 @@ class TestMiscellaneous(unittest.TestCase):
         else:
             orig_getlocale = None
 
-        orig_env = {}
         try:
-            for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
-                if key in os.environ:
-                    orig_env[key] = os.environ[key]
-                    del os.environ[key]
+            with os_helper.EnvironmentVarGuard() as env:
+                env.unset('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')
+                env.set('LC_CTYPE', 'UTF-8')
 
-            os.environ['LC_CTYPE'] = 'UTF-8'
-
-            with check_warnings(('', DeprecationWarning)):
-                self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
-
+                with check_warnings(('', DeprecationWarning)):
+                    self.assertEqual(locale.getdefaultlocale(), (None, 'UTF-8'))
         finally:
-            for k in orig_env:
-                os.environ[k] = orig_env[k]
-
-            if 'LC_CTYPE' not in orig_env:
-                del os.environ['LC_CTYPE']
-
             if orig_getlocale is not None:
                 _locale._getdefaultlocale = orig_getlocale
 
@@ -560,27 +600,6 @@ class TestMiscellaneous(unittest.TestCase):
 
         # crasher from bug #7419
         self.assertRaises(locale.Error, locale.setlocale, 12345)
-
-    def test_getsetlocale_issue1813(self):
-        # Issue #1813: setting and getting the locale under a Turkish locale
-        oldlocale = locale.setlocale(locale.LC_CTYPE)
-        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
-        try:
-            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
-        except locale.Error:
-            # Unsupported locale on this system
-            self.skipTest('test needs Turkish locale')
-        loc = locale.getlocale(locale.LC_CTYPE)
-        if verbose:
-            print('testing with %a' % (loc,), end=' ', flush=True)
-        try:
-            locale.setlocale(locale.LC_CTYPE, loc)
-        except locale.Error as exc:
-            # bpo-37945: setlocale(LC_CTYPE) fails with getlocale(LC_CTYPE)
-            # and the tr_TR locale on Windows. getlocale() builds a locale
-            # which is not recognize by setlocale().
-            self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
-        self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
     def test_invalid_locale_format_in_localetuple(self):
         with self.assertRaises(TypeError):

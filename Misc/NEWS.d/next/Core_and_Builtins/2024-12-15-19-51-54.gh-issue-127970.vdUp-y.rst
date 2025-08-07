@@ -1,6 +1,0 @@
-We now use the location of the ``libpython`` runtime library used in the current
-proccess to determine :data:`sys.base_prefix` on all platforms implementing the
-`dladdr <https://pubs.opengroup.org/onlinepubs/9799919799/functions/dladdr.html>`_
-function defined by the UNIX standard — this includes Linux, Android, macOS,
-iOS, FreeBSD, etc. This was already the case on Windows and macOS Framework
-builds.

@@ -43,13 +43,8 @@ pointers.  This is consistent throughout the API.
    Return the sum of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
-
-.. c:function:: Py_complex _Py_cr_sum(Py_complex left, double right)
-
-   Return the sum of a complex number and a real number, using the C :c:type:`Py_complex`
-   representation.
-
-   .. versionadded:: 3.14
+   .. deprecated:: 3.15
+      This function is :term:`soft deprecated`.
 
 
 .. c:function:: Py_complex _Py_c_diff(Py_complex left, Py_complex right)
@@ -57,21 +52,8 @@ pointers.  This is consistent throughout the API.
    Return the difference between two complex numbers, using the C
    :c:type:`Py_complex` representation.
 
-
-.. c:function:: Py_complex _Py_cr_diff(Py_complex left, double right)
-
-   Return the difference between a complex number and a real number, using the C
-   :c:type:`Py_complex` representation.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: Py_complex _Py_rc_diff(double left, Py_complex right)
-
-   Return the difference between a real number and a complex number, using the C
-   :c:type:`Py_complex` representation.
-
-   .. versionadded:: 3.14
+   .. deprecated:: 3.15
+      This function is :term:`soft deprecated`.
 
 
 .. c:function:: Py_complex _Py_c_neg(Py_complex num)
@@ -79,19 +61,17 @@ pointers.  This is consistent throughout the API.
    Return the negation of the complex number *num*, using the C
    :c:type:`Py_complex` representation.
 
+   .. deprecated:: 3.15
+      This function is :term:`soft deprecated`.
+
 
 .. c:function:: Py_complex _Py_c_prod(Py_complex left, Py_complex right)
 
    Return the product of two complex numbers, using the C :c:type:`Py_complex`
    representation.
 
-
-.. c:function:: Py_complex _Py_cr_prod(Py_complex left, double right)
-
-   Return the product of a complex number and a real number, using the C
-   :c:type:`Py_complex` representation.
-
-   .. versionadded:: 3.14
+   .. deprecated:: 3.15
+      This function is :term:`soft deprecated`.
 
 
 .. c:function:: Py_complex _Py_c_quot(Py_complex dividend, Py_complex divisor)
@@ -102,27 +82,8 @@ pointers.  This is consistent throughout the API.
    If *divisor* is null, this method returns zero and sets
    :c:data:`errno` to :c:macro:`!EDOM`.
 
-
-.. c:function:: Py_complex _Py_cr_quot(Py_complex dividend, double divisor)
-
-   Return the quotient of a complex number and a real number, using the C
-   :c:type:`Py_complex` representation.
-
-   If *divisor* is zero, this method returns zero and sets
-   :c:data:`errno` to :c:macro:`!EDOM`.
-
-   .. versionadded:: 3.14
-
-
-.. c:function:: Py_complex _Py_rc_quot(double dividend, Py_complex divisor)
-
-   Return the quotient of a real number and a complex number, using the C
-   :c:type:`Py_complex` representation.
-
-   If *divisor* is zero, this method returns zero and sets
-   :c:data:`errno` to :c:macro:`!EDOM`.
-
-   .. versionadded:: 3.14
+   .. deprecated:: 3.15
+      This function is :term:`soft deprecated`.
 
 
 .. c:function:: Py_complex _Py_c_pow(Py_complex num, Py_complex exp)
@@ -134,6 +95,19 @@ pointers.  This is consistent throughout the API.
    this method returns zero and sets :c:data:`errno` to :c:macro:`!EDOM`.
 
    Set :c:data:`errno` to :c:macro:`!ERANGE` on overflows.
+
+   .. deprecated:: 3.15
+      This function is :term:`soft deprecated`.
+
+
+.. c:function:: double _Py_c_abs(Py_complex num)
+
+   Return the absolute value of the complex number *num*.
+
+   Set :c:data:`errno` to :c:macro:`!ERANGE` on overflows.
+
+   .. deprecated:: 3.15
+      This function is :term:`soft deprecated`.
 
 
 Complex Numbers as Python Objects

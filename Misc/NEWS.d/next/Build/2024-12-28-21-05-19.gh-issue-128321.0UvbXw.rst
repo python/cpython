@@ -1,3 +1,0 @@
-Set ``LIBS`` instead of ``LDFLAGS`` when checking if :mod:`sqlite3` library
-functions are available. This fixes the ordering of linked libraries during
-checks, which was incorrect when using a statically linked ``libsqlite3``.

@@ -16,11 +16,10 @@
    references to these attributes should be marked using the :member: role.
 
 
-.. warning::
+.. note::
 
-   The :mod:`pyexpat` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 
 .. index:: single: Expat
@@ -945,7 +944,7 @@ The ``errors`` module has the following attributes:
 
    The parser was tried to be stopped or suspended before it started.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. rubric:: Footnotes

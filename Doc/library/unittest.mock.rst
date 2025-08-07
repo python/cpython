@@ -2008,7 +2008,7 @@ Imagine we have a project that we want to test with the following structure::
 
 Now we want to test ``some_function`` but we want to mock out ``SomeClass`` using
 :func:`patch`. The problem is that when we import module b, which we will have to
-do then it imports ``SomeClass`` from module a. If we use :func:`patch` to mock out
+do when it imports ``SomeClass`` from module a. If we use :func:`patch` to mock out
 ``a.SomeClass`` then it will have no effect on our test; module b already has a
 reference to the *real* ``SomeClass`` and it looks like our patching had no
 effect.
@@ -2654,9 +2654,9 @@ with any methods on the mock:
 
 .. code-block:: pycon
 
-    >>> mock.has_data()
+    >>> mock.header_items()
     <mock.Mock object at 0x...>
-    >>> mock.has_data.assret_called_with()  # Intentional typo!
+    >>> mock.header_items.assret_called_with()  # Intentional typo!
 
 Auto-speccing solves this problem. You can either pass ``autospec=True`` to
 :func:`patch` / :func:`patch.object` or use the :func:`create_autospec` function to create a
