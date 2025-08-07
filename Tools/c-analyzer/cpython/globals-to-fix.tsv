@@ -153,7 +153,6 @@ Objects/object.c	-	_PyLegacyEventHandler_Type	-
 
 Objects/floatobject.c	-	FloatInfoType	-
 Objects/longobject.c	-	Int_InfoType	-
-Python/abiinfo.c	-	AbiInfoType	-
 Python/errors.c	-	UnraisableHookArgsType	-
 Python/sysmodule.c	-	AsyncGenHooksType	-
 Python/sysmodule.c	-	FlagsType	-
