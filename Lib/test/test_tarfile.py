@@ -841,6 +841,57 @@ class MiscReadTestBase(CommonReadTest):
         with tarfile.open(fileobj=fd, mode="r") as tf:
             self.assertEqual(tf.next(), None)
 
+    def _setup_symlink_to_target(self, temp_dirpath):
+        target_filepath = os.path.join(temp_dirpath, "target")
+        ustar_dirpath = os.path.join(temp_dirpath, "ustar")
+        hardlink_filepath = os.path.join(ustar_dirpath, "lnktype")
+        with open(target_filepath, "wb") as f:
+            f.write(b"target")
+        os.makedirs(ustar_dirpath)
+        os.symlink(target_filepath, hardlink_filepath)
+        return target_filepath, hardlink_filepath
+
+    def _assert_on_file_content(self, filepath, digest):
+        with open(filepath, "rb") as f:
+            data = f.read()
+        self.assertEqual(sha256sum(data), digest)
+
+    @unittest.skipUnless(
+        hasattr(os, "link"), "Missing hardlink implementation"
+    )
+    @os_helper.skip_unless_symlink
+    def test_extract_hardlink_on_symlink(self):
+        """
+        This test verifies that extracting a hardlink will not follow an
+        existing symlink after a FileExistsError on os.link.
+        """
+        with os_helper.temp_dir() as DIR:
+            target_filepath, hardlink_filepath = self._setup_symlink_to_target(DIR)
+            with tarfile.open(tarname, encoding="iso8859-1") as tar:
+                tar.extract("ustar/regtype", DIR, filter="data")
+                tar.extract("ustar/lnktype", DIR, filter="data")
+                self._assert_on_file_content(target_filepath, sha256sum(b"target"))
+                self._assert_on_file_content(hardlink_filepath, sha256_regtype)
+
+    @unittest.skipUnless(
+        hasattr(os, "link"), "Missing hardlink implementation"
+    )
+    @os_helper.skip_unless_symlink
+    def test_extractall_hardlink_on_symlink(self):
+        """
+        This test verifies that extracting a hardlink will not follow an
+        existing symlink after a FileExistsError on os.link.
+        """
+        with os_helper.temp_dir() as DIR:
+            target_filepath, hardlink_filepath = self._setup_symlink_to_target(DIR)
+            with tarfile.open(tarname, encoding="iso8859-1") as tar:
+                tar.extractall(
+                    DIR, members=["ustar/regtype", "ustar/lnktype"], filter="data",
+                )
+                self._assert_on_file_content(target_filepath, sha256sum(b"target"))
+                self._assert_on_file_content(hardlink_filepath, sha256_regtype)
+
+
 class MiscReadTest(MiscReadTestBase, unittest.TestCase):
     test_fail_comp = None
 
