@@ -475,9 +475,12 @@ Lib/pathlib/                  @barneygale
 Lib/test/test_pathlib/        @barneygale
 
 # pdb & bdb
-Doc/library/[bp]db.rst        @gaogaotiantian
-Lib/[bp]db.py                 @gaogaotiantian
-Lib/test/test_[bp]db.py       @gaogaotiantian
+Doc/library/bdb.rst        @gaogaotiantian
+Doc/library/pdb.rst        @gaogaotiantian
+Lib/bdb.py                 @gaogaotiantian
+Lib/pdb.py                 @gaogaotiantian
+Lib/test/test_bdb.py       @gaogaotiantian
+Lib/test/test_pdb.py       @gaogaotiantian
 Lib/test/test_remote_pdb.py   @gaogaotiantian
 
 # Pydoc
