@@ -43,7 +43,6 @@ int PyCodec_Register(PyObject *search_function)
     FT_MUTEX_LOCK(&interp->codecs.search_path_mutex);
     int ret = PyList_Append(interp->codecs.search_path, search_function);
     FT_MUTEX_UNLOCK(&interp->codecs.search_path_mutex);
-
     return ret;
 
  onError:
