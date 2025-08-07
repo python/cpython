@@ -1,0 +1,3 @@
+:meth:`unittest.TestCase.assertLogs` and :meth:`unittest.TestCase.assertNoLogs`
+now correctly accept :data:`logging.NOTSET` as a valid level parameter instead
+of treating it as falsey and defaulting to ``logging.INFO``.
