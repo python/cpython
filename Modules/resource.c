@@ -156,17 +156,20 @@ py2rlim(PyObject *obj, rlim_t *out)
         return -1;
     }
     int neg = PyLong_IsNegative(obj);
+    if (neg) {
+        PyErr_SetString(PyExc_ValueError,
+            "Cannot convert negative int");
+        Py_DECREF(obj);
+        return -1;
+    }
     assert(neg >= 0);
     Py_ssize_t bytes = PyLong_AsNativeBytes(obj, out, sizeof(*out),
                                             Py_ASNATIVEBYTES_NATIVE_ENDIAN |
-                                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER |
+                                            Py_ASNATIVEBYTES_REJECT_NEGATIVE |
+                                            Py_ASNATIVEBYTES_ALLOW_INDEX);
     Py_DECREF(obj);
     if (bytes < 0) {
-        return -1;
-    }
-    else if (neg && (*out != RLIM_INFINITY || bytes > (Py_ssize_t)sizeof(*out))) {
-        PyErr_SetString(PyExc_ValueError,
-            "Cannot convert negative int");
         return -1;
     }
     else if (bytes > (Py_ssize_t)sizeof(*out)) {
@@ -210,9 +213,6 @@ error:
 static PyObject*
 rlim2py(rlim_t value)
 {
-    if (value == RLIM_INFINITY) {
-        return PyLong_FromNativeBytes(&value, sizeof(value), -1);
-    }
     return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1);
 }
 
