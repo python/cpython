@@ -2450,12 +2450,18 @@ ensure that there is no open transaction:
   using the :attr:`!autocommit` attribute
   before executing the ``PRAGMA`` statement:
 
-.. testcode::
+  .. testcode::
+     :hide:
 
-   saved = con.autocommit
-   con.autocommit = True  # Disable implicit transaction control.
-   cur.execute("PRAGMA foreign_keys=ON")
-   con.autocommit = saved  # Restore the previous setting.
+     con = sqlite3.connect(":memory:", autocommit=False)
+
+  .. testcode::
+
+     cur = con.cursor()
+     saved = con.autocommit
+     con.autocommit = True  # Disable implicit transaction control.
+     cur.execute("PRAGMA foreign_keys=ON")
+     con.autocommit = saved  # Restore the previous setting.
 
 
 .. _sqlite3-uri-tricks:
