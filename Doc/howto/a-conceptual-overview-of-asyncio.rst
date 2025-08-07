@@ -185,6 +185,7 @@ For example, many async programs follow this setup::
    import asyncio
 
    async def main():
+       # Perform all sorts of wacky, wild asynchronous things...
        ...
 
    if __name__ == "__main__":
