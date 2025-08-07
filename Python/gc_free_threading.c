@@ -1493,7 +1493,43 @@ move_legacy_finalizer_reachable(struct collection_state *state)
 }
 
 // Weakrefs with callbacks are enqueued in `wrcb_to_call`, but not invoked
-// yet.
+// yet.  Note that it's possible for such weakrefs to be outside the
+// unreachable set -- indeed, those are precisely the weakrefs whose callbacks
+// must be invoked.  See gc_weakref.txt for overview & some details.
+//
+// The clearing of weakrefs is suble and must be done carefully, as there was
+// previous bugs related to this.  First, weakrefs to the unreachable set of
+// objects must be cleared before we start calling `tp_clear`.  If we don't,
+// those weakrefs can reveal unreachable objects to Python-level code and that
+// is not safe.  Many objects are not usable after `tp_clear` has been called
+// and could even cause crashes if accessed (see bpo-38006 and gh-91636 as
+// example bugs).
+//
+// Weakrefs with callbacks always need to be cleared before executing the
+// callback.  That's because sometimes a callback will call the ref object,
+// to check if the reference is actually dead (KeyedRef does this, for
+// example).  We want to indicate that it is dead, even though it is possible
+// a finalizer might resurrect it.  Clearing also prevents the callback from
+// executing more than once.
+//
+// Since Python 2.3, all weakrefs to cyclic garbage have been cleared *before*
+// calling finalizers.  However, since tp_subclasses started being necessary
+// to invalidate caches (e.g. by PyType_Modified), that clearing has created
+// a bug.  If the weakref to the subclass is cleared before a finalizer is
+// called, the cache may not be correctly invalidated.  That can lead to
+// segfaults since the caches can refer to deallocated objects (GH-91636
+// is an example).  Now, we delay the clear of weakrefs without callbacks
+// until *after* finalizers have been executed.  That means weakrefs without
+// callbacks are still usable while finalizers are being executed.
+//
+// The weakrefs that are inside the unreachable set must also be cleared.
+// The reason this is required is not immediately obvious.  If the weakref
+// refers to an object outside of the unreachable set, that object might go
+// away when we start clearing objects.  Normally, the object should also be
+// part of the unreachable set but that's not true in the case of incomplete
+// or missing `tp_traverse` methods.  When that object goes away, the callback
+// for weakref can be executed and that could reveal unreachable objects to
+// Python-level code.  See bpo-38006 as an example bug.
 static void
 find_weakref_callbacks(struct collection_state *state)
 {
@@ -1518,22 +1554,7 @@ find_weakref_callbacks(struct collection_state *state)
             next_wr = wr->wr_next;
 
             // Weakrefs with callbacks always need to be cleared before
-            // executing the callback.  Sometimes the callback will call
-            // the ref object, to check if it's actually a dead reference
-            // (KeyedRef does this, for example).  We want to indicate that it
-            // is dead, even though it is possible a finalizer might resurrect
-            // it.  Clearing also prevents the callback from being executing
-            // more than once.
-            //
-            // Since Python 2.3, all weakrefs to cyclic garbage have
-            // been cleared *before* calling finalizers.  However, since
-            // tp_subclasses started being necessary to invalidate caches
-            // (e.g. by PyType_Modified()), that clearing has created a bug.
-            // If the weakref to the subclass is cleared before a finalizer
-            // is called, the cache may not be correctly invalidated.  That
-            // can lead to segfaults since the caches can refer to deallocated
-            // objects.  Delaying the clear of weakrefs until *after*
-            // finalizers have been called fixes that bug.
+            // executing the callback.
             if (wr->wr_callback != NULL) {
                 // _PyWeakref_ClearRef clears the weakref but leaves the
                 // callback pointer intact.  Obscure: it also changes *wrlist.
@@ -1561,18 +1582,15 @@ find_weakref_callbacks(struct collection_state *state)
     }
 }
 
-// Clear all weakrefs to unreachable objects.
+// Clear weakrefs to objects in the unreachable set.  See comments
+// above find_weakref_callbacks() for why this clearing is required.
 static void
 clear_weakrefs(struct collection_state *state)
 {
     PyObject *op;
     WORKSTACK_FOR_EACH(&state->unreachable, op) {
         if (PyWeakref_Check(op)) {
-            // Clear weakrefs that are themselves unreachable to ensure their
-            // callbacks will not be executed later from a `tp_clear()`
-            // inside delete_garbage(). That would be unsafe: it could
-            // resurrect a dead object or access a an already cleared object.
-            // See bpo-38006 for one example.
+            // Clear weakrefs that are themselves unreachable.
             _PyWeakref_ClearRef((PyWeakReference *)op);
         }
 
@@ -1585,8 +1603,7 @@ clear_weakrefs(struct collection_state *state)
         PyWeakReference **wrlist = _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(op);
 
         // `op` may have some weakrefs.  March over the list, clear
-        // all the weakrefs, and enqueue the weakrefs with callbacks
-        // that must be called into wrcb_to_call.
+        // all the weakrefs.
         for (PyWeakReference *wr = *wrlist; wr != NULL; wr = *wrlist) {
             // _PyWeakref_ClearRef clears the weakref but leaves
             // the callback pointer intact.  Obscure: it also
@@ -2288,20 +2305,6 @@ gc_collect_internal(PyInterpreterState *interp, struct collection_state *state, 
     // Clear free lists in all threads
     _PyGC_ClearAllFreeLists(interp);
     if (err == 0) {
-        // Clear weakrefs to objects in the unreachable set.  No Python-level
-        // code must be allowed to access those unreachable objects.  During
-        // delete_garbage(), finalizers outside the unreachable set might
-        // run and if those weakrefs were not cleared, that could reveal
-        // unreachable objects.
-        //
-        // We used to clear weakrefs earlier, before calling finalizers.
-        // That causes at least two problems.  First, the finalizers could
-        // create new weakrefs, that refer to unreachable objects.  Those
-        // would not be cleared and could cause the problem described above
-        // (see GH-91636 as an example).  Second, we need the weakrefs in the
-        // tp_subclasses to *not* be cleared so that caches based on the type
-        // version are correctly invalidated (see GH-135552 as a bug caused by
-        // this).
         clear_weakrefs(state);
     }
     _PyEval_StartTheWorld(interp);
