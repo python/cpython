@@ -550,16 +550,12 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     co->co_framesize = nlocalsplus + con->stacksize + FRAME_SPECIALS_SIZE;
     co->co_ncellvars = ncellvars;
     co->co_nfreevars = nfreevars;
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&interp->func_state.mutex);
-#endif
+    FT_MUTEX_LOCK(&interp->func_state.mutex);
     co->co_version = interp->func_state.next_version;
     if (interp->func_state.next_version != 0) {
         interp->func_state.next_version++;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&interp->func_state.mutex);
-#endif
+    FT_MUTEX_UNLOCK(&interp->func_state.mutex);
     co->_co_monitoring = NULL;
     co->_co_instrumentation_version = 0;
     /* not set */
@@ -689,7 +685,7 @@ intern_code_constants(struct _PyCodeConstructor *con)
 #ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _py_code_state *state = &interp->code_state;
-    PyMutex_Lock(&state->mutex);
+    FT_MUTEX_LOCK(&state->mutex);
 #endif
     if (intern_strings(con->names) < 0) {
         goto error;
@@ -700,15 +696,11 @@ intern_code_constants(struct _PyCodeConstructor *con)
     if (intern_strings(con->localsplusnames) < 0) {
         goto error;
     }
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&state->mutex);
-#endif
+    FT_MUTEX_UNLOCK(&state->mutex);
     return 0;
 
 error:
-#ifdef Py_GIL_DISABLED
-    PyMutex_Unlock(&state->mutex);
-#endif
+    FT_MUTEX_UNLOCK(&state->mutex);
     return -1;
 }
 
