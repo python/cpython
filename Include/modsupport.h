@@ -94,7 +94,7 @@ PyAPI_FUNC(PyObject *) PyModule_FromDefAndSpec2(PyModuleDef *def,
 #endif /* New in 3.5 */
 
 /* ABI info & checking (new in 3.15) */
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= _Py_PACK_VERSION(3, 15)
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030f0000
 typedef struct PyABIInfo {
     uint8_t abiinfo_major_version;
     uint8_t abiinfo_minor_version;
