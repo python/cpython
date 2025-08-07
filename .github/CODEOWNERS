@@ -55,8 +55,8 @@
 .azure-pipelines/             @AA-Turner
 
 # GitHub & related scripts
-.github/                      @ezio-melotti @hugovk @AA-Turner
-Tools/build/compute-changes.py @AA-Turner
+.github/                               @ezio-melotti @hugovk @AA-Turner
+Tools/build/compute-changes.py         @AA-Turner
 Tools/build/verify_ensurepip_wheels.py @AA-Turner @pfmoore @pradyunsg
 
 # pre-commit
@@ -72,11 +72,11 @@ Tools/patchcheck/             @AA-Turner
 # ----------------------------------------------------------------------------
 
 # autotools
-configure*                    @erlend-aasland @corona10 @AA-Turner
-Makefile.pre.in               @erlend-aasland @AA-Turner
-Modules/Setup*                @erlend-aasland @AA-Turner
-Tools/build/regen-configure.sh @AA-Turner
-
+configure*                       @erlend-aasland @corona10 @AA-Turner
+Makefile.pre.in                  @erlend-aasland @AA-Turner
+Modules/Setup*                   @erlend-aasland @AA-Turner
+Tools/build/regen-configure.sh   @AA-Turner
+                                 @AA-Turner
 
 # ----------------------------------------------------------------------------
 # Documentation
@@ -168,8 +168,8 @@ Tools/nuget/                  @python/windows-team
 Tools/wasm/README.md          @brettcannon @freakboy3742
 
 # WebAssembly (Emscripten)
-Tools/wasm/config.site-wasm32-emscripten @freakboy3742
-Tools/wasm/emscripten         @freakboy3742
+Tools/wasm/config.site-wasm32-emscripten  @freakboy3742
+Tools/wasm/emscripten                     @freakboy3742
 
 # WebAssembly (WASI)
 Tools/wasm/wasi-env           @brettcannon
@@ -220,12 +220,12 @@ Python/ast.c                  @isidentical @JelleZijlstra @eclips4 @tomasr8
 Python/ast_preprocess.c       @isidentical @eclips4 @tomasr8
 
 # Context variables & HAMT
-**/contextvars*               @1st1
-**/*hamt*                     @1st1
-Include/cpython/context.h     @1st1
-Include/internal/pycore_context.h @1st1
-Lib/test/test_context.py      @1st1
-Python/context.c              @1st1
+**/contextvars*                     @1st1
+**/*hamt*                           @1st1
+Include/cpython/context.h           @1st1
+Include/internal/pycore_context.h   @1st1
+Lib/test/test_context.py            @1st1
+Python/context.c                    @1st1
 
 # Exceptions
 Lib/test/test_except*.py      @iritkatriel
@@ -236,10 +236,10 @@ Lib/test/test_getpath.py      @FFY00
 Modules/getpath*              @FFY00
 
 # Hashing / ``hash()`` and related
-Include/cpython/pyhash.h      @gpshead @picnixz @tiran
+Include/cpython/pyhash.h         @gpshead @picnixz @tiran
 Include/internal/pycore_pyhash.h @gpshead @picnixz @tiran
-Include/pyhash.h              @gpshead @picnixz @tiran
-Python/pyhash.c               @gpshead @picnixz @tiran
+Include/pyhash.h                 @gpshead @picnixz @tiran
+Python/pyhash.c                  @gpshead @picnixz @tiran
 
 # The import system (including importlib)
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
@@ -294,34 +294,34 @@ Tools/peg_generator/          @pablogsal @lysnikolaou
 **/*gil*                      @ericsnowcurrently
 **/*pylifecycle*              @ericsnowcurrently @ZeroIntensity
 **/*pystate*                  @ericsnowcurrently @ZeroIntensity
-Include/internal/pycore_*_init.h    @ericsnowcurrently
-Include/internal/pycore_*_state.h   @ericsnowcurrently
-Include/internal/pycore_atexit.h    @ericsnowcurrently
-Include/internal/pycore_freelist.h  @ericsnowcurrently
+Include/internal/pycore_*_init.h          @ericsnowcurrently
+Include/internal/pycore_*_state.h         @ericsnowcurrently
+Include/internal/pycore_atexit.h          @ericsnowcurrently
+Include/internal/pycore_freelist.h        @ericsnowcurrently
 Include/internal/pycore_global_objects.h  @ericsnowcurrently
-Include/internal/pycore_interp.h    @ericsnowcurrently
-Include/internal/pycore_obmalloc.h  @ericsnowcurrently
-Include/internal/pycore_pymem.h     @ericsnowcurrently
-Include/internal/pycore_runtime.h   @ericsnowcurrently
-Include/internal/pycore_stackref.h  @Fidget-Spinner
-Include/internal/pycore_tstate.h    @ericsnowcurrently
-Tools/build/generate_global_objects.py  @ericsnowcurrently
+Include/internal/pycore_interp.h          @ericsnowcurrently
+Include/internal/pycore_obmalloc.h        @ericsnowcurrently
+Include/internal/pycore_pymem.h           @ericsnowcurrently
+Include/internal/pycore_runtime.h         @ericsnowcurrently
+Include/internal/pycore_stackref.h        @Fidget-Spinner
+Include/internal/pycore_tstate.h          @ericsnowcurrently
+Tools/build/generate_global_objects.py    @ericsnowcurrently
 
 # Remote Debugging
-Python/remote_debug.h         @pablogsal
-Python/remote_debugging.c     @pablogsal
-Modules/_remote_debugging_module.c @pablogsal @ambv @1st1
+Python/remote_debug.h               @pablogsal
+Python/remote_debugging.c           @pablogsal
+Modules/_remote_debugging_module.c  @pablogsal @ambv @1st1
 
 # Sub-Interpreters
-**/*crossinterp*              @ericsnowcurrently
-**/*interpreteridobject.*     @ericsnowcurrently
-Doc/library/concurrent.interpreters.rst @ericsnowcurrently
-Lib/concurrent/futures/interpreter.py @ericsnowcurrently
-Lib/concurrent/interpreters/  @ericsnowcurrently
-Lib/test/support/channels.py  @ericsnowcurrently
-Lib/test/test__interp*.py     @ericsnowcurrently
-Lib/test/test_interpreters/   @ericsnowcurrently
-Modules/_interp*module.c      @ericsnowcurrently
+**/*crossinterp*                          @ericsnowcurrently
+**/*interpreteridobject.*                 @ericsnowcurrently
+Doc/library/concurrent.interpreters.rst   @ericsnowcurrently
+Lib/concurrent/futures/interpreter.py     @ericsnowcurrently
+Lib/concurrent/interpreters/              @ericsnowcurrently
+Lib/test/support/channels.py              @ericsnowcurrently
+Lib/test/test__interp*.py                 @ericsnowcurrently
+Lib/test/test_interpreters/               @ericsnowcurrently
+Modules/_interp*module.c                  @ericsnowcurrently
 
 # Template string literals (t-strings)
 Lib/test/test_tstring.py      @lysnikolaou
@@ -329,9 +329,9 @@ Objects/interpolationobject.c @lysnikolaou
 Objects/templateobject.c      @lysnikolaou
 
 # Tests
-Lib/test/test_patma.py        @brandtbucher
-Lib/test/test_type_*.py       @JelleZijlstra
-Lib/test/test_capi/test_misc.py @markshannon
+Lib/test/test_patma.py           @brandtbucher
+Lib/test/test_type_*.py          @JelleZijlstra
+Lib/test/test_capi/test_misc.py  @markshannon
 
 
 # ----------------------------------------------------------------------------
@@ -339,9 +339,9 @@ Lib/test/test_capi/test_misc.py @markshannon
 # ----------------------------------------------------------------------------
 
 # Annotationlib
-Doc/library/annotationlib.rst @JelleZijlstra
-Lib/annotationlib.py          @JelleZijlstra
-Lib/test/test_annotationlib.py @JelleZijlstra
+Doc/library/annotationlib.rst    @JelleZijlstra
+Lib/annotationlib.py             @JelleZijlstra
+Lib/test/test_annotationlib.py   @JelleZijlstra
 
 # Argparse
 Doc/**/argparse*.rst          @savannahostrowski
@@ -380,12 +380,12 @@ Modules/cjkcodecs/            @corona10
 Tools/unicode/gencjkcodecs.py @corona10
 
 # Collections
-Doc/library/collections.abc.rst @rhettinger
-Doc/library/collections.rst   @rhettinger
-Lib/_collections_abc.py       @rhettinger
-Lib/collections/              @rhettinger
-Lib/test/test_collections.py  @rhettinger
-Modules/_collectionsmodule.c  @rhettinger
+Doc/library/collections.abc.rst  @rhettinger
+Doc/library/collections.rst      @rhettinger
+Lib/_collections_abc.py          @rhettinger
+Lib/collections/                 @rhettinger
+Lib/test/test_collections.py     @rhettinger
+Modules/_collectionsmodule.c     @rhettinger
 
 # Colorize
 Lib/_colorize.py              @hugovk
@@ -401,14 +401,14 @@ Lib/dataclasses.py            @ericvsmith
 Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
-Doc/**/*time.rst              @pganssle @abalkin
-Include/datetime.h            @pganssle @abalkin
-Include/internal/pycore_time.h @pganssle @abalkin
-Lib/*time.py                  @pganssle @abalkin
-Lib/test/datetimetester.py    @pganssle @abalkin
-Lib/test/test_*time.py        @pganssle @abalkin
-Modules/*time*                @pganssle @abalkin
-Python/pytime.c               @pganssle @abalkin
+Doc/**/*time.rst                 @pganssle @abalkin
+Include/datetime.h               @pganssle @abalkin
+Include/internal/pycore_time.h   @pganssle @abalkin
+Lib/*time.py                     @pganssle @abalkin
+Lib/test/datetimetester.py       @pganssle @abalkin
+Lib/test/test_*time.py           @pganssle @abalkin
+Modules/*time*                   @pganssle @abalkin
+Python/pytime.c                  @pganssle @abalkin
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
@@ -429,11 +429,11 @@ Lib/ensurepip/                @pfmoore @pradyunsg
 Lib/test/test_ensurepip.py    @pfmoore @pradyunsg
 
 # Enum
-Doc/howto/enum.rst            @ethanfurman
-Doc/library/enum.rst          @ethanfurman
-Lib/enum.py                   @ethanfurman
-Lib/test/test_enum.py         @ethanfurman
-Lib/test/test_json/test_enum.py @ethanfurman
+Doc/howto/enum.rst               @ethanfurman
+Doc/library/enum.rst             @ethanfurman
+Lib/enum.py                      @ethanfurman
+Lib/test/test_enum.py            @ethanfurman
+Lib/test/test_json/test_enum.py  @ethanfurman
 
 # FTP
 Doc/library/ftplib.rst        @giampaolo
@@ -463,22 +463,22 @@ Lib/test/test_heapq.py        @rhettinger
 Modules/_heapqmodule.c        @rhettinger
 
 # HTML
-Doc/library/html*             @ezio-melotti
-Lib/html/                     @ezio-melotti
-Lib/_markupbase.py            @ezio-melotti
-Lib/test/test_html*.py        @ezio-melotti
+Doc/library/html*                   @ezio-melotti
+Lib/html/                           @ezio-melotti
+Lib/_markupbase.py                  @ezio-melotti
+Lib/test/test_html*.py              @ezio-melotti
 Tools/build/parse_html5_entities.py @ezio-melotti
 
 # importlib.metadata
-Doc/library/importlib.metadata.rst @jaraco @warsaw
-Lib/importlib/metadata/       @jaraco @warsaw
-Lib/test/test_importlib/metadata/ @jaraco @warsaw
+Doc/library/importlib.metadata.rst  @jaraco @warsaw
+Lib/importlib/metadata/             @jaraco @warsaw
+Lib/test/test_importlib/metadata/   @jaraco @warsaw
 
 # importlib.resources
-Doc/library/importlib.resources.abc.rst @jaraco @warsaw
-Doc/library/importlib.resources.rst @jaraco @warsaw
-Lib/importlib/resources/      @jaraco @warsaw @FFY00
-Lib/test/test_importlib/resources/ @jaraco @warsaw @FFY00
+Doc/library/importlib.resources.abc.rst   @jaraco @warsaw
+Doc/library/importlib.resources.rst       @jaraco @warsaw
+Lib/importlib/resources/                  @jaraco @warsaw @FFY00
+Lib/test/test_importlib/resources/        @jaraco @warsaw @FFY00
 
 # itertools
 Doc/library/itertools.rst     @rhettinger
@@ -492,10 +492,10 @@ Lib/test/test_logging.py      @vsajip
 
 # multiprocessing
 Doc/library/multiprocessing*.rst @gpshead
-Lib/multiprocessing/          @gpshead
-Lib/test/*multiprocessing.py  @gpshead
-Lib/test/test_multiprocessing*/ @gpshead
-Modules/_multiprocessing/     @gpshead
+Lib/multiprocessing/             @gpshead
+Lib/test/*multiprocessing.py     @gpshead
+Lib/test/test_multiprocessing*/  @gpshead
+Modules/_multiprocessing/        @gpshead
 
 # pathlib
 Doc/library/pathlib.rst       @barneygale
@@ -537,9 +537,9 @@ Lib/test/test_site.py         @FFY00
 Doc/library/site.rst          @FFY00
 
 # string.templatelib
-Doc/library/string.templatelib.rst @lysnikolaou @AA-Turner
-Lib/string/templatelib.py     @lysnikolaou @AA-Turner
-Lib/test/test_string/test_templatelib.py @lysnikolaou @AA-Turner
+Doc/library/string.templatelib.rst        @lysnikolaou @AA-Turner
+Lib/string/templatelib.py                 @lysnikolaou @AA-Turner
+Lib/test/test_string/test_templatelib.py  @lysnikolaou @AA-Turner
 
 # Sysconfig
 **/*sysconfig*                @FFY00
@@ -578,7 +578,7 @@ Lib/types.py                  @AA-Turner
 Modules/_typesmodule.c        @AA-Turner
 
 # Unittest
-Lib/unittest/mock.py          @cjw296
+Lib/unittest/mock.py             @cjw296
 Lib/test/test_unittest/testmock/ @cjw296
 
 # Urllib
