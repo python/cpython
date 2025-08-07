@@ -1,5 +1,6 @@
 """Tool for generating Software Bill of Materials (SBOM) for Python's dependencies"""
 import os
+import random
 import re
 import hashlib
 import json
@@ -167,16 +168,18 @@ def get_externals() -> list[str]:
 
 
 def download_with_retries(download_location: str,
-                          max_retries: int = 5,
-                          base_delay: float = 2.0) -> typing.Any:
+                          max_retries: int = 7,
+                          base_delay: float = 2.25,
+                          max_jitter: float = 1.0) -> typing.Any:
     """Download a file with exponential backoff retry."""
     for attempt in range(max_retries):
         try:
             resp = urllib.request.urlopen(download_location)
         except urllib.error.URLError as ex:
             if attempt == max_retries:
-                raise ex
-            time.sleep(base_delay**attempt)
+                msg = f"Download from {download_location} failed."
+                raise OSError(msg) from ex
+            time.sleep(base_delay**attempt + random.uniform(0, max_jitter))
         else:
             return resp
 
