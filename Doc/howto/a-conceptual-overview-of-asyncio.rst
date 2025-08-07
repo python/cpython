@@ -378,7 +378,7 @@ That might sound odd to you. You might be thinking:
    :ref:`async generator function <asynchronous-generator-functions>`, a
    different beast entirely.
 
-   2. What about a ``yield from`` within the coroutine function to a (plain)
+   2. What about a :ref:`yield from <yieldexpr>` within the coroutine function to a (plain)
    generator?
    It causes the following error: ``SyntaxError: yield from not allowed in a coroutine.``
    This was intentionally designed for the sake of simplicity -- mandating only
