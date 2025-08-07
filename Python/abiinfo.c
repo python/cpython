@@ -26,27 +26,6 @@ static PyStructSequence_Desc abi_info_desc = {
 };
 
 PyObject *
-_PyAbiInfo_GetPointerBits(void)
-{
-    PyObject *pointer_bits;
-    switch (SIZEOF_VOID_P) {
-        case 4:
-            pointer_bits = PyLong_FromLong(32);
-            break;
-        case 8:
-            pointer_bits = PyLong_FromLong(64);
-            break;
-        default:
-            pointer_bits = Py_NewRef(Py_None);
-            break;
-    }
-    if (pointer_bits == NULL) {
-        return NULL;
-    }
-    return pointer_bits;
-}
-
-PyObject *
 PyAbiInfo_GetInfo(void)
 {
     PyObject *abi_info, *value;
@@ -56,7 +35,7 @@ PyAbiInfo_GetInfo(void)
         goto error;
     }
 
-    value = _PyAbiInfo_GetPointerBits();
+    value = PyLong_FromLong(sizeof(void *) * 8);
     if (value == NULL) {
         goto error;
     }

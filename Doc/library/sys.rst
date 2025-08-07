@@ -18,10 +18,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. attribute:: abi_info.pointer_bits
 
       The width of pointers in bits, as an integer.
-
-      * ``32``: 32-bit build
-      * ``64``: 64-bit build
-      * ``None`` if this information is unknown or neither 32 nore 64 bits.
+      Equivalent to ``8 * sizeof(void *)``, i.e. usually ``32`` or ``64``.
 
    .. attribute:: abi_info.Py_GIL_DISABLED
 
