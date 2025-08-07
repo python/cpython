@@ -214,7 +214,7 @@ static inline PyStats* _PyThreadState_GetStatsFast(void);
 #define _Py_STATS_COND_EXPR(cond, expr) \
     do { \
         PyStats *s = _PyStats_GET(); \
-        if (s != NULL && cond) { \
+        if (s != NULL && (cond)) { \
             s->expr; \
         } \
     } while (0)
