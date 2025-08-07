@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/resource.h>         // getrusage()
 #include <unistd.h>               // getpagesize()
+#include <internal/pycore_long.h> // _PyLong_IsNegative()
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.
@@ -155,7 +156,7 @@ py2rlim(PyObject *obj, rlim_t *out)
     if (obj == NULL) {
         return -1;
     }
-    int neg = PyLong_IsNegative(obj);
+    int neg = _PyLong_IsNegative((const PyLongObject *)obj);
     assert(neg >= 0);
     Py_ssize_t bytes = PyLong_AsNativeBytes(obj, out, sizeof(*out),
                                             Py_ASNATIVEBYTES_NATIVE_ENDIAN |
