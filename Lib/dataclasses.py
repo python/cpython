@@ -442,7 +442,7 @@ def _tuple_compare_expand(op, fields):
             )
         yield f'    return self.{fields[-1].name} {op} other.{fields[-1].name}'
     else:
-        yield '    return True'
+        yield f'    return {op.endswith("=")}'
 
 
 class _FuncBuilder:
