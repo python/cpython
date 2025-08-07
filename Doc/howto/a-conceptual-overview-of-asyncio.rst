@@ -215,7 +215,7 @@ being awaited.
 
 Awaiting a task will cede control from the current task or coroutine to
 the event loop.
-In the process of relinquishing control a few important things happen.
+In the process of relinquishing control, a few important things happen.
 We'll use the following code example to illustrate::
 
    async def plant_a_tree():
@@ -227,7 +227,7 @@ We'll use the following code example to illustrate::
 
 In this example, imagine the event loop has passed control to the start of the
 coroutine ``plant_a_tree()``.
-As seen above, that coroutine creates a task, then awaits it.
+As seen above, the coroutine creates a task and then awaits it.
 The ``await dig_the_hole_task`` instruction adds a callback, which will resume
 ``plant_a_tree()``, to the ``dig_the_hole_task`` object's list of callbacks.
 And then, the instruction cedes control to the event loop.
@@ -301,7 +301,7 @@ unintentionally hog control from other tasks and effectively stall the event
 loop.
 :func:`asyncio.run` can help you detect such occurences with the ``debug=True``
 flag.
-Among other things, that will log any coroutines which monopolize execution for
+Among other things, it will log any coroutines that monopolize execution for
 100ms or longer.
 
 The design intentionally trades off some conceptual clarity around usage of
@@ -433,7 +433,7 @@ like a status light (red, yellow or green) or indicator.
 these various capabilities.
 The prior section said tasks store a list of callbacks, which wasn't entirely
 accurate.
-It's actually the ``Future`` class that implements this logic which ``Task``
+It's actually the ``Future`` class that implements this logic, which ``Task``
 inherits.
 
 Futures may also be used directly (not via tasks).
@@ -487,7 +487,7 @@ If :meth:`future.set_result() <asyncio.Future.set_result>` (the method
 responsible for marking that future as done) is never called, then this task
 will never finish.
 We've also enlisted the help of another task, which we'll see in a moment, that
-will monitor how much time has elapsed and accordingly call
+will monitor how much time has elapsed and, accordingly, call
 ``future.set_result()``.
 
 ::
