@@ -433,6 +433,18 @@ def _tuple_str(obj_name, fields):
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
 
 
+def _tuple_compare_expand(op, fields):
+    if fields:
+        for f in fields[:-1]:
+            yield (
+                f'    if self.{f.name} != other.{f.name}:\n'
+                f'      return self.{f.name} {op} other.{f.name}'
+            )
+        yield f'    return self.{fields[-1].name} {op} other.{fields[-1].name}'
+    else:
+        yield '    return True'
+
+
 class _FuncBuilder:
     def __init__(self, globals):
         self.names = []
@@ -1128,21 +1140,20 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if order:
         # Create and set the ordering methods.
         flds = [f for f in field_list if f.compare]
-        self_tuple = _tuple_str('self', flds)
-        other_tuple = _tuple_str('other', flds)
         for name, op in [('__lt__', '<'),
                          ('__le__', '<='),
                          ('__gt__', '>'),
                          ('__ge__', '>='),
                          ]:
             # Create a comparison function.  If the fields in the object are
-            # named 'x' and 'y', then self_tuple is the string
-            # '(self.x,self.y)' and other_tuple is the string
-            # '(other.x,other.y)'.
+            # named 'x' and 'y'.
+            # if self.x != other.x:
+            #     return self.x {op} other.x
+            # return self.y {op} other.y
             func_builder.add_fn(name,
                             ('self', 'other'),
                             [ '  if other.__class__ is self.__class__:',
-                             f'   return {self_tuple}{op}{other_tuple}',
+                              *_tuple_compare_expand(op, flds),
                               '  return NotImplemented'],
                             overwrite_error='Consider using functools.total_ordering')
 
