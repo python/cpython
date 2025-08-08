@@ -268,7 +268,7 @@ http.cookies
 
 * Allow double quotes in cookie values with a more linient regex for
   doublequoted strings.
-  (Contributed by Nick Burns and Senthil Kumaran in :gh:`137566`.)
+  (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
 math
