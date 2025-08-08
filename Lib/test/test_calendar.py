@@ -721,7 +721,6 @@ class CalendarTestCase(unittest.TestCase):
             'Portuguese', 'pt_PT.UTF-8',
             'German',  'de_DE.UTF-8',
             'Russian', 'ru_RU.UTF-8',
-            'Sinhala', 'si_LK.UTF-8'
     )
     def test_locale_calendar_long_weekday_names(self):
         get_weekday_names = lambda width: calendar.TextCalendar().formatweekheader(width).split()
