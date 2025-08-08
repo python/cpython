@@ -571,7 +571,10 @@ Deprecated C APIs
   (Contributed by Serhiy Storchaka in :gh:`132629`.)
 
 * Deprecate :c:member:`~PyComplexObject.cval` field of the the
-  :c:type:`PyComplexObject` type.
+  :c:type:`PyComplexObject` type:
+  Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
+  to convert a Python complex number to/from the C :c:type:`Py_complex`
+  representation.
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
 
 * Functions :c:func:`_Py_c_sum`, :c:func:`_Py_c_diff`, :c:func:`_Py_c_neg`,
