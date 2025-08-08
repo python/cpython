@@ -696,12 +696,12 @@ class CalendarTestCase(unittest.TestCase):
         except locale.Error:
             raise unittest.SkipTest('cannot set the en_US locale')
 
-    # These locales have weekday names all shorter than English's longest 
+    # These locales have weekday names all shorter than English's longest
     # 'Wednesday'. They should not be abbreviated unnecessarily
-    @support.run_with_locales("LC_ALL", 
-            'Chinese', 'zh_CN.UTF-8', 
+    @support.run_with_locales("LC_ALL",
+            'Chinese', 'zh_CN.UTF-8',
             'French', 'fr_FR.UTF-8',
-            'Norwegian', 'nb_NO.UTF-8', 
+            'Norwegian', 'nb_NO.UTF-8',
             'Malay', 'ms_MY.UTF8'
     )
     def test_locale_calendar_short_weekday_names(self):
@@ -715,19 +715,19 @@ class CalendarTestCase(unittest.TestCase):
 
         # Weekday names should not be abbreviated if the width is sufficient
         self.assertEqual(
-            get_weekday_names(max_length), 
+            get_weekday_names(max_length),
             get_weekday_names(max_length + 10)
         )
 
         # Any width shorter than necessary should produce abbreviations
         self.assertNotEqual(
-            get_weekday_names(max_length), 
+            get_weekday_names(max_length),
             get_weekday_names(max_length - 1)
         )
 
     # These locales have a weekday name longer than 'Wednesday'
     # They should be properly abbreviated rather than truncated
-    @support.run_with_locales("LC_ALL", 
+    @support.run_with_locales("LC_ALL",
             'Portuguese', 'pt_PT.UTF-8',
             'German',  'de_DE.UTF-8',
             'Russian', 'ru_RU.UTF-8',
