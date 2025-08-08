@@ -366,7 +366,7 @@ Basic Usage
 
    .. note::
 
-      As mandated by RFC 8259, keys in JSON key-value pairs are always of
+      As mandated by :rfc:`8259`, keys in JSON key-value pairs are always of
       type :class:`str`. Therefore, dictionary keys obtained by
       deserializing JSON objects will always be strings.
       For Example,
