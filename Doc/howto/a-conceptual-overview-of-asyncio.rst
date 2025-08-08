@@ -172,8 +172,26 @@ functions) tied to an event loop.
 A task also maintains a list of callback functions whose importance will become
 clear in a moment when we discuss :keyword:`await`.
 The recommended way to create tasks is via :func:`asyncio.create_task`.
-Creating a task automatically schedules it for execution (by adding it to the
-event loop's to-do list, that is, collection of jobs).
+
+Creating a task automatically schedules it for execution (by adding a
+callback to run it in the event loop's to-do list, that is, collection of jobs).
+It's important to be aware that the task itself is not added to the event loop.
+This matters if the task object you created is garbage collected before it's
+called by the event loop.
+For example, consider this program::
+
+   async def hello():
+       print("hello!")
+
+   async def main():
+       hello_task = asyncio.create_task(hello())
+       return
+
+   asyncio.run(main())
+
+Because the coroutine ``main()`` exits before awaiting the task and no other
+references to the task are made, the task object ``hello_task`` *might* be
+garbage collected before the event loop invokes it.
 
 Since there's only one event loop (in each thread), :mod:`!asyncio` takes care of
 associating the task with the event loop for you. As such, there's no need
