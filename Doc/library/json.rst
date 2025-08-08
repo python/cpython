@@ -366,8 +366,12 @@ Basic Usage
 
    .. note::
 
-      As mandated by RFC 8259,the key in key-value pairs in JSON is always of type of :class:`str`,so the key of the dictionary that is got by serializing a JSON object is always a string.
-      Example:``json.loads('{"42":"value"}')`` will get a dictionary ``{'42':'value'}``
+      As mandated by RFC 8259, keys in JSON key-value pairs are always of
+      type :class:`str`. Therefore, dictionary keys obtained by
+      deserializing JSON objects will always be strings.
+      For Example,
+      ``json.loads('{"42":"value"}')`` returns the dictionary
+      ``{'42': 'value'}``.
 
 Encoders and Decoders
 ---------------------
