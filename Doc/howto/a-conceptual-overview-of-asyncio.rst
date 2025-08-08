@@ -349,9 +349,9 @@ This is where the magic happens.
 You'll come away from this section knowing what ``await`` does behind the scenes
 and how to make your own asynchronous operators.
 
-============================
-Inner workings of coroutines
-============================
+================================
+The inner workings of coroutines
+================================
 
 :mod:`!asyncio` leverages four components to pass around control.
 
@@ -470,9 +470,9 @@ Futures are much more versatile and will be marked as done when you say so.
 In this way, they're the flexible interface for you to make your own conditions
 for waiting and resuming.
 
-======================
-Homemade asyncio.sleep
-======================
+========================
+A homemade asyncio.sleep
+========================
 
 We'll go through an example of how you could leverage a future to create your
 own variant of asynchronous sleep (``async_sleep``) which mimics
