@@ -31,8 +31,8 @@ import sys
 import sysconfig
 import warnings
 from collections.abc import Iterable
-from importlib._bootstrap import (
-    _load as bootstrap_load,  # type: ignore[attr-defined]
+from importlib._bootstrap import (  # type: ignore[attr-defined]
+    _load as bootstrap_load,
 )
 from importlib.machinery import (
     BuiltinImporter,
