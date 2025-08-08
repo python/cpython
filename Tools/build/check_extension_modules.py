@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import _imp
 import argparse
-import collections
 import enum
 import logging
 import os
@@ -32,7 +31,9 @@ import sys
 import sysconfig
 import warnings
 from collections.abc import Iterable
-from importlib._bootstrap import _load as bootstrap_load  # type: ignore[attr-defined]
+from importlib._bootstrap import (
+    _load as bootstrap_load,  # type: ignore[attr-defined]
+)
 from importlib.machinery import (
     BuiltinImporter,
     ExtensionFileLoader,
