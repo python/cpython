@@ -2000,15 +2000,9 @@ expression support in the :mod:`re` module).
 
    For example::
 
-      >>> 'a commom word'.isascii()
-      True
-      >>> 'acommomword'.isascii()
+      >>> 'a common word'.isascii()
       True
       >>> 'µ'.isascii()
-      False
-      >>> 'æ'.isascii()
-      False
-      >>> 'Ŧ'.isascii()
       False
 
    .. versionadded:: 3.7
