@@ -323,8 +323,8 @@ invocations before ``coro_b()``'s output:
 If we change ``await coro_a()`` to ``await asyncio.create_task(coro_a())``, the
 behavior changes.
 The coroutine ``main()`` cedes control to the event loop with that statement.
-The event loop then proceeds through its backlog of work, calling the task
-which wraps ``coro_b()`` and then ``coro_a()`` before resuming the coroutine
+The event loop then proceeds through its backlog of work, calling ``task_b``
+and then the task which wraps ``coro_a()`` before resuming the coroutine
 ``main()``.
 
 .. code-block:: none
