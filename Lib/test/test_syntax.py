@@ -350,6 +350,25 @@ SyntaxError: invalid syntax. Perhaps you forgot a comma?
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Perhaps you forgot a comma?
 
+# Suggest the correct form of an empty literal collection.
+# A slash ('/') is only valid for sets.
+
+>>> [/]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you meant '[]' instead of '[/]'?
+
+>>> [   /   ]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you meant '[]' instead of '[/]'?
+
+>>> (/)
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you meant '()' instead of '(/)'?
+
+>>> (   /   )
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Perhaps you meant '()' instead of '(/)'?
+
 # Make sure soft keywords constructs don't raise specialized
 # errors regarding missing commas or other spezialiced errors
 

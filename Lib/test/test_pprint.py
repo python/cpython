@@ -833,7 +833,8 @@ dataclass5(a=dataclass6(c=...,
         self.assertEqual(dotted_printer.pformat(o2), exp2)
 
     def test_set_reprs(self):
-        self.assertEqual(pprint.pformat(set()), 'set()')
+        self.assertEqual(pprint.pformat({/}), '{/}')
+        self.assertEqual(pprint.pformat(set()), '{/}')
         self.assertEqual(pprint.pformat(set(range(3))), '{0, 1, 2}')
         self.assertEqual(pprint.pformat(set(range(7)), width=20), '''\
 {0,

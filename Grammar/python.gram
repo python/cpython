@@ -993,13 +993,17 @@ strings[expr_ty] (memo):
     | a[asdl_expr_seq*]=tstring+ { _PyPegen_concatenate_tstrings(p, a, EXTRA) }
 
 list[expr_ty]:
+    | invalid_list_slash
     | '[' a=[star_named_expressions] ']' { _PyAST_List(a, Load, EXTRA) }
 
 tuple[expr_ty]:
+    | invalid_tuple_slash
     | '(' a=[y=star_named_expression ',' z=[star_named_expressions] { _PyPegen_seq_insert_in_front(p, y, z) } ] ')' {
         _PyAST_Tuple(a, Load, EXTRA) }
 
-set[expr_ty]: '{' a=star_named_expressions '}' { _PyAST_Set(a, EXTRA) }
+set[expr_ty]:
+    | '{' '/' '}' { _PyAST_Set(NULL, EXTRA) }
+    | '{' a=star_named_expressions '}' { _PyAST_Set(a, EXTRA) }
 
 # Dicts
 # -----
@@ -1572,3 +1576,11 @@ invalid_type_params:
         RAISE_SYNTAX_ERROR_STARTING_FROM(
             token,
             "Type parameter list cannot be empty")}
+
+invalid_list_slash:
+    | '[' a='/' ']' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
+        "invalid syntax. Perhaps you meant '[]' instead of '[/]'?") }
+
+invalid_tuple_slash:
+    | '(' a='/' ')' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a,
+        "invalid syntax. Perhaps you meant '()' instead of '(/)'?") }

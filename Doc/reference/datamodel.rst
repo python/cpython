@@ -450,11 +450,14 @@ There are currently two intrinsic set types:
 
 Sets
    .. index:: pair: object; set
+              pair: empty; set
 
-   These represent a mutable set. They are created by the built-in :func:`set`
-   constructor and can be modified afterwards by several methods, such as
-   :meth:`~set.add`.
-
+   The items of a set are arbitrary Python objects.
+   Sets are formed by placing a comma-separated list of expressions in
+   curly brackets. For sets of length 1, the comma may be ommitted.
+   An empty set can be formed by ``{/}``.
+   Sets are mutable (see section :ref:`set`) and can be modified afterwards
+   by several methods, such as :meth:`~set.add`.
 
 Frozen sets
    .. index:: pair: object; frozenset

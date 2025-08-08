@@ -70,6 +70,33 @@ Summary --- release highlights
 New features
 ============
 
+.. _whatsnew315-pep-802:
+
+Display Syntax for the Empty Set
+--------------------------------
+
+There is a new notation for the empty set, ``{/}``.
+As part of this, the :func`:str` and :func:`repr` of an empty :class:`set`
+will now return ``'{/}'``.
+
+This complements the existing notation for empty tuples, lists, and
+dictionaries, which use ``()``, ``[]``, and ``{}`` respectively.
+
+.. code-block:: python
+
+   >>> type({/})
+   <class 'set'>
+   >>> {/} == set()
+   True
+  >>> repr({/})
+   '{/}'
+   >>> str(set())
+   '{/}'
+   >>> str({/}) == str(set()) == repr({/}) == repr(set())
+   True
+
+(Contributed by Adam Turner in :pep:`802`.)
+
 .. _whatsnew315-sampling-profiler:
 
 High frequency statistical sampling profiler
