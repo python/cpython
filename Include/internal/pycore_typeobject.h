@@ -40,6 +40,7 @@ extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_FiniExtTypes(PyInterpreterState *interp);
 extern void _PyTypes_Fini(PyInterpreterState *);
 extern void _PyTypes_AfterFork(void);
+extern void _PyTypes_FiniCachedDescriptors(PyInterpreterState *);
 
 static inline PyObject **
 _PyStaticType_GET_WEAKREFS_LISTPTR(managed_static_type_state *state)
