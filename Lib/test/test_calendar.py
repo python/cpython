@@ -696,28 +696,24 @@ class CalendarTestCase(unittest.TestCase):
         except locale.Error:
             raise unittest.SkipTest('cannot set the en_US locale')
             
-    def test_locale_calendar_shorter_day_names(self):
-        locale_tested = False
-        for locale_name in locale.locale_alias.keys():
-            if len(locale_name) < 16: # avoiding a crashing bug on older versions of Python on Windows
-                try:
-                    with calendar.different_locale(locale_name):
-                        max_length = max(map(len, (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))))
+    # These locales have weekday names all shorter than English's longest 'Wednesday'
+    # They should not be abbreviated unnecessarily
+    @support.run_with_locale("LC_ALL", 
+            'Chinese', 'zh_CN.UTF-8', 
+            'French', 'fr_FR.UTF-8',
+            'Norwegian', 'nb_NO.UTF-8', 
+            'Malay', 'ms_MY.UTF8'
+    )
+    def test_locale_calendar_weekday_names(self):
+        max_length = max(map(len, (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))))
 
-                        cal = calendar.TextCalendar()
-                        week_header_split = lambda width: cal.formatweekheader(width).split()
+        get_weekday_names = lambda width: calendar.TextCalendar().formatweekheader(width).split()
 
-                        # Full weekday name should be used whenever the width is sufficient
-                        self.assertEqual(week_header_split(max_length), week_header_split(max_length + 10))
-                        # Any width shorter than the longest necessary should return abbreviations
-                        self.assertNotEqual(week_header_split(max_length), week_header_split(max_length - 1))
+        # Full weekday name, not an abbreviation, should be used if the width is sufficient
+        self.assertEqual(get_weekday_names(max_length), get_weekday_names(max_length + 10))
 
-                        locale_tested = True
-                except locale.Error:
-                    continue
-
-        if not locale_tested:
-            raise unittest.SkipTest('cannot set the locale to a language with short weekday names')
+        # Any width shorter than the longest necessary should produce abbreviations
+        self.assertNotEqual(get_weekday_names(max_length), get_weekday_names(max_length - 1))
 
     def test_locale_calendar_formatmonthname(self):
         try:
