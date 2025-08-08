@@ -150,10 +150,18 @@ class ResourceTest(unittest.TestCase):
     def test_fsize_negative(self):
         self.assertGreater(resource.RLIM_INFINITY, 0)
         (cur, max) = resource.getrlimit(resource.RLIMIT_FSIZE)
-        for value in -5, -3, -1, -2**31, -2**32-5, -2**63, -2**64-5, -2**1000:
+        for value in -5, -2**31, -2**32-5, -2**63, -2**64-5, -2**1000:
             with self.subTest(value=value):
                 self.assertRaises(ValueError, resource.setrlimit, resource.RLIMIT_FSIZE, (value, max))
                 self.assertRaises(ValueError, resource.setrlimit, resource.RLIMIT_FSIZE, (cur, value))
+
+        if resource.RLIM_INFINITY in (2**32-3, 2**32-1, 2**64-3, 2**64-1):
+            value = (resource.RLIM_INFINITY & 0xffff) - 0x10000
+            with self.assertWarnsRegex(DeprecationWarning, "RLIM_INFINITY"):
+                resource.setrlimit(resource.RLIMIT_FSIZE, (value, max))
+            with self.assertWarnsRegex(DeprecationWarning, "RLIM_INFINITY"):
+                resource.setrlimit(resource.RLIMIT_FSIZE, (cur, value))
+
 
     @unittest.skipUnless(hasattr(resource, "getrusage"), "needs getrusage")
     def test_getrusage(self):

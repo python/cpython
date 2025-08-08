@@ -560,6 +560,12 @@ Porting to Python 3.15
   The |pythoncapi_compat_project| can be used to get most of these new
   functions on Python 3.14 and older.
 
+* :data:`resource.RLIM_INFINITY` is now always positive.
+  Passing a negative integer value that corresponded to its old value
+  (such as ``-1`` or ``-3``, depending on platform) to
+  :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`137044`.)
+
 
 Deprecated C APIs
 -----------------
