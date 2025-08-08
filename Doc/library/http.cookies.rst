@@ -30,6 +30,8 @@ in a cookie name (as :attr:`~Morsel.key`).
 .. versionchanged:: 3.3
    Allowed ':' as a valid cookie name character.
 
+.. versionchanged:: 3.15
+   Allowed '"' as a valid cookie value character.
 
 .. note::
 
@@ -314,3 +316,9 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
+   >>> C = cookies.SimpleCookie()
+   >>> C.load('cookies=7; mixins="{"chips": "dark chocolate"}"; state="gooey"')
+   >>> print(C)
+   Set-Cookie: cookies=7
+   Set-Cookie: mixins="{"chips": "dark chocolate"}"
+   Set-Cookie: state="gooey"
