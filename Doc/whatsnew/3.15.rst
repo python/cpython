@@ -76,7 +76,7 @@ Display Syntax for the Empty Set
 --------------------------------
 
 There is a new notation for the empty set, ``{/}``.
-As part of this, the :func`:str` and :func:`repr` of an empty :class:`set`
+As part of this, the :func:`:str` and :func:`repr` of an empty :class:`set`
 will now return ``'{/}'``.
 
 This complements the existing notation for empty tuples, lists, and
