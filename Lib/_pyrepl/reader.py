@@ -30,6 +30,8 @@ from dataclasses import dataclass, field, fields
 from . import commands, console, input
 from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
+import termios
+import errno
 
 
 # types
@@ -590,6 +592,10 @@ class Reader:
             self.dirty = True
             self.last_command = None
             self.calc_screen()
+        except termios.error as e:
+            if e.args[0] == errno.EIO:
+                return
+            raise
         except BaseException:
             self.restore()
             raise
