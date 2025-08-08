@@ -112,7 +112,7 @@ instead, it creates a coroutine object::
    >>> loudmouth_penguin(magic_number=3)
    <coroutine object loudmouth_penguin at 0x104ed2740>
 
-The terms "asynchronous function" and "coroutine object" are often conflated
+The terms "coroutine function" and "coroutine object" are often conflated
 as coroutine.
 That can be confusing!
 In this article, coroutine specifically refers to a coroutine object, or more
