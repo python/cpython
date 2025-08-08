@@ -25,7 +25,7 @@ article:
      tree/main>`_ that inspired this HOWTO article, by Alexander Nordin.
    * This in-depth `YouTube tutorial series <https://www.youtube.com/
      watch?v=Xbl7XjFYsN4&list=PLhNSoGM2ik6SIkVGXWBwerucXjgP1rHmB>`_ on
-     ``asyncio`` created by core Python team member, Łukasz Lang.
+     ``asyncio`` created by core Python team member, Łukasz Langa.
    * `500 Lines or Less: A Web Crawler With asyncio Coroutines <https://
      aosabook.org/en/500L/a-web-crawler-with-asyncio-coroutines.html>`_ by A.
      Jesse Jiryu Davis and Guido van Rossum.
