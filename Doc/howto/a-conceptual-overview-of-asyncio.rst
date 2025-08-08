@@ -208,23 +208,33 @@ It's important to be aware that the task itself is not added to the event loop,
 only a callback to the task is.
 This matters if the task object you created is garbage collected before it's
 called by the event loop.
-For example, consider this program::
+For example, consider this program:
+
+.. code-block::
+   :linenos:
 
    async def hello():
        print("hello!")
 
    async def main():
-       hello_task = asyncio.create_task(hello())
-       return
+       asyncio.create_task(hello())
+       # Other asynchronous instructions which run for a while
+       # and cede control to the event loop...
+       ...
 
    asyncio.run(main())
 
-Because the coroutine ``main()`` exits before awaiting the task and no other
-references to the task are made, the task object ``hello_task`` *might* be
-garbage collected before the event loop invokes it.
-That example still actually ends up running ``hello_task``, because
-``asyncio`` and Python's garbage collector work pretty hard to ensure this
-sort of thing doesn't happen.
+Because there's no reference to the task object created on line 5, it *might*
+be garbage collected before the event loop invokes it.
+Despite later instructions in the coroutine ``main()`` handing control back to
+the event loop so it can invoke other jobs, the task which wraps the ``hello()``
+coroutine may never run because it's already gone!
+This can also happen even if a coroutine keeps a reference to a task but
+completes before that task finishes.
+When the coroutine exits, local variables go out of scope and may be subject
+to garbage collection.
+In practice, ``asyncio`` and Python's garbage collector work pretty hard to
+ensure this sort of thing doesn't happen.
 But that's no reason to be reckless!
 
 =====
