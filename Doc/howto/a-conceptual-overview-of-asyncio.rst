@@ -229,7 +229,7 @@ be garbage collected before the event loop invokes it.
 Later instructions in the coroutine ``main()`` hand control back to the event
 loop so it can invoke other jobs.
 When the event loop eventually tries to run the task, it might fail and
-discover the task object has already been garbage collected!
+discover the task object does not exist!
 This can also happen even if a coroutine keeps a reference to a task but
 completes before that task finishes.
 When the coroutine exits, local variables go out of scope and may be subject
