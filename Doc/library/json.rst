@@ -364,6 +364,10 @@ Basic Usage
    .. versionchanged:: 3.9
       The keyword argument *encoding* has been removed.
 
+   .. note::
+
+      As mandated by RFC 8259,the key in key-value pairs in JSON is always of type of :class:`str`,so the key of the dictionary that is got by serializing a JSON object is always a string.
+      Example:``json.loads('{"42":"value"}')`` will get a dictionary ``{'42':'value'}``
 
 Encoders and Decoders
 ---------------------
