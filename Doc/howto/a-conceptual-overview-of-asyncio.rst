@@ -175,27 +175,6 @@ The recommended way to create tasks is via :func:`asyncio.create_task`.
 
 Creating a task automatically schedules it for execution (by adding a
 callback to run it in the event loop's to-do list, that is, collection of jobs).
-It's important to be aware that the task itself is not added to the event loop.
-This matters if the task object you created is garbage collected before it's
-called by the event loop.
-For example, consider this program::
-
-   async def hello():
-       print("hello!")
-
-   async def main():
-       hello_task = asyncio.create_task(hello())
-       return
-
-   asyncio.run(main())
-
-Because the coroutine ``main()`` exits before awaiting the task and no other
-references to the task are made, the task object ``hello_task`` *might* be
-garbage collected before the event loop invokes it.
-That example still actually ends up running ``hello_task``, because
-``asyncio`` and Python's garbage collector work pretty hard to ensure this
-sort of thing doesn't happen.
-But that's no reason to be reckless!
 
 Since there's only one event loop (in each thread), :mod:`!asyncio` takes care of
 associating the task with the event loop for you. As such, there's no need
@@ -224,6 +203,29 @@ For example, many async programs follow this setup::
        # The program will not reach the following print statement until the
        # coroutine main() finishes.
        print("coroutine main() is done!")
+
+It's important to be aware that the task itself is not added to the event loop,
+only a callback to the task is.
+This matters if the task object you created is garbage collected before it's
+called by the event loop.
+For example, consider this program::
+
+   async def hello():
+       print("hello!")
+
+   async def main():
+       hello_task = asyncio.create_task(hello())
+       return
+
+   asyncio.run(main())
+
+Because the coroutine ``main()`` exits before awaiting the task and no other
+references to the task are made, the task object ``hello_task`` *might* be
+garbage collected before the event loop invokes it.
+That example still actually ends up running ``hello_task``, because
+``asyncio`` and Python's garbage collector work pretty hard to ensure this
+sort of thing doesn't happen.
+But that's no reason to be reckless!
 
 =====
 await
