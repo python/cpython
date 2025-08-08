@@ -339,9 +339,9 @@ call stack to the event loop.
 That might sound minor, but in a large program with many ``await``'s and a deep
 callstack that overhead can add up to a meaningful performance drag.
 
-------------------------------------------
-Part 2: how coroutines work under the hood
-------------------------------------------
+---------------------------------
+Part 2: coroutines under the hood
+---------------------------------
 
 Part 2 goes into detail on the mechanisms :mod:`!asyncio` uses to manage
 control flow.
