@@ -192,6 +192,9 @@ For example, consider this program::
 Because the coroutine ``main()`` exits before awaiting the task and no other
 references to the task are made, the task object ``hello_task`` *might* be
 garbage collected before the event loop invokes it.
+Despite that, ``asyncio`` and Python's garbage collector work pretty hard
+to ensure this doesn't happen.
+But that's no reason to be reckless!
 
 Since there's only one event loop (in each thread), :mod:`!asyncio` takes care of
 associating the task with the event loop for you. As such, there's no need
