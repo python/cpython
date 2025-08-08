@@ -326,8 +326,9 @@ This behavior of ``await coroutine`` can trip a lot of people up!
 That example highlights how using only ``await coroutine`` could
 unintentionally hog control from other tasks and effectively stall the event
 loop.
-:func:`asyncio.run` can help you detect such occurences with the ``debug=True``
-flag.
+:func:`asyncio.run` can help you detect such occurences via the
+``debug=True`` flag which accordingly enables
+:ref:`debug mode <asyncio-debug-mode>`.
 Among other things, it will log any coroutines that monopolize execution for
 100ms or longer.
 
