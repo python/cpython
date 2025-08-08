@@ -4,9 +4,9 @@
 A Conceptual Overview of :mod:`!asyncio`
 ****************************************
 
-This :ref:`HOWTO <how-tos>` article seeks to help you build a sturdy mental model of how :mod:`asyncio`
-fundamentally works, helping you understand the how and why behind the
-recommended patterns.
+This :ref:`HOWTO <how-tos>` article seeks to help you build a sturdy mental
+model of how :mod:`asyncio` fundamentally works, helping you understand the
+how and why behind the recommended patterns.
 
 You might be curious about some key :mod:`!asyncio` concepts.
 You'll be comfortably able to answer these questions by the end of this
