@@ -263,6 +263,14 @@ http.client
   (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
 
 
+http.cookies
+------------
+
+* Allow double quotes in cookie values with a more linient regex for
+  doublequoted strings.
+  (Contributed by Nick Burns and Senthil Kumaran in :gh:`137566`.)
+
+
 math
 ----
 
