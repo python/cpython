@@ -539,8 +539,8 @@ will monitor how much time has elapsed and, accordingly, call
        # Block until the future is marked as done.
        await future
 
-We'll use a rather bare object, ``YieldToEventLoop()``, to ``yield`` from
-``__await__`` in order to cede control to the event loop.
+Below, we'll use a rather bare object, ``YieldToEventLoop()``, to ``yield``
+from ``__await__`` in order to cede control to the event loop.
 This is effectively the same as calling ``asyncio.sleep(0)``, but this approach
 offers more clarity, not to mention it's somewhat cheating to use
 ``asyncio.sleep`` when showcasing how to implement it!
