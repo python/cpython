@@ -339,9 +339,9 @@ call stack to the event loop.
 That might sound minor, but in a large program with many ``await``'s and a deep
 callstack that overhead can add up to a meaningful performance drag.
 
----------------------------------
-Part 2: coroutines under the hood
----------------------------------
+------------------------------------------------
+A conceptual overview part 2: the nuts and bolts
+------------------------------------------------
 
 Part 2 goes into detail on the mechanisms :mod:`!asyncio` uses to manage
 control flow.
@@ -349,9 +349,9 @@ This is where the magic happens.
 You'll come away from this section knowing what ``await`` does behind the scenes
 and how to make your own asynchronous operators.
 
-================================================
-coroutine.send(), await, yield and StopIteration
-================================================
+=========================
+Coroutines under the hood
+=========================
 
 :mod:`!asyncio` leverages four components to pass around control.
 
