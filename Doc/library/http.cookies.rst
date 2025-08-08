@@ -30,7 +30,7 @@ in a cookie name (as :attr:`~Morsel.key`).
 .. versionchanged:: 3.3
    Allowed ':' as a valid cookie name character.
 
-.. versionchanged:: 3.15
+.. versionchanged:: next
    Allowed '"' as a valid cookie value character.
 
 .. note::
