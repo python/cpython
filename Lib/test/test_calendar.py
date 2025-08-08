@@ -696,8 +696,8 @@ class CalendarTestCase(unittest.TestCase):
         except locale.Error:
             raise unittest.SkipTest('cannot set the en_US locale')
             
-    # These locales have weekday names all shorter than English's longest 'Wednesday'
-    # They should not be abbreviated unnecessarily
+    # These locales have weekday names all shorter than English's longest 
+    # 'Wednesday'. They should not be abbreviated unnecessarily
     @support.run_with_locale("LC_ALL", 
             'Chinese', 'zh_CN.UTF-8', 
             'French', 'fr_FR.UTF-8',
@@ -705,17 +705,25 @@ class CalendarTestCase(unittest.TestCase):
             'Malay', 'ms_MY.UTF8'
     )
     def test_locale_calendar_weekday_names(self):
-        max_length = max(map(len, (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))))
+        names = (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))
+        max_length = max(map(len, names))
 
-        get_weekday_names = lambda width: calendar.TextCalendar().formatweekheader(width).split()
+        def get_weekday_names(width):
+            return calendar.TextCalendar().formatweekheader(width).split()
 
-        # Full weekday name, not an abbreviation, should be used if the width is sufficient
-        self.assertEqual(get_weekday_names(max_length), get_weekday_names(max_length + 10))
+        # Weekday names should not be abbreviated if the width is sufficient
+        self.assertEqual(
+            get_weekday_names(max_length), 
+            get_weekday_names(max_length + 10)
+        )
 
-        # Any width shorter than the longest necessary should produce abbreviations
-        self.assertNotEqual(get_weekday_names(max_length), get_weekday_names(max_length - 1))
+        # Any width shorter than necessary should produce abbreviations
+        self.assertNotEqual(
+            get_weekday_names(max_length), 
+            get_weekday_names(max_length - 1)
+        )
 
-    # These locales have a weekday name longer than English's longest 'Wednesday'
+    # These locales have a weekday name longer than 'Wednesday'
     # They should be properly abbreviated rather than truncated
     @support.run_with_locale("LC_ALL", 
             'Portuguese', 'pt_PT.UTF-8',
@@ -723,7 +731,8 @@ class CalendarTestCase(unittest.TestCase):
             'Russian', 'ru_RU.UTF-8',
     )
     def test_locale_calendar_long_weekday_names(self):
-        get_weekday_names = lambda width: calendar.TextCalendar().formatweekheader(width).split()
+        def get_weekday_names(width):
+            return calendar.TextCalendar().formatweekheader(width).split()
         self.assertEqual(get_weekday_names(4), get_weekday_names(9))
 
     def test_locale_calendar_formatmonthname(self):
