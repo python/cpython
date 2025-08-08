@@ -226,9 +226,10 @@ For example, consider this program:
 
 Because there's no reference to the task object created on line 5, it *might*
 be garbage collected before the event loop invokes it.
-Despite later instructions in the coroutine ``main()`` handing control back to
-the event loop so it can invoke other jobs, the task which wraps the ``hello()``
-coroutine may never run because it's already gone!
+Later instructions in the coroutine ``main()`` hand control back to the event
+loop so it can invoke other jobs.
+When the event loop eventually tries to run the task, it might fail and
+discover the task object has already been garbage collected!
 This can also happen even if a coroutine keeps a reference to a task but
 completes before that task finishes.
 When the coroutine exits, local variables go out of scope and may be subject
