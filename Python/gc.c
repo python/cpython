@@ -570,8 +570,7 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 }
 
 /* Subtract internal references from gc_refs.  After this, gc_refs is >= 0
- * for all objects in containers, and is GC_REACHABLE for all tracked gc
- * objects not in containers.  The ones with gc_refs > 0 are directly
+ * for all objects in containers. The ones with gc_refs > 0 are directly
  * reachable from outside containers, and so can't be collected.
  */
 static void
