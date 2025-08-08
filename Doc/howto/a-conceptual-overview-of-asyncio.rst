@@ -62,7 +62,7 @@ If there are no more jobs pending execution, the event loop is smart enough to
 rest and avoid needlessly wasting CPU cycles, and will come back when there's
 more work to be done.
 
-Effective execution relies on tasks sharing well and cooperating; a greedy job
+Effective execution relies on jobs sharing well and cooperating; a greedy job
 could hog control and leave the other jobs to starve, rendering the overall
 event loop approach rather useless.
 
@@ -71,7 +71,7 @@ event loop approach rather useless.
    import asyncio
 
    # This creates an event loop and indefinitely cycles through
-   # its queue of tasks.
+   # its collection of jobs.
    event_loop = asyncio.new_event_loop()
    event_loop.run_forever()
 
@@ -172,7 +172,8 @@ functions) tied to an event loop.
 A task also maintains a list of callback functions whose importance will become
 clear in a moment when we discuss :keyword:`await`.
 The recommended way to create tasks is via :func:`asyncio.create_task`.
-Creating a task automatically adds it to the event loop's queue of tasks.
+Creating a task automatically schedules it for execution (by adding it to the
+event loop's to-do list, that is, collection of jobs).
 
 Since there's only one event loop (in each thread), :mod:`!asyncio` takes care of
 associating the task with the event loop for you. As such, there's no need
@@ -181,7 +182,7 @@ to specify the event loop.
 ::
 
    coroutine = loudmouth_penguin(magic_number=5)
-   # This creates a Task object and puts it on the event loop's queue.
+   # This creates a Task object and schedules its execution via the event loop.
    task = asyncio.create_task(coroutine)
 
 Earlier, we manually created the event loop and set it to run forever.
@@ -240,7 +241,7 @@ in this case, a call to resume ``plant_a_tree()``.
 
 Generally speaking, when the awaited task finishes (``dig_the_hole_task``),
 the original task or coroutine (``plant_a_tree()``) is added back to the event
-loops queue to be resumed.
+loops to-do list to be resumed.
 
 This is a basic, yet reliable mental model.
 In practice, the control handoffs are slightly more complex, but not by much.
@@ -271,8 +272,8 @@ Consider this program::
 
    asyncio.run(main())
 
-The first statement in the coroutine ``main()`` creates ``task_b`` and places
-it on the event loop's queue.
+The first statement in the coroutine ``main()`` creates ``task_b`` and schedules
+it for execution via the event loop.
 Then, ``coro_a()`` is repeatedly awaited. Control never cedes to the
 event loop which is why we see the output of all three ``coro_a()``
 invocations before ``coro_b()``'s output:
@@ -287,8 +288,8 @@ invocations before ``coro_b()``'s output:
 If we change ``await coro_a()`` to ``await asyncio.create_task(coro_a())``, the
 behavior changes.
 The coroutine ``main()`` cedes control to the event loop with that statement.
-The event loop then works through its queue, calling ``coro_b()`` and then
-``coro_a()`` before resuming the coroutine ``main()``.
+The event loop then proceeds through its backlog of work, calling ``coro_b()``
+and then ``coro_a()`` before resuming the coroutine ``main()``.
 
 .. code-block:: none
 
@@ -452,7 +453,7 @@ We'll go through an example of how you could leverage a future to create your
 own variant of asynchronous sleep (``async_sleep``) which mimics
 :func:`asyncio.sleep`.
 
-This snippet puts a few tasks on the event loop's queue and then awaits a
+This snippet registers a few tasks with the event loop and then awaits a
 coroutine wrapped in a task: ``async_sleep(3)``.
 We want that task to finish only after three seconds have elapsed, but without
 preventing other tasks from running.
@@ -508,16 +509,16 @@ This is effectively the same as calling ``asyncio.sleep(0)``, but this approach
 offers more clarity, not to mention it's somewhat cheating to use
 ``asyncio.sleep`` when showcasing how to implement it!
 
-As usual, the event loop cycles through its queue of tasks, giving them control
+As usual, the event loop cycles through its tasks, giving them control
 and receiving control back when they pause or finish.
 The ``watcher_task``, which runs the coroutine ``_sleep_watcher(...)``, will
-be invoked once per full cycle of the event loop's queue.
+be invoked once per full cycle of the event loop.
 On each resumption, it'll check the time and if not enough has elapsed, then
 it'll pause once again and hand control back to the event loop.
 Eventually, enough time will have elapsed, and ``_sleep_watcher(...)`` will
 mark the future as done, and then itself finish too by breaking out of the
 infinite ``while`` loop.
-Given this helper task is only invoked once per cycle of the event loop's queue,
+Given this helper task is only invoked once per cycle of the event loop,
 you'd be correct to note that this asynchronous sleep will sleep *at least*
 three seconds, rather than exactly three seconds.
 Note this is also of true of ``asyncio.sleep``.
