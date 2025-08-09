@@ -276,8 +276,10 @@ def clean_all(context):
 def setup_ci():
     # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
     if "GITHUB_ACTIONS" in os.environ and platform.system() == "Linux":
-        Path("/etc/udev/rules.d/99-kvm4all.rules").write_text(
-            'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n'
+        run(
+            ["sudo", "tee", "/etc/udev/rules.d/99-kvm4all.rules"],
+            input='KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n',
+            text=True,
         )
         run(["sudo", "udevadm", "control", "--reload-rules"])
         run(["sudo", "udevadm", "trigger", "--name-match=kvm"])
@@ -691,13 +693,8 @@ def package(context):
 
         # Strip debug information.
         if not context.debug:
-            run(
-                [
-                    android_env(context.host)["STRIP"],
-                    *glob(f"{temp_dir}/**/*.so", recursive=True),
-                ],
-                log=False,
-            )
+            so_files = glob(f"{temp_dir}/**/*.so", recursive=True)
+            run([android_env(context.host)["STRIP"], *so_files], log=False)
 
         dist_dir = subdir(context.host, "dist", create=True)
         package_path = shutil.make_archive(
@@ -731,7 +728,7 @@ def ci(context):
         and (platform.system(), platform.machine()) != ("Linux", "x86_64")
     ):
         print(
-            "Skipping test: GitHub Actions does not supports the Android "
+            "Skipping tests: GitHub Actions does not support the Android "
             "emulator on this platform."
         )
     else:
