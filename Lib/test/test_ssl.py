@@ -4630,7 +4630,6 @@ class ThreadedTests(unittest.TestCase):
         # that the recv() call held.
         data = b"1" * 50
         event = threading.Event()
-        import time
         def background(sock):
             event.set()
             received = sock.recv(50)
@@ -4648,7 +4647,6 @@ class ThreadedTests(unittest.TestCase):
                                               args=(sock,), daemon=True)
                     thread.start()
                     event.wait()
-                    time.sleep(0)
                     sock.sendall(b"1" * 50)
                     thread.join()
                     if cm.exc_value is not None:
