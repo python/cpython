@@ -1310,6 +1310,73 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
             data = f.read()
             self.assertEndsWith(data, '0\n\n')
 
+    # Test reading an mbox file with un-prefixed From in body text
+    # currently generates 2 messages
+    def _test_read_mbox(self, matcher=0, count=2):
+        # create a basic mbox file
+        self._box.add('From: foo\n\nHello\n')
+        # Add an un-prefixed From to create a second entry
+        self._box._file.write(b'From time to time\n')
+        self._box.close()
+        # re-read it using the provided matcher
+        if matcher == 0: # not provided, so omit
+            self._box = mailbox.mbox(self._path, create=False)
+        else:
+            self._box = mailbox.mbox(self._path, create=False, from_matcher=matcher)
+        # How many messages were found?
+        self.assertEqual(len(self._box.keys()), count)
+
+    def test_read_mbox_omitted(self):
+        self._test_read_mbox()
+
+    def test_read_mbox_none(self):
+        self._test_read_mbox(None)
+
+    def test_read_mbox_default(self):
+        self._test_read_mbox(lambda line: re.match(b'From ', line))
+
+    def test_read_mbox_full1(self):
+        self._test_read_mbox('full', count=1)
+
+    def test_read_mbox_regex1(self):
+        import re
+        # stricter matching should only find one message
+        self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d\\d\\r?\\n', line), count=1)
+
+    def test_read_mbox_regex2(self):
+        import re
+        # invalid, so don't find any messages
+        self._test_read_mbox(lambda line: re.match(b'From .+ \\d\\d\\d\\r?\\n', line), count=0)
+
+class TestMboxFromFile(unittest.TestCase):
+    # test class without default setUp/tearDown which we don't want
+
+    def setUp(self):
+        self._box = None
+        self._path = None
+
+    def tearDown(self):
+        if self._box is not None:
+            self._box.close()
+        # Don't delete it!
+
+    def checkmbox(self, name, matcher, count):
+        self._path = os.path.join(os.path.dirname(__file__), 'test_email', 'data', name)
+        self._box = mailbox.mbox(self._path, create=False, from_matcher=matcher)
+        self.assertEqual(len(self._box.keys()), count)
+
+    # default matcher finds two messages as there are 2 From lines
+    def test_read_mbox_None_01(self):
+        self.checkmbox('mailbox_01.mbox', None, 2)
+
+    def test_read_mbox_None_02(self):
+        self.checkmbox('mailbox_02.mbox', None, 2)
+
+    def test_read_mbox_full_01(self):
+        self.checkmbox('mailbox_01.mbox', 'full', 1)
+
+    def test_read_mbox_full_02(self):
+        self.checkmbox('mailbox_02.mbox', 'full', 0)  # From line has extra non-space chars after YYYY
 
 class TestMMDF(_TestMboxMMDF, unittest.TestCase):
 
