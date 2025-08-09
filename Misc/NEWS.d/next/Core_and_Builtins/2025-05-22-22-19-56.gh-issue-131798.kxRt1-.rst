@@ -1,0 +1,2 @@
+Optimize ``_CALL_ISINSTANCE`` in the JIT when the second argument is a tuple
+of classes.
