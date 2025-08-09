@@ -333,10 +333,12 @@ ssl
    (Contributed by Ron Frederick in :gh:`136306`)
 
 * Added new method :meth:`ssl.SSLContext.set_ciphersuites` for setting TLS 1.3
-  ciphers and updated the documentation on :meth:`ssl.SSLContext.set_ciphers`
-  to mention that it only applies to TLS 1.2 and earlier and that this new
-  method must be used to set TLS 1.3 cipher suites.
+  ciphers. For TLS 1.2 or earlier, :meth:`ssl.SSLContext.set_ciphers` should
+  continue to be used. Both calls can be made on the same context and the
+  selected cipher suite will depend on the TLS version negotiated when a
+  connection is made.
   (Contributed by Ron Frederick in :gh:`137197`)
+
 
 tarfile
 -------
