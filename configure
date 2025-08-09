@@ -4898,12 +4898,17 @@ printf "%s\n" "$SDKROOT" >&6; }
 
 		if test -n "$found_gcc" -a -n "$found_clang"
 		then
-			if test -n "`"$found_gcc" --version | grep llvm-gcc`"
+			if test -n "`"$found_gcc" --version | grep apple-darwin`"
 			then
 				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: Detected llvm-gcc, falling back to clang" >&5
 printf "%s\n" "$as_me: Detected llvm-gcc, falling back to clang" >&6;}
 				CC="$found_clang"
 				CXX="$found_clang++"
+				maybe_ar=`xcrun -find ar 2>/dev/null`
+				if test -n $maybe_ar
+				then
+					AR=$maybe_ar
+				fi
 			fi
 
 
