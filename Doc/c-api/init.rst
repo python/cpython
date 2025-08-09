@@ -425,7 +425,7 @@ Initializing and finalizing the interpreter
 
    Note that Python will do a best effort at freeing all memory allocated by the Python
    interpreter.  Therefore, any C-Extension should make sure to correctly clean up all
-   of the preveiously allocated PyObjects before using them in subsequent calls to
+   of the previously allocated PyObjects before using them in subsequent calls to
    :c:func:`Py_Initialize`.  Otherwise it could introduce vulnerabilities and incorrect
    behavior.
 
