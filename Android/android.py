@@ -50,7 +50,19 @@ gradlew = Path(
     + (".bat" if os.name == "nt" else "")
 )
 
-logcat_started = False
+# Whether we've seen any output from Python yet.
+python_started = False
+
+# Buffer for verbose output which will be displayed only if a test fails and
+# there has been no output from Python.
+hidden_output = []
+
+
+def log_verbose(context, line, stream=sys.stdout):
+    if context.verbose:
+        stream.write(line)
+    else:
+        hidden_output.append((stream, line))
 
 
 def delete_glob(pattern):
@@ -118,7 +130,7 @@ def android_env(host):
     env_script = ANDROID_DIR / "android-env.sh"
     env_output = subprocess.run(
         f"set -eu; "
-        f"export HOST={host}; "
+        f"HOST={host}; "
         f"PREFIX={prefix}; "
         f". {env_script}; "
         f"export",
@@ -175,7 +187,7 @@ def unpack_deps(host, prefix_dir):
     os.chdir(prefix_dir)
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
     for name_ver in ["bzip2-1.0.8-3", "libffi-3.4.4-3", "openssl-3.0.15-4",
-                     "sqlite-3.49.1-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
+                     "sqlite-3.50.4-0", "xz-5.4.6-1", "zstd-1.5.7-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
         download(f"{deps_url}/{name_ver}/{filename}")
         shutil.unpack_archive(filename)
@@ -453,17 +465,19 @@ async def logcat_task(context, initial_devices):
 
     # `--pid` requires API level 24 or higher.
     args = [adb, "-s", serial, "logcat", "--pid", pid,  "--format", "tag"]
-    hidden_output = []
+    logcat_started = False
     async with async_process(
         *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
     ) as process:
         while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
             if match := re.fullmatch(r"([A-Z])/(.*)", line, re.DOTALL):
+                logcat_started = True
                 level, message = match.groups()
             else:
-                # If the regex doesn't match, this is probably the second or
-                # subsequent line of a multi-line message. Python won't produce
-                # such messages, but other components might.
+                # If the regex doesn't match, this is either a logcat startup
+                # error, or the second or subsequent line of a multi-line
+                # message. Python won't produce multi-line messages, but other
+                # components might.
                 level, message = None, line
 
             # Exclude high-volume messages which are rarely useful.
@@ -483,25 +497,22 @@ async def logcat_task(context, initial_devices):
             # tag indicators from Python's stdout and stderr.
             for prefix in ["python.stdout: ", "python.stderr: "]:
                 if message.startswith(prefix):
-                    global logcat_started
-                    logcat_started = True
+                    global python_started
+                    python_started = True
                     stream.write(message.removeprefix(prefix))
                     break
             else:
-                if context.verbose:
-                    # Non-Python messages add a lot of noise, but they may
-                    # sometimes help explain a failure.
-                    stream.write(line)
-                else:
-                    hidden_output.append(line)
+                # Non-Python messages add a lot of noise, but they may
+                # sometimes help explain a failure.
+                log_verbose(context, line, stream)
 
         # If the device disconnects while logcat is running, which always
         # happens in --managed mode, some versions of adb return non-zero.
         # Distinguish this from a logcat startup error by checking whether we've
-        # received a message from Python yet.
+        # received any logcat messages yet.
         status = await wait_for(process.wait(), timeout=1)
         if status != 0 and not logcat_started:
-            raise CalledProcessError(status, args, "".join(hidden_output))
+            raise CalledProcessError(status, args)
 
 
 def stop_app(serial):
@@ -515,16 +526,6 @@ async def gradle_task(context):
     else:
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
-
-    hidden_output = []
-
-    def log(line):
-        # Gradle may take several minutes to install SDK packages, so it's worth
-        # showing those messages even in non-verbose mode.
-        if context.verbose or line.startswith('Preparing "Install'):
-            sys.stdout.write(line)
-        else:
-            hidden_output.append(line)
 
     if context.command:
         mode = "-c"
@@ -550,7 +551,7 @@ async def gradle_task(context):
     ]
     if context.verbose >= 2:
         args.append("--info")
-    log("> " + join_command(args))
+    log_verbose(context, f"> {join_command(args)}\n")
 
     try:
         async with async_process(
@@ -558,7 +559,12 @@ async def gradle_task(context):
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         ) as process:
             while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-                log(line)
+                # Gradle may take several minutes to install SDK packages, so
+                # it's worth showing those messages even in non-verbose mode.
+                if line.startswith('Preparing "Install'):
+                    sys.stdout.write(line)
+                else:
+                    log_verbose(context, line)
 
             status = await wait_for(process.wait(), timeout=1)
             if status == 0:
@@ -566,11 +572,6 @@ async def gradle_task(context):
             else:
                 raise CalledProcessError(status, args)
     finally:
-        # If logcat never started, then something has gone badly wrong, so the
-        # user probably wants to see the Gradle output even in non-verbose mode.
-        if hidden_output and not logcat_started:
-            sys.stdout.write("".join(hidden_output))
-
         # Gradle does not stop the tests when interrupted.
         if context.connected:
             stop_app(context.connected)
@@ -600,6 +601,12 @@ async def run_testbed(context):
     except* MySystemExit as e:
         raise SystemExit(*e.exceptions[0].args) from None
     except* CalledProcessError as e:
+        # If Python produced no output, then the user probably wants to see the
+        # verbose output to explain why the test failed.
+        if not python_started:
+            for stream, line in hidden_output:
+                stream.write(line)
+
         # Extract it from the ExceptionGroup so it can be handled by `main`.
         raise e.exceptions[0]
 
