@@ -4628,24 +4628,35 @@ class ThreadedTests(unittest.TestCase):
         # if a thread started to infinitely block until data was received, calls
         # to send() would deadlock, because it would wait forever on the lock
         # that the recv() call held.
-        data = b"a" * 500
+        data = b"1" * 50
+        event = threading.Event()
+        event2 = threading.Event()
         def background(sock):
-            received = sock.recv(500)
+            event.set()
+            event2.wait()
+            received = sock.recv(50)
             self.assertEqual(received, data)
 
         client_context, server_context, hostname = testing_context()
-        server = ThreadedEchoServer(context=server_context)
+        server = ThreadedEchoServer(context=server_context,
+                                    chatty=False, connectionchatty=False)
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as sock:
                 sock.connect((HOST, server.port))
+                sock.settimeout(5)
                 with threading_helper.catch_threading_exception() as cm:
-                    thread = threading.Thread(target=background, args=(sock,))
+                    thread = threading.Thread(target=background,
+                                              args=(sock,), daemon=True)
                     thread.start()
-                    sock.sendall(data)
+                    # Use two events to prevent some race conditions here.
+                    event.wait()
+                    event2.set()
+                    sock.sendall(b"1" * 50)
                     thread.join()
                     if cm.exc_value is not None:
                         raise cm.exc_value
+
 
 @unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
                      "Test needs TLS 1.3 PHA")
