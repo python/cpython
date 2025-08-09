@@ -1207,6 +1207,9 @@
 /* Define to 1 if you have the 'shm_open' function. */
 #undef HAVE_SHM_OPEN
 
+/* Define to 1 if you have the 'shm_rename' function. */
+#undef HAVE_SHM_RENAME
+
 /* Define to 1 if you have the 'shm_unlink' function. */
 #undef HAVE_SHM_UNLINK
 
