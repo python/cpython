@@ -2895,6 +2895,12 @@ class TestDateTime(TestDate):
             strptime("-00:02:01.000003", "%z").utcoffset(),
             -timedelta(minutes=2, seconds=1, microseconds=3)
         )
+        self.assertEqual(strptime("+01:07", "%:z").utcoffset(),
+                         1 * HOUR + 7 * MINUTE)
+        self.assertEqual(strptime("-10:02", "%:z").utcoffset(),
+                         -(10 * HOUR + 2 * MINUTE))
+        self.assertEqual(strptime("-00:00:01.00001", "%:z").utcoffset(),
+                         -timedelta(seconds=1, microseconds=10))
         # Only local timezone and UTC are supported
         for tzseconds, tzname in ((0, 'UTC'), (0, 'GMT'),
                                  (-_time.timezone, _time.tzname[0])):
@@ -2973,7 +2979,7 @@ class TestDateTime(TestDate):
             self.theclass.strptime('02-29,2024', '%m-%d,%Y')
 
     def test_strptime_z_empty(self):
-        for directive in ('z',):
+        for directive in ('z', ':z'):
             string = '2025-04-25 11:42:47'
             format = f'%Y-%m-%d %H:%M:%S%{directive}'
             target = self.theclass(2025, 4, 25, 11, 42, 47)
@@ -4041,6 +4047,12 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             strptime("-00:02:01.000003", "%z").utcoffset(),
             -timedelta(minutes=2, seconds=1, microseconds=3)
         )
+        self.assertEqual(strptime("+01:07", "%:z").utcoffset(),
+                         1 * HOUR + 7 * MINUTE)
+        self.assertEqual(strptime("-10:02", "%:z").utcoffset(),
+                         -(10 * HOUR + 2 * MINUTE))
+        self.assertEqual(strptime("-00:00:01.00001", "%:z").utcoffset(),
+                         -timedelta(seconds=1, microseconds=10))
         # Only local timezone and UTC are supported
         for tzseconds, tzname in ((0, 'UTC'), (0, 'GMT'),
                                  (-_time.timezone, _time.tzname[0])):
@@ -4070,9 +4082,11 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(strptime("UTC", "%Z").tzinfo, None)
 
     def test_strptime_errors(self):
-        for tzstr in ("-2400", "-000", "z"):
+        for tzstr in ("-2400", "-000", "z", "24:00"):
             with self.assertRaises(ValueError):
                 self.theclass.strptime(tzstr, "%z")
+            with self.assertRaises(ValueError):
+                self.theclass.strptime(tzstr, "%:z")
 
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit times are allowed.
