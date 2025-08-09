@@ -2037,7 +2037,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         """
-        with self.assertRaisesRegex(AssertionError, "All abstract uops"):
+        with self.assertRaisesRegex(ValueError, "All abstract uops"):
             self.run_cases_test(input, input2, output)
 
     def test_validate_uop_input_length_mismatch(self):
@@ -2382,6 +2382,53 @@ class TestGeneratedAbstractCases(unittest.TestCase):
                 /* Start of uop copied from bytecodes for constant evaluation */
                 if (foo) {
                     res_stackref = PyStackRef_IsNone(foo);
+                }
+                else {
+                    res_stackref = 1;
+                }
+                /* End of uop copied from bytecodes for constant evaluation */
+                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+                stack_pointer[-1] = res;
+                break;
+            }
+            res = sym_new_known(ctx, foo);
+            stack_pointer[-1] = res;
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_replace_opcode_escaping_uop_body_copied_in_complex(self):
+        input = """
+        pure op(OP, (foo -- res)) {
+            if (foo) {
+                res = ESCAPING_CODE(foo);
+            }
+            else {
+                res = 1;
+            }
+        }
+        """
+        input2 = """
+        op(OP, (foo -- res)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(foo);
+            res = sym_new_known(ctx, foo);
+        }
+        """
+        output = """
+        case OP: {
+            JitOptRef foo;
+            JitOptRef res;
+            foo = stack_pointer[-1];
+            if (
+                sym_is_safe_const(ctx, foo)
+            ) {
+                JitOptRef foo_sym = foo;
+                _PyStackRef foo = sym_get_const_as_stackref(ctx, foo_sym);
+                _PyStackRef res_stackref;
+                /* Start of uop copied from bytecodes for constant evaluation */
+                if (foo) {
+                    res_stackref = ESCAPING_CODE(foo);
                 }
                 else {
                     res_stackref = 1;

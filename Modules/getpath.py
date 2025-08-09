@@ -364,10 +364,9 @@ if not py_setpath:
         venv_prefix = None
         pyvenvcfg = []
 
-    # Search for the 'home' key in pyvenv.cfg. Currently, we don't consider the
-    # presence of a pyvenv.cfg file without a 'home' key to signify the
-    # existence of a virtual environment — we quietly ignore them.
-    # XXX: If we don't find a 'home' key, we don't look for another pyvenv.cfg!
+    # Search for the 'home' key in pyvenv.cfg. If a home key isn't found,
+    # then it means a venv is active and home is based on the venv's
+    # executable (if its a symlink, home is where the symlink points).
     for line in pyvenvcfg:
         key, had_equ, value = line.partition('=')
         if had_equ and key.strip().lower() == 'home':
@@ -412,10 +411,8 @@ if not py_setpath:
                             if isfile(candidate):
                                 base_executable = candidate
                                 break
+            # home key found; stop iterating over lines
             break
-    else:
-        # We didn't find a 'home' key in pyvenv.cfg (no break), reset venv_prefix.
-        venv_prefix = None
 
 
 # ******************************************************************************

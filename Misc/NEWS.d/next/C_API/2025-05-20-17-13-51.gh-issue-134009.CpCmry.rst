@@ -1,0 +1,1 @@
+Expose :c:func:`PyMutex_IsLocked` as part of the public C API.

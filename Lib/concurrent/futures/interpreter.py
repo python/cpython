@@ -118,5 +118,7 @@ class InterpreterPoolExecutor(_thread.ThreadPoolExecutor):
                 each worker interpreter.
             initargs: A tuple of arguments to pass to the initializer.
         """
+        thread_name_prefix = (thread_name_prefix or
+                              (f"InterpreterPoolExecutor-{self._counter()}"))
         super().__init__(max_workers, thread_name_prefix,
                          initializer, initargs)
