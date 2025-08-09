@@ -366,14 +366,10 @@ Basic Usage
 
    .. note::
 
-      As mandated by :rfc:`8259`, keys in JSON key-value pairs are always of
-      type :class:`str`. Therefore, dictionary keys obtained by
-      deserializing JSON objects will always be strings.
-      For Example,
-      ``json.loads('{"42":"spam"}')`` returns the dictionary
-      ``{'42': 'spam'}``,but ``json.loads('{42:"spam"}')``
-      will raise a exception,because it is not a correct
-      JSON text
+      As mandated by :rfc:`8259`, JSON keys must be :class:`str` objects.
+      In particular, ``json.loads('{"42": "spam"}')`` returns ``{'42': 'spam'}``,
+      but ``json.loads('{42: "spam"}')`` fails since ``42`` is not a valid JSON key.
+
 
 Encoders and Decoders
 ---------------------
