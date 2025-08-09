@@ -22,7 +22,6 @@ is a lightweight data interchange format inspired by
    The term "object" in the context of JSON processing in Python can be
    ambiguous. All values in Python are objects. In JSON, an object refers to
    any data wrapped in curly braces, similar to a Python dictionary.
-
 .. warning::
    Be cautious when parsing JSON data from untrusted sources. A malicious
    JSON string may cause the decoder to consume considerable CPU and memory
@@ -146,6 +145,13 @@ See :ref:`json-commandline` for detailed documentation.
    This module's encoders and decoders preserve input and output order by
    default.  Order is only lost if the underlying containers are unordered.
 
+.. note::
+   According to RFC 7159, the keys of all objects in JSON are strings.
+   Under normal circumstances,the encoder of this module
+   will convert the keys of all Python dictionaries into strings as the
+   keys of JSON objects, and the decoder of this module will
+   decode the keys of all JSON objects into strings as the keys
+   of Python dictionaries
 
 Basic Usage
 -----------
