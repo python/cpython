@@ -874,18 +874,18 @@ ast_clear(PyObject *op)
 }
 
 /*
- * Format the names in the set 'missing' into a natural language list, 
+ * Format the names in the set 'missing' into a natural language list,
  * sorted in the order in which they appear in 'fields'.
  *
  * Similar to format_missing from 'Python/ceval.c'.
  *
  * Parameters
- 
+
  *      missing     Set of missing field names to render.
  *      fields      Sequence of AST node field names (self._fields).
  */
 static PyObject *
-format_missing(PyObject *missing, PyObject *fields) 
+format_missing(PyObject *missing, PyObject *fields)
 {
     Py_ssize_t num_fields, num_total, num_left;
     num_fields = PySequence_Size(fields);
@@ -894,7 +894,7 @@ format_missing(PyObject *missing, PyObject *fields)
     }
     num_total = num_left = PySet_GET_SIZE(missing);
     PyObject *name_str = PyUnicode_FromString("");
-    // Iterate all AST node fields in order so that the missing positional 
+    // Iterate all AST node fields in order so that the missing positional
     // arguments are rendered in the order in which __init__ expects them.
     for (Py_ssize_t i = 0; i < num_fields; i++) {
         PyObject *name = PySequence_GetItem(fields, i);
