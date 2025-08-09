@@ -730,7 +730,6 @@ loops that truncate the stream.
    produced by the upstream :func:`tee` call.  This "flattening step"
    allows nested :func:`tee` calls to share the same underlying data
    chain and to have a single update step rather than a chain of calls.
-   
    .. note::
 
     :func:`tee` automatically "flattens" existing tee objects,
