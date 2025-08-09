@@ -1259,6 +1259,10 @@ class SMTPSimTests(unittest.TestCase):
             smtp.sendmail('John', 'Sally', 'test message')
         self.assertIsNone(smtp.sock)
 
+    # The following 421 response tests for sendmail ensure that sendmail handles
+    # 421 respones correctly by closing the connection. sendmail has to take
+    # care of this, as it wraps a mail transaction for users.
+
     # Issue 5713: make sure close, not rset, is called if we get a 421 error
     def test_421_from_mail_cmd(self):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
@@ -1292,6 +1296,16 @@ class SMTPSimTests(unittest.TestCase):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
                             timeout=support.LOOPBACK_TIMEOUT)
         smtp.noop()
+        with self.assertRaises(smtplib.SMTPDataError):
+            smtp.sendmail('John@foo.org', ['Sally@foo.org'], 'test message')
+        self.assertIsNone(smtp.sock)
+        self.assertEqual(self.serv._SMTPchannel.rcpt_count, 0)
+
+    def test_421_during_data_cmd(self):
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        smtp.noop()
+        self.serv._SMTPchannel.data_response = '421 closing'
         with self.assertRaises(smtplib.SMTPDataError):
             smtp.sendmail('John@foo.org', ['Sally@foo.org'], 'test message')
         self.assertIsNone(smtp.sock)
