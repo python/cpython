@@ -378,11 +378,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     self.rcLines.extend(rcFile)
             except OSError:
                 pass
-            try:
-                with open(".pdbrc", encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
-            except OSError:
-                pass
+            if os.path.abspath(".pdbrc") != os.path.expanduser("~/.pdbrc"):
+                try:
+                    with open(".pdbrc", encoding='utf-8') as rcFile:
+                        self.rcLines.extend(rcFile)
+                except OSError:
+                    pass
 
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_defining = False # True while in the process of defining
