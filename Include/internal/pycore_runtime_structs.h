@@ -279,7 +279,10 @@ struct pyruntimestate {
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
     // Used in "Python/emscripten_trampoline.c" to choose between type
     // reflection trampoline and EM_JS trampoline.
-    int (*emscripten_count_args_function)(PyCFunctionWithKeywords func);
+    PyObject *(*emscripten_trampoline)(int *success,
+                                       PyCFunctionWithKeywords func,
+                                       PyObject *arg1, PyObject *arg2,
+                                       PyObject *arg3);
 #endif
 
     /* All the objects that are shared by the runtime's interpreters. */
