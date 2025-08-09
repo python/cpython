@@ -371,7 +371,7 @@ Basic Usage
       deserializing JSON objects will always be strings.
       For Example,
       ``json.loads('{"42":"spam"}')`` returns the dictionary
-      ``{'42': 'spam'}`,but ``json.loads('{42:"spam"}')``
+      ``{'42': 'spam'}``,but ``json.loads('{42:"spam"}')``
       will raise a exception,because it is not a correct
       JSON text
 
