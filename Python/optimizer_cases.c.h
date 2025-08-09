@@ -3200,7 +3200,7 @@
             break;
         }
 
-        case _PERIODIC: {
+        case _HANDLE_PENDING_AND_DEOPT: {
             break;
         }
 

@@ -1054,7 +1054,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 exit_op = _DEOPT;
             }
             else if (exit_flags & HAS_PERIODIC_FLAG) {
-                exit_op = _PERIODIC;
+                exit_op = _HANDLE_PENDING_AND_DEOPT;
             }
             int32_t jump_target = target;
             if (is_for_iter_test[opcode]) {
@@ -1169,7 +1169,7 @@ sanity_check(_PyExecutorObject *executor)
         uint16_t opcode = inst->opcode;
         CHECK(
             opcode == _DEOPT ||
-            opcode == _PERIODIC ||
+            opcode == _HANDLE_PENDING_AND_DEOPT ||
             opcode == _EXIT_TRACE ||
             opcode == _ERROR_POP_N);
     }

@@ -5373,7 +5373,7 @@ dummy_func(
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }
 
-        tier2 op(_PERIODIC, (--)) {
+        tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
             int err = _Py_HandlePending(tstate);
             GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }

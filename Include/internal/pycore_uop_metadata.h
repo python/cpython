@@ -334,7 +334,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
     [_DEOPT] = 0,
-    [_PERIODIC] = HAS_ESCAPES_FLAG,
+    [_HANDLE_PENDING_AND_DEOPT] = HAS_ESCAPES_FLAG,
     [_ERROR_POP_N] = HAS_ARG_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_PERIODIC_FLAG,
     [_COLD_EXIT] = HAS_ESCAPES_FLAG,
@@ -502,6 +502,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_TOS_UNICODE] = "_GUARD_TOS_UNICODE",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_GUARD_TYPE_VERSION_AND_LOCK] = "_GUARD_TYPE_VERSION_AND_LOCK",
+    [_HANDLE_PENDING_AND_DEOPT] = "_HANDLE_PENDING_AND_DEOPT",
     [_IMPORT_FROM] = "_IMPORT_FROM",
     [_IMPORT_NAME] = "_IMPORT_NAME",
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
@@ -591,7 +592,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_MAYBE_EXPAND_METHOD] = "_MAYBE_EXPAND_METHOD",
     [_MAYBE_EXPAND_METHOD_KW] = "_MAYBE_EXPAND_METHOD_KW",
     [_NOP] = "_NOP",
-    [_PERIODIC] = "_PERIODIC",
     [_POP_CALL] = "_POP_CALL",
     [_POP_CALL_LOAD_CONST_INLINE_BORROW] = "_POP_CALL_LOAD_CONST_INLINE_BORROW",
     [_POP_CALL_ONE] = "_POP_CALL_ONE",
@@ -1301,7 +1301,7 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _DEOPT:
             return 0;
-        case _PERIODIC:
+        case _HANDLE_PENDING_AND_DEOPT:
             return 0;
         case _ERROR_POP_N:
             return 0;

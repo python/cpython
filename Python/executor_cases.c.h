@@ -7437,7 +7437,7 @@
             break;
         }
 
-        case _PERIODIC: {
+        case _HANDLE_PENDING_AND_DEOPT: {
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _Py_HandlePending(tstate);
             stack_pointer = _PyFrame_GetStackPointer(frame);
