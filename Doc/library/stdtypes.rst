@@ -1990,7 +1990,19 @@ expression support in the :mod:`re` module).
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
    <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-4/#G91002>`_.
+   For example::
 
+   ..doctest::
+
+      >>> 'a commom word'.isalpha()
+      False
+      >>> 'acommomword'.isalpha()
+      True
+      >>> 'µ'.isalpha() # no-ascii characters could be alpha too
+      True
+
+
+   See Unicode Properties section in :ref:`unicode-howto`.
 
 .. method:: str.isascii()
 
