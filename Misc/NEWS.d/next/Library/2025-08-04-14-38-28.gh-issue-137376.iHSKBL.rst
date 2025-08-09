@@ -1,0 +1,3 @@
+Ensure that :exc:`SyntaxError` is raised when given incorrect REPL inputs
+that are only detected when processing symbol tables. Patch by Bénédikt
+Tran.

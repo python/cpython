@@ -20,10 +20,12 @@
 from __future__ import annotations
 
 import _colorize
+import _symtable  # type: ignore[import-not-found]
 
 from abc import ABC, abstractmethod
 import ast
 import code
+import codeop
 import linecache
 from dataclasses import dataclass, field
 import os.path
@@ -211,6 +213,24 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         except (OverflowError, ValueError):
             self.showsyntaxerror(filename, source=source)
             return False
+
+        # Validate stuff that cannot be validated with AST parsing only,
+        # such as assigning to a variable before a global declaration,
+        #
+        # While runsource("x = 1; global x") would fail, runsource("x = 1")
+        # followed by runsource("global x") would still work since preventing
+        # this requires the REPL to remember the global names whose number
+        # grows faster than in a regular program, which then becomes less
+        # efficient or relevant for the user.
+        flags = self.compile.compiler.flags  # may contain active futures
+        flags &= ~codeop.PyCF_DONT_IMPLY_DEDENT
+        flags &= ~codeop.PyCF_ALLOW_INCOMPLETE_INPUT
+        try:
+            _symtable.symtable(source, filename, "exec", flags=flags)
+        except (SyntaxError, OverflowError, ValueError):
+            self.showsyntaxerror(filename, source=source)
+            return False
+
         if tree.body:
             *_, last_stmt = tree.body
         for stmt in tree.body:

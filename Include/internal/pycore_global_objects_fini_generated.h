@@ -950,6 +950,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fd2));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fdel));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(feature_version));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fget));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fields));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(file));
