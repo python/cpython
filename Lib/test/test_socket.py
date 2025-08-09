@@ -6219,6 +6219,9 @@ class TestUnixDomain(unittest.TestCase):
         self.addCleanup(os_helper.unlink, path)
         self.assertEqual(self.sock.getsockname(), path)
 
+    @unittest.skipIf(sys.platform == 'win32',
+                     'Windows have a bug which can\'t unlink sock file with '
+                     'TESTFN_UNENCODABLE in it\'s name')
     def testUnencodableAddr(self):
         # Test binding to a pathname that cannot be encoded in the
         # file system encoding.
