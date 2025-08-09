@@ -200,7 +200,7 @@ syntax for format strings (although in the case of :class:`Formatter`,
 subclasses can define their own format string syntax).  The syntax is
 related to that of :ref:`formatted string literals <f-strings>` and
 :ref:`template string literals <t-strings>`, but it is less sophisticated
-and, in particular, does not support arbitrary expressions.
+and, in particular, does not support arbitrary expressions in interpolations.
 
 .. index::
    single: {} (curly brackets); in string formatting
@@ -799,13 +799,15 @@ Template strings ($-strings)
 
 .. note::
 
-   The feature described here was introduced in Python 2.4.  It is unrelated
-   to, and should not be confused with, the newer
-   :ref:`template strings <template-strings>` and
-   :ref:`t-string literal syntax <t-strings>` introduced in Python 3.14.
-   T-string literals evaluate to instances of a different
-   :class:`~string.templatelib.Template` class, found in the
-   :mod:`string.templatelib` module.
+   The feature described here was introduced in Python 2.4;
+   a simple templating method based upon regular expressions.
+   It predates :meth:`str.format`, :ref:`formatted string literals <f-strings>`,
+   and :ref:`template string literals <template-strings>`.
+
+   It is unrelated to template string literals (t-strings),
+   which were introduced in Python 3.14.
+   These evaluate to  :class:`string.templatelib.Template` objects,
+   found in the :mod:`string.templatelib` module.
 
 Template strings provide simpler string substitutions as described in
 :pep:`292`.  A primary use case for template strings is for

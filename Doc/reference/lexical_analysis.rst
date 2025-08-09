@@ -599,9 +599,9 @@ The allowed prefixes are:
 
 See the linked sections for details on each type.
 
-Prefixes are case-insensitive (for example, ``B`` works the same as ``b``).
-The ``r`` prefix can be combined with ``f``, ``t`` or ``b``, so ``fr``,
-``rf``, ``tr``, ``rt``, ``br`` and ``rb`` are also valid prefixes.
+Prefixes are case-insensitive (for example, '``B``' works the same as '``b``').
+The '``r``' prefix can be combined with '``f``', '``t``' or '``b``', so '``fr``',
+'``rf``', '``tr``', '``rt``', '``br``', and '``rb``' are also valid prefixes.
 
 .. versionadded:: 3.3
    The ``'rb'`` prefix of raw bytes literals has been added as a synonym
@@ -661,7 +661,7 @@ quote.
 Escape sequences
 ----------------
 
-Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
+Unless an '``r``' or '``R``' prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
 Standard C.  The recognized escape sequences are:
 
@@ -852,7 +852,7 @@ unrecognized escapes.
 Bytes literals
 --------------
 
-:dfn:`Bytes literals` are always prefixed with ``'b'`` or ``'B'``; they produce an
+:dfn:`Bytes literals` are always prefixed with '``b``' or '``B``'; they produce an
 instance of the :class:`bytes` type instead of the :class:`str` type.
 They may only contain ASCII characters; bytes with a numeric value of 128
 or greater must be expressed with escape sequences (typically
@@ -878,8 +878,8 @@ Similarly, a zero byte must be expressed using an escape sequence (typically
 Raw string literals
 -------------------
 
-Both string and bytes literals may optionally be prefixed with a letter ``'r'``
-or ``'R'``; such constructs are called :dfn:`raw string literals`
+Both string and bytes literals may optionally be prefixed with a letter '``r``'
+or '``R``'; such constructs are called :dfn:`raw string literals`
 and :dfn:`raw bytes literals` respectively and treat backslashes as
 literal characters.
 As a result, in raw string literals, :ref:`escape sequences <escape-sequences>`
@@ -923,7 +923,7 @@ f-strings
 .. versionadded:: 3.6
 
 A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
-that is prefixed with ``f`` or ``F``.  These strings may contain
+that is prefixed with '``f``' or '``F``'.  These strings may contain
 replacement fields, which are expressions delimited by curly braces ``{}``.
 While other string literals always have a constant value, formatted strings
 are really expressions evaluated at run time.
@@ -1089,37 +1089,37 @@ t-strings
 .. versionadded:: 3.14
 
 A :dfn:`template string literal` or :dfn:`t-string` is a string literal
-that is prefixed with ``t`` or ``T``.  These strings follow the same
-syntax and evaluation rules as :ref:`formatted string literals <f-strings>`, with
-the following differences:
+that is prefixed with '``t``' or '``T``'.
+These strings follow the same syntax and evaluation rules as
+:ref:`formatted string literals <f-strings>`, with the following differences:
 
-- Rather than evaluating to a ``str`` object, t-strings evaluate to a
-  :class:`~string.templatelib.Template` object from the
-  :mod:`string.templatelib` module.
+* Rather than evaluating to a ``str`` object, template string literals evaluate
+  to a :class:`string.templatelib.Template` object.
 
-- The :func:`format` protocol is not used. Instead, the format specifier and
-  conversions (if any) are passed to a new :class:`~string.templatelib.Interpolation`
-  object that is created for each evaluated expression. It is up to code that
-  processes the resulting :class:`~string.templatelib.Template` object to
-  decide how to handle format specifiers and conversions.
+* The :func:`format` protocol is not used.
+  Instead, the format specifier and conversions (if any) are passed to
+  a new :class:`~string.templatelib.Interpolation` object that is created
+  for each evaluated expression.
+  It is up to code that processes the resulting :class:`~string.templatelib.Template`
+  object to decide how to handle format specifiers and conversions.
 
-- Format specifiers containing nested replacement fields are evaluated eagerly,
+* Format specifiers containing nested replacement fields are evaluated eagerly,
   prior to being passed to the :class:`~string.templatelib.Interpolation` object.
   For instance, an interpolation of the form ``{amount:.{precision}f}`` will
-  evaluate the expression ``{precision}`` before setting the ``format_spec``
-  attribute of the resulting :class:`!Interpolation` object; if ``precision``
-  is (for example) ``2``, the resulting format specifier will be ``'.2f'``.
+  evaluate the inner expression ``{precision}`` to determine the value of the
+  ``format_spec`` attribute.
+  If ``precision`` were to be ``2``, the resulting format specifier
+  would be ``'.2f'``.
 
-- When the equal sign ``'='`` is provided in an interpolation expression, the
-  resulting :class:`~string.templatelib.Template` object will have the expression
-  text along with a ``'='`` character placed in its
-  :attr:`~string.templatelib.Template.strings` attribute. The
-  :attr:`~string.templatelib.Template.interpolations` attribute will also
-  contain an ``Interpolation`` instance for the expression. By default, the
-  :attr:`~string.templatelib.Interpolation.conversion` attribute will be set to
-  ``'r'`` (that is, :func:`repr`), unless there is a conversion explicitly
-  specified (in which case it overrides the default) or a format specifier is
-  provided (in which case, the ``conversion`` defaults to ``None``).
+* When the equals sign ``'='`` is provided in an interpolation expression,
+  the text of the expression is appended to the literal string that precedes
+  the relevant interpolation.
+  This includes the equals sign and any surrounding whitespace.
+  The :class:`!Interpolation` instance for the expression will be created as
+  normal, except that :attr:`~string.templatelib.Interpolation.conversion` will
+  be set to '``r``' (:func:`repr`) by default.
+  If an explicit conversion or format specifier are provided,
+  this will override the default behaviour.
 
 
 .. _numbers:
