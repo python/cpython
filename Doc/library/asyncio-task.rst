@@ -1135,6 +1135,7 @@ Introspection
 
    .. versionadded:: 3.4
 
+.. _asyncio-task-obj:
 
 Task Object
 ===========
