@@ -4630,16 +4630,13 @@ class ThreadedTests(unittest.TestCase):
         # that the recv() call held.
         data = b"1" * 50
         event = threading.Event()
-        event2 = threading.Event()
         def background(sock):
             event.set()
-            event2.wait()
             received = sock.recv(50)
             self.assertEqual(received, data)
 
         client_context, server_context, hostname = testing_context()
-        server = ThreadedEchoServer(context=server_context,
-                                    chatty=False, connectionchatty=False)
+        server = ThreadedEchoServer(context=server_context)
         with server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as sock:
@@ -4651,7 +4648,6 @@ class ThreadedTests(unittest.TestCase):
                     thread.start()
                     # Use two events to prevent some race conditions here.
                     event.wait()
-                    event2.set()
                     sock.sendall(b"1" * 50)
                     thread.join()
                     if cm.exc_value is not None:
