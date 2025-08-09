@@ -6624,7 +6624,7 @@ class ZoneInfo(tzinfo):
         for (_, prev_ti), (t, ti) in pairs(zip(self.ut, self.ti)):
             shift = ti[0] - prev_ti[0]
             if shift < ZERO and ti[1] == prev_ti[1]:
-                yield _utcfromtimestamp(datetime, t,), -shift, prev_ti[2], ti[2]
+                yield datetime.fromtimestamp(t, datetime.UTC), -shift, prev_ti[2], ti[2]
 
     @classmethod
     def print_all_nondst_folds(cls, same_abbr=False, start_year=1):
