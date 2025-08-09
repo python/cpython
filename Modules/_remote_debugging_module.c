@@ -75,7 +75,7 @@
 #endif
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 
-
+#define MAX_TLBC_SIZE 2048
 
 // Copied from Modules/_asynciomodule.c because it's not exported
 
@@ -1594,10 +1594,16 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
         return 0; // Invalid size
     }
 
+    if (tlbc_size > MAX_TLBC_SIZE) {
+        PyErr_SetString(PyExc_RuntimeError, "TLBC array size exceeds maximum limit");
+        return 0; // Invalid size
+    }
+
     // Allocate and read the entire TLBC array
     size_t array_data_size = tlbc_size * sizeof(void*);
     tlbc_array = PyMem_RawMalloc(sizeof(Py_ssize_t) + array_data_size);
     if (!tlbc_array) {
+        PyErr_NoMemory();
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate TLBC array");
         return 0; // Memory error
     }
@@ -1611,6 +1617,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     // Create cache entry
     entry = PyMem_RawMalloc(sizeof(TLBCCacheEntry));
     if (!entry) {
+        PyErr_NoMemory();
         PyMem_RawFree(tlbc_array);
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate TLBC cache entry");
         return 0; // Memory error
@@ -1791,6 +1798,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 
         meta = PyMem_RawMalloc(sizeof(CachedCodeMetadata));
         if (!meta) {
+            PyErr_NoMemory();
             set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate cached code metadata");
             goto error;
         }
