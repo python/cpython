@@ -1,0 +1,2 @@
+Improve speed (x1.3-1.5) of the :class:`~fractions.Fraction` constructor for
+string inputs.
