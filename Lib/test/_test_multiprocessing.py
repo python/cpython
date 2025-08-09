@@ -6895,6 +6895,18 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual(q.get_nowait(), "done")
         close_queue(q)
 
+    def test_preload_main(self):
+        # gh-126631: Check that __main__ can be pre-loaded
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test")
+
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_main.py')
+        _, out, err = test.support.script_helper.assert_python_ok(name)
+        self.assertFalse(err, msg=err.decode())
+
+        # TODO: Where is the extra empty line coming from?
+        out = out.decode().split("\n")
+        self.assertEqual(out, ['__main__', '__mp_main__', 'f', 'f', ''])
 
 #
 # Mixins
