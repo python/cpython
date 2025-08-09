@@ -18,8 +18,6 @@ runs:
     # The steps of a composite action are not clearly divided in the GitHub
     # UI, so use a single step with ::group:: markers instead.
     - shell: bash
-      env:
-        triplet: ${{ inputs.triplet }}
       # The `name` of a composite action step doesn't appear anywhere in the
       # GitHub UI, so put it in a comment on the first line instead.
       run: |
@@ -33,15 +31,15 @@ runs:
         echo "::endgroup::"
 
         echo "::group::Configure host Python"
-        ./Android/android.py configure-host $triplet
+        ./Android/android.py configure-host ${{ inputs.triplet }}
         echo "::endgroup::"
 
         echo "::group::Compile host Python"
-        ./Android/android.py make-host $triplet
+        ./Android/android.py make-host ${{ inputs.triplet }}
         echo "::endgroup::"
 
         echo "::group::Make release package"
-        ./Android/android.py package $triplet
+        ./Android/android.py package ${{ inputs.triplet }}
         echo "::endgroup::"
 
         if [ "$RUNNER_OS" = "Linux" ] && [ "$RUNNER_ARCH" = "X64" ]; then
@@ -55,7 +53,7 @@ runs:
 
             echo "::group::Unpack release artifact"
             mkdir $RUNNER_TEMP/android
-            tar -C $RUNNER_TEMP/android -xf cross-build/$triplet/dist/*
+            tar -C $RUNNER_TEMP/android -xf cross-build/${{ inputs.triplet }}/dist/*
             echo "::endgroup::"
 
             echo "::group::Tests"
