@@ -2990,9 +2990,18 @@ class TestType(unittest.TestCase):
 
 
 def load_tests(loader, tests, pattern):
-    from doctest import DocTestSuite
+    import doctest
     if sys.float_repr_style == 'short':
-        tests.addTest(DocTestSuite(builtins))
+        tests.addTest(doctest.DocTestSuite(builtins))
+        lib_tests = os.path.join(support.REPO_ROOT, 'Doc/library/stdtypes.rst')
+        if os.path.exists(lib_tests):
+            tests.addTests(
+                doctest.DocFileSuite(
+                    lib_tests,
+                    module_relative=False,
+                    optionflags=doctest.ELLIPSIS | doctest.NORMALIZE_WHITESPACE,
+                ),
+            )
     return tests
 
 if __name__ == "__main__":
