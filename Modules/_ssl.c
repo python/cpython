@@ -366,9 +366,6 @@ typedef struct {
      * and shutdown methods check for chained exceptions.
      */
     PyObject *exc;
-    /* Lock to synchronize calls when the thread state is detached.
-       See also gh-134698. */
-    PyMutex tstate_mutex;
 } PySSLSocket;
 
 #define PySSLSocket_CAST(op)    ((PySSLSocket *)(op))
@@ -918,7 +915,6 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
     self->server_hostname = NULL;
     self->err = err;
     self->exc = NULL;
-    self->tstate_mutex = (PyMutex){0};
 
     /* Make sure the SSL error state is initialized */
     ERR_clear_error();
