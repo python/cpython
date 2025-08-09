@@ -1577,6 +1577,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
     def test_isoformat(self):
         t = self.theclass(2, 3, 2)
         self.assertEqual(t.isoformat(), "0002-03-02")
+        self.assertEqual(t.isoformat(basic=True), "00020302")
 
     def test_ctime(self):
         t = self.theclass(2002, 3, 2)
@@ -2232,76 +2233,117 @@ class TestDateTime(TestDate):
     def test_isoformat(self):
         t = self.theclass(1, 2, 3, 4, 5, 1, 123)
         self.assertEqual(t.isoformat(),    "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat(basic=True), "00010203T040501.000123")
+
         self.assertEqual(t.isoformat('T'), "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat('T', basic=True), "00010203T040501.000123")
+
         self.assertEqual(t.isoformat(' '), "0001-02-03 04:05:01.000123")
+        self.assertEqual(t.isoformat(' ', basic=True), "00010203 040501.000123")
+
         self.assertEqual(t.isoformat('\x00'), "0001-02-03\x0004:05:01.000123")
+        self.assertEqual(t.isoformat('\x00', basic=True), "00010203\x00040501.000123")
+
         # bpo-34482: Check that surrogates are handled properly.
-        self.assertEqual(t.isoformat('\ud800'),
-                         "0001-02-03\ud80004:05:01.000123")
+        self.assertEqual(t.isoformat('\ud800'), "0001-02-03\ud80004:05:01.000123")
+        self.assertEqual(t.isoformat('\ud800', basic=True), "00010203\ud800040501.000123")
+
         self.assertEqual(t.isoformat(timespec='hours'), "0001-02-03T04")
+        self.assertEqual(t.isoformat(timespec='hours', basic=True), "00010203T04")
+
         self.assertEqual(t.isoformat(timespec='minutes'), "0001-02-03T04:05")
+        self.assertEqual(t.isoformat(timespec='minutes', basic=True), "00010203T0405")
+
         self.assertEqual(t.isoformat(timespec='seconds'), "0001-02-03T04:05:01")
+        self.assertEqual(t.isoformat(timespec='seconds', basic=True), "00010203T040501")
+
         self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.000")
+        self.assertEqual(t.isoformat(timespec='milliseconds', basic=True), "00010203T040501.000")
+
         self.assertEqual(t.isoformat(timespec='microseconds'), "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat(timespec='microseconds', basic=True), "00010203T040501.000123")
+
         self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat(timespec='auto', basic=True), "00010203T040501.000123")
+
         self.assertEqual(t.isoformat(sep=' ', timespec='minutes'), "0001-02-03 04:05")
+        self.assertEqual(t.isoformat(sep=' ', timespec='minutes', basic=True), "00010203 0405")
+
         self.assertRaises(ValueError, t.isoformat, timespec='foo')
+        self.assertRaises(ValueError, t.isoformat, timespec='foo', basic=True)
         # bpo-34482: Check that surrogates are handled properly.
         self.assertRaises(ValueError, t.isoformat, timespec='\ud800')
+        self.assertRaises(ValueError, t.isoformat, timespec='\ud800', basic=True)
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0001-02-03 04:05:01.000123")
 
         t = self.theclass(1, 2, 3, 4, 5, 1, 999500, tzinfo=timezone.utc)
         self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.999+00:00")
+        self.assertEqual(t.isoformat(timespec='milliseconds', basic=True), "00010203T040501.999+0000")
 
         t = self.theclass(1, 2, 3, 4, 5, 1, 999500)
         self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.999")
+        self.assertEqual(t.isoformat(timespec='milliseconds', basic=True), "00010203T040501.999")
 
         t = self.theclass(1, 2, 3, 4, 5, 1)
         self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01")
+        self.assertEqual(t.isoformat(timespec='auto', basic=True), "00010203T040501")
         self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.000")
+        self.assertEqual(t.isoformat(timespec='milliseconds', basic=True), "00010203T040501.000")
         self.assertEqual(t.isoformat(timespec='microseconds'), "0001-02-03T04:05:01.000000")
+        self.assertEqual(t.isoformat(timespec='microseconds', basic=True), "00010203T040501.000000")
 
         t = self.theclass(2, 3, 2)
         self.assertEqual(t.isoformat(),    "0002-03-02T00:00:00")
+        self.assertEqual(t.isoformat(basic=True), "00020302T000000")
         self.assertEqual(t.isoformat('T'), "0002-03-02T00:00:00")
+        self.assertEqual(t.isoformat('T', basic=True), "00020302T000000")
         self.assertEqual(t.isoformat(' '), "0002-03-02 00:00:00")
+        self.assertEqual(t.isoformat(' ', basic=True), "00020302 000000")
         # str is ISO format with the separator forced to a blank.
         self.assertEqual(str(t), "0002-03-02 00:00:00")
         # ISO format with timezone
         tz = FixedOffset(timedelta(seconds=16), 'XXX')
         t = self.theclass(2, 3, 2, tzinfo=tz)
         self.assertEqual(t.isoformat(), "0002-03-02T00:00:00+00:00:16")
+        self.assertEqual(t.isoformat(basic=True), "00020302T000000+000016")
 
     def test_isoformat_timezone(self):
         tzoffsets = [
-            ('05:00', timedelta(hours=5)),
-            ('02:00', timedelta(hours=2)),
-            ('06:27', timedelta(hours=6, minutes=27)),
-            ('12:32:30', timedelta(hours=12, minutes=32, seconds=30)),
-            ('02:04:09.123456', timedelta(hours=2, minutes=4, seconds=9, microseconds=123456))
+            (('05:00', '0500'), timedelta(hours=5)),
+            (('02:00', '0200'), timedelta(hours=2)),
+            (('06:27', '0627'), timedelta(hours=6, minutes=27)),
+            (('12:32:30', '123230'), timedelta(hours=12, minutes=32, seconds=30)),
+            (('02:04:09.123456', '020409.123456'),
+             timedelta(hours=2, minutes=4, seconds=9, microseconds=123456))
         ]
 
         tzinfos = [
-            ('', None),
-            ('+00:00', timezone.utc),
-            ('+00:00', timezone(timedelta(0))),
+            (('', ''), None),
+            (('+00:00', '+0000'), timezone.utc),
+            (('+00:00', '+0000'), timezone(timedelta(0))),
         ]
 
         tzinfos += [
-            (prefix + expected, timezone(sign * td))
-            for expected, td in tzoffsets
+            ((prefix + expected_extended, prefix + expected_basic), timezone(sign * td))
+            for (expected_extended, expected_basic), td in tzoffsets
             for prefix, sign in [('-', -1), ('+', 1)]
         ]
 
         dt_base = self.theclass(2016, 4, 1, 12, 37, 9)
-        exp_base = '2016-04-01T12:37:09'
+        exp_base_ext = '2016-04-01T12:37:09'
+        exp_base_basic = '20160401T123709'
 
-        for exp_tz, tzi in tzinfos:
+        for (exp_tz_ext, exp_tz_basic), tzi in tzinfos:
             dt = dt_base.replace(tzinfo=tzi)
-            exp = exp_base + exp_tz
-            with self.subTest(tzi=tzi):
+            with self.subTest(tzi=tzi, basic=False):
+                exp = exp_base_ext + exp_tz_ext
                 assert dt.isoformat() == exp
+                assert dt.isoformat(basic=False) == exp
+
+            with self.subTest(tzi=tzi, basic=True):
+                exp = exp_base_basic + exp_tz_basic
+                assert dt.isoformat(basic=True) == exp
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10, 4, 5, 1, 123)
@@ -4419,10 +4461,15 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(str(t5), "00:00:00.000040+00:00")
 
         self.assertEqual(t1.isoformat(), "07:47:00-05:00")
+        self.assertEqual(t1.isoformat(basic=True), "074700-0500")
         self.assertEqual(t2.isoformat(), "12:47:00+00:00")
+        self.assertEqual(t2.isoformat(basic=True), "124700+0000")
         self.assertEqual(t3.isoformat(), "13:47:00+01:00")
+        self.assertEqual(t3.isoformat(basic=True), "134700+0100")
         self.assertEqual(t4.isoformat(), "00:00:00.000040")
+        self.assertEqual(t4.isoformat(basic=True), "000000.000040")
         self.assertEqual(t5.isoformat(), "00:00:00.000040+00:00")
+        self.assertEqual(t5.isoformat(basic=True), "000000.000040+0000")
 
         d = 'datetime.time'
         self.assertEqual(repr(t1), d + "(7, 47, tzinfo=est)")
@@ -5353,25 +5400,71 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(OverflowError, huge.utctimetuple)
 
     def test_tzinfo_isoformat(self):
+        offsets = [
+            (("+00:00", "+0000"), 0),
+            (("+03:40", "+0340"), 220),
+            (("-03:51", "-0351"), -231),
+            (("", ""), None),
+        ]
+
         zero = FixedOffset(0, "+00:00")
         plus = FixedOffset(220, "+03:40")
         minus = FixedOffset(-231, "-03:51")
         unknown = FixedOffset(None, "")
 
         cls = self.theclass
-        datestr = '0001-02-03'
+        datestr_ext = '0001-02-03'
+        datestr_basic = '00010203'
+        for (name_ext, name_basic), value in offsets:
+            for us in 0, 987001:
+                timestr_suffix = (us and '.987001' or '')
+
+                offset_ext = FixedOffset(value, name_ext)
+                d = cls(1, 2, 3, 4, 5, 59, us, tzinfo=offset_ext)
+                ofsstr_ext = offset_ext is not None and d.tzname() or ''
+                timestr_ext = '04:05:59' + timestr_suffix
+                tailstr_ext = timestr_ext + ofsstr_ext
+
+                iso = d.isoformat()
+                self.assertEqual(iso, d.isoformat(basic=False))
+                self.assertEqual(iso, datestr_ext + 'T' + tailstr_ext)
+                self.assertEqual(iso, d.isoformat('T'))
+                self.assertEqual(d.isoformat('k'), datestr_ext + 'k' + tailstr_ext)
+                self.assertEqual(d.isoformat('\u1234'), datestr_ext + '\u1234' + tailstr_ext)
+                self.assertEqual(str(d), datestr_ext + ' ' + tailstr_ext)
+
+                offset_basic = FixedOffset(value, name_basic)
+                d = cls(1, 2, 3, 4, 5, 59, us, tzinfo=offset_basic)
+                ofsstr_basic = offset_basic is not None and d.tzname() or ''
+                timestr_basic = '040559' + timestr_suffix
+                tailstr_basic = timestr_basic + ofsstr_basic
+
+                iso = d.isoformat(basic=True)
+                self.assertEqual(iso, datestr_basic + 'T' + tailstr_basic)
+                self.assertEqual(iso, d.isoformat('T', basic=True))
+                self.assertEqual(d.isoformat('k', basic=True), datestr_basic + 'k' + tailstr_basic)
+                self.assertEqual(d.isoformat('\u1234', basic=True), datestr_basic + '\u1234' + tailstr_basic)
+
+    def test_tzinfo_isoformat_basic(self):
+        zero = FixedOffset(0, "+0000")
+        plus = FixedOffset(220, "+0340")
+        minus = FixedOffset(-231, "-0351")
+        unknown = FixedOffset(None, "")
+
+        cls = self.theclass
+        datestr = '00010203'
         for ofs in None, zero, plus, minus, unknown:
             for us in 0, 987001:
                 d = cls(1, 2, 3, 4, 5, 59, us, tzinfo=ofs)
-                timestr = '04:05:59' + (us and '.987001' or '')
+                timestr_suffix = us and '.987001' or ''
+                timestr = '040559' + timestr_suffix
                 ofsstr = ofs is not None and d.tzname() or ''
                 tailstr = timestr + ofsstr
-                iso = d.isoformat()
+                iso = d.isoformat(basic=True)
                 self.assertEqual(iso, datestr + 'T' + tailstr)
-                self.assertEqual(iso, d.isoformat('T'))
-                self.assertEqual(d.isoformat('k'), datestr + 'k' + tailstr)
-                self.assertEqual(d.isoformat('\u1234'), datestr + '\u1234' + tailstr)
-                self.assertEqual(str(d), datestr + ' ' + tailstr)
+                self.assertEqual(iso, d.isoformat('T', basic=True))
+                self.assertEqual(d.isoformat('k', basic=True), datestr + 'k' + tailstr)
+                self.assertEqual(d.isoformat('\u1234', basic=True), datestr + '\u1234' + tailstr)
 
     def test_replace(self):
         cls = self.theclass
