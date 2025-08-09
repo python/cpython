@@ -2693,7 +2693,7 @@ static PyNumberMethods matmulType_as_number = {
     0,                          /* nb_xor */
     0,                          /* nb_or */
     0,                          /* nb_int */
-    0,                          /* nb_reserved */
+    0,                          /* nb_complex */
     0,                          /* nb_float */
     0,                          /* nb_inplace_add */
     0,                          /* nb_inplace_subtract */
@@ -3184,6 +3184,27 @@ create_manual_heap_type(void)
     return (PyObject *)type;
 }
 
+/* Complex-like type with a __complex__ method, instead of nb_complex slot,
+   to test deprecation. */
+
+static PyObject *
+complex_dunder(PyObject *self, PyObject *Py_UNUSED(dummy))
+{
+    return PyComplex_FromDoubles(1, 2);
+}
+
+static PyMethodDef old_complex_methods[] = {
+    {"__complex__", complex_dunder, METH_NOARGS},
+    {NULL, NULL} /* sentinel */
+};
+
+PyTypeObject OldComplexLikeType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "old_complex_like",
+    .tp_new = PyType_GenericNew,
+    .tp_methods = old_complex_methods,
+};
+
 typedef struct {
     PyObject_VAR_HEAD
 } ManagedDictObject;
@@ -3366,6 +3387,10 @@ PyInit__testcapi(void)
         return NULL;
     }
 
+    if (PyType_Ready(&OldComplexLikeType) < 0)
+        return NULL;
+    Py_INCREF(&OldComplexLikeType);
+    PyModule_AddObject(m, "old_complex_like", (PyObject *)&OldComplexLikeType);
     PyObject *managed_dict_type = create_managed_dict_type();
     if (managed_dict_type == NULL) {
         return NULL;
