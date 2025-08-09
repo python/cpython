@@ -1,0 +1,4 @@
+Add *use_utc_designator* as an optional parameter to
+:meth:`datetime.datetime.isoformat` and :meth:`datetime.time.isoformat`. If
+it's set to true, the UTC offset will be formatted as "Z" rather than "+00:00"
+if the object is associated with a timezone named exactly ``"UTC"``.
