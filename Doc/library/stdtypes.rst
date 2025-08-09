@@ -1998,7 +1998,7 @@ expression support in the :mod:`re` module).
       False
       >>> 'acommomword'.isalpha()
       True
-      >>> 'µ'.isalpha() # no-ascii characters could be alpha too
+      >>> 'µ'.isalpha()  # non-ascii characters can be considered alphabetical too
       True
 
    See :ref:`unicode-properties`.
