@@ -1,3 +1,5 @@
+import os
+import stat
 import sys
 import unittest
 from contextlib import closing
@@ -88,6 +90,88 @@ class ReadOnly(_SQLiteDbmTests):
 
     def test_readonly_iter(self):
         self.assertEqual([k for k in self.db], [b"key1", b"key2"])
+
+class Immutable(unittest.TestCase):
+    def setUp(self):
+        self.filename = os_helper.TESTFN
+
+        db = dbm_sqlite3.open(self.filename, "c")
+        db[b"key"] = b"value"
+        db.close()
+
+        self.db = dbm_sqlite3.open(self.filename, "r")
+
+    def tearDown(self):
+        self.db.close()
+        for suffix in "", "-wal", "-shm":
+            os_helper.unlink(self.filename + suffix)
+
+    def test_readonly_open_without_wal_shm(self):
+        wal_path = self.filename + "-wal"
+        shm_path = self.filename + "-shm"
+
+        self.assertFalse(os.path.exists(wal_path))
+        self.assertFalse(os.path.exists(shm_path))
+
+        self.assertEqual(self.db[b"key"], b"value")
+
+
+class ReadOnlyFilesystem(unittest.TestCase):
+
+    def setUp(self):
+        self.test_dir = os_helper.TESTFN
+        os.mkdir(self.test_dir)
+        self.db_path = os.path.join(self.test_dir, "test.db")
+
+        db = dbm_sqlite3.open(self.db_path, "c")
+        db[b"key"] = b"value"
+        db.close()
+
+    def tearDown(self):
+        os.chmod(self.db_path, stat.S_IWRITE)
+        os.chmod(self.test_dir, stat.S_IWRITE | stat.S_IEXEC | stat.S_IREAD)
+        os_helper.rmtree(self.test_dir)
+
+    def test_open_readonly_dir_success_ro(self):
+        files = os.listdir(self.test_dir)
+        self.assertEqual(sorted(files), ["test.db"])
+
+        os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
+        with dbm_sqlite3.open(self.db_path, "r") as db:
+            self.assertEqual(db[b"key"], b"value")
+
+    def test_open_readonly_file_success(self):
+        os.chmod(self.db_path, stat.S_IREAD)
+        with dbm_sqlite3.open(self.db_path, "r") as db:
+            self.assertEqual(db[b"key"], b"value")
+
+    def test_open_readonly_file_fail_rw(self):
+        os.chmod(self.db_path, stat.S_IREAD)
+        with dbm_sqlite3.open(self.db_path, "w") as db:
+            with self.assertRaises(OSError):
+                db[b"newkey"] = b"newvalue"
+    @unittest.skipUnless(sys.platform == "darwin", "SQLite fallback behavior differs on non-macOS")
+    def test_open_readonly_dir_fail_rw_missing_wal_shm(self):
+        for suffix in ("-wal", "-shm"):
+            os_helper.unlink(self.db_path + suffix)
+
+        os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
+
+        with self.assertRaises(OSError):
+            with dbm_sqlite3.open(self.db_path, "w") as db:
+                db[b"newkey"] = b"newvalue"
+
+    @unittest.skipUnless(sys.platform == "darwin", "SQLite fallback behavior differs on non-macOS")
+    def test_open_readonly_dir_fail_rw_with_writable_db(self):
+        os.chmod(self.db_path, stat.S_IREAD | stat.S_IWRITE)
+        for suffix in ("-wal", "-shm"):
+            os_helper.unlink(self.db_path + suffix)
+
+        os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
+
+        with self.assertRaises(OSError):
+            with dbm_sqlite3.open(self.db_path, "w") as db:
+                db[b"newkey"] = b"newvalue"
 
 
 class ReadWrite(_SQLiteDbmTests):
