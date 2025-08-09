@@ -303,6 +303,7 @@ trip_signal(int sig_num)
     int fd = wakeup.fd;
     if (fd != INVALID_FD) {
         PyInterpreterState *interp = _PyInterpreterState_Main();
+        assert(interp != NULL);
         unsigned char byte = (unsigned char)sig_num;
 #ifdef MS_WINDOWS
         if (wakeup.use_send) {
@@ -507,7 +508,7 @@ signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "signal only works in main thread "
-                         "of the main interpreter");
+                         "of interpreters that support it");
         return NULL;
     }
     if (signalnum < 1 || signalnum >= Py_NSIG) {
@@ -751,7 +752,7 @@ signal_set_wakeup_fd_impl(PyObject *module, PyObject *fdobj,
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "set_wakeup_fd only works in main thread "
-                         "of the main interpreter");
+                         "of supporting interpreters");
         return NULL;
     }
 
@@ -1661,7 +1662,7 @@ signal_module_exec(PyObject *m)
 #endif
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_Py_IsMainInterpreter(tstate->interp)) {
+    if (_Py_ThreadCanHandleSignals(tstate->interp)) {
         if (signal_get_set_handlers(state, d) < 0) {
             return -1;
         }
