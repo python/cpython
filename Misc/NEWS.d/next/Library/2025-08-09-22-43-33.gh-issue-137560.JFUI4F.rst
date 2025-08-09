@@ -1,0 +1,2 @@
+Speed up :func:`ssl.create_default_context` on Windows if all certificates
+in the Windows certificate store are valid.
