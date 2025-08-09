@@ -15,8 +15,9 @@ import select
 import errno
 import textwrap
 import threading
-
 import unittest
+import warnings
+
 from test import support, mock_socket
 from test.support import hashlib_helper
 from test.support import socket_helper
@@ -1174,12 +1175,19 @@ class SMTPSimTests(unittest.TestCase):
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_CRAM_MD5(self):
-        self.serv.add_feature("AUTH CRAM-MD5")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+        with warnings.catch_warnings(record=True) as warn_list:
+            self.serv.add_feature("AUTH CRAM-MD5")
+            smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
                             timeout=support.LOOPBACK_TIMEOUT)
-        resp = smtp.login(sim_auth[0], sim_auth[1])
-        self.assertEqual(resp, (235, b'Authentication Succeeded'))
-        smtp.close()
+            resp = smtp.login(sim_auth[0], sim_auth[1])
+            self.assertEqual(len(warn_list), 2)
+            self.assertTrue(issubclass(warn_list[0].category, DeprecationWarning))
+            self.assertIn("This function is deprecated and will be removed in Python 3.15.",
+                           str(warn_list[0].message))
+            self.assertEqual(resp, (235, b'Authentication Succeeded'))
+            smtp.close()
+
+
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_multiple(self):
