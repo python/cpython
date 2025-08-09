@@ -1340,18 +1340,25 @@ _PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
 PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
 {
-    PyBytesObject* op = (PyBytesObject*) obj;
-    Py_ssize_t i, length = Py_SIZE(op);
+    Py_ssize_t i, length;
     Py_ssize_t newsize, squotes, dquotes;
     PyObject *v;
+    PyTypeObject *type = Py_TYPE(obj);
+    Py_buffer view;
     unsigned char quote;
     const unsigned char *s;
     Py_UCS1 *p;
 
     /* Compute size of output string */
+    if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) == -1)
+        return NULL;
+    s = (unsigned char *)view.buf;
+    length = view.len;
     squotes = dquotes = 0;
     newsize = 3; /* b'' */
-    s = (const unsigned char*)op->ob_sval;
+    if (!PyBytes_Check(obj)) {
+        newsize += strlen(type->tp_name) + 2; /* bytearray(b'') */
+    }
     for (i = 0; i < length; i++) {
         Py_ssize_t incr = 1;
         switch(s[i]) {
@@ -1382,9 +1389,16 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
     }
     p = PyUnicode_1BYTE_DATA(v);
 
+    if (!PyBytes_Check(obj)) {
+        const char *q = type->tp_name;
+        *(p + newsize - 1) = ')';
+        while (*q) *p++ = *q++;
+        *p++ = '(';
+    }
+
     *p++ = 'b', *p++ = quote;
     for (i = 0; i < length; i++) {
-        unsigned char c = op->ob_sval[i];
+        unsigned char c = s[i];
         if (c == quote || c == '\\')
             *p++ = '\\', *p++ = c;
         else if (c == '\t')
@@ -1403,12 +1417,15 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
             *p++ = c;
     }
     *p++ = quote;
+    PyBuffer_Release(&view);
     assert(_PyUnicode_CheckConsistency(v, 1));
     return v;
 
   overflow:
-    PyErr_SetString(PyExc_OverflowError,
-                    "bytes object is too large to make repr");
+    PyBuffer_Release(&view);
+    PyErr_Format(PyExc_OverflowError,
+                 "%s object is too large to make repr",
+                 type->tp_name);
     return NULL;
 }
 
