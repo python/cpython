@@ -1665,38 +1665,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_UNARY_INVERT", uops)
         self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
 
-    def test_replace_with_true_pop_top_load_const_inline_borrow(self):
-        def testfunc(n):
-            x = 0
-            for _ in range(n):
-                a = 42
-                result = bool(a)
-                if result:
-                    x += 1
-            return x
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertNotIn("_REPLACE_WITH_TRUE", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-
-    def test_to_bool_none_pop_top_load_const_inline_borrow(self):
-        def testfunc(n):
-            x = 0
-            for _ in range(n):
-                a = None
-                result = bool(a)
-                if result:
-                    x += 1
-            return x
-        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, 0)
-        self.assertIsNotNone(ex)
-        uops = get_opnames(ex)
-        self.assertNotIn("_TO_BOOL_NONE", uops)
-        self.assertNotIn("_POP_TOP_LOAD_CONST_INLINE_BORROW", uops)
-
     def test_compare_op_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
