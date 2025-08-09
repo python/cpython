@@ -370,8 +370,10 @@ Basic Usage
       type :class:`str`. Therefore, dictionary keys obtained by
       deserializing JSON objects will always be strings.
       For Example,
-      ``json.loads('{"42":"value"}')`` returns the dictionary
-      ``{'42': 'value'}``.
+      ``json.loads('{"42":"spam"}')`` returns the dictionary
+      ``{'42': 'spam'}`,but ``json.loads('{42:"spam"}')``
+      will raise a exception,because it is not a correct
+      JSON text
 
 Encoders and Decoders
 ---------------------
