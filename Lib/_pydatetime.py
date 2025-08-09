@@ -2019,7 +2019,11 @@ class datetime(date):
         t = (self - epoch) // timedelta(0, 1)
         def local(u):
             y, m, d, hh, mm, ss = _time.localtime(u)[:6]
-            return (datetime(y, m, d, hh, mm, ss) - epoch) // timedelta(0, 1)
+            try:
+                return ((datetime(y, m, d, hh, mm, ss) - epoch) //
+                        timedelta(0, 1))
+            except (ValueError, OverflowError):
+                return u
 
         # Our goal is to solve t = local(u) for u.
         a = local(t) - t
