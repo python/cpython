@@ -22,6 +22,7 @@ is a lightweight data interchange format inspired by
    The term "object" in the context of JSON processing in Python can be
    ambiguous. All values in Python are objects. In JSON, an object refers to
    any data wrapped in curly braces, similar to a Python dictionary.
+
 .. warning::
    Be cautious when parsing JSON data from untrusted sources. A malicious
    JSON string may cause the decoder to consume considerable CPU and memory
@@ -146,7 +147,7 @@ See :ref:`json-commandline` for detailed documentation.
    default.  Order is only lost if the underlying containers are unordered.
 
 .. note::
-   According to RFC 7159, the keys of all objects in JSON are strings.
+   According to :rfc:`7159`, the keys of all objects in JSON are strings.
    Under normal circumstances,the encoder of this module
    will convert the keys of all Python dictionaries into strings as the
    keys of JSON objects, and the decoder of this module will
@@ -372,7 +373,7 @@ Basic Usage
 
    .. note::
 
-      As mandated by :rfc:`8259`, JSON keys must be :class:`str` objects.
+      As mandated by :rfc:`7159`, JSON keys must be :class:`str` objects.
       In particular, ``json.loads('{"42": "spam"}')`` returns ``{'42': 'spam'}``,
       but ``json.loads('{42: "spam"}')`` fails since ``42`` is not a valid JSON key.
 
