@@ -4647,6 +4647,9 @@ class ThreadedTests(unittest.TestCase):
                                               args=(sock,), daemon=True)
                     thread.start()
                     event.wait()
+                    # We need to yield the GIL to prevent some silly race
+                    # condition in ThreadedEchoServer
+                    time.sleep(0)
                     sock.sendall(b"1" * 50)
                     thread.join()
                     if cm.exc_value is not None:
