@@ -1998,6 +1998,13 @@ expression support in the :mod:`re` module).
    ``False`` otherwise.
    ASCII characters have code points in the range U+0000-U+007F.
 
+   For example::
+
+      >>> 'a common word'.isascii()
+      True
+      >>> 'µ'.isascii()
+      False
+
    .. versionadded:: 3.7
 
 
