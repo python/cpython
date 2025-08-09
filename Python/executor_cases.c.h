@@ -5433,32 +5433,26 @@
 
         case _CALL_STR_1: {
             _PyStackRef arg;
-            _PyStackRef null;
-            _PyStackRef callable;
             _PyStackRef res;
+            _PyStackRef a;
             oparg = CURRENT_OPARG();
             arg = stack_pointer[-1];
-            null = stack_pointer[-2];
-            callable = stack_pointer[-3];
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
             assert(oparg == 1);
             STAT_INC(CALL, hit);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = PyObject_Str(arg_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            (void)callable;
-            (void)null;
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(arg);
+            PyObject *res_o = PyObject_Str(arg_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            a = arg;
             if (res_o == NULL) {
                 JUMP_TO_ERROR();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[1] = a;
+            stack_pointer += 2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
