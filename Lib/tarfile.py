@@ -382,7 +382,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("bz2 module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = bz2.BZ2Decompressor()
                     self.exception = OSError
                 else:
@@ -394,7 +393,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("lzma module is not available") from None
                 if mode == "r":
-                    self.dbuf = b""
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
@@ -485,7 +483,6 @@ class _Stream:
         """Initialize for reading a gzip compressed fileobj.
         """
         self.cmp = self.zlib.decompressobj(-self.zlib.MAX_WBITS)
-        self.dbuf = b""
 
         # taken from gzip.GzipFile with some alterations
         if self.__read(2) != b"\037\213":
@@ -543,26 +540,31 @@ class _Stream:
         if self.comptype == "tar":
             return self.__read(size)
 
-        c = len(self.dbuf)
-        t = [self.dbuf]
+        c = 0
+        t = []
         while c < size:
             # Skip underlying buffer to avoid unaligned double buffering.
             if self.buf:
                 buf = self.buf
                 self.buf = b""
+            elif self.comptype != "gz" and not self.cmp.needs_input:
+                buf = b""
             else:
                 buf = self.fileobj.read(self.bufsize)
                 if not buf:
                     break
             try:
-                buf = self.cmp.decompress(buf)
+                buf = self.cmp.decompress(buf, size - c)
+                if self.comptype == "gz":
+                    self.buf = self.cmp.unconsumed_tail
             except self.exception as e:
                 raise ReadError("invalid compressed data") from e
             t.append(buf)
             c += len(buf)
         t = b"".join(t)
-        self.dbuf = t[size:]
-        return t[:size]
+        if len(t) > size:
+            raise ReadError("decompress() returned too much data")
+        return t
 
     def __read(self, size):
         """Return size bytes from stream. If internal buffer is empty,
