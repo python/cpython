@@ -1,0 +1,9 @@
+:attr:`ipaddress.IPv4Address.is_private` and
+:attr:`ipaddress.IPv4Network.is_private` no longer treat the
+``100.64.0.0/10`` address block in a special way.
+
+Previously the range was considered not private but not global either.
+
+Now ``is_private`` returns ``True`` for these addresses, matching the wider
+``is_private`` semantics and the IANA IPv4 Special-Purpose Address Registry
+registry saying the range is not globally reachable.

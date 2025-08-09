@@ -2295,7 +2295,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_network(
                 '127.42.0.0/16').is_loopback)
         self.assertEqual(False, ipaddress.ip_network('128.0.0.0').is_loopback)
-        self.assertEqual(False,
+        self.assertEqual(True,
                          ipaddress.ip_network('100.64.0.0/10').is_private)
         self.assertEqual(False, ipaddress.ip_network('100.64.0.0/10').is_global)
 
@@ -2317,6 +2317,9 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_address(
                 '10.255.255.255').is_private)
         self.assertEqual(False, ipaddress.ip_address('11.0.0.0').is_private)
+        self.assertEqual(True,
+                         ipaddress.ip_address('100.64.0.0').is_private)
+        self.assertEqual(False, ipaddress.ip_address('100.64.0.0').is_global)
         self.assertEqual(True, ipaddress.ip_address(
                 '172.31.255.255').is_private)
         self.assertEqual(False, ipaddress.ip_address('172.32.0.0').is_private)
