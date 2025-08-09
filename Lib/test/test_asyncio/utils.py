@@ -243,6 +243,9 @@ if hasattr(socket, 'AF_UNIX'):
 
     @contextlib.contextmanager
     def unix_socket_path():
+        if sys.platform == 'win32':
+            raise unittest.SkipTest('AF_UNIX support for asyncio is not '
+                                    'implemented on Windows for now')
         path = gen_unix_socket_path()
         try:
             yield path
@@ -255,6 +258,9 @@ if hasattr(socket, 'AF_UNIX'):
 
     @contextlib.contextmanager
     def run_test_unix_server(*, use_ssl=False):
+        if sys.platform == 'win32':
+            raise unittest.SkipTest('AF_UNIX support for asyncio is not '
+                                    'implemented on Windows for now')
         with unix_socket_path() as path:
             yield from _run_test_server(address=path, use_ssl=use_ssl,
                                         server_cls=SilentUnixWSGIServer,

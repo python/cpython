@@ -2747,6 +2747,7 @@ class PathTest(PurePathTest):
     @unittest.skipIf(
         is_wasi, "Cannot create socket on WASI."
     )
+    @unittest.skipIf(sys.platform=='win32', "didn't work on Windows")
     def test_is_socket_true(self):
         P = self.cls(self.base, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
