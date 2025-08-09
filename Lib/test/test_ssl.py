@@ -4642,6 +4642,7 @@ class ThreadedTests(unittest.TestCase):
                                             server_hostname=hostname) as sock:
                 sock.connect((HOST, server.port))
                 sock.settimeout(1)
+                sock.setblocking(1)
                 # Ensure that the server is ready to accept requests
                 sock.sendall(b"123")
                 self.assertEqual(sock.recv(3), b"123")
