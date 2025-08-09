@@ -111,7 +111,7 @@ class Emitter:
     def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False):
         self._replacers = {
             "EXIT_IF": self.exit_if,
-            "EXIT_IF_AFTER": self.exit_if_after,
+            "AT_END_EXIT_IF": self.exit_if_after,
             "DEOPT_IF": self.deopt_if,
             "PERIODIC_IF": self.periodic_if,
             "ERROR_IF": self.error_if,
@@ -191,7 +191,7 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        storage.clear_inputs("in EXIT_IF_AFTER")
+        storage.clear_inputs("in AT_END_EXIT_IF")
         storage.flush(self.out)
         storage.stack.clear(self.out)
         return self.exit_if(tkn, tkn_iter, uop, storage, inst)

@@ -709,7 +709,7 @@ def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, Escapi
             in_if = 0
             tkn_iter = iter(stmt.contents)
             for tkn in tkn_iter:
-                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF", "PERIODIC_IF", "EXIT_IF_AFTER"):
+                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF", "PERIODIC_IF", "AT_END_EXIT_IF"):
                     in_if = 1
                     next(tkn_iter)
                 elif tkn.kind == "LPAREN":
@@ -836,7 +836,7 @@ def stmt_is_simple_exit(stmt: Stmt) -> bool:
     if len(tokens) < 4:
         return False
     return (
-        tokens[0].text in ("ERROR_IF", "DEOPT_IF", "EXIT_IF", "EXIT_IF_AFTER")
+        tokens[0].text in ("ERROR_IF", "DEOPT_IF", "EXIT_IF", "AT_END_EXIT_IF")
         and
         tokens[1].text == "("
         and
@@ -892,7 +892,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         or variable_used(op, "PyCell_SwapTakeRef")
     )
     deopts_if = variable_used(op, "DEOPT_IF")
-    exits_if = variable_used(op, "EXIT_IF") or variable_used(op, "EXIT_IF_AFTER")
+    exits_if = variable_used(op, "EXIT_IF") or variable_used(op, "AT_END_EXIT_IF")
     deopts_periodic = variable_used(op, "PERIODIC_IF")
     exits_and_deopts = sum((deopts_if, exits_if, deopts_periodic))
     if exits_and_deopts > 1:
