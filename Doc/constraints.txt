@@ -22,3 +22,6 @@ sphinxcontrib-serializinghtml<3
 
 # Direct dependencies of Jinja2 (Jinja is a dependency of Sphinx, see above)
 MarkupSafe<3
+
+# Direct dependencies of the sphinx-codeautolink extension
+beautifulsoup4<4.13.4
