@@ -1,0 +1,1 @@
+Add :meth:`threading.iter_locked` to make concurrent iteration over an iterable execute using a lock.
