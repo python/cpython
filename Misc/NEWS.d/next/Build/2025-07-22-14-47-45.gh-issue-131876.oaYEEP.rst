@@ -1,0 +1,2 @@
+Remove :file:`!Modules/hashlib.h` and move its content into dedicated files
+now located in ``Modules/_hashlib``. Patch by Bénédikt Tran.
