@@ -1577,7 +1577,7 @@ are always available.  They are listed here in alphabetical order.
    ``pow(base, exp) % mod``). The two-argument form ``pow(base, exp)`` is
    equivalent to using the power operator: ``base**exp``.
 
-   The arguments must have numeric types.  With mixed operand types, the
+   When arguments are builtin numeric types with mixed operand types, the
    coercion rules for binary arithmetic operators apply.  For :class:`int`
    operands, the result has the same type as the operands (after coercion)
    unless the second argument is negative; in that case, all arguments are
@@ -1839,14 +1839,14 @@ are always available.  They are listed here in alphabetical order.
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.
 
+   Slice objects have read-only data attributes :attr:`!start`,
+   :attr:`!stop`, and :attr:`!step` which merely return the argument
+   values (or their default).  They have no other explicit functionality;
+   however, they are used by NumPy and other third-party packages.
+
    .. attribute:: slice.start
    .. attribute:: slice.stop
    .. attribute:: slice.step
-
-      Slice objects have read-only data attributes :attr:`!start`,
-      :attr:`!stop`, and :attr:`!step` which merely return the argument
-      values (or their default).  They have no other explicit functionality;
-      however, they are used by NumPy and other third-party packages.
 
    Slice objects are also generated when extended indexing syntax is used.  For
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See

@@ -17,8 +17,6 @@ class HoleValue(enum.Enum):
 
     # The base address of the machine code for the current uop (exposed as _JIT_ENTRY):
     CODE = enum.auto()
-    # The base address of the machine code for the next uop (exposed as _JIT_CONTINUE):
-    CONTINUE = enum.auto()
     # The base address of the read-only data for this uop:
     DATA = enum.auto()
     # The address of the current executor (exposed as _JIT_EXECUTOR):
@@ -97,7 +95,6 @@ _PATCH_FUNCS = {
 # Translate HoleValues to C expressions:
 _HOLE_EXPRS = {
     HoleValue.CODE: "(uintptr_t)code",
-    HoleValue.CONTINUE: "(uintptr_t)code + sizeof(code_body)",
     HoleValue.DATA: "(uintptr_t)data",
     HoleValue.EXECUTOR: "(uintptr_t)executor",
     # These should all have been turned into DATA values by process_relocations:
@@ -209,64 +206,6 @@ class Stencil:
             self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def add_nops(self, nop: bytes, alignment: int) -> None:
-        """Add NOPs until there is alignment. Fail if it is not possible."""
-        offset = len(self.body)
-        nop_size = len(nop)
-
-        # Calculate the gap to the next multiple of alignment.
-        gap = -offset % alignment
-        if gap:
-            if gap % nop_size == 0:
-                count = gap // nop_size
-                self.body.extend(nop * count)
-            else:
-                raise ValueError(
-                    f"Cannot add nops of size '{nop_size}' to a body with "
-                    f"offset '{offset}' to align with '{alignment}'"
-                )
-
-    def remove_jump(self) -> None:
-        """Remove a zero-length continuation jump, if it exists."""
-        hole = max(self.holes, key=lambda hole: hole.offset)
-        match hole:
-            case Hole(
-                offset=offset,
-                kind="IMAGE_REL_AMD64_REL32",
-                value=HoleValue.GOT,
-                symbol="_JIT_CONTINUE",
-                addend=-4,
-            ) as hole:
-                # jmp qword ptr [rip]
-                jump = b"\x48\xff\x25\x00\x00\x00\x00"
-                offset -= 3
-            case Hole(
-                offset=offset,
-                kind="IMAGE_REL_I386_REL32" | "R_X86_64_PLT32" | "X86_64_RELOC_BRANCH",
-                value=HoleValue.CONTINUE,
-                symbol=None,
-                addend=addend,
-            ) as hole if (
-                _signed(addend) == -4
-            ):
-                # jmp 5
-                jump = b"\xe9\x00\x00\x00\x00"
-                offset -= 1
-            case Hole(
-                offset=offset,
-                kind="R_AARCH64_JUMP26",
-                value=HoleValue.CONTINUE,
-                symbol=None,
-                addend=0,
-            ) as hole:
-                # b #4
-                jump = b"\x00\x00\x00\x14"
-            case _:
-                return
-        if self.body[offset:] == jump:
-            self.body = self.body[:offset]
-            self.holes.remove(hole)
-
 
 @dataclasses.dataclass
 class StencilGroup:
@@ -284,9 +223,7 @@ class StencilGroup:
     _got: dict[str, int] = dataclasses.field(default_factory=dict, init=False)
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
-    def process_relocations(
-        self, known_symbols: dict[str, int], *, alignment: int = 1, nop: bytes = b""
-    ) -> None:
+    def process_relocations(self, known_symbols: dict[str, int]) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
@@ -306,8 +243,6 @@ class StencilGroup:
                 self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
-        self.code.remove_jump()
-        self.code.add_nops(nop=nop, alignment=alignment)
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:

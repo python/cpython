@@ -185,6 +185,37 @@ _Py_uop_sym_get_const(JitOptContext *ctx, JitOptRef ref)
     return NULL;
 }
 
+_PyStackRef
+_Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym)
+{
+    PyObject *const_val = _Py_uop_sym_get_const(ctx, sym);
+    if (const_val == NULL) {
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectBorrow(const_val);
+}
+
+/*
+ Indicates whether the constant is safe to constant evaluate
+ (without side effects).
+ */
+bool
+_Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
+{
+    PyObject *const_val = _Py_uop_sym_get_const(ctx, sym);
+    if (const_val == NULL) {
+        return false;
+    }
+    if (_PyLong_CheckExactAndCompact(const_val)) {
+        return true;
+    }
+    PyTypeObject *typ = Py_TYPE(const_val);
+    return (typ == &PyUnicode_Type) ||
+           (typ == &PyFloat_Type) ||
+           (typ == &_PyNone_Type) ||
+           (typ == &PyBool_Type);
+}
+
 void
 _Py_uop_sym_set_type(JitOptContext *ctx, JitOptRef ref, PyTypeObject *typ)
 {
@@ -465,6 +496,16 @@ _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val)
     JitOptRef ref = PyJitRef_Wrap(res);
     _Py_uop_sym_set_const(ctx, ref, const_val);
     return ref;
+}
+
+JitOptRef
+_Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val)
+{
+    assert(const_val != NULL);
+    JitOptRef res = _Py_uop_sym_new_const(ctx, const_val);
+    // Decref once because sym_new_const increfs it.
+    Py_DECREF(const_val);
+    return res;
 }
 
 JitOptRef

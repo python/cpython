@@ -41,6 +41,11 @@ extern PyObject *_Py_set_function_type_params(
 PyAPI_FUNC(int)
 _PyFunction_VerifyStateless(PyThreadState *, PyObject *);
 
+static inline PyObject* _PyFunction_GET_BUILTINS(PyObject *func) {
+    return _PyFunction_CAST(func)->func_builtins;
+}
+#define _PyFunction_GET_BUILTINS(func) _PyFunction_GET_BUILTINS(_PyObject_CAST(func))
+
 
 #ifdef __cplusplus
 }
