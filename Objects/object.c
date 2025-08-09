@@ -779,8 +779,8 @@ PyObject_Repr(PyObject *v)
     res = (*Py_TYPE(v)->tp_repr)(v);
     _Py_LeaveRecursiveCallTstate(tstate);
 
-    if (res == NULL) {
-        return NULL;
+    if (res == NULL || PyUnicode_CheckExact(res)) {
+        return res;
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
@@ -789,6 +789,7 @@ PyObject_Repr(PyObject *v)
         Py_DECREF(res);
         return NULL;
     }
+    Py_SETREF(res, _PyUnicode_Copy(res));
     return res;
 }
 
@@ -825,6 +826,10 @@ PyObject_Str(PyObject *v)
     if (res == NULL) {
         return NULL;
     }
+    if (PyUnicode_CheckExact(res)) {
+        assert(_PyUnicode_CheckConsistency(res, 1));
+        return res;
+    }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "__str__ returned non-string (type %.200s)",
@@ -833,6 +838,7 @@ PyObject_Str(PyObject *v)
         return NULL;
     }
     assert(_PyUnicode_CheckConsistency(res, 1));
+    Py_SETREF(res, _PyUnicode_Copy(res));
     return res;
 }
 
@@ -881,6 +887,9 @@ PyObject_Bytes(PyObject *v)
         Py_DECREF(func);
         if (result == NULL)
             return NULL;
+        if (PyBytes_CheckExact(result)) {
+            return result;
+        }
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                          "__bytes__ returned non-bytes (type %.200s)",
@@ -888,6 +897,8 @@ PyObject_Bytes(PyObject *v)
             Py_DECREF(result);
             return NULL;
         }
+        Py_SETREF(result, PyBytes_FromStringAndSize(PyBytes_AS_STRING(result),
+                                                    PyBytes_GET_SIZE(result)));
         return result;
     }
     else if (PyErr_Occurred())

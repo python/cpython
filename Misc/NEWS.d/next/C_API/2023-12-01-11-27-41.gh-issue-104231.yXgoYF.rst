@@ -1,0 +1,7 @@
+:c:func:`PyObject_Str`, :c:func:`PyObject_Repr` and :c:func:`PyObject_ASCII`
+now always return an instance of :class:`str`, even if the special methods
+``__str__()`` or ``__repr__()`` return an instance of a subclass of
+:class:`!str`.
+:c:func:`PyObject_Bytes` now always returns an instance of :class:`bytes`, even
+if the special method ``__bytes__()`` returns an instance of a subclass of
+:class:`!bytes`.
