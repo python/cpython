@@ -4,6 +4,7 @@ import rlcompleter
 from textwrap import dedent
 from unittest import TestCase
 from unittest.mock import MagicMock
+from _pyrepl.readline import multiline_input
 from test.support import force_colorized_test_class, force_not_colorized_test_class
 
 from .support import handle_all_events, handle_events_narrow_console
@@ -357,6 +358,63 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(8, 0)
         self.assertEqual(reader.pos, 7)
+
+    def test_empty_line_control_w_k(self):
+        """Test that Control-W followed by Control-K on an empty line doesn't crash."""
+        events = [
+            Event(evt="key", data="\x17", raw=bytearray(b"\x17")),  # Control-W
+            Event(evt="key", data="\x0b", raw=bytearray(b"\x0b")),  # Control-K
+        ]
+        reader, _ = handle_all_events(events)
+        self.assert_screen_equal(reader, "", clean=True)
+        self.assertEqual(reader.pos, 0)
+
+    def test_control_w_delete_word(self):
+        """Test Control-W delete word"""
+        cases = (
+            ("", 0, 0, []),
+            ("a", 1, 0, [""]),
+            ("abc", 3, 0, [""]),
+            ("abc def", 4, 0, ["def"]),
+            ("abc def", 7, 4, ["abc "]),
+            ("def xxx():xxx\n    ", 18, 10, ["def xxx():"]),
+        )
+
+        for text, before_pos, after_pos, expected in cases:
+            with self.subTest(text=text, before_pos=before_pos):
+                events = itertools.chain(
+                    code_to_events(text),
+                    [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))] * (len(text) - before_pos),  # Move cursor to specified position
+                    [
+                        Event(evt="key", data="\x17", raw=bytearray(b"\x17")), # Control-W
+                    ],
+                )
+                reader, _ = handle_all_events(events)
+                self.assertEqual(reader.screen, expected)
+                self.assertEqual(reader.pos, after_pos)
+
+    def test_control_k_delete_to_eol(self):
+        """Test Control-K delete from cursor to end of line"""
+        cases = (
+            ("", 0, [""]),
+            ("a", 0, [""]),
+            ("abc", 1, ["a"]),
+            ("abc def", 4, ["abc "]),
+            ("def xxx():xxx\n    pass", 10, ["def xxx():", "    pass"]),
+        )
+
+        for text, pos, expected in cases:
+            with self.subTest(text=text, pos=pos):
+                events = itertools.chain(
+                    code_to_events(text),
+                    [Event(evt="key", data="left", raw=bytearray(b"\x1bOD"))] * (len(text) - pos),  # Move cursor to specified position
+                    [
+                        Event(evt="key", data="\x0b", raw=bytearray(b"\x0b")),  # Control-K
+                    ],
+                )
+                reader, _ = handle_all_events(events)
+                self.assertEqual(reader.screen, expected)
+                self.assertEqual(reader.pos, pos)
 
 @force_colorized_test_class
 class TestReaderInColor(ScreenEqualMixin, TestCase):
