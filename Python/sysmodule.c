@@ -3489,6 +3489,7 @@ static PyStructSequence_Field version_info_fields[] = {
     {"micro", "Patch release number"},
     {"releaselevel", "'alpha', 'beta', 'candidate', or 'final'"},
     {"serial", "Serial release number"},
+    {"devel", "Development build"},
     {0}
 };
 
@@ -3496,7 +3497,7 @@ static PyStructSequence_Desc version_info_desc = {
     "sys.version_info",     /* name */
     version_info__doc__,    /* doc */
     version_info_fields,    /* fields */
-    5
+    5                       /* n_in_sequence */
 };
 
 static PyObject *
@@ -3529,12 +3530,15 @@ make_version_info(PyThreadState *tstate)
     PyStructSequence_SET_ITEM(version_info, pos++, PyLong_FromLong(flag))
 #define SetStrItem(flag) \
     PyStructSequence_SET_ITEM(version_info, pos++, PyUnicode_FromString(flag))
+#define SetBoolItem(flag) \
+    PyStructSequence_SET_ITEM(version_info, pos++, PyBool_FromLong(flag))
 
     SetIntItem(PY_MAJOR_VERSION);
     SetIntItem(PY_MINOR_VERSION);
     SetIntItem(PY_MICRO_VERSION);
     SetStrItem(s);
     SetIntItem(PY_RELEASE_SERIAL);
+    SetBoolItem(strncmp(GITTAG, "tags/", 5));
 #undef SetIntItem
 #undef SetStrItem
 
