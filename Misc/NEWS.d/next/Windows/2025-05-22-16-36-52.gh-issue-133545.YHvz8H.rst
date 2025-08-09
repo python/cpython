@@ -1,0 +1,2 @@
+In :mod:`subprocess` on Windows, in addition to space, tab, and empty string, quote arguments containing
+``&<>^|``. Patch by John Keith Hohm.
