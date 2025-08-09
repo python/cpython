@@ -233,27 +233,28 @@ class OptimizerEmitter(Emitter):
             else:
                 emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
 
-        if len(used_stack_inputs) >= 1 and len(self.original_uop.stack.outputs) == 1:
+        if len(self.original_uop.stack.outputs) == 1:
             outp = self.original_uop.stack.outputs[0]
             if not outp.peek:
-                if len(used_stack_inputs) == 1:
-                    emitter.emit(f"""
-                    if (sym_is_const(ctx, {outp.name})) {{
-                        PyObject *result = sym_get_const(ctx, {outp.name});
-                        if (_Py_IsImmortal(result)) {{
-                            // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        }}
-                    }}""")
-                elif len(used_stack_inputs) == 2:
-                    emitter.emit(f"""
-                    if (sym_is_const(ctx, {outp.name})) {{
-                        PyObject *result = sym_get_const(ctx, {outp.name});
-                        if (_Py_IsImmortal(result)) {{
-                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                        }}
-                    }}""")
+                if self.original_uop.name.startswith('_'):
+                    if len(used_stack_inputs) == 1:
+                        emitter.emit(f"""
+                        if (sym_is_const(ctx, {outp.name})) {{
+                            PyObject *result = sym_get_const(ctx, {outp.name});
+                            if (_Py_IsImmortal(result)) {{
+                                // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+                                REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            }}
+                        }}""")
+                    elif len(used_stack_inputs) == 2:
+                        emitter.emit(f"""
+                        if (sym_is_const(ctx, {outp.name})) {{
+                            PyObject *result = sym_get_const(ctx, {outp.name});
+                            if (_Py_IsImmortal(result)) {{
+                                // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                            }}
+                        }}""")
 
         storage.flush(self.out)
         emitter.emit("break;\n")
