@@ -1,0 +1,4 @@
+Fix a deadlock introduced in the :mod:`ssl` module when a call to
+``recv()`` was blocked in one thread, while another
+attempted to call ``send()`` to unblock it in another
+thread.
