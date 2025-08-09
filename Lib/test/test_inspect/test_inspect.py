@@ -5833,7 +5833,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_datetime_module_has_signatures(self):
         # Only test if the C implementation is available.
-        support.import_module('_datetime')
+        import_helper.import_module('_datetime')
         import datetime
         no_signature = {'tzinfo'}
         unsupported_signature = {'timezone'}
