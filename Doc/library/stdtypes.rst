@@ -2001,8 +2001,8 @@ expression support in the :mod:`re` module).
       >>> 'µ'.isalpha() # no-ascii characters could be alpha too
       True
 
+   See :ref:`unicode-properties`.
 
-   See Unicode Properties section in :ref:`unicode-howto`.
 
 .. method:: str.isascii()
 
