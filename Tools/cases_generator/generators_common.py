@@ -113,7 +113,7 @@ class Emitter:
             "EXIT_IF": self.exit_if,
             "AT_END_EXIT_IF": self.exit_if_after,
             "DEOPT_IF": self.deopt_if,
-            "PERIODIC_IF": self.periodic_if,
+            "HANDLE_PENDING_AND_DEOPT_IF": self.periodic_if,
             "ERROR_IF": self.error_if,
             "ERROR_NO_POP": self.error_no_pop,
             "DECREF_INPUTS": self.decref_inputs,
@@ -181,7 +181,7 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        raise NotImplementedError("PERIODIC_IF not support in tier 1")
+        raise NotImplementedError("HANDLE_PENDING_AND_DEOPT_IF not support in tier 1")
 
     def exit_if_after(
         self,

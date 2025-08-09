@@ -709,7 +709,7 @@ def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, Escapi
             in_if = 0
             tkn_iter = iter(stmt.contents)
             for tkn in tkn_iter:
-                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF", "PERIODIC_IF", "AT_END_EXIT_IF"):
+                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF", "HANDLE_PENDING_AND_DEOPT_IF", "AT_END_EXIT_IF"):
                     in_if = 1
                     next(tkn_iter)
                 elif tkn.kind == "LPAREN":
@@ -893,12 +893,12 @@ def compute_properties(op: parser.CodeDef) -> Properties:
     )
     deopts_if = variable_used(op, "DEOPT_IF")
     exits_if = variable_used(op, "EXIT_IF") or variable_used(op, "AT_END_EXIT_IF")
-    deopts_periodic = variable_used(op, "PERIODIC_IF")
+    deopts_periodic = variable_used(op, "HANDLE_PENDING_AND_DEOPT_IF")
     exits_and_deopts = sum((deopts_if, exits_if, deopts_periodic))
     if exits_and_deopts > 1:
         tkn = op.tokens[0]
         raise lexer.make_syntax_error(
-            "Op cannot contain more than one of EXIT_IF, DEOPT_IF and PERIODIC_IF",
+            "Op cannot contain more than one of EXIT_IF, DEOPT_IF and HANDLE_PENDING_AND_DEOPT_IF",
             tkn.filename,
             tkn.line,
             tkn.column,
