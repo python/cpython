@@ -1278,6 +1278,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       This bit indicates that instances of the class should be weakly
       referenceable.
 
+      If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
+
       .. versionadded:: 3.12
 
       **Inheritance:**
