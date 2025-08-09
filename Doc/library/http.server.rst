@@ -246,7 +246,7 @@ instantiation, of which this module provides three different variants:
 
       .. versionadded:: 3.2
 
-   .. method:: send_error(code, message=None, explain=None)
+   .. method:: send_error(code, message=None, explain=None, *, extra_headers=())
 
       Sends and logs a complete error reply to the client. The numeric *code*
       specifies the HTTP error code, with *message* as an optional, short, human
@@ -260,9 +260,16 @@ instantiation, of which this module provides three different variants:
       HEAD or the response code is one of the following: :samp:`1{xx}`,
       ``204 No Content``, ``205 Reset Content``, ``304 Not Modified``.
 
+      The *extra_headers* argument can be a key-value tuple list which
+      specifies additional headers to be sent in the response (for
+      instance, ``[("Content-Range", "bytes 3-14/42")]``).
+
       .. versionchanged:: 3.4
          The error response includes a Content-Length header.
          Added the *explain* argument.
+
+      .. versionchanged:: next
+         Added the *extra_headers* argument.
 
    .. method:: send_response(code, message=None)
 
@@ -373,6 +380,10 @@ instantiation, of which this module provides three different variants:
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added support for HTTP single-part range requests on files, as specified
+      in :rfc:`9110#section-14`.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
