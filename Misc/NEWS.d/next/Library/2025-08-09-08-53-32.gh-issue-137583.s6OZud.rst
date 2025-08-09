@@ -1,4 +1,4 @@
-Fix a deadlock introduced in the :mod:`ssl` module when a call to
-``recv()`` was blocked in one thread, while another
-attempted to call ``send()`` to unblock it in another
+Fix a deadlock introduced in 3.13.6 when a call to
+:meth:`ssl.SSLSocket.recv <socket.socket.recv>` was blocked in one thread, while another
+attempted to call :meth:`ssl.SSLSocket.send <socket.socket.send>` to unblock it in another
 thread.
