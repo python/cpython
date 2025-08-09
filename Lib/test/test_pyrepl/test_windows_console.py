@@ -5,6 +5,9 @@ if sys.platform != "win32":
     raise unittest.SkipTest("test only relevant on win32")
 
 
+import subprocess
+from tempfile import TemporaryDirectory
+import os
 import itertools
 from functools import partial
 from test.support import force_not_colorized_test_class
@@ -575,6 +578,30 @@ class WindowsConsoleGetEventTests(TestCase):
         self.assertEqual(self.get_event(irs, vt_support=True),
                          Event(evt='key', data='up', raw=bytearray(b'\x1b[A')))
         self.assertEqual(self.mock.call_count, 3)
+
+
+class WindowsCommandLineTests(unittest.TestCase):
+    def test_for_crash_traceback_with_redirected_stdout(self):
+        """python.bat -i -c "print('hlwd')" > file.txt"""
+        script_command = "print('script has run')"
+        with TemporaryDirectory() as tmp_dir:
+            stdout_path = os.path.join(tmp_dir, "WinCMDLineTests.txt")
+            with open(stdout_path, "w+") as stdout_file, \
+                subprocess.Popen(
+                    [sys.executable, '-i', '-u', '-c', script_command],
+                    stdin=None,
+                    stdout=stdout_file,
+                    stderr=subprocess.PIPE,
+                    text=True, errors='replace'
+                ) as process:
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                stdout_file.seek(0)
+                stdout_from_file = stdout_file.read()
+                stdout_file.close()
+                self.assertIn("script has run", stdout_from_file)
 
 
 if __name__ == "__main__":
