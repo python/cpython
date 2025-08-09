@@ -769,7 +769,15 @@ long_lcm(PyObject *a, PyObject *b)
     if (_PyLong_IsZero((PyLongObject *)a) || _PyLong_IsZero((PyLongObject *)b)) {
         return PyLong_FromLong(0);
     }
-    g = _PyLong_GCD(a, b);
+
+    /* Make sure a_size <= b_size to speed up (a // g) * b; see gh-102221 for details. */
+    if (_PyLong_DigitCount((PyLongObject *)b) < _PyLong_DigitCount((PyLongObject *)a)) {
+        g = a;
+        a = b;
+        b = g;
+    }
+
+    g = _PyLong_GCD(b, a);
     if (g == NULL) {
         return NULL;
     }
@@ -830,7 +838,7 @@ math_lcm_impl(PyObject *module, PyObject * const *args,
             Py_DECREF(x);
             continue;
         }
-        Py_SETREF(res, long_lcm(res, x));
+        Py_SETREF(res, long_lcm(x, res));
         Py_DECREF(x);
         if (res == NULL) {
             return NULL;
