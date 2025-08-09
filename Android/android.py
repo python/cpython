@@ -3,6 +3,7 @@
 import asyncio
 import argparse
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -270,6 +271,16 @@ def clean(host):
 def clean_all(context):
     for host in HOSTS + ["build"]:
         clean(host)
+
+
+def setup_ci():
+    # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
+    if "GITHUB_ACTIONS" in os.environ and platform.system() == "Linux":
+        Path("/etc/udev/rules.d/99-kvm4all.rules").write_text(
+            'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n'
+        )
+        run(["sudo", "udevadm", "control", "--reload-rules"])
+        run(["sudo", "udevadm", "trigger", "--name-match=kvm"])
 
 
 def setup_sdk():
@@ -584,6 +595,7 @@ async def gradle_task(context):
 
 
 async def run_testbed(context):
+    setup_ci()
     setup_sdk()
     setup_testbed()
 
@@ -692,6 +704,53 @@ def package(context):
             f"{dist_dir}/python-{version}-{context.host}", "gztar", temp_dir
         )
         print(f"Wrote {package_path}")
+        return package_path
+
+
+def ci(context):
+    for step in [
+        configure_build_python,
+        make_build_python,
+        configure_host_python,
+        make_host_python,
+        package,
+    ]:
+        caption = (
+            step.__name__.replace("_", " ")
+            .capitalize()
+            .replace("python", "Python")
+        )
+        print(f"::group::{caption}")
+        result = step(context)
+        if step is package:
+            package_path = result
+        print("::endgroup::")
+
+    if (
+        "GITHUB_ACTIONS" in os.environ
+        and (platform.system(), platform.machine()) != ("Linux", "x86_64")
+    ):
+        print(
+            "Skipping test: GitHub Actions does not supports the Android "
+            "emulator on this platform."
+        )
+    else:
+        with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+            print("::group::Tests")
+            # Prove the package is self-contained by using it to run the tests.
+            shutil.unpack_archive(package_path, temp_dir)
+
+            # Arguments are similar to --fast-ci, but in single-process mode.
+            launcher_args = ["--managed", "maxVersion", "-v"]
+            test_args = [
+                "--single-process", "--fail-env-changed", "--rerun", "--slowest",
+                "--verbose3", "-u", "all,-cpu", "--timeout=600"
+            ]
+            run(
+                ["./android.py", "test", *launcher_args, "--", *test_args],
+                cwd=temp_dir
+            )
+            print("::endgroup::")
 
 
 def env(context):
@@ -735,15 +794,16 @@ def parse_args():
     add_parser("build-testbed", help="Build the testbed app")
     test = add_parser("test", help="Run the testbed app")
     package = add_parser("package", help="Make a release package")
+    ci = add_parser("ci", help="Run build, package and test")
     env = add_parser("env", help="Print environment variables")
 
     # Common arguments
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build directories first")
 
-    host_commands = [build, configure_host, make_host, package]
+    host_commands = [build, configure_host, make_host, package, ci]
     if in_source_tree:
         host_commands.append(env)
     for subcommand in host_commands:
@@ -751,7 +811,7 @@ def parse_args():
             "host", metavar="HOST", choices=HOSTS,
             help="Host triplet: choices=[%(choices)s]")
 
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument("args", nargs="*",
                                 help="Extra arguments to pass to `configure`")
 
@@ -784,9 +844,10 @@ def parse_args():
         f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
 
     # Package arguments.
-    package.add_argument(
-        "-g", action="store_true", default=False, dest="debug",
-        help="Include debug information")
+    for subcommand in [package, ci]:
+        subcommand.add_argument(
+            "-g", action="store_true", default=False, dest="debug",
+            help="Include debug information in package")
 
     return parser.parse_args()
 
@@ -811,6 +872,7 @@ def main():
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
+        "ci": ci,
         "env": env,
     }
 

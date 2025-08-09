@@ -418,10 +418,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Build and test (Android)
-        uses: ./.github/actions/build-android
-        with:
-          triplet: ${{ matrix.arch }}-linux-android
+      - name: Build and test
+        run: ./Android/android.py ci ${{ matrix.arch }}-linux-android
 
   build-wasi:
     name: 'WASI'
