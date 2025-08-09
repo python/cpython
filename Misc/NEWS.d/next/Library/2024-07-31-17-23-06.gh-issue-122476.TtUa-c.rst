@@ -1,0 +1,7 @@
+The :mod:`email` module no longer incorrectly uses :rfc:`2047` encoding for
+a mailbox with non-ASCII characters in its local-part. Under a policy with
+:attr:`~email.policy.EmailPolicy.utf8` set ``False``, attempting to serialize
+such a message will now raise an :exc:`~email.errors.InvalidMailboxError`.
+There is no valid 7-bit encoding for an internationalized local-part. Use
+:data:`email.policy.SMTPUTF8` (or another policy with ``utf8=True``) to
+correctly pass through the local-part as Unicode characters.
