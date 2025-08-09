@@ -1028,7 +1028,7 @@ dummy_func(void) {
     }
 
     op(_REPLACE_WITH_TRUE, (value -- res)) {
-        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
+        REPLACE_OPCODE_IF_EVALUATES_PURE(value);
         res = sym_new_const(ctx, Py_True);
     }
 
