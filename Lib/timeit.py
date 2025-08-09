@@ -129,7 +129,7 @@ class Timer:
             raise ValueError("global_setup is neither a string nor callable")
         if isinstance(setup, str):
             # Check that the code can be compiled outside a function
-            compile(setup, dummy_src_name, "exec")
+            compile(setup, dummy_src_name, "exec", **compile_options)
             stmtprefix = setup + '\n'
             setup = reindent(setup, 4)
         elif callable(setup):
@@ -141,7 +141,7 @@ class Timer:
             raise ValueError("setup is neither a string nor callable")
         if isinstance(stmt, str):
             # Check that the code can be compiled outside a function
-            compile(stmtprefix + stmt, dummy_src_name, "exec")
+            compile(stmtprefix + stmt, dummy_src_name, "exec", **compile_options)
             stmt = reindent(stmt, 8)
         elif callable(stmt):
             local_ns['_stmt'] = stmt
@@ -252,15 +252,17 @@ class Timer:
 
 
 def timeit(stmt="pass", setup="pass", timer=default_timer,
-           number=default_number, globals=None):
+           number=default_number, globals=None,
+           *, global_setup="pass"):
     """Convenience function to create Timer object and call timeit method."""
-    return Timer(stmt, setup, timer, globals).timeit(number)
+    return Timer(stmt, setup, timer, globals, global_setup=global_setup).timeit(number)
 
 
 def repeat(stmt="pass", setup="pass", timer=default_timer,
-           repeat=default_repeat, number=default_number, globals=None):
+           repeat=default_repeat, number=default_number, globals=None,
+           *, global_setup="pass"):
     """Convenience function to create Timer object and call repeat method."""
-    return Timer(stmt, setup, timer, globals).repeat(repeat, number)
+    return Timer(stmt, setup, timer, globals, global_setup=global_setup).repeat(repeat, number)
 
 
 def main(args=None, *, _wrap_timer=None):
