@@ -1925,10 +1925,11 @@ _PySys_GetSizeOf(PyObject *o)
     PyObject *res = NULL;
     PyObject *method;
     Py_ssize_t size;
+    PyTypeObject *type = Py_TYPE(o);
     PyThreadState *tstate = _PyThreadState_GET();
 
     /* Make sure the type is initialized. float gets initialized late */
-    if (PyType_Ready(Py_TYPE(o)) < 0) {
+    if (PyType_Ready(type) < 0) {
         return (size_t)-1;
     }
 
@@ -1937,7 +1938,7 @@ _PySys_GetSizeOf(PyObject *o)
         if (!_PyErr_Occurred(tstate)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "Type %.100s doesn't define __sizeof__",
-                          Py_TYPE(o)->tp_name);
+                          type->tp_name);
         }
     }
     else {
@@ -1957,6 +1958,10 @@ _PySys_GetSizeOf(PyObject *o)
         _PyErr_SetString(tstate, PyExc_ValueError,
                           "__sizeof__() should return >= 0");
         return (size_t)-1;
+    }
+
+    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        size += _PyInlineValuesSize(type);
     }
 
     size_t presize = 0;
