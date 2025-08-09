@@ -267,9 +267,47 @@ class TestLongMessage(unittest.TestCase):
 
     def testAssertDictEqual(self):
         self.assertMessages('assertDictEqual', ({}, {'key': 'value'}),
-                            [r"\+ \{'key': 'value'\}$", "^oops$",
-                             r"\+ \{'key': 'value'\}$",
-                             r"\+ \{'key': 'value'\} : oops$"])
+                            [r"^\{\} != \{'key': 'value'\}\n\{\nKeys in the second "
+                             r"dict but not the first:\n  \+ 'key': 'value',\n\}$",
+                             r"^oops$",
+                             r"^\{\} != \{'key': 'value'\}\n\{\nKeys in the second "
+                             r"dict but not the first:\n  \+ 'key': 'value',\n\}$",
+                             r"^\{\} != \{'key': 'value'\}\n\{\nKeys in the second "
+                             r"dict but not the first:\n  \+ 'key': 'value',\n\} : oops$"])
+        self.assertDictEqual({}, {})
+        self.assertDictEqual({'key': 'value'}, {'key': 'value'})
+        self.assertRaisesRegex(
+            AssertionError,
+            r"^\{\} != \{'key': 'value'\}\n{\nKeys in the second "
+            r"dict but not the first:\n  \+ 'key': 'value',\n}$",
+            lambda: self.assertDictEqual({}, {'key': 'value'}))
+        self.assertRaisesRegex(
+            AssertionError,
+            r"^\{'key': 'value'\} != \{\}\n{\nKeys in the first "
+            r"dict but not the second:\n  - 'key': 'value',\n}$",
+            lambda: self.assertDictEqual({'key': 'value'}, {}))
+        self.assertRaisesRegex(
+            AssertionError,
+            r"^\{'key': 'value'\} != \{'key': 'othervalue'\}\n{\nKeys in both dicts "
+            r"with differing values:\n  - 'key': 'value',\n  \+ 'key': 'othervalue',\n}$",
+            lambda: self.assertDictEqual({'key': 'value'}, {'key': 'othervalue'}))
+        self.assertRaisesRegex(
+            AssertionError,
+            r"^\{'same': 'same', 'samekey': 'onevalue', 'otherkey': 'othervalue'\} "
+            r"!= \{'same': 'same', 'samekey': 'twovalue', 'somekey': 'somevalue'\}\n{\n"
+            r"    'same': 'same',\n"
+            r"Keys in both dicts with differing values:\n"
+            r"  - 'samekey': 'onevalue',\n"
+            r"  \+ 'samekey': 'twovalue',\n"
+            r"Keys in the first dict but not the second:\n"
+            r"  - 'otherkey': 'othervalue',\n"
+            r"Keys in the second dict but not the first:\n"
+            r"  \+ 'somekey': 'somevalue',\n"
+            r"\}$",
+            lambda: self.assertDictEqual(
+                {'same': 'same', 'samekey': 'onevalue', 'otherkey': 'othervalue'},
+                {'same': 'same', 'samekey': 'twovalue', 'somekey': 'somevalue'}))
+
 
     def testAssertMultiLineEqual(self):
         self.assertMessages('assertMultiLineEqual', ("", "foo"),
