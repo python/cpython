@@ -55,7 +55,12 @@ class RobotFileParser:
     def set_url(self, url):
         """Sets the URL referring to a robots.txt file."""
         self.url = url
-        self.host, self.path = urllib.parse.urlparse(url)[1:3]
+
+        if isinstance(url, urllib.request.Request):
+            self.host = url.host
+            self.path = url.selector
+        else:
+            self.host, self.path = urllib.parse.urlparse(url)[1:3]
 
     def read(self):
         """Reads the robots.txt URL and feeds it to the parser."""
