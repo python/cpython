@@ -4628,11 +4628,11 @@ class ThreadedTests(unittest.TestCase):
         # if a thread started to infinitely block until data was received, calls
         # to send() would deadlock, because it would wait forever on the lock
         # that the recv() call held.
-        data = b"1" * 50
+        data = b"1" * 1024
         event = threading.Event()
         def background(sock):
             event.set()
-            received = sock.recv(50)
+            received = sock.recv(len(data))
             self.assertEqual(received, data)
 
         client_context, server_context, hostname = testing_context()
@@ -4641,16 +4641,16 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as sock:
                 sock.connect((HOST, server.port))
-                sock.settimeout(5)
+                sock.settimeout(1)
+                # Ensure that the server is ready to accept requests
+                sock.sendall(b"123")
+                self.assertEqual(sock.recv(3), b"123")
                 with threading_helper.catch_threading_exception() as cm:
                     thread = threading.Thread(target=background,
                                               args=(sock,), daemon=True)
                     thread.start()
                     event.wait()
-                    # We need to yield the GIL to prevent some silly race
-                    # condition in ThreadedEchoServer
-                    time.sleep(0)
-                    sock.sendall(b"1" * 50)
+                    sock.sendall(data)
                     thread.join()
                     if cm.exc_value is not None:
                         raise cm.exc_value
