@@ -1685,28 +1685,29 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.set_ciphers(ciphers)
 
    Set the allowed ciphers for sockets created with this context when
-   connecting using TLS 1.2 and earlier.  It should be a string in the `OpenSSL
-   cipher list format <https://docs.openssl.org/master/man1/ciphers/>`_.
+   connecting using TLS 1.2 and earlier.  The *ciphers* argument should
+   be a string in the `OpenSSL cipher list format
+   <https://docs.openssl.org/master/man1/ciphers/>`_.
    To set allowed TLS 1.3 ciphers, use :meth:`SSLContext.set_ciphersuites`.
-   below.  If no cipher can be selected (because compile-time options or other
+   If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
 
    .. note::
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
-      return the negotiated cipher and associated TLS version.
+      return details about the negotiated cipher.
 
 .. method:: SSLContext.set_ciphersuites(ciphersuites)
 
    Set the allowed ciphers for sockets created with this context when
-   connecting using TLS 1.3.  It should be a colon-separate string of TLS 1.3
-   cipher names.  If no cipher can be selected (because compile-time options
-   or other configuration forbids use of all the specified ciphers), an
-   :class:`SSLError` will be raised.
+   connecting using TLS 1.3.  The *ciphersuites* argument should be a
+   colon-separate string of TLS 1.3 cipher names.  If no cipher can be
+   selected (because compile-time options or other configuration forbids
+   use of all the specified ciphers), an :class:`SSLError` will be raised.
 
    .. note::
       when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
-      return the negotiated cipher and associated TLS version.
+      return details about the negotiated cipher.
 
 .. method:: SSLContext.set_groups(groups)
 
@@ -2860,8 +2861,9 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
   called instead of :meth:`SSLContext.set_ciphers`, which only affects
   ciphers in older TLS versions.  The method :meth:`SSLContext.get_ciphers`
   returns information about ciphers for both TLS 1.3 and earlier versions
-  and the method :meth:`SSLSocket.cipher` returns the negotiated cipher and
-  the associated TLS version once a connection is established.
+  and the method :meth:`SSLSocket.cipher` returns information about the
+  negotiated cipher for both TLS 1.3 and earlier versions once a connection
+  is established.
 - Session tickets are no longer sent as part of the initial handshake and
   are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
   are not compatible with TLS 1.3.

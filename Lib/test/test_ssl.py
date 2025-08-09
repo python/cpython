@@ -261,9 +261,11 @@ ignore_deprecation = warnings_helper.ignore_warnings(
 )
 
 
-def test_wrap_socket(sock, *, cert_reqs=ssl.CERT_NONE, ca_certs=None,
+def test_wrap_socket(sock, *,
+                     cert_reqs=ssl.CERT_NONE, ca_certs=None,
                      ciphers=None, ciphersuites=None, min_version=None,
-                     certfile=None, keyfile=None, **kwargs):
+                     certfile=None, keyfile=None,
+                     **kwargs):
     if not kwargs.get("server_side"):
         kwargs["server_hostname"] = SIGNED_CERTFILE_HOSTNAME
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1866,6 +1868,10 @@ class SimpleBackgroundTests(unittest.TestCase):
 
     def setUp(self):
         self.server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+
+        if has_tls_version('TLSv1_3'):
+            self.server_context.set_ciphersuites('TLS_AES_256_GCM_SHA384')
+
         self.server_context.load_cert_chain(SIGNED_CERTFILE)
         server = ThreadedEchoServer(context=self.server_context)
         self.enterContext(server)
@@ -2112,12 +2118,9 @@ class SimpleBackgroundTests(unittest.TestCase):
                                     cert_reqs=ssl.CERT_NONE, ciphers="^$:,;?*'dorothyx")
                 s.connect(self.server_addr)
 
+    @requires_tls_version('TLSv1_3')
     def test_ciphersuites(self):
-        with test_wrap_socket(socket.socket(socket.AF_INET),
-                              cert_reqs=ssl.CERT_NONE,
-                              min_version=ssl.TLSVersion.TLSv1_3) as s:
-            s.connect(self.server_addr)
-            self.assertEqual(s.cipher()[1], "TLSv1.3")
+        # Test successful TLS 1.3 handshake
         with test_wrap_socket(socket.socket(socket.AF_INET),
                               cert_reqs=ssl.CERT_NONE,
                               ciphersuites="TLS_AES_256_GCM_SHA384",
@@ -2125,14 +2128,22 @@ class SimpleBackgroundTests(unittest.TestCase):
             s.connect(self.server_addr)
             self.assertEqual(s.cipher(),
                              ("TLS_AES_256_GCM_SHA384", "TLSv1.3", 256))
-        # Error checking can happen at instantiation or when connecting
+
+        # Test mismatched TLS 1.3 cipher suites
+        with test_wrap_socket(socket.socket(socket.AF_INET),
+                              cert_reqs=ssl.CERT_NONE,
+                              ciphersuites="TLS_AES_128_GCM_SHA256",
+                              min_version=ssl.TLSVersion.TLSv1_3) as s:
+            with self.assertRaises(ssl.SSLError):
+                s.connect(self.server_addr)
+
+        # Test unrecognized TLS 1.3 cipher suite name
         with self.assertRaisesRegex(ssl.SSLError,
                                     "No cipher suite can be selected"):
             with socket.socket(socket.AF_INET) as sock:
                 s = test_wrap_socket(sock, cert_reqs=ssl.CERT_NONE,
                                      ciphersuites="XXX",
                                      min_version=ssl.TLSVersion.TLSv1_3)
-                s.connect(self.server_addr)
 
     def test_get_ca_certs_capath(self):
         # capath certs are loaded on request
