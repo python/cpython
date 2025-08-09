@@ -1412,7 +1412,7 @@ class CopyTests(unittest.TestCase):
 
         self.assertRaises(AttributeError, getattr, node, 'id')
         self.assertIs(node.ctx, context)
-        msg = "Name.__replace__ missing 1 keyword argument: 'id'."
+        msg = "ast.Name.__init__ missing 1 required positional argument: 'id'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node)
         # assert that there is no side-effect
@@ -1449,7 +1449,7 @@ class CopyTests(unittest.TestCase):
 
         # explicit rejection of known instance fields
         self.assertHasAttr(node, 'extra')
-        msg = "Name.__replace__ got an unexpected keyword argument 'extra'."
+        msg = "ast.Name.__init__ got an unexpected keyword argument 'extra'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node, extra=1)
         # assert that there is no side-effect
@@ -1463,7 +1463,7 @@ class CopyTests(unittest.TestCase):
 
         # explicit rejection of unknown extra fields
         self.assertRaises(AttributeError, getattr, node, 'unknown')
-        msg = "Name.__replace__ got an unexpected keyword argument 'unknown'."
+        msg = "ast.Name.__init__ got an unexpected keyword argument 'unknown'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node, unknown=1)
         # assert that there is no side-effect
