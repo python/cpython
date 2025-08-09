@@ -374,7 +374,7 @@ class NewIMAPTestsMixin():
         typ, data = client.append(None, None, None, msg_string.encode('utf-8'))
         self.assertEqual(typ, 'OK')
         self.assertEqual(server.response,
-            ('UTF8 (%s)\r\n' % msg_string).encode('utf-8'))
+            ('%s\r\n' % msg_string).encode('utf-8'))
 
     def test_search_disallows_charset_in_utf8_mode(self):
         class UTF8Server(SimpleIMAPHandler):
@@ -901,7 +901,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertEqual(typ, 'OK')
             self.assertEqual(
                 server.response,
-                ('UTF8 (%s)\r\n' % msg_string).encode('utf-8')
+                ('%s\r\n' % msg_string).encode('utf-8')
             )
 
     # XXX also need a test that makes sure that the Literal and Untagged_status
