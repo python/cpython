@@ -493,3 +493,22 @@ constants, but are not an exhaustive list.
           IO_REPARSE_TAG_APPEXECLINK
 
    .. versionadded:: 3.8
+
+On Linux, the following constants are available for comparing against the
+``st_attributes`` and ``st_attributes_mask`` members returned by
+:func:`os.stat`.  See the `statx(2) man page
+<https://man.archlinux.org/man/statx.2#File_attributes>` for more detail on the
+meaning of these constants.
+
+.. data:: STATX_ATTR_COMPRESSED
+          STATX_ATTR_IMMUTABLE
+          STATX_ATTR_APPEND
+          STATX_ATTR_NODUMP
+          STATX_ATTR_ENCRYPTED
+          STATX_ATTR_AUTOMOUNT
+          STATX_ATTR_MOUNT_ROOT
+          STATX_ATTR_VERITY
+          STATX_ATTR_DAX
+          STATX_ATTR_WRITE_ATOMIC
+
+   .. versionadded:: next
