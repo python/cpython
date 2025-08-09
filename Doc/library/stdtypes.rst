@@ -2008,7 +2008,7 @@ expression support in the :mod:`re` module).
    otherwise. Decimal characters are those that can be used to form
    numbers in base 10, e.g. U+0660, ARABIC-INDIC DIGIT
    ZERO.  Formally a decimal character is a character in the Unicode
-   General Category "Nd". For example::
+   General Category "Nd". For example:
 
    .. doctest::
 
@@ -2028,6 +2028,7 @@ expression support in the :mod:`re` module).
    This covers digits which cannot be used to form numbers in base 10,
    like the Kharosthi numbers.  Formally, a digit is a character that has the
    property value Numeric_Type=Digit or Numeric_Type=Decimal.
+
 
 .. method:: str.isidentifier()
 
