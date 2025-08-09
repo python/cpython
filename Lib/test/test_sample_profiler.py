@@ -1752,6 +1752,46 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
 
 class TestSampleProfilerCLI(unittest.TestCase):
+    def _setup_sync_mocks(self, mock_socket, mock_popen):
+        """Helper to set up socket and process mocks for coordinator tests."""
+        # Mock the sync socket with context manager support
+        mock_sock_instance = mock.MagicMock()
+        mock_sock_instance.getsockname.return_value = ("127.0.0.1", 12345)
+
+        # Mock the connection with context manager support
+        mock_conn = mock.MagicMock()
+        mock_conn.recv.return_value = b"ready"
+        mock_conn.__enter__.return_value = mock_conn
+        mock_conn.__exit__.return_value = None
+
+        # Mock accept() to return (connection, address) and support indexing
+        mock_accept_result = mock.MagicMock()
+        mock_accept_result.__getitem__.return_value = mock_conn  # [0] returns the connection
+        mock_sock_instance.accept.return_value = mock_accept_result
+
+        # Mock socket with context manager support
+        mock_sock_instance.__enter__.return_value = mock_sock_instance
+        mock_sock_instance.__exit__.return_value = None
+        mock_socket.return_value = mock_sock_instance
+
+        # Mock the subprocess
+        mock_process = mock.MagicMock()
+        mock_process.pid = 12345
+        mock_process.poll.return_value = None
+        mock_popen.return_value = mock_process
+        return mock_process
+
+    def _verify_coordinator_command(self, mock_popen, expected_target_args):
+        """Helper to verify the coordinator command was called correctly."""
+        args, kwargs = mock_popen.call_args
+        coordinator_cmd = args[0]
+        self.assertEqual(coordinator_cmd[0], sys.executable)
+        self.assertEqual(coordinator_cmd[1], "-m")
+        self.assertEqual(coordinator_cmd[2], "profile._sync_coordinator")
+        self.assertEqual(coordinator_cmd[3], "12345")  # port
+        # cwd is coordinator_cmd[4]
+        self.assertEqual(coordinator_cmd[5:], expected_target_args)
+
     def test_cli_module_argument_parsing(self):
         test_args = ["profile.sample", "-m", "mymodule"]
 
@@ -1759,16 +1799,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profile.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
+            mock.patch("socket.socket") as mock_socket,
         ):
-            mock_process = mock.MagicMock()
-            mock_process.pid = 12345
-            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
-            mock_process.poll.return_value = None
-            mock_popen.return_value = mock_process
-
+            self._setup_sync_mocks(mock_socket, mock_popen)
             profile.sample.main()
 
-            mock_popen.assert_called_once_with((sys.executable, "-m", "mymodule"))
+            self._verify_coordinator_command(mock_popen, ("-m", "mymodule"))
             mock_sample.assert_called_once_with(
                 12345,
                 sort=2,  # default sort (sort_value from args.sort)
@@ -1789,18 +1825,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profile.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
+            mock.patch("socket.socket") as mock_socket,
         ):
-            mock_process = mock.MagicMock()
-            mock_process.pid = 12345
-            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
-            mock_process.poll.return_value = None
-            mock_popen.return_value = mock_process
-
+            self._setup_sync_mocks(mock_socket, mock_popen)
             profile.sample.main()
 
-            mock_popen.assert_called_once_with((
-                sys.executable, "-m", "mymodule", "arg1", "arg2", "--flag"
-            ))
+            self._verify_coordinator_command(mock_popen, ("-m", "mymodule", "arg1", "arg2", "--flag"))
             mock_sample.assert_called_once_with(
                 12345,
                 sort=2,
@@ -1821,16 +1851,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profile.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
+            mock.patch("socket.socket") as mock_socket,
         ):
-            mock_process = mock.MagicMock()
-            mock_process.pid = 12345
-            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
-            mock_process.poll.return_value = None
-            mock_popen.return_value = mock_process
-
+            self._setup_sync_mocks(mock_socket, mock_popen)
             profile.sample.main()
 
-            mock_popen.assert_called_once_with((sys.executable, "myscript.py"))
+            self._verify_coordinator_command(mock_popen, ("myscript.py",))
             mock_sample.assert_called_once_with(
                 12345,
                 sort=2,
@@ -1851,18 +1877,24 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profile.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
+            mock.patch("socket.socket") as mock_socket,
         ):
-            mock_process = mock.MagicMock()
-            mock_process.pid = 12345
+            # Use the helper to set up mocks consistently
+            mock_process = self._setup_sync_mocks(mock_socket, mock_popen)
+            # Override specific behavior for this test
             mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
-            mock_process.poll.return_value = None
-            mock_popen.return_value = mock_process
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with((
-                sys.executable, "myscript.py", "arg1", "arg2", "--flag"
-            ))
+            # Verify the coordinator command was called
+            args, kwargs = mock_popen.call_args
+            coordinator_cmd = args[0]
+            self.assertEqual(coordinator_cmd[0], sys.executable)
+            self.assertEqual(coordinator_cmd[1], "-m")
+            self.assertEqual(coordinator_cmd[2], "profile._sync_coordinator")
+            self.assertEqual(coordinator_cmd[3], "12345")  # port
+            # cwd is coordinator_cmd[4]
+            self.assertEqual(coordinator_cmd[5:], ("myscript.py", "arg1", "arg2", "--flag"))
 
     def test_cli_mutually_exclusive_pid_module(self):
         test_args = ["profile.sample", "-p", "12345", "-m", "mymodule"]
@@ -1890,7 +1922,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
         error_msg = mock_stderr.getvalue()
-        self.assertIn("not allowed with argument", error_msg)
+        self.assertIn("only one target type can be specified", error_msg)
 
     def test_cli_no_target_specified(self):
         test_args = ["profile.sample", "-d", "5"]
@@ -1916,15 +1948,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profile.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
+            mock.patch("socket.socket") as mock_socket,
         ):
-            mock_process = mock.MagicMock()
-            mock_process.pid = 12345
-            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
-            mock_process.poll.return_value = None
-            mock_popen.return_value = mock_process
-
+            self._setup_sync_mocks(mock_socket, mock_popen)
             profile.sample.main()
 
+            self._verify_coordinator_command(mock_popen, ("-m", "mymodule"))
             mock_sample.assert_called_once_with(
                 12345,
                 sort=1,  # sort-tottime
@@ -1950,18 +1979,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profile.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
+            mock.patch("socket.socket") as mock_socket,
         ):
-            mock_process = mock.MagicMock()
-            mock_process.pid = 12345
-            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
-            mock_process.poll.return_value = None
-            mock_popen.return_value = mock_process
-
+            self._setup_sync_mocks(mock_socket, mock_popen)
             profile.sample.main()
 
-            mock_popen.assert_called_once_with((
-                sys.executable, "myscript.py", "scriptarg"
-            ))
+            self._verify_coordinator_command(mock_popen, ("myscript.py", "scriptarg"))
             # Verify profiler options were passed correctly
             mock_sample.assert_called_once_with(
                 12345,
@@ -1988,7 +2011,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
         error_msg = mock_stderr.getvalue()
-        self.assertIn("arguments are required: module name", error_msg)
+        self.assertIn("argument -m/--module: expected one argument", error_msg)
 
     def test_cli_long_module_option(self):
         test_args = ["profile.sample", "--module", "mymodule", "arg1"]
@@ -1997,18 +2020,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock.patch("sys.argv", test_args),
             mock.patch("profile.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
+            mock.patch("socket.socket") as mock_socket,
         ):
-            mock_process = mock.MagicMock()
-            mock_process.pid = 12345
-            mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
-            mock_process.poll.return_value = None
-            mock_popen.return_value = mock_process
-
+            self._setup_sync_mocks(mock_socket, mock_popen)
             profile.sample.main()
 
-            mock_popen.assert_called_once_with((
-                sys.executable, "-m", "mymodule", "arg1",
-            ))
+            self._verify_coordinator_command(mock_popen, ("-m", "mymodule", "arg1"))
 
     def test_cli_complex_script_arguments(self):
         test_args = [
@@ -2019,17 +2036,17 @@ class TestSampleProfilerCLI(unittest.TestCase):
         with (
             mock.patch("sys.argv", test_args),
             mock.patch("profile.sample.sample") as mock_sample,
-            mock.patch("subprocess.Popen") as mock_popen,
+            mock.patch("profile.sample._run_with_sync") as mock_run_with_sync,
         ):
             mock_process = mock.MagicMock()
             mock_process.pid = 12345
             mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
             mock_process.poll.return_value = None
-            mock_popen.return_value = mock_process
+            mock_run_with_sync.return_value = mock_process
 
             profile.sample.main()
 
-            mock_popen.assert_called_once_with((
+            mock_run_with_sync.assert_called_once_with((
                 sys.executable, "script.py",
                 "--input", "file.txt", "-v", "--output=/tmp/out", "positional",
             ))

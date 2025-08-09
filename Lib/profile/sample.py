@@ -2,6 +2,7 @@ import argparse
 import _remote_debugging
 import os
 import pstats
+import socket
 import subprocess
 import statistics
 import sys
@@ -58,6 +59,58 @@ Examples:
 
   # Sort by cumulative samples to find functions most on call stack
   python -m profile.sample --sort-nsamples-cumul -p 1234"""
+
+
+# Constants for socket synchronization
+_SYNC_TIMEOUT = 5.0
+_PROCESS_KILL_TIMEOUT = 2.0
+_READY_MESSAGE = b"ready"
+_RECV_BUFFER_SIZE = 1024
+
+
+def _run_with_sync(original_cmd):
+    """Run a command with socket-based synchronization and return the process."""
+    # Create a TCP socket for synchronization with better socket options
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sync_sock:
+        # Set SO_REUSEADDR to avoid "Address already in use" errors
+        sync_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sync_sock.bind(("127.0.0.1", 0))  # Let OS choose a free port
+        sync_port = sync_sock.getsockname()[1]
+        sync_sock.listen(1)
+        sync_sock.settimeout(_SYNC_TIMEOUT)
+
+        # Get current working directory to preserve it
+        cwd = os.getcwd()
+
+        # Build command using the sync coordinator
+        target_args = original_cmd[1:]  # Remove python executable
+        cmd = (sys.executable, "-m", "profile._sync_coordinator", str(sync_port), cwd) + tuple(target_args)
+
+        # Start the process with coordinator
+        process = subprocess.Popen(cmd)
+
+        try:
+            # Wait for ready signal with timeout
+            with sync_sock.accept()[0] as conn:
+                ready_signal = conn.recv(_RECV_BUFFER_SIZE)
+
+                if ready_signal != _READY_MESSAGE:
+                    raise RuntimeError(f"Invalid ready signal received: {ready_signal!r}")
+
+        except socket.timeout:
+            # If we timeout, kill the process and raise an error
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+            raise RuntimeError("Process failed to signal readiness within timeout")
+
+        return process
+
+
 
 
 class SampleProfiler:
@@ -579,33 +632,31 @@ def _validate_collapsed_format_args(args, parser):
             f"The following options are only valid with --pstats format: {', '.join(invalid_opts)}"
         )
 
-    # Set default output filename for collapsed format
-    if not args.outfile:
+    # Set default output filename for collapsed format only if we have a PID
+    # For module/script execution, this will be set later with the subprocess PID
+    if not args.outfile and args.pid is not None:
         args.outfile = f"collapsed.{args.pid}.txt"
 
 
 def wait_for_process_and_sample(pid, sort_value, args):
-    for attempt in range(_MAX_STARTUP_ATTEMPTS):
-        try:
-            sample(
-                pid,
-                sort=sort_value,
-                sample_interval_usec=args.interval,
-                duration_sec=args.duration,
-                filename=args.outfile,
-                all_threads=args.all_threads,
-                limit=args.limit,
-                show_summary=not args.no_summary,
-                output_format=args.format,
-                realtime_stats=args.realtime_stats,
-            )
-            break
-        except RuntimeError:
-            if attempt < _MAX_STARTUP_ATTEMPTS - 1:
-                print("Waiting for process to start...")
-                time.sleep(_STARTUP_RETRY_DELAY_SECONDS)
-            else:
-                raise RuntimeError("Process failed to start after maximum retries") from None
+    """Sample the process immediately since it has already signaled readiness."""
+    # Set default collapsed filename with subprocess PID if not already set
+    filename = args.outfile
+    if not filename and args.format == "collapsed":
+        filename = f"collapsed.{pid}.txt"
+
+    sample(
+        pid,
+        sort=sort_value,
+        sample_interval_usec=args.interval,
+        duration_sec=args.duration,
+        filename=filename,
+        all_threads=args.all_threads,
+        limit=args.limit,
+        show_summary=not args.no_summary,
+        output_format=args.format,
+        realtime_stats=args.realtime_stats,
+    )
 
 
 def main():
@@ -616,17 +667,16 @@ def main():
     )
 
     # Target selection
-    target_group = parser.add_mutually_exclusive_group(required=True)
+    target_group = parser.add_mutually_exclusive_group(required=False)
     target_group.add_argument(
         "-p", "--pid", type=int, help="Process ID to sample"
     )
     target_group.add_argument(
         "-m", "--module",
-        nargs=argparse.REMAINDER,
         help="Run and profile a module as python -m module [ARGS...]"
     )
-    target_group.add_argument(
-        "script",
+    parser.add_argument(
+        "args",
         nargs=argparse.REMAINDER,
         help="Script to run and profile, with optional arguments"
     )
@@ -761,7 +811,20 @@ def main():
     sort_value = args.sort if args.sort is not None else 2
 
     if args.module is not None and not args.module:
-        parser.error("the following arguments are required: module name")
+        parser.error("argument -m/--module: expected one argument")
+
+    # Validate that we have exactly one target type
+    # Note: args can be present with -m (module arguments) but not as standalone script
+    has_pid = args.pid is not None
+    has_module = args.module is not None
+    has_script = bool(args.args) and args.module is None
+
+    target_count = sum([has_pid, has_module, has_script])
+
+    if target_count == 0:
+        parser.error("one of the arguments -p/--pid -m/--module or script name is required")
+    elif target_count > 1:
+        parser.error("only one target type can be specified: -p/--pid, -m/--module, or script")
 
     if args.pid:
         sample(
@@ -776,16 +839,16 @@ def main():
             output_format=args.format,
             realtime_stats=args.realtime_stats,
         )
-    elif args.module or args.script:
+    elif args.module or args.args:
         if args.module:
-            cmd = (sys.executable, "-m", *args.module)
+            cmd = (sys.executable, "-m", args.module, *args.args)
         else:
-            cmd = (sys.executable, *args.script)
+            cmd = (sys.executable, *args.args)
 
-        process = subprocess.Popen(cmd)
+        # Use synchronized process startup
+        process = _run_with_sync(cmd)
 
-        # If we are the ones starting the process, we need to wait until the
-        # runtime state is initialized
+        # Process has already signaled readiness, start sampling immediately
         try:
             wait_for_process_and_sample(process.pid, sort_value, args)
         finally:
