@@ -1560,6 +1560,26 @@ class DictTest(unittest.TestCase):
                 self.assertEqual(d.get(key3_3), 44)
                 self.assertGreaterEqual(eq_count, 1)
 
+    def test_overwrite_managed_dict(self):
+        # GH-130327: Overwriting an object's managed dictionary with another object's
+        # skipped traversal in favor of inline values, causing the GC to believe that
+        # the __dict__ wasn't reachable.
+        import gc
+
+        class Shenanigans:
+            pass
+
+        to_be_deleted = Shenanigans()
+        to_be_deleted.attr = "whatever"
+        holds_reference = Shenanigans()
+        holds_reference.__dict__ = to_be_deleted.__dict__
+        holds_reference.ref = {"circular": to_be_deleted, "data": 42}
+
+        del to_be_deleted
+        gc.collect()
+        self.assertEqual(holds_reference.ref['data'], 42)
+        self.assertEqual(holds_reference.attr, "whatever")
+
     def test_unhashable_key(self):
         d = {'a': 1}
         key = [1, 2, 3]
