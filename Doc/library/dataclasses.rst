@@ -230,6 +230,7 @@ Module contents
    :meth:`~object.__init__` method, which will be defined as::
 
      def __init__(self, a: int, b: int = 0):
+         ...
 
    :exc:`TypeError` will be raised if a field without a default value
    follows a field with a default value.  This is true whether this
@@ -686,6 +687,7 @@ type of :attr:`!x` is :class:`int`, as specified in class :class:`!C`.
 The generated :meth:`~object.__init__` method for :class:`!C` will look like::
 
   def __init__(self, x: int = 15, y: int = 0, z: int = 10):
+      ...
 
 Re-ordering of keyword-only parameters in :meth:`!__init__`
 -----------------------------------------------------------
@@ -714,6 +716,7 @@ fields, and :attr:`!Base.x` and :attr:`!D.z` are regular fields::
 The generated :meth:`!__init__` method for :class:`!D` will look like::
 
   def __init__(self, x: Any = 15.0, z: int = 10, *, y: int = 0, w: int = 1, t: int = 0):
+      ...
 
 Note that the parameters have been re-ordered from how they appear in
 the list of fields: parameters derived from regular fields are
