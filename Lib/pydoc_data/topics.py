@@ -6894,8 +6894,9 @@ object.__ceil__(self)
 *************************
 
 *Objects* are Python’s abstraction for data.  All data in a Python
-program is represented by objects or by relations between objects.
-Even code is represented by objects.
+program is represented by objects or by relations between objects. (In
+a sense, and in conformance to Von Neumann’s model of a “stored
+program computer”, code is also represented by objects.)
 
 Every object has an identity, a type and a value.  An object’s
 *identity* never changes once it has been created; you may think of it
