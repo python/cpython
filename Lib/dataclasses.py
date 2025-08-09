@@ -1178,7 +1178,10 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if match_args:
         # I could probably compute this once.
         _set_new_attribute(cls, '__match_args__',
-                           tuple(f.name for f in std_init_fields))
+                           tuple(f.name
+                                 for f in std_init_fields
+                                 # Only include regular fields, not `InitVar`s
+                                 if f._field_type is _FIELD))
 
     # It's an error to specify weakref_slot if slots is False.
     if weakref_slot and not slots:
