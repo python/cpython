@@ -4077,42 +4077,82 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(e.a, 2)
         self.assertEqual(C2.__subclasses__(), [D])
 
-        try:
+        with self.assertRaisesRegex(TypeError,
+                    "cannot delete '__bases__' attribute of immutable type"):
             del D.__bases__
-        except (TypeError, AttributeError):
-            pass
-        else:
-            self.fail("shouldn't be able to delete .__bases__")
-
-        try:
+        with self.assertRaisesRegex(TypeError, 'can only assign non-empty tuple'):
             D.__bases__ = ()
-        except TypeError as msg:
-            if str(msg) == "a new-style class can't have only classic bases":
-                self.fail("wrong error message for .__bases__ = ()")
-        else:
-            self.fail("shouldn't be able to set .__bases__ to ()")
-
-        try:
-            D.__bases__ = (D,)
-        except TypeError:
-            pass
-        else:
-            # actually, we'll have crashed by here...
-            self.fail("shouldn't be able to create inheritance cycles")
-
-        try:
+        with self.assertRaisesRegex(TypeError, 'can only assign tuple'):
+            D.__bases__ = [C]
+        with self.assertRaisesRegex(TypeError, 'duplicate base class'):
             D.__bases__ = (C, C)
-        except TypeError:
-            pass
-        else:
-            self.fail("didn't detect repeated base classes")
-
-        try:
+        with self.assertRaisesRegex(TypeError, 'inheritance cycle'):
+            D.__bases__ = (D,)
+        with self.assertRaisesRegex(TypeError, 'inheritance cycle'):
             D.__bases__ = (E,)
-        except TypeError:
+
+        class A:
+            __slots__ = ()
+            def __repr__(self):
+                return '<A>'
+        class B:
+            __slots__ = ()
+        b = B()
+        r = repr(b)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (int,)
+        B.__bases__ = (A,)
+        self.assertNotHasAttr(b, '__dict__')
+        self.assertNotHasAttr(b, '__weakref__')
+        self.assertEqual(repr(b), '<A>')
+        B.__bases__ = (object,)
+        self.assertEqual(repr(b), r)
+
+        class A_with_dict:
             pass
-        else:
-            self.fail("shouldn't be able to create inheritance cycles")
+        class B_with_dict:
+            pass
+        b = B_with_dict()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_dict.__bases__ = (A_with_dict,)
+        B_with_dict.__bases__ = (A,)
+        self.assertHasAttr(b, '__dict__')
+        self.assertHasAttr(b, '__weakref__')
+        B_with_dict.__bases__ = (object,)
+
+        class A_int(int):
+            __slots__ = ()
+            def __repr__(self):
+                return '<A_int>'
+        class B_int(int):
+            __slots__ = ()
+        b = B_int(42)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_int.__bases__ = (object,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_int.__bases__ = (tuple,)
+        with self.assertRaisesRegex(TypeError, 'is not an acceptable base type'):
+            B_int.__bases__ = (bool,)
+        B_int.__bases__ = (A_int,)
+        self.assertEqual(repr(b), '<A_int>')
+        B_int.__bases__ = (int,)
+        self.assertEqual(repr(b), '42')
+
+        class A_tuple(tuple):
+            __slots__ = ()
+            def __repr__(self):
+                return '<A_tuple>'
+        class B_tuple(tuple):
+            __slots__ = ()
+        b = B_tuple((1, 2))
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_tuple.__bases__ = (object,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_tuple.__bases__ = (int,)
+        B_tuple.__bases__ = (A_tuple,)
+        self.assertEqual(repr(b), '<A_tuple>')
+        B_tuple.__bases__ = (tuple,)
+        self.assertEqual(repr(b), '(1, 2)')
 
     def test_assign_bases_many_subclasses(self):
         # This is intended to check that typeobject.c:queue_slot_update() can
@@ -4165,26 +4205,14 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         class D(C):
             pass
 
-        try:
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
             L.__bases__ = (dict,)
-        except TypeError:
-            pass
-        else:
-            self.fail("shouldn't turn list subclass into dict subclass")
 
-        try:
+        with self.assertRaisesRegex(TypeError, 'immutable type'):
             list.__bases__ = (dict,)
-        except TypeError:
-            pass
-        else:
-            self.fail("shouldn't be able to assign to list.__bases__")
 
-        try:
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
             D.__bases__ = (C, list)
-        except TypeError:
-            pass
-        else:
-            self.fail("best_base calculation found wanting")
 
     def test_unsubclassable_types(self):
         with self.assertRaises(TypeError):
