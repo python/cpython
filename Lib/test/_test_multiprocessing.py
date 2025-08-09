@@ -4470,14 +4470,6 @@ class _TestSharedMemory(BaseTestCase):
         with self.assertRaises(ValueError):
             sms_invalid = shared_memory.SharedMemory(create=True, size=-1)
 
-        # Test creating a shared memory segment with size 0
-        with self.assertRaises(ValueError):
-            sms_invalid = shared_memory.SharedMemory(create=True, size=0)
-
-        # Test creating a shared memory segment without size argument
-        with self.assertRaises(ValueError):
-            sms_invalid = shared_memory.SharedMemory(create=True)
-
     def test_shared_memory_pickle_unpickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
@@ -4873,6 +4865,33 @@ class _TestSharedMemory(BaseTestCase):
                 pass
             resource_tracker.unregister(mem._name, "shared_memory")
             mem.close()
+
+    @unittest.skipIf(os.name != "posix", "windows automatically unlinks")
+    def test_creating_shm_unlinks_on_error(self):
+        name = self._new_shm_name("test_csuoe")
+        with unittest.mock.patch('mmap.mmap') as mock_mmap:
+            mock_mmap.side_effect = OSError("filesystems are evil")
+            with self.assertRaises(OSError):
+                shared_memory.SharedMemory(name, create=True, size=1)
+        with self.assertRaises(FileNotFoundError):
+            import _posixshmem
+            _posixshmem.shm_unlink(name)
+
+    def test_existing_shm_not_unlinked_on_error(self):
+        name = self._new_shm_name("test_esnuoe")
+        mem = shared_memory.SharedMemory(name, create=True, size=1)
+        self.addCleanup(mem.unlink)
+        with unittest.mock.patch('mmap.mmap') as mock_mmap:
+            mock_mmap.side_effect = OSError("filesystems are evil")
+            with self.assertRaises(OSError):
+                shared_memory.SharedMemory(name, create=False)
+
+    def test_zero_length_shared_memory(self):
+        name = self._new_shm_name("test_zlsm")
+        mem = shared_memory.SharedMemory(name, create=True, size=0)
+        self.addCleanup(mem.unlink)
+        self.assertEqual(mem.size, 0)
+        self.assertEqual(len(mem.buf), 0)
 
 #
 # Test to verify that `Finalize` works.

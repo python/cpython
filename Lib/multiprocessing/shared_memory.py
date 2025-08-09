@@ -74,12 +74,10 @@ class SharedMemory:
     _track = True
 
     def __init__(self, name=None, create=False, size=0, *, track=True):
-        if not size >= 0:
-            raise ValueError("'size' must be a positive integer")
+        if size < 0:
+            raise ValueError("'size' must be a non-negative integer")
         if create:
             self._flags = _O_CREX | os.O_RDWR
-            if size == 0:
-                raise ValueError("'size' must be a positive number different from zero")
         if name is None and not self._flags & os.O_EXCL:
             raise ValueError("'name' can only be None if create=True")
 
@@ -114,9 +112,11 @@ class SharedMemory:
                     os.ftruncate(self._fd, size)
                 stats = os.fstat(self._fd)
                 size = stats.st_size
-                self._mmap = mmap.mmap(self._fd, size)
-            except OSError:
-                self.unlink()
+                if size > 0:
+                    self._mmap = mmap.mmap(self._fd, size)
+            except:
+                if create:
+                    _posixshmem.shm_unlink(self._name)
                 raise
             if self._track:
                 resource_tracker.register(self._name, "shared_memory")
@@ -125,7 +125,7 @@ class SharedMemory:
 
             # Windows Named Shared Memory
 
-            if create:
+            if create and size > 0:
                 while True:
                     temp_name = _make_filename() if name is None else name
                     # Create and reserve shared memory block with this name
@@ -155,7 +155,9 @@ class SharedMemory:
                         _winapi.CloseHandle(h_map)
                     self._name = temp_name
                     break
-
+            elif create and size == 0:
+                # TODO: Leave as None?
+                self._name = _make_filename() if name is None else name
             else:
                 self._name = name
                 # Dynamically determine the existing named shared memory
@@ -179,10 +181,14 @@ class SharedMemory:
                     size = _winapi.VirtualQuerySize(p_buf)
                 finally:
                     _winapi.UnmapViewOfFile(p_buf)
-                self._mmap = mmap.mmap(-1, size, tagname=name)
+                if size > 0:
+                    self._mmap = mmap.mmap(-1, size, tagname=name)
 
         self._size = size
-        self._buf = memoryview(self._mmap)
+        if size > 0:
+            self._buf = memoryview(self._mmap)
+        else:
+            self._buf = memoryview(b'')
 
     def __del__(self):
         try:
