@@ -7228,8 +7228,6 @@ compatible_with_tp_base(PyTypeObject *child)
     return (parent != NULL &&
             child->tp_basicsize == parent->tp_basicsize &&
             child->tp_itemsize == parent->tp_itemsize &&
-            child->tp_dictoffset == parent->tp_dictoffset &&
-            child->tp_weaklistoffset == parent->tp_weaklistoffset &&
             (child->tp_dealloc == subtype_dealloc ||
              child->tp_dealloc == parent->tp_dealloc));
 }

@@ -4095,12 +4095,34 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             __slots__ = ()
             def __repr__(self):
                 return '<A>'
+        class A_with_dict:
+            __slots__ = ('__dict__',)
+            def __repr__(self):
+                return '<A_with_dict>'
+        class A_with_dict_weakref:
+            def __repr__(self):
+                return '<A_with_dict_weakref>'
+        class A_with_slots:
+            __slots__ = ('x',)
+            def __repr__(self):
+                return '<A_with_slots>'
+        class A_with_slots_dict:
+            __slots__ = ('x', '__dict__')
+            def __repr__(self):
+                return '<A_with_slots_dict>'
+
         class B:
             __slots__ = ()
         b = B()
         r = repr(b)
         with self.assertRaisesRegex(TypeError, 'layout differs'):
             B.__bases__ = (int,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (A_with_dict_weakref,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (A_with_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (A_with_slots,)
         B.__bases__ = (A,)
         self.assertNotHasAttr(b, '__dict__')
         self.assertNotHasAttr(b, '__weakref__')
@@ -4108,17 +4130,80 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         B.__bases__ = (object,)
         self.assertEqual(repr(b), r)
 
-        class A_with_dict:
+        class B_with_dict_weakref:
             pass
-        class B_with_dict:
-            pass
-        b = B_with_dict()
+        b = B_with_dict_weakref()
         with self.assertRaisesRegex(TypeError, 'layout differs'):
-            B_with_dict.__bases__ = (A_with_dict,)
-        B_with_dict.__bases__ = (A,)
-        self.assertHasAttr(b, '__dict__')
-        self.assertHasAttr(b, '__weakref__')
-        B_with_dict.__bases__ = (object,)
+            B.__bases__ = (A_with_slots,)
+        B_with_dict_weakref.__bases__ = (A_with_dict_weakref,)
+        self.assertEqual(repr(b), '<A_with_dict_weakref>')
+        B_with_dict_weakref.__bases__ = (A_with_dict,)
+        self.assertEqual(repr(b), '<A_with_dict>')
+        B_with_dict_weakref.__bases__ = (A,)
+        self.assertEqual(repr(b), '<A>')
+        B_with_dict_weakref.__bases__ = (object,)
+
+        class B_with_slots:
+            __slots__ = ('x',)
+        b = B_with_slots()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots.__bases__ = (A_with_dict_weakref,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots.__bases__ = (A_with_dict,)
+        B_with_slots.__bases__ = (A,)
+        self.assertEqual(repr(b), '<A>')
+
+        class B_with_slots_dict:
+            __slots__ = ('x', '__dict__')
+        b = B_with_slots_dict()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots_dict.__bases__ = (A_with_dict_weakref,)
+        B_with_slots_dict.__bases__ = (A_with_dict,)
+        self.assertEqual(repr(b), '<A_with_dict>')
+        B_with_slots_dict.__bases__ = (A,)
+        self.assertEqual(repr(b), '<A>')
+
+        class B_with_slots_dict_weakref:
+            __slots__ = ('x', '__dict__', '__weakref__')
+        b = B_with_slots_dict_weakref()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots_dict_weakref.__bases__ = (A_with_slots_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots_dict_weakref.__bases__ = (A_with_slots,)
+        B_with_slots_dict_weakref.__bases__ = (A_with_dict_weakref,)
+        self.assertEqual(repr(b), '<A_with_dict_weakref>')
+        B_with_slots_dict_weakref.__bases__ = (A_with_dict,)
+        self.assertEqual(repr(b), '<A_with_dict>')
+        B_with_slots_dict_weakref.__bases__ = (A,)
+        self.assertEqual(repr(b), '<A>')
+
+        class C_with_slots(A_with_slots):
+            __slots__ = ()
+        c = C_with_slots()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots.__bases__ = (A_with_slots_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots.__bases__ = (A_with_dict_weakref,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots.__bases__ = (A_with_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots.__bases__ = (A,)
+        C_with_slots.__bases__ = (A_with_slots,)
+        self.assertEqual(repr(c), '<A_with_slots>')
+
+        class C_with_slots_dict(A_with_slots):
+            pass
+        c = C_with_slots_dict()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots_dict.__bases__ = (A_with_dict_weakref,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots_dict.__bases__ = (A_with_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots_dict.__bases__ = (A,)
+        C_with_slots_dict.__bases__ = (A_with_slots_dict,)
+        self.assertEqual(repr(c), '<A_with_slots_dict>')
+        C_with_slots_dict.__bases__ = (A_with_slots,)
+        self.assertEqual(repr(c), '<A_with_slots>')
 
         class A_int(int):
             __slots__ = ()
