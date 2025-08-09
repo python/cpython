@@ -33,7 +33,7 @@ void _PyFunction_ClearCodeByVersion(uint32_t version);
 PyFunctionObject *_PyFunction_LookupByVersion(uint32_t version, PyObject **p_code);
 
 extern PyObject *_Py_set_function_type_params(
-    PyThreadState* unused, PyObject *func, PyObject *type_params);
+    PyThreadState *ts, PyObject *func, PyObject *type_params);
 
 
 /* See pycore_code.h for explanation about what "stateless" means. */
