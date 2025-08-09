@@ -8,14 +8,20 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 import codecs
 import base64
 
+### Codec Helpers
+
+def _assert_strict(errors):
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
+
 ### Codec APIs
 
 def base64_encode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     return (base64.encodebytes(input), len(input))
 
 def base64_decode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     return (base64.decodebytes(input), len(input))
 
 class Codec(codecs.Codec):
@@ -26,12 +32,12 @@ class Codec(codecs.Codec):
 
 class IncrementalEncoder(codecs.IncrementalEncoder):
     def encode(self, input, final=False):
-        assert self.errors == 'strict'
+        _assert_strict(self.errors)
         return base64.encodebytes(input)
 
 class IncrementalDecoder(codecs.IncrementalDecoder):
     def decode(self, input, final=False):
-        assert self.errors == 'strict'
+        _assert_strict(self.errors)
         return base64.decodebytes(input)
 
 class StreamWriter(Codec, codecs.StreamWriter):
