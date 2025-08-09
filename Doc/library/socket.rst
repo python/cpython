@@ -55,9 +55,9 @@ created.  Socket addresses are represented as follows:
   Linux's abstract namespace is returned as a :term:`bytes-like object` with
   an initial null byte; note that sockets in this namespace can
   communicate with normal file system sockets, so programs intended to
-  run on Linux may need to deal with both types of address.  A string or
-  bytes-like object can be used for either type of address when
-  passing it as an argument.
+  run on Linux may need to deal with both types of address.  A string,
+  bytes-like object, or :term:`path-like object` can be used for either
+  type of address when passing it as an argument.
 
   .. versionchanged:: 3.3
      Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
@@ -65,6 +65,11 @@ created.  Socket addresses are represented as follows:
 
   .. versionchanged:: 3.5
      Writable :term:`bytes-like object` is now accepted.
+
+  .. versionchanged:: 3.12
+     :term:`path-like object` is now accepted.
+     Note that object which is both a :term:`path-like object` and a
+     :term:`bytes-like object` will be treated as a :term:`path-like object`.
 
 .. _host_port:
 
