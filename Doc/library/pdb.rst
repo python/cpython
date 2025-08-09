@@ -88,6 +88,15 @@ after normal exit of the program), pdb will restart the program.  Automatic
 restarting preserves pdb's state (such as breakpoints) and in most cases is more
 useful than quitting the debugger upon program's exit.
 
+.. warning::
+
+   If the target program has arguments that overlap with those given below,
+   they will be parsed incorrectly. To avoid this problem, separate target
+   program arguments from ``pdb`` arguments using ``--``, for example::
+
+      pdb target.py -- -m "Target program argument"
+      pdb -m target -- -m "Target program argument"
+
 .. option:: -c, --command <command>
 
    To execute commands as if given in a :file:`.pdbrc` file; see
