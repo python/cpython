@@ -990,11 +990,12 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         BIO_set_nbio(SSL_get_wbio(self->ssl), 1);
     }
 
-    // No other threads can have access to this, so no need to lock it.
+    Py_BEGIN_ALLOW_THREADS;
     if (socket_type == PY_SSL_CLIENT)
         SSL_set_connect_state(self->ssl);
     else
         SSL_set_accept_state(self->ssl);
+    Py_END_ALLOW_THREADS;
 
     self->socket_type = socket_type;
     if (sock != NULL) {
