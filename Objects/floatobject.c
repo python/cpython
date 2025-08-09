@@ -286,21 +286,11 @@ PyFloat_AsDouble(PyObject *op)
         return -1;
     }
     if (!PyFloat_CheckExact(res)) {
-        if (!PyFloat_Check(res)) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.50s.__float__ returned non-float (type %.50s)",
-                         Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name);
-            Py_DECREF(res);
-            return -1;
-        }
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%.50s.__float__ returned non-float (type %.50s).  "
-                "The ability to return an instance of a strict subclass of float "
-                "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(op)->tp_name, Py_TYPE(res)->tp_name)) {
-            Py_DECREF(res);
-            return -1;
-        }
+        PyErr_Format(PyExc_TypeError,
+                     "%T.__float__ returned non-float (type %T)",
+                     op, res);
+        Py_DECREF(res);
+        return -1;
     }
 
     val = PyFloat_AS_DOUBLE(res);
