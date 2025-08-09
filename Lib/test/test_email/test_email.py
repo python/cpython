@@ -5891,6 +5891,13 @@ class TestSigned(TestEmailBase):
         result = fp.getvalue()
         self._signed_parts_eq(original, result)
 
+    def test_multipart_signed(self):
+        inner = Message()
+        outer = Message()
+        outer.set_type("multipart/signed")
+        outer.attach(inner)
+        self.assertTrue(inner.as_string() in outer.as_string())
+
 class TestHeaderRegistry(TestEmailBase):
     # See issue gh-93010.
     def test_HeaderRegistry(self):
