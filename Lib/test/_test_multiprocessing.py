@@ -4853,6 +4853,9 @@ class _TestSharedMemory(BaseTestCase):
         # gh-82300: When a separate Python process accesses shared memory
         # with track=True, it must cause the memory to be deleted when
         # terminating.
+        # gh-116849: Tracking should only be applied when shared memory
+        # is created, otherwize an error is raised when it is unlinked
+        # in a different process.
         cmd = '''if 1:
             import sys
             from multiprocessing.shared_memory import SharedMemory
@@ -4863,15 +4866,16 @@ class _TestSharedMemory(BaseTestCase):
         try:
             rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
             self.assertEqual(rc, 0)
-            self.assertIn(
+            self.assertNotIn(
                 b"resource_tracker: There appear to be 1 leaked "
                 b"shared_memory objects to clean up at shutdown", err)
         finally:
             try:
                 mem.unlink()
-            except OSError:
-                pass
-            resource_tracker.unregister(mem._name, "shared_memory")
+            except OSError as e:
+                self.assertIn(
+                    b"[Errno 2] No such file or directory", str(e)
+                )
             mem.close()
 
 #
