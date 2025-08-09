@@ -208,6 +208,12 @@ try:
     import ctypes
 except ImportError:
     ctypes = None
+
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 from test.support import (cpython_only,
                           check_impl_detail, requires_debug_ranges,
                           gc_collect, Py_GIL_DISABLED)
@@ -1163,6 +1169,25 @@ class CodeTest(unittest.TestCase):
                 with self.subTest((func, '(func)')):
                     with self.assertRaises(Exception):
                         _testinternalcapi.verify_stateless_code(func)
+
+    @unittest.skipUnless(ctypes, "requires ctypes")
+    @unittest.skipUnless(_testcapi, "requires _testcapi")
+    def test_co_framesize_overflow(self):
+        # See: https://github.com/python/cpython/issues/126119.
+
+        def foo(a, b):
+            x = a * b
+            return x
+
+        c = foo.__code__
+
+        # The exact limit depends on co_nlocalsplus, so we do not hardcode it.
+        too_large_stacksize = _testcapi.INT_MAX // 16
+        ok_stacksize = too_large_stacksize // 2
+
+        with self.assertRaisesRegex(OverflowError, "stack size is too large"):
+            c.__replace__(co_stacksize=too_large_stacksize)
+        c.__replace__(co_stacksize=ok_stacksize)
 
 
 def isinterned(s):
