@@ -197,9 +197,14 @@ class IdleConfTest(unittest.TestCase):
         cls.orig_warn = config._warn
         config._warn = Func()
 
+        cls._patcher = mock.patch("idlelib.macosx._tk_type", new="cocoa" if sys.platform == "darwin" else "other")
+        cls._patcher.start()
+
+
     @classmethod
     def tearDownClass(cls):
         config._warn = cls.orig_warn
+        cls._patcher.stop()
 
     def new_config(self, _utest=False):
         return config.IdleConf(_utest=_utest)
