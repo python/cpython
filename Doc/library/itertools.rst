@@ -742,18 +742,6 @@ loops that truncate the stream.
       Previously, the first iterator in the result could be the same object as the
       input, causing inconsistent behavior.
 
-   .. doctest::
-
-       >>> it = iter([1, 2, 3])
-       >>> a, b = tee(it)
-       >>> c, d = tee(a)
-       >>> list(b)
-       [1, 2, 3]
-       >>> list(c)
-       [1, 2, 3]
-       >>> list(d)
-       [1, 2, 3]
-
    The flattening property makes tee iterators efficiently peekable:
 
    .. testcode::
