@@ -418,6 +418,16 @@ hashlib
 Removed
 =======
 
+ast
+---
+
+* The constructors of node types in the :mod:`ast`  module now raise a
+  :exc:`TypeError` when a required argument is omitted or when a
+  keyword-argument that does not map to a field on the AST node is passed.
+  These cases had previously raised a :exc:`DeprecationWarning` since Python 3.13.
+  (Contributed by Brian Schubert and Jelle Zijlstra in :gh:`137600` and :gh:`105858`.)
+
+
 ctypes
 ------
 
