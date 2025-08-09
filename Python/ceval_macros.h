@@ -422,3 +422,14 @@ do { \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+
+static inline int
+check_periodics(PyThreadState *tstate) {
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+    QSBR_QUIESCENT_STATE(tstate);
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+        return _Py_HandlePending(tstate);
+    }
+    return 0;
+}
+
