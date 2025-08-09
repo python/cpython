@@ -5693,6 +5693,8 @@
             _PyStackRef self_or_null;
             _PyStackRef callable;
             _PyStackRef res;
+            _PyStackRef a;
+            _PyStackRef c;
             oparg = CURRENT_OPARG();
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
@@ -5727,20 +5729,18 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(arg);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -2 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(callable);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            a = arg;
+            c = callable;
             if (res_o == NULL) {
+                stack_pointer += -2 - oparg;
+                assert(WITHIN_STACK_BOUNDS());
                 JUMP_TO_ERROR();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = res;
+            stack_pointer[-1 - oparg] = a;
+            stack_pointer[-oparg] = c;
+            stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
