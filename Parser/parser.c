@@ -1201,7 +1201,7 @@ statements_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ statements[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "statement+"));
-            _res = _PyPegen_register_stmts ( p , ( asdl_stmt_seq* ) _PyPegen_seq_flatten ( p , a ) );
+            _res = ( asdl_stmt_seq* ) _PyPegen_seq_flatten ( p , a );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -1244,7 +1244,7 @@ statement_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ statement[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "compound_stmt"));
-            _res = ( asdl_stmt_seq* ) _PyPegen_singleton_seq ( p , a );
+            _res = _PyPegen_register_stmts ( p , ( asdl_stmt_seq* ) _PyPegen_singleton_seq ( p , a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
