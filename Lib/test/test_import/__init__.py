@@ -2539,6 +2539,44 @@ class SubinterpImportTests(unittest.TestCase):
         excsnap = _interpreters.run_string(interpid, script)
         self.assertIsNot(excsnap, None)
 
+    def test_stdlib_compatible(self):
+        incompatible = frozenset({
+            '_curses', '_curses_panel',
+            'faulthandler',
+            'readline',
+            '_suggestions',
+            '_tkinter',
+            '_tracemalloc',
+            '_wmi',
+            '_zstd',
+        })
+
+        # collect all importable non-Python stdlib modules
+        supported_modules = set()
+        for module in sys.stdlib_module_names - incompatible:
+            # avoid importing pure-Python modules with side effects/warnings
+            spec = importlib.util.find_spec(module)
+            if isinstance(spec and spec.loader, ExtensionFileLoader):
+                try:
+                    importlib.import_module(module)
+                except Exception:
+                    pass
+                else:
+                    supported_modules.add(module)
+
+        for module in supported_modules:
+            if not Py_GIL_DISABLED:
+                with self.subTest(f'{module}: not strict'):
+                    self.check_compatible_here(module, strict=False)
+            with self.subTest(f'{module}: strict, not fresh'):
+                self.check_compatible_here(module, strict=True)
+            with self.subTest(f'{module}: strict, fresh'):
+                self.check_compatible_fresh(module, strict=True)
+            with self.subTest(f'{module}: isolated, not fresh'):
+                self.check_compatible_here(module, strict=True, isolated=True)
+            with self.subTest(f'{module}: isolated, fresh'):
+                self.check_compatible_fresh(module, strict=True, isolated=True)
+
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
     """A representation of a single-phase init module for testing.
