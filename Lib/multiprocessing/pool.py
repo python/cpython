@@ -14,6 +14,7 @@ __all__ = ['Pool', 'ThreadPool']
 #
 
 import collections
+import functools
 import itertools
 import os
 import queue
@@ -190,6 +191,11 @@ class Pool(object):
         self._ctx = context or get_context()
         self._setup_queues()
         self._taskqueue = queue.SimpleQueue()
+        # The _taskqueue_buffersize_semaphores exist to allow calling .release()
+        # on every active semaphore when the pool is terminating to let task_handler
+        # wake up to stop. It's a dict so that each iterator object can efficiently
+        # deregister its semaphore when iterator finishes.
+        self._taskqueue_buffersize_semaphores = {}
         # The _change_notifier queue exist to wake up self._handle_workers()
         # when the cache (self._cache) is empty or when there is a change in
         # the _state variable of the thread that runs _handle_workers.
@@ -256,7 +262,8 @@ class Pool(object):
             self, self._terminate_pool,
             args=(self._taskqueue, self._inqueue, self._outqueue, self._pool,
                   self._change_notifier, self._worker_handler, self._task_handler,
-                  self._result_handler, self._cache),
+                  self._result_handler, self._cache,
+                  self._taskqueue_buffersize_semaphores),
             exitpriority=15
             )
         self._state = RUN
@@ -382,73 +389,42 @@ class Pool(object):
         return self._map_async(func, iterable, starmapstar, chunksize,
                                callback, error_callback)
 
-    def _guarded_task_generation(self, result_job, func, iterable):
+    def _guarded_task_generation(self, result_job, func, iterable, sema=None):
         '''Provides a generator of tasks for imap and imap_unordered with
         appropriate handling for iterables which throw exceptions during
         iteration.'''
         try:
             i = -1
-            for i, x in enumerate(iterable):
-                yield (result_job, i, func, (x,), {})
+
+            if sema is None:
+                for i, x in enumerate(iterable):
+                    yield (result_job, i, func, (x,), {})
+
+            else:
+                enumerated_iter = iter(enumerate(iterable))
+                while True:
+                    sema.acquire()
+                    try:
+                        i, x = next(enumerated_iter)
+                    except StopIteration:
+                        break
+                    yield (result_job, i, func, (x,), {})
+
         except Exception as e:
             yield (result_job, i+1, _helper_reraises_exception, (e,), {})
 
-    def imap(self, func, iterable, chunksize=1):
+    def imap(self, func, iterable, chunksize=1, buffersize=None):
         '''
         Equivalent of `map()` -- can be MUCH slower than `Pool.map()`.
         '''
-        self._check_running()
-        if chunksize == 1:
-            result = IMapIterator(self)
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(result._job, func, iterable),
-                    result._set_length
-                ))
-            return result
-        else:
-            if chunksize < 1:
-                raise ValueError(
-                    "Chunksize must be 1+, not {0:n}".format(
-                        chunksize))
-            task_batches = Pool._get_tasks(func, iterable, chunksize)
-            result = IMapIterator(self)
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(result._job,
-                                                  mapstar,
-                                                  task_batches),
-                    result._set_length
-                ))
-            return (item for chunk in result for item in chunk)
+        return self._imap(IMapIterator, func, iterable, chunksize, buffersize)
 
-    def imap_unordered(self, func, iterable, chunksize=1):
+    def imap_unordered(self, func, iterable, chunksize=1, buffersize=None):
         '''
         Like `imap()` method but ordering of results is arbitrary.
         '''
-        self._check_running()
-        if chunksize == 1:
-            result = IMapUnorderedIterator(self)
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(result._job, func, iterable),
-                    result._set_length
-                ))
-            return result
-        else:
-            if chunksize < 1:
-                raise ValueError(
-                    "Chunksize must be 1+, not {0!r}".format(chunksize))
-            task_batches = Pool._get_tasks(func, iterable, chunksize)
-            result = IMapUnorderedIterator(self)
-            self._taskqueue.put(
-                (
-                    self._guarded_task_generation(result._job,
-                                                  mapstar,
-                                                  task_batches),
-                    result._set_length
-                ))
-            return (item for chunk in result for item in chunk)
+        return self._imap(IMapUnorderedIterator, func, iterable, chunksize,
+                          buffersize)
 
     def apply_async(self, func, args=(), kwds={}, callback=None,
             error_callback=None):
@@ -496,6 +472,50 @@ class Pool(object):
             )
         )
         return result
+
+    def _imap(self, iterator_cls, func, iterable, chunksize=1,
+              buffersize=None):
+        self._check_running()
+        self._check_chunksize(chunksize)
+        self._check_buffersize(buffersize)
+
+        result = iterator_cls(self, buffersize)
+        if chunksize == 1:
+            self._taskqueue.put(
+                (
+                    self._guarded_task_generation(result._job, func, iterable,
+                                                  result._buffersize_sema),
+                    result._set_length,
+                )
+            )
+            return result
+        else:
+            task_batches = Pool._get_tasks(func, iterable, chunksize)
+            self._taskqueue.put(
+                (
+                    self._guarded_task_generation(result._job, mapstar,
+                                                  task_batches,
+                                                  result._buffersize_sema),
+                    result._set_length,
+                )
+            )
+            return (item for chunk in result for item in chunk)
+
+    @staticmethod
+    def _check_chunksize(chunksize):
+        if chunksize < 1:
+            raise ValueError(
+                "Chunksize must be 1+, not {0:n}".format(chunksize)
+            )
+
+    @staticmethod
+    def _check_buffersize(buffersize):
+        if buffersize is None:
+            return
+        if not isinstance(buffersize, int):
+            raise TypeError("buffersize must be an integer or None")
+        if buffersize < 1:
+            raise ValueError("buffersize must be None or > 0")
 
     @staticmethod
     def _wait_for_updates(sentinels, change_notifier, timeout=None):
@@ -679,7 +699,8 @@ class Pool(object):
 
     @classmethod
     def _terminate_pool(cls, taskqueue, inqueue, outqueue, pool, change_notifier,
-                        worker_handler, task_handler, result_handler, cache):
+                        worker_handler, task_handler, result_handler, cache,
+                        taskqueue_buffersize_semaphores):
         # this is guaranteed to only be called once
         util.debug('finalizing pool')
 
@@ -690,6 +711,12 @@ class Pool(object):
         change_notifier.put(None)
 
         task_handler._state = TERMINATE
+        # Release all semaphores to wake up task_handler to stop.
+        for job_id, buffersize_sema in tuple(
+            taskqueue_buffersize_semaphores.items()
+        ):
+            buffersize_sema.release()
+            taskqueue_buffersize_semaphores.pop(job_id, None)
 
         util.debug('helping task handler/workers to finish')
         cls._help_stuff_finish(inqueue, task_handler, len(pool))
@@ -836,7 +863,7 @@ class MapResult(ApplyResult):
 
 class IMapIterator(object):
 
-    def __init__(self, pool):
+    def __init__(self, pool, buffersize=None):
         self._pool = pool
         self._cond = threading.Condition(threading.Lock())
         self._job = next(job_counter)
@@ -846,6 +873,13 @@ class IMapIterator(object):
         self._length = None
         self._unsorted = {}
         self._cache[self._job] = self
+        if buffersize is None:
+            self._buffersize_sema = None
+        else:
+            self._buffersize_sema = threading.Semaphore(buffersize)
+            self._pool._taskqueue_buffersize_semaphores[self._job] = (
+                self._buffersize_sema
+            )
 
     def __iter__(self):
         return self
@@ -856,21 +890,29 @@ class IMapIterator(object):
                 item = self._items.popleft()
             except IndexError:
                 if self._index == self._length:
-                    self._pool = None
-                    raise StopIteration from None
+                    self._stop_iterator()
                 self._cond.wait(timeout)
                 try:
                     item = self._items.popleft()
                 except IndexError:
                     if self._index == self._length:
-                        self._pool = None
-                        raise StopIteration from None
+                        self._stop_iterator()
                     raise TimeoutError from None
+
+        if self._buffersize_sema is not None:
+            self._buffersize_sema.release()
 
         success, value = item
         if success:
             return value
         raise value
+
+    def _stop_iterator(self):
+        if self._pool is not None:
+            # `self._pool` could be set to `None` in previous `.next()` calls
+            self._pool._taskqueue_buffersize_semaphores.pop(self._job, None)
+        self._pool = None
+        raise StopIteration from None
 
     __next__ = next                    # XXX
 
