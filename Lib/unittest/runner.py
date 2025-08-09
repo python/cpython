@@ -51,10 +51,14 @@ class TextTestResult(result.TestResult):
 
     def getDescription(self, test):
         doc_first_line = test.shortDescription()
+        test_name = self.getName(test)
         if self.descriptions and doc_first_line:
-            return '\n'.join((str(test), doc_first_line))
+            return f'{test_name}\n{doc_first_line}'
         else:
-            return str(test)
+            return test_name
+
+    def getName(self, test):
+        return str(test)
 
     def startTest(self, test):
         super(TextTestResult, self).startTest(test)
