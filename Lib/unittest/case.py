@@ -7,6 +7,7 @@ import pprint
 import re
 import warnings
 import collections
+import collections.abc
 import contextlib
 import traceback
 import time
@@ -1211,17 +1212,50 @@ class TestCase(object):
             standardMsg = 'unexpectedly identical: %s' % (safe_repr(expr1),)
             self.fail(self._formatMessage(msg, standardMsg))
 
-    def assertDictEqual(self, d1, d2, msg=None):
-        self.assertIsInstance(d1, dict, 'First argument is not a dictionary')
-        self.assertIsInstance(d2, dict, 'Second argument is not a dictionary')
+    def assertMappingEqual(self, mapping1, mapping2, msg=None, mapping_type=None):
+        """A mapping-specific equality assertion.
 
-        if d1 != d2:
-            standardMsg = '%s != %s' % _common_shorten_repr(d1, d2)
+        Args:
+            mapping1: The first mapping to compare.
+            mapping2: The second mapping to compare.
+            msg: Optional message to use on failure instead of a list of
+                    differences.
+            mapping_type: The expected datatype of the mappings, or None if no
+                    datatype should be enforced as long as the mappings follow the
+                    mapping protocol.
+
+        """
+        if mapping_type is None:
+            mapping_type = collections.abc.Mapping
+            mapping_type_name = "mapping"
+        else:
+            mapping_type_name = mapping_type.__name__
+        if not isinstance(mapping1, mapping_type):
+            raise self.failureException('First mapping is not a %s: %s'
+                                    % (mapping_type_name, safe_repr(mapping1)))
+        if not isinstance(mapping2, mapping_type):
+            raise self.failureException('Second mapping is not a %s: %s'
+                                    % (mapping_type_name, safe_repr(mapping2)))
+
+        if mapping1 != mapping2:
+            standardMsg = '%s != %s' % _common_shorten_repr(mapping1, mapping2)
             diff = ('\n' + '\n'.join(difflib.ndiff(
-                           pprint.pformat(d1).splitlines(),
-                           pprint.pformat(d2).splitlines())))
+                           pprint.pformat(dict(mapping1)).splitlines(),
+                           pprint.pformat(dict(mapping2)).splitlines())))
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
+
+    def assertDictEqual(self, d1, d2, msg=None):
+        """A dict-specific equality assertion.
+
+        Args:
+            d1: The first dict to compare.
+            d2: The second dict to compare.
+            msg: Optional message to use on failure instead of a list of
+                    differences.
+
+        """
+        self.assertMappingEqual(d1, d2, msg, mapping_type=dict)
 
     def assertCountEqual(self, first, second, msg=None):
         """Asserts that two iterables have the same elements, the same number of
