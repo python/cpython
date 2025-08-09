@@ -815,7 +815,13 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
     _PyGC_Fini(interp);
-
+    struct _PyExecutorObject *cold = interp->cold_executor;
+    if (cold != NULL) {
+        interp->cold_executor = NULL;
+        assert(cold->vm_data.valid);
+        assert(cold->vm_data.warm);
+        _PyExecutor_Free(cold);
+    }
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
        which requires sysdict and builtins. */
@@ -1469,6 +1475,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
     tstate->current_executor = NULL;
+    tstate->jit_exit = NULL;
     tstate->dict_global_version = 0;
 
     _tstate->c_stack_soft_limit = UINTPTR_MAX;
@@ -1682,6 +1689,8 @@ PyThreadState_Clear(PyThreadState *tstate)
           "PyThreadState_Clear: warning: thread still has a generator\n");
     }
 
+    FT_MUTEX_LOCK(&_PyRuntime.ceval.sys_trace_profile_mutex);
+
     if (tstate->c_profilefunc != NULL) {
         tstate->interp->sys_profiling_threads--;
         tstate->c_profilefunc = NULL;
@@ -1690,6 +1699,9 @@ PyThreadState_Clear(PyThreadState *tstate)
         tstate->interp->sys_tracing_threads--;
         tstate->c_tracefunc = NULL;
     }
+
+    FT_MUTEX_UNLOCK(&_PyRuntime.ceval.sys_trace_profile_mutex);
+
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
 

@@ -5,6 +5,7 @@ from test.support.import_helper import ensure_lazy_imports, import_fresh_module
 from unittest import mock
 import unittest
 import locale
+import os
 import sys
 import codecs
 
@@ -486,6 +487,54 @@ class NormalizeTest(unittest.TestCase):
         self.check('jp_jp', 'ja_JP.eucJP')
 
 
+class TestRealLocales(unittest.TestCase):
+    def setUp(self):
+        oldlocale = locale.setlocale(locale.LC_CTYPE)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+
+    def test_getsetlocale_issue1813(self):
+        # Issue #1813: setting and getting the locale under a Turkish locale
+        try:
+            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
+        except locale.Error:
+            # Unsupported locale on this system
+            self.skipTest('test needs Turkish locale')
+        loc = locale.getlocale(locale.LC_CTYPE)
+        if verbose:
+            print('testing with %a' % (loc,), end=' ', flush=True)
+        try:
+            locale.setlocale(locale.LC_CTYPE, loc)
+        except locale.Error as exc:
+            # bpo-37945: setlocale(LC_CTYPE) fails with getlocale(LC_CTYPE)
+            # and the tr_TR locale on Windows. getlocale() builds a locale
+            # which is not recognize by setlocale().
+            self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
+        self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
+
+    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
+    def test_setlocale_long_encoding(self):
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_CTYPE, 'English.%016d' % 1252)
+        locale.setlocale(locale.LC_CTYPE, 'English.%015d' % 1252)
+        loc = locale.setlocale(locale.LC_ALL)
+        self.assertIn('.1252', loc)
+        loc2 = loc.replace('.1252', '.%016d' % 1252, 1)
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_ALL, loc2)
+        loc2 = loc.replace('.1252', '.%015d' % 1252, 1)
+        locale.setlocale(locale.LC_ALL, loc2)
+
+        # gh-137273: Debug assertion failure on Windows for long encoding.
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_CTYPE, 'en_US.' + 'x'*16)
+        locale.setlocale(locale.LC_CTYPE, 'en_US.UTF-8')
+        loc = locale.setlocale(locale.LC_ALL)
+        self.assertIn('.UTF-8', loc)
+        loc2 = loc.replace('.UTF-8', '.' + 'x'*16, 1)
+        with self.assertRaises(locale.Error):
+            locale.setlocale(locale.LC_ALL, loc2)
+
+
 class TestMiscellaneous(unittest.TestCase):
     def test_defaults_UTF8(self):
         # Issue #18378: on (at least) macOS setting LC_CTYPE to "UTF-8" is
@@ -551,27 +600,6 @@ class TestMiscellaneous(unittest.TestCase):
 
         # crasher from bug #7419
         self.assertRaises(locale.Error, locale.setlocale, 12345)
-
-    def test_getsetlocale_issue1813(self):
-        # Issue #1813: setting and getting the locale under a Turkish locale
-        oldlocale = locale.setlocale(locale.LC_CTYPE)
-        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
-        try:
-            locale.setlocale(locale.LC_CTYPE, 'tr_TR')
-        except locale.Error:
-            # Unsupported locale on this system
-            self.skipTest('test needs Turkish locale')
-        loc = locale.getlocale(locale.LC_CTYPE)
-        if verbose:
-            print('testing with %a' % (loc,), end=' ', flush=True)
-        try:
-            locale.setlocale(locale.LC_CTYPE, loc)
-        except locale.Error as exc:
-            # bpo-37945: setlocale(LC_CTYPE) fails with getlocale(LC_CTYPE)
-            # and the tr_TR locale on Windows. getlocale() builds a locale
-            # which is not recognize by setlocale().
-            self.skipTest(f"setlocale(LC_CTYPE, {loc!r}) failed: {exc!r}")
-        self.assertEqual(loc, locale.getlocale(locale.LC_CTYPE))
 
     def test_invalid_locale_format_in_localetuple(self):
         with self.assertRaises(TypeError):
