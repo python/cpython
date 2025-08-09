@@ -97,3 +97,59 @@ msgid_plural "worlds"
 msgstr[0] ""
 msgstr[1] ""
 
+#: messages.py:122 messages.py:123
+msgid "Hello World"
+msgstr ""
+
+#: messages.py:124
+msgid "Hello {name}"
+msgstr ""
+
+#: messages.py:125
+msgid "Hello {name__title}"
+msgstr ""
+
+#: messages.py:126 messages.py:127 messages.py:128
+msgid "Hello {user__name}"
+msgstr ""
+
+#: messages.py:129
+msgid "Hello {numbers__69}"
+msgstr ""
+
+#: messages.py:132
+msgid "Hello {{escaped braces}}"
+msgstr ""
+
+#: messages.py:133
+msgid "Hello {{{interpolated_braces}}} inside esacped braces"
+msgstr ""
+
+#: messages.py:134
+msgid "}}Even{{ more {{braces}}"
+msgstr ""
+
+#: messages.py:135
+msgid "}}Even{{ more {{{interpolated_braces}}}"
+msgstr ""
+
+#: messages.py:139
+msgid "Weird {meow__False}"
+msgstr ""
+
+#: messages.py:140
+msgid "Weird {meow__True}"
+msgstr ""
+
+#: messages.py:141
+msgid "Weird {meow__69j}"
+msgstr ""
+
+#: messages.py:142
+msgid "Weird {meow__Ellipsis}"
+msgstr ""
+
+#: messages.py:143
+msgid "Weird {meow__None}"
+msgstr ""
+
