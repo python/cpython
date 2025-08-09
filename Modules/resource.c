@@ -1,7 +1,5 @@
-// Need limited C API version 3.13 for PySys_Audit()
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030d0000
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
@@ -151,6 +149,35 @@ resource_getrusage_impl(PyObject *module, int who)
 #endif
 
 static int
+py2rlim(PyObject *obj, rlim_t *out)
+{
+    obj = PyNumber_Index(obj);
+    if (obj == NULL) {
+        return -1;
+    }
+    int neg = PyLong_IsNegative(obj);
+    assert(neg >= 0);
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, out, sizeof(*out),
+                                            Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+    Py_DECREF(obj);
+    if (bytes < 0) {
+        return -1;
+    }
+    else if (neg && (*out != RLIM_INFINITY || bytes > (Py_ssize_t)sizeof(*out))) {
+        PyErr_SetString(PyExc_ValueError,
+            "Cannot convert negative int");
+        return -1;
+    }
+    else if (bytes > (Py_ssize_t)sizeof(*out)) {
+        PyErr_SetString(PyExc_OverflowError,
+            "Python int too large to convert to C rlim_t");
+        return -1;
+    }
+    return 0;
+}
+
+static int
 py2rlimit(PyObject *limits, struct rlimit *rl_out)
 {
     PyObject *curobj, *maxobj;
@@ -166,26 +193,13 @@ py2rlimit(PyObject *limits, struct rlimit *rl_out)
     }
     curobj = PyTuple_GetItem(limits, 0);  // borrowed
     maxobj = PyTuple_GetItem(limits, 1);  // borrowed
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-    rl_out->rlim_cur = PyLong_AsLong(curobj);
-    if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())
+    if (py2rlim(curobj, &rl_out->rlim_cur) < 0 ||
+        py2rlim(maxobj, &rl_out->rlim_max) < 0)
+    {
         goto error;
-    rl_out->rlim_max = PyLong_AsLong(maxobj);
-    if (rl_out->rlim_max == (rlim_t)-1 && PyErr_Occurred())
-        goto error;
-#else
-    /* The limits are probably bigger than a long */
-    rl_out->rlim_cur = PyLong_AsLongLong(curobj);
-    if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())
-        goto error;
-    rl_out->rlim_max = PyLong_AsLongLong(maxobj);
-    if (rl_out->rlim_max == (rlim_t)-1 && PyErr_Occurred())
-        goto error;
-#endif
+    }
 
     Py_DECREF(limits);
-    rl_out->rlim_cur = rl_out->rlim_cur & RLIM_INFINITY;
-    rl_out->rlim_max = rl_out->rlim_max & RLIM_INFINITY;
     return 0;
 
 error:
@@ -194,14 +208,23 @@ error:
 }
 
 static PyObject*
+rlim2py(rlim_t value)
+{
+    if (value == RLIM_INFINITY) {
+        return PyLong_FromNativeBytes(&value, sizeof(value), -1);
+    }
+    return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1);
+}
+
+static PyObject*
 rlimit2py(struct rlimit rl)
 {
-    if (sizeof(rl.rlim_cur) > sizeof(long)) {
-        return Py_BuildValue("LL",
-                             (long long) rl.rlim_cur,
-                             (long long) rl.rlim_max);
+    PyObject *cur = rlim2py(rl.rlim_cur);
+    if (cur == NULL) {
+        return NULL;
     }
-    return Py_BuildValue("ll", (long) rl.rlim_cur, (long) rl.rlim_max);
+    PyObject *max = rlim2py(rl.rlim_max);
+    return Py_BuildValue("NN", cur, max);
 }
 
 /*[clinic input]
@@ -495,14 +518,7 @@ resource_exec(PyObject *module)
     ADD_INT(module, RLIMIT_KQUEUES);
 #endif
 
-    PyObject *v;
-    if (sizeof(RLIM_INFINITY) > sizeof(long)) {
-        v = PyLong_FromLongLong((long long) RLIM_INFINITY);
-    } else
-    {
-        v = PyLong_FromLong((long) RLIM_INFINITY);
-    }
-    if (PyModule_Add(module, "RLIM_INFINITY", v) < 0) {
+    if (PyModule_Add(module, "RLIM_INFINITY", rlim2py(RLIM_INFINITY)) < 0) {
         return -1;
     }
     return 0;
