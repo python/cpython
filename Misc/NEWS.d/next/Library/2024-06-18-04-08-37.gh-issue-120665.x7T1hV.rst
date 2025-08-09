@@ -1,0 +1,1 @@
+Fixed an issue where ``unittest`` loaders would load and instantiate :class:`unittest.TestCase`-derived subclasses that are also abstract base classes, which can't be instantiated.
