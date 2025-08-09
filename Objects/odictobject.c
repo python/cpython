@@ -1034,7 +1034,11 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
         if (result == NULL) {
             if (PyErr_Occurred())
                 return NULL;
-            assert(_odict_find_node(self, key) == NULL);
+            if (_odict_find_node(self, key) != NULL) {
+                PyErr_SetString(PyExc_RuntimeError,
+                    "OrderedDict key appears to change its hash value over time");
+                return NULL;
+            }
             if (PyODict_SetItem((PyObject *)self, key, default_value) >= 0) {
                 result = Py_NewRef(default_value);
             }
