@@ -5157,6 +5157,69 @@ ast_clear(PyObject *op)
     return 0;
 }
 
+/*
+ * Format the names in the set 'missing' into a natural language list, 
+ * sorted in the order in which they appear in 'fields'.
+ *
+ * Similar to format_missing from 'Python/ceval.c'.
+ *
+ * Parameters
+ 
+ *      missing     Set of missing field names to render.
+ *      fields      Sequence of AST node field names (self._fields).
+ */
+static PyObject *
+format_missing(PyObject *missing, PyObject *fields) 
+{
+    Py_ssize_t num_fields, num_total, num_left;
+    num_fields = PySequence_Size(fields);
+    if (num_fields == -1) {
+        return NULL;
+    }
+    num_total = num_left = PySet_GET_SIZE(missing);
+    PyObject *name_str = PyUnicode_FromString("");
+    // Iterate all AST node fields in order so that the missing positional 
+    // arguments are rendered in the order in which __init__ expects them.
+    for (Py_ssize_t i = 0; i < num_fields; i++) {
+        PyObject *name = PySequence_GetItem(fields, i);
+        if (!name) {
+            Py_DECREF(name_str);
+            return NULL;
+        }
+        int contains = PySet_Contains(missing, name);
+        if (contains == -1) {
+            Py_DECREF(name_str);
+            Py_DECREF(name);
+            return NULL;
+        }
+        else if (contains == 1) {
+            const char* fmt = NULL;
+            if (num_left == 1) {
+                fmt = "'%U'";
+            }
+            else if (num_total == 2) {
+                fmt = "'%U' and ";
+            }
+            else if (num_left == 2) {
+                fmt = "'%U', and ";
+            }
+            else {
+                fmt = "'%U', ";
+            }
+            num_left--;
+            PyObject *tmp = PyUnicode_FromFormat(fmt, name);
+            if (!tmp) {
+                Py_DECREF(name_str);
+                Py_DECREF(name);
+                return NULL;
+            }
+            name_str = PyUnicode_Concat(name_str, tmp);
+        }
+        Py_DECREF(name);
+    }
+    return name_str;
+}
+
 static int
 ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
 {
@@ -5247,16 +5310,11 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto cleanup;
                 }
                 else if (contains == 0) {
-                    if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "%.400s.__init__ got an unexpected keyword argument '%U'. "
-                        "Support for arbitrary keyword arguments is deprecated "
-                        "and will be removed in Python 3.15.",
-                        Py_TYPE(self)->tp_name, key
-                    ) < 0) {
-                        res = -1;
-                        goto cleanup;
-                    }
+                    PyErr_Format(PyExc_TypeError,
+                        "%T.__init__ got an unexpected keyword "
+                        "argument '%U'", self, key);
+                    res = -1;
+                    goto cleanup;
                 }
             }
             res = PyObject_SetAttr(self, key, value);
@@ -5266,7 +5324,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
     }
     Py_ssize_t size = PySet_Size(remaining_fields);
-    PyObject *field_types = NULL, *remaining_list = NULL;
+    PyObject *field_types = NULL, *remaining_list = NULL, *missing_names = NULL;
     if (size > 0) {
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
                                      &field_types) < 0) {
@@ -5283,6 +5341,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         if (!remaining_list) {
             goto set_remaining_cleanup;
         }
+        missing_names = PySet_New(NULL);
+        if (!missing_names) {
+            goto set_remaining_cleanup;
+        }
         for (Py_ssize_t i = 0; i < size; i++) {
             PyObject *name = PyList_GET_ITEM(remaining_list, i);
             PyObject *type = PyDict_GetItemWithError(field_types, name);
@@ -5291,14 +5353,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                     goto set_remaining_cleanup;
                 }
                 else {
-                    if (PyErr_WarnFormat(
-                        PyExc_DeprecationWarning, 1,
-                        "Field '%U' is missing from %.400s._field_types. "
-                        "This will become an error in Python 3.15.",
-                        name, Py_TYPE(self)->tp_name
-                    ) < 0) {
-                        goto set_remaining_cleanup;
-                    }
+                    PyErr_Format(PyExc_TypeError,
+                        "Field '%U' is missing from %T._field_types",
+                        name, self);
+                    goto set_remaining_cleanup;
                 }
             }
             else if (_PyUnion_Check(type)) {
@@ -5326,16 +5384,25 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
             }
             else {
                 // simple field (e.g., identifier)
-                if (PyErr_WarnFormat(
-                    PyExc_DeprecationWarning, 1,
-                    "%.400s.__init__ missing 1 required positional argument: '%U'. "
-                    "This will become an error in Python 3.15.",
-                    Py_TYPE(self)->tp_name, name
-                ) < 0) {
+                res = PySet_Add(missing_names, name);
+                if (res < 0) {
                     goto set_remaining_cleanup;
                 }
             }
         }
+        Py_ssize_t num_missing = PySet_GET_SIZE(missing_names);
+        if (num_missing > 0) {
+            PyObject* name_str = format_missing(missing_names, fields);
+            if (!name_str) {
+                goto set_remaining_cleanup;
+            }
+            PyErr_Format(PyExc_TypeError,
+                "%T.__init__ missing %d required positional argument%s: %U",
+                self, num_missing, num_missing == 1 ? "" : "s", name_str);
+            Py_DECREF(name_str);
+            goto set_remaining_cleanup;
+        }
+        Py_DECREF(missing_names);
         Py_DECREF(remaining_list);
         Py_DECREF(field_types);
     }
@@ -5345,6 +5412,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_XDECREF(remaining_fields);
     return res;
   set_remaining_cleanup:
+    Py_XDECREF(missing_names);
     Py_XDECREF(remaining_list);
     Py_XDECREF(field_types);
     res = -1;
