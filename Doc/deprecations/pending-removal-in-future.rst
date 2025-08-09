@@ -123,7 +123,7 @@ although there is currently no date scheduled for their removal.
 * :class:`typing.Text` (:gh:`92332`).
 
 * The internal class ``typing._UnionGenericAlias`` is no longer used to implement
-  :class:`typing.Union`. To preserve compatibility with users using this private
+  :data:`typing.Union`. To preserve compatibility with users using this private
   class, a compatibility shim will be provided until at least Python 3.17. (Contributed by
   Jelle Zijlstra in :gh:`105499`.)
 

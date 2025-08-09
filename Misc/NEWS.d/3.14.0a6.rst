@@ -834,7 +834,7 @@ performance. Patch by Romain Morotti.
 .. nonce: 7jV6cP
 .. section: Library
 
-Make :class:`types.UnionType` an alias for :class:`typing.Union`. Both ``int
+[Partially reverted in :gh:`137065`] Make :class:`types.UnionType` an alias for :data:`typing.Union`. Both ``int
 | str`` and ``Union[int, str]`` now create instances of the same type. Patch
 by Jelle Zijlstra.
 
