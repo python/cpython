@@ -1394,6 +1394,7 @@ INT_GETTER(ErrorByteIndex)
 INT_GETTER(CurrentLineNumber)
 INT_GETTER(CurrentColumnNumber)
 INT_GETTER(CurrentByteIndex)
+INT_GETTER(CurrentByteCount)
 
 #undef INT_GETTER
 
@@ -1591,6 +1592,7 @@ static PyGetSetDef xmlparse_getsetlist[] = {
     XMLPARSE_GETTER_DEF(CurrentLineNumber)
     XMLPARSE_GETTER_DEF(CurrentColumnNumber)
     XMLPARSE_GETTER_DEF(CurrentByteIndex)
+    XMLPARSE_GETTER_DEF(CurrentByteCount)
     XMLPARSE_GETTER_SETTER_DEF(buffer_size)
     XMLPARSE_GETTER_SETTER_DEF(buffer_text)
     XMLPARSE_GETTER_DEF(buffer_used)
