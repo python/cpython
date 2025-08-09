@@ -730,16 +730,17 @@ loops that truncate the stream.
    produced by the upstream :func:`tee` call.  This "flattening step"
    allows nested :func:`tee` calls to share the same underlying data
    chain and to have a single update step rather than a chain of calls.
+
    .. note::
 
     :func:`tee` automatically "flattens" existing tee objects,
     sharing the same underlying buffer instead of nesting them, to avoid
-    performance degradation. This flattening behavior has existed since Python 3.7.
+    performance degradation.
 
    .. versionchanged:: 3.13
-      Fixed a bug where re-teeing the first iterator did not correctly flatten
-      the iterator chain in all cases. Previously, this could lead to unnecessary
-      nesting and performance degradation in rare scenarios.
+      Fixed a bug where re-teeing a tee iterator did not always return independent iterators.
+      Previously, the first iterator in the result could be the same object as the
+      input, causing inconsistent behavior.
 
    .. doctest::
 
