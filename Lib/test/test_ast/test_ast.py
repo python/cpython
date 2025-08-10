@@ -545,6 +545,7 @@ class AST_Tests(unittest.TestCase):
         # Random attribute allowed too
         x.foobarbaz = 5
         self.assertEqual(x.foobarbaz, 5)
+        self.assertEqual(x._fields, ('left', 'op', 'right'))
 
         x = ast.BinOp(1, 2, 3)
         self.assertEqual(x.left, 1)
@@ -570,7 +571,8 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.lineno, 0)
 
         # Random kwargs are not allowed
-        with self.assertRaisesRegex(TypeError, "unexpected keyword argument 'foobarbaz'"):
+        msg = "ast.BinOp.__init__ got an unexpected keyword argument 'foobarbaz'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             x = ast.BinOp(1, 2, 3, foobarbaz=42)
 
     def test_no_fields(self):
@@ -3271,8 +3273,8 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertEqual(obj.a, 1)
         self.assertEqual(obj.b, 2)
 
-        with self.assertRaisesRegex(TypeError,
-                                   r"MyAttrs.__init__ got an unexpected keyword argument 'c'"):
+        msg = "MyAttrs.__init__ got an unexpected keyword argument 'c'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             obj = MyAttrs(c=3)
 
     def test_fields_and_types_no_default(self):
@@ -3280,8 +3282,8 @@ class ASTConstructorTests(unittest.TestCase):
             _fields = ('a',)
             _field_types = {'a': int}
 
-        with self.assertRaisesRegex(TypeError,
-                                   r"FieldsAndTypesNoDefault\.__init__ missing 1 required positional argument: 'a'"):
+        msg = "FieldsAndTypesNoDefault.__init__ missing 1 required positional argument: 'a'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             obj = FieldsAndTypesNoDefault()
 
         obj = FieldsAndTypesNoDefault(a=1)
@@ -3294,7 +3296,8 @@ class ASTConstructorTests(unittest.TestCase):
             a: int | None = None
             b: int | None = None
 
-        with self.assertRaisesRegex(TypeError, "Field 'b' is missing"):
+        msg = "Field 'b' is missing from test.test_ast.test_ast.ASTConstructorTests.test_incomplete_field_types.<locals>.MoreFieldsThanTypes._field_types"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             obj = MoreFieldsThanTypes()
 
         obj = MoreFieldsThanTypes(a=1, b=2)
