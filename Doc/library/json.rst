@@ -261,12 +261,10 @@ Basic Usage
 
    .. note::
 
-      Keys in key/value pairs of JSON are always of the type :class:`str`. When
-      a dictionary is converted into JSON, all the keys of the dictionary are
-      coerced to strings. As a result of this, if a dictionary is converted
-      into JSON and then back into a dictionary, the dictionary may not equal
-      the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
-      keys.
+      The encoder will convert all non-string keys in dictionaries into string,
+      if a dictionary is converted into JSON and then back into a dictionary,
+      the dictionary may not equal the original one.
+      That is, ``loads(dumps(x)) != x`` if x has non-string keys.
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \
