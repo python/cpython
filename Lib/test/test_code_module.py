@@ -133,7 +133,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         output = ''.join(''.join(call[1]) for call in self.stderr.method_calls)
         output = output[output.index('(InteractiveConsole)'):]
         output = output[output.index('\n') + 1:]
-        self.assertTrue(output.startswith('UnicodeEncodeError: '), output)
+        self.assertStartsWith(output, 'UnicodeEncodeError: ')
         self.assertIs(self.sysmod.last_type, UnicodeEncodeError)
         self.assertIs(type(self.sysmod.last_value), UnicodeEncodeError)
         self.assertIsNone(self.sysmod.last_traceback)

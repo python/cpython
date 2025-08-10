@@ -17,6 +17,7 @@
 
 #include "Python.h"
 #include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include "expat.h"
@@ -689,10 +690,8 @@ element_dealloc(PyObject *op)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, element_dealloc)
 
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
 
     /* element_gc_clear clears all references and deallocates extra
     */
@@ -700,7 +699,6 @@ element_dealloc(PyObject *op)
 
     tp->tp_free(self);
     Py_DECREF(tp);
-    Py_TRASHCAN_END
 }
 
 /* -------------------------------------------------------------------- */
@@ -813,6 +811,8 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
+    // The deepcopy() helper takes care of incrementing the refcount
+    // of the object to copy so to avoid use-after-frees.
     tag = deepcopy(st, self->tag, memo);
     if (!tag)
         return NULL;
@@ -847,11 +847,13 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     assert(!element->extra || !element->extra->length);
     if (self->extra) {
-        if (element_resize(element, self->extra->length) < 0)
+        Py_ssize_t expected_count = self->extra->length;
+        if (element_resize(element, expected_count) < 0) {
+            assert(!element->extra->length);
             goto error;
+        }
 
-        // TODO(picnixz): check for an evil child's __deepcopy__ on 'self'
-        for (i = 0; i < self->extra->length; i++) {
+        for (i = 0; self->extra && i < self->extra->length; i++) {
             PyObject* child = deepcopy(st, self->extra->children[i], memo);
             if (!child || !Element_Check(st, child)) {
                 if (child) {
@@ -861,11 +863,24 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
                 element->extra->length = i;
                 goto error;
             }
+            if (self->extra && expected_count != self->extra->length) {
+                // 'self->extra' got mutated and 'element' may not have
+                // sufficient space to hold the next iteration's item.
+                expected_count = self->extra->length;
+                if (element_resize(element, expected_count) < 0) {
+                    Py_DECREF(child);
+                    element->extra->length = i;
+                    goto error;
+                }
+            }
             element->extra->children[i] = child;
         }
 
         assert(!element->extra->length);
-        element->extra->length = self->extra->length;
+        // The original 'self->extra' may be gone at this point if deepcopy()
+        // has side-effects. However, 'i' is the number of copied items that
+        // we were able to successfully copy.
+        element->extra->length = i;
     }
 
     /* add object to memo dictionary (so deepcopy won't visit it again) */
@@ -908,13 +923,20 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
                     break;
                 }
             }
-            if (simple)
+            if (simple) {
                 return PyDict_Copy(object);
+            }
             /* Fall through to general case */
         }
         else if (Element_CheckExact(st, object)) {
-            return _elementtree_Element___deepcopy___impl(
+            // The __deepcopy__() call may call arbitrary code even if the
+            // object to copy is a built-in XML element (one of its children
+            // any of its parents in its own __deepcopy__() implementation).
+            Py_INCREF(object);
+            PyObject *res = _elementtree_Element___deepcopy___impl(
                 (ElementObject *)object, memo);
+            Py_DECREF(object);
+            return res;
         }
     }
 
@@ -925,8 +947,11 @@ deepcopy(elementtreestate *st, PyObject *object, PyObject *memo)
         return NULL;
     }
 
+    Py_INCREF(object);
     PyObject *args[2] = {object, memo};
-    return PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
+    PyObject *res = PyObject_Vectorcall(st->deepcopy_obj, args, 2, NULL);
+    Py_DECREF(object);
+    return res;
 }
 
 
@@ -3082,8 +3107,7 @@ typedef struct {
     PyObject *elementtree_module;
 } XMLParserObject;
 
-
-#define _XMLParser_CAST(op) ((XMLParserObject *)(op))
+#define XMLParserObject_CAST(op)    ((XMLParserObject *)(op))
 
 /* helpers */
 
@@ -3207,12 +3231,12 @@ expat_set_error(elementtreestate *st, enum XML_Error error_code,
 /* handlers */
 
 static void
-expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
-                      int data_len)
+expat_default_handler(void *op, const XML_Char *data_in, int data_len)
 {
-    PyObject* key;
-    PyObject* value;
-    PyObject* res;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *key;
+    PyObject *value;
+    PyObject *res;
 
     if (data_len < 2 || data_in[0] != '&')
         return;
@@ -3254,12 +3278,13 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
 }
 
 static void
-expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
+expat_start_handler(void *op, const XML_Char *tag_in,
                     const XML_Char **attrib_in)
 {
-    PyObject* res;
-    PyObject* tag;
-    PyObject* attrib;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *res;
+    PyObject *tag;
+    PyObject *attrib;
     int ok;
 
     if (PyErr_Occurred())
@@ -3278,13 +3303,13 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
             return;
         }
         while (attrib_in[0] && attrib_in[1]) {
-            PyObject* key = makeuniversal(self, attrib_in[0]);
+            PyObject *key = makeuniversal(self, attrib_in[0]);
             if (key == NULL) {
                 Py_DECREF(attrib);
                 Py_DECREF(tag);
                 return;
             }
-            PyObject* value = PyUnicode_DecodeUTF8(attrib_in[1], strlen(attrib_in[1]), "strict");
+            PyObject *value = PyUnicode_DecodeUTF8(attrib_in[1], strlen(attrib_in[1]), "strict");
             if (value == NULL) {
                 Py_DECREF(key);
                 Py_DECREF(attrib);
@@ -3331,11 +3356,12 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
 }
 
 static void
-expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
+expat_data_handler(void *op, const XML_Char *data_in,
                    int data_len)
 {
-    PyObject* data;
-    PyObject* res;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *data;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3359,10 +3385,11 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
 }
 
 static void
-expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
+expat_end_handler(void *op, const XML_Char *tag_in)
 {
-    PyObject* tag;
-    PyObject* res = NULL;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *tag;
+    PyObject *res = NULL;
 
     if (PyErr_Occurred())
         return;
@@ -3386,12 +3413,13 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
 }
 
 static void
-expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
+expat_start_ns_handler(void *op, const XML_Char *prefix_in,
                        const XML_Char *uri_in)
 {
-    PyObject* res = NULL;
-    PyObject* uri;
-    PyObject* prefix;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *res = NULL;
+    PyObject *uri;
+    PyObject *prefix;
 
     if (PyErr_Occurred())
         return;
@@ -3430,7 +3458,7 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
             return;
         }
 
-        PyObject* args[2] = {prefix, uri};
+        PyObject *args[2] = {prefix, uri};
         res = PyObject_Vectorcall(self->handle_start_ns, args, 2, NULL);
         Py_DECREF(uri);
         Py_DECREF(prefix);
@@ -3440,10 +3468,11 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
 }
 
 static void
-expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
+expat_end_ns_handler(void *op, const XML_Char *prefix_in)
 {
+    XMLParserObject *self = XMLParserObject_CAST(op);
     PyObject *res = NULL;
-    PyObject* prefix;
+    PyObject *prefix;
 
     if (PyErr_Occurred())
         return;
@@ -3472,10 +3501,11 @@ expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
 }
 
 static void
-expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
+expat_comment_handler(void *op, const XML_Char *comment_in)
 {
-    PyObject* comment;
-    PyObject* res;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *comment;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3504,12 +3534,13 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
 }
 
 static void
-expat_start_doctype_handler(XMLParserObject *self,
+expat_start_doctype_handler(void *op,
                             const XML_Char *doctype_name,
                             const XML_Char *sysid,
                             const XML_Char *pubid,
                             int has_internal_subset)
 {
+    XMLParserObject *self = XMLParserObject_CAST(op);
     PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
     PyObject *res;
 
@@ -3562,12 +3593,13 @@ expat_start_doctype_handler(XMLParserObject *self,
 }
 
 static void
-expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
-                 const XML_Char* data_in)
+expat_pi_handler(void *op, const XML_Char *target_in,
+                 const XML_Char *data_in)
 {
-    PyObject* pi_target;
-    PyObject* data;
-    PyObject* res;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *pi_target;
+    PyObject *data;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3597,7 +3629,7 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
         if (!data)
             goto error;
 
-        PyObject* args[2] = {pi_target, data};
+        PyObject *args[2] = {pi_target, data};
         res = PyObject_Vectorcall(self->handle_pi, args, 2, NULL);
         Py_XDECREF(res);
         Py_DECREF(data);
@@ -3777,7 +3809,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
 static int
 xmlparser_gc_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    XMLParserObject *self = _XMLParser_CAST(op);
+    XMLParserObject *self = XMLParserObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->handle_close);
     Py_VISIT(self->handle_pi);
@@ -3799,7 +3831,7 @@ xmlparser_gc_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 xmlparser_gc_clear(PyObject *op)
 {
-    XMLParserObject *self = _XMLParser_CAST(op);
+    XMLParserObject *self = XMLParserObject_CAST(op);
     elementtreestate *st = self->state;
     if (self->parser != NULL) {
         XML_Parser parser = self->parser;

@@ -853,7 +853,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: linked_with_musl()
 
-   Return ``False`` if there is no evidence the interperter was compiled with
+   Return ``False`` if there is no evidence the interpreter was compiled with
    ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
    version is unknown, or the actual version if it is known.  Intended for use
    in ``skip`` decorators.  ``emscripten`` and ``wasi`` are assumed to be
@@ -1382,6 +1382,13 @@ The :mod:`test.support.threading_helper` module provides support for threading t
        # (to avoid reference cycles)
 
    .. versionadded:: 3.8
+
+
+.. function:: run_concurrently(worker_func, nthreads, args=(), kwargs={})
+
+    Run the worker function concurrently in multiple threads.
+    Re-raises an exception if any thread raises one, after all threads have
+    finished.
 
 
 :mod:`test.support.os_helper` --- Utilities for os tests

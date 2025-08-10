@@ -1100,6 +1100,11 @@ class AbstractUnpickleTests:
         self.check_unpickling_error((pickle.UnpicklingError, OverflowError),
                                     dumped)
 
+    def test_large_binstring(self):
+        errmsg = 'BINSTRING pickle has negative byte count'
+        with self.assertRaisesRegex(pickle.UnpicklingError, errmsg):
+            self.loads(b'T\0\0\0\x80')
+
     def test_get(self):
         pickled = b'((lp100000\ng100000\nt.'
         unpickled = self.loads(pickled)
@@ -2272,7 +2277,11 @@ class AbstractPicklingErrorTests:
 
     def test_nested_lookup_error(self):
         # Nested name does not exist
-        obj = REX('AbstractPickleTests.spam')
+        global TestGlobal
+        class TestGlobal:
+            class A:
+                pass
+        obj = REX('TestGlobal.A.B.C')
         obj.__module__ = __name__
         for proto in protocols:
             with self.subTest(proto=proto):
@@ -2280,9 +2289,9 @@ class AbstractPicklingErrorTests:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
                     f"Can't pickle {obj!r}: "
-                    f"it's not found as {__name__}.AbstractPickleTests.spam")
+                    f"it's not found as {__name__}.TestGlobal.A.B.C")
                 self.assertEqual(str(cm.exception.__context__),
-                    "type object 'AbstractPickleTests' has no attribute 'spam'")
+                    "type object 'A' has no attribute 'B'")
 
         obj.__module__ = None
         for proto in protocols:
@@ -2290,21 +2299,25 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests.spam")
+                    f"Can't pickle {obj!r}: "
+                    f"it's not found as __main__.TestGlobal.A.B.C")
                 self.assertEqual(str(cm.exception.__context__),
-                    "module '__main__' has no attribute 'AbstractPickleTests'")
+                    "module '__main__' has no attribute 'TestGlobal'")
 
     def test_wrong_object_lookup_error(self):
         # Name is bound to different object
-        obj = REX('AbstractPickleTests')
+        global TestGlobal
+        class TestGlobal:
+            pass
+        obj = REX('TestGlobal')
         obj.__module__ = __name__
-        AbstractPickleTests.ham = []
         for proto in protocols:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not the same object as {__name__}.AbstractPickleTests")
+                    f"Can't pickle {obj!r}: "
+                    f"it's not the same object as {__name__}.TestGlobal")
                 self.assertIsNone(cm.exception.__context__)
 
         obj.__module__ = None
@@ -2313,9 +2326,10 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests")
+                    f"Can't pickle {obj!r}: "
+                    f"it's not found as __main__.TestGlobal")
                 self.assertEqual(str(cm.exception.__context__),
-                    "module '__main__' has no attribute 'AbstractPickleTests'")
+                    "module '__main__' has no attribute 'TestGlobal'")
 
     def test_local_lookup_error(self):
         # Test that whichmodule() errors out cleanly when looking up
@@ -3059,7 +3073,7 @@ class AbstractPickleTests:
             pickled = self.dumps(None, proto)
             if proto >= 2:
                 proto_header = pickle.PROTO + bytes([proto])
-                self.assertTrue(pickled.startswith(proto_header))
+                self.assertStartsWith(pickled, proto_header)
             else:
                 self.assertEqual(count_opcode(pickle.PROTO, pickled), 0)
 
@@ -4998,7 +5012,7 @@ class AbstractDispatchTableTests:
         p = self.pickler_class(f, 0)
         with self.assertRaises(AttributeError):
             p.dispatch_table
-        self.assertFalse(hasattr(p, 'dispatch_table'))
+        self.assertNotHasAttr(p, 'dispatch_table')
 
     def test_class_dispatch_table(self):
         # A dispatch_table attribute can be specified class-wide

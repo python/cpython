@@ -120,7 +120,7 @@
     <ClInclude Include="..\Include\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\lock.h">
+    <ClInclude Include="..\Include\pylock.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
@@ -414,7 +414,7 @@
     <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\lock.h">
+    <ClInclude Include="..\Include\cpython\pylock.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\longintrepr.h">
@@ -708,6 +708,9 @@
     <ClInclude Include="..\Include\internal\pycore_interpframe_structs.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interpolation.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -838,6 +841,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_stackref.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_template.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_time.h">
@@ -1304,6 +1310,9 @@
     <ClCompile Include="..\PC\msvcrtmodule.c">
       <Filter>PC</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\_contextvars.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\_warnings.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1316,7 +1325,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_preprocess.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">
@@ -1570,9 +1579,6 @@
     </ClCompile>
     <ClCompile Include="..\Objects\odictobject.c">
       <Filter>Objects</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Modules\_contextvarsmodule.c">
-      <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="$(zlibDir)\adler32.c">
       <Filter>Modules\zlib</Filter>

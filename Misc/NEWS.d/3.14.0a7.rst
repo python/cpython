@@ -288,7 +288,7 @@ Improve the import time of the :mod:`ast` module by extracting the
 .. nonce: 8M-HVz
 .. section: Library
 
-Improved performance of :func:`textwrap.dedent` by an average of ~1.3x.
+Improved performance of :func:`textwrap.indent` by an average of ~1.3x.
 Patch by Adam Turner.
 
 ..

@@ -58,12 +58,11 @@ class _MonitoringTracer:
         E = sys.monitoring.events
         all_events = 0
         for event, cb_name in self.EVENT_CALLBACK_MAP.items():
-            callback = getattr(self, f'{cb_name}_callback')
+            callback = self.callback_wrapper(getattr(self, f'{cb_name}_callback'), event)
             sys.monitoring.register_callback(self._tool_id, event, callback)
             if event != E.INSTRUCTION:
                 all_events |= event
-        self.check_trace_func()
-        self.check_trace_opcodes()
+        self.update_local_events()
         sys.monitoring.set_events(self._tool_id, self.GLOBAL_EVENTS)
         self._enabled = True
 
@@ -74,7 +73,6 @@ class _MonitoringTracer:
         if curr_tool != self._name:
             return
         sys.monitoring.clear_tool_id(self._tool_id)
-        self.check_trace_opcodes()
         sys.monitoring.free_tool_id(self._tool_id)
 
     def disable_current_event(self):
@@ -84,19 +82,22 @@ class _MonitoringTracer:
         if sys.monitoring.get_tool(self._tool_id) == self._name:
             sys.monitoring.restart_events()
 
-    def callback_wrapper(func):
+    def callback_wrapper(self, func, event):
         import functools
 
         @functools.wraps(func)
-        def wrapper(self, *args):
+        def wrapper(*args):
             if self._tracing_thread != threading.current_thread():
                 return
             try:
                 frame = sys._getframe().f_back
-                ret = func(self, frame, *args)
+                ret = func(frame, *args)
                 if self._enabled and frame.f_trace:
-                    self.check_trace_func()
-                if self._disable_current_event:
+                    self.update_local_events()
+                if (
+                    self._disable_current_event
+                    and event not in (E.PY_THROW, E.PY_UNWIND, E.RAISE)
+                ):
                     return sys.monitoring.DISABLE
                 else:
                     return ret
@@ -109,7 +110,6 @@ class _MonitoringTracer:
 
         return wrapper
 
-    @callback_wrapper
     def call_callback(self, frame, code, *args):
         local_tracefunc = self._tracefunc(frame, 'call', None)
         if local_tracefunc is not None:
@@ -117,22 +117,18 @@ class _MonitoringTracer:
             if self._enabled:
                 sys.monitoring.set_local_events(self._tool_id, code, self.LOCAL_EVENTS)
 
-    @callback_wrapper
     def return_callback(self, frame, code, offset, retval):
         if frame.f_trace:
             frame.f_trace(frame, 'return', retval)
 
-    @callback_wrapper
     def unwind_callback(self, frame, code, *args):
         if frame.f_trace:
             frame.f_trace(frame, 'return', None)
 
-    @callback_wrapper
     def line_callback(self, frame, code, *args):
         if frame.f_trace and frame.f_trace_lines:
             frame.f_trace(frame, 'line', None)
 
-    @callback_wrapper
     def jump_callback(self, frame, code, inst_offset, dest_offset):
         if dest_offset > inst_offset:
             return sys.monitoring.DISABLE
@@ -143,7 +139,6 @@ class _MonitoringTracer:
         if frame.f_trace and frame.f_trace_lines:
             frame.f_trace(frame, 'line', None)
 
-    @callback_wrapper
     def exception_callback(self, frame, code, offset, exc):
         if frame.f_trace:
             if exc.__traceback__ and hasattr(exc.__traceback__, 'tb_frame'):
@@ -154,32 +149,22 @@ class _MonitoringTracer:
                     tb = tb.tb_next
             frame.f_trace(frame, 'exception', (type(exc), exc, exc.__traceback__))
 
-    @callback_wrapper
     def opcode_callback(self, frame, code, offset):
         if frame.f_trace and frame.f_trace_opcodes:
             frame.f_trace(frame, 'opcode', None)
 
-    def check_trace_opcodes(self, frame=None):
-        if frame is None:
-            frame = sys._getframe().f_back
-        while frame is not None:
-            self.set_trace_opcodes(frame, frame.f_trace_opcodes)
-            frame = frame.f_back
-
-    def set_trace_opcodes(self, frame, trace_opcodes):
+    def update_local_events(self, frame=None):
         if sys.monitoring.get_tool(self._tool_id) != self._name:
             return
-        if trace_opcodes:
-            sys.monitoring.set_local_events(self._tool_id, frame.f_code, E.INSTRUCTION)
-        else:
-            sys.monitoring.set_local_events(self._tool_id, frame.f_code, 0)
-
-    def check_trace_func(self, frame=None):
         if frame is None:
             frame = sys._getframe().f_back
         while frame is not None:
             if frame.f_trace is not None:
-                sys.monitoring.set_local_events(self._tool_id, frame.f_code, self.LOCAL_EVENTS)
+                if frame.f_trace_opcodes:
+                    events = self.LOCAL_EVENTS | E.INSTRUCTION
+                else:
+                    events = self.LOCAL_EVENTS
+                sys.monitoring.set_local_events(self._tool_id, frame.f_code, events)
             frame = frame.f_back
 
     def _get_lineno(self, code, offset):
@@ -282,12 +267,9 @@ class Bdb:
                   is entered.
             return: A function or other code block is about to return.
             exception: An exception has occurred.
-            c_call: A C function is about to be called.
-            c_return: A C function has returned.
-            c_exception: A C function has raised an exception.
 
-        For the Python events, specialized functions (see the dispatch_*()
-        methods) are called.  For the C events, no action is taken.
+        For all the events, specialized functions (see the dispatch_*()
+        methods) are called.
 
         The arg parameter depends on the previous event.
         """
@@ -303,12 +285,6 @@ class Bdb:
                 return self.dispatch_return(frame, arg)
             if event == 'exception':
                 return self.dispatch_exception(frame, arg)
-            if event == 'c_call':
-                return self.trace_dispatch
-            if event == 'c_exception':
-                return self.trace_dispatch
-            if event == 'c_return':
-                return self.trace_dispatch
             if event == 'opcode':
                 return self.dispatch_opcode(frame, arg)
             print('bdb.Bdb.dispatch: unknown debugging event:', repr(event))
@@ -544,11 +520,11 @@ class Bdb:
             frame = self.enterframe
             while frame is not None:
                 frame.f_trace_opcodes = trace_opcodes
-                if self.monitoring_tracer:
-                    self.monitoring_tracer.set_trace_opcodes(frame, trace_opcodes)
                 if frame is self.botframe:
                     break
                 frame = frame.f_back
+            if self.monitoring_tracer:
+                self.monitoring_tracer.update_local_events()
 
     def _set_stopinfo(self, stopframe, returnframe, stoplineno=0, opcode=False):
         """Set the attributes for stopping.
@@ -642,8 +618,8 @@ class Bdb:
                 frame = frame.f_back
             for frame, (trace_lines, trace_opcodes) in self.frame_trace_lines_opcodes.items():
                 frame.f_trace_lines, frame.f_trace_opcodes = trace_lines, trace_opcodes
-                if self.backend == 'monitoring':
-                    self.monitoring_tracer.set_trace_opcodes(frame, trace_opcodes)
+            if self.backend == 'monitoring':
+                self.monitoring_tracer.update_local_events()
             self.frame_trace_lines_opcodes = {}
 
     def set_quit(self):

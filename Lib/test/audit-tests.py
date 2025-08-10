@@ -195,6 +195,17 @@ def test_open(testfn):
     except ImportError:
         load_dh_params = None
 
+    try:
+        import readline
+    except ImportError:
+        readline = None
+
+    def rl(name):
+        if readline:
+            return getattr(readline, name, None)
+        else:
+            return None
+
     # Try a range of "open" functions.
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
@@ -204,6 +215,14 @@ def test_open(testfn):
             (open, 3, "wb"),
             (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
             (load_dh_params, testfn),
+            (rl("read_history_file"), testfn),
+            (rl("read_history_file"), None),
+            (rl("write_history_file"), testfn),
+            (rl("write_history_file"), None),
+            (rl("append_history_file"), 0, testfn),
+            (rl("append_history_file"), 0, None),
+            (rl("read_init_file"), testfn),
+            (rl("read_init_file"), None),
         ]:
             if not fn:
                 continue
@@ -229,6 +248,14 @@ def test_open(testfn):
                 (3, "w"),
                 (testfn, "w"),
                 (testfn, "rb") if load_dh_params else None,
+                (testfn, "r") if readline else None,
+                ("~/.history", "r") if readline else None,
+                (testfn, "w") if readline else None,
+                ("~/.history", "w") if readline else None,
+                (testfn, "a") if rl("append_history_file") else None,
+                ("~/.history", "a") if rl("append_history_file") else None,
+                (testfn, "r") if readline else None,
+                ("<readline_init_file>", "r") if readline else None,
             ]
             if i is not None
         ],
@@ -276,6 +303,37 @@ def test_mmap():
     with TestHook() as hook:
         mmap.mmap(-1, 8)
         assertEqual(hook.seen[0][1][:2], (-1, 8))
+
+
+def test_ctypes_call_function():
+    import ctypes
+    import _ctypes
+
+    with TestHook() as hook:
+        _ctypes.call_function(ctypes._memmove_addr, (0, 0, 0))
+        assert ("ctypes.call_function", (ctypes._memmove_addr, (0, 0, 0))) in hook.seen, f"{ctypes._memmove_addr=} {hook.seen=}"
+
+        ctypes.CFUNCTYPE(ctypes.c_voidp)(ctypes._memset_addr)(1, 0, 0)
+        assert ("ctypes.call_function", (ctypes._memset_addr, (1, 0, 0))) in hook.seen, f"{ctypes._memset_addr=} {hook.seen=}"
+
+    with TestHook() as hook:
+        ctypes.cast(ctypes.c_voidp(0), ctypes.POINTER(ctypes.c_char))
+        assert "ctypes.call_function" in hook.seen_events
+
+    with TestHook() as hook:
+        ctypes.string_at(id("ctypes.string_at") + 40)
+        assert "ctypes.call_function" in hook.seen_events
+        assert "ctypes.string_at" in hook.seen_events
+
+
+def test_posixsubprocess():
+    import multiprocessing.util
+
+    exe = b"xxx"
+    args = [b"yyy", b"zzz"]
+    with TestHook() as hook:
+        multiprocessing.util.spawnv_passfds(exe, args, ())
+        assert ("_posixsubprocess.fork_exec", ([exe], args, None)) in hook.seen
 
 
 def test_excepthook():
@@ -585,6 +643,34 @@ def test_assert_unicode():
     else:
         raise RuntimeError("Expected sys.audit(9) to fail.")
 
+def test_sys_remote_exec():
+    import tempfile
+
+    pid = os.getpid()
+    event_pid = -1
+    event_script_path = ""
+    remote_event_script_path = ""
+    def hook(event, args):
+        if event not in ["sys.remote_exec", "cpython.remote_debugger_script"]:
+            return
+        print(event, args)
+        match event:
+            case "sys.remote_exec":
+                nonlocal event_pid, event_script_path
+                event_pid = args[0]
+                event_script_path = args[1]
+            case "cpython.remote_debugger_script":
+                nonlocal remote_event_script_path
+                remote_event_script_path = args[0]
+
+    sys.addaudithook(hook)
+    with tempfile.NamedTemporaryFile(mode='w+', delete=True) as tmp_file:
+        tmp_file.write("a = 1+1\n")
+        tmp_file.flush()
+        sys.remote_exec(pid, tmp_file.name)
+        assertEqual(event_pid, pid)
+        assertEqual(event_script_path, tmp_file.name)
+        assertEqual(remote_event_script_path, tmp_file.name)
 
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts

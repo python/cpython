@@ -1190,9 +1190,10 @@ call_instrumentation_vector(
                 break;
             }
             else {
-                LOCK_CODE(code);
+                PyInterpreterState *interp = tstate->interp;
+                _PyEval_StopTheWorld(interp);
                 remove_tools(code, offset, event, 1 << tool);
-                UNLOCK_CODE();
+                _PyEval_StartTheWorld(interp);
             }
         }
     }
@@ -1200,7 +1201,7 @@ call_instrumentation_vector(
     return err;
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr)
@@ -1209,7 +1210,7 @@ _Py_call_instrumentation(
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 2, args);
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation_arg(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg)
@@ -1218,7 +1219,7 @@ _Py_call_instrumentation_arg(
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 3, args);
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation_2args(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
@@ -1227,7 +1228,7 @@ _Py_call_instrumentation_2args(
     return call_instrumentation_vector(instr, tstate, event, frame, instr, 4, args);
 }
 
-_Py_CODEUNIT *
+Py_NO_INLINE _Py_CODEUNIT *
 _Py_call_instrumentation_jump(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest)
@@ -1271,7 +1272,7 @@ call_instrumentation_vector_protected(
     assert(_PyErr_Occurred(tstate));
 }
 
-void
+Py_NO_INLINE void
 _Py_call_instrumentation_exc2(
     PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1)
@@ -1294,7 +1295,7 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
     return line;
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -1381,9 +1382,10 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
         }
         else {
             /* DISABLE  */
-            LOCK_CODE(code);
+            PyInterpreterState *interp = tstate->interp;
+            _PyEval_StopTheWorld(interp);
             remove_line_tools(code, i, 1 << tool);
-            UNLOCK_CODE();
+            _PyEval_StartTheWorld(interp);
         }
     } while (tools);
     Py_DECREF(line_obj);
@@ -1396,7 +1398,7 @@ done:
     return original_opcode;
 }
 
-int
+Py_NO_INLINE int
 _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -1438,9 +1440,10 @@ _Py_call_instrumentation_instruction(PyThreadState *tstate, _PyInterpreterFrame*
         }
         else {
             /* DISABLE  */
-            LOCK_CODE(code);
+            PyInterpreterState *interp = tstate->interp;
+            _PyEval_StopTheWorld(interp);
             remove_per_instruction_tools(code, offset, 1 << tool);
-            UNLOCK_CODE();
+            _PyEval_StartTheWorld(interp);
         }
     }
     Py_DECREF(offset_obj);
@@ -1530,7 +1533,7 @@ initialize_lines(PyCodeObject *code, int bytes_per_entry)
                 case END_FOR:
                 case END_SEND:
                 case RESUME:
-            case POP_ITER:
+                case POP_ITER:
                     /* END_FOR cannot start a line, as it is skipped by FOR_ITER
                     * END_SEND cannot start a line, as it is skipped by SEND
                     * RESUME and POP_ITER must not be instrumented with INSTRUMENTED_LINE */
@@ -2558,18 +2561,22 @@ PyObject *_Py_CreateMonitoringObject(void)
     err = PyObject_SetAttrString(events, "NO_EVENTS", _PyLong_GetZero());
     if (err) goto error;
     PyObject *val = PyLong_FromLong(PY_MONITORING_DEBUGGER_ID);
+    assert(val != NULL); /* Can't return NULL because the int is small. */
     err = PyObject_SetAttrString(mod, "DEBUGGER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_COVERAGE_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "COVERAGE_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_PROFILER_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "PROFILER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_OPTIMIZER_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "OPTIMIZER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
@@ -2991,9 +2998,10 @@ branch_handler_vectorcall(
             // Orphaned NOT_TAKEN -- Jump removed by the compiler
             return res;
         }
-        LOCK_CODE(code);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
         remove_tools(code, offset, other_event, 1 << self->tool_id);
-        UNLOCK_CODE();
+        _PyEval_StartTheWorld(interp);
     }
     return res;
 }

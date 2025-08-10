@@ -7,18 +7,13 @@ typedef struct {
     double imag;
 } Py_complex;
 
-// Operations on complex numbers.
+/* Operations on complex numbers (soft deprecated
+   since Python 3.15). */
 PyAPI_FUNC(Py_complex) _Py_c_sum(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) _Py_cr_sum(Py_complex, double);
 PyAPI_FUNC(Py_complex) _Py_c_diff(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) _Py_cr_diff(Py_complex, double);
-PyAPI_FUNC(Py_complex) _Py_rc_diff(double, Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_neg(Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_prod(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) _Py_cr_prod(Py_complex, double);
 PyAPI_FUNC(Py_complex) _Py_c_quot(Py_complex, Py_complex);
-PyAPI_FUNC(Py_complex) _Py_cr_quot(Py_complex, double);
-PyAPI_FUNC(Py_complex) _Py_rc_quot(double, Py_complex);
 PyAPI_FUNC(Py_complex) _Py_c_pow(Py_complex, Py_complex);
 PyAPI_FUNC(double) _Py_c_abs(Py_complex);
 

@@ -121,8 +121,11 @@ Module contents
      :meth:`!__le__`, :meth:`!__gt__`, or :meth:`!__ge__`, then
      :exc:`TypeError` is raised.
 
-   - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
-     is generated according to how *eq* and *frozen* are set.
+   - *unsafe_hash*: If true, force ``dataclasses`` to create a
+     :meth:`~object.__hash__` method, even though it may not be safe to do so.
+     Otherwise, generate a :meth:`~object.__hash__` method according to how
+     *eq* and *frozen* are set.
+     The default value is ``False``.
 
      :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
@@ -304,9 +307,9 @@ Module contents
 
     .. versionadded:: 3.10
 
-   - ``doc``: optional docstring for this field.
+   - *doc*: optional docstring for this field.
 
-    .. versionadded:: 3.13
+    .. versionadded:: 3.14
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be
@@ -343,6 +346,15 @@ Module contents
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
+
+.. class:: InitVar
+
+   ``InitVar[T]`` type annotations describe variables that are :ref:`init-only
+   <dataclasses-init-only-variables>`. Fields annotated with :class:`!InitVar`
+   are considered pseudo-fields, and thus are neither returned by the
+   :func:`fields` function nor used in any way except adding them as
+   parameters to :meth:`~object.__init__` and an optional
+   :meth:`__post_init__`.
 
 .. function:: fields(class_or_instance)
 
@@ -600,8 +612,8 @@ Init-only variables
 
 Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
-if the type of a field is of type ``dataclasses.InitVar``.  If a field
-is an ``InitVar``, it is considered a pseudo-field called an init-only
+if the type of a field is of type :class:`InitVar`.  If a field
+is an :class:`InitVar`, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level :func:`fields` function.  Init-only fields are added as
 parameters to the generated :meth:`~object.__init__` method, and are passed to

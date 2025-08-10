@@ -857,6 +857,8 @@ exit:
     return return_value;
 }
 
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(_winapi_GetShortPathName__doc__,
 "GetShortPathName($module, /, path)\n"
 "--\n"
@@ -929,6 +931,8 @@ exit:
 
     return return_value;
 }
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
 
 PyDoc_STRVAR(_winapi_GetStdHandle__doc__,
 "GetStdHandle($module, std_handle, /)\n"
@@ -1929,6 +1933,24 @@ _winapi_GetACP(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _winapi_GetACP_impl(module);
 }
 
+PyDoc_STRVAR(_winapi_GetOEMCP__doc__,
+"GetOEMCP($module, /)\n"
+"--\n"
+"\n"
+"Get the current Windows ANSI code page identifier.");
+
+#define _WINAPI_GETOEMCP_METHODDEF    \
+    {"GetOEMCP", (PyCFunction)_winapi_GetOEMCP, METH_NOARGS, _winapi_GetOEMCP__doc__},
+
+static PyObject *
+_winapi_GetOEMCP_impl(PyObject *module);
+
+static PyObject *
+_winapi_GetOEMCP(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _winapi_GetOEMCP_impl(module);
+}
+
 PyDoc_STRVAR(_winapi_GetFileType__doc__,
 "GetFileType($module, /, handle)\n"
 "--\n"
@@ -2161,4 +2183,8 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6cd07628af447d0a input=a9049054013a1b77]*/
+
+#ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
+    #define _WINAPI_GETSHORTPATHNAME_METHODDEF
+#endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
+/*[clinic end generated code: output=4581fd481c3c6293 input=a9049054013a1b77]*/

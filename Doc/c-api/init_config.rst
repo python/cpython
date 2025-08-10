@@ -320,7 +320,7 @@ Configuration Options
    * - ``"cpu_count"``
      - :c:member:`cpu_count <PyConfig.cpu_count>`
      - ``int``
-     - Read-only
+     - Public
    * - ``"dev_mode"``
      - :c:member:`dev_mode <PyConfig.dev_mode>`
      - ``bool``
@@ -363,7 +363,7 @@ Configuration Options
      - Read-only
    * - ``"import_time"``
      - :c:member:`import_time <PyConfig.import_time>`
-     - ``bool``
+     - ``int``
      - Read-only
    * - ``"inspect"``
      - :c:member:`inspect <PyConfig.inspect>`
@@ -618,6 +618,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    The caller must have an :term:`attached thread state`. The function cannot
    be called before Python initialization nor after Python finalization.
+
+   .. audit-event:: cpython.PyConfig_Set name,value c.PyConfig_Set
 
    .. versionadded:: 3.14
 
@@ -973,9 +975,7 @@ PyPreConfig
       Set to ``0`` or ``1`` by the :option:`-X utf8 <-X>` command line option
       and the :envvar:`PYTHONUTF8` environment variable.
 
-      Also set to ``1`` if the ``LC_CTYPE`` locale is ``C`` or ``POSIX``.
-
-      Default: ``-1`` in Python config and ``0`` in isolated config.
+      Default: ``1``.
 
 
 .. _c-preinit:
@@ -1475,12 +1475,18 @@ PyConfig
 
    .. c:member:: int import_time
 
-      If non-zero, profile import time.
+      If ``1``, profile import time.
+      If ``2``, include additional output that indicates
+      when an imported module has already been loaded.
 
-      Set the ``1`` by the :option:`-X importtime <-X>` option and the
+      Set by the :option:`-X importtime <-X>` option and the
       :envvar:`PYTHONPROFILEIMPORTTIME` environment variable.
 
       Default: ``0``.
+
+     .. versionchanged:: 3.14
+
+        Added support for ``import_time = 2``
 
    .. c:member:: int inspect
 
@@ -2103,7 +2109,7 @@ initialization::
 
         /* Specify sys.path explicitly */
         /* If you want to modify the default set of paths, finish
-           initialization first and then use PySys_GetObject("path") */
+           initialization first and then use PySys_GetAttrString("path") */
         config.module_search_paths_set = 1;
         status = PyWideStringList_Append(&config.module_search_paths,
                                          L"/path/to/stdlib");

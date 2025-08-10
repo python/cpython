@@ -49,7 +49,7 @@ Functions and classes provided:
 
    While many objects natively support use in with statements, sometimes a
    resource needs to be managed that isn't a context manager in its own right,
-   and doesn't implement a ``close()`` method for use with ``contextlib.closing``
+   and doesn't implement a ``close()`` method for use with ``contextlib.closing``.
 
    An abstract example would be the following to ensure correct resource
    management::

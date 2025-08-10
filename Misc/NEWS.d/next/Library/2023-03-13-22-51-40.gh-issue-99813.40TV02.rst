@@ -1,0 +1,4 @@
+:mod:`ssl` now uses ``SSL_sendfile`` internally when it is possible (see
+:data:`~ssl.OP_ENABLE_KTLS`). The function sends a file more efficiently
+because it performs TLS encryption in the kernel to avoid additional context
+switches. Patch by Illia Volochii.

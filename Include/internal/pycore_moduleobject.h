@@ -47,6 +47,12 @@ static inline PyObject* _PyModule_GetDict(PyObject *mod) {
     return dict;  // borrowed reference
 }
 
+extern PyObject * _PyModule_GetFilenameObject(PyObject *);
+extern Py_ssize_t _PyModule_GetFilenameUTF8(
+        PyObject *module,
+        char *buffer,
+        Py_ssize_t maxlen);
+
 PyObject* _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress);
 PyObject* _Py_module_getattro(PyObject *m, PyObject *name);
 

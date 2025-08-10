@@ -155,6 +155,15 @@ _PyInstructionSequence_InsertInstruction(instr_sequence *seq, int pos,
 }
 
 int
+_PyInstructionSequence_SetAnnotationsCode(instr_sequence *seq,
+                                          instr_sequence *annotations)
+{
+    assert(seq->s_annotations_code == NULL);
+    seq->s_annotations_code = annotations;
+    return SUCCESS;
+}
+
+int
 _PyInstructionSequence_AddNested(instr_sequence *seq, instr_sequence *nested)
 {
     if (seq->s_nested == NULL) {
@@ -178,6 +187,12 @@ PyInstructionSequence_Fini(instr_sequence *seq) {
 
     PyMem_Free(seq->s_instrs);
     seq->s_instrs = NULL;
+
+    if (seq->s_annotations_code != NULL) {
+        PyInstructionSequence_Fini(seq->s_annotations_code);
+        Py_CLEAR(seq->s_annotations_code);
+    }
+
 }
 
 /*[clinic input]
@@ -200,6 +215,7 @@ inst_seq_create(void)
     seq->s_labelmap = NULL;
     seq->s_labelmap_size = 0;
     seq->s_nested = NULL;
+    seq->s_annotations_code = NULL;
 
     PyObject_GC_Track(seq);
     return seq;
@@ -403,10 +419,8 @@ inst_seq_dealloc(PyObject *op)
 {
     _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     PyObject_GC_UnTrack(seq);
-    Py_TRASHCAN_BEGIN(seq, inst_seq_dealloc)
     PyInstructionSequence_Fini(seq);
     PyObject_GC_Del(seq);
-    Py_TRASHCAN_END
 }
 
 static int
@@ -414,6 +428,7 @@ inst_seq_traverse(PyObject *op, visitproc visit, void *arg)
 {
     _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     Py_VISIT(seq->s_nested);
+    Py_VISIT((PyObject *)seq->s_annotations_code);
     return 0;
 }
 
@@ -422,6 +437,7 @@ inst_seq_clear(PyObject *op)
 {
     _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     Py_CLEAR(seq->s_nested);
+    Py_CLEAR(seq->s_annotations_code);
     return 0;
 }
 
