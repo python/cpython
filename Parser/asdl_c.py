@@ -923,13 +923,20 @@ format_missing(PyObject *missing, PyObject *fields)
                 fmt = "'%U', ";
             }
             num_left--;
-            PyObject *tmp = PyUnicode_FromFormat(fmt, name);
-            if (!tmp) {
+            PyObject *tail = PyUnicode_FromFormat(fmt, name);
+            if (!tail) {
                 Py_DECREF(name_str);
                 Py_DECREF(name);
                 return NULL;
             }
-            name_str = PyUnicode_Concat(name_str, tmp);
+            PyObject *tmp = PyUnicode_Concat(name_str, tail);
+            Py_DECREF(name_str);
+            Py_DECREF(tail);
+            if (!tmp) {
+                Py_DECREF(name);
+                return NULL;
+            }
+            name_str = tmp;
         }
         Py_DECREF(name);
     }
