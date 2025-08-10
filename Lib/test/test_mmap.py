@@ -732,7 +732,7 @@ class MmapTests(unittest.TestCase):
         m2.close()
         m1.close()
 
-        with self.assertRaisesRegex(TypeError, 'must be str or None'):
+        with self.assertRaisesRegex(TypeError, 'tagname'):
             mmap.mmap(-1, 8, tagname=1)
 
     @cpython_only

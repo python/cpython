@@ -193,43 +193,52 @@ The :mod:`uuid` module defines the following functions:
 
 .. function:: uuid1(node=None, clock_seq=None)
 
-   Generate a UUID from a host ID, sequence number, and the current time. If *node*
-   is not given, :func:`getnode` is used to obtain the hardware address. If
-   *clock_seq* is given, it is used as the sequence number; otherwise a random
-   14-bit sequence number is chosen.
+   Generate a UUID from a host ID, sequence number, and the current time
+   according to :rfc:`RFC 9562, §5.1 <9562#section-5.1>`.
+
+   When *node* is not specified, :func:`getnode` is used to obtain the hardware
+   address as a 48-bit positive integer. When a sequence number *clock_seq* is
+   not specified, a pseudo-random 14-bit positive integer is generated.
+
+   If *node* or *clock_seq* exceed their expected bit count,
+   only their least significant bits are kept.
 
 
 .. function:: uuid3(namespace, name)
 
    Generate a UUID based on the MD5 hash of a namespace identifier (which is a
    UUID) and a name (which is a :class:`bytes` object or a string
-   that will be encoded using UTF-8).
+   that will be encoded using UTF-8)
+   according to :rfc:`RFC 9562, §5.3 <9562#section-5.3>`.
 
 
 .. function:: uuid4()
 
-   Generate a random UUID.
+   Generate a random UUID in a cryptographically-secure method
+   according to :rfc:`RFC 9562, §5.4 <9562#section-5.4>`.
 
 
 .. function:: uuid5(namespace, name)
 
    Generate a UUID based on the SHA-1 hash of a namespace identifier (which is a
    UUID) and a name (which is a :class:`bytes` object or a string
-   that will be encoded using UTF-8).
+   that will be encoded using UTF-8)
+   according to :rfc:`RFC 9562, §5.5 <9562#section-5.5>`.
 
 
 .. function:: uuid6(node=None, clock_seq=None)
 
    Generate a UUID from a sequence number and the current time according to
-   :rfc:`9562`.
+   :rfc:`RFC 9562, §5.6 <9562#section-5.6>`.
+
    This is an alternative to :func:`uuid1` to improve database locality.
 
    When *node* is not specified, :func:`getnode` is used to obtain the hardware
    address as a 48-bit positive integer. When a sequence number *clock_seq* is
    not specified, a pseudo-random 14-bit positive integer is generated.
 
-   If *node* or *clock_seq* exceed their expected bit count, only their least
-   significant bits are kept.
+   If *node* or *clock_seq* exceed their expected bit count,
+   only their least significant bits are kept.
 
    .. versionadded:: 3.14
 

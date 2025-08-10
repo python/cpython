@@ -492,9 +492,9 @@ metatype) initializes :c:member:`~PyTypeObject.tp_itemsize`, which means that it
 type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
 
 
-.. c:member:: Py_ssize_t PyObject.ob_refcnt
+:c:member:`PyObject.ob_refcnt`
 
-   This is the type object's reference count, initialized to ``1`` by the
+   The type object's reference count is initialized to ``1`` by the
    ``PyObject_HEAD_INIT`` macro.  Note that for :ref:`statically allocated type
    objects <static-types>`, the type's instances (objects whose :c:member:`~PyObject.ob_type`
    points back to the type) do *not* count as references.  But for
@@ -506,7 +506,7 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
    This field is not inherited by subtypes.
 
 
-.. c:member:: PyTypeObject* PyObject.ob_type
+:c:member:`PyObject.ob_type`
 
    This is the type's type, in other words its metatype.  It is initialized by the
    argument to the ``PyObject_HEAD_INIT`` macro, and its value should normally be
@@ -532,14 +532,13 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
 PyVarObject Slots
 -----------------
 
-.. c:member:: Py_ssize_t PyVarObject.ob_size
+:c:member:`PyVarObject.ob_size`
 
    For :ref:`statically allocated type objects <static-types>`, this should be
    initialized to zero. For :ref:`dynamically allocated type objects
    <heap-types>`, this field has a special internal meaning.
 
-   This field should be accessed using the :c:func:`Py_SIZE()` and
-   :c:func:`Py_SET_SIZE()` macros.
+   This field should be accessed using the :c:func:`Py_SIZE()` macro.
 
    **Inheritance:**
 

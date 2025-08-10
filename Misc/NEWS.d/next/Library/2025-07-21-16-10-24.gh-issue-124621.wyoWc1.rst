@@ -1,0 +1,1 @@
+pyrepl now works in Emscripten.

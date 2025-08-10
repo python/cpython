@@ -108,6 +108,12 @@ Python UTF-8 Mode
 .. versionadded:: 3.7
    See :pep:`540` for more details.
 
+.. versionchanged:: next
+
+   Python UTF-8 mode is now enabled by default (:pep:`686`).
+   It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
+   an environment variable or by using the :option:`-X utf8=0 <-X>` command line option.
+
 The Python UTF-8 Mode ignores the :term:`locale encoding` and forces the usage
 of the UTF-8 encoding:
 
@@ -139,30 +145,21 @@ level APIs also exhibit different default behaviours:
   default so that attempting to open a binary file in text mode is likely
   to raise an exception rather than producing nonsense data.
 
-The :ref:`Python UTF-8 Mode <utf8-mode>` is enabled if the LC_CTYPE locale is
-``C`` or ``POSIX`` at Python startup (see the :c:func:`PyConfig_Read`
-function).
-
-It can be enabled or disabled using the :option:`-X utf8 <-X>` command line
-option and the :envvar:`PYTHONUTF8` environment variable.
-
-If the :envvar:`PYTHONUTF8` environment variable is not set at all, then the
-interpreter defaults to using the current locale settings, *unless* the current
-locale is identified as a legacy ASCII-based locale (as described for
-:envvar:`PYTHONCOERCECLOCALE`), and locale coercion is either disabled or
-fails. In such legacy locales, the interpreter will default to enabling UTF-8
-mode unless explicitly instructed not to do so.
-
-The Python UTF-8 Mode can only be enabled at the Python startup. Its value
+The :ref:`Python UTF-8 Mode <utf8-mode>` is enabled by default.
+It can be disabled using the :option:`-X utf8=0 <-X>` command line
+option or the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable.
+The Python UTF-8 Mode can only be disabled at Python startup. Its value
 can be read from :data:`sys.flags.utf8_mode <sys.flags>`.
+
+If the UTF-8 mode is disabled, the interpreter defaults to using
+the current locale settings, *unless* the current locale is identified
+as a legacy ASCII-based locale (as described for :envvar:`PYTHONCOERCECLOCALE`),
+and locale coercion is either disabled or fails.
+In such legacy locales, the interpreter will default to enabling UTF-8 mode
+unless explicitly instructed not to do so.
 
 See also the :ref:`UTF-8 mode on Windows <win-utf8-mode>`
 and the :term:`filesystem encoding and error handler`.
-
-.. seealso::
-
-   :pep:`686`
-      Python 3.15 will make :ref:`utf8-mode` default.
 
 
 .. _os-procinfo:
