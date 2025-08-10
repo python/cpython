@@ -367,6 +367,12 @@ Basic Usage
    .. versionchanged:: 3.9
       The keyword argument *encoding* has been removed.
 
+   .. note::
+
+      The decoder will convert all JSON objects' keys into string as
+      the key of dictionaries,for example,
+      ``json.loads('{"spam":"foo"}')`` returns ``{'spam':'foo'}``
+
 Encoders and Decoders
 ---------------------
 
