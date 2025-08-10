@@ -57,11 +57,6 @@ context does not affect the conversion and is only passed to determine if\n\
 the InvalidOperation trap is active.\n\
 \n");
 
-PyDoc_STRVAR(doc_adjusted,
-"adjusted($self, /)\n--\n\n\
-Return the adjusted exponent of the number.  Defined as exp + digits - 1.\n\
-\n");
-
 PyDoc_STRVAR(doc_as_tuple,
 "as_tuple($self, /)\n--\n\n\
 Return a tuple representation of the number.\n\
@@ -440,20 +435,6 @@ place. For example, Decimal('123E+1') is converted to Decimal('1.23E+3').\n\
 \n\
 The value of context.capitals determines whether the exponent sign is lower\n\
 or upper case. Otherwise, the context does not affect the operation.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral,
-"to_integral($self, /, rounding=None, context=None)\n--\n\n\
-Identical to the to_integral_value() method.  The to_integral() name has been\n\
-kept for compatibility with older versions.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral_exact,
-"to_integral_exact($self, /, rounding=None, context=None)\n--\n\n\
-Round to the nearest integer, signaling Inexact or Rounded as appropriate if\n\
-rounding occurs.  The rounding mode is determined by the rounding parameter\n\
-if given, else by the given context. If neither parameter is given, then the\n\
-rounding mode of the current default context is used.\n\
 \n");
 
 PyDoc_STRVAR(doc_to_integral_value,

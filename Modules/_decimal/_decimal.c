@@ -3862,21 +3862,27 @@ error:
     return result;
 }
 
+/*[clinic input]
+_decimal.Decimal.to_integral
+
+    rounding: object = None
+    context: object = None
+
+Identical to the to_integral_value() method.
+
+The to_integral() name has been kept for compatibility with older versions.
+[clinic start generated code]*/
+
 static PyObject *
-PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
+_decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
+                                  PyObject *context)
+/*[clinic end generated code: output=a0c7188686ee7f5c input=a57d62d1d29aed1b]*/
 {
-    static char *kwlist[] = {"rounding", "context", NULL};
     PyObject *result;
-    PyObject *rounding = Py_None;
-    PyObject *context = Py_None;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO", kwlist,
-                                     &rounding, &context)) {
-        return NULL;
-    }
-    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -3895,7 +3901,7 @@ PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    mpd_qround_to_int(MPD(result), MPD(dec), &workctx, &status);
+    mpd_qround_to_int(MPD(result), MPD(self), &workctx, &status);
     if (dec_addstatus(context, status)) {
         Py_DECREF(result);
         return NULL;
@@ -3904,21 +3910,30 @@ PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
     return result;
 }
 
+/*[clinic input]
+_decimal.Decimal.to_integral_exact
+
+    rounding: object = None
+    context: object = None
+
+Rounds to a nearby integer.
+
+Round to the nearest integer, signaling Inexact or Rounded as appropriate if
+rounding occurs.  The rounding mode is determined by the rounding parameter
+if given, else by the given context. If neither parameter is given, then the
+rounding mode of the current default context is used.
+[clinic start generated code]*/
+
 static PyObject *
-PyDec_ToIntegralExact(PyObject *dec, PyObject *args, PyObject *kwds)
+_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
+                                        PyObject *context)
+/*[clinic end generated code: output=8b004f9b45ac7746 input=e98e6aabbc97a92c]*/
 {
-    static char *kwlist[] = {"rounding", "context", NULL};
     PyObject *result;
-    PyObject *rounding = Py_None;
-    PyObject *context = Py_None;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO", kwlist,
-                                     &rounding, &context)) {
-        return NULL;
-    }
-    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -3937,7 +3952,7 @@ PyDec_ToIntegralExact(PyObject *dec, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    mpd_qround_to_intx(MPD(result), MPD(dec), &workctx, &status);
+    mpd_qround_to_intx(MPD(result), MPD(self), &workctx, &status);
     if (dec_addstatus(context, status)) {
         Py_DECREF(result);
         return NULL;
@@ -4512,8 +4527,16 @@ Dec_BoolFuncVA(mpd_isnormal)
 Dec_BoolFuncVA(mpd_issubnormal)
 
 /* Unary functions, no context arg */
+
+/*[clinic input]
+_decimal.Decimal.adjusted
+
+Return the adjusted exponent of the number.  Defined as exp + digits - 1.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_adjexp(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_adjusted_impl(PyObject *self)
+/*[clinic end generated code: output=21ea2c9f23994c52 input=775a14d44f31f787]*/
 {
     mpd_ssize_t retval;
 
@@ -5126,9 +5149,9 @@ static PyMethodDef dec_methods [] =
   { "next_minus", _PyCFunction_CAST(dec_mpd_qnext_minus), METH_VARARGS|METH_KEYWORDS, doc_next_minus },
   { "next_plus", _PyCFunction_CAST(dec_mpd_qnext_plus), METH_VARARGS|METH_KEYWORDS, doc_next_plus },
   { "normalize", _PyCFunction_CAST(dec_mpd_qreduce), METH_VARARGS|METH_KEYWORDS, doc_normalize },
-  { "to_integral", _PyCFunction_CAST(PyDec_ToIntegralValue), METH_VARARGS|METH_KEYWORDS, doc_to_integral },
-  { "to_integral_exact", _PyCFunction_CAST(PyDec_ToIntegralExact), METH_VARARGS|METH_KEYWORDS, doc_to_integral_exact },
-  { "to_integral_value", _PyCFunction_CAST(PyDec_ToIntegralValue), METH_VARARGS|METH_KEYWORDS, doc_to_integral_value },
+  _DECIMAL_DECIMAL_TO_INTEGRAL_METHODDEF
+  _DECIMAL_DECIMAL_TO_INTEGRAL_EXACT_METHODDEF
+  { "to_integral_value", _PyCFunction_CAST(_decimal_Decimal_to_integral), METH_FASTCALL|METH_KEYWORDS, doc_to_integral_value },
   { "sqrt", _PyCFunction_CAST(dec_mpd_qsqrt), METH_VARARGS|METH_KEYWORDS, doc_sqrt },
 
   /* Binary arithmetic functions, optional context arg */
@@ -5160,7 +5183,7 @@ static PyMethodDef dec_methods [] =
   { "is_subnormal", _PyCFunction_CAST(dec_mpd_issubnormal), METH_VARARGS|METH_KEYWORDS, doc_is_subnormal },
 
   /* Unary functions, no context arg */
-  { "adjusted", dec_mpd_adjexp, METH_NOARGS, doc_adjusted },
+  _DECIMAL_DECIMAL_ADJUSTED_METHODDEF
   { "canonical", dec_canonical, METH_NOARGS, doc_canonical },
   { "conjugate", dec_conjugate, METH_NOARGS, doc_conjugate },
   { "radix", dec_mpd_radix, METH_NOARGS, doc_radix },
