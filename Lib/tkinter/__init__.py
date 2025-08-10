@@ -4038,14 +4038,12 @@ class Text(Widget, XView, YView):
         scan_mark."""
         self.tk.call(self._w, 'scan', 'dragto', x, y)
 
-    def search(self, pattern, index, stopindex=None,
-           forwards=None, backwards=None, exact=None,
-           regexp=None, nocase=None, count=None,
-           elide=None, nolinestop=None, all=None,
-           overlap=None, strictlimits=None):
+    def search(self, pattern, index, stopindex=None, *,
+            forwards=None, backwards=None, exact=None,
+            regexp=None, nocase=None, count=None,
+            elide=None, nolinestop=None, strictlimits=None):
         """Search PATTERN beginning from INDEX until STOPINDEX.
-        Return the index of the first character of a match or an
-        empty string."""
+        Return the index of the first character of a match or an empty string."""
         args = [self._w, 'search']
         if forwards: args.append('-forwards')
         if backwards: args.append('-backwards')
@@ -4055,14 +4053,37 @@ class Text(Widget, XView, YView):
         if elide: args.append('-elide')
         if count: args.append('-count'); args.append(count)
         if nolinestop: args.append('-nolinestop')
-        if all: args.append('-all')
-        if overlap: args.append('-overlap')
         if strictlimits: args.append('-strictlimits')
         if pattern and pattern[0] == '-': args.append('--')
         args.append(pattern)
         args.append(index)
         if stopindex: args.append(stopindex)
         return str(self.tk.call(tuple(args)))
+
+    def search_all(self, pattern, index, stopindex=None, *,
+            forwards=None, backwards=None, exact=None,
+            regexp=None, nocase=None, count=None,
+            elide=None, nolinestop=None, overlap=None,
+            strictlimits=None):
+        """Search all occurrences of PATTERN from INDEX to STOPINDEX.
+        Return a list of indices where matches begin."""
+        args = [self._w, 'search', '-all']
+        if forwards: args.append('-forwards')
+        if backwards: args.append('-backwards')
+        if exact: args.append('-exact')
+        if regexp: args.append('-regexp')
+        if nocase: args.append('-nocase')
+        if elide: args.append('-elide')
+        if count: args.append('-count'); args.append(count)
+        if nolinestop: args.append('-nolinestop')
+        if overlap: args.append('-overlap')
+        if strictlimits: args.append('-strictlimits')
+        if pattern and pattern[0] == '-': args.append('--')
+        args.append(pattern)
+        args.append(index)
+        if stopindex: args.append(stopindex)
+        result = self.tk.call(tuple(args))
+        return list(result.split()) if result else []
 
     def see(self, index):
         """Scroll such that the character at INDEX is visible."""
