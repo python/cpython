@@ -877,7 +877,7 @@ ast_clear(PyObject *op)
  * Format the names in the set 'missing' into a natural language list,
  * sorted in the order in which they appear in 'fields'.
  *
- * Similar to format_missing from 'Python/ceval.c'.
+ * Similar to format_missing() from 'Python/ceval.c'.
  *
  * Parameters
  *
@@ -893,20 +893,21 @@ format_missing(PyObject *missing, PyObject *fields)
         return NULL;
     }
     num_total = num_left = PySet_GET_SIZE(missing);
-    PyObject *name_str = PyUnicode_FromString("");
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
     // Iterate all AST node fields in order so that the missing positional
     // arguments are rendered in the order in which __init__ expects them.
     for (Py_ssize_t i = 0; i < num_fields; i++) {
         PyObject *name = PySequence_GetItem(fields, i);
-        if (!name) {
-            Py_DECREF(name_str);
-            return NULL;
+        if (name == NULL) {
+            goto error;
         }
         int contains = PySet_Contains(missing, name);
         if (contains == -1) {
-            Py_DECREF(name_str);
             Py_DECREF(name);
-            return NULL;
+            goto error;
         }
         else if (contains == 1) {
             const char* fmt = NULL;
@@ -923,24 +924,17 @@ format_missing(PyObject *missing, PyObject *fields)
                 fmt = "'%U', ";
             }
             num_left--;
-            PyObject *tail = PyUnicode_FromFormat(fmt, name);
-            if (!tail) {
-                Py_DECREF(name_str);
+            if (PyUnicodeWriter_Format(writer, fmt, name) < 0) {
                 Py_DECREF(name);
-                return NULL;
+                goto error;
             }
-            PyObject *tmp = PyUnicode_Concat(name_str, tail);
-            Py_DECREF(name_str);
-            Py_DECREF(tail);
-            if (!tmp) {
-                Py_DECREF(name);
-                return NULL;
-            }
-            name_str = tmp;
         }
         Py_DECREF(name);
     }
-    return name_str;
+    return PyUnicodeWriter_Finish(writer);
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
 }
 
 static int
