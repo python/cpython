@@ -8,7 +8,7 @@ repos:
         files: ^Doc/
       - id: ruff
         name: Run Ruff (lint) on Lib/test/
-        args: [--exit-non-zero-on-fix, --target-version=py313]
+        args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
         name: Run Ruff (lint) on Tools/build/
