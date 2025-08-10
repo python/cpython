@@ -45,15 +45,14 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         result = text.search('line', '1.0', 'end', nolinestop=True, regexp=True)
         self.assertEqual(result, '2.8')
 
-        all_res = text.search('test', '1.0', 'end', all=True)
-        self.assertIsInstance(all_res, str)
-        indices = all_res.split()
-        self.assertGreaterEqual(len(indices), 2)
-        self.assertTrue(all(isinstance(i, str) for i in indices))
+        all_res = text.search_all('test', '1.0', 'end')
+        self.assertIsInstance(all_res, list)
+        self.assertGreaterEqual(len(all_res), 2)
+        self.assertTrue(all(isinstance(i, str) for i in all_res))
 
-        overlap_res = text.search('test', '1.0', 'end', all=True, overlap=True)
-        self.assertIsInstance(overlap_res, str)
-        self.assertIn('textindex', overlap_res)
+        overlap_res = text.search_all('test', '1.0', 'end', overlap=True)
+        self.assertIsInstance(overlap_res, list)
+        self.assertGreaterEqual(len(overlap_res), len(all_res))
 
         strict_res = text.search('test', '1.0', '1.20', strictlimits=True)
         self.assertEqual(strict_res, '1.10')
