@@ -928,7 +928,7 @@ class Differ:
         dump_i, dump_j = alo, blo # smallest indices not yet resolved
         for j in range(blo, bhi):
             cruncher.set_seq2(b[j])
-            # Search the corresponding i's within WINDOW for rhe highest
+            # Search the corresponding i's within WINDOW for the highest
             # ratio greater than `cutoff`.
             aequiv = alo + (j - blo)
             arange = range(max(aequiv - WINDOW, dump_i),
