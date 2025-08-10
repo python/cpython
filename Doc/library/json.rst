@@ -259,13 +259,6 @@ Basic Usage
    table <py-to-json-table>`.  The arguments have the same meaning as in
    :func:`dump`.
 
-   .. note::
-
-      The encoder will convert all non-string keys in dictionaries into string,
-      if a dictionary is converted into JSON and then back into a dictionary,
-      the dictionary may not equal the original one.
-      That is, ``loads(dumps(x)) != x`` if x has non-string keys.
-
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \
                    object_pairs_hook=None, **kw)
@@ -367,11 +360,6 @@ Basic Usage
    .. versionchanged:: 3.9
       The keyword argument *encoding* has been removed.
 
-   .. note::
-
-      The decoder will convert all JSON objects' keys into string as
-      the key of dictionaries,for example,
-      ``json.loads('{"spam":"foo"}')`` returns ``{'spam':'foo'}``
 
 Encoders and Decoders
 ---------------------
