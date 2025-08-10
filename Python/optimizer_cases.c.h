@@ -391,21 +391,21 @@
             JitOptRef value;
             JitOptRef res;
             value = stack_pointer[-1];
-            if (
-                sym_is_safe_const(ctx, value)
-            ) {
-                JitOptRef value_sym = value;
-                _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
-                _PyStackRef res_stackref;
-                /* Start of uop copied from bytecodes for constant evaluation */
-                PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
-                PyStackRef_CLOSE(value);
-                if (res_o == NULL) {
-                    goto error;
-                }
-                res_stackref = PyStackRef_FromPyObjectSteal(res_o);
-                /* End of uop copied from bytecodes for constant evaluation */
-                res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
+            if (!sym_matches_type(value, &PyBool_Type)) {if (
+                    sym_is_safe_const(ctx, value)
+                ) {
+                    JitOptRef value_sym = value;
+                    _PyStackRef value = sym_get_const_as_stackref(ctx, value_sym);
+                    _PyStackRef res_stackref;
+                    /* Start of uop copied from bytecodes for constant evaluation */
+                    PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
+                    PyStackRef_CLOSE(value);
+                    if (res_o == NULL) {
+                        goto error;
+                    }
+                    res_stackref = PyStackRef_FromPyObjectSteal(res_o);
+                    /* End of uop copied from bytecodes for constant evaluation */
+                    res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
                                      if (sym_is_const(ctx, res)) {
                                         PyObject *result = sym_get_const(ctx, res);
@@ -414,8 +414,9 @@
                                             REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
                                         }
                                     }
-                stack_pointer[-1] = res;
-                break;
+                    stack_pointer[-1] = res;
+                    break;
+                }
             }
             if (sym_matches_type(value, &PyLong_Type)) {
                 res = sym_new_type(ctx, &PyLong_Type);

@@ -413,7 +413,9 @@ dummy_func(void) {
     }
 
     op(_UNARY_INVERT, (value -- res)) {
-        REPLACE_OPCODE_IF_EVALUATES_PURE(value);
+        if (!sym_matches_type(value, &PyBool_Type)) {
+            REPLACE_OPCODE_IF_EVALUATES_PURE(value);
+        }
         if (sym_matches_type(value, &PyLong_Type)) {
             res = sym_new_type(ctx, &PyLong_Type);
         }
