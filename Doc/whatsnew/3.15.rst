@@ -71,6 +71,14 @@ New features
 ============
 
 
+tkinter
+-------
+
+* ``tkinter.Text.search`` now provides the ``-nolinestop`` and ``--strictlimits`` arguments
+  (Contributed by Rihaan Meher in :gh:`130848`)
+* Added the ``tkinter.Text.search_all`` method for searching with the tcl ``-all`` and ``-overlap`` arguments.
+  (Contributed by Rihaan Meher in :gh:`130848`)
+.. tkinter.Text is not currently documented./ being tracked in :gh:``135658``
 
 Other language changes
 ======================
@@ -169,7 +177,6 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
-
 
 zlib
 ----
