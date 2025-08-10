@@ -75,10 +75,10 @@ PyDoc_STRVAR(_decimal_Decimal_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Return a pair of integers, whose ratio is exactly equal to the original.\n"
+"Return a pair of integers whose ratio is exactly equal to the original.\n"
 "\n"
-"The ratio is in lowest terms and with a positive denominator.  Raise\n"
-"OverflowError on infinities and a ValueError on NaNs.");
+"The ratio is in lowest terms and with a positive denominator.\n"
+"Raise OverflowError on infinities and a ValueError on NaNs.");
 
 #define _DECIMAL_DECIMAL_AS_INTEGER_RATIO_METHODDEF    \
     {"as_integer_ratio", (PyCFunction)_decimal_Decimal_as_integer_ratio, METH_NOARGS, _decimal_Decimal_as_integer_ratio__doc__},
@@ -169,9 +169,9 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_exact__doc__,
 "to_integral_exact($self, /, rounding=None, context=None)\n"
 "--\n"
 "\n"
-"Rounds to a nearby integer.\n"
+"Round to the nearest integer.\n"
 "\n"
-"Round to the nearest integer, signaling Inexact or Rounded as appropriate if\n"
+"Decimal.to_integral_exact() signals Inexact or Rounded as appropriate if\n"
 "rounding occurs.  The rounding mode is determined by the rounding parameter\n"
 "if given, else by the given context. If neither parameter is given, then the\n"
 "rounding mode of the current default context is used.");
@@ -322,7 +322,7 @@ PyDoc_STRVAR(_decimal_Decimal_radix__doc__,
 "\n"
 "Return Decimal(10).\n"
 "\n"
-"I.e. return the radix (base) in which the Decimal class does\n"
+"This is the radix (base) in which the Decimal class does\n"
 "all its arithmetic. Included for compatibility with the specification.");
 
 #define _DECIMAL_DECIMAL_RADIX_METHODDEF    \
@@ -465,8 +465,8 @@ PyDoc_STRVAR(_decimal_Decimal_to_eng_string__doc__,
 "to 3 digits left of the decimal place. For example, Decimal(\'123E+1\') is\n"
 "converted to Decimal(\'1.23E+3\').\n"
 "\n"
-"The value of context.capitals determines whether the exponent sign is lower or\n"
-"upper case. Otherwise, the context does not affect the operation.");
+"The value of context.capitals determines whether the exponent sign is lower\n"
+"or upper case. Otherwise, the context does not affect the operation.");
 
 #define _DECIMAL_DECIMAL_TO_ENG_STRING_METHODDEF    \
     {"to_eng_string", _PyCFunction_CAST(_decimal_Decimal_to_eng_string), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_eng_string__doc__},
@@ -529,7 +529,7 @@ PyDoc_STRVAR(_decimal_Decimal_copy_sign__doc__,
 "copy_sign($self, /, other, context=None)\n"
 "--\n"
 "\n"
-"Returns self with the sign of other.\n"
+"Return a copy of *self* with the sign set to be the same as the sign of *other*.\n"
 "\n"
 "For example:\n"
 "\n"
@@ -537,7 +537,7 @@ PyDoc_STRVAR(_decimal_Decimal_copy_sign__doc__,
 "    Decimal(\'-2.3\')\n"
 "\n"
 "This operation is unaffected by context and is quiet: no flags are changed\n"
-"and no rounding is performed.  As an exception, the C version may raise\n"
+"and no rounding is performed. As an exception, the C version may raise\n"
 "InvalidOperation if the second operand cannot be converted exactly.");
 
 #define _DECIMAL_DECIMAL_COPY_SIGN_METHODDEF    \
@@ -606,8 +606,8 @@ PyDoc_STRVAR(_decimal_Decimal_same_quantum__doc__,
 "\n"
 "Test whether self and other have the same exponent or whether both are NaN.\n"
 "\n"
-"This operation is unaffected by context and is quiet: no flags are changed and\n"
-"no rounding is performed. As an exception, the C version may raise\n"
+"This operation is unaffected by context and is quiet: no flags are changed\n"
+"and no rounding is performed. As an exception, the C version may raise\n"
 "InvalidOperation if the second operand cannot be converted exactly.");
 
 #define _DECIMAL_DECIMAL_SAME_QUANTUM_METHODDEF    \
@@ -674,10 +674,7 @@ PyDoc_STRVAR(_decimal_Decimal_quantize__doc__,
 "quantize($self, /, exp, rounding=None, context=None)\n"
 "--\n"
 "\n"
-"Quantize self so its exponent is the same as that of exp.\n"
-"\n"
-"Return a value equal to the first operand after rounding and having the\n"
-"exponent of the second operand.\n"
+"Return a value equal to *self* after rounding, with the exponent of *other*.\n"
 "\n"
 "    >>> Decimal(\'1.41421356\').quantize(Decimal(\'1.000\'))\n"
 "    Decimal(\'1.414\')\n"
@@ -761,4 +758,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1a75fdce7878ecb4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=304ce135eee594cc input=a9049054013a1b77]*/

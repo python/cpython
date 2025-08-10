@@ -2899,12 +2899,11 @@ Decimal.from_float(0.1) is not the same as Decimal('0.1').
     Decimal('Infinity')
     >>> Decimal.from_float(float('-inf'))
     Decimal('-Infinity')
-
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_from_float_impl(PyTypeObject *type, PyObject *pyfloat)
-/*[clinic end generated code: output=e62775271ac469e6 input=31302a9a4c1d9c99]*/
+/*[clinic end generated code: output=e62775271ac469e6 input=052036648342f8c8]*/
 {
     PyObject *context;
     PyObject *result;
@@ -3807,15 +3806,15 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
 /*[clinic input]
 _decimal.Decimal.as_integer_ratio
 
-Return a pair of integers, whose ratio is exactly equal to the original.
+Return a pair of integers whose ratio is exactly equal to the original.
 
-The ratio is in lowest terms and with a positive denominator.  Raise
-OverflowError on infinities and a ValueError on NaNs.
+The ratio is in lowest terms and with a positive denominator.
+Raise OverflowError on infinities and a ValueError on NaNs.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_as_integer_ratio_impl(PyObject *self)
-/*[clinic end generated code: output=c5d88e900080c264 input=3a4819b9484919d5]*/
+/*[clinic end generated code: output=c5d88e900080c264 input=7861cb643f01525a]*/
 {
     PyObject *numerator = NULL;
     PyObject *denominator = NULL;
@@ -3971,9 +3970,9 @@ _decimal.Decimal.to_integral_exact
     rounding: object = None
     context: object = None
 
-Rounds to a nearby integer.
+Round to the nearest integer.
 
-Round to the nearest integer, signaling Inexact or Rounded as appropriate if
+Decimal.to_integral_exact() signals Inexact or Rounded as appropriate if
 rounding occurs.  The rounding mode is determined by the rounding parameter
 if given, else by the given context. If neither parameter is given, then the
 rounding mode of the current default context is used.
@@ -3982,7 +3981,7 @@ rounding mode of the current default context is used.
 static PyObject *
 _decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
                                         PyObject *context)
-/*[clinic end generated code: output=8b004f9b45ac7746 input=e98e6aabbc97a92c]*/
+/*[clinic end generated code: output=8b004f9b45ac7746 input=edd30a9f06aed70b]*/
 {
     PyObject *result;
     uint32_t status = 0;
@@ -4661,13 +4660,13 @@ _decimal.Decimal.radix
 
 Return Decimal(10).
 
-I.e. return the radix (base) in which the Decimal class does
+This is the radix (base) in which the Decimal class does
 all its arithmetic. Included for compatibility with the specification.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_radix_impl(PyObject *self)
-/*[clinic end generated code: output=6b1db4c3fcdb5ee1 input=c25ca314723040ed]*/
+/*[clinic end generated code: output=6b1db4c3fcdb5ee1 input=18b72393549ca8fd]*/
 {
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     return _dec_mpd_radix(state);
@@ -4784,14 +4783,13 @@ Engineering notation has an exponent which is a multiple of 3, so there are up
 to 3 digits left of the decimal place. For example, Decimal('123E+1') is
 converted to Decimal('1.23E+3').
 
-The value of context.capitals determines whether the exponent sign is lower or
-upper case. Otherwise, the context does not affect the operation.
-
+The value of context.capitals determines whether the exponent sign is lower
+or upper case. Otherwise, the context does not affect the operation.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_to_eng_string_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=d386194c25ffffa7 input=fac5029cbf436bd5]*/
+/*[clinic end generated code: output=d386194c25ffffa7 input=36436cb7973dd5d0]*/
 {
     PyObject *result;
     mpd_ssize_t size;
@@ -4822,7 +4820,7 @@ _decimal.Decimal.copy_sign
     other: object
     context: object = None
 
-Returns self with the sign of other.
+Return a copy of *self* with the sign set to be the same as the sign of *other*.
 
 For example:
 
@@ -4830,14 +4828,14 @@ For example:
     Decimal('-2.3')
 
 This operation is unaffected by context and is quiet: no flags are changed
-and no rounding is performed.  As an exception, the C version may raise
+and no rounding is performed. As an exception, the C version may raise
 InvalidOperation if the second operand cannot be converted exactly.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_copy_sign_impl(PyObject *self, PyObject *other,
                                 PyObject *context)
-/*[clinic end generated code: output=72c62177763e012e input=f02ebb5d7489c502]*/
+/*[clinic end generated code: output=72c62177763e012e input=96b620d142ed80a9]*/
 {
     PyObject *a, *b;
     PyObject *result;
@@ -4873,15 +4871,15 @@ _decimal.Decimal.same_quantum
 
 Test whether self and other have the same exponent or whether both are NaN.
 
-This operation is unaffected by context and is quiet: no flags are changed and
-no rounding is performed. As an exception, the C version may raise
+This operation is unaffected by context and is quiet: no flags are changed
+and no rounding is performed. As an exception, the C version may raise
 InvalidOperation if the second operand cannot be converted exactly.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_same_quantum_impl(PyObject *self, PyObject *other,
                                    PyObject *context)
-/*[clinic end generated code: output=c0a3a046c662a7e2 input=0930e11241231ac2]*/
+/*[clinic end generated code: output=c0a3a046c662a7e2 input=d583092dec58453e]*/
 {
     PyObject *a, *b;
     PyObject *result;
@@ -4913,10 +4911,7 @@ _decimal.Decimal.quantize
     rounding: object = None
     context: object = None
 
-Quantize self so its exponent is the same as that of exp.
-
-Return a value equal to the first operand after rounding and having the
-exponent of the second operand.
+Return a value equal to *self* after rounding, with the exponent of *other*.
 
     >>> Decimal('1.41421356').quantize(Decimal('1.000'))
     Decimal('1.414')
@@ -4938,7 +4933,7 @@ argument is given, the rounding mode of the current thread's context is used.
 static PyObject *
 _decimal_Decimal_quantize_impl(PyObject *self, PyObject *w,
                                PyObject *rounding, PyObject *context)
-/*[clinic end generated code: output=5e84581f96dc685c input=eed2fdd8d65fce21]*/
+/*[clinic end generated code: output=5e84581f96dc685c input=2053ebf488a665dc]*/
 {
     PyObject *a, *b;
     PyObject *result;
