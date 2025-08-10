@@ -371,13 +371,6 @@ Basic Usage
    .. versionchanged:: 3.9
       The keyword argument *encoding* has been removed.
 
-   .. note::
-
-      As mandated by :rfc:`7159`, JSON keys must be :class:`str` objects.
-      In particular, ``json.loads('{"42": "spam"}')`` returns ``{'42': 'spam'}``,
-      but ``json.loads('{42: "spam"}')`` fails since ``42`` is not a valid JSON key.
-
-
 Encoders and Decoders
 ---------------------
 
