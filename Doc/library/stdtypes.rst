@@ -1312,8 +1312,7 @@ Lists are mutable sequences, typically used to store collections of
 homogeneous items (where the precise degree of similarity will vary by
 application).
 
-.. class:: list()
-           list(iterable, /)
+.. class:: list(iterable=(), /)
 
    Lists may be constructed in several ways:
 
@@ -1394,8 +1393,7 @@ built-in). Tuples are also used for cases where an immutable sequence of
 homogeneous data is needed (such as allowing storage in a :class:`set` or
 :class:`dict` instance).
 
-.. class:: tuple()
-           tuple(iterable, /)
+.. class:: tuple(iterable=(), /)
 
    Tuples may be constructed in a number of ways:
 
@@ -1698,10 +1696,8 @@ multiple fragments.
 .. index::
    single: string; str (built-in class)
 
-.. class:: str()
-           str(object)
-           str(object, encoding)
-           str(object, encoding, errors)
+.. class:: str(object='')
+           str(object, encoding, errors='strict')
            str(object, *, errors)
 
    Return a :ref:`string <textseq>` version of *object*.  If *object* is not
@@ -2895,10 +2891,8 @@ binary protocols are based on the ASCII text encoding, bytes objects offer
 several methods that are only valid when working with ASCII compatible
 data and are closely related to string objects in a variety of other ways.
 
-.. class:: bytes()
-           bytes(source)
-           bytes(source, encoding)
-           bytes(source, encoding, errors)
+.. class:: bytes(source=b'')
+           bytes(source, encoding, errors='strict')
 
    Firstly, the syntax for bytes literals is largely the same as that for string
    literals, except that a ``b`` prefix is added:
@@ -3008,10 +3002,8 @@ Bytearray Objects
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
 objects.
 
-.. class:: bytearray()
-           bytearray(source)
-           bytearray(source, encoding)
-           bytearray(source, encoding, errors)
+.. class:: bytearray(source=b'')
+           bytearray(source, encoding, errors='strict')
 
    There is no dedicated literal syntax for bytearray objects, instead
    they are always created by calling the constructor:

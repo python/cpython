@@ -182,10 +182,8 @@ are always available.  They are listed here in alphabetical order.
    .. versionadded:: 3.7
 
 .. _func-bytearray:
-.. class:: bytearray()
-           bytearray(source)
-           bytearray(source, encoding)
-           bytearray(source, encoding, errors)
+.. class:: bytearray(source=b'')
+           bytearray(source, encoding, errors='strict')
    :noindex:
 
    Return a new array of bytes.  The :class:`bytearray` class is a mutable
@@ -215,10 +213,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-bytes:
-.. class:: bytes()
-           bytes(source)
-           bytes(source, encoding)
-           bytes(source, encoding, errors)
+.. class:: bytes(source=b'')
+           bytes(source, encoding, errors='strict')
    :noindex:
 
    Return a new "bytes" object which is an immutable sequence of integers in
@@ -848,7 +844,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-frozenset:
-.. class:: frozenset(iterable=set(), /)
+.. class:: frozenset(iterable=(), /)
    :noindex:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
@@ -1146,8 +1142,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-list:
-.. class:: list()
-           list(iterable, /)
+.. class:: list(iterable=(), /)
    :noindex:
 
    Rather than being a function, :class:`list` is actually a mutable
@@ -1763,7 +1758,7 @@ are always available.  They are listed here in alphabetical order.
             return f"Person('{self.name}', {self.age})"
 
 
-.. function:: reversed(sequence, /)
+.. function:: reversed(object, /)
 
    Return a reverse :term:`iterator`.  The argument must be an object which has
    a :meth:`~object.__reversed__` method or supports the sequence protocol (the
@@ -1799,8 +1794,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-set:
-.. class:: set()
-           set(iterable, /)
+.. class:: set(iterable=(), /)
    :noindex:
 
    Return a new :class:`set` object, optionally with elements taken from
@@ -1940,10 +1934,8 @@ are always available.  They are listed here in alphabetical order.
    single: string; str() (built-in function)
 
 .. _func-str:
-.. class:: str()
-           str(object)
-           str(object, encoding)
-           str(object, encoding, errors)
+.. class:: str(object='')
+           str(object, encoding, errors='strict')
            str(object, *, errors)
    :noindex:
 
@@ -2059,8 +2051,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-tuple:
-.. class:: tuple()
-           tuple(iterable, /)
+.. class:: tuple(iterable=(), /)
    :noindex:
 
    Rather than being a function, :class:`tuple` is actually an immutable
