@@ -3332,32 +3332,59 @@ sock_setsockopt(PyObject *self, PyObject *args)
 {
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
 
+    Py_ssize_t arglen;
     int level;
     int optname;
     int res;
-    Py_buffer optval;
+    Py_buffer buffer;
     int flag;
     unsigned int optlen;
-    PyObject *none;
+    PyObject *optval;
+
+    if (!PyArg_ParseTuple(args, "iiO|I:setsockopt",
+                          &level, &optname, &optval, &optlen))
+    {
+        return NULL;
+    }
+
+    arglen = PyTuple_Size(args);
+    if (arglen == 3 && optval == Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                     "setsockopt() requires 4 arguments when the third argument is None",
+                     arglen);
+        return NULL;
+    }
+    if (arglen == 4 && optval != Py_None) {
+        PyErr_Format(PyExc_TypeError,
+                     "setsockopt() only takes 4 arguments when the third argument is None (got %T)",
+                     optval);
+        return NULL;
+    }
 
 #ifdef AF_VSOCK
     if (s->sock_family == AF_VSOCK) {
+        if (!PyIndex_Check(optval)) {
+            PyErr_Format(PyExc_TypeError,
+                         "setsockopt() argument 3 for AF_VSOCK must be an int (got %T)",
+                         optval);
+        }
         uint64_t vflag; // Must be set width of 64 bits
         /* setsockopt(level, opt, flag) */
-        if (PyArg_ParseTuple(args, "iiK:setsockopt",
-                         &level, &optname, &vflag)) {
-            // level should always be set to AF_VSOCK
-            res = setsockopt(get_sock_fd(s), level, optname,
-                         (void*)&vflag, sizeof vflag);
-            goto done;
+        if (!PyArg_Parse(optval, "K", &vflag)) {
+            return NULL;
         }
-        return NULL;
+        // level should always be set to AF_VSOCK
+        res = setsockopt(get_sock_fd(s), level, optname,
+                         (void*)&vflag, sizeof vflag);
+        goto done;
     }
 #endif
 
     /* setsockopt(level, opt, flag) */
-    if (PyArg_ParseTuple(args, "iii:setsockopt",
-                         &level, &optname, &flag)) {
+    if (PyIndex_Check(optval)) {
+        if (!PyArg_Parse(optval, "i", &flag)) {
+            return NULL;
+        }
 #ifdef MS_WINDOWS
         if (optname == SIO_TCP_SET_ACK_FREQUENCY) {
             DWORD dummy;
@@ -3374,36 +3401,40 @@ sock_setsockopt(PyObject *self, PyObject *args)
         goto done;
     }
 
-    PyErr_Clear();
-    /* setsockopt(level, opt, None, flag) */
-    if (PyArg_ParseTuple(args, "iiO!I:setsockopt",
-                         &level, &optname, Py_TYPE(Py_None), &none, &optlen)) {
+    /* setsockopt(level, opt, None, optlen) */
+    if (optval == Py_None) {
         assert(sizeof(socklen_t) >= sizeof(unsigned int));
         res = setsockopt(get_sock_fd(s), level, optname,
                          NULL, (socklen_t)optlen);
         goto done;
     }
 
-    PyErr_Clear();
     /* setsockopt(level, opt, buffer) */
-    if (!PyArg_ParseTuple(args, "iiy*:setsockopt",
-                            &level, &optname, &optval))
-        return NULL;
-
+    if (PyObject_CheckBuffer(optval)) {
+        if (!PyArg_Parse(optval, "y*", &buffer)) {
+            return NULL;
+        }
 #ifdef MS_WINDOWS
-    if (optval.len > INT_MAX) {
-        PyBuffer_Release(&optval);
-        PyErr_Format(PyExc_OverflowError,
-                        "socket option is larger than %i bytes",
-                        INT_MAX);
-        return NULL;
-    }
-    res = setsockopt(get_sock_fd(s), level, optname,
-                        optval.buf, (int)optval.len);
+        if (buffer.len > INT_MAX) {
+            PyBuffer_Release(&buffer);
+            PyErr_Format(PyExc_OverflowError,
+                         "socket option is larger than %i bytes",
+                         INT_MAX);
+            return NULL;
+        }
+        res = setsockopt(get_sock_fd(s), level, optname,
+                         buffer.buf, (int)buffer.len);
 #else
-    res = setsockopt(get_sock_fd(s), level, optname, optval.buf, optval.len);
+        res = setsockopt(get_sock_fd(s), level, optname, buffer.buf, buffer.len);
 #endif
-    PyBuffer_Release(&optval);
+        PyBuffer_Release(&buffer);
+        goto done;
+    }
+
+    PyErr_Format(PyExc_TypeError,
+                 "socket option should be int, bytes-like object or None (got %T)",
+                 optval);
+    return NULL;
 
 done:
     if (res < 0) {
@@ -4592,55 +4623,62 @@ sock_send_impl(PySocketSockObject *s, void *data)
     return (ctx->result >= 0);
 }
 
-/* s.send(data [,flags]) method */
+/*[clinic input]
+_socket.socket.send
+    self as s: self(type="PySocketSockObject *")
+    data as pbuf: Py_buffer
+    flags: int = 0
+    /
+
+Send a data string to the socket.
+
+For the optional flags argument, see the Unix manual.
+Return the number of bytes sent; this may be less than len(data) if the network is busy.
+[clinic start generated code]*/
 
 static PyObject *
-sock_send(PyObject *self, PyObject *args)
-{
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
+_socket_socket_send_impl(PySocketSockObject *s, Py_buffer *pbuf, int flags)
+/*[clinic end generated code: output=3ddf83f17d0c875b input=befe7d7790ccb035]*/
 
-    int flags = 0;
-    Py_buffer pbuf;
+{
     struct sock_send ctx;
 
-    if (!PyArg_ParseTuple(args, "y*|i:send", &pbuf, &flags))
-        return NULL;
-
     if (!IS_SELECTABLE(s)) {
-        PyBuffer_Release(&pbuf);
         return select_error();
     }
-    ctx.buf = pbuf.buf;
-    ctx.len = pbuf.len;
+    ctx.buf = pbuf->buf;
+    ctx.len = pbuf->len;
     ctx.flags = flags;
     if (sock_call(s, 1, sock_send_impl, &ctx) < 0) {
-        PyBuffer_Release(&pbuf);
         return NULL;
     }
-    PyBuffer_Release(&pbuf);
 
     return PyLong_FromSsize_t(ctx.result);
 }
 
-PyDoc_STRVAR(send_doc,
-"send(data[, flags]) -> count\n\
-\n\
-Send a data string to the socket.  For the optional flags\n\
-argument, see the Unix manual.  Return the number of bytes\n\
-sent; this may be less than len(data) if the network is busy.");
 
+/*[clinic input]
+_socket.socket.sendall
+    self as s: self(type="PySocketSockObject *")
+    data as pbuf: Py_buffer
+    flags: int = 0
+    /
 
-/* s.sendall(data [,flags]) method */
+Send a data string to the socket.
+
+For the optional flags argument, see the Unix manual.
+This calls send() repeatedly until all data is sent.
+If an error occurs, it's impossible to tell how much data has been sent.
+[clinic start generated code]*/
 
 static PyObject *
-sock_sendall(PyObject *self, PyObject *args)
-{
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
+_socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
+                            int flags)
+/*[clinic end generated code: output=ec92861424d3faa8 input=732b15b9ca64dce6]*/
 
+{
     char *buf;
     Py_ssize_t len, n;
-    int flags = 0;
-    Py_buffer pbuf;
     struct sock_send ctx;
     int has_timeout = (s->sock_timeout > 0);
     PyTime_t timeout = s->sock_timeout;
@@ -4648,13 +4686,10 @@ sock_sendall(PyObject *self, PyObject *args)
     int deadline_initialized = 0;
     PyObject *res = NULL;
 
-    if (!PyArg_ParseTuple(args, "y*|i:sendall", &pbuf, &flags))
-        return NULL;
-    buf = pbuf.buf;
-    len = pbuf.len;
+    buf = pbuf->buf;
+    len = pbuf->len;
 
     if (!IS_SELECTABLE(s)) {
-        PyBuffer_Release(&pbuf);
         return select_error();
     }
 
@@ -4692,22 +4727,12 @@ sock_sendall(PyObject *self, PyObject *args)
         if (PyErr_CheckSignals())
             goto done;
     } while (len > 0);
-    PyBuffer_Release(&pbuf);
 
     res = Py_NewRef(Py_None);
 
 done:
-    PyBuffer_Release(&pbuf);
     return res;
 }
-
-PyDoc_STRVAR(sendall_doc,
-"sendall(data[, flags])\n\
-\n\
-Send a data string to the socket.  For the optional flags\n\
-argument, see the Unix manual.  This calls send() repeatedly\n\
-until all data is sent.  If an error occurs, it's impossible\n\
-to tell how much data has been sent.");
 
 
 #ifdef HAVE_SENDTO
@@ -4858,10 +4883,8 @@ sock_sendmsg_iovec(PySocketSockObject *s, PyObject *data_arg,
         }
     }
     for (; ndatabufs < ndataparts; ndatabufs++) {
-        if (!PyArg_Parse(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
-                         "y*;sendmsg() argument 1 must be an iterable of "
-                         "bytes-like objects",
-                         &databufs[ndatabufs]))
+        if (PyObject_GetBuffer(PySequence_Fast_GET_ITEM(data_fast, ndatabufs),
+            &databufs[ndatabufs], PyBUF_SIMPLE) < 0)
             goto finally;
         iovs[ndatabufs].iov_base = databufs[ndatabufs].buf;
         iovs[ndatabufs].iov_len = databufs[ndatabufs].len;
@@ -4883,13 +4906,39 @@ sock_sendmsg_impl(PySocketSockObject *s, void *data)
     return (ctx->result >= 0);
 }
 
-/* s.sendmsg(buffers[, ancdata[, flags[, address]]]) method */
+/*[clinic input]
+_socket.socket.sendmsg
+    self as s: self(type="PySocketSockObject *")
+    buffers as data_arg: object
+    ancdata as cmsg_arg: object = NULL
+    flags: int = 0
+    address as addr_arg: object = NULL
+    /
+
+Send normal and ancillary data to the socket.
+
+It gathering the non-ancillary data from a series of buffers
+and concatenating it into a single message.
+The buffers argument specifies the non-ancillary
+data as an iterable of bytes-like objects (e.g. bytes objects).
+The ancdata argument specifies the ancillary data (control messages)
+as an iterable of zero or more tuples (cmsg_level, cmsg_type,
+cmsg_data), where cmsg_level and cmsg_type are integers specifying the
+protocol level and protocol-specific type respectively, and cmsg_data
+is a bytes-like object holding the associated data.  The flags
+argument defaults to 0 and has the same meaning as for send().  If
+address is supplied and not None, it sets a destination address for
+the message.  The return value is the number of bytes of non-ancillary
+data sent.
+[clinic start generated code]*/
 
 static PyObject *
-sock_sendmsg(PyObject *self, PyObject *args)
-{
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
+_socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
+                            PyObject *cmsg_arg, int flags,
+                            PyObject *addr_arg)
+/*[clinic end generated code: output=3b4cb1110644ce39 input=479c13d90bd2f88b]*/
 
+{
     Py_ssize_t i, ndatabufs = 0, ncmsgs, ncmsgbufs = 0;
     Py_buffer *databufs = NULL;
     sock_addr_t addrbuf;
@@ -4901,15 +4950,9 @@ sock_sendmsg(PyObject *self, PyObject *args)
     } *cmsgs = NULL;
     void *controlbuf = NULL;
     size_t controllen, controllen_last;
-    int addrlen, flags = 0;
-    PyObject *data_arg, *cmsg_arg = NULL, *addr_arg = NULL,
-        *cmsg_fast = NULL, *retval = NULL;
+    int addrlen;
+    PyObject *cmsg_fast = NULL, *retval = NULL;
     struct sock_sendmsg ctx;
-
-    if (!PyArg_ParseTuple(args, "O|OiO:sendmsg",
-                          &data_arg, &cmsg_arg, &flags, &addr_arg)) {
-        return NULL;
-    }
 
     memset(&msg, 0, sizeof(msg));
 
@@ -5072,22 +5115,6 @@ finally:
     return retval;
 }
 
-PyDoc_STRVAR(sendmsg_doc,
-"sendmsg(buffers[, ancdata[, flags[, address]]]) -> count\n\
-\n\
-Send normal and ancillary data to the socket, gathering the\n\
-non-ancillary data from a series of buffers and concatenating it into\n\
-a single message.  The buffers argument specifies the non-ancillary\n\
-data as an iterable of bytes-like objects (e.g. bytes objects).\n\
-The ancdata argument specifies the ancillary data (control messages)\n\
-as an iterable of zero or more tuples (cmsg_level, cmsg_type,\n\
-cmsg_data), where cmsg_level and cmsg_type are integers specifying the\n\
-protocol level and protocol-specific type respectively, and cmsg_data\n\
-is a bytes-like object holding the associated data.  The flags\n\
-argument defaults to 0 and has the same meaning as for send().  If\n\
-address is supplied and not None, it sets a destination address for\n\
-the message.  The return value is the number of bytes of non-ancillary\n\
-data sent.");
 #endif    /* CMSG_LEN */
 
 #ifdef HAVE_SOCKADDR_ALG
@@ -5424,8 +5451,8 @@ static PyMethodDef sock_methods[] = {
         recvfrom_into_doc
     },
 #endif
-    {"send", sock_send, METH_VARARGS, send_doc},
-    {"sendall", sock_sendall, METH_VARARGS, sendall_doc},
+    _SOCKET_SOCKET_SEND_METHODDEF
+    _SOCKET_SOCKET_SENDALL_METHODDEF
 #ifdef HAVE_SENDTO
     {"sendto", sock_sendto, METH_VARARGS, sendto_doc},
 #endif
@@ -5445,7 +5472,7 @@ static PyMethodDef sock_methods[] = {
 #ifdef CMSG_LEN
     {"recvmsg", sock_recvmsg, METH_VARARGS, recvmsg_doc},
     {"recvmsg_into", sock_recvmsg_into, METH_VARARGS, recvmsg_into_doc},
-    {"sendmsg", sock_sendmsg, METH_VARARGS, sendmsg_doc},
+    _SOCKET_SOCKET_SENDMSG_METHODDEF
 #endif
 #ifdef HAVE_SOCKADDR_ALG
     {

@@ -368,7 +368,7 @@ typedef struct _Py_DebugOffsets {
         .remote_debugging_enabled = offsetof(PyInterpreterState, config.remote_debug),  \
         .debugger_pending_call = offsetof(_PyRemoteDebuggerSupport, debugger_pending_call),  \
         .debugger_script_path = offsetof(_PyRemoteDebuggerSupport, debugger_script_path),  \
-        .debugger_script_path_size = MAX_SCRIPT_PATH_SIZE, \
+        .debugger_script_path_size = Py_MAX_SCRIPT_PATH_SIZE, \
     }, \
 }
 

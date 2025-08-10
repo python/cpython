@@ -6,7 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
-#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(py_sha3_new__doc__,
@@ -100,15 +100,19 @@ PyDoc_STRVAR(_sha3_sha3_224_copy__doc__,
 "Return a copy of the hash object.");
 
 #define _SHA3_SHA3_224_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_sha3_sha3_224_copy, METH_NOARGS, _sha3_sha3_224_copy__doc__},
+    {"copy", _PyCFunction_CAST(_sha3_sha3_224_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sha3_sha3_224_copy__doc__},
 
 static PyObject *
-_sha3_sha3_224_copy_impl(SHA3object *self);
+_sha3_sha3_224_copy_impl(SHA3object *self, PyTypeObject *cls);
 
 static PyObject *
-_sha3_sha3_224_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+_sha3_sha3_224_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _sha3_sha3_224_copy_impl((SHA3object *)self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
+    }
+    return _sha3_sha3_224_copy_impl((SHA3object *)self, cls);
 }
 
 PyDoc_STRVAR(_sha3_sha3_224_digest__doc__,
@@ -179,7 +183,7 @@ PyDoc_STRVAR(_sha3_shake_128_digest__doc__,
     {"digest", _PyCFunction_CAST(_sha3_shake_128_digest), METH_FASTCALL|METH_KEYWORDS, _sha3_shake_128_digest__doc__},
 
 static PyObject *
-_sha3_shake_128_digest_impl(SHA3object *self, unsigned long length);
+_sha3_shake_128_digest_impl(SHA3object *self, Py_ssize_t length);
 
 static PyObject *
 _sha3_shake_128_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -213,15 +217,24 @@ _sha3_shake_128_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    unsigned long length;
+    Py_ssize_t length;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_UnsignedLong_Converter(args[0], &length)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     return_value = _sha3_shake_128_digest_impl((SHA3object *)self, length);
 
@@ -239,7 +252,7 @@ PyDoc_STRVAR(_sha3_shake_128_hexdigest__doc__,
     {"hexdigest", _PyCFunction_CAST(_sha3_shake_128_hexdigest), METH_FASTCALL|METH_KEYWORDS, _sha3_shake_128_hexdigest__doc__},
 
 static PyObject *
-_sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length);
+_sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length);
 
 static PyObject *
 _sha3_shake_128_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -273,19 +286,28 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t narg
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    unsigned long length;
+    Py_ssize_t length;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!_PyLong_UnsignedLong_Converter(args[0], &length)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     return_value = _sha3_shake_128_hexdigest_impl((SHA3object *)self, length);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=65e437799472b89f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48be77f8a31e8a3e input=a9049054013a1b77]*/

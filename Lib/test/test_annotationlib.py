@@ -1650,8 +1650,10 @@ class TestForwardRefClass(unittest.TestCase):
         with support.swap_attr(builtins, "int", dict):
             self.assertIs(ForwardRef("int").evaluate(), dict)
 
-        with self.assertRaises(NameError):
+        with self.assertRaises(NameError, msg="name 'doesntexist' is not defined") as exc:
             ForwardRef("doesntexist").evaluate()
+
+        self.assertEqual(exc.exception.name, "doesntexist")
 
     def test_fwdref_invalid_syntax(self):
         fr = ForwardRef("if")
