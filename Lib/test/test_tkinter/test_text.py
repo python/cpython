@@ -27,19 +27,36 @@ class TextTest(AbstractTkTest, unittest.TestCase):
     def test_search(self):
         text = self.text
 
-        # pattern and index are obligatory arguments.
         self.assertRaises(tkinter.TclError, text.search, None, '1.0')
         self.assertRaises(tkinter.TclError, text.search, 'a', None)
         self.assertRaises(tkinter.TclError, text.search, None, None)
-
-        # Invalid text index.
         self.assertRaises(tkinter.TclError, text.search, '', 0)
 
-        # Check if we are getting the indices as strings -- you are likely
-        # to get Tcl_Obj under Tk 8.5 if Tkinter doesn't convert it.
         text.insert('1.0', 'hi-test')
         self.assertEqual(text.search('-test', '1.0', 'end'), '1.2')
         self.assertEqual(text.search('test', '1.0', 'end'), '1.3')
+
+        text.delete('1.0', 'end')
+        text.insert('1.0',
+            'This is a test. This is only a test.\n'
+            'Another line.\n'
+            'Yet another line.')
+
+        result = text.search('line', '1.0', 'end', nolinestop=True, regexp=True)
+        self.assertEqual(result, '2.8')
+
+        all_res = text.search('test', '1.0', 'end', all=True)
+        self.assertIsInstance(all_res, str)
+        indices = all_res.split()
+        self.assertGreaterEqual(len(indices), 2)
+        self.assertTrue(all(isinstance(i, str) for i in indices))
+
+        overlap_res = text.search('test', '1.0', 'end', all=True, overlap=True)
+        self.assertIsInstance(overlap_res, str)
+        self.assertIn('textindex', overlap_res)
+
+        strict_res = text.search('test', '1.0', '1.20', strictlimits=True)
+        self.assertEqual(strict_res, '1.10')
 
     def test_count(self):
         text = self.text
@@ -93,35 +110,6 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.count('1.3', '1.5', 'update'), (2,))
         self.assertEqual(text.count('1.3', '1.3', 'update', return_ints=True), 0)
         self.assertEqual(text.count('1.3', '1.3', 'update'), None)
-
-class TextSearchOptionsTest(AbstractTkTest, unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.text = tkinter.Text(self.root)
-        self.text.pack()
-        self.text.insert('1.0',
-            'This is a test. This is only a test.\n'
-            'Another line.\nYet another line.')
-
-    def test_nolinestop(self):
-        result = self.text.search('line', '1.0', 'end', nolinestop=True, regexp=True)
-        self.assertEqual(result, '2.8')
-
-    def test_all(self):
-        result = self.text.search('test', '1.0', 'end', all=True)
-        self.assertIsInstance(result, str)
-        indices = result.split()
-        self.assertGreaterEqual(len(indices), 2)
-        self.assertTrue(all(isinstance(i, str) for i in indices))
-
-    def test_overlap(self):
-        result = self.text.search('test', '1.0', 'end', all=True, overlap=True)
-        self.assertIsInstance(result, str)
-        self.assertIn("textindex", result)
-
-    def test_strictlimits(self):
-        result = self.text.search('test', '1.0', '1.20', strictlimits=True)
-        self.assertEqual(result, '1.10')
 
 if __name__ == "__main__":
     unittest.main()
