@@ -5164,7 +5164,7 @@ ast_clear(PyObject *op)
  * Similar to format_missing from 'Python/ceval.c'.
  *
  * Parameters
-
+ *
  *      missing     Set of missing field names to render.
  *      fields      Sequence of AST node field names (self._fields).
  */
@@ -5318,8 +5318,8 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
                 else if (contains == 0) {
                     PyErr_Format(PyExc_TypeError,
-                        "%T.__init__ got an unexpected keyword "
-                        "argument '%U'", self, key);
+                        "%T.__init__ got an unexpected keyword argument '%U'",
+                        self, key);
                     res = -1;
                     goto cleanup;
                 }
@@ -5399,7 +5399,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         }
         Py_ssize_t num_missing = PySet_GET_SIZE(missing_names);
         if (num_missing > 0) {
-            PyObject* name_str = format_missing(missing_names, fields);
+            PyObject *name_str = format_missing(missing_names, fields);
             if (!name_str) {
                 goto set_remaining_cleanup;
             }
