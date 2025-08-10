@@ -147,9 +147,9 @@ See :ref:`json-commandline` for detailed documentation.
    default.  Order is only lost if the underlying containers are unordered.
 
 .. note::
-   Per RFC 7159, JSON keys are strings.
-   This module's encoder converts dictionary keys to strings,
-   and its decoder produces dictionaries with string keys.
+   Per :rfc:`7159`, JSON objects' keys must be strings.
+   This module's encoder converts Python dictionary's keys to strings,
+   and its decoder produces Python dictionaries with string keys.
 
 Basic Usage
 -----------
