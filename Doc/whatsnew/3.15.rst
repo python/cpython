@@ -70,7 +70,6 @@ Summary --- release highlights
 New features
 ============
 
-
 tkinter
 -------
 
@@ -78,7 +77,8 @@ tkinter
   (Contributed by Rihaan Meher in :gh:`130848`)
 * Added the ``tkinter.Text.search_all`` method for searching with the tcl ``-all`` and ``-overlap`` arguments.
   (Contributed by Rihaan Meher in :gh:`130848`)
-.. tkinter.Text is not currently documented./ being tracked in :gh:``135658``
+
+.. tkinter.Text is not currently documented - being tracked in :gh:``135658``
 
 Other language changes
 ======================
