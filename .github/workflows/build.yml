@@ -225,8 +225,8 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
 
   build-windows-msi:
-    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      Windows MSI${{ '' }}
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: Windows MSI${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
     if: fromJSON(needs.build-context.outputs.run-windows-msi)
     strategy:
@@ -558,8 +558,8 @@ jobs:
       run: xvfb-run make ci
 
   build-san:
-    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      Sanitizers${{ '' }}
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: Sanitizers${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
