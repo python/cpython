@@ -97,7 +97,7 @@ class FunctionTest(unittest.TestCase):
         self.assertTrue(m.groups()[0].isidentifier())
         m = idprog.match(' 42')
         self.assertFalse(m.groups()[0].isidentifier())
-        m = idprog.match('dot·[T]')
+        m = idprog.match(' dot·[T]')
         self.assertTrue(m.groups()[0].isidentifier())
         m = idprog.match(' cls()')
         self.assertTrue(m.groups()[0].isidentifier())
