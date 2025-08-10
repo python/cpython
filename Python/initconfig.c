@@ -273,8 +273,6 @@ Options (and corresponding environment variables):\n\
 -P     : don't prepend a potentially unsafe path to sys.path; also\n\
          PYTHONSAFEPATH\n\
 -q     : don't print version and copyright messages on interactive startup\n\
--R     : enable hash randomization;\n\
-         this option overrides PYTHONHASHSEED to use the default behavior\n\
 -s     : don't add user site directory to sys.path; also PYTHONNOUSERSITE=x\n\
 -S     : don't imply 'import site' on initialization\n\
 -u     : force the stdout and stderr streams to be unbuffered;\n\
