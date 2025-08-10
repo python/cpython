@@ -57,21 +57,6 @@ context does not affect the conversion and is only passed to determine if\n\
 the InvalidOperation trap is active.\n\
 \n");
 
-PyDoc_STRVAR(doc_compare,
-"compare($self, /, other, context=None)\n--\n\n\
-Compare self to other.  Return a decimal value:\n\
-\n\
-    a or b is a NaN ==> Decimal('NaN')\n\
-    a < b           ==> Decimal('-1')\n\
-    a == b          ==> Decimal('0')\n\
-    a > b           ==> Decimal('1')\n\
-\n");
-
-PyDoc_STRVAR(doc_compare_signal,
-"compare_signal($self, /, other, context=None)\n--\n\n\
-Identical to compare, except that all NaNs signal.\n\
-\n");
-
 PyDoc_STRVAR(doc_compare_total,
 "compare_total($self, /, other, context=None)\n--\n\n\
 Compare two operands using their abstract representation rather than\n\
@@ -104,13 +89,6 @@ x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs())
 This operation is unaffected by context and is quiet: no flags are changed\n\
 and no rounding is performed. As an exception, the C version may raise\n\
 InvalidOperation if the second operand cannot be converted exactly.\n\
-\n");
-
-PyDoc_STRVAR(doc_exp,
-"exp($self, /, context=None)\n--\n\n\
-Return the value of the (natural) exponential function e**x at the given\n\
-number.  The function always uses the ROUND_HALF_EVEN mode and the result\n\
-is correctly rounded.\n\
 \n");
 
 PyDoc_STRVAR(doc_fma,
@@ -184,34 +162,9 @@ Return True if the argument is a (positive or negative) zero and False\n\
 otherwise.\n\
 \n");
 
-PyDoc_STRVAR(doc_ln,
-"ln($self, /, context=None)\n--\n\n\
-Return the natural (base e) logarithm of the operand. The function always\n\
-uses the ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
-\n");
-
-PyDoc_STRVAR(doc_log10,
-"log10($self, /, context=None)\n--\n\n\
-Return the base ten logarithm of the operand. The function always uses the\n\
-ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
-\n");
-
-PyDoc_STRVAR(doc_logb,
-"logb($self, /, context=None)\n--\n\n\
-For a non-zero number, return the adjusted exponent of the operand as a\n\
-Decimal instance.  If the operand is a zero, then Decimal('-Infinity') is\n\
-returned and the DivisionByZero condition is raised. If the operand is\n\
-an infinity then Decimal('Infinity') is returned.\n\
-\n");
-
 PyDoc_STRVAR(doc_logical_and,
 "logical_and($self, /, other, context=None)\n--\n\n\
 Return the digit-wise 'and' of the two (logical) operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_logical_invert,
-"logical_invert($self, /, context=None)\n--\n\n\
-Return the digit-wise inversion of the (logical) operand.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_or,
@@ -222,72 +175,6 @@ Return the digit-wise 'or' of the two (logical) operands.\n\
 PyDoc_STRVAR(doc_logical_xor,
 "logical_xor($self, /, other, context=None)\n--\n\n\
 Return the digit-wise 'exclusive or' of the two (logical) operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_max,
-"max($self, /, other, context=None)\n--\n\n\
-Maximum of self and other.  If one operand is a quiet NaN and the other is\n\
-numeric, the numeric operand is returned.\n\
-\n");
-
-PyDoc_STRVAR(doc_max_mag,
-"max_mag($self, /, other, context=None)\n--\n\n\
-Similar to the max() method, but the comparison is done using the absolute\n\
-values of the operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_min,
-"min($self, /, other, context=None)\n--\n\n\
-Minimum of self and other. If one operand is a quiet NaN and the other is\n\
-numeric, the numeric operand is returned.\n\
-\n");
-
-PyDoc_STRVAR(doc_min_mag,
-"min_mag($self, /, other, context=None)\n--\n\n\
-Similar to the min() method, but the comparison is done using the absolute\n\
-values of the operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_next_minus,
-"next_minus($self, /, context=None)\n--\n\n\
-Return the largest number representable in the given context (or in the\n\
-current default context if no context is given) that is smaller than the\n\
-given operand.\n\
-\n");
-
-PyDoc_STRVAR(doc_next_plus,
-"next_plus($self, /, context=None)\n--\n\n\
-Return the smallest number representable in the given context (or in the\n\
-current default context if no context is given) that is larger than the\n\
-given operand.\n\
-\n");
-
-PyDoc_STRVAR(doc_next_toward,
-"next_toward($self, /, other, context=None)\n--\n\n\
-If the two operands are unequal, return the number closest to the first\n\
-operand in the direction of the second operand.  If both operands are\n\
-numerically equal, return a copy of the first operand with the sign set\n\
-to be the same as the sign of the second operand.\n\
-\n");
-
-PyDoc_STRVAR(doc_normalize,
-"normalize($self, /, context=None)\n--\n\n\
-Normalize the number by stripping the rightmost trailing zeros and\n\
-converting any result equal to Decimal('0') to Decimal('0e0').  Used\n\
-for producing canonical values for members of an equivalence class.\n\
-For example, Decimal('32.100') and Decimal('0.321000e+2') both normalize\n\
-to the equivalent value Decimal('32.1').\n\
-\n");
-
-PyDoc_STRVAR(doc_remainder_near,
-"remainder_near($self, /, other, context=None)\n--\n\n\
-Return the remainder from dividing self by other.  This differs from\n\
-self % other in that the sign of the remainder is chosen so as to minimize\n\
-its absolute value. More precisely, the return value is self - n * other\n\
-where n is the integer nearest to the exact value of self / other, and\n\
-if two integers are equally near then the even one is chosen.\n\
-\n\
-If the result is zero then its sign will be the sign of self.\n\
 \n");
 
 PyDoc_STRVAR(doc_rotate,
@@ -318,20 +205,6 @@ operand gives the number of places to shift. If the second operand is\n\
 positive, then the shift is to the left; otherwise the shift is to the\n\
 right. Digits shifted into the coefficient are zeros. The sign and exponent\n\
 of the first operand are unchanged.\n\
-\n");
-
-PyDoc_STRVAR(doc_sqrt,
-"sqrt($self, /, context=None)\n--\n\n\
-Return the square root of the argument to full precision. The result is\n\
-correctly rounded using the ROUND_HALF_EVEN rounding mode.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral_value,
-"to_integral_value($self, /, rounding=None, context=None)\n--\n\n\
-Round to the nearest integer without signaling Inexact or Rounded.  The\n\
-rounding mode is determined by the rounding parameter if given, else by\n\
-the given context. If neither parameter is given, then the rounding mode\n\
-of the current default context is used.\n\
 \n");
 
 
