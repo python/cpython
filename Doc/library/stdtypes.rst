@@ -1312,7 +1312,8 @@ Lists are mutable sequences, typically used to store collections of
 homogeneous items (where the precise degree of similarity will vary by
 application).
 
-.. class:: list([iterable])
+.. class:: list()
+           list(iterable, /)
 
    Lists may be constructed in several ways:
 
@@ -1393,7 +1394,8 @@ built-in). Tuples are also used for cases where an immutable sequence of
 homogeneous data is needed (such as allowing storage in a :class:`set` or
 :class:`dict` instance).
 
-.. class:: tuple([iterable])
+.. class:: tuple()
+           tuple(iterable, /)
 
    Tuples may be constructed in a number of ways:
 
@@ -1435,8 +1437,8 @@ The :class:`range` type represents an immutable sequence of numbers and is
 commonly used for looping a specific number of times in :keyword:`for`
 loops.
 
-.. class:: range(stop)
-           range(start, stop[, step])
+.. class:: range(stop, /)
+           range(start, stop, step=1, /)
 
    The arguments to the range constructor must be integers (either built-in
    :class:`int` or any object that implements the :meth:`~object.__index__` special
@@ -1696,8 +1698,11 @@ multiple fragments.
 .. index::
    single: string; str (built-in class)
 
-.. class:: str(object='')
-           str(object=b'', encoding='utf-8', errors='strict')
+.. class:: str()
+           str(object)
+           str(object, encoding)
+           str(object, encoding, errors)
+           str(object, *, errors)
 
    Return a :ref:`string <textseq>` version of *object*.  If *object* is not
    provided, returns the empty string.  Otherwise, the behavior of ``str()``
@@ -1791,7 +1796,7 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.3
 
 
-.. method:: str.center(width[, fillchar])
+.. method:: str.center(width, fillchar=' ', /)
 
    Return centered in a string of length *width*. Padding is done using the
    specified *fillchar* (default is an ASCII space). The original string is
@@ -1805,7 +1810,7 @@ expression support in the :mod:`re` module).
       'Python'
 
 
-.. method:: str.count(sub[, start[, end]])
+.. method:: str.count(sub, start=0, stop=None, /)
 
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
@@ -1860,7 +1865,7 @@ expression support in the :mod:`re` module).
       in :ref:`debug mode <debug-build>`.
 
 
-.. method:: str.endswith(suffix[, start[, end]])
+.. method:: str.endswith(suffix, start=0, stop=None, /)
 
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
@@ -1904,7 +1909,7 @@ expression support in the :mod:`re` module).
       0123    01234
 
 
-.. method:: str.find(sub[, start[, end]])
+.. method:: str.find(sub, start=0, stop=None, /)
 
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
@@ -1967,7 +1972,7 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.2
 
 
-.. method:: str.index(sub[, start[, end]])
+.. method:: str.index(sub, start=0, stop=None, /)
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
    not found.
@@ -2109,7 +2114,7 @@ expression support in the :mod:`re` module).
 
 .. _meth-str-join:
 
-.. method:: str.join(iterable)
+.. method:: str.join(iterable, /)
 
    Return a string which is the concatenation of the strings in *iterable*.
    A :exc:`TypeError` will be raised if there are any non-string values in
@@ -2117,7 +2122,7 @@ expression support in the :mod:`re` module).
    elements is the string providing this method.
 
 
-.. method:: str.ljust(width[, fillchar])
+.. method:: str.ljust(width, fillchar=' ', /)
 
    Return the string left justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
@@ -2134,7 +2139,7 @@ expression support in the :mod:`re` module).
    <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
 
 
-.. method:: str.lstrip([chars])
+.. method:: str.lstrip(chars=None, /)
 
    Return a copy of the string with leading characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
@@ -2170,7 +2175,7 @@ expression support in the :mod:`re` module).
    whose characters will be mapped to ``None`` in the result.
 
 
-.. method:: str.partition(sep)
+.. method:: str.partition(sep, /)
 
    Split the string at the first occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
@@ -2206,7 +2211,7 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.9
 
 
-.. method:: str.replace(old, new, count=-1)
+.. method:: str.replace(old, new, /, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
    *new*.  If *count* is given, only the first *count* occurrences are replaced.
@@ -2216,27 +2221,27 @@ expression support in the :mod:`re` module).
       *count* is now supported as a keyword argument.
 
 
-.. method:: str.rfind(sub[, start[, end]])
+.. method:: str.rfind(sub, start=0, stop=None, /)
 
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
 
 
-.. method:: str.rindex(sub[, start[, end]])
+.. method:: str.rindex(sub, start=0, stop=None, /)
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
 
 
-.. method:: str.rjust(width[, fillchar])
+.. method:: str.rjust(width, fillchar=' ', /)
 
    Return the string right justified in a string of length *width*. Padding is
    done using the specified *fillchar* (default is an ASCII space). The
    original string is returned if *width* is less than or equal to ``len(s)``.
 
 
-.. method:: str.rpartition(sep)
+.. method:: str.rpartition(sep, /)
 
    Split the string at the last occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself, and the part
@@ -2253,7 +2258,7 @@ expression support in the :mod:`re` module).
    :meth:`split` which is described in detail below.
 
 
-.. method:: str.rstrip([chars])
+.. method:: str.rstrip(chars=None, /)
 
    Return a copy of the string with trailing characters removed.  The *chars*
    argument is a string specifying the set of characters to be removed.  If omitted
@@ -2394,7 +2399,7 @@ expression support in the :mod:`re` module).
       ['Two lines', '']
 
 
-.. method:: str.startswith(prefix[, start[, end]])
+.. method:: str.startswith(prefix, start=0, stop=None, /)
 
    Return ``True`` if string starts with the *prefix*, otherwise return ``False``.
    *prefix* can also be a tuple of prefixes to look for.  With optional *start*,
@@ -2402,7 +2407,7 @@ expression support in the :mod:`re` module).
    string at that position.
 
 
-.. method:: str.strip([chars])
+.. method:: str.strip(chars=None, /)
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
@@ -2467,7 +2472,7 @@ expression support in the :mod:`re` module).
         "They're Bill's Friends."
 
 
-.. method:: str.translate(table)
+.. method:: str.translate(table, /)
 
    Return a copy of the string in which each character has been mapped through
    the given translation table.  The table must be an object that implements
@@ -2498,7 +2503,7 @@ expression support in the :mod:`re` module).
    <https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-3/#G33992>`__.
 
 
-.. method:: str.zfill(width)
+.. method:: str.zfill(width, /)
 
    Return a copy of the string left filled with ASCII ``'0'`` digits to
    make a string of length *width*. A leading sign prefix (``'+'``/``'-'``)
@@ -2890,7 +2895,10 @@ binary protocols are based on the ASCII text encoding, bytes objects offer
 several methods that are only valid when working with ASCII compatible
 data and are closely related to string objects in a variety of other ways.
 
-.. class:: bytes([source[, encoding[, errors]]])
+.. class:: bytes()
+           bytes(source)
+           bytes(source, encoding)
+           bytes(source, encoding, errors)
 
    Firstly, the syntax for bytes literals is largely the same as that for string
    literals, except that a ``b`` prefix is added:
@@ -2930,7 +2938,7 @@ data and are closely related to string objects in a variety of other ways.
    numbers are a commonly used format for describing binary data. Accordingly,
    the bytes type has an additional class method to read data in that format:
 
-   .. classmethod:: fromhex(string)
+   .. classmethod:: fromhex(string, /)
 
       This :class:`bytes` class method returns a bytes object, decoding the
       given string object.  The string must contain two hexadecimal digits per
@@ -2950,7 +2958,8 @@ data and are closely related to string objects in a variety of other ways.
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
-   .. method:: hex([sep[, bytes_per_sep]])
+   .. method:: hex(*, bytes_per_sep=1)
+               hex(sep, bytes_per_sep=1)
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2999,7 +3008,10 @@ Bytearray Objects
 :class:`bytearray` objects are a mutable counterpart to :class:`bytes`
 objects.
 
-.. class:: bytearray([source[, encoding[, errors]]])
+.. class:: bytearray()
+           bytearray(source)
+           bytearray(source, encoding)
+           bytearray(source, encoding, errors)
 
    There is no dedicated literal syntax for bytearray objects, instead
    they are always created by calling the constructor:
@@ -3019,7 +3031,7 @@ objects.
    numbers are a commonly used format for describing binary data. Accordingly,
    the bytearray type has an additional class method to read data in that format:
 
-   .. classmethod:: fromhex(string)
+   .. classmethod:: fromhex(string, /)
 
       This :class:`bytearray` class method returns bytearray object, decoding
       the given string object.  The string must contain two hexadecimal digits
@@ -3039,7 +3051,8 @@ objects.
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
 
-   .. method:: hex([sep[, bytes_per_sep]])
+   .. method:: hex(*, bytes_per_sep=1)
+               hex(sep, bytes_per_sep=1)
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -3054,7 +3067,7 @@ objects.
          optional *sep* and *bytes_per_sep* parameters to insert separators
          between bytes in the hex output.
 
-   .. method:: resize(size)
+   .. method:: resize(size, /)
 
       Resize the :class:`bytearray` to contain *size* bytes. *size* must be
       greater than or equal to 0.
@@ -3136,8 +3149,8 @@ binary data. These restrictions are covered below.
 The following methods on bytes and bytearray objects can be used with
 arbitrary binary data.
 
-.. method:: bytes.count(sub[, start[, end]])
-            bytearray.count(sub[, start[, end]])
+.. method:: bytes.count(sub, start=0, stop=None, /)
+            bytearray.count(sub, start=0, stop=None, /)
 
    Return the number of non-overlapping occurrences of subsequence *sub* in
    the range [*start*, *end*].  Optional arguments *start* and *end* are
@@ -3229,8 +3242,8 @@ arbitrary binary data.
       in :ref:`debug mode <debug-build>`.
 
 
-.. method:: bytes.endswith(suffix[, start[, end]])
-            bytearray.endswith(suffix[, start[, end]])
+.. method:: bytes.endswith(suffix, start=0, stop=None, /)
+            bytearray.endswith(suffix, start=0, stop=None, /)
 
    Return ``True`` if the binary data ends with the specified *suffix*,
    otherwise return ``False``.  *suffix* can also be a tuple of suffixes to
@@ -3240,8 +3253,8 @@ arbitrary binary data.
    The suffix(es) to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.find(sub[, start[, end]])
-            bytearray.find(sub[, start[, end]])
+.. method:: bytes.find(sub, start=0, stop=None, /)
+            bytearray.find(sub, start=0, stop=None, /)
 
    Return the lowest index in the data where the subsequence *sub* is found,
    such that *sub* is contained in the slice ``s[start:end]``.  Optional
@@ -3264,8 +3277,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.index(sub[, start[, end]])
-            bytearray.index(sub[, start[, end]])
+.. method:: bytes.index(sub, start=0, stop=None, /)
+            bytearray.index(sub, start=0, stop=None, /)
 
    Like :meth:`~bytes.find`, but raise :exc:`ValueError` when the
    subsequence is not found.
@@ -3277,8 +3290,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.join(iterable)
-            bytearray.join(iterable)
+.. method:: bytes.join(iterable, /)
+            bytearray.join(iterable, /)
 
    Return a bytes or bytearray object which is the concatenation of the
    binary data sequences in *iterable*.  A :exc:`TypeError` will be raised
@@ -3288,8 +3301,8 @@ arbitrary binary data.
    bytearray object providing this method.
 
 
-.. staticmethod:: bytes.maketrans(from, to)
-                  bytearray.maketrans(from, to)
+.. staticmethod:: bytes.maketrans(from, to, /)
+                  bytearray.maketrans(from, to, /)
 
    This static method returns a translation table usable for
    :meth:`bytes.translate` that will map each character in *from* into the
@@ -3299,8 +3312,8 @@ arbitrary binary data.
    .. versionadded:: 3.1
 
 
-.. method:: bytes.partition(sep)
-            bytearray.partition(sep)
+.. method:: bytes.partition(sep, /)
+            bytearray.partition(sep, /)
 
    Split the sequence at the first occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself or its
@@ -3312,8 +3325,8 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.replace(old, new[, count])
-            bytearray.replace(old, new[, count])
+.. method:: bytes.replace(old, new, count=-1, /)
+            bytearray.replace(old, new, count=-1, /)
 
    Return a copy of the sequence with all occurrences of subsequence *old*
    replaced by *new*.  If the optional argument *count* is given, only the
@@ -3328,8 +3341,8 @@ arbitrary binary data.
       always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.rfind(sub[, start[, end]])
-            bytearray.rfind(sub[, start[, end]])
+.. method:: bytes.rfind(sub, start=0, stop=None, /)
+            bytearray.rfind(sub, start=0, stop=None, /)
 
    Return the highest index in the sequence where the subsequence *sub* is
    found, such that *sub* is contained within ``s[start:end]``.  Optional
@@ -3343,8 +3356,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.rindex(sub[, start[, end]])
-            bytearray.rindex(sub[, start[, end]])
+.. method:: bytes.rindex(sub, start=0, stop=None, /)
+            bytearray.rindex(sub, start=0, stop=None, /)
 
    Like :meth:`~bytes.rfind` but raises :exc:`ValueError` when the
    subsequence *sub* is not found.
@@ -3356,8 +3369,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.rpartition(sep)
-            bytearray.rpartition(sep)
+.. method:: bytes.rpartition(sep, /)
+            bytearray.rpartition(sep, /)
 
    Split the sequence at the last occurrence of *sep*, and return a 3-tuple
    containing the part before the separator, the separator itself or its
@@ -3369,8 +3382,8 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.startswith(prefix[, start[, end]])
-            bytearray.startswith(prefix[, start[, end]])
+.. method:: bytes.startswith(prefix, start=0, stop=None, /)
+            bytearray.startswith(prefix, start=0, stop=None, /)
 
    Return ``True`` if the binary data starts with the specified *prefix*,
    otherwise return ``False``.  *prefix* can also be a tuple of prefixes to
@@ -3407,8 +3420,8 @@ with arbitrary binary data by passing appropriate arguments. Note that all of
 the bytearray methods in this section do *not* operate in place, and instead
 produce new objects.
 
-.. method:: bytes.center(width[, fillbyte])
-            bytearray.center(width[, fillbyte])
+.. method:: bytes.center(width, fillbyte=b' ', /)
+            bytearray.center(width, fillbyte=b' ', /)
 
    Return a copy of the object centered in a sequence of length *width*.
    Padding is done using the specified *fillbyte* (default is an ASCII
@@ -3421,8 +3434,8 @@ produce new objects.
       it always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.ljust(width[, fillbyte])
-            bytearray.ljust(width[, fillbyte])
+.. method:: bytes.ljust(width, fillbyte=b' ', /)
+            bytearray.ljust(width, fillbyte=b' ', /)
 
    Return a copy of the object left justified in a sequence of length *width*.
    Padding is done using the specified *fillbyte* (default is an ASCII
@@ -3435,14 +3448,14 @@ produce new objects.
       it always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.lstrip([chars])
-            bytearray.lstrip([chars])
+.. method:: bytes.lstrip(bytes=None, /)
+            bytearray.lstrip(bytes=None, /)
 
    Return a copy of the sequence with specified leading bytes removed.  The
-   *chars* argument is a binary sequence specifying the set of byte values to
+   *bytes* argument is a binary sequence specifying the set of byte values to
    be removed - the name refers to the fact this method is usually used with
-   ASCII characters.  If omitted or ``None``, the *chars* argument defaults
-   to removing ASCII whitespace.  The *chars* argument is not a prefix;
+   ASCII characters.  If omitted or ``None``, the *bytes* argument defaults
+   to removing ASCII whitespace.  The *bytes* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
       >>> b'   spacious   '.lstrip()
@@ -3466,8 +3479,8 @@ produce new objects.
       it always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.rjust(width[, fillbyte])
-            bytearray.rjust(width[, fillbyte])
+.. method:: bytes.rjust(width, fillbyte=b' ', /)
+            bytearray.rjust(width, fillbyte=b' ', /)
 
    Return a copy of the object right justified in a sequence of length *width*.
    Padding is done using the specified *fillbyte* (default is an ASCII
@@ -3491,14 +3504,14 @@ produce new objects.
    :meth:`split` which is described in detail below.
 
 
-.. method:: bytes.rstrip([chars])
-            bytearray.rstrip([chars])
+.. method:: bytes.rstrip(bytes=None, /)
+            bytearray.rstrip(bytes=None, /)
 
    Return a copy of the sequence with specified trailing bytes removed.  The
-   *chars* argument is a binary sequence specifying the set of byte values to
+   *bytes* argument is a binary sequence specifying the set of byte values to
    be removed - the name refers to the fact this method is usually used with
-   ASCII characters.  If omitted or ``None``, the *chars* argument defaults to
-   removing ASCII whitespace.  The *chars* argument is not a suffix; rather,
+   ASCII characters.  If omitted or ``None``, the *bytes* argument defaults to
+   removing ASCII whitespace.  The *bytes* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
       >>> b'   spacious   '.rstrip()
@@ -3568,14 +3581,14 @@ produce new objects.
       [b'1', b'2', b'3']
 
 
-.. method:: bytes.strip([chars])
-            bytearray.strip([chars])
+.. method:: bytes.strip(bytes=None, /)
+            bytearray.strip(bytes=None, /)
 
    Return a copy of the sequence with specified leading and trailing bytes
-   removed. The *chars* argument is a binary sequence specifying the set of
+   removed. The *bytes* argument is a binary sequence specifying the set of
    byte values to be removed - the name refers to the fact this method is
-   usually used with ASCII characters.  If omitted or ``None``, the *chars*
-   argument defaults to removing ASCII whitespace. The *chars* argument is
+   usually used with ASCII characters.  If omitted or ``None``, the *bytes*
+   argument defaults to removing ASCII whitespace. The *bytes* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
 
@@ -3897,8 +3910,8 @@ place, and instead produce new objects.
       always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.zfill(width)
-            bytearray.zfill(width)
+.. method:: bytes.zfill(width, /)
+            bytearray.zfill(width, /)
 
    Return a copy of the sequence left filled with ASCII ``b'0'`` digits to
    make a sequence of length *width*. A leading sign prefix (``b'+'``/
@@ -4310,7 +4323,8 @@ copying.
          in-memory Fortran order is preserved. For non-contiguous views, the
          data is converted to C first. *order=None* is the same as *order='C'*.
 
-   .. method:: hex([sep[, bytes_per_sep]])
+   .. method:: hex(*, bytes_per_sep=1)
+               hex(sep, bytes_per_sep=1)
 
       Return a string object containing two hexadecimal digits for each
       byte in the buffer. ::
@@ -4395,7 +4409,8 @@ copying.
 
       .. versionadded:: 3.2
 
-   .. method:: cast(format[, shape])
+   .. method:: cast(format, /)
+               cast(format, shape, /)
 
       Cast a memoryview to a new format or shape. *shape* defaults to
       ``[byte_length//new_itemsize]``, which means that the result view
@@ -4494,7 +4509,7 @@ copying.
 
       .. versionadded:: 3.14
 
-  .. method:: index(value, start=0, stop=sys.maxsize, /)
+  .. method:: index(value, start=0, stop=None, /)
 
       Return the index of the first occurrence of *value* (at or after
       index *start* and before index *stop*).
@@ -4657,8 +4672,8 @@ of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to t
 
 The constructors for both classes work the same:
 
-.. class:: set([iterable])
-           frozenset([iterable])
+.. class:: set(iterable=(), /)
+           frozenset(iterable=(), /)
 
    Return a new set or frozenset object whose elements are taken from
    *iterable*.  The elements of a set must be :term:`hashable`.  To
@@ -4687,12 +4702,12 @@ The constructors for both classes work the same:
 
       Test *x* for non-membership in *s*.
 
-   .. method:: isdisjoint(other)
+   .. method:: isdisjoint(other, /)
 
       Return ``True`` if the set has no elements in common with *other*.  Sets are
       disjoint if and only if their intersection is the empty set.
 
-   .. method:: issubset(other)
+   .. method:: issubset(other, /)
                set <= other
 
       Test whether every element in the set is in *other*.
@@ -4702,7 +4717,7 @@ The constructors for both classes work the same:
       Test whether the set is a proper subset of *other*, that is,
       ``set <= other and set != other``.
 
-   .. method:: issuperset(other)
+   .. method:: issuperset(other, /)
                set >= other
 
       Test whether every element in *other* is in the set.
@@ -4727,7 +4742,7 @@ The constructors for both classes work the same:
 
       Return a new set with elements in the set that are not in the others.
 
-   .. method:: symmetric_difference(other)
+   .. method:: symmetric_difference(other, /)
                set ^ other
 
       Return a new set with elements in either the set or *other* but not both.
@@ -4787,21 +4802,21 @@ The constructors for both classes work the same:
 
       Update the set, removing elements found in others.
 
-   .. method:: symmetric_difference_update(other)
+   .. method:: symmetric_difference_update(other, /)
                set ^= other
 
       Update the set, keeping only elements found in either set, but not in both.
 
-   .. method:: add(elem)
+   .. method:: add(elem, /)
 
       Add element *elem* to the set.
 
-   .. method:: remove(elem)
+   .. method:: remove(elem, /)
 
       Remove element *elem* from the set.  Raises :exc:`KeyError` if *elem* is
       not contained in the set.
 
-   .. method:: discard(elem)
+   .. method:: discard(elem, /)
 
       Remove element *elem* from the set if it is present.
 
@@ -4853,8 +4868,8 @@ Values that compare equal (such as ``1``, ``1.0``, and ``True``)
 can be used interchangeably to index the same dictionary entry.
 
 .. class:: dict(**kwargs)
-           dict(mapping, **kwargs)
-           dict(iterable, **kwargs)
+           dict(mapping, /, **kwargs)
+           dict(iterable, /, **kwargs)
 
    Return a new dictionary initialized from an optional positional argument
    and a possibly empty set of keyword arguments.
@@ -5022,7 +5037,8 @@ can be used interchangeably to index the same dictionary entry.
       Return a new view of the dictionary's keys.  See the :ref:`documentation
       of view objects <dict-views>`.
 
-   .. method:: pop(key[, default])
+   .. method:: pop(key, /)
+               pop(key, default, /)
 
       If *key* is in the dictionary, remove it and return its value, else return
       *default*.  If *default* is not given and *key* is not in the dictionary,
@@ -5054,9 +5070,11 @@ can be used interchangeably to index the same dictionary entry.
       with a value of *default* and return *default*.  *default* defaults to
       ``None``.
 
-   .. method:: update([other])
+   .. method:: update(**kwargs)
+               update(mapping, **kwargs)
+               update(iterable, **kwargs)
 
-      Update the dictionary with the key/value pairs from *other*, overwriting
+      Update the dictionary with the key/value pairs from *mapping* or *iterable*, overwriting
       existing keys.  Return ``None``.
 
       :meth:`update` accepts either another object with a ``keys()`` method (in
