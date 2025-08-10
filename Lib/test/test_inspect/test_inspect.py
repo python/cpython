@@ -6263,11 +6263,7 @@ class TestSignatureDefinitions(unittest.TestCase):
                 methods_no_signature, methods_unsupported_signature)
 
     def test_types_module_has_signatures(self):
-        methods_no_signature = {
-            'FrameLocalsProxyType': {'setdefault', 'pop', 'get'},
-        }
-        self._test_module_has_signatures(types,
-                methods_no_signature=methods_no_signature)
+        self._test_module_has_signatures(types)
 
     def test_sys_module_has_signatures(self):
         self._test_module_has_signatures(sys)
