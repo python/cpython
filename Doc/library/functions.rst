@@ -1105,7 +1105,7 @@ are always available.  They are listed here in alphabetical order.
 
    Return an :term:`iterator` object.  The first argument is interpreted very
    differently depending on the presence of the second argument. Without a
-   second argument, the sinle argument must be a collection object which supports the
+   second argument, the single argument must be a collection object which supports the
    :term:`iterable` protocol (the :meth:`~object.__iter__` method),
    or it must support
    the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
