@@ -861,4 +861,73 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=623fce9726f3efa0 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_get_config__doc__,
+"get_config($module, /, id, *, restrict=False)\n"
+"--\n"
+"\n"
+"Return a representation of the config used to initialize the interpreter.");
+
+#define _INTERPRETERS_GET_CONFIG_METHODDEF    \
+    {"get_config", _PyCFunction_CAST(_interpreters_get_config), METH_FASTCALL|METH_KEYWORDS, _interpreters_get_config__doc__},
+
+static PyObject *
+_interpreters_get_config_impl(PyObject *module, PyObject *idobj,
+                              int restricted);
+
+static PyObject *
+_interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(id), &_Py_ID(restrict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"id", "restrict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "get_config",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *idobj;
+    int restricted = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    idobj = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    restricted = PyObject_IsTrue(args[1]);
+    if (restricted < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _interpreters_get_config_impl(module, idobj, restricted);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=e5c4396144a92bad input=a9049054013a1b77]*/

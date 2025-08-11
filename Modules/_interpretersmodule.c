@@ -1373,18 +1373,20 @@ _interpreters_is_running_impl(PyObject *module, PyObject *id, int restricted)
 }
 
 
+/*[clinic input]
+_interpreters.get_config
+    id as idobj: object
+    *
+    restrict as restricted: bool = False
+
+Return a representation of the config used to initialize the interpreter.
+[clinic start generated code]*/
+
 static PyObject *
-interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
+_interpreters_get_config_impl(PyObject *module, PyObject *idobj,
+                              int restricted)
+/*[clinic end generated code: output=63f81d35c2fe1387 input=aa38d50f534eb3c5]*/
 {
-    static char *kwlist[] = {"id", "restrict", NULL};
-    PyObject *idobj = NULL;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:get_config", kwlist,
-                                     &idobj, &restricted))
-    {
-        return NULL;
-    }
     if (idobj == Py_None) {
         idobj = NULL;
     }
@@ -1409,11 +1411,6 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
     Py_DECREF(dict);
     return configobj;
 }
-
-PyDoc_STRVAR(get_config_doc,
-"get_config(id, *, restrict=False) -> types.SimpleNamespace\n\
-\n\
-Return a representation of the config used to initialize the interpreter.");
 
 
 static PyObject *
@@ -1577,8 +1574,7 @@ static PyMethodDef module_functions[] = {
     _INTERPRETERS_GET_MAIN_METHODDEF
 
     _INTERPRETERS_IS_RUNNING_METHODDEF
-    {"get_config",                _PyCFunction_CAST(interp_get_config),
-     METH_VARARGS | METH_KEYWORDS, get_config_doc},
+    _INTERPRETERS_GET_CONFIG_METHODDEF
     {"whence",                    _PyCFunction_CAST(interp_whence),
      METH_VARARGS | METH_KEYWORDS, whence_doc},
     _INTERPRETERS_EXEC_METHODDEF
