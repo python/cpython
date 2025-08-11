@@ -9,7 +9,7 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_interpreters_create__doc__,
-"create($module, /, config=\'isolated\', *, reqrefs=False)\n"
+"create($module, config=\'isolated\', /, *, reqrefs=False)\n"
 "--\n"
 "\n"
 "Create a new interpreter and return a unique generated ID.\n"
@@ -35,7 +35,7 @@ _interpreters_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -44,7 +44,7 @@ _interpreters_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(config), &_Py_ID(reqrefs), },
+        .ob_item = { &_Py_ID(reqrefs), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -53,7 +53,7 @@ _interpreters_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"config", "reqrefs", NULL};
+    static const char * const _keywords[] = {"", "reqrefs", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "create",
@@ -70,16 +70,12 @@ _interpreters_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!args) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_pos;
+    if (nargs < 1) {
+        goto skip_optional_posonly;
     }
-    if (args[0]) {
-        configobj = args[0];
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-skip_optional_pos:
+    noptargs--;
+    configobj = args[0];
+skip_optional_posonly:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -95,7 +91,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_destroy__doc__,
-"destroy($module, /, id, *, restrict=False)\n"
+"destroy($module, id, /, *, restrict=False)\n"
 "--\n"
 "\n"
 "Destroy the identified interpreter.\n"
@@ -115,7 +111,7 @@ _interpreters_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -124,7 +120,7 @@ _interpreters_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -133,7 +129,7 @@ _interpreters_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "restrict", NULL};
+    static const char * const _keywords[] = {"", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "destroy",
@@ -268,7 +264,7 @@ _interpreters_get_main(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_interpreters_set___main___attrs__doc__,
-"set___main___attrs($module, /, id, updates, *, restrict=False)\n"
+"set___main___attrs($module, id, ns, /, *, restrict=False)\n"
 "--\n"
 "\n"
 "Bind the given attributes in the interpreter\'s __main__ module.");
@@ -286,7 +282,7 @@ _interpreters_set___main___attrs(PyObject *module, PyObject *const *args, Py_ssi
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -295,7 +291,7 @@ _interpreters_set___main___attrs(PyObject *module, PyObject *const *args, Py_ssi
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(updates), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -304,7 +300,7 @@ _interpreters_set___main___attrs(PyObject *module, PyObject *const *args, Py_ssi
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "updates", "restrict", NULL};
+    static const char * const _keywords[] = {"", "", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "set___main___attrs",
@@ -324,7 +320,7 @@ _interpreters_set___main___attrs(PyObject *module, PyObject *const *args, Py_ssi
     }
     id = args[0];
     if (!PyDict_Check(args[1])) {
-        _PyArg_BadArgument("set___main___attrs", "argument 'updates'", "dict", args[1]);
+        _PyArg_BadArgument("set___main___attrs", "argument 2", "dict", args[1]);
         goto exit;
     }
     updates = args[1];
@@ -343,7 +339,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_exec__doc__,
-"exec($module, /, id, code, shared={}, *, restrict=False)\n"
+"exec($module, id, /, code, shared={}, *, restrict=False)\n"
 "--\n"
 "\n"
 "Execute the provided code in the identified interpreter.\n"
@@ -374,7 +370,7 @@ _interpreters_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -383,7 +379,7 @@ _interpreters_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(code), &_Py_ID(shared), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(code), &_Py_ID(shared), &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -392,7 +388,7 @@ _interpreters_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "code", "shared", "restrict", NULL};
+    static const char * const _keywords[] = {"", "code", "shared", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "exec",
@@ -442,7 +438,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_run_string__doc__,
-"run_string($module, /, id, script, shared={}, *, restrict=False)\n"
+"run_string($module, id, /, script, shared={}, *, restrict=False)\n"
 "--\n"
 "\n"
 "Execute the provided string in the identified interpreter.\n"
@@ -463,7 +459,7 @@ _interpreters_run_string(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -472,7 +468,7 @@ _interpreters_run_string(PyObject *module, PyObject *const *args, Py_ssize_t nar
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(script), &_Py_ID(shared), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(script), &_Py_ID(shared), &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -481,7 +477,7 @@ _interpreters_run_string(PyObject *module, PyObject *const *args, Py_ssize_t nar
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "script", "shared", "restrict", NULL};
+    static const char * const _keywords[] = {"", "script", "shared", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "run_string",
@@ -535,7 +531,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_run_func__doc__,
-"run_func($module, /, id, func, shared={}, *, restrict=False)\n"
+"run_func($module, id, /, func, shared={}, *, restrict=False)\n"
 "--\n"
 "\n"
 "Execute the body of the provided function in the identified interpreter.\n"
@@ -558,7 +554,7 @@ _interpreters_run_func(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -567,7 +563,7 @@ _interpreters_run_func(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(func), &_Py_ID(shared), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(func), &_Py_ID(shared), &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -576,7 +572,7 @@ _interpreters_run_func(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "func", "shared", "restrict", NULL};
+    static const char * const _keywords[] = {"", "func", "shared", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "run_func",
@@ -626,7 +622,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_call__doc__,
-"call($module, /, id, callable, args=(), kwargs={}, *,\n"
+"call($module, id, /, callable, args=(), kwargs={}, *,\n"
 "     preserve_exc=False, restrict=False)\n"
 "--\n"
 "\n"
@@ -648,7 +644,7 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 6
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -657,7 +653,7 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(callable), &_Py_ID(args), &_Py_ID(kwargs), &_Py_ID(preserve_exc), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(callable), &_Py_ID(args), &_Py_ID(kwargs), &_Py_ID(preserve_exc), &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -666,7 +662,7 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "callable", "args", "kwargs", "preserve_exc", "restrict", NULL};
+    static const char * const _keywords[] = {"", "callable", "args", "kwargs", "preserve_exc", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "call",
@@ -737,65 +733,16 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_is_shareable__doc__,
-"is_shareable($module, /, obj)\n"
+"is_shareable($module, obj, /)\n"
 "--\n"
 "\n"
 "Return True if the object\'s data may be shared between interpreters and False otherwise.");
 
 #define _INTERPRETERS_IS_SHAREABLE_METHODDEF    \
-    {"is_shareable", _PyCFunction_CAST(_interpreters_is_shareable), METH_FASTCALL|METH_KEYWORDS, _interpreters_is_shareable__doc__},
-
-static PyObject *
-_interpreters_is_shareable_impl(PyObject *module, PyObject *obj);
-
-static PyObject *
-_interpreters_is_shareable(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(obj), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"obj", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "is_shareable",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *obj;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    obj = args[0];
-    return_value = _interpreters_is_shareable_impl(module, obj);
-
-exit:
-    return return_value;
-}
+    {"is_shareable", (PyCFunction)_interpreters_is_shareable, METH_O, _interpreters_is_shareable__doc__},
 
 PyDoc_STRVAR(_interpreters_is_running__doc__,
-"is_running($module, /, id, *, restrict=False)\n"
+"is_running($module, id, /, *, restrict=False)\n"
 "--\n"
 "\n"
 "Return whether or not the identified interpreter is running.");
@@ -812,7 +759,7 @@ _interpreters_is_running(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -821,7 +768,7 @@ _interpreters_is_running(PyObject *module, PyObject *const *args, Py_ssize_t nar
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -830,7 +777,7 @@ _interpreters_is_running(PyObject *module, PyObject *const *args, Py_ssize_t nar
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "restrict", NULL};
+    static const char * const _keywords[] = {"", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "is_running",
@@ -863,7 +810,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_get_config__doc__,
-"get_config($module, /, id, *, restrict=False)\n"
+"get_config($module, id, /, *, restrict=False)\n"
 "--\n"
 "\n"
 "Return a representation of the config used to initialize the interpreter.");
@@ -881,7 +828,7 @@ _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -890,7 +837,7 @@ _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nar
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -899,7 +846,7 @@ _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nar
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "restrict", NULL};
+    static const char * const _keywords[] = {"", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "get_config",
@@ -932,65 +879,16 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_whence__doc__,
-"whence($module, /, id)\n"
+"whence($module, id, /)\n"
 "--\n"
 "\n"
 "Return an identifier for where the interpreter was created.");
 
 #define _INTERPRETERS_WHENCE_METHODDEF    \
-    {"whence", _PyCFunction_CAST(_interpreters_whence), METH_FASTCALL|METH_KEYWORDS, _interpreters_whence__doc__},
-
-static PyObject *
-_interpreters_whence_impl(PyObject *module, PyObject *id);
-
-static PyObject *
-_interpreters_whence(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"id", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "whence",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    PyObject *id;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    id = args[0];
-    return_value = _interpreters_whence_impl(module, id);
-
-exit:
-    return return_value;
-}
+    {"whence", (PyCFunction)_interpreters_whence, METH_O, _interpreters_whence__doc__},
 
 PyDoc_STRVAR(_interpreters_incref__doc__,
-"incref($module, /, id, *, implieslink=False, restrict=False)\n"
+"incref($module, id, /, *, implieslink=False, restrict=False)\n"
 "--\n"
 "\n");
 
@@ -1007,7 +905,7 @@ _interpreters_incref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 3
+    #define NUM_KEYWORDS 2
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1016,7 +914,7 @@ _interpreters_incref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(implieslink), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(implieslink), &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1025,7 +923,7 @@ _interpreters_incref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "implieslink", "restrict", NULL};
+    static const char * const _keywords[] = {"", "implieslink", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "incref",
@@ -1068,7 +966,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_decref__doc__,
-"decref($module, /, id, *, restrict=False)\n"
+"decref($module, id, /, *, restrict=False)\n"
 "--\n"
 "\n");
 
@@ -1084,7 +982,7 @@ _interpreters_decref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 1
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -1093,7 +991,7 @@ _interpreters_decref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(id), &_Py_ID(restrict), },
+        .ob_item = { &_Py_ID(restrict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1102,7 +1000,7 @@ _interpreters_decref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"id", "restrict", NULL};
+    static const char * const _keywords[] = {"", "restrict", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "decref",
@@ -1135,7 +1033,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_capture_exception__doc__,
-"capture_exception($module, /, exc_arg=None)\n"
+"capture_exception($module, exc_arg=None, /)\n"
 "--\n"
 "\n"
 "Return a snapshot of an exception.\n"
@@ -1144,59 +1042,28 @@ PyDoc_STRVAR(_interpreters_capture_exception__doc__,
 "The returned snapshot is the same as what _interpreters.exec() returns.");
 
 #define _INTERPRETERS_CAPTURE_EXCEPTION_METHODDEF    \
-    {"capture_exception", _PyCFunction_CAST(_interpreters_capture_exception), METH_FASTCALL|METH_KEYWORDS, _interpreters_capture_exception__doc__},
+    {"capture_exception", _PyCFunction_CAST(_interpreters_capture_exception), METH_FASTCALL, _interpreters_capture_exception__doc__},
 
 static PyObject *
 _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg);
 
 static PyObject *
-_interpreters_capture_exception(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_interpreters_capture_exception(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(exc_arg), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"exc_arg", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "capture_exception",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *exc_arg = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("capture_exception", nargs, 0, 1)) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_pos;
+    if (nargs < 1) {
+        goto skip_optional;
     }
     exc_arg = args[0];
-skip_optional_pos:
+skip_optional:
     return_value = _interpreters_capture_exception_impl(module, exc_arg);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e83e8292dcd38205 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5b52436e3b5a087 input=a9049054013a1b77]*/
