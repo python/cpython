@@ -4083,12 +4083,7 @@ class Text(Widget, XView, YView):
         args.append(index)
         if stopindex: args.append(stopindex)
         result = self.tk.call(tuple(args))
-        if isinstance(result, tuple):
-            return [str(i) for i in result]
-        elif isinstance(result, str):
-            return result.split()
-        else:
-            return []
+        return self._tk.splitlist(result)
 
     def see(self, index):
         """Scroll such that the character at INDEX is visible."""
