@@ -2696,6 +2696,11 @@ This means:
 .. note::
 
   Some ``PRAGMA`` statements have no effect when a transaction is open.
+  If ``PRAGMA`` statements are a part of the database connection setup
+  and you want :pep:`249`-compliant transaction control,
+  set *autocommit* to ``True`` in :func:`connect`,
+  execute the needed ``PRAGMA`` statements,
+  then set :attr:`Connection.autocommit` to ``False``.
   See :ref:`sqlite3-howto-pragma-in-transaction` for details.
 
 Set *autocommit* to ``True`` to enable SQLite's `autocommit mode`_.
