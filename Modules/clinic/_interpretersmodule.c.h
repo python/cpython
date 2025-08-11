@@ -341,4 +341,103 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=61cb084380333368 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_exec__doc__,
+"exec($module, /, id, code, shared={}, *, restrict=False)\n"
+"--\n"
+"\n"
+"Execute the provided code in the identified interpreter.\n"
+"\n"
+"This is equivalent to running the builtin exec() under the target\n"
+"interpreter, using the __dict__ of its __main__ module as both\n"
+"globals and locals.\n"
+"\n"
+"\"code\" may be a string containing the text of a Python script.\n"
+"\n"
+"Functions (and code objects) are also supported, with some restrictions.\n"
+"The code/function must not take any arguments or be a closure\n"
+"(i.e. have cell vars).  Methods and other callables are not supported.\n"
+"\n"
+"If a function is provided, its code object is used and all its state\n"
+"is ignored, including its __globals__ dict.");
+
+#define _INTERPRETERS_EXEC_METHODDEF    \
+    {"exec", _PyCFunction_CAST(_interpreters_exec), METH_FASTCALL|METH_KEYWORDS, _interpreters_exec__doc__},
+
+static PyObject *
+_interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
+                        PyObject *shared, int restricted);
+
+static PyObject *
+_interpreters_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(id), &_Py_ID(code), &_Py_ID(shared), &_Py_ID(restrict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"id", "code", "shared", "restrict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "exec",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *id;
+    PyObject *code;
+    PyObject *shared = NULL;
+    int restricted = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    id = args[0];
+    code = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        if (!PyDict_Check(args[2])) {
+            _PyArg_BadArgument("exec", "argument 'shared'", "dict", args[2]);
+            goto exit;
+        }
+        shared = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    restricted = PyObject_IsTrue(args[3]);
+    if (restricted < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _interpreters_exec_impl(module, id, code, shared, restricted);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=863235940fd4f2de input=a9049054013a1b77]*/

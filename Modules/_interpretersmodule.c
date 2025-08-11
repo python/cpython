@@ -1102,23 +1102,36 @@ _handle_script_error(struct run_result *runres)
     return runres->excinfo;
 }
 
-static PyObject *
-interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
-{
-#define FUNCNAME MODULE_NAME_STR ".exec"
-    PyThreadState *tstate = _PyThreadState_GET();
-    static char *kwlist[] = {"id", "code", "shared", "restrict", NULL};
-    PyObject *id, *code;
-    PyObject *shared = NULL;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O!$p:" FUNCNAME, kwlist,
-                                     &id, &code, &PyDict_Type, &shared,
-                                     &restricted))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.exec
+    id: object
+    code: object
+    shared: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
+    *
+    restrict as restricted: bool = False
 
+Execute the provided code in the identified interpreter.
+
+This is equivalent to running the builtin exec() under the target
+interpreter, using the __dict__ of its __main__ module as both
+globals and locals.
+
+"code" may be a string containing the text of a Python script.
+
+Functions (and code objects) are also supported, with some restrictions.
+The code/function must not take any arguments or be a closure
+(i.e. have cell vars).  Methods and other callables are not supported.
+
+If a function is provided, its code object is used and all its state
+is ignored, including its __globals__ dict.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
+                        PyObject *shared, int restricted)
+/*[clinic end generated code: output=492057c4f10dc304 input=5a22c1ed0c5dbcf3]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
     PyInterpreterState *interp = \
             resolve_interp(id, restricted, reqready, "exec code for");
@@ -1143,25 +1156,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     }
     assert(runres.result == NULL);
     Py_RETURN_NONE;
-#undef FUNCNAME
 }
-
-PyDoc_STRVAR(exec_doc,
-"exec(id, code, shared=None, *, restrict=False)\n\
-\n\
-Execute the provided code in the identified interpreter.\n\
-This is equivalent to running the builtin exec() under the target\n\
-interpreter, using the __dict__ of its __main__ module as both\n\
-globals and locals.\n\
-\n\
-\"code\" may be a string containing the text of a Python script.\n\
-\n\
-Functions (and code objects) are also supported, with some restrictions.\n\
-The code/function must not take any arguments or be a closure\n\
-(i.e. have cell vars).  Methods and other callables are not supported.\n\
-\n\
-If a function is provided, its code object is used and all its state\n\
-is ignored, including its __globals__ dict.");
 
 static PyObject *
 interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1610,8 +1605,7 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, get_config_doc},
     {"whence",                    _PyCFunction_CAST(interp_whence),
      METH_VARARGS | METH_KEYWORDS, whence_doc},
-    {"exec",                      _PyCFunction_CAST(interp_exec),
-     METH_VARARGS | METH_KEYWORDS, exec_doc},
+    _INTERPRETERS_EXEC_METHODDEF
     {"call",                      _PyCFunction_CAST(interp_call),
      METH_VARARGS | METH_KEYWORDS, call_doc},
     {"run_string",                _PyCFunction_CAST(interp_run_string),
