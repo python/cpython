@@ -71,7 +71,6 @@ from _csv import Error, writer, reader, register_dialect, \
                  QUOTE_STRINGS, QUOTE_NOTNULL
 from _csv import Dialect as _Dialect
 
-from collections import defaultdict, Counter
 from io import StringIO
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
@@ -365,6 +364,7 @@ class Sniffer:
         try and evaluate the smallest portion of the data possible, evaluating
         additional chunks as necessary.
         """
+        from collections import Counter, defaultdict
 
         data = list(filter(None, data.split('\n')))
 
