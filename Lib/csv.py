@@ -388,6 +388,7 @@ class Sniffer:
                     count = line.count(char)
                     charFrequency[char][count] += 1
 
+            # must count even if frequency is 0
             missing_chars = ascii.difference(candidate_chars)
             chunk_len = len(chunk)
             for char in missing_chars:
