@@ -72,7 +72,10 @@ New features
 
 .. _whatsnew315-tkinter-text:
 
-The `tkinter.Text.search` method now supports two additional arguments:
+tkinter.Text
+------------
+
+The ``tkinter.Text.search`` method now supports two additional arguments:
 
 * ``-nolinestop`` — allows the search to continue across line boundaries.
 * ``--strictlimits`` — restricts the search to within the specified range.
