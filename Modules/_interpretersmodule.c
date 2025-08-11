@@ -902,19 +902,22 @@ _interpreters_create_impl(PyObject *module, PyObject *configobj, int reqrefs)
 }
 
 
-static PyObject *
-interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"id", "restrict", NULL};
-    PyObject *id;
-    int restricted = 0;
-    // XXX Use "L" for id?
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:destroy", kwlist, &id, &restricted))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.destroy
+    id: object
+    *
+    restrict as restricted: bool = False
 
+Destroy the identified interpreter.
+
+Attempting to destroy the current interpreter raises InterpreterError.
+So does an unrecognized ID.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_destroy_impl(PyObject *module, PyObject *id, int restricted)
+/*[clinic end generated code: output=0bc20da8700ab4dd input=561bdd6537639d40]*/
+{
     // Look up the interpreter.
     int reqready = 0;
     PyInterpreterState *interp = \
@@ -947,14 +950,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(destroy_doc,
-"destroy(id, *, restrict=False)\n\
-\n\
-Destroy the identified interpreter.\n\
-\n\
-Attempting to destroy the current interpreter raises InterpreterError.\n\
-So does an unrecognized ID.");
 
 
 static PyObject *
@@ -1608,8 +1603,7 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, new_config_doc},
 
     _INTERPRETERS_CREATE_METHODDEF
-    {"destroy",                   _PyCFunction_CAST(interp_destroy),
-     METH_VARARGS | METH_KEYWORDS, destroy_doc},
+    _INTERPRETERS_DESTROY_METHODDEF
     {"list_all",                  _PyCFunction_CAST(interp_list_all),
      METH_VARARGS | METH_KEYWORDS, list_all_doc},
     {"get_current",               interp_get_current,
