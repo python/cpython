@@ -840,6 +840,7 @@ extern "C" {
     INIT_ID(call), \
     INIT_ID(call_exception_handler), \
     INIT_ID(call_soon), \
+    INIT_ID(callable), \
     INIT_ID(callback), \
     INIT_ID(cancel), \
     INIT_ID(capath), \
@@ -1004,6 +1005,7 @@ extern "C" {
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
     INIT_ID(imag), \
+    INIT_ID(implieslink), \
     INIT_ID(importlib), \
     INIT_ID(in_fd), \
     INIT_ID(include_aliases), \
@@ -1053,6 +1055,7 @@ extern "C" {
     INIT_ID(kw), \
     INIT_ID(kw1), \
     INIT_ID(kw2), \
+    INIT_ID(kwargs), \
     INIT_ID(kwdefaults), \
     INIT_ID(label), \
     INIT_ID(last), \
@@ -1169,6 +1172,7 @@ extern "C" {
     INIT_ID(pos1), \
     INIT_ID(pos2), \
     INIT_ID(posix), \
+    INIT_ID(preserve_exc), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \
@@ -1196,9 +1200,12 @@ extern "C" {
     INIT_ID(reload), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(reqrefs), \
+    INIT_ID(require_ready), \
     INIT_ID(reserved), \
     INIT_ID(reset), \
     INIT_ID(resetids), \
+    INIT_ID(restrict), \
     INIT_ID(return), \
     INIT_ID(reverse), \
     INIT_ID(reversed), \
@@ -1225,6 +1232,7 @@ extern "C" {
     INIT_ID(setsigmask), \
     INIT_ID(setstate), \
     INIT_ID(shape), \
+    INIT_ID(shared), \
     INIT_ID(show_cmd), \
     INIT_ID(signed), \
     INIT_ID(size), \
