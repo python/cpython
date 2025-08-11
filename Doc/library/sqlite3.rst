@@ -2433,8 +2433,8 @@ the context manager does nothing.
 
 .. _sqlite3-howto-pragma-in-transaction:
 
-How to use ``PRAGMA`` statements in transactions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use ``PRAGMA`` statements with implicit transaction control
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Some ``PRAGMA`` statements have no effect within transactions.
 For example, a ``PRAGMA foreign_keys=ON`` query will silently fail
@@ -2678,8 +2678,7 @@ Transaction control via the ``autocommit`` attribute
 
 The recommended way of controlling transaction behaviour is through
 the :attr:`Connection.autocommit` attribute,
-which should preferably be set using the *autocommit* parameter
-of :func:`connect`.
+normally set using the *autocommit* parameter of :func:`connect`.
 
 Set *autocommit* to ``False`` for :pep:`249`-compliant transaction control.
 This means:
