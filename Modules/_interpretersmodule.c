@@ -1158,23 +1158,27 @@ _interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_interpreters.run_string
+    id: object
+    script: unicode
+    shared: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
+    *
+    restrict as restricted: bool = False
+
+Execute the provided string in the identified interpreter.
+
+(See _interpreters.exec().)
+[clinic start generated code]*/
+
 static PyObject *
-interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
+_interpreters_run_string_impl(PyObject *module, PyObject *id,
+                              PyObject *script, PyObject *shared,
+                              int restricted)
+/*[clinic end generated code: output=a30a64fb9ad396a2 input=9158a58996e05957]*/
 {
 #define FUNCNAME MODULE_NAME_STR ".run_string"
     PyThreadState *tstate = _PyThreadState_GET();
-    static char *kwlist[] = {"id", "script", "shared", "restrict", NULL};
-    PyObject *id, *script;
-    PyObject *shared = NULL;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OU|O!$p:" FUNCNAME, kwlist,
-                                     &id, &script, &PyDict_Type, &shared,
-                                     &restricted))
-    {
-        return NULL;
-    }
-
     int reqready = 1;
     PyInterpreterState *interp = \
             resolve_interp(id, restricted, reqready, "run a string in");
@@ -1204,13 +1208,6 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 #undef FUNCNAME
 }
-
-PyDoc_STRVAR(run_string_doc,
-"run_string(id, script, shared=None, *, restrict=False)\n\
-\n\
-Execute the provided string in the identified interpreter.\n\
-\n\
-(See " MODULE_NAME_STR ".exec().");
 
 static PyObject *
 interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1608,8 +1605,7 @@ static PyMethodDef module_functions[] = {
     _INTERPRETERS_EXEC_METHODDEF
     {"call",                      _PyCFunction_CAST(interp_call),
      METH_VARARGS | METH_KEYWORDS, call_doc},
-    {"run_string",                _PyCFunction_CAST(interp_run_string),
-     METH_VARARGS | METH_KEYWORDS, run_string_doc},
+    _INTERPRETERS_RUN_STRING_METHODDEF
     {"run_func",                  _PyCFunction_CAST(interp_run_func),
      METH_VARARGS | METH_KEYWORDS, run_func_doc},
 
