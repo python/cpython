@@ -255,7 +255,8 @@ Basic Usage
 
    .. note::
 
-      The encoder dose not preserve the types of dictionary keys in Python.Read more at :ref:`json-key-convertion`
+      The encoder dose not preserve the types of dictionary keys in Python.
+      Read more at :ref:`json-key-convertion`
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \
@@ -360,7 +361,8 @@ Basic Usage
 
    .. note::
 
-      The decoder preserves the keys in JSON text as :class:`str`.Read more at :ref:`json-key-convertion`
+      The decoder preserves the keys in JSON text as :class:`str`.
+      Read more at :ref:`json-key-convertion`
 
 
 Encoders and Decoders
