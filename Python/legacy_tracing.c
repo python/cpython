@@ -127,7 +127,7 @@ sys_profile_call_or_return(
 }
 
 static int
-set_opcode_trace_lock_held(PyCodeObject *code, bool enable)
+set_opcode_trace_world_stopped(PyCodeObject *code, bool enable)
 {
     _PyMonitoringEventSet events = 0;
     if (_PyMonitoring_GetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, &events) < 0) {
@@ -169,7 +169,7 @@ _PyEval_SetOpcodeTrace(PyFrameObject *frame, bool enable)
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyEval_StopTheWorld(interp);
-    int res = set_opcode_trace_lock_held(code, enable);
+    int res = set_opcode_trace_world_stopped(code, enable);
     _PyEval_StartTheWorld(interp);
     return res;
 }
@@ -452,7 +452,7 @@ is_tstate_valid(PyThreadState *tstate)
 #endif
 
 static int
-setup_profile_callbacks(void *_unused)
+setup_profile_callbacks(void *Py_UNUSED(arg))
 {
     /* Setup PEP 669 monitoring callbacks and events. */
     if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
@@ -683,7 +683,7 @@ maybe_set_opcode_trace(PyThreadState *tstate)
     if (frame == NULL || !frame->f_trace_opcodes) {
         return 0;
     }
-    return set_opcode_trace_lock_held(_PyFrame_GetCode(iframe), true);
+    return set_opcode_trace_world_stopped(_PyFrame_GetCode(iframe), true);
 }
 
 int
