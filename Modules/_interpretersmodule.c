@@ -1271,28 +1271,28 @@ _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
 #undef FUNCNAME
 }
 
-static PyObject *
-interp_call(PyObject *self, PyObject *args, PyObject *kwds)
-{
-#define FUNCNAME MODULE_NAME_STR ".call"
-    PyThreadState *tstate = _PyThreadState_GET();
-    static char *kwlist[] = {"id", "callable", "args", "kwargs",
-                             "preserve_exc", "restrict", NULL};
-    PyObject *id, *callable;
-    PyObject *args_obj = NULL;
-    PyObject *kwargs_obj = NULL;
-    int preserve_exc = 0;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O!O!$pp:" FUNCNAME, kwlist,
-                                     &id, &callable,
-                                     &PyTuple_Type, &args_obj,
-                                     &PyDict_Type, &kwargs_obj,
-                                     &preserve_exc, &restricted))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.call
+    id: object
+    callable: object
+    args as args_obj: object(subclass_of='&PyTuple_Type', c_default='NULL') = ()
+    kwargs as kwargs_obj: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
+    *
+    preserve_exc: bool = False
+    restrict as restricted: bool = False
 
+Call the provided object in the identified interpreter.
+
+Pass the given args and kwargs, if possible.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
+                        PyObject *args_obj, PyObject *kwargs_obj,
+                        int preserve_exc, int restricted)
+/*[clinic end generated code: output=983ee27b3c43f6ef input=77590fdb3f519d65]*/
+{
+    PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
     PyInterpreterState *interp = \
             resolve_interp(id, restricted, reqready, "make a call in");
@@ -1323,14 +1323,7 @@ finally:
     _interp_call_clear(&call);
     _run_result_clear(&runres);
     return res_and_exc;
-#undef FUNCNAME
 }
-
-PyDoc_STRVAR(call_doc,
-"call(id, callable, args=None, kwargs=None, *, restrict=False)\n\
-\n\
-Call the provided object in the identified interpreter.\n\
-Pass the given args and kwargs, if possible.");
 
 
 static PyObject *
@@ -1600,8 +1593,7 @@ static PyMethodDef module_functions[] = {
     {"whence",                    _PyCFunction_CAST(interp_whence),
      METH_VARARGS | METH_KEYWORDS, whence_doc},
     _INTERPRETERS_EXEC_METHODDEF
-    {"call",                      _PyCFunction_CAST(interp_call),
-     METH_VARARGS | METH_KEYWORDS, call_doc},
+    _INTERPRETERS_CALL_METHODDEF
     _INTERPRETERS_RUN_STRING_METHODDEF
     _INTERPRETERS_RUN_FUNC_METHODDEF
 

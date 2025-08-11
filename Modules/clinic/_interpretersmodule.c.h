@@ -624,4 +624,115 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=18c9d4cdaf74b200 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_call__doc__,
+"call($module, /, id, callable, args=(), kwargs={}, *,\n"
+"     preserve_exc=False, restrict=False)\n"
+"--\n"
+"\n"
+"Call the provided object in the identified interpreter.\n"
+"\n"
+"Pass the given args and kwargs, if possible.");
+
+#define _INTERPRETERS_CALL_METHODDEF    \
+    {"call", _PyCFunction_CAST(_interpreters_call), METH_FASTCALL|METH_KEYWORDS, _interpreters_call__doc__},
+
+static PyObject *
+_interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
+                        PyObject *args_obj, PyObject *kwargs_obj,
+                        int preserve_exc, int restricted);
+
+static PyObject *
+_interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 6
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(id), &_Py_ID(callable), &_Py_ID(args), &_Py_ID(kwargs), &_Py_ID(preserve_exc), &_Py_ID(restrict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"id", "callable", "args", "kwargs", "preserve_exc", "restrict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "call",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[6];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *id;
+    PyObject *callable;
+    PyObject *args_obj = NULL;
+    PyObject *kwargs_obj = NULL;
+    int preserve_exc = 0;
+    int restricted = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    id = args[0];
+    callable = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        if (!PyTuple_Check(args[2])) {
+            _PyArg_BadArgument("call", "argument 'args'", "tuple", args[2]);
+            goto exit;
+        }
+        args_obj = args[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[3]) {
+        if (!PyDict_Check(args[3])) {
+            _PyArg_BadArgument("call", "argument 'kwargs'", "dict", args[3]);
+            goto exit;
+        }
+        kwargs_obj = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[4]) {
+        preserve_exc = PyObject_IsTrue(args[4]);
+        if (preserve_exc < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    restricted = PyObject_IsTrue(args[5]);
+    if (restricted < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _interpreters_call_impl(module, id, callable, args_obj, kwargs_obj, preserve_exc, restricted);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=d009f06b21136592 input=a9049054013a1b77]*/
