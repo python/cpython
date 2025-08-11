@@ -326,14 +326,6 @@ Return the square root of the argument to full precision. The result is\n\
 correctly rounded using the ROUND_HALF_EVEN rounding mode.\n\
 \n");
 
-PyDoc_STRVAR(doc_to_integral_value,
-"to_integral_value($self, /, rounding=None, context=None)\n--\n\n\
-Round to the nearest integer without signaling Inexact or Rounded.  The\n\
-rounding mode is determined by the rounding parameter if given, else by\n\
-the given context. If neither parameter is given, then the rounding mode\n\
-of the current default context is used.\n\
-\n");
-
 
 /******************************************************************************/
 /*                       Context Object and Methods                           */
