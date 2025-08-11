@@ -70,8 +70,6 @@ Summary --- release highlights
 New features
 ============
 
-.. tkinter.Text is not currently documented - being tracked in :gh:``135658``
-
 .. _whatsnew315-sampling-profiler:
 
 High frequency statistical sampling profiler
@@ -358,13 +356,13 @@ tarfile
 tkinter
 -------
 
-* The ``tkinter.Text.search`` method now supports two additional
-  arguments: ``nolinestop`` which allows the search to
+* The :meth:`!tkinter.Text.search` method now supports two additional
+  arguments: *nolinestop* which allows the search to
   continue across line boundaries;
-  and ``strictlimits`` which restricts the search to within the specified range.
+  and *strictlimits* which restricts the search to within the specified range.
   (Contributed by Rihaan Meher in :gh:`130848`)
 
-* A new method ``tkinter.Text.search_all`` has been introduced.
+* A new method :meth:`!tkinter.Text.search_all` has been introduced.
   This method allows for searching for all matches of a pattern
   using Tcl's ``-all`` and ``-overlap`` options.
   (Contributed by Rihaan Meher in :gh:`130848`)

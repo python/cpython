@@ -4067,7 +4067,7 @@ class Text(Widget, XView, YView):
             elide=None, nolinestop=None, overlap=None,
             strictlimits=None):
         """Search all occurrences of PATTERN from INDEX to STOPINDEX.
-        Return a list of indices where matches begin."""
+        Return a tuple of indices where matches begin."""
         args = [self._w, 'search', '-all']
         if forwards: args.append('-forwards')
         if backwards: args.append('-backwards')
