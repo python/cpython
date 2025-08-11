@@ -1028,19 +1028,21 @@ _interpreters_get_main_impl(PyObject *module)
 }
 
 
-static PyObject *
-interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {"id", "updates", "restrict", NULL};
-    PyObject *id, *updates;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "OO!|$p:" MODULE_NAME_STR ".set___main___attrs",
-                                     kwlist, &id, &PyDict_Type, &updates, &restricted))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.set___main___attrs
+    id: object
+    updates: object(subclass_of='&PyDict_Type')
+    *
+    restrict as restricted: bool = False
 
+Bind the given attributes in the interpreter's __main__ module.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_set___main___attrs_impl(PyObject *module, PyObject *id,
+                                      PyObject *updates, int restricted)
+/*[clinic end generated code: output=f3803010cb452bf0 input=d16ab8d81371f86a]*/
+{
     // Look up the interpreter.
     int reqready = 1;
     PyInterpreterState *interp = \
@@ -1086,11 +1088,6 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
 
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(set___main___attrs_doc,
-"set___main___attrs(id, ns, *, restrict=False)\n\
-\n\
-Bind the given attributes in the interpreter's __main__ module.");
 
 
 static PyObject *
@@ -1622,8 +1619,7 @@ static PyMethodDef module_functions[] = {
     {"run_func",                  _PyCFunction_CAST(interp_run_func),
      METH_VARARGS | METH_KEYWORDS, run_func_doc},
 
-    {"set___main___attrs",        _PyCFunction_CAST(interp_set___main___attrs),
-     METH_VARARGS | METH_KEYWORDS, set___main___attrs_doc},
+    _INTERPRETERS_SET___MAIN___ATTRS_METHODDEF
 
     {"incref",                    _PyCFunction_CAST(interp_incref),
      METH_VARARGS | METH_KEYWORDS, NULL},

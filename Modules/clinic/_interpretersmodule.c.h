@@ -266,4 +266,79 @@ _interpreters_get_main(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _interpreters_get_main_impl(module);
 }
-/*[clinic end generated code: output=a6ba3b909548db9f input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_set___main___attrs__doc__,
+"set___main___attrs($module, /, id, updates, *, restrict=False)\n"
+"--\n"
+"\n"
+"Bind the given attributes in the interpreter\'s __main__ module.");
+
+#define _INTERPRETERS_SET___MAIN___ATTRS_METHODDEF    \
+    {"set___main___attrs", _PyCFunction_CAST(_interpreters_set___main___attrs), METH_FASTCALL|METH_KEYWORDS, _interpreters_set___main___attrs__doc__},
+
+static PyObject *
+_interpreters_set___main___attrs_impl(PyObject *module, PyObject *id,
+                                      PyObject *updates, int restricted);
+
+static PyObject *
+_interpreters_set___main___attrs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(id), &_Py_ID(updates), &_Py_ID(restrict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"id", "updates", "restrict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set___main___attrs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *id;
+    PyObject *updates;
+    int restricted = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    id = args[0];
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("set___main___attrs", "argument 'updates'", "dict", args[1]);
+        goto exit;
+    }
+    updates = args[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    restricted = PyObject_IsTrue(args[2]);
+    if (restricted < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _interpreters_set___main___attrs_impl(module, id, updates, restricted);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=61cb084380333368 input=a9049054013a1b77]*/
