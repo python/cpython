@@ -1133,4 +1133,70 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=78a3c49f45245ed8 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_capture_exception__doc__,
+"capture_exception($module, /, exc_arg=None)\n"
+"--\n"
+"\n"
+"Return a snapshot of an exception.\n"
+"\n"
+"If \"exc\" is None then the current exception, if any, is used (but not cleared).\n"
+"The returned snapshot is the same as what _interpreters.exec() returns.");
+
+#define _INTERPRETERS_CAPTURE_EXCEPTION_METHODDEF    \
+    {"capture_exception", _PyCFunction_CAST(_interpreters_capture_exception), METH_FASTCALL|METH_KEYWORDS, _interpreters_capture_exception__doc__},
+
+static PyObject *
+_interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg);
+
+static PyObject *
+_interpreters_capture_exception(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(exc_arg), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"exc_arg", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "capture_exception",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *exc_arg = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    exc_arg = args[0];
+skip_optional_pos:
+    return_value = _interpreters_capture_exception_impl(module, exc_arg);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=e83e8292dcd38205 input=a9049054013a1b77]*/

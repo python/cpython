@@ -1490,18 +1490,20 @@ _interpreters_decref_impl(PyObject *module, PyObject *id, int restricted)
 }
 
 
-static PyObject *
-capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"exc", NULL};
-    PyObject *exc_arg = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O:capture_exception", kwlist,
-                                     &exc_arg))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.capture_exception
+    exc_arg: object(c_default='NULL') = None
 
+Return a snapshot of an exception.
+
+If "exc" is None then the current exception, if any, is used (but not cleared).
+The returned snapshot is the same as what _interpreters.exec() returns.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
+/*[clinic end generated code: output=ef3f5393ef9c88a6 input=e607efac7eb95fba]*/
+{
     PyObject *exc = exc_arg;
     if (exc == NULL || exc == Py_None) {
         exc = PyErr_GetRaisedException();
@@ -1549,14 +1551,6 @@ finally:
     return captured;
 }
 
-PyDoc_STRVAR(capture_exception_doc,
-"capture_exception(exc=None) -> types.SimpleNamespace\n\
-\n\
-Return a snapshot of an exception.  If \"exc\" is None\n\
-then the current exception, if any, is used (but not cleared).\n\
-\n\
-The returned snapshot is the same as what _interpreters.exec() returns.");
-
 
 static PyMethodDef module_functions[] = {
     {"new_config",                _PyCFunction_CAST(interp_new_config),
@@ -1583,8 +1577,7 @@ static PyMethodDef module_functions[] = {
 
     _INTERPRETERS_IS_SHAREABLE_METHODDEF
 
-    {"capture_exception",         _PyCFunction_CAST(capture_exception),
-     METH_VARARGS | METH_KEYWORDS, capture_exception_doc},
+    _INTERPRETERS_CAPTURE_EXCEPTION_METHODDEF
 
     {NULL,                        NULL}           /* sentinel */
 };
