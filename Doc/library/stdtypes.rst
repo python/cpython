@@ -38,8 +38,7 @@ Truth Value Testing
    pair: Boolean; operations
    single: false
 
-Any object can be tested for truth value (with the exception of the
-:exc:`NotImplemented` object), for use in an :keyword:`if` or
+Any object can be tested for truth value, for use in an :keyword:`if` or
 :keyword:`while` condition or as operand of the Boolean operations below.
 
 .. index:: single: true
@@ -47,7 +46,9 @@ Any object can be tested for truth value (with the exception of the
 By default, an object is considered true unless its class defines either a
 :meth:`~object.__bool__` method that returns ``False`` or a
 :meth:`~object.__len__` method that
-returns zero, when called with the object. [1]_  Here are most of the built-in
+returns zero, when called with the object. [1]_ If one of the methods raises an
+exception when they are called, the exception is propagated and the object does
+not have a truth value. Here are most of the built-in
 objects considered false:
 
 .. index::
