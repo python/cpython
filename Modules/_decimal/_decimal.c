@@ -3921,6 +3921,7 @@ error:
 /*[clinic input]
 _decimal.Decimal.to_integral_value
 
+    self as dec: self
     rounding: object = None
     context: object = None
 
@@ -3932,15 +3933,15 @@ the current default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_value_impl(PyObject *dec, PyObject *rounding,
                                         PyObject *context)
-/*[clinic end generated code: output=7301465765f48b6b input=5778168222cadf71]*/
+/*[clinic end generated code: output=1517d948029dbecc input=0fd8dd3bc5248b21]*/
 {
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -3959,7 +3960,7 @@ _decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
         return NULL;
     }
 
-    mpd_qround_to_int(MPD(result), MPD(self), &workctx, &status);
+    mpd_qround_to_int(MPD(result), MPD(dec), &workctx, &status);
     if (dec_addstatus(context, status)) {
         Py_DECREF(result);
         return NULL;
@@ -3990,6 +3991,7 @@ _decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
 /*[clinic input]
 _decimal.Decimal.to_integral_exact
 
+    self as dec: self
     rounding: object = None
     context: object = None
 
@@ -4002,15 +4004,15 @@ rounding mode of the current default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_exact_impl(PyObject *dec, PyObject *rounding,
                                         PyObject *context)
-/*[clinic end generated code: output=8b004f9b45ac7746 input=edd30a9f06aed70b]*/
+/*[clinic end generated code: output=bfcd6d3ac47460d7 input=095a7cc7368dcfbb]*/
 {
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -4029,7 +4031,7 @@ _decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
         return NULL;
     }
 
-    mpd_qround_to_intx(MPD(result), MPD(self), &workctx, &status);
+    mpd_qround_to_intx(MPD(result), MPD(dec), &workctx, &status);
     if (dec_addstatus(context, status)) {
         Py_DECREF(result);
         return NULL;
@@ -4123,12 +4125,14 @@ PyDec_Round(PyObject *dec, PyObject *args)
 /*[clinic input]
 _decimal.Decimal.as_tuple
 
+    self as dec: self
+
 Return a tuple representation of the number.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_as_tuple_impl(PyObject *self)
-/*[clinic end generated code: output=c6e8e2420c515eca input=e26f2151d78ff59d]*/
+_decimal_Decimal_as_tuple_impl(PyObject *dec)
+/*[clinic end generated code: output=b1a619dfdbf89220 input=e334c01206f0e62e]*/
 {
     PyObject *result = NULL;
     PyObject *sign = NULL;
@@ -4140,13 +4144,13 @@ _decimal_Decimal_as_tuple_impl(PyObject *self)
     Py_ssize_t intlen, i;
 
 
-    x = mpd_qncopy(MPD(self));
+    x = mpd_qncopy(MPD(dec));
     if (x == NULL) {
         PyErr_NoMemory();
         goto out;
     }
 
-    sign = PyLong_FromUnsignedLong(mpd_sign(MPD(self)));
+    sign = PyLong_FromUnsignedLong(mpd_sign(MPD(dec)));
     if (sign == NULL) {
         goto out;
     }
@@ -4167,7 +4171,7 @@ _decimal_Decimal_as_tuple_impl(PyObject *self)
             expt = PyUnicode_FromString(mpd_isqnan(x)?"n":"N");
         }
         else {
-            expt = PyLong_FromSsize_t(MPD(self)->exp);
+            expt = PyLong_FromSsize_t(MPD(dec)->exp);
         }
         if (expt == NULL) {
             goto out;
@@ -4208,7 +4212,7 @@ _decimal_Decimal_as_tuple_impl(PyObject *self)
         }
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
     result = PyObject_CallFunctionObjArgs((PyObject *)state->DecimalTuple,
                                           sign, coeff, expt, NULL);
 
@@ -4930,6 +4934,7 @@ Dec_BinaryFuncVA(mpd_qshift)
 /*[clinic input]
 _decimal.Decimal.quantize
 
+    self as v: self
     exp as w: object
     rounding: object = None
     context: object = None
@@ -4954,16 +4959,16 @@ argument is given, the rounding mode of the current thread's context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_quantize_impl(PyObject *self, PyObject *w,
-                               PyObject *rounding, PyObject *context)
-/*[clinic end generated code: output=5e84581f96dc685c input=2053ebf488a665dc]*/
+_decimal_Decimal_quantize_impl(PyObject *v, PyObject *w, PyObject *rounding,
+                               PyObject *context)
+/*[clinic end generated code: output=6ebc907ee3000c1f input=223b9dd92655b4bd]*/
 {
     PyObject *a, *b;
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -4977,7 +4982,7 @@ _decimal_Decimal_quantize_impl(PyObject *self, PyObject *w,
         }
     }
 
-    CONVERT_BINOP_RAISE(&a, &b, self, w, context);
+    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
 
     result = dec_alloc(state);
     if (result == NULL) {

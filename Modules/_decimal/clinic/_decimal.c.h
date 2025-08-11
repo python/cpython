@@ -106,11 +106,11 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_value__doc__,
     {"to_integral_value", _PyCFunction_CAST(_decimal_Decimal_to_integral_value), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_value__doc__},
 
 static PyObject *
-_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_value_impl(PyObject *dec, PyObject *rounding,
                                         PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_integral_value(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_integral_value(PyObject *dec, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -161,7 +161,7 @@ _decimal_Decimal_to_integral_value(PyObject *self, PyObject *const *args, Py_ssi
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_value_impl(self, rounding, context);
+    return_value = _decimal_Decimal_to_integral_value_impl(dec, rounding, context);
 
 exit:
     return return_value;
@@ -255,11 +255,11 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_exact__doc__,
     {"to_integral_exact", _PyCFunction_CAST(_decimal_Decimal_to_integral_exact), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_exact__doc__},
 
 static PyObject *
-_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_exact_impl(PyObject *dec, PyObject *rounding,
                                         PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_integral_exact(PyObject *dec, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -310,7 +310,7 @@ _decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssi
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_exact_impl(self, rounding, context);
+    return_value = _decimal_Decimal_to_integral_exact_impl(dec, rounding, context);
 
 exit:
     return return_value;
@@ -326,12 +326,12 @@ PyDoc_STRVAR(_decimal_Decimal_as_tuple__doc__,
     {"as_tuple", (PyCFunction)_decimal_Decimal_as_tuple, METH_NOARGS, _decimal_Decimal_as_tuple__doc__},
 
 static PyObject *
-_decimal_Decimal_as_tuple_impl(PyObject *self);
+_decimal_Decimal_as_tuple_impl(PyObject *dec);
 
 static PyObject *
-_decimal_Decimal_as_tuple(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal_as_tuple(PyObject *dec, PyObject *Py_UNUSED(ignored))
 {
-    return _decimal_Decimal_as_tuple_impl(self);
+    return _decimal_Decimal_as_tuple_impl(dec);
 }
 
 PyDoc_STRVAR(_decimal_Decimal_adjusted__doc__,
@@ -771,11 +771,11 @@ PyDoc_STRVAR(_decimal_Decimal_quantize__doc__,
     {"quantize", _PyCFunction_CAST(_decimal_Decimal_quantize), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_quantize__doc__},
 
 static PyObject *
-_decimal_Decimal_quantize_impl(PyObject *self, PyObject *w,
-                               PyObject *rounding, PyObject *context);
+_decimal_Decimal_quantize_impl(PyObject *v, PyObject *w, PyObject *rounding,
+                               PyObject *context);
 
 static PyObject *
-_decimal_Decimal_quantize(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_quantize(PyObject *v, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -828,9 +828,9 @@ _decimal_Decimal_quantize(PyObject *self, PyObject *const *args, Py_ssize_t narg
     }
     context = args[2];
 skip_optional_pos:
-    return_value = _decimal_Decimal_quantize_impl(self, w, rounding, context);
+    return_value = _decimal_Decimal_quantize_impl(v, w, rounding, context);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=641ac1cc6c557f2d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9dca0c61c40ce23b input=a9049054013a1b77]*/
