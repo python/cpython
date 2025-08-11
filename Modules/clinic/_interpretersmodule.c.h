@@ -793,4 +793,72 @@ _interpreters_is_shareable(PyObject *module, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=95284c14ff28beed input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_is_running__doc__,
+"is_running($module, /, id, *, restrict=False)\n"
+"--\n"
+"\n"
+"Return whether or not the identified interpreter is running.");
+
+#define _INTERPRETERS_IS_RUNNING_METHODDEF    \
+    {"is_running", _PyCFunction_CAST(_interpreters_is_running), METH_FASTCALL|METH_KEYWORDS, _interpreters_is_running__doc__},
+
+static PyObject *
+_interpreters_is_running_impl(PyObject *module, PyObject *id, int restricted);
+
+static PyObject *
+_interpreters_is_running(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(id), &_Py_ID(restrict), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"id", "restrict", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_running",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *id;
+    int restricted = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    id = args[0];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    restricted = PyObject_IsTrue(args[1]);
+    if (restricted < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _interpreters_is_running_impl(module, id, restricted);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=623fce9726f3efa0 input=a9049054013a1b77]*/

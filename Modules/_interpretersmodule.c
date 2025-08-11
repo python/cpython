@@ -1346,19 +1346,19 @@ _interpreters_is_shareable_impl(PyObject *module, PyObject *obj)
 }
 
 
-static PyObject *
-interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"id", "restrict", NULL};
-    PyObject *id;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:is_running", kwlist,
-                                     &id, &restricted))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.is_running
+    id: object
+    *
+    restrict as restricted: bool = False
 
+Return whether or not the identified interpreter is running.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_is_running_impl(PyObject *module, PyObject *id, int restricted)
+/*[clinic end generated code: output=32a6225d5ded9bdb input=3291578d04231125]*/
+{
     int reqready = 1;
     PyInterpreterState *interp = \
             resolve_interp(id, restricted, reqready, "check if running for");
@@ -1371,11 +1371,6 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
     }
     Py_RETURN_FALSE;
 }
-
-PyDoc_STRVAR(is_running_doc,
-"is_running(id, *, restrict=False) -> bool\n\
-\n\
-Return whether or not the identified interpreter is running.");
 
 
 static PyObject *
@@ -1581,8 +1576,7 @@ static PyMethodDef module_functions[] = {
     _INTERPRETERS_GET_CURRENT_METHODDEF
     _INTERPRETERS_GET_MAIN_METHODDEF
 
-    {"is_running",                _PyCFunction_CAST(interp_is_running),
-     METH_VARARGS | METH_KEYWORDS, is_running_doc},
+    _INTERPRETERS_IS_RUNNING_METHODDEF
     {"get_config",                _PyCFunction_CAST(interp_get_config),
      METH_VARARGS | METH_KEYWORDS, get_config_doc},
     {"whence",                    _PyCFunction_CAST(interp_whence),
