@@ -146,12 +146,6 @@ See :ref:`json-commandline` for detailed documentation.
    This module's encoders and decoders preserve input and output order by
    default.  Order is only lost if the underlying containers are unordered.
 
-.. note::
-   :rfc:`7159` requires that keys in key/value pairs of JSON are always of the
-   type :class:`str`. When a dictionary is converted into JSON, all the keys
-   of the dictionary arecoerced to strings.When a JSON object is converted into
-   dictionaries,all the keys of the dictionary are strings.
-
 Basic Usage
 -----------
 
