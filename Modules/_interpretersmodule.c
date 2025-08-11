@@ -1413,17 +1413,17 @@ _interpreters_get_config_impl(PyObject *module, PyObject *idobj,
 }
 
 
-static PyObject *
-interp_whence(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"id", NULL};
-    PyObject *id;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:whence", kwlist, &id))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.whence
+    id: object
 
+Return an identifier for where the interpreter was created.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_whence_impl(PyObject *module, PyObject *id)
+/*[clinic end generated code: output=ef2c21ab106c2c20 input=eeede0a2fbfa2968]*/
+{
     PyInterpreterState *interp = look_up_interp(id);
     if (interp == NULL) {
         return NULL;
@@ -1432,11 +1432,6 @@ interp_whence(PyObject *self, PyObject *args, PyObject *kwds)
     long whence = get_whence(interp);
     return PyLong_FromLong(whence);
 }
-
-PyDoc_STRVAR(whence_doc,
-"whence(id) -> int\n\
-\n\
-Return an identifier for where the interpreter was created.");
 
 
 static PyObject *
@@ -1575,8 +1570,7 @@ static PyMethodDef module_functions[] = {
 
     _INTERPRETERS_IS_RUNNING_METHODDEF
     _INTERPRETERS_GET_CONFIG_METHODDEF
-    {"whence",                    _PyCFunction_CAST(interp_whence),
-     METH_VARARGS | METH_KEYWORDS, whence_doc},
+    _INTERPRETERS_WHENCE_METHODDEF
     _INTERPRETERS_EXEC_METHODDEF
     _INTERPRETERS_CALL_METHODDEF
     _INTERPRETERS_RUN_STRING_METHODDEF

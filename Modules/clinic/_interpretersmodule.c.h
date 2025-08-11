@@ -930,4 +930,62 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e5c4396144a92bad input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_whence__doc__,
+"whence($module, /, id)\n"
+"--\n"
+"\n"
+"Return an identifier for where the interpreter was created.");
+
+#define _INTERPRETERS_WHENCE_METHODDEF    \
+    {"whence", _PyCFunction_CAST(_interpreters_whence), METH_FASTCALL|METH_KEYWORDS, _interpreters_whence__doc__},
+
+static PyObject *
+_interpreters_whence_impl(PyObject *module, PyObject *id);
+
+static PyObject *
+_interpreters_whence(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(id), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"id", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "whence",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *id;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    id = args[0];
+    return_value = _interpreters_whence_impl(module, id);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=70a1e5c316ae46ac input=a9049054013a1b77]*/
