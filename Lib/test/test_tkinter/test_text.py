@@ -46,14 +46,14 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(result, '2.8')
 
         all_res = text.search_all('test', '1.0', 'end')
-        self.assertIsInstance(all_res, list)
+        self.assertIsInstance(all_res, tuple)
         self.assertGreaterEqual(len(all_res), 2)
         self.assertEqual(str(all_res[0]), '1.10')
         self.assertEqual(str(all_res[1]), '2.8')
 
 
         overlap_res = text.search_all('test', '1.0', 'end', overlap=True)
-        self.assertIsInstance(overlap_res, list)
+        self.assertIsInstance(overlap_res, tuple)
         self.assertGreaterEqual(len(overlap_res), len(all_res))
 
         strict_res = text.search('test', '1.0', '1.20', strictlimits=True)
