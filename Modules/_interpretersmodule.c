@@ -20,11 +20,17 @@
 
 #include "_interpreters_common.h"
 
+#include "clinic/_interpretersmodule.c.h"
 
 #define MODULE_NAME _interpreters
 #define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
 #define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
+
+/*[clinic input]
+module _interpreters
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bfd967980a0de892]*/
 
 static PyInterpreterState *
 _get_current_interp(void)
@@ -841,17 +847,28 @@ Any keyword arguments are set on the corresponding config fields,\n\
 overriding the initial values.");
 
 
-static PyObject *
-interp_create(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"config", "reqrefs", NULL};
-    PyObject *configobj = NULL;
-    int reqrefs = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O$p:create", kwlist,
-                                     &configobj, &reqrefs)) {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.create
+    config as configobj: object(py_default="'isolated'") = NULL
+    *
+    reqrefs: bool = False
 
+Create a new interpreter and return a unique generated ID.
+
+The caller is responsible for destroying the interpreter before exiting,
+typically by using _interpreters.destroy().  This can be managed
+automatically by passing "reqrefs=True" and then using _incref() and
+_decref() appropriately.
+
+"config" must be a valid interpreter config or the name of a
+predefined config ("isolated" or "legacy").  The default
+is "isolated".
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_create_impl(PyObject *module, PyObject *configobj, int reqrefs)
+/*[clinic end generated code: output=c1cc6835b1277c16 input=c6d69e3ff2315a65]*/
+{
     PyInterpreterConfig config;
     if (config_from_object(configobj, &config) < 0) {
         return NULL;
@@ -883,21 +900,6 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     return idobj;
 }
-
-
-PyDoc_STRVAR(create_doc,
-"create([config], *, reqrefs=False) -> ID\n\
-\n\
-Create a new interpreter and return a unique generated ID.\n\
-\n\
-The caller is responsible for destroying the interpreter before exiting,\n\
-typically by using _interpreters.destroy().  This can be managed \n\
-automatically by passing \"reqrefs=True\" and then using _incref() and\n\
-_decref() appropriately.\n\
-\n\
-\"config\" must be a valid interpreter config or the name of a\n\
-predefined config (\"isolated\" or \"legacy\").  The default\n\
-is \"isolated\".");
 
 
 static PyObject *
@@ -1605,8 +1607,7 @@ static PyMethodDef module_functions[] = {
     {"new_config",                _PyCFunction_CAST(interp_new_config),
      METH_VARARGS | METH_KEYWORDS, new_config_doc},
 
-    {"create",                    _PyCFunction_CAST(interp_create),
-     METH_VARARGS | METH_KEYWORDS, create_doc},
+    _INTERPRETERS_CREATE_METHODDEF
     {"destroy",                   _PyCFunction_CAST(interp_destroy),
      METH_VARARGS | METH_KEYWORDS, destroy_doc},
     {"list_all",                  _PyCFunction_CAST(interp_list_all),
