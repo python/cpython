@@ -156,7 +156,7 @@ _PyEval_SetOpcodeTrace(PyFrameObject *frame, bool enable)
     PyCodeObject *code = _PyFrame_GetCode(frame->f_frame);
 
 #ifdef Py_GIL_DISABLED
-    // First check if a change is necessary outside of the stop-the-world section
+    // First check if a change is necessary outside of the stop-the-world pause
     _PyMonitoringEventSet events = 0;
     if (_PyMonitoring_GetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, &events) < 0) {
         return -1;
