@@ -48,8 +48,8 @@ By default, an object is considered true unless its class defines either a
 :meth:`~object.__len__` method that
 returns zero, when called with the object. [1]_ If one of the methods raises an
 exception when they are called, the exception is propagated and the object does
-not have a truth value. Here are most of the built-in
-objects considered false:
+not have a truth value (for example, :exc:`NotImplemented`).
+Here are most of the built-in objects considered false:
 
 .. index::
    single: None (Built-in object)
