@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -71,6 +71,9 @@ set_zstd_error(const _zstd_state *state, error_type type, size_t zstd_ret)
             break;
         case ERR_COMPRESS:
             msg = "Unable to compress Zstandard data: %s";
+            break;
+        case ERR_SET_PLEDGED_INPUT_SIZE:
+            msg = "Unable to set pledged uncompressed content size: %s";
             break;
 
         case ERR_LOAD_D_DICT:

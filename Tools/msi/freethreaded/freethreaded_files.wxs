@@ -103,7 +103,7 @@
         </ComponentGroup>
     </Fragment>
 
-    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_uuid;_wmi;_zoneinfo;_zstd;_testcapi;_ctypes_test;_testbuffer;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testinternalcapi;_testclinic;_testclinic_limited;_tkinter ?>
+    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_remote_debugging;_uuid;_wmi;_zoneinfo;_zstd;_testcapi;_ctypes_test;_testbuffer;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testinternalcapi;_testclinic;_testclinic_limited;_tkinter ?>
     <Fragment>
         <DirectoryRef Id="Lib_venv_scripts_nt__freethreaded" />
 

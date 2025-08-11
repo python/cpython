@@ -10,6 +10,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_stats.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 static const char *
@@ -1148,9 +1149,7 @@ func_dealloc(PyObject *self)
         return;
     }
     _PyObject_GC_UNTRACK(op);
-    if (op->func_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) op);
-    }
+    FT_CLEAR_WEAKREFS(self, op->func_weakreflist);
     (void)func_clear((PyObject*)op);
     // These aren't cleared by func_clear().
     _Py_DECREF_CODE((PyCodeObject *)op->func_code);
@@ -1256,7 +1255,7 @@ _PyFunction_VerifyStateless(PyThreadState *tstate, PyObject *func)
         return -1;
     }
     // Check the builtins.
-    PyObject *builtinsns = PyFunction_GET_BUILTINS(func);
+    PyObject *builtinsns = _PyFunction_GET_BUILTINS(func);
     if (builtinsns != NULL && !PyDict_Check(builtinsns)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "unsupported builtins %R", builtinsns);

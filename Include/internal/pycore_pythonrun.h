@@ -33,6 +33,28 @@ extern const char* _Py_SourceAsString(
     PyCompilerFlags *cf,
     PyObject **cmd_copy);
 
+
+/* Stack size, in "pointers". This must be large enough, so
+ * no two calls to check recursion depth are more than this far
+ * apart. In practice, that means it must be larger than the C
+ * stack consumption of PyEval_EvalDefault */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
+#  define _PyOS_LOG2_STACK_MARGIN 12
+#elif defined(Py_DEBUG) && defined(WIN32)
+#  define _PyOS_LOG2_STACK_MARGIN 12
+#else
+#  define _PyOS_LOG2_STACK_MARGIN 11
+#endif
+#define _PyOS_STACK_MARGIN (1 << _PyOS_LOG2_STACK_MARGIN)
+#define _PyOS_STACK_MARGIN_BYTES (_PyOS_STACK_MARGIN * sizeof(void *))
+
+#if SIZEOF_VOID_P == 8
+#  define _PyOS_STACK_MARGIN_SHIFT (_PyOS_LOG2_STACK_MARGIN + 3)
+#else
+#  define _PyOS_STACK_MARGIN_SHIFT (_PyOS_LOG2_STACK_MARGIN + 2)
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

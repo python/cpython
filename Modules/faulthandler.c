@@ -524,6 +524,11 @@ faulthandler_enable(void)
     }
 #endif
 
+    // gh-137185: Initialize C stack trace dumping outside of the signal
+    // handler. Specifically, we call backtrace() to ensure that libgcc is
+    // dynamically loaded outside of the signal handler.
+    _Py_InitDumpStack();
+
     for (size_t i=0; i < faulthandler_nsignals; i++) {
         fault_handler_t *handler;
         int err;
