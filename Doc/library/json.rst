@@ -259,6 +259,10 @@ Basic Usage
    table <py-to-json-table>`.  The arguments have the same meaning as in
    :func:`dump`.
 
+   .. note::
+
+      The encoder dose not preserve the types of dictionary keys in Python.Read more at :ref:`json-key-convertion`
+
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \
                    object_pairs_hook=None, **kw)
@@ -359,6 +363,10 @@ Basic Usage
 
    .. versionchanged:: 3.9
       The keyword argument *encoding* has been removed.
+
+   .. note::
+
+      The decoder preserves the keys in JSON text as :class:`str`.Read more at :ref:`json-key-convertion`
 
 
 Encoders and Decoders
@@ -573,6 +581,28 @@ Encoders and Decoders
             for chunk in json.JSONEncoder().iterencode(bigobject):
                 mysocket.write(chunk)
 
+.. _json-key-convertion:
+
+JSON Key Convertion
+^^^^^^^^^^^^^^^^^^^
+
+:rfc:`7159` requires that keys in key/value pairs of JSON are always of the
+type :class:`str`. When a dictionary is converted into JSON, all the keys
+of the dictionary arecoerced to strings.When a JSON object is converted into
+dictionaries,all the keys of the dictionary are strings.
+For example:
+
+   >>> import json
+   >>> foo={1:"spam"}
+   >>> result=json.dumps(foo)
+   >>> print(result)
+   {"1": "spam"}
+   >>> print(foo)
+   {1: 'spam'}
+   >>> print(foo==result)
+   False
+
+It can be seen that non-string keys are converted into strings after being encoded as JSON
 
 Exceptions
 ----------
