@@ -1465,18 +1465,18 @@ _interpreters_incref_impl(PyObject *module, PyObject *id, int implieslink,
 }
 
 
-static PyObject *
-interp_decref(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"id", "restrict", NULL};
-    PyObject *id;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:decref", kwlist, &id, &restricted))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.decref
+    id: object
+    *
+    restrict as restricted: bool = False
 
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_decref_impl(PyObject *module, PyObject *id, int restricted)
+/*[clinic end generated code: output=5c54db4b22086171 input=c4aa34f09c44e62a]*/
+{
     int reqready = 1;
     PyInterpreterState *interp = \
             resolve_interp(id, restricted, reqready, "decref");
@@ -1579,8 +1579,7 @@ static PyMethodDef module_functions[] = {
     _INTERPRETERS_SET___MAIN___ATTRS_METHODDEF
 
     _INTERPRETERS_INCREF_METHODDEF
-    {"decref",                    _PyCFunction_CAST(interp_decref),
-     METH_VARARGS | METH_KEYWORDS, NULL},
+    _INTERPRETERS_DECREF_METHODDEF
 
     _INTERPRETERS_IS_SHAREABLE_METHODDEF
 
