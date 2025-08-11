@@ -2912,7 +2912,8 @@ _decimal_Decimal_from_float_impl(PyTypeObject *type, PyObject *pyfloat)
     CURRENT_CONTEXT(state, context);
     result = PyDecType_FromFloatExact(state->PyDec_Type, pyfloat, context);
     if (type != state->PyDec_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
+        Py_SETREF(result,
+            PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
     }
 
     return result;
@@ -2976,7 +2977,8 @@ _decimal_Decimal_from_number_impl(PyTypeObject *type, PyObject *number)
     CURRENT_CONTEXT(state, context);
     result = PyDecType_FromNumberExact(state->PyDec_Type, number, context);
     if (type != state->PyDec_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
+        Py_SETREF(result,
+            PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
     }
 
     return result;
