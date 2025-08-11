@@ -1,0 +1,2 @@
+The :mod:`decimal` converted to use the Argument Clinic, that speedup
+processing arguments up to 1.5x faster.  Patch by Sergey B Kirpichev.
