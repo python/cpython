@@ -6194,6 +6194,11 @@ class TestUnixDomain(unittest.TestCase):
         # Issue #30205 (note getsockname() can return None on OS X)
         self.assertIn(self.sock.getsockname(), ('', None))
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'Windows-specific behavior')
+    def test_unbound_on_windows(self):
+        self.assertRaisesRegex(OSError, 'WinError 10022', self.sock.getsockname)
+
     def testStrAddr(self):
         # Test binding to and retrieving a normal string pathname.
         path = os.path.abspath(os_helper.TESTFN)
@@ -6239,6 +6244,12 @@ class TestUnixDomain(unittest.TestCase):
     def testEmptyAddress(self):
         # Test that binding empty address fails.
         self.assertRaises(OSError, self.sock.bind, "")
+
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'Windows-specified behavior')
+    def test_empty_address_on_windows(self):
+        self.sock.bind('')
+        self.assertEqual(self.sock.getsockname(), '')
 
 
 class BufferIOTest(SocketConnectedTest):

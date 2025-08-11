@@ -2747,7 +2747,8 @@ class PathTest(PurePathTest):
     @unittest.skipIf(
         is_wasi, "Cannot create socket on WASI."
     )
-    @unittest.skipIf(sys.platform=='win32', "didn't work on Windows")
+    @unittest.skipIf(sys.platform=='win32',
+                     "detecting if file is socket is not supported by Windows")
     def test_is_socket_true(self):
         P = self.cls(self.base, 'mysock')
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -2761,6 +2762,25 @@ class PathTest(PurePathTest):
         self.assertTrue(P.is_socket())
         self.assertFalse(P.is_fifo())
         self.assertFalse(P.is_file())
+        self.assertIs(self.cls(self.base, 'mysock\udfff').is_socket(), False)
+        self.assertIs(self.cls(self.base, 'mysock\x00').is_socket(), False)
+
+    @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
+    @unittest.skipUnless(sys.platform=='win32',
+                         "socket file on Windows is a normal file")
+    def test_is_socket_on_windows(self):
+        P = self.cls(self.base, 'mysock')
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        try:
+            sock.bind(str(P))
+        except OSError as e:
+            if (isinstance(e, PermissionError) or
+                    "AF_UNIX path too long" in str(e)):
+                self.skipTest("cannot bind Unix socket: " + str(e))
+        self.assertFalse(P.is_socket())
+        self.assertFalse(P.is_fifo())
+        self.assertTrue(P.is_file())
         self.assertIs(self.cls(self.base, 'mysock\udfff').is_socket(), False)
         self.assertIs(self.cls(self.base, 'mysock\x00').is_socket(), False)
 

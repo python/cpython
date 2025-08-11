@@ -223,6 +223,15 @@ class TestFilemode:
             self.assertEqual(modestr[0], 's')
             self.assertS_IS("SOCK", st_mode)
 
+    @socket_helper.skip_unless_bind_unix_socket
+    @unittest.skipUnless(sys.platform=='win32', "didn't work on Windows")
+    def test_socket_on_windows(self):
+        with socket.socket(socket.AF_UNIX) as s:
+            s.bind(TESTFN)
+            st_mode, modestr = self.get_mode()
+            self.assertNotEqual(modestr[0], 's')
+            self.assertS_IS("REG", st_mode)
+
     def test_module_attributes(self):
         for key, value in self.stat_struct.items():
             modvalue = getattr(self.statmod, key)
