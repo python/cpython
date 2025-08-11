@@ -359,8 +359,9 @@ tkinter
 -------
 
 * The ``tkinter.Text.search`` method now supports two additional
-  arguments: ``-nolinestop`` which allows the search to continue across line boundaries;
-  and ``-strictlimits`` which restricts the search to within the specified range.
+  arguments: ``nolinestop`` which allows the search to
+  continue across line boundaries;
+  and ``strictlimits`` which restricts the search to within the specified range.
   (Contributed by Rihaan Meher in :gh:`130848`)
 
 * A new method ``tkinter.Text.search_all`` has been introduced.
