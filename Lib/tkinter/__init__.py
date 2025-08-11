@@ -4038,7 +4038,7 @@ class Text(Widget, XView, YView):
         scan_mark."""
         self.tk.call(self._w, 'scan', 'dragto', x, y)
 
-    def search(self, pattern, index, stopindex=None, *,
+    def search(self, pattern, index, stopindex=None,
             forwards=None, backwards=None, exact=None,
             regexp=None, nocase=None, count=None,
             elide=None, nolinestop=None, strictlimits=None):
@@ -4060,7 +4060,7 @@ class Text(Widget, XView, YView):
         if stopindex: args.append(stopindex)
         return str(self.tk.call(tuple(args)))
 
-    def search_all(self, pattern, index, stopindex=None, *,
+    def search_all(self, pattern, index, stopindex=None,
             forwards=None, backwards=None, exact=None,
             regexp=None, nocase=None, count=None,
             elide=None, nolinestop=None, overlap=None,
