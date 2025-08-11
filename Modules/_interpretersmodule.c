@@ -1012,18 +1012,20 @@ _interpreters_get_current_impl(PyObject *module)
 }
 
 
+/*[clinic input]
+_interpreters.get_main
+
+Return the ID of  main interpreter.
+[clinic start generated code]*/
+
 static PyObject *
-interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
+_interpreters_get_main_impl(PyObject *module)
+/*[clinic end generated code: output=9647288aff735557 input=a05bdf890db4b223]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_Main();
     assert(_PyInterpreterState_IsReady(interp));
     return get_summary(interp);
 }
-
-PyDoc_STRVAR(get_main_doc,
-"get_main() -> (ID, whence)\n\
-\n\
-Return the ID of main interpreter.");
 
 
 static PyObject *
@@ -1603,8 +1605,7 @@ static PyMethodDef module_functions[] = {
     _INTERPRETERS_DESTROY_METHODDEF
     _INTERPRETERS_LIST_ALL_METHODDEF
     _INTERPRETERS_GET_CURRENT_METHODDEF
-    {"get_main",                  interp_get_main,
-     METH_NOARGS, get_main_doc},
+    _INTERPRETERS_GET_MAIN_METHODDEF
 
     {"is_running",                _PyCFunction_CAST(interp_is_running),
      METH_VARARGS | METH_KEYWORDS, is_running_doc},

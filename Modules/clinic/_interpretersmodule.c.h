@@ -248,4 +248,22 @@ _interpreters_get_current(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _interpreters_get_current_impl(module);
 }
-/*[clinic end generated code: output=fb7ded6bea2ae0e8 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_get_main__doc__,
+"get_main($module, /)\n"
+"--\n"
+"\n"
+"Return the ID of  main interpreter.");
+
+#define _INTERPRETERS_GET_MAIN_METHODDEF    \
+    {"get_main", (PyCFunction)_interpreters_get_main, METH_NOARGS, _interpreters_get_main__doc__},
+
+static PyObject *
+_interpreters_get_main_impl(PyObject *module);
+
+static PyObject *
+_interpreters_get_main(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _interpreters_get_main_impl(module);
+}
+/*[clinic end generated code: output=a6ba3b909548db9f input=a9049054013a1b77]*/
