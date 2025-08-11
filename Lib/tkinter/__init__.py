@@ -1829,7 +1829,7 @@ class Misc:
     def configure(self, cnf=None, **kw):
         """Query or modify the configuration options of the widget.
 
-        If no arguments is specified, return a dictionary describing
+        If no arguments are specified, return a dictionary describing
         all of the available options for the widget.
 
         If an option name is specified, then return a tuple describing
@@ -4893,12 +4893,12 @@ class PanedWindow(Widget):
         return self.sash("place", index, x, y)
 
     def panecget(self, child, option):
-        """Return the value of option for window."""
+        """Return the value of option for a child window."""
         return self.tk.call(
             (self._w, 'panecget') + (child, '-'+option))
 
     def paneconfigure(self, tagOrId, cnf=None, **kw):
-        """Query or modify the configuration options for window TAGORID.
+        """Query or modify the configuration options for a child window.
 
         Similar to configure() except that it applies to the specified
         window.
