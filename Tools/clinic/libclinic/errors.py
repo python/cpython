@@ -15,7 +15,7 @@ class ClinicError(Exception):
     def report(self, *, warn_only: bool = False) -> str:
         msg = "Warning" if warn_only else "Error"
         if self.filename is not None:
-            msg += f" in file {self.filename!r}"
+            msg += f" in file '{self.filename}'"
         if self.lineno is not None:
             msg += f" on line {self.lineno}"
         msg += ":\n"

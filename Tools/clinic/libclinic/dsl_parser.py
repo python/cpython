@@ -14,6 +14,7 @@ import libclinic
 from libclinic import (
     ClinicError, VersionTuple,
     fail, warn, unspecified, unknown, NULL)
+from libclinic._overlong_docstrings import OVERLONG_DOCSTRINGS
 from libclinic.function import (
     Module, Class, Function, Parameter,
     FunctionKind,
@@ -1509,6 +1510,9 @@ class DSLParser:
                 fail(f"Docstring for {f.full_name!r} does not have a summary line!\n"
                      "Every non-blank function docstring must start with "
                      "a single line summary followed by an empty line.")
+            if len(lines[0]) > 80 and f.full_name not in OVERLONG_DOCSTRINGS:
+                fail(f"Summary line {f.full_name!r} is too long!\n"
+                     "The summary line must be no longer than 80 characters.")
         elif len(lines) == 1:
             # the docstring is only one line right now--the summary line.
             # add an empty line after the summary line so we have space
