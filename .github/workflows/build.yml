@@ -398,7 +398,7 @@ jobs:
       run: ./python Lib/test/ssltests.py
 
   build-android:
-    name: Android (${{matrix.arch}})
+    name: Android (${{ matrix.arch }})
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     timeout-minutes: 60
