@@ -156,7 +156,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         traceback_lines = output.splitlines()[-6:-1]
         expected_lines = [
             "Traceback (most recent call last):",
-            "  File \"<stdin-0>\", line 1, in <module>",
+            "  File \"<stdin>\", line 1, in <module>",
             "    1 / 0 / 3 / 4",
             "    ~~^~~",
             "ZeroDivisionError: division by zero",
@@ -178,10 +178,10 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
         traceback_lines = output.splitlines()[-8:-1]
         expected_lines = [
-            '  File "<stdin-2>", line 1, in <module>',
+            '  File "<stdin>", line 1, in <module>',
             '    foo(0)',
             '    ~~~^^^',
-            '  File "<stdin-1>", line 2, in foo',
+            '  File "<stdin>", line 2, in foo',
             '    1 / x',
             '    ~~^~~',
             'ZeroDivisionError: division by zero'
@@ -216,7 +216,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             output = kill_python(p)
         expected = dedent("""
             Traceback (most recent call last):
-              File "<stdin-0>", line 1, in <module>
+              File "<stdin>", line 1, in <module>
                 1/0
                 ~^~
             ZeroDivisionError: division by zero
@@ -238,7 +238,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
             output = kill_python(p)
         expected = dedent("""
             Traceback (most recent call last):
-              File "<stdin-0>", line 1, in <module>
+              File "<stdin>", line 1, in <module>
                 foo()
                 ~~~^^
               File "%s", line 2, in foo
