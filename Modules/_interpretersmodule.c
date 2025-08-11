@@ -836,7 +836,7 @@ interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(new_config_doc,
-"new_config($module, /, name='isolated', /, **overrides)\n\
+"new_config($module, name='isolated', /, **overrides)\n\
 --\n\
 \n\
 Return a representation of a new PyInterpreterConfig.\n\
