@@ -1375,6 +1375,9 @@ get_interactive_filename(PyObject *filename, Py_ssize_t count)
             && PyUnicode_ReadChar(filename, 0) == '<'
             && PyUnicode_ReadChar(filename, len - 1) == '>') {
         PyObject *middle = PyUnicode_Substring(filename, 1, len-1);
+        if (middle == NULL) {
+            return NULL;
+        }
         result = PyUnicode_FromFormat("<%U-%d>", middle, count);
         Py_DECREF(middle);
     } else {
