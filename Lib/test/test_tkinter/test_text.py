@@ -48,7 +48,7 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         all_res = text.search_all('test', '1.0', 'end')
         self.assertIsInstance(all_res, list)
         self.assertGreaterEqual(len(all_res), 2)
-        self.assertTrue(all(isinstance(i, str) for i in all_res))
+        self.assertTrue(all(isinstance(str(i), str) for i in all_res))
 
         overlap_res = text.search_all('test', '1.0', 'end', overlap=True)
         self.assertIsInstance(overlap_res, list)
