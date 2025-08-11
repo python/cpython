@@ -1209,23 +1209,29 @@ _interpreters_run_string_impl(PyObject *module, PyObject *id,
 #undef FUNCNAME
 }
 
+/*[clinic input]
+_interpreters.run_func
+    id: object
+    func: object
+    shared: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
+    *
+    restrict as restricted: bool = False
+
+Execute the body of the provided function in the identified interpreter.
+
+Code objects are also supported.  In both cases, closures and args
+are not supported.  Methods and other callables are not supported either.
+
+(See _interpreters.exec().)
+[clinic start generated code]*/
+
 static PyObject *
-interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
+_interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
+                            PyObject *shared, int restricted)
+/*[clinic end generated code: output=131f7202ca4a0c5e input=2d62bb9b9eaf4948]*/
 {
 #define FUNCNAME MODULE_NAME_STR ".run_func"
     PyThreadState *tstate = _PyThreadState_GET();
-    static char *kwlist[] = {"id", "func", "shared", "restrict", NULL};
-    PyObject *id, *func;
-    PyObject *shared = NULL;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O!$p:" FUNCNAME, kwlist,
-                                     &id, &func, &PyDict_Type, &shared,
-                                     &restricted))
-    {
-        return NULL;
-    }
-
     int reqready = 1;
     PyInterpreterState *interp = \
             resolve_interp(id, restricted, reqready, "run a function in");
@@ -1264,15 +1270,6 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 #undef FUNCNAME
 }
-
-PyDoc_STRVAR(run_func_doc,
-"run_func(id, func, shared=None, *, restrict=False)\n\
-\n\
-Execute the body of the provided function in the identified interpreter.\n\
-Code objects are also supported.  In both cases, closures and args\n\
-are not supported.  Methods and other callables are not supported either.\n\
-\n\
-(See " MODULE_NAME_STR ".exec().");
 
 static PyObject *
 interp_call(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1606,8 +1603,7 @@ static PyMethodDef module_functions[] = {
     {"call",                      _PyCFunction_CAST(interp_call),
      METH_VARARGS | METH_KEYWORDS, call_doc},
     _INTERPRETERS_RUN_STRING_METHODDEF
-    {"run_func",                  _PyCFunction_CAST(interp_run_func),
-     METH_VARARGS | METH_KEYWORDS, run_func_doc},
+    _INTERPRETERS_RUN_FUNC_METHODDEF
 
     _INTERPRETERS_SET___MAIN___ATTRS_METHODDEF
 
