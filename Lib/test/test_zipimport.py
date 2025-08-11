@@ -551,8 +551,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  "spam" + pyc_ext: test_pyc}
         self.makeZip(files, file_comment=b"spam")
 
-        sys.path.insert(0, TEMP_ZIP)
-
         zi = zipimport.zipimporter(TEMP_ZIP)
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertTrue(zi.is_package(TESTPACK))
@@ -570,6 +568,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
+
+        sys.path.insert(0, TEMP_ZIP)
 
         existing_pack_path = importlib.import_module(TESTPACK).__path__[0]
         expected_path_path = os.path.join(TEMP_ZIP, TESTPACK)
@@ -665,8 +665,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  packdir2 + TESTMOD + pyc_ext: test_pyc}
         self.makeZip(files, file_comment=b"eggs")
 
-        sys.path.insert(0, TEMP_ZIP + os.sep + TESTPACK)
-
         zi = zipimport.zipimporter(TEMP_ZIP + os.sep + packdir)
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertEqual(zi.prefix, packdir)
@@ -693,9 +691,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(
             spec.loader.get_filename(TESTMOD), load_mod.__file__)
 
+        sys.path.insert(0, TEMP_ZIP + os.sep + TESTPACK)
+
         mod_path = TESTPACK2 + os.sep + TESTMOD
         mod_name = module_path_to_dotted_name(mod_path)
         mod = importlib.import_module(mod_name)
+
         self.assertTrue(mod_name in sys.modules)
         self.assertIsNone(zi.get_source(TESTPACK2))
         self.assertIsNone(zi.get_source(mod_path))
