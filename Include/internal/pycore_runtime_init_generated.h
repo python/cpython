@@ -876,6 +876,7 @@ extern "C" {
     INIT_ID(command), \
     INIT_ID(comment_factory), \
     INIT_ID(compile_mode), \
+    INIT_ID(config), \
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(contravariant), \
@@ -934,6 +935,7 @@ extern "C" {
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
+    INIT_ID(exc_arg), \
     INIT_ID(exc_type), \
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
@@ -1303,6 +1305,7 @@ extern "C" {
     INIT_ID(uid), \
     INIT_ID(unlink), \
     INIT_ID(unraisablehook), \
+    INIT_ID(updates), \
     INIT_ID(uri), \
     INIT_ID(usedforsecurity), \
     INIT_ID(value), \

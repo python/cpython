@@ -486,7 +486,7 @@ class CommonTests(TestBase):
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.run_func(self.id, lambda: None, shared=1)
         # See https://github.com/python/cpython/issues/135855
-        msg = r'set___main___attrs\(\) argument 2 must be dict, not int'
+        msg = r"set___main___attrs\(\) argument 'updates' must be dict, not int"
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.set___main___attrs(self.id, 1)
 
