@@ -735,4 +735,62 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d009f06b21136592 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_is_shareable__doc__,
+"is_shareable($module, /, obj)\n"
+"--\n"
+"\n"
+"Return True if the object\'s data may be shared between interpreters and False otherwise.");
+
+#define _INTERPRETERS_IS_SHAREABLE_METHODDEF    \
+    {"is_shareable", _PyCFunction_CAST(_interpreters_is_shareable), METH_FASTCALL|METH_KEYWORDS, _interpreters_is_shareable__doc__},
+
+static PyObject *
+_interpreters_is_shareable_impl(PyObject *module, PyObject *obj);
+
+static PyObject *
+_interpreters_is_shareable(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(obj), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"obj", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_shareable",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *obj;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    obj = args[0];
+    return_value = _interpreters_is_shareable_impl(module, obj);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=95284c14ff28beed input=a9049054013a1b77]*/

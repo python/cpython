@@ -1326,16 +1326,17 @@ finally:
 }
 
 
-static PyObject *
-object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"obj", NULL};
-    PyObject *obj;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:is_shareable", kwlist, &obj)) {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.is_shareable
+    obj: object
 
+Return True if the object's data may be shared between interpreters and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_is_shareable_impl(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=227856926a22940b input=72b9a36bdf1d2a53]*/
+{
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PyObject_CheckXIData(tstate, obj) == 0) {
         Py_RETURN_TRUE;
@@ -1343,12 +1344,6 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
     PyErr_Clear();
     Py_RETURN_FALSE;
 }
-
-PyDoc_STRVAR(is_shareable_doc,
-"is_shareable(obj) -> bool\n\
-\n\
-Return True if the object's data may be shared between interpreters and\n\
-False otherwise.");
 
 
 static PyObject *
@@ -1604,8 +1599,7 @@ static PyMethodDef module_functions[] = {
     {"decref",                    _PyCFunction_CAST(interp_decref),
      METH_VARARGS | METH_KEYWORDS, NULL},
 
-    {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
-     METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
+    _INTERPRETERS_IS_SHAREABLE_METHODDEF
 
     {"capture_exception",         _PyCFunction_CAST(capture_exception),
      METH_VARARGS | METH_KEYWORDS, capture_exception_doc},
