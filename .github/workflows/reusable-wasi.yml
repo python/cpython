@@ -22,7 +22,7 @@ jobs:
       CROSS_BUILD_PYTHON: cross-build/build
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         persist-credentials: false
     # No problem resolver registered as one doesn't currently exist for Clang.

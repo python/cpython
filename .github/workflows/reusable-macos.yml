@@ -31,7 +31,7 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         persist-credentials: false
     - name: Runner image version
