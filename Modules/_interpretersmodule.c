@@ -952,18 +952,18 @@ _interpreters_destroy_impl(PyObject *module, PyObject *id, int restricted)
 }
 
 
-static PyObject *
-interp_list_all(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *kwlist[] = {"require_ready", NULL};
-    int reqready = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "|$p:" MODULE_NAME_STR ".list_all",
-                                     kwlist, &reqready))
-    {
-        return NULL;
-    }
+/*[clinic input]
+_interpreters.list_all
+    *
+    require_ready as reqready: bool = False
 
+Return a list containing the ID of every existing interpreter.
+[clinic start generated code]*/
+
+static PyObject *
+_interpreters_list_all_impl(PyObject *module, int reqready)
+/*[clinic end generated code: output=3f21c1a7c78043c0 input=35bae91c381a2cf9]*/
+{
     PyObject *ids = PyList_New(0);
     if (ids == NULL) {
         return NULL;
@@ -991,11 +991,6 @@ interp_list_all(PyObject *self, PyObject *args, PyObject *kwargs)
 
     return ids;
 }
-
-PyDoc_STRVAR(list_all_doc,
-"list_all() -> [(ID, whence)]\n\
-\n\
-Return a list containing the ID of every existing interpreter.");
 
 
 static PyObject *
@@ -1604,8 +1599,7 @@ static PyMethodDef module_functions[] = {
 
     _INTERPRETERS_CREATE_METHODDEF
     _INTERPRETERS_DESTROY_METHODDEF
-    {"list_all",                  _PyCFunction_CAST(interp_list_all),
-     METH_VARARGS | METH_KEYWORDS, list_all_doc},
+    _INTERPRETERS_LIST_ALL_METHODDEF
     {"get_current",               interp_get_current,
      METH_NOARGS, get_current_doc},
     {"get_main",                  interp_get_main,
