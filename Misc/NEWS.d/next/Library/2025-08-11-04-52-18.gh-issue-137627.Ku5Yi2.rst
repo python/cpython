@@ -1,0 +1,1 @@
+:meth:`csv.Sniffer._guess_delimiter` 2x faster
