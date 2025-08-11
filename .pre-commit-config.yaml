@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.8
+    rev: v0.12.8
     hooks:
       - id: ruff
         name: Run Ruff (lint) on Doc/
@@ -42,7 +42,7 @@ repos:
         exclude: ^Tools/c-analyzer/cpython/_parser.py
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-case-conflict
       - id: check-merge-conflict
@@ -60,7 +60,7 @@ repos:
         files: '^\.github/CODEOWNERS|\.(gram)$'
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.33.0
+    rev: 0.33.2
     hooks:
       - id: check-dependabot
       - id: check-github-workflows
@@ -72,7 +72,7 @@ repos:
       - id: actionlint
 
   - repo: https://github.com/woodruffw/zizmor-pre-commit
-    rev: v1.6.0
+    rev: v1.11.0
     hooks:
       - id: zizmor
 
