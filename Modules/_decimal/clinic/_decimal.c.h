@@ -92,6 +92,81 @@ _decimal_Decimal_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _decimal_Decimal_as_integer_ratio_impl(self);
 }
 
+PyDoc_STRVAR(_decimal_Decimal_to_integral_value__doc__,
+"to_integral_value($self, /, rounding=None, context=None)\n"
+"--\n"
+"\n"
+"Round to the nearest integer without signaling Inexact or Rounded.\n"
+"\n"
+"The rounding mode is determined by the rounding parameter if given, else by\n"
+"the given context. If neither parameter is given, then the rounding mode of\n"
+"the current default context is used.");
+
+#define _DECIMAL_DECIMAL_TO_INTEGRAL_VALUE_METHODDEF    \
+    {"to_integral_value", _PyCFunction_CAST(_decimal_Decimal_to_integral_value), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_value__doc__},
+
+static PyObject *
+_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+                                        PyObject *context);
+
+static PyObject *
+_decimal_Decimal_to_integral_value(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(rounding), &_Py_ID(context), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"rounding", "context", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "to_integral_value",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *rounding = Py_None;
+    PyObject *context = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        rounding = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    context = args[1];
+skip_optional_pos:
+    return_value = _decimal_Decimal_to_integral_value_impl(self, rounding, context);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_decimal_Decimal_to_integral__doc__,
 "to_integral($self, /, rounding=None, context=None)\n"
 "--\n"
@@ -236,81 +311,6 @@ _decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssi
     context = args[1];
 skip_optional_pos:
     return_value = _decimal_Decimal_to_integral_exact_impl(self, rounding, context);
-
-exit:
-    return return_value;
-}
-
-PyDoc_STRVAR(_decimal_Decimal_to_integral_value__doc__,
-"to_integral_value($self, /, rounding=None, context=None)\n"
-"--\n"
-"\n"
-"Round to the nearest integer without signaling Inexact or Rounded.\n"
-"\n"
-"The rounding mode is determined by the rounding parameter if given, else by\n"
-"the given context. If neither parameter is given, then the rounding mode of\n"
-"the current default context is used.");
-
-#define _DECIMAL_DECIMAL_TO_INTEGRAL_VALUE_METHODDEF    \
-    {"to_integral_value", _PyCFunction_CAST(_decimal_Decimal_to_integral_value), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_value__doc__},
-
-static PyObject *
-_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
-                                        PyObject *context);
-
-static PyObject *
-_decimal_Decimal_to_integral_value(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(rounding), &_Py_ID(context), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"rounding", "context", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "to_integral_value",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *rounding = Py_None;
-    PyObject *context = Py_None;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[0]) {
-        rounding = args[0];
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    context = args[1];
-skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_value_impl(self, rounding, context);
 
 exit:
     return return_value;
@@ -2538,4 +2538,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2a88992a1081c36d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a72c95123d7107e1 input=a9049054013a1b77]*/

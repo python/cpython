@@ -3919,20 +3919,22 @@ error:
 }
 
 /*[clinic input]
-_decimal.Decimal.to_integral
+_decimal.Decimal.to_integral_value
 
     rounding: object = None
     context: object = None
 
-Identical to the to_integral_value() method.
+Round to the nearest integer without signaling Inexact or Rounded.
 
-The to_integral() name has been kept for compatibility with older versions.
+The rounding mode is determined by the rounding parameter if given, else by
+the given context. If neither parameter is given, then the rounding mode of
+the current default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
-                                  PyObject *context)
-/*[clinic end generated code: output=a0c7188686ee7f5c input=a57d62d1d29aed1b]*/
+_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+                                        PyObject *context)
+/*[clinic end generated code: output=7301465765f48b6b input=5778168222cadf71]*/
 {
     PyObject *result;
     uint32_t status = 0;
@@ -3964,6 +3966,25 @@ _decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
     }
 
     return result;
+}
+
+/*[clinic input]
+_decimal.Decimal.to_integral
+
+    rounding: object = None
+    context: object = None
+
+Identical to the to_integral_value() method.
+
+The to_integral() name has been kept for compatibility with older versions.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
+                                  PyObject *context)
+/*[clinic end generated code: output=a0c7188686ee7f5c input=a57d62d1d29aed1b]*/
+{
+    return _decimal_Decimal_to_integral_value_impl(self, rounding, context);
 }
 
 /*[clinic input]
@@ -4015,27 +4036,6 @@ _decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
     }
 
     return result;
-}
-
-/*[clinic input]
-_decimal.Decimal.to_integral_value
-
-    rounding: object = None
-    context: object = None
-
-Round to the nearest integer without signaling Inexact or Rounded.
-
-The rounding mode is determined by the rounding parameter if given, else by
-the given context. If neither parameter is given, then the rounding mode of
-the current default context is used.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
-                                        PyObject *context)
-/*[clinic end generated code: output=7301465765f48b6b input=5778168222cadf71]*/
-{
-    return _decimal_Decimal_to_integral_impl(self, rounding, context);
 }
 
 static PyObject *
