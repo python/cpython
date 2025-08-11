@@ -1365,7 +1365,7 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
     return PyEval_EvalCode((PyObject*)co, globals, locals);
 }
 
-PyObject *
+static PyObject *
 get_interactive_filename(PyObject *filename, Py_ssize_t count){
     PyObject *result;
     Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
