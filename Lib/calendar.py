@@ -490,30 +490,29 @@ class HTMLCalendar(Calendar):
         """
         if day == 0:
             # day outside month
-            return '<td class="%s">&nbsp;</td>' % self.cssclass_noday
+            return f'<td class="{self.cssclass_noday}">&nbsp;</td>'
         else:
-            return '<td class="%s">%d</td>' % (self.cssclasses[weekday], day)
+            return f'<td class="{self.cssclasses[weekday]}">{day}</td>'
 
     def formatweek(self, theweek):
         """
         Return a complete week as a table row.
         """
         s = ''.join(self.formatday(d, wd) for (d, wd) in theweek)
-        return '<tr>%s</tr>' % s
+        return f'<tr>{s}</tr>'
 
     def formatweekday(self, day):
         """
         Return a weekday name as a table header.
         """
-        return '<th class="%s">%s</th>' % (
-            self.cssclasses_weekday_head[day], day_abbr[day])
+        return f'<th class="{self.cssclasses_weekday_head[day]}">{day_abbr[day]}</th>'
 
     def formatweekheader(self):
         """
         Return a header for a week as a table row.
         """
         s = ''.join(self.formatweekday(i) for i in self.iterweekdays())
-        return '<tr>%s</tr>' % s
+        return f'<tr>{s}</tr>'
 
     def formatmonthname(self, theyear, themonth, withyear=True):
         """
@@ -521,11 +520,10 @@ class HTMLCalendar(Calendar):
         """
         _validate_month(themonth)
         if withyear:
-            s = '%s %s' % (standalone_month_name[themonth], theyear)
+            s = f'{standalone_month_name[themonth]} {theyear}'
         else:
             s = standalone_month_name[themonth]
-        return '<tr><th colspan="7" class="%s">%s</th></tr>' % (
-            self.cssclass_month_head, s)
+        return f'<tr><th colspan="7" class="{self.cssclass_month_head}">{s}</th></tr>'
 
     def formatmonth(self, theyear, themonth, withyear=True):
         """
@@ -533,8 +531,7 @@ class HTMLCalendar(Calendar):
         """
         v = []
         a = v.append
-        a('<table border="0" cellpadding="0" cellspacing="0" class="%s">' % (
-            self.cssclass_month))
+        a(f'<table class="{self.cssclass_month}">')
         a('\n')
         a(self.formatmonthname(theyear, themonth, withyear=withyear))
         a('\n')
@@ -554,11 +551,9 @@ class HTMLCalendar(Calendar):
         v = []
         a = v.append
         width = max(width, 1)
-        a('<table border="0" cellpadding="0" cellspacing="0" class="%s">' %
-          self.cssclass_year)
+        a(f'<table class="{self.cssclass_year}">')
         a('\n')
-        a('<tr><th colspan="%d" class="%s">%s</th></tr>' % (
-            width, self.cssclass_year_head, theyear))
+        a(f'<tr><th colspan="{width}" class="{self.cssclass_year_head}">{theyear}</th></tr>')
         for i in range(JANUARY, JANUARY+12, width):
             # months in this row
             months = range(i, min(i+width, 13))
@@ -579,14 +574,21 @@ class HTMLCalendar(Calendar):
             encoding = 'utf-8'
         v = []
         a = v.append
-        a('<?xml version="1.0" encoding="%s"?>\n' % encoding)
-        a('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n')
-        a('<html>\n')
+        a('<!DOCTYPE html>\n')
+        a('<html lang="en">\n')
         a('<head>\n')
-        a('<meta http-equiv="Content-Type" content="text/html; charset=%s" />\n' % encoding)
+        a(f'<meta charset="{encoding}">\n')
+        a('<meta name="viewport" content="width=device-width, initial-scale=1">\n')
+        a(f'<title>Calendar for {theyear}</title>\n')
+        a('<style>\n')
+        a('@media (prefers-color-scheme: dark) {\n')
+        a('  body { background-color: #121212; color: #e0e0e0; }\n')
+        a('  table.year, table.month { border-color: #444; }\n')
+        a('  td, th { border-color: #444; }\n')
+        a('}\n')
+        a('</style>\n')
         if css is not None:
-            a('<link rel="stylesheet" type="text/css" href="%s" />\n' % css)
-        a('<title>Calendar for %d</title>\n' % theyear)
+            a(f'<link rel="stylesheet" href="{css}">\n')
         a('</head>\n')
         a('<body>\n')
         a(self.formatyear(theyear, width))
