@@ -997,12 +997,12 @@ _interpreters_list_all_impl(PyObject *module, int reqready)
 /*[clinic input]
 _interpreters.get_current
 
-Return the ID of current interpreter.
+Return (ID, whence) of the current interpreter.
 [clinic start generated code]*/
 
 static PyObject *
 _interpreters_get_current_impl(PyObject *module)
-/*[clinic end generated code: output=03161c8fcc0136eb input=6d003c614eacc533]*/
+/*[clinic end generated code: output=03161c8fcc0136eb input=37fb2c067c14d543]*/
 {
     PyInterpreterState *interp =_get_current_interp();
     if (interp == NULL) {
@@ -1016,12 +1016,12 @@ _interpreters_get_current_impl(PyObject *module)
 /*[clinic input]
 _interpreters.get_main
 
-Return the ID of  main interpreter.
+Return (ID, whence) of the main interpreter.
 [clinic start generated code]*/
 
 static PyObject *
 _interpreters_get_main_impl(PyObject *module)
-/*[clinic end generated code: output=9647288aff735557 input=a05bdf890db4b223]*/
+/*[clinic end generated code: output=9647288aff735557 input=b4ace23ca562146f]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_Main();
     assert(_PyInterpreterState_IsReady(interp));
@@ -1493,7 +1493,7 @@ _interpreters_decref_impl(PyObject *module, PyObject *id, int restricted)
 
 /*[clinic input]
 _interpreters.capture_exception
-    exc_arg: object(c_default='NULL') = None
+    exc as exc_arg: object = None
 
 Return a snapshot of an exception.
 
@@ -1503,7 +1503,7 @@ The returned snapshot is the same as what _interpreters.exec() returns.
 
 static PyObject *
 _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
-/*[clinic end generated code: output=ef3f5393ef9c88a6 input=e607efac7eb95fba]*/
+/*[clinic end generated code: output=ef3f5393ef9c88a6 input=32045341e979bc9e]*/
 {
     PyObject *exc = exc_arg;
     if (exc == NULL || exc == Py_None) {

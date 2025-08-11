@@ -428,7 +428,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(errors)
         STRUCT_FOR_ID(event)
         STRUCT_FOR_ID(eventmask)
-        STRUCT_FOR_ID(exc_arg)
+        STRUCT_FOR_ID(exc)
         STRUCT_FOR_ID(exc_type)
         STRUCT_FOR_ID(exc_value)
         STRUCT_FOR_ID(excepthook)

@@ -235,7 +235,7 @@ PyDoc_STRVAR(_interpreters_get_current__doc__,
 "get_current($module, /)\n"
 "--\n"
 "\n"
-"Return the ID of current interpreter.");
+"Return (ID, whence) of the current interpreter.");
 
 #define _INTERPRETERS_GET_CURRENT_METHODDEF    \
     {"get_current", (PyCFunction)_interpreters_get_current, METH_NOARGS, _interpreters_get_current__doc__},
@@ -253,7 +253,7 @@ PyDoc_STRVAR(_interpreters_get_main__doc__,
 "get_main($module, /)\n"
 "--\n"
 "\n"
-"Return the ID of  main interpreter.");
+"Return (ID, whence) of the main interpreter.");
 
 #define _INTERPRETERS_GET_MAIN_METHODDEF    \
     {"get_main", (PyCFunction)_interpreters_get_main, METH_NOARGS, _interpreters_get_main__doc__},
@@ -1135,7 +1135,7 @@ exit:
 }
 
 PyDoc_STRVAR(_interpreters_capture_exception__doc__,
-"capture_exception($module, /, exc_arg=None)\n"
+"capture_exception($module, /, exc=None)\n"
 "--\n"
 "\n"
 "Return a snapshot of an exception.\n"
@@ -1164,7 +1164,7 @@ _interpreters_capture_exception(PyObject *module, PyObject *const *args, Py_ssiz
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(exc_arg), },
+        .ob_item = { &_Py_ID(exc), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1173,7 +1173,7 @@ _interpreters_capture_exception(PyObject *module, PyObject *const *args, Py_ssiz
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"exc_arg", NULL};
+    static const char * const _keywords[] = {"exc", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "capture_exception",
@@ -1182,7 +1182,7 @@ _interpreters_capture_exception(PyObject *module, PyObject *const *args, Py_ssiz
     #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *exc_arg = NULL;
+    PyObject *exc_arg = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1199,4 +1199,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b6dd60cfb082b53c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cf3f54caaa2dd6a2 input=a9049054013a1b77]*/

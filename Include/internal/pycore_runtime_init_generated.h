@@ -935,7 +935,7 @@ extern "C" {
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
-    INIT_ID(exc_arg), \
+    INIT_ID(exc), \
     INIT_ID(exc_type), \
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
