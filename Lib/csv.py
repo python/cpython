@@ -84,6 +84,8 @@ __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
 __version__ = "1.0"
 
 
+_ASCII_CHARS = frozenset(map(chr, range(127))) # 7-bit ASCII
+
 class Dialect:
     """Describe a CSV dialect.
 
@@ -368,8 +370,6 @@ class Sniffer:
 
         data = list(filter(None, data.split('\n')))
 
-        ascii = {chr(c) for c in range(127)} # 7-bit ASCII
-
         # build frequency tables
         chunkLength = min(10, len(data))
         iteration = 0
@@ -381,15 +381,15 @@ class Sniffer:
         while start < len(data):
             iteration += 1
             chunk = data[start:end]
-            candidate_chars = set("".join(chunk))
-            candidate_chars.intersection_update(ascii)
+            candidate_chars = set().union(*chunk)
+            candidate_chars &= _ASCII_CHARS
             for line in chunk:
                 for char in candidate_chars:
                     count = line.count(char)
                     charFrequency[char][count] += 1
 
             # must count even if frequency is 0
-            missing_chars = ascii.difference(candidate_chars)
+            missing_chars = _ASCII_CHARS - candidate_chars
             chunk_len = len(chunk)
             for char in missing_chars:
                 charFrequency[char][0] += chunk_len
