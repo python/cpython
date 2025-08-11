@@ -803,12 +803,12 @@ get_summary(PyInterpreterState *interp)
 }
 
 
+// Not converted to Argument Clinic because the function uses ``**kwargs``.
 static PyObject *
 interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
 {
     const char *name = NULL;
-    if (!PyArg_ParseTuple(args, "|s:" MODULE_NAME_STR ".new_config",
-                          &name))
+    if (!PyArg_ParseTuple(args, "|s:" MODULE_NAME_STR ".new_config", &name))
     {
         return NULL;
     }
@@ -836,7 +836,8 @@ interp_new_config(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(new_config_doc,
-"new_config(name='isolated', /, **overrides) -> type.SimpleNamespace\n\
+"new_config($module, /, name='isolated', /, **overrides)\n\
+--\n\
 \n\
 Return a representation of a new PyInterpreterConfig.\n\
 \n\
