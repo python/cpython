@@ -1208,9 +1208,9 @@ are always available.  They are listed here in alphabetical order.
    already arranged into argument tuples, see :func:`itertools.starmap`\.
 
 
-.. function:: max(iterable, *, key=None)
-              max(iterable, *, default, key=None)
-              max(arg1, arg2, *args, key=None)
+.. function:: max(iterable, /, *, key=None)
+              max(iterable, /, *, default, key=None)
+              max(arg1, arg2, /, *args, key=None)
 
    Return the largest item in an iterable or the largest of two or more
    arguments.
@@ -1246,9 +1246,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *, key=None)
-              min(iterable, *, default, key=None)
-              min(arg1, arg2, *args, key=None)
+.. function:: min(iterable, /, *, key=None)
+              min(iterable, /, *, default, key=None)
+              min(arg1, arg2, /, *args, key=None)
 
    Return the smallest item in an iterable or the smallest of two or more
    arguments.
