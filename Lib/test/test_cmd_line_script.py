@@ -203,7 +203,7 @@ class CmdLineTest(unittest.TestCase):
             p.stdin.flush()
             stderr = p.stderr if separate_stderr else p.stdout
             self.assertIn(b'Traceback ', stderr.readline())
-            self.assertIn(b'File "<stdin>"', stderr.readline())
+            self.assertIn(b'File "<stdin-0>"', stderr.readline())
             self.assertIn(b'1/0', stderr.readline())
             self.assertIn(b'    ~^~', stderr.readline())
             self.assertIn(b'ZeroDivisionError', stderr.readline())
