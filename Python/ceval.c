@@ -2510,9 +2510,7 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (_PyEval_SetProfileAllThreads(interp, func, arg) < 0) {
         /* Log _PySys_Audit() error */
         PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
@@ -2532,9 +2530,7 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (_PyEval_SetTraceAllThreads(interp, func, arg) < 0) {
         /* Log _PySys_Audit() error */
         PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");

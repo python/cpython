@@ -1946,10 +1946,7 @@ instrument_all_executing_code_objects(PyInterpreterState *interp)
     ASSERT_WORLD_STOPPED();
 
     int err = 0;
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    PyThreadState *ts = PyInterpreterState_ThreadHead(interp);
-    while (ts) {
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
             if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
@@ -1960,10 +1957,9 @@ instrument_all_executing_code_objects(PyInterpreterState *interp)
             }
             frame = frame->previous;
         }
-        ts = PyThreadState_Next(ts);
     }
 done:
-    HEAD_UNLOCK(runtime);
+    _Py_FOR_EACH_TSTATE_END(interp);
     return err;
 }
 
