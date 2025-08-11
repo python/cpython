@@ -38,7 +38,8 @@ Truth Value Testing
    pair: Boolean; operations
    single: false
 
-Any object can be tested for truth value, for use in an :keyword:`if` or
+Any object can be tested for truth value (with the exception of the
+:exc:`NotImplemented` object), for use in an :keyword:`if` or
 :keyword:`while` condition or as operand of the Boolean operations below.
 
 .. index:: single: true
