@@ -15,7 +15,8 @@
 #
 # An entry in this file does not imply 'ownership', despite the name of the
 # file, but instead that those listed take an interest in that part of the
-# project, and would like to be notified of any proposed changes to it.
+# project and will automatically be added as reviewers to PRs that affect
+# the matching files.
 # See also the Experts Index in the Python Developer's Guide:
 # https://devguide.python.org/core-developers/experts/
 #
@@ -31,10 +32,10 @@
 # Top-level sections are:
 #
 # * Buildbots, Continuous Integration, and Testing
-#     e.g. project-wide configuration files, internal tools for use in CI,
+#     project-wide configuration files, internal tools for use in CI,
 #     linting.
 # * Build System
-#     e.g. the Makefile, autoconf.
+#     the Makefile, autoconf, and other autotools files.
 # * Documentation
 #     broader sections of documentation, documentation tools
 # * Other / Misc (Tools, Programs, Integration, etc)
@@ -43,9 +44,10 @@
 # * Platform Support
 #     relating to support for specific platforms
 # * Interpreter Core
-#     the grammar, parser, compiler, interpreter, etc
+#     the grammar, parser, compiler, interpreter, etc.
 # * Standard Library
-#     standard library modules & related files
+#     standard library modules (from both Lib and Modules)
+#     and related files (such as their tests and docs)
 
 # ----------------------------------------------------------------------------
 # Buildbots, Continuous Integration, and Testing
