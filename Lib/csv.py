@@ -71,6 +71,7 @@ from _csv import Error, writer, reader, register_dialect, \
                  QUOTE_STRINGS, QUOTE_NOTNULL
 from _csv import Dialect as _Dialect
 
+from collections import defaultdict, Counter
 from io import StringIO
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
@@ -367,25 +368,30 @@ class Sniffer:
 
         data = list(filter(None, data.split('\n')))
 
-        ascii = [chr(c) for c in range(127)] # 7-bit ASCII
+        ascii = {chr(c) for c in range(127)} # 7-bit ASCII
 
         # build frequency tables
         chunkLength = min(10, len(data))
         iteration = 0
-        charFrequency = {}
+        # {char -> {count_per_line -> num_lines_with_that_count}}
+        charFrequency = defaultdict(Counter)
         modes = {}
         delims = {}
         start, end = 0, chunkLength
         while start < len(data):
             iteration += 1
-            for line in data[start:end]:
-                for char in ascii:
-                    metaFrequency = charFrequency.get(char, {})
-                    # must count even if frequency is 0
-                    freq = line.count(char)
-                    # value is the mode
-                    metaFrequency[freq] = metaFrequency.get(freq, 0) + 1
-                    charFrequency[char] = metaFrequency
+            chunk = data[start:end]
+            candidate_chars = set("".join(chunk))
+            candidate_chars.intersection_update(ascii)
+            for line in chunk:
+                for char in candidate_chars:
+                    count = line.count(char)
+                    charFrequency[char][count] += 1
+
+            missing_chars = ascii.difference(candidate_chars)
+            chunk_len = len(chunk)
+            for char in missing_chars:
+                charFrequency[char][0] += chunk_len
 
             for char in charFrequency.keys():
                 items = list(charFrequency[char].items())
