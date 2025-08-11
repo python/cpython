@@ -993,8 +993,15 @@ _interpreters_list_all_impl(PyObject *module, int reqready)
 }
 
 
+/*[clinic input]
+_interpreters.get_current
+
+Return the ID of current interpreter.
+[clinic start generated code]*/
+
 static PyObject *
-interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
+_interpreters_get_current_impl(PyObject *module)
+/*[clinic end generated code: output=03161c8fcc0136eb input=6d003c614eacc533]*/
 {
     PyInterpreterState *interp =_get_current_interp();
     if (interp == NULL) {
@@ -1003,11 +1010,6 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     assert(_PyInterpreterState_IsReady(interp));
     return get_summary(interp);
 }
-
-PyDoc_STRVAR(get_current_doc,
-"get_current() -> (ID, whence)\n\
-\n\
-Return the ID of current interpreter.");
 
 
 static PyObject *
@@ -1600,8 +1602,7 @@ static PyMethodDef module_functions[] = {
     _INTERPRETERS_CREATE_METHODDEF
     _INTERPRETERS_DESTROY_METHODDEF
     _INTERPRETERS_LIST_ALL_METHODDEF
-    {"get_current",               interp_get_current,
-     METH_NOARGS, get_current_doc},
+    _INTERPRETERS_GET_CURRENT_METHODDEF
     {"get_main",                  interp_get_main,
      METH_NOARGS, get_main_doc},
 

@@ -230,4 +230,22 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d0cc168bf7b1d459 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpreters_get_current__doc__,
+"get_current($module, /)\n"
+"--\n"
+"\n"
+"Return the ID of current interpreter.");
+
+#define _INTERPRETERS_GET_CURRENT_METHODDEF    \
+    {"get_current", (PyCFunction)_interpreters_get_current, METH_NOARGS, _interpreters_get_current__doc__},
+
+static PyObject *
+_interpreters_get_current_impl(PyObject *module);
+
+static PyObject *
+_interpreters_get_current(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _interpreters_get_current_impl(module);
+}
+/*[clinic end generated code: output=fb7ded6bea2ae0e8 input=a9049054013a1b77]*/
