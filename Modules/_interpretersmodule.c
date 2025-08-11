@@ -862,14 +862,14 @@ typically by using _interpreters.destroy().  This can be managed
 automatically by passing "reqrefs=True" and then using _incref() and
 _decref() appropriately.
 
-"config" must be a valid interpreter config or the name of a
-predefined config ("isolated" or "legacy").  The default
-is "isolated".
+*config* must be a valid interpreter config or the name of a
+predefined config ('isolated' or 'legacy').  The default
+is 'isolated'.
 [clinic start generated code]*/
 
 static PyObject *
 _interpreters_create_impl(PyObject *module, PyObject *configobj, int reqrefs)
-/*[clinic end generated code: output=c1cc6835b1277c16 input=9b240f749f0f0972]*/
+/*[clinic end generated code: output=c1cc6835b1277c16 input=7d7dbdefcd992b7e]*/
 {
     PyInterpreterConfig config;
     if (config_from_object(configobj, &config) < 0) {
@@ -1121,7 +1121,7 @@ This is equivalent to running the builtin exec() under the target
 interpreter, using the __dict__ of its __main__ module as both
 globals and locals.
 
-"code" may be a string containing the text of a Python script.
+*code* may be a string containing the text of a Python script.
 
 Functions (and code objects) are also supported, with some restrictions.
 The code/function must not take any arguments or be a closure
@@ -1134,7 +1134,7 @@ is ignored, including its __globals__ dict.
 static PyObject *
 _interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
                         PyObject *shared, int restricted)
-/*[clinic end generated code: output=492057c4f10dc304 input=687f3f6ac5294593]*/
+/*[clinic end generated code: output=492057c4f10dc304 input=8e0199d4a220bbb8]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
@@ -1511,13 +1511,13 @@ _interpreters.capture_exception
 
 Return a snapshot of an exception.
 
-If "exc" is None then the current exception, if any, is used (but not cleared).
+If *exc* is None then the current exception, if any, is used (but not cleared).
 The returned snapshot is the same as what _interpreters.exec() returns.
 [clinic start generated code]*/
 
 static PyObject *
 _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
-/*[clinic end generated code: output=ef3f5393ef9c88a6 input=e67d59d7fbb6d58c]*/
+/*[clinic end generated code: output=ef3f5393ef9c88a6 input=5ffe1ced0ec8e093]*/
 {
     PyObject *exc = exc_arg;
     if (exc == NULL || exc == Py_None) {

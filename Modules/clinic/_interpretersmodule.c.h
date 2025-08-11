@@ -19,9 +19,9 @@ PyDoc_STRVAR(_interpreters_create__doc__,
 "automatically by passing \"reqrefs=True\" and then using _incref() and\n"
 "_decref() appropriately.\n"
 "\n"
-"\"config\" must be a valid interpreter config or the name of a\n"
-"predefined config (\"isolated\" or \"legacy\").  The default\n"
-"is \"isolated\".");
+"*config* must be a valid interpreter config or the name of a\n"
+"predefined config (\'isolated\' or \'legacy\').  The default\n"
+"is \'isolated\'.");
 
 #define _INTERPRETERS_CREATE_METHODDEF    \
     {"create", _PyCFunction_CAST(_interpreters_create), METH_FASTCALL|METH_KEYWORDS, _interpreters_create__doc__},
@@ -348,7 +348,7 @@ PyDoc_STRVAR(_interpreters_exec__doc__,
 "interpreter, using the __dict__ of its __main__ module as both\n"
 "globals and locals.\n"
 "\n"
-"\"code\" may be a string containing the text of a Python script.\n"
+"*code* may be a string containing the text of a Python script.\n"
 "\n"
 "Functions (and code objects) are also supported, with some restrictions.\n"
 "The code/function must not take any arguments or be a closure\n"
@@ -1038,7 +1038,7 @@ PyDoc_STRVAR(_interpreters_capture_exception__doc__,
 "\n"
 "Return a snapshot of an exception.\n"
 "\n"
-"If \"exc\" is None then the current exception, if any, is used (but not cleared).\n"
+"If *exc* is None then the current exception, if any, is used (but not cleared).\n"
 "The returned snapshot is the same as what _interpreters.exec() returns.");
 
 #define _INTERPRETERS_CAPTURE_EXCEPTION_METHODDEF    \
@@ -1066,4 +1066,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e5b52436e3b5a087 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e0357d000b5dc81a input=a9049054013a1b77]*/
