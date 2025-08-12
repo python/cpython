@@ -739,6 +739,15 @@ class SysModuleTest(unittest.TestCase):
         elif sys.platform == "wasi":
             self.assertEqual(info.name, "pthread-stubs")
 
+    def test_abi_info(self):
+        info = sys.abi_info
+        self.assertEqual(len(info), 3)
+        pointer_bits = 64 if sys.maxsize > 2**32 else 32
+        self.assertEqual(info.pointer_bits, pointer_bits)
+        for flag in ["Py_GIL_DISABLED", "Py_DEBUG"]:
+            self.assertEqual(getattr(info, flag, None),
+                             bool(sysconfig.get_config_var(flag)))
+
     @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
     def test_emscripten_info(self):
         self.assertEqual(len(sys._emscripten_info), 4)
