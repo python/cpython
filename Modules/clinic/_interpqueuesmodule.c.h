@@ -184,4 +184,87 @@ _interpqueues_list_all(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _interpqueues_list_all_impl(module);
 }
-/*[clinic end generated code: output=700d27c8f5e2eb72 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpqueues_put__doc__,
+"put($module, /, qid, obj, unboundop=-1, fallback=-1)\n"
+"--\n"
+"\n"
+"Add the object\'s data to the queue.");
+
+#define _INTERPQUEUES_PUT_METHODDEF    \
+    {"put", _PyCFunction_CAST(_interpqueues_put), METH_FASTCALL|METH_KEYWORDS, _interpqueues_put__doc__},
+
+static PyObject *
+_interpqueues_put_impl(PyObject *module, qidarg_converter_data qidarg,
+                       PyObject *obj, int unboundarg, int fallbackarg);
+
+static PyObject *
+_interpqueues_put(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 4
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(qid), &_Py_ID(obj), &_Py_ID(unboundop), &_Py_ID(fallback), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"qid", "obj", "unboundop", "fallback", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "put",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    qidarg_converter_data qidarg = {0};
+    PyObject *obj;
+    int unboundarg = -1;
+    int fallbackarg = -1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!qidarg_converter(args[0], &qidarg)) {
+        goto exit;
+    }
+    obj = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        unboundarg = PyLong_AsInt(args[2]);
+        if (unboundarg == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    fallbackarg = PyLong_AsInt(args[3]);
+    if (fallbackarg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _interpqueues_put_impl(module, qidarg, obj, unboundarg, fallbackarg);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=e56010c88d411c5a input=a9049054013a1b77]*/

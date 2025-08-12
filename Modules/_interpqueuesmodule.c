@@ -1610,25 +1610,26 @@ finally:
     return ids;
 }
 
+/*[clinic input]
+_interpqueues.put
+    qid as qidarg: qidarg
+    obj: object
+    unboundop as unboundarg: int = -1
+    fallback as fallbackarg: int = -1
+
+Add the object's data to the queue.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_put_impl(PyObject *module, qidarg_converter_data qidarg,
+                       PyObject *obj, int unboundarg, int fallbackarg)
+/*[clinic end generated code: output=24c24c63489a19fa input=5cdee664acd659ce]*/
 {
-    static char *kwlist[] = {"qid", "obj", "unboundop", "fallback", NULL};
-    qidarg_converter_data qidarg = {0};
-    PyObject *obj;
-    int unboundarg = -1;
-    int fallbackarg = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|ii$p:put", kwlist,
-                                     qidarg_converter, &qidarg, &obj,
-                                     &unboundarg, &fallbackarg))
-    {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
     struct _queuedefaults defaults = {-1, -1};
     if (unboundarg < 0 || fallbackarg < 0) {
         int err = queue_get_defaults(&_globals.queues, qid, &defaults);
-        if (handle_queue_error(err, self, qid)) {
+        if (handle_queue_error(err, module, qid)) {
             return NULL;
         }
     }
@@ -1644,17 +1645,12 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
     /* Queue up the object. */
     int err = queue_put(&_globals.queues, qid, obj, unboundop, fallback);
     // This is the only place that raises QueueFull.
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(queuesmod_put_doc,
-"put(qid, obj)\n\
-\n\
-Add the object's data to the queue.");
 
 static PyObject *
 queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1900,8 +1896,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_CREATE_METHODDEF
     _INTERPQUEUES_DESTROY_METHODDEF
     _INTERPQUEUES_LIST_ALL_METHODDEF
-    {"put",                        _PyCFunction_CAST(queuesmod_put),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_put_doc},
+    _INTERPQUEUES_PUT_METHODDEF
     {"get",                        _PyCFunction_CAST(queuesmod_get),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_doc},
     {"bind",                       _PyCFunction_CAST(queuesmod_bind),
