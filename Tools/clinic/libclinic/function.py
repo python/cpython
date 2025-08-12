@@ -177,8 +177,8 @@ class Function:
         Methods have an extra level of indentation, so we use 68.
         """
         if self.cls is not None and not self.kind.new_or_init:
-            return 68
-        return 72
+            return 72
+        return 76
 
     def __repr__(self) -> str:
         return f'<clinic.Function {self.name!r}>'
