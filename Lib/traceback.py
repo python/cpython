@@ -1107,11 +1107,20 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
-        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
-                sys.flags.no_site and \
-                getattr(exc_value, "name", None) not in sys.stdlib_module_names:
-            self._str += (". Site initialization is disabled, did you forget to "
-                + "add the site-packages directory to sys.path?")
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \               
+                getattr(exc_value, "name", None):
+            wrong_name = getattr(exc_value, "name", None)
+            suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
+            self._str = exc_value.msg
+            if suggestion:                
+                self._str += f". Did you mean: '{suggestion}'?"
+            if sys.flags.no_site and getattr(exc_value, "name", None) not in sys.stdlib_module_names:
+                if not suggestion:
+                    self._str += (". Site initialization is disabled, did you forget to "
+                    + "add the site-packages directory to sys.path?")
+                else:
+                    self._str += ("Or did you forget to add the site-packages directory to sys.path? The "
+                                 + "site initialization is disabled")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1634,7 +1643,100 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
-            return None
+            scan_dir, find_all_packages = _find_all_packages()
+            import os
+            list_d = find_all_packages()            
+            _module_name = exc_value.name
+            wrong_name_list = _module_name.split(".")
+            module_name = wrong_name_list[0]
+            if module_name not in sys.modules:                
+                wrong_name = module_name
+                exc_value.msg = f"no module named '{module_name}'"
+                if len(wrong_name_list) == 1:                    
+                    if (_closed_name := _calculate_closed_name(module_name, sorted(sys.stdlib_module_names))):
+                        return _closed_name # stdlib first
+                    _close_name_list = []
+                    for i in list_d:
+                        module_result = _calculate_closed_name(wrong_name, i)
+                        if module_result:
+                            _close_name_list.append(module_result)
+                    _close_name_list.sorted()
+                    return _closed_name_list[0]                   
+                else:                   
+                    if wrong_name in sum(list_d, []):
+                        path = ""
+                        for i in sys.path:
+                            if i and isinstance(i, str) and not i.endswith("idlelib"):
+                                if wrong_name in scan_dir(i):
+                                    path = f"{i}/{wrong_name}"
+                                    break
+                        else:
+                            if (_closed_name := _calculate_closed_name(module_name, sorted(sys.stdlib_module_names))):
+                                return _closed_name
+                            _close_name_list = []
+                            for i in list_d:
+                                module_result = _calculate_closed_name(wrong_name, i)
+                                if module_result:
+                                    _close_name_list.append(module_result)
+                            _close_name_list.sorted()
+                            return _closed_name_list[0] 
+                    else:
+                        if (_closed_name := _calculate_closed_name(module_name, sorted(sys.stdlib_module_names))):
+                            return _closed_name
+                        _close_name_list = []
+                        for i in list_d:
+                            module_result = _calculate_closed_name(wrong_name, i)
+                            if module_result:
+                                _close_name_list.append(module_result)
+                        _close_name_list.sorted()
+                        return _closed_name_list[0] 
+                                
+                    if not os.path.exists(path) or not os.path.isdir(path):
+                        exc_value.msg = f"module '{module_name}' has no child module '{wrong_name_list[1]}'; '{module_name}' is not a package"
+                        return None
+                    index = 0
+                    for i in wrong_name_list[1:]:
+                        index += 1
+                        _child_modules_d = scan_dir(path)
+                        original_module_name = module_name
+                        if wrong_name_list[index] not in _child_modules_d:
+                            exc_value.msg = f"module '{module_name}' has no child module '{i}'"
+                            wrong_name = i
+                            d = _child_modules_d
+                            break
+                        path += f"/{i}"
+                        if not os.path.exists(path) or not os.path.isdir(path) and len(wrong_name_list) > index + 1:
+                            module_name += "." + i
+                            exc_value.msg = f"module '{module_name}' has no child module '{wrong_name_list[index + 1]}'; '{module_name}' is not a package"
+                            return None
+                        module_name += "." + i
+                exc_value.args = (exc_value.msg,)
+            else:
+                if hasattr(sys.modules[module_name], '__path__') and len(wrong_name_list)>1:
+                    index = 0
+                    for i in wrong_name_list[1:]:
+                        index += 1
+                        original_module_name = module_name
+                        exc_value.msg = f"module '{module_name}' has no child module '{i}'"
+                        exc_value.args = (exc_value.msg,)
+                        module_name += "." + i
+                        if module_name not in sys.modules:
+                            wrong_name = i
+                            d = scan_dir(sys.modules[original_module_name].__path__[0])
+                            break
+                        else:
+                            if hasattr(sys.modules[module_name], '__path__'):
+                                continue
+                            else:
+                                if len(wrong_name_list) > index + 1:                                    
+                                    exc_value.msg = f"module '{module_name}' has no child module '{wrong_name_list[index+1]}'; '{module_name}' is not a package"
+                                exc_value.args = (exc_value.msg,)
+                                return None
+                else:
+                    if len(wrong_name_list) > 1:
+                        exc_value.msg = f"module '{module_name}' has no child module '{wrong_name_list[1]}'; '{module_name}' is not a package"
+                    exc_value.args = (exc_value.msg,)
+                    return None
     else:
         assert isinstance(exc_value, NameError)
         # find most recent frame
@@ -1661,13 +1763,14 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             if has_wrong_name:
                 return f"self.{wrong_name}"
 
+    return _calculate_closed_name(wrong_name, d)
+
+def _calculate_closed_name(wrong_name, d):
     try:
         import _suggestions
+        return _suggestions._generate_suggestions(d, wrong_name)
     except ImportError:
         pass
-    else:
-        return _suggestions._generate_suggestions(d, wrong_name)
-
     # Compute closest match
 
     if len(d) > _MAX_CANDIDATE_ITEMS:
@@ -1693,6 +1796,54 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             best_distance = current_distance
     return suggestion
 
+def _find_all_packages():
+    import os
+    import sys
+    from importlib import machinery
+    
+    def scan_dir(path):
+        """
+        Return all of the packages in the path without import
+        contains：
+          - .py file
+          - directory with "__init__.py"
+          - the .pyd/so file that has right ABI
+        """
+        if not os.path.isdir(path):
+            return []
+    
+        suffixes = machinery.EXTENSION_SUFFIXES
+        result = []
+    
+        for name in os.listdir(path):
+            full_path = os.path.join(path, name)
+    
+            # .py file
+            if name.endswith(".py") and os.path.isfile(full_path):
+                modname = name[:-3]
+                if modname.isidentifier():
+                    result.append(modname)
+    
+            # directory with "__init__.py"
+            elif os.path.isdir(full_path):
+                init_file = os.path.join(full_path, "__init__.py")
+                if os.path.isfile(init_file) and name.isidentifier():
+                    result.append(name)
+    
+            # the .pyd/so file that has right ABI
+            elif os.path.isfile(full_path):
+                for suf in suffixes:
+                    if name.endswith(suf):
+                        modname = name[:-len(suf)]
+                        if modname.isidentifier():
+                            result.append(modname)
+                        break
+    
+        return sorted(result)
+    
+    def find_all_packages():
+        return [scan_dir(i) if i and isinstance(i, str) and not i.endswith("idlelib") else [] for i in sys.path] + [sorted(sys.builtin_module_names)]
+    return scan_dir, find_all_packages
 
 def _levenshtein_distance(a, b, max_cost):
     # A Python implementation of Python/suggestions.c:levenshtein_distance.
