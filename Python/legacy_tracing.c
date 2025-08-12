@@ -590,7 +590,7 @@ _PyEval_SetProfileAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyOb
 }
 
 static int
-setup_trace_callbacks(void *_unused)
+setup_trace_callbacks(void *Py_UNUSED(arg))
 {
     /* Setup PEP 669 monitoring callbacks and events. */
     if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
