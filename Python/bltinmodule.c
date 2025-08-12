@@ -2118,15 +2118,18 @@ builtin_oct(PyObject *module, PyObject *number)
 /*[clinic input]
 ord as builtin_ord
 
-    c: object
+    character as c: object
     /
 
 Return the Unicode code point for a one-character string.
+
+Return the value of the first byte for a bytes or bytearray object of
+length 1.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_ord(PyObject *module, PyObject *c)
-/*[clinic end generated code: output=4fa5e87a323bae71 input=3064e5d6203ad012]*/
+/*[clinic end generated code: output=4fa5e87a323bae71 input=99e491d094680598]*/
 {
     long ord;
     Py_ssize_t size;
