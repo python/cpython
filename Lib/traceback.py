@@ -1642,6 +1642,8 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
+            if not isinstance(exc_value, ModuleNotFoundError):
+                return None
             scan_dir, find_all_packages = _find_all_packages()
             import os
             list_d = find_all_packages()            
@@ -1650,7 +1652,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             module_name = wrong_name_list[0]
             if module_name not in sys.modules:                
                 wrong_name = module_name
-                exc_value.msg = f"no module named '{module_name}'"
+                exc_value.msg = f"No module named '{module_name}'"
                 if len(wrong_name_list) == 1:                    
                     if (_closed_name := _calculate_closed_name(module_name, sorted(sys.stdlib_module_names))):
                         return _closed_name # stdlib first
