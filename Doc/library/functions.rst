@@ -1422,51 +1422,10 @@ are always available.  They are listed here in alphabetical order.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled—this cannot be used in binary mode.
-   A variety of standard error handlers are available
-   (listed under :ref:`error-handlers`, and summarized below for convenience),
+   A variety of standard error handlers are available,
    though any error handling name that has been registered with
    :func:`codecs.register_error` is also valid.  The standard names
-   include:
-
-   .. list-table::
-      :header-rows: 1
-
-      * - Error handler
-        - Description
-      * - ``'strict'``
-        - Raise a :exc:`UnicodeError` (or a subclass) exception if there is
-          an error.  The default value of ``None`` has the same effect.
-      * - ``'ignore'``
-        - Ignore the malformed data and continue without further notice.
-          Note that ignoring encoding errors can lead to data loss.
-      * - ``'replace'``
-        - Replace malformed data with a replacement marker.
-          On writing, use ``?`` (ASCII character 63).
-          On reading, use ``�`` (U+FFFD, the official REPLACEMENT CHARACTER)
-      * - ``'backslashreplace'``
-        - Replace malformed data with backslashed escape sequences.
-          On writing, use hexadecimal form of Unicode code points with formats
-          :samp:`\\x{hh}` :samp:`\\u{xxxx}` :samp:`\\U{xxxxxxxx}`.
-          On reading, use hexadecimal form of byte value with format :samp:`\\x{hh}`.
-      * - ``'surrogateescape'``
-        - Will represent any incorrect bytes as low
-          surrogate code units ranging from ``U+DC80`` to ``U+DCFF``.
-          These surrogate code units will then be turned back into
-          the same bytes when the ``'surrogateescape'`` error handler is used
-          when writing data.  This is useful for processing files in an
-          unknown encoding.
-      * - ``'surrogatepass'``
-        - Only available for Unicode codecs.
-          Allow encoding and decoding surrogate code points
-          (``U+D800`` - ``U+DFFF``) as normal code points.  Otherwise these codecs
-          treat the presence of surrogate code points in :class:`str` as an error.
-      * - ``'xmlcharrefreplace'``
-        - Only supported when writing.
-          Characters not supported by the encoding are replaced with the
-          appropriate XML character reference :samp:`&#{nnn};`.
-      * - ``'namereplace'``
-        - Only supported when writing.  Replaces unsupported characters with
-          ``\N{...}`` escape sequences.
+   can be found in :ref:`error-handlers`.
 
    .. index::
       single: universal newlines; open() built-in function
