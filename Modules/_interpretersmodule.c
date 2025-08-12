@@ -1302,7 +1302,7 @@ _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
     }
 
     struct interp_call call = {0};
-    if (_interp_call_pack(tstate, &call, callable, args_obj, kwargs_obj) < 0) {
+    if (_interp_call_pack(tstate, &call, callable, args, kwargs) < 0) {
         return NULL;
     }
 
