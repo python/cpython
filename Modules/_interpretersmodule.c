@@ -742,7 +742,7 @@ get_whence(PyInterpreterState *interp)
 
 
 static PyInterpreterState *
-resolve_interp(PyObject *idobj, int restrict, int reqready, const char *op)
+resolve_interp(PyObject *idobj, int restricted, int reqready, const char *op)
 {
     PyInterpreterState *interp;
     if (idobj == NULL) {
@@ -767,7 +767,7 @@ resolve_interp(PyObject *idobj, int restrict, int reqready, const char *op)
         return NULL;
     }
 
-    if (restrict && get_whence(interp) != _PyInterpreterState_WHENCE_STDLIB) {
+    if (restricted && get_whence(interp) != _PyInterpreterState_WHENCE_STDLIB) {
         if (idobj == NULL) {
             PyErr_Format(PyExc_InterpreterError,
                          "cannot %s unrecognized current interpreter", op);
@@ -907,7 +907,7 @@ _interpreters_create_impl(PyObject *module, PyObject *configobj, int reqrefs)
 _interpreters.destroy
     id: object
     *
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 Destroy the identified interpreter.
 
@@ -916,13 +916,13 @@ So does an unrecognized ID.
 [clinic start generated code]*/
 
 static PyObject *
-_interpreters_destroy_impl(PyObject *module, PyObject *id, int restrict)
-/*[clinic end generated code: output=3887e3c350597df5 input=43fd109df8e851f9]*/
+_interpreters_destroy_impl(PyObject *module, PyObject *id, int restricted)
+/*[clinic end generated code: output=0bc20da8700ab4dd input=561bdd6537639d40]*/
 {
     // Look up the interpreter.
     int reqready = 0;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "destroy");
+            resolve_interp(id, restricted, reqready, "destroy");
     if (interp == NULL) {
         return NULL;
     }
@@ -1034,20 +1034,20 @@ _interpreters.set___main___attrs
     id: object
     updates: object(subclass_of='&PyDict_Type')
     *
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 Bind the given attributes in the interpreter's __main__ module.
 [clinic start generated code]*/
 
 static PyObject *
 _interpreters_set___main___attrs_impl(PyObject *module, PyObject *id,
-                                      PyObject *updates, int restrict)
-/*[clinic end generated code: output=494c8fc4be971936 input=4235567e63091172]*/
+                                      PyObject *updates, int restricted)
+/*[clinic end generated code: output=f3803010cb452bf0 input=d16ab8d81371f86a]*/
 {
     // Look up the interpreter.
     int reqready = 1;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "update __main__ for");
+            resolve_interp(id, restricted, reqready, "update __main__ for");
     if (interp == NULL) {
         return NULL;
     }
@@ -1109,7 +1109,7 @@ _interpreters.exec
     code: object
     shared: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
     *
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 Execute the provided code in the identified interpreter.
 
@@ -1129,13 +1129,13 @@ is ignored, including its __globals__ dict.
 
 static PyObject *
 _interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
-                        PyObject *shared, int restrict)
-/*[clinic end generated code: output=1e47a912017ea298 input=0591915eb37dc8ca]*/
+                        PyObject *shared, int restricted)
+/*[clinic end generated code: output=492057c4f10dc304 input=5a22c1ed0c5dbcf3]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "exec code for");
+            resolve_interp(id, restricted, reqready, "exec code for");
     if (interp == NULL) {
         return NULL;
     }
@@ -1165,7 +1165,7 @@ _interpreters.run_string
     script: unicode
     shared: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
     *
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 Execute the provided string in the identified interpreter.
 
@@ -1175,14 +1175,14 @@ Execute the provided string in the identified interpreter.
 static PyObject *
 _interpreters_run_string_impl(PyObject *module, PyObject *id,
                               PyObject *script, PyObject *shared,
-                              int restrict)
-/*[clinic end generated code: output=aa0b7383aca83202 input=f6fb336564bfe090]*/
+                              int restricted)
+/*[clinic end generated code: output=a30a64fb9ad396a2 input=51ce549b9a8dbe21]*/
 {
 #define FUNCNAME MODULE_NAME_STR ".run_string"
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "run a string in");
+            resolve_interp(id, restricted, reqready, "run a string in");
     if (interp == NULL) {
         return NULL;
     }
@@ -1216,7 +1216,7 @@ _interpreters.run_func
     func: object
     shared: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
     *
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 Execute the body of the provided function in the identified interpreter.
 
@@ -1228,14 +1228,14 @@ are not supported.  Methods and other callables are not supported either.
 
 static PyObject *
 _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
-                            PyObject *shared, int restrict)
-/*[clinic end generated code: output=80c7ab83886e5497 input=08d2724bce5e5d8c]*/
+                            PyObject *shared, int restricted)
+/*[clinic end generated code: output=131f7202ca4a0c5e input=2d62bb9b9eaf4948]*/
 {
 #define FUNCNAME MODULE_NAME_STR ".run_func"
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "run a function in");
+            resolve_interp(id, restricted, reqready, "run a function in");
     if (interp == NULL) {
         return NULL;
     }
@@ -1280,7 +1280,7 @@ _interpreters.call
     kwargs: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
     *
     preserve_exc: bool = False
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 Call the provided object in the identified interpreter.
 
@@ -1290,13 +1290,13 @@ Pass the given args and kwargs, if possible.
 static PyObject *
 _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
                         PyObject *args, PyObject *kwargs, int preserve_exc,
-                        int restrict)
-/*[clinic end generated code: output=e04c697326e0f482 input=858caec5becc34ed]*/
+                        int restricted)
+/*[clinic end generated code: output=b7a4a27d72df3ebc input=b026d0b212a575e6]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "make a call in");
+            resolve_interp(id, restricted, reqready, "make a call in");
     if (interp == NULL) {
         return NULL;
     }
@@ -1351,18 +1351,18 @@ _interpreters_is_shareable_impl(PyObject *module, PyObject *obj)
 _interpreters.is_running
     id: object
     *
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 Return whether or not the identified interpreter is running.
 [clinic start generated code]*/
 
 static PyObject *
-_interpreters_is_running_impl(PyObject *module, PyObject *id, int restrict)
-/*[clinic end generated code: output=807f93da48f682cd input=ab3e5e07a870d506]*/
+_interpreters_is_running_impl(PyObject *module, PyObject *id, int restricted)
+/*[clinic end generated code: output=32a6225d5ded9bdb input=3291578d04231125]*/
 {
     int reqready = 1;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "check if running for");
+            resolve_interp(id, restricted, reqready, "check if running for");
     if (interp == NULL) {
         return NULL;
     }
@@ -1378,14 +1378,14 @@ _interpreters_is_running_impl(PyObject *module, PyObject *id, int restrict)
 _interpreters.get_config
     id: object
     *
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 Return a representation of the config used to initialize the interpreter.
 [clinic start generated code]*/
 
 static PyObject *
-_interpreters_get_config_impl(PyObject *module, PyObject *id, int restrict)
-/*[clinic end generated code: output=b739277cc30cf365 input=d268b92b96b0712b]*/
+_interpreters_get_config_impl(PyObject *module, PyObject *id, int restricted)
+/*[clinic end generated code: output=56773353b9b7224a input=59519a01c22d96d1]*/
 {
     if (id == Py_None) {
         id = NULL;
@@ -1393,7 +1393,7 @@ _interpreters_get_config_impl(PyObject *module, PyObject *id, int restrict)
 
     int reqready = 0;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "get the config of");
+            resolve_interp(id, restricted, reqready, "get the config of");
     if (interp == NULL) {
         return NULL;
     }
@@ -1439,18 +1439,18 @@ _interpreters.incref
     id: object
     *
     implieslink: bool = False
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 [clinic start generated code]*/
 
 static PyObject *
 _interpreters_incref_impl(PyObject *module, PyObject *id, int implieslink,
-                          int restrict)
-/*[clinic end generated code: output=07ac7d417e19ea14 input=d83785796c100d14]*/
+                          int restricted)
+/*[clinic end generated code: output=eccaa4e03fbe8ee2 input=a0a614748f2e348c]*/
 {
     int reqready = 1;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "incref");
+            resolve_interp(id, restricted, reqready, "incref");
     if (interp == NULL) {
         return NULL;
     }
@@ -1469,17 +1469,17 @@ _interpreters_incref_impl(PyObject *module, PyObject *id, int implieslink,
 _interpreters.decref
     id: object
     *
-    restrict: bool = False
+    restrict as restricted: bool = False
 
 [clinic start generated code]*/
 
 static PyObject *
-_interpreters_decref_impl(PyObject *module, PyObject *id, int restrict)
-/*[clinic end generated code: output=1b9b5a4b9f16b914 input=3eb5e65dffddffe3]*/
+_interpreters_decref_impl(PyObject *module, PyObject *id, int restricted)
+/*[clinic end generated code: output=5c54db4b22086171 input=c4aa34f09c44e62a]*/
 {
     int reqready = 1;
     PyInterpreterState *interp = \
-            resolve_interp(id, restrict, reqready, "decref");
+            resolve_interp(id, restricted, reqready, "decref");
     if (interp == NULL) {
         return NULL;
     }
