@@ -335,7 +335,7 @@ class Test_TestLoader(unittest.TestCase):
         loader = unittest.TestLoader()
 
         suite = loader.loadTestsFromName('unittest.sdasfasfasdf')
-        expected = "No module named 'unittest.sdasfasfasdf'"
+        expected = "module 'unittest' has no child module 'sdasfasfasdf'"
         error, test = self.check_deferred_error(loader, suite)
         self.assertIn(
             expected, error,
