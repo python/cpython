@@ -872,8 +872,7 @@ PyDoc_STRVAR(_interpreters_get_config__doc__,
     {"get_config", _PyCFunction_CAST(_interpreters_get_config), METH_FASTCALL|METH_KEYWORDS, _interpreters_get_config__doc__},
 
 static PyObject *
-_interpreters_get_config_impl(PyObject *module, PyObject *idobj,
-                              int restrict);
+_interpreters_get_config_impl(PyObject *module, PyObject *id, int restrict);
 
 static PyObject *
 _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -908,7 +907,7 @@ _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nar
     #undef KWTUPLE
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    PyObject *idobj;
+    PyObject *id;
     int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -916,7 +915,7 @@ _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!args) {
         goto exit;
     }
-    idobj = args[0];
+    id = args[0];
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
@@ -925,7 +924,7 @@ _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nar
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_get_config_impl(module, idobj, restrict);
+    return_value = _interpreters_get_config_impl(module, id, restrict);
 
 exit:
     return return_value;
@@ -1199,4 +1198,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=17de7de23608e491 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=407e2f173a3ad602 input=a9049054013a1b77]*/

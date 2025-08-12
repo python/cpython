@@ -1376,7 +1376,7 @@ _interpreters_is_running_impl(PyObject *module, PyObject *id, int restrict)
 
 /*[clinic input]
 _interpreters.get_config
-    id as idobj: object
+    id: object
     *
     restrict: bool = False
 
@@ -1384,17 +1384,16 @@ Return a representation of the config used to initialize the interpreter.
 [clinic start generated code]*/
 
 static PyObject *
-_interpreters_get_config_impl(PyObject *module, PyObject *idobj,
-                              int restrict)
-/*[clinic end generated code: output=eb69d3a5cafb6b17 input=57c06ac75061acf0]*/
+_interpreters_get_config_impl(PyObject *module, PyObject *id, int restrict)
+/*[clinic end generated code: output=b739277cc30cf365 input=d268b92b96b0712b]*/
 {
-    if (idobj == Py_None) {
-        idobj = NULL;
+    if (id == Py_None) {
+        id = NULL;
     }
 
     int reqready = 0;
     PyInterpreterState *interp = \
-            resolve_interp(idobj, restrict, reqready, "get the config of");
+            resolve_interp(id, restrict, reqready, "get the config of");
     if (interp == NULL) {
         return NULL;
     }
