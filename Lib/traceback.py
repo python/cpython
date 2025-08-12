@@ -1107,8 +1107,7 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
-        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \               
-                getattr(exc_value, "name", None):
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and getattr(exc_value, "name", None):
             wrong_name = getattr(exc_value, "name", None)
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             self._str = exc_value.msg
