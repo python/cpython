@@ -576,4 +576,64 @@ _interpqueues_get_queue_defaults(PyObject *module, PyObject *const *args, Py_ssi
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=934b40d0f6e02fbc input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpqueues_is_full__doc__,
+"is_full($module, /, qid)\n"
+"--\n"
+"\n"
+"Return true if the queue has a maxsize and has reached it.");
+
+#define _INTERPQUEUES_IS_FULL_METHODDEF    \
+    {"is_full", _PyCFunction_CAST(_interpqueues_is_full), METH_FASTCALL|METH_KEYWORDS, _interpqueues_is_full__doc__},
+
+static PyObject *
+_interpqueues_is_full_impl(PyObject *module, qidarg_converter_data qidarg);
+
+static PyObject *
+_interpqueues_is_full(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(qid), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"qid", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "is_full",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    qidarg_converter_data qidarg = {0};
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!qidarg_converter(args[0], &qidarg)) {
+        goto exit;
+    }
+    return_value = _interpqueues_is_full_impl(module, qidarg);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=716511a7166dd2a3 input=a9049054013a1b77]*/

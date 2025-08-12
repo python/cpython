@@ -1784,21 +1784,22 @@ _interpqueues_get_queue_defaults_impl(PyObject *module,
     return res;
 }
 
+/*[clinic input]
+_interpqueues.is_full
+    qid as qidarg: qidarg
+
+Return true if the queue has a maxsize and has reached it.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_is_full_impl(PyObject *module, qidarg_converter_data qidarg)
+/*[clinic end generated code: output=a2867798f650ad6a input=ff1e367174db36e7]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:is_full", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
 
     int is_full = 0;
     int err = queue_is_full(&_globals.queues, qid, &is_full);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
     if (is_full) {
@@ -1806,11 +1807,6 @@ queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
     }
     Py_RETURN_FALSE;
 }
-
-PyDoc_STRVAR(queuesmod_is_full_doc,
-"is_full(qid)\n\
-\n\
-Return true if the queue has a maxsize and has reached it.");
 
 static PyObject *
 queuesmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1888,8 +1884,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_RELEASE_METHODDEF
     _INTERPQUEUES_GET_MAXSIZE_METHODDEF
     _INTERPQUEUES_GET_QUEUE_DEFAULTS_METHODDEF
-    {"is_full",                    _PyCFunction_CAST(queuesmod_is_full),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_is_full_doc},
+    _INTERPQUEUES_IS_FULL_METHODDEF
     {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_count_doc},
     {"_register_heap_types",       _PyCFunction_CAST(queuesmod__register_heap_types),
