@@ -2877,8 +2877,6 @@ PyDecType_FromSequenceExact(PyTypeObject *type, PyObject *v,
 #define PyDec_FromSequenceExact(st, sequence, context) \
         PyDecType_FromSequenceExact((st)->PyDec_Type, sequence, context)
 
-/* class method */
-
 /*[clinic input]
 @classmethod
 _decimal.Decimal.from_float
@@ -2946,8 +2944,6 @@ PyDecType_FromNumberExact(PyTypeObject *type, PyObject *v, PyObject *context)
         return NULL;
     }
 }
-
-/* class method */
 
 /*[clinic input]
 @classmethod
@@ -3803,8 +3799,6 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     return PyLongWriter_Finish(writer);
 }
 
-/* Convert a Decimal to its exact integer ratio representation. */
-
 /*[clinic input]
 _decimal.Decimal.as_integer_ratio
 
@@ -4119,8 +4113,6 @@ PyDec_Round(PyObject *dec, PyObject *args)
         return dec_as_long(dec, context, MPD_ROUND_HALF_EVEN);
     }
 }
-
-/* Return the DecimalTuple representation of a PyDecObject. */
 
 /*[clinic input]
 _decimal.Decimal.as_tuple
