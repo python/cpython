@@ -1,3 +1,3 @@
-The :attr:`type.__dict__` and :attr:`!__weakref__` descriptors now use a
+The :attr:`object.__dict__` and :attr:`!__weakref__` descriptors now use a
 single descriptor instance per interpreter, shared across all types that
 need them.
