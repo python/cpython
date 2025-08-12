@@ -696,4 +696,69 @@ _interpqueues_get_count(PyObject *module, PyObject *const *args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c803e09e44f9d471 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpqueues__register_heap_types__doc__,
+"_register_heap_types($module, /, queuetype, emptyerror, fullerror)\n"
+"--\n"
+"\n"
+"Return the number of items in the queue.");
+
+#define _INTERPQUEUES__REGISTER_HEAP_TYPES_METHODDEF    \
+    {"_register_heap_types", _PyCFunction_CAST(_interpqueues__register_heap_types), METH_FASTCALL|METH_KEYWORDS, _interpqueues__register_heap_types__doc__},
+
+static PyObject *
+_interpqueues__register_heap_types_impl(PyObject *module,
+                                        PyObject *queuetype,
+                                        PyObject *emptyerror,
+                                        PyObject *fullerror);
+
+static PyObject *
+_interpqueues__register_heap_types(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(queuetype), &_Py_ID(emptyerror), &_Py_ID(fullerror), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"queuetype", "emptyerror", "fullerror", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_register_heap_types",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    PyObject *queuetype;
+    PyObject *emptyerror;
+    PyObject *fullerror;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    queuetype = args[0];
+    emptyerror = args[1];
+    fullerror = args[2];
+    return_value = _interpqueues__register_heap_types_impl(module, queuetype, emptyerror, fullerror);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=bda838d2c69fd3b4 input=a9049054013a1b77]*/

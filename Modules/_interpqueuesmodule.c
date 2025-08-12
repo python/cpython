@@ -1830,18 +1830,22 @@ _interpqueues_get_count_impl(PyObject *module, qidarg_converter_data qidarg)
     return PyLong_FromSsize_t(count);
 }
 
+/*[clinic input]
+_interpqueues._register_heap_types
+    queuetype: object
+    emptyerror: object
+    fullerror: object
+
+Return the number of items in the queue.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues__register_heap_types_impl(PyObject *module,
+                                        PyObject *queuetype,
+                                        PyObject *emptyerror,
+                                        PyObject *fullerror)
+/*[clinic end generated code: output=8d7b129b64dcd01f input=878c5f97c09404bf]*/
 {
-    static char *kwlist[] = {"queuetype", "emptyerror", "fullerror", NULL};
-    PyObject *queuetype;
-    PyObject *emptyerror;
-    PyObject *fullerror;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OOO:_register_heap_types", kwlist,
-                                     &queuetype, &emptyerror, &fullerror)) {
-        return NULL;
-    }
     if (!PyType_Check(queuetype)) {
         PyErr_SetString(PyExc_TypeError,
                         "expected a type for 'queuetype'");
@@ -1858,7 +1862,7 @@ queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    module_state *state = get_module_state(self);
+    module_state *state = get_module_state(module);
 
     if (set_external_queue_type(state, (PyTypeObject *)queuetype) < 0) {
         return NULL;
@@ -1882,8 +1886,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_GET_QUEUE_DEFAULTS_METHODDEF
     _INTERPQUEUES_IS_FULL_METHODDEF
     _INTERPQUEUES_GET_COUNT_METHODDEF
-    {"_register_heap_types",       _PyCFunction_CAST(queuesmod__register_heap_types),
-     METH_VARARGS | METH_KEYWORDS, NULL},
+    _INTERPQUEUES__REGISTER_HEAP_TYPES_METHODDEF
 
     {NULL,                        NULL}           /* sentinel */
 };
