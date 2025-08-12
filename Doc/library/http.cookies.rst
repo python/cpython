@@ -316,8 +316,9 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C)
    Set-Cookie: number=7
    Set-Cookie: string=seven
+   >>> import json
    >>> C = cookies.SimpleCookie()
-   >>> C.load('cookies=7; mixins="{"chips": "dark chocolate"}"; state="gooey"')
+   >>> C.load(f'cookies=7; mixins="{json.dumps({"chips": "dark chocolate"})}"; state=gooey')
    >>> print(C)
    Set-Cookie: cookies=7
    Set-Cookie: mixins="{"chips": "dark chocolate"}"
