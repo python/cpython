@@ -1760,32 +1760,29 @@ _interpqueues_get_maxsize_impl(PyObject *module,
     return PyLong_FromLongLong(maxsize);
 }
 
+/*[clinic input]
+_interpqueues.get_queue_defaults
+    qid as qidarg: qidarg
+
+Return the queue's default values, set when it was created.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_get_queue_defaults_impl(PyObject *module,
+                                      qidarg_converter_data qidarg)
+/*[clinic end generated code: output=b43920b9ad7d2a82 input=be70c4d4f09ba78a]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_queue_defaults", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
 
     struct _queuedefaults defaults = {0};
     int err = queue_get_defaults(&_globals.queues, qid, &defaults);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
     PyObject *res = Py_BuildValue("ii", defaults.unboundop, defaults.fallback);
     return res;
 }
-
-PyDoc_STRVAR(queuesmod_get_queue_defaults_doc,
-"get_queue_defaults(qid)\n\
-\n\
-Return the queue's default values, set when it was created.");
 
 static PyObject *
 queuesmod_is_full(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1890,8 +1887,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_BIND_METHODDEF
     _INTERPQUEUES_RELEASE_METHODDEF
     _INTERPQUEUES_GET_MAXSIZE_METHODDEF
-    {"get_queue_defaults",         _PyCFunction_CAST(queuesmod_get_queue_defaults),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_queue_defaults_doc},
+    _INTERPQUEUES_GET_QUEUE_DEFAULTS_METHODDEF
     {"is_full",                    _PyCFunction_CAST(queuesmod_is_full),
      METH_VARARGS | METH_KEYWORDS, queuesmod_is_full_doc},
     {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
