@@ -29,6 +29,16 @@ module _interpqueues
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=cb1313f77fab132b]*/
 
+/*[python input]
+
+class qidarg_converter(CConverter):
+    type = 'qidarg_converter_data'
+    converter = 'qidarg_converter'
+    c_default='{0}'
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=055fedf5dfa38d4d]*/
+
 #define GLOBAL_MALLOC(TYPE) \
     PyMem_RawMalloc(sizeof(TYPE))
 #define GLOBAL_FREE(VAR) \
@@ -1537,29 +1547,27 @@ _interpqueues_create_impl(PyObject *module, Py_ssize_t maxsize,
     return qidobj;
 }
 
+/*[clinic input]
+_interpqueues.destroy
+    qid as qidarg: qidarg
+
+Clear and destroy the queue.
+
+Afterward attempts to use the queue will behave as though it never existed.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_destroy_impl(PyObject *module, qidarg_converter_data qidarg)
+/*[clinic end generated code: output=d362df720aded31a input=d77908b36282e0a2]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:destroy", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
 
     int err = queue_destroy(&_globals.queues, qid);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(queuesmod_destroy_doc,
-"destroy(qid)\n\
-\n\
-Clear and destroy the queue.  Afterward attempts to use the queue\n\
-will behave as though it never existed.");
 
 static PyObject *
 queuesmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1887,8 +1895,7 @@ queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
 
 static PyMethodDef module_functions[] = {
     _INTERPQUEUES_CREATE_METHODDEF
-    {"destroy",                    _PyCFunction_CAST(queuesmod_destroy),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_destroy_doc},
+    _INTERPQUEUES_DESTROY_METHODDEF
     {"list_all",                   queuesmod_list_all,
      METH_NOARGS,                  queuesmod_list_all_doc},
     {"put",                        _PyCFunction_CAST(queuesmod_put),
