@@ -441,8 +441,9 @@ class _FuncBuilder:
         self.locals = {}
         self.overwrite_errors = {}
         self.unconditional_adds = {}
+        self.method_annotations = {}
 
-    def add_fn(self, name, args, body, *, locals=None, return_type=MISSING,
+    def add_fn(self, name, args, body, *, locals=None, annotations=None,
                overwrite_error=False, unconditional_add=False, decorator=None):
         if locals is not None:
             self.locals.update(locals)
@@ -464,16 +465,14 @@ class _FuncBuilder:
 
         self.names.append(name)
 
-        if return_type is not MISSING:
-            self.locals[f'__dataclass_{name}_return_type__'] = return_type
-            return_annotation = f'->__dataclass_{name}_return_type__'
-        else:
-            return_annotation = ''
+        if annotations is not None:
+            self.method_annotations[name] = annotations
+
         args = ','.join(args)
         body = '\n'.join(body)
 
         # Compute the text of the entire function, add it to the text we're generating.
-        self.src.append(f'{f' {decorator}\n' if decorator else ''} def {name}({args}){return_annotation}:\n{body}')
+        self.src.append(f'{f' {decorator}\n' if decorator else ''} def {name}({args}):\n{body}')
 
     def add_fns_to_class(self, cls):
         # The source to all of the functions we're generating.
@@ -509,6 +508,9 @@ class _FuncBuilder:
         # Now that we've generated the functions, assign them into cls.
         for name, fn in zip(self.names, fns):
             fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
+            if annotations := self.method_annotations.get(name):
+                fn.__annotate__ = self.make_annotate_function(annotations)
+
             if self.unconditional_adds.get(name, False):
                 setattr(cls, name, fn)
             else:
@@ -522,6 +524,34 @@ class _FuncBuilder:
                         error_msg = f'{error_msg} {msg_extra}'
 
                     raise TypeError(error_msg)
+
+    @staticmethod
+    def make_annotate_function(annotations):
+        # Create an __annotate__ function for a dataclass
+        # Try to return annotations in the same format as they would be
+        # from a regular __init__ function
+        def __annotate__(format):
+            match format:
+                case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
+                    return {
+                        k: v.evaluate(format=format)
+                        if isinstance(v, annotationlib.ForwardRef) else v
+                        for k, v in annotations.items()
+                    }
+                case annotationlib.Format.STRING:
+                    string_annos = {}
+                    for k, v in annotations.items():
+                        if isinstance(v, str):
+                            string_annos[k] = v
+                        elif isinstance(v, annotationlib.ForwardRef):
+                            string_annos[k] = v.evaluate(format=annotationlib.Format.STRING)
+                        else:
+                            string_annos[k] = annotationlib.type_repr(v)
+                    return string_annos
+                case _:
+                    raise NotImplementedError(format)
+
+        return __annotate__
 
 
 def _field_assign(frozen, name, value, self_name):
@@ -612,7 +642,7 @@ def _init_param(f):
     elif f.default_factory is not MISSING:
         # There's a factory function.  Set a marker.
         default = '=__dataclass_HAS_DEFAULT_FACTORY__'
-    return f'{f.name}:__dataclass_type_{f.name}__{default}'
+    return f'{f.name}{default}'
 
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
@@ -635,8 +665,10 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                 raise TypeError(f'non-default argument {f.name!r} '
                                 f'follows default argument {seen_default.name!r}')
 
-    locals = {**{f'__dataclass_type_{f.name}__': f.type for f in fields},
-              **{'__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
+    annotations = {f.name: f.type for f in fields if f.init}
+    annotations["return"] = None
+
+    locals = {**{'__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
                  '__dataclass_builtins_object__': object,
                  }
               }
@@ -670,7 +702,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         [self_name] + _init_params,
                         body_lines,
                         locals=locals,
-                        return_type=None)
+                        annotations=annotations)
 
 
 def _frozen_get_del_attr(cls, fields, func_builder):
