@@ -1516,31 +1516,27 @@ class DSLParser:
             # between it and the {parameters} we're about to add.
             lines.append('')
 
-        # PEP 8 requires that docstrings are limited to 72 characters:
-        #
-        #     The Python standard library is conservative and requires
-        #     limiting lines to 79 characters (and docstrings to 72).
-        #
         # Fail if the summary line is too long.
         # Warn if any of the body lines are too long.
         # Existing violations are recorded in OVERLONG_{SUMMARY,BODY}.
+        max_width = f.docstring_line_width
         summary_len = len(lines[0])
         max_body = max(map(len, lines[1:]))
-        if summary_len > 72:
+        if summary_len > max_width:
             if f.full_name not in OVERLONG_SUMMARY:
                 fail(f"Summary line for {f.full_name!r} is too long!\n"
-                     f"The summary line must be no longer than 72 characters.")
+                     f"The summary line must be no longer than {max_width} characters.")
         else:
             if f.full_name in OVERLONG_SUMMARY:
-                fail(f"Remove {f.full_name!r} from OVERLONG_SUMMARY!\n")
+                warn(f"Remove {f.full_name!r} from OVERLONG_SUMMARY!\n")
 
-        if max_body > 72:
+        if max_body > max_width:
             if f.full_name not in OVERLONG_BODY:
                 warn(f"Docstring lines for {f.full_name!r} are too long!\n"
-                     f"Lines should be no longer than 72 characters.")
+                     f"Lines should be no longer than {max_width} characters.")
         else:
             if f.full_name in OVERLONG_BODY:
-                fail(f"Remove {f.full_name!r} from OVERLONG_BODY!\n")
+                warn(f"Remove {f.full_name!r} from OVERLONG_BODY!\n")
 
         parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
         if parameters_marker_count > 1:

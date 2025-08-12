@@ -167,6 +167,19 @@ class Function:
             flags.append('METH_COEXIST')
         return '|'.join(flags)
 
+    @property
+    def docstring_line_width(self) -> int:
+        """PEP 8 requires that docstrings are limited to 72 characters:
+
+            The Python standard library is conservative and requires
+            limiting lines to 79 characters (and docstrings to 72).
+
+        Methods have an extra level of indentation, so we use 68.
+        """
+        if self.cls is not None and not self.kind.new_or_init:
+            return 68
+        return 72
+
     def __repr__(self) -> str:
         return f'<clinic.Function {self.name!r}>'
 
