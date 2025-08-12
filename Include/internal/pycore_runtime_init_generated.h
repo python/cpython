@@ -923,6 +923,7 @@ extern "C" {
     INIT_ID(eager_start), \
     INIT_ID(effective_ids), \
     INIT_ID(element_factory), \
+    INIT_ID(emptyerror), \
     INIT_ID(encode), \
     INIT_ID(encoding), \
     INIT_ID(end), \
@@ -947,6 +948,7 @@ extern "C" {
     INIT_ID(extra_tokens), \
     INIT_ID(facility), \
     INIT_ID(factory), \
+    INIT_ID(fallback), \
     INIT_ID(false), \
     INIT_ID(family), \
     INIT_ID(fanout), \
@@ -978,6 +980,7 @@ extern "C" {
     INIT_ID(fromtimestamp), \
     INIT_ID(fromutc), \
     INIT_ID(fset), \
+    INIT_ID(fullerror), \
     INIT_ID(func), \
     INIT_ID(future), \
     INIT_ID(generation), \
@@ -1089,6 +1092,7 @@ extern "C" {
     INIT_ID(maxevents), \
     INIT_ID(maxlen), \
     INIT_ID(maxmem), \
+    INIT_ID(maxsize), \
     INIT_ID(maxsplit), \
     INIT_ID(maxvalue), \
     INIT_ID(memLevel), \
@@ -1183,7 +1187,9 @@ extern "C" {
     INIT_ID(protocol), \
     INIT_ID(ps1), \
     INIT_ID(ps2), \
+    INIT_ID(qid), \
     INIT_ID(query), \
+    INIT_ID(queuetype), \
     INIT_ID(quotetabs), \
     INIT_ID(raw), \
     INIT_ID(read), \
@@ -1303,6 +1309,7 @@ extern "C" {
     INIT_ID(tzinfo), \
     INIT_ID(tzname), \
     INIT_ID(uid), \
+    INIT_ID(unboundop), \
     INIT_ID(unlink), \
     INIT_ID(unraisablehook), \
     INIT_ID(updates), \
