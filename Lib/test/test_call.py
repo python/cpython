@@ -1075,6 +1075,7 @@ class TestRecursion(unittest.TestCase):
                 c_py_recurse(100_000)
 
 
+
 class TestFunctionWithManyArgs(unittest.TestCase):
     def test_function_with_many_args(self):
         for N in (10, 500, 1000):

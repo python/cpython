@@ -695,6 +695,11 @@ _Py_uop_analyze_and_optimize(
 )
 {
     OPT_STAT_INC(optimizer_attempts);
+    /* Make sure we have enough C stack space for the optimizer */
+    int margin = 1 + sizeof(JitOptContext)/_PyOS_STACK_MARGIN_BYTES;
+    if (_Py_ReachedRecursionLimitWithMargin(_PyThreadState_GET(), margin)) {
+        return 0;
+    }
 
     int err = remove_globals(frame, buffer, length, dependencies);
     if (err <= 0) {
