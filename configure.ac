@@ -5104,16 +5104,33 @@ then
     # linked into the binary. Correspondingly, dtrace(1) is missing the ELF
     # generation flag '-G'. We check for presence of this flag, rather than
     # hardcoding support by OS, in the interest of robustness.
+    #
+    # NetBSD DTrace requires the -x nolibs flag to avoid system library conflicts
+    # and uses header generation for testing instead of object generation.
     AC_CACHE_CHECK([whether DTrace probes require linking],
-        [ac_cv_dtrace_link], [dnl
+        [ac_cv_dtrace_link], [
             ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            case $host in
+                *netbsd*)
+                    DTRACE_TEST_FLAGS="-x nolibs -h"
+                    ;;
+                *)
+                    DTRACE_TEST_FLAGS="-G"
+                    ;;
+            esac
+            "$DTRACE" $DFLAGS $DTRACE_TEST_FLAGS -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
     if test "$ac_cv_dtrace_link" = "yes"; then
         DTRACE_OBJS="Python/pydtrace.o"
     fi
+    # Set NetBSD-specific DTrace flags in DFLAGS
+    case $host in
+        *netbsd*)
+            DFLAGS="$DFLAGS -x nolibs"
+            ;;
+    esac
 fi
 
 dnl Platform-specific C and header files.
@@ -5219,7 +5236,7 @@ AC_CHECK_FUNCS([ \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np
+  pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np \
   pthread_setname_np pthread_getattr_np \
   ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \

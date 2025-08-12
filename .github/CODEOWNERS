@@ -4,17 +4,23 @@
 # It uses the same pattern rule for gitignore file
 # https://git-scm.com/docs/gitignore#_pattern_format
 
-# GitHub
+# Azure Pipelines
+.azure-pipelines/             @AA-Turner
+
+# GitHub & related scripts
 .github/**                    @ezio-melotti @hugovk @AA-Turner
+Tools/build/compute-changes.py @AA-Turner
+Tools/build/verify_ensurepip_wheels.py @AA-Turner
 
 # pre-commit
-.pre-commit-config.yaml       @hugovk @AlexWaygood
+.pre-commit-config.yaml       @hugovk
 .ruff.toml                    @hugovk @AlexWaygood @AA-Turner
 
-# Build system
-configure*                    @erlend-aasland @corona10
-Makefile.pre.in               @erlend-aasland
-Modules/Setup*                @erlend-aasland
+# Build system (autotools)
+configure*                    @erlend-aasland @corona10 @AA-Turner
+Makefile.pre.in               @erlend-aasland @AA-Turner
+Modules/Setup*                @erlend-aasland @AA-Turner
+Tools/build/regen-configure.sh @AA-Turner
 
 # argparse
 **/*argparse*                 @savannahostrowski
@@ -67,6 +73,7 @@ Doc/make.bat                  @AA-Turner @hugovk
 Doc/requirements.txt          @AA-Turner @hugovk
 Doc/_static/**                @AA-Turner @hugovk
 Doc/tools/**                  @AA-Turner @hugovk
+.readthedocs.yml              @AA-Turner
 
 # runtime state/lifecycle
 **/*pylifecycle*              @ericsnowcurrently @ZeroIntensity
@@ -155,6 +162,10 @@ Doc/c-api/module.rst          @ericsnowcurrently
 **/*importlib/resources/*     @jaraco @warsaw @FFY00
 **/*importlib/metadata/*       @jaraco @warsaw
 
+# Calendar
+Lib/calendar.py               @AA-Turner
+Lib/test/test_calendar.py     @AA-Turner
+
 # Dates and times
 **/*datetime*                 @pganssle @abalkin
 **/*str*time*                 @pganssle @abalkin
@@ -205,6 +216,11 @@ Lib/test/test_ast/            @eclips4 @tomasr8
 # multiprocessing
 **/*multiprocessing*          @gpshead
 
+# pydoc
+Lib/pydoc.py                  @AA-Turner
+Lib/pydoc_data/               @AA-Turner
+Lib/test/test_pydoc/          @AA-Turner
+
 # SQLite 3
 **/*sqlite*                   @berkerpeksag @erlend-aasland
 
@@ -216,6 +232,11 @@ Lib/test/test_ast/            @eclips4 @tomasr8
 # debugger
 **/*pdb*                      @gaogaotiantian
 **/*bdb*                      @gaogaotiantian
+
+# types
+Lib/test/test_types.py        @AA-Turner
+Lib/types.py                  @AA-Turner
+Modules/_typesmodule.c        @AA-Turner
 
 # Limited C API & stable ABI
 Tools/build/stable_abi.py     @encukou
@@ -233,6 +254,11 @@ Doc/c-api/stable.rst          @encukou
 # Windows installer packages
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
+
+# Zstandard
+Lib/compression/zstd/         @AA-Turner
+Lib/test/test_zstd.py         @AA-Turner
+Modules/_zstd/                @AA-Turner
 
 # Misc
 **/*itertools*                @rhettinger
@@ -266,6 +292,9 @@ Doc/c-api/stable.rst          @encukou
 
 **/*cjkcodecs*                @corona10
 
+# Patchcheck
+Tools/patchcheck/             @AA-Turner
+
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
@@ -277,9 +306,9 @@ Doc/c-api/stable.rst          @encukou
 **/*zipfile/_path/*           @jaraco
 
 # Argument Clinic
-/Tools/clinic/**              @erlend-aasland
-/Lib/test/test_clinic.py      @erlend-aasland
-Doc/howto/clinic.rst          @erlend-aasland
+/Tools/clinic/**              @erlend-aasland @AA-Turner
+/Lib/test/test_clinic.py      @erlend-aasland @AA-Turner
+Doc/howto/clinic.rst          @erlend-aasland @AA-Turner
 
 # Subinterpreters
 **/*interpreteridobject.*     @ericsnowcurrently
@@ -323,6 +352,7 @@ Lib/test/test_configparser.py @jaraco
 
 # Doc sections
 Doc/reference/                @willingc @AA-Turner
+Doc/whatsnew/                 @AA-Turner
 
 **/*weakref*                  @kumaraditya303
 
@@ -336,7 +366,7 @@ Modules/_xxtestfuzz/          @ammaraskar
 # t-strings
 **/*interpolationobject*      @lysnikolaou
 **/*templateobject*           @lysnikolaou
-**/*templatelib*              @lysnikolaou
+**/*templatelib*              @lysnikolaou @AA-Turner
 **/*tstring*                  @lysnikolaou
 
 # Remote debugging
@@ -346,3 +376,6 @@ Modules/_remote_debugging_module.c @pablogsal @ambv @1st1
 
 # gettext
 **/*gettext*                  @tomasr8
+
+# Internal Docs
+InternalDocs/                 @AA-Turner

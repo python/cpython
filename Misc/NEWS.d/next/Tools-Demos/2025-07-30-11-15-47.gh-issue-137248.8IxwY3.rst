@@ -1,0 +1,2 @@
+Add a ``--logdir`` option to ``Tools/wasm/wasi`` for specifying where to
+write log files.
