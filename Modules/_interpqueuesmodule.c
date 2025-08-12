@@ -32,12 +32,11 @@ module _interpqueues
 /*[python input]
 
 class qidarg_converter(CConverter):
-    type = 'qidarg_converter_data'
+    type = 'int64_t'
     converter = 'qidarg_converter'
-    c_default='{0}'
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=055fedf5dfa38d4d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c64fbf36771164d6]*/
 
 #define GLOBAL_MALLOC(TYPE) \
     PyMem_RawMalloc(sizeof(TYPE))
@@ -1483,16 +1482,16 @@ clear_interpreter(void *data)
 }
 
 
-typedef struct idarg_int64_converter_data qidarg_converter_data;
-
 static int
 qidarg_converter(PyObject *arg, void *ptr)
 {
-    qidarg_converter_data *data = ptr;
-    if (data->label == NULL) {
-        data->label = "queue ID";
-    }
-    return idarg_int64_converter(arg, ptr);
+    int64_t *qid_ptr = ptr;
+    struct idarg_int64_converter_data data = {
+        .label = "queue ID",
+    };
+    int res = idarg_int64_converter(arg, &data);
+    *qid_ptr = data.id;
+    return res;
 }
 
 
@@ -1549,7 +1548,7 @@ _interpqueues_create_impl(PyObject *module, Py_ssize_t maxsize,
 
 /*[clinic input]
 _interpqueues.destroy
-    qid as qidarg: qidarg
+    qid: qidarg
 
 Clear and destroy the queue.
 
@@ -1557,11 +1556,9 @@ Afterward attempts to use the queue will behave as though it never existed.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_destroy_impl(PyObject *module, qidarg_converter_data qidarg)
-/*[clinic end generated code: output=d362df720aded31a input=d77908b36282e0a2]*/
+_interpqueues_destroy_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=46b35623f080cbff input=8632bba87f81e3e9]*/
 {
-    int64_t qid = qidarg.id;
-
     int err = queue_destroy(&_globals.queues, qid);
     if (handle_queue_error(err, module, qid)) {
         return NULL;
@@ -1612,7 +1609,7 @@ finally:
 
 /*[clinic input]
 _interpqueues.put
-    qid as qidarg: qidarg
+    qid: qidarg
     obj: object
     unboundop as unboundarg: int = -1
     fallback as fallbackarg: int = -1
@@ -1621,11 +1618,10 @@ Add the object's data to the queue.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_put_impl(PyObject *module, qidarg_converter_data qidarg,
-                       PyObject *obj, int unboundarg, int fallbackarg)
-/*[clinic end generated code: output=24c24c63489a19fa input=5cdee664acd659ce]*/
+_interpqueues_put_impl(PyObject *module, int64_t qid, PyObject *obj,
+                       int unboundarg, int fallbackarg)
+/*[clinic end generated code: output=2e0b31c6eaec29c9 input=4906550ab5c73be3]*/
 {
-    int64_t qid = qidarg.id;
     struct _queuedefaults defaults = {-1, -1};
     if (unboundarg < 0 || fallbackarg < 0) {
         int err = queue_get_defaults(&_globals.queues, qid, &defaults);
@@ -1654,7 +1650,7 @@ _interpqueues_put_impl(PyObject *module, qidarg_converter_data qidarg,
 
 /*[clinic input]
 _interpqueues.get
-    qid as qidarg: qidarg
+    qid: qidarg
 
 Return a new object from the data at the front of the queue.
 
@@ -1663,11 +1659,9 @@ If there is nothing to receive then raise QueueEmpty.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_get_impl(PyObject *module, qidarg_converter_data qidarg)
-/*[clinic end generated code: output=39fc769d4921e857 input=ba7ffbfb10eaacc8]*/
+_interpqueues_get_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=b0988a0e29194f05 input=73a70333af3b1c31]*/
 {
-    int64_t qid = qidarg.id;
-
     PyObject *obj = NULL;
     int unboundop = 0;
     int err = queue_get(&_globals.queues, qid, &obj, &unboundop);
@@ -1686,7 +1680,7 @@ _interpqueues_get_impl(PyObject *module, qidarg_converter_data qidarg)
 
 /*[clinic input]
 _interpqueues.bind
-    qid as qidarg: qidarg
+    qid: qidarg
 
 Take a reference to the identified queue.
 
@@ -1694,11 +1688,9 @@ The queue is not destroyed until there are no references left.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_bind_impl(PyObject *module, qidarg_converter_data qidarg)
-/*[clinic end generated code: output=88ef140ddff25e90 input=3c96a605f31ba766]*/
+_interpqueues_bind_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=02b515e203c3f926 input=b0efd1a6ce0e576e]*/
 {
-    int64_t qid = qidarg.id;
-
     // XXX Check module state if bound already.
 
     int err = _queues_incref(&_globals.queues, qid);
@@ -1713,7 +1705,7 @@ _interpqueues_bind_impl(PyObject *module, qidarg_converter_data qidarg)
 
 /*[clinic input]
 _interpqueues.release
-    qid as qidarg: qidarg
+    qid: qidarg
 
 Release a reference to the queue.
 
@@ -1721,11 +1713,10 @@ The queue is destroyed once there are no references left.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_release_impl(PyObject *module, qidarg_converter_data qidarg)
-/*[clinic end generated code: output=53a0180f7f311387 input=57923b1efa4772b5]*/
+_interpqueues_release_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=a59545d7c61fc6ee input=664125cf0262ff6f]*/
 {
     // Note that only the current interpreter is affected.
-    int64_t qid = qidarg.id;
 
     // XXX Check module state if bound already.
     // XXX Update module state.
@@ -1740,18 +1731,15 @@ _interpqueues_release_impl(PyObject *module, qidarg_converter_data qidarg)
 
 /*[clinic input]
 _interpqueues.get_maxsize
-    qid as qidarg: qidarg
+    qid: qidarg
 
 Return the maximum number of items in the queue.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_get_maxsize_impl(PyObject *module,
-                               qidarg_converter_data qidarg)
-/*[clinic end generated code: output=6cefdf97233e62d2 input=0e217353c6384add]*/
+_interpqueues_get_maxsize_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=074202b9c6dc37bf input=ef55def3496cc379]*/
 {
-    int64_t qid = qidarg.id;
-
     Py_ssize_t maxsize = -1;
     int err = queue_get_maxsize(&_globals.queues, qid, &maxsize);
     if (handle_queue_error(err, module, qid)) {
@@ -1762,18 +1750,15 @@ _interpqueues_get_maxsize_impl(PyObject *module,
 
 /*[clinic input]
 _interpqueues.get_queue_defaults
-    qid as qidarg: qidarg
+    qid: qidarg
 
 Return the queue's default values, set when it was created.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_get_queue_defaults_impl(PyObject *module,
-                                      qidarg_converter_data qidarg)
-/*[clinic end generated code: output=b43920b9ad7d2a82 input=be70c4d4f09ba78a]*/
+_interpqueues_get_queue_defaults_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=b1b8b8103834191a input=3102315a7bff77fc]*/
 {
-    int64_t qid = qidarg.id;
-
     struct _queuedefaults defaults = {0};
     int err = queue_get_defaults(&_globals.queues, qid, &defaults);
     if (handle_queue_error(err, module, qid)) {
@@ -1786,17 +1771,15 @@ _interpqueues_get_queue_defaults_impl(PyObject *module,
 
 /*[clinic input]
 _interpqueues.is_full
-    qid as qidarg: qidarg
+    qid: qidarg
 
 Return true if the queue has a maxsize and has reached it.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_is_full_impl(PyObject *module, qidarg_converter_data qidarg)
-/*[clinic end generated code: output=a2867798f650ad6a input=ff1e367174db36e7]*/
+_interpqueues_is_full_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=47a6e18477cddfee input=25d86a327ed3a2e7]*/
 {
-    int64_t qid = qidarg.id;
-
     int is_full = 0;
     int err = queue_is_full(&_globals.queues, qid, &is_full);
     if (handle_queue_error(err, module, qid)) {
@@ -1810,17 +1793,15 @@ _interpqueues_is_full_impl(PyObject *module, qidarg_converter_data qidarg)
 
 /*[clinic input]
 _interpqueues.get_count
-    qid as qidarg: qidarg
+    qid: qidarg
 
 Return the number of items in the queue.
 [clinic start generated code]*/
 
 static PyObject *
-_interpqueues_get_count_impl(PyObject *module, qidarg_converter_data qidarg)
-/*[clinic end generated code: output=df18967daf982771 input=2063e063d0cac8ea]*/
+_interpqueues_get_count_impl(PyObject *module, int64_t qid)
+/*[clinic end generated code: output=fb9e66e829cdd964 input=ce47690e7598884b]*/
 {
-    int64_t qid = qidarg.id;
-
     Py_ssize_t count = -1;
     int err = queue_get_count(&_globals.queues, qid, &count);
     if (handle_queue_error(err, module, qid)) {

@@ -115,7 +115,7 @@ PyDoc_STRVAR(_interpqueues_destroy__doc__,
     {"destroy", _PyCFunction_CAST(_interpqueues_destroy), METH_FASTCALL|METH_KEYWORDS, _interpqueues_destroy__doc__},
 
 static PyObject *
-_interpqueues_destroy_impl(PyObject *module, qidarg_converter_data qidarg);
+_interpqueues_destroy_impl(PyObject *module, int64_t qid);
 
 static PyObject *
 _interpqueues_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -149,17 +149,17 @@ _interpqueues_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
-    return_value = _interpqueues_destroy_impl(module, qidarg);
+    return_value = _interpqueues_destroy_impl(module, qid);
 
 exit:
     return return_value;
@@ -195,8 +195,8 @@ PyDoc_STRVAR(_interpqueues_put__doc__,
     {"put", _PyCFunction_CAST(_interpqueues_put), METH_FASTCALL|METH_KEYWORDS, _interpqueues_put__doc__},
 
 static PyObject *
-_interpqueues_put_impl(PyObject *module, qidarg_converter_data qidarg,
-                       PyObject *obj, int unboundarg, int fallbackarg);
+_interpqueues_put_impl(PyObject *module, int64_t qid, PyObject *obj,
+                       int unboundarg, int fallbackarg);
 
 static PyObject *
 _interpqueues_put(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -231,7 +231,7 @@ _interpqueues_put(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     #undef KWTUPLE
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
     PyObject *obj;
     int unboundarg = -1;
     int fallbackarg = -1;
@@ -241,7 +241,7 @@ _interpqueues_put(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
     obj = args[1];
@@ -262,7 +262,7 @@ _interpqueues_put(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         goto exit;
     }
 skip_optional_pos:
-    return_value = _interpqueues_put_impl(module, qidarg, obj, unboundarg, fallbackarg);
+    return_value = _interpqueues_put_impl(module, qid, obj, unboundarg, fallbackarg);
 
 exit:
     return return_value;
@@ -281,7 +281,7 @@ PyDoc_STRVAR(_interpqueues_get__doc__,
     {"get", _PyCFunction_CAST(_interpqueues_get), METH_FASTCALL|METH_KEYWORDS, _interpqueues_get__doc__},
 
 static PyObject *
-_interpqueues_get_impl(PyObject *module, qidarg_converter_data qidarg);
+_interpqueues_get_impl(PyObject *module, int64_t qid);
 
 static PyObject *
 _interpqueues_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -315,17 +315,17 @@ _interpqueues_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
-    return_value = _interpqueues_get_impl(module, qidarg);
+    return_value = _interpqueues_get_impl(module, qid);
 
 exit:
     return return_value;
@@ -343,7 +343,7 @@ PyDoc_STRVAR(_interpqueues_bind__doc__,
     {"bind", _PyCFunction_CAST(_interpqueues_bind), METH_FASTCALL|METH_KEYWORDS, _interpqueues_bind__doc__},
 
 static PyObject *
-_interpqueues_bind_impl(PyObject *module, qidarg_converter_data qidarg);
+_interpqueues_bind_impl(PyObject *module, int64_t qid);
 
 static PyObject *
 _interpqueues_bind(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -377,17 +377,17 @@ _interpqueues_bind(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
-    return_value = _interpqueues_bind_impl(module, qidarg);
+    return_value = _interpqueues_bind_impl(module, qid);
 
 exit:
     return return_value;
@@ -405,7 +405,7 @@ PyDoc_STRVAR(_interpqueues_release__doc__,
     {"release", _PyCFunction_CAST(_interpqueues_release), METH_FASTCALL|METH_KEYWORDS, _interpqueues_release__doc__},
 
 static PyObject *
-_interpqueues_release_impl(PyObject *module, qidarg_converter_data qidarg);
+_interpqueues_release_impl(PyObject *module, int64_t qid);
 
 static PyObject *
 _interpqueues_release(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -439,17 +439,17 @@ _interpqueues_release(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
-    return_value = _interpqueues_release_impl(module, qidarg);
+    return_value = _interpqueues_release_impl(module, qid);
 
 exit:
     return return_value;
@@ -465,8 +465,7 @@ PyDoc_STRVAR(_interpqueues_get_maxsize__doc__,
     {"get_maxsize", _PyCFunction_CAST(_interpqueues_get_maxsize), METH_FASTCALL|METH_KEYWORDS, _interpqueues_get_maxsize__doc__},
 
 static PyObject *
-_interpqueues_get_maxsize_impl(PyObject *module,
-                               qidarg_converter_data qidarg);
+_interpqueues_get_maxsize_impl(PyObject *module, int64_t qid);
 
 static PyObject *
 _interpqueues_get_maxsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -500,17 +499,17 @@ _interpqueues_get_maxsize(PyObject *module, PyObject *const *args, Py_ssize_t na
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
-    return_value = _interpqueues_get_maxsize_impl(module, qidarg);
+    return_value = _interpqueues_get_maxsize_impl(module, qid);
 
 exit:
     return return_value;
@@ -526,8 +525,7 @@ PyDoc_STRVAR(_interpqueues_get_queue_defaults__doc__,
     {"get_queue_defaults", _PyCFunction_CAST(_interpqueues_get_queue_defaults), METH_FASTCALL|METH_KEYWORDS, _interpqueues_get_queue_defaults__doc__},
 
 static PyObject *
-_interpqueues_get_queue_defaults_impl(PyObject *module,
-                                      qidarg_converter_data qidarg);
+_interpqueues_get_queue_defaults_impl(PyObject *module, int64_t qid);
 
 static PyObject *
 _interpqueues_get_queue_defaults(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -561,17 +559,17 @@ _interpqueues_get_queue_defaults(PyObject *module, PyObject *const *args, Py_ssi
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
-    return_value = _interpqueues_get_queue_defaults_impl(module, qidarg);
+    return_value = _interpqueues_get_queue_defaults_impl(module, qid);
 
 exit:
     return return_value;
@@ -587,7 +585,7 @@ PyDoc_STRVAR(_interpqueues_is_full__doc__,
     {"is_full", _PyCFunction_CAST(_interpqueues_is_full), METH_FASTCALL|METH_KEYWORDS, _interpqueues_is_full__doc__},
 
 static PyObject *
-_interpqueues_is_full_impl(PyObject *module, qidarg_converter_data qidarg);
+_interpqueues_is_full_impl(PyObject *module, int64_t qid);
 
 static PyObject *
 _interpqueues_is_full(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -621,17 +619,17 @@ _interpqueues_is_full(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
-    return_value = _interpqueues_is_full_impl(module, qidarg);
+    return_value = _interpqueues_is_full_impl(module, qid);
 
 exit:
     return return_value;
@@ -647,7 +645,7 @@ PyDoc_STRVAR(_interpqueues_get_count__doc__,
     {"get_count", _PyCFunction_CAST(_interpqueues_get_count), METH_FASTCALL|METH_KEYWORDS, _interpqueues_get_count__doc__},
 
 static PyObject *
-_interpqueues_get_count_impl(PyObject *module, qidarg_converter_data qidarg);
+_interpqueues_get_count_impl(PyObject *module, int64_t qid);
 
 static PyObject *
 _interpqueues_get_count(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -681,17 +679,17 @@ _interpqueues_get_count(PyObject *module, PyObject *const *args, Py_ssize_t narg
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    qidarg_converter_data qidarg = {0};
+    int64_t qid;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    if (!qidarg_converter(args[0], &qidarg)) {
+    if (!qidarg_converter(args[0], &qid)) {
         goto exit;
     }
-    return_value = _interpqueues_get_count_impl(module, qidarg);
+    return_value = _interpqueues_get_count_impl(module, qid);
 
 exit:
     return return_value;
@@ -761,4 +759,4 @@ _interpqueues__register_heap_types(PyObject *module, PyObject *const *args, Py_s
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bda838d2c69fd3b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=290f9d6c610289e2 input=a9049054013a1b77]*/
