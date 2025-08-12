@@ -1660,7 +1660,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                         if module_result:
                             _close_name_list.append(module_result)
                     _close_name_list.sort()
-                    return _closed_name_list[0]                   
+                    return _close_name_list[0]                   
                 else:                   
                     if wrong_name in sum(list_d, []):
                         path = ""
@@ -1678,7 +1678,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                                 if module_result:
                                     _close_name_list.append(module_result)
                             _close_name_list.sort()
-                            return _closed_name_list[0] 
+                            return _close_name_list[0] 
                     else:
                         if (_closed_name := _calculate_closed_name(module_name, sorted(sys.stdlib_module_names))):
                             return _closed_name
@@ -1688,7 +1688,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                             if module_result:
                                 _close_name_list.append(module_result)
                         _close_name_list.sort()
-                        return _closed_name_list[0] 
+                        return _close_name_list[0] 
                                 
                     if not os.path.exists(path) or not os.path.isdir(path):
                         exc_value.msg = f"module '{module_name}' has no child module '{wrong_name_list[1]}'; '{module_name}' is not a package"
