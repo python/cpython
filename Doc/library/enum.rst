@@ -464,7 +464,7 @@ Data Types
 
       Adds a new name as an alias to an existing member::
 
-         >>> Color._add_alias_(Color.RED, "ERROR")
+         >>> Color.RED._add_alias_("ERROR")
          >>> Color.ERROR
          <Color.RED: 1>
 
@@ -476,7 +476,7 @@ Data Types
 
       Adds a new value as an alias to an existing member::
 
-         >>> Color._add_value_alias_(Color.RED, 42)
+         >>> Color.RED._add_value_alias_(42)
          >>> Color(42)
          <Color.RED: 1>
 
