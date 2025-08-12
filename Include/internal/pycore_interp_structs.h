@@ -88,6 +88,7 @@ struct _ceval_runtime_state {
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
         Py_ssize_t persist_after_fork;
+       _PyFrameEvalFunction prev_eval_frame;
 #else
         int _not_used;
 #endif
