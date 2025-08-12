@@ -583,8 +583,7 @@ class HTMLCalendar(Calendar):
         a('<style>\n')
         a('@media (prefers-color-scheme: dark) {\n')
         a('  body { background-color: #121212; color: #e0e0e0; }\n')
-        a('  table.year, table.month { border-color: #444; }\n')
-        a('  td, th { border-color: #444; }\n')
+        a('  table.year, table.month, td, th { border-color: #444; }\n')
         a('}\n')
         a('</style>\n')
         if css is not None:

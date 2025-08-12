@@ -116,8 +116,7 @@ default_format = dict(year="year", month="month", encoding="ascii")
 result_2004_css = """<style>
 @media (prefers-color-scheme: dark) {
   body { background-color: #121212; color: #e0e0e0; }
-  table.year, table.month { border-color: #444; }
-  td, th { border-color: #444; }
+  table.year, table.month, td, th { border-color: #444; }
 }
 </style>"""
 
