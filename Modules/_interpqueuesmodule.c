@@ -16,11 +16,18 @@
 #undef HAS_FALLBACK
 #undef REGISTERS_HEAP_TYPES
 
+#include "clinic/_interpqueuesmodule.c.h"
+
 
 #define MODULE_NAME _interpqueues
 #define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
 #define MODINIT_FUNC_NAME RESOLVE_MODINIT_FUNC_NAME(MODULE_NAME)
 
+
+/*[clinic input]
+module _interpqueues
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cb1313f77fab132b]*/
 
 #define GLOBAL_MALLOC(TYPE) \
     PyMem_RawMalloc(sizeof(TYPE))
@@ -1479,18 +1486,24 @@ qidarg_converter(PyObject *arg, void *ptr)
 }
 
 
+/*[clinic input]
+_interpqueues.create
+    maxsize: Py_ssize_t
+    unboundop as unboundarg: int = -1
+    fallback as fallbackarg: int = -1
+
+Create a new cross-interpreter queue and return its unique generated ID.
+
+It is a new reference as though bind() had been called on the queue.
+The caller is responsible for calling destroy() for the new queue
+before the runtime is finalized.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_create_impl(PyObject *module, Py_ssize_t maxsize,
+                          int unboundarg, int fallbackarg)
+/*[clinic end generated code: output=9a889b93773251eb input=4f79b710a87360e1]*/
 {
-    static char *kwlist[] = {"maxsize", "unboundop", "fallback", NULL};
-    Py_ssize_t maxsize;
-    int unboundarg = -1;
-    int fallbackarg = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n|ii:create", kwlist,
-                                     &maxsize, &unboundarg, &fallbackarg))
-    {
-        return NULL;
-    }
     struct _queuedefaults defaults = {0};
     if (resolve_unboundop(unboundarg, UNBOUND_REPLACE,
                           &defaults.unboundop) < 0)
@@ -1505,7 +1518,7 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     int64_t qid = queue_create(&_globals.queues, maxsize, defaults);
     if (qid < 0) {
-        (void)handle_queue_error((int)qid, self, qid);
+        (void)handle_queue_error((int)qid, module, qid);
         return NULL;
     }
 
@@ -1513,7 +1526,7 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     if (qidobj == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
         int err = queue_destroy(&_globals.queues, qid);
-        if (handle_queue_error(err, self, qid)) {
+        if (handle_queue_error(err, module, qid)) {
             // XXX issue a warning?
             PyErr_Clear();
         }
@@ -1523,15 +1536,6 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
 
     return qidobj;
 }
-
-PyDoc_STRVAR(queuesmod_create_doc,
-"create(maxsize, unboundop, fallback) -> qid\n\
-\n\
-Create a new cross-interpreter queue and return its unique generated ID.\n\
-It is a new reference as though bind() had been called on the queue.\n\
-\n\
-The caller is responsible for calling destroy() for the new queue\n\
-before the runtime is finalized.");
 
 static PyObject *
 queuesmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1882,8 +1886,7 @@ queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                     _PyCFunction_CAST(queuesmod_create),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_create_doc},
+    _INTERPQUEUES_CREATE_METHODDEF
     {"destroy",                    _PyCFunction_CAST(queuesmod_destroy),
      METH_VARARGS | METH_KEYWORDS, queuesmod_destroy_doc},
     {"list_all",                   queuesmod_list_all,
