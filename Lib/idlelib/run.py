@@ -230,7 +230,7 @@ def show_socket_error(err, address):
 
 def get_message_lines(typ, exc, tb):
     "Return line composing the exception message."
-    if typ in (AttributeError, NameError):
+    if typ in (AttributeError, NameError, ImportError):
         # 3.10+ hints are not directly accessible from python (#44026).
         err = io.StringIO()
         with contextlib.redirect_stderr(err):
@@ -243,7 +243,7 @@ def get_message_lines(typ, exc, tb):
             else:
                 err_list = err_list[i:-1]
                 break
-        return ["\n".join(err_list) + "\n"]
+        return ["\n".join(err_list) + "\n"] # The unmerged gh-135511
     else:
         return traceback.format_exception_only(typ, exc)
 
