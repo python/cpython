@@ -2644,7 +2644,7 @@ sys__baserepl_impl(PyObject *module)
 /*[clinic input]
 sys._clear_type_descriptors
 
-    type: object
+    type: object(subclass_of='&PyType_Type')
     /
 
 Private function for clearing certain descriptors from a type's dictionary.
@@ -2653,14 +2653,10 @@ See gh-135228 for context.
 [clinic start generated code]*/
 
 static PyObject *
-sys__clear_type_descriptors(PyObject *module, PyObject *type)
-/*[clinic end generated code: output=7d5cefcf861909e0 input=5fdc23500d477de6]*/
+sys__clear_type_descriptors_impl(PyObject *module, PyObject *type)
+/*[clinic end generated code: output=5ad17851b762b6d9 input=dc536c97fde07251]*/
 {
-    if (!PyType_Check(type)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a type");
-        return NULL;
-    }
-    PyTypeObject *typeobj = (PyTypeObject *)(type);
+    PyTypeObject *typeobj = (PyTypeObject *)type;
     if (_PyType_HasFeature(typeobj, Py_TPFLAGS_IMMUTABLETYPE)) {
         PyErr_SetString(PyExc_TypeError, "argument is immutable");
         return NULL;
