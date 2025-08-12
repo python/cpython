@@ -362,7 +362,7 @@ instantiation, of which this module provides three different variants:
          delays, it now always returns the IP address.
 
 
-.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None)
+.. class:: SimpleHTTPRequestHandler(request, client_address, server, directory=None, response_headers=None)
 
    This class serves files from the directory *directory* and below,
    or the current directory if *directory* is not provided, directly
@@ -373,6 +373,11 @@ instantiation, of which this module provides three different variants:
 
    .. versionchanged:: 3.9
       The *directory* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added *response_headers*, which accepts an optional iterable of
+      name/value pairs of HTTP headers to add to each successful HTTP status 200
+      response. All other status code responses will not include these headers.
 
    A lot of the work, such as parsing the request, is done by the base class
    :class:`BaseHTTPRequestHandler`.  This class implements the :func:`do_GET`
@@ -428,6 +433,9 @@ instantiation, of which this module provides three different variants:
       followed by a ``'Content-Length:'`` header with the file's size and a
       ``'Last-Modified:'`` header with the file's modification time.
 
+      The instance attribute ``response_headers`` is used as an iterable of
+      name/value pairs to set user specified custom response headers.
+
       Then follows a blank line signifying the end of the headers, and then the
       contents of the file are output.
 
@@ -436,6 +444,9 @@ instantiation, of which this module provides three different variants:
 
       .. versionchanged:: 3.7
          Support of the ``'If-Modified-Since'`` header.
+
+      .. versionchanged:: next
+         Support ``response_headers`` as an instance argument.
 
 The :class:`SimpleHTTPRequestHandler` class can be used in the following
 manner in order to create a very basic webserver serving files relative to
@@ -542,7 +553,6 @@ The following options are accepted:
    This option requires `--tls-cert`` to be specified.
 
    .. versionadded:: 3.14
-
 
 .. _http.server-security:
 
