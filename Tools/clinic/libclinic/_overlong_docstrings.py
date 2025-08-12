@@ -1,4 +1,7 @@
 OVERLONG_SUMMARY = frozenset((
+    # Lib/test/
+    'test_preprocessor_guarded_if_e_or_f',
+
     # Modules/
     '_abc._abc_init',
     '_abc._abc_instancecheck',
@@ -314,7 +317,6 @@ OVERLONG_BODY = frozenset((
     'itertools.compress.__new__',
     'math.nextafter',
     'os.abort',
-    'os.access',
     'os.chdir',
     'os.chflags',
     'os.chown',
