@@ -15,6 +15,7 @@ on:
       - "Misc/mypy/**"
       - "Tools/build/mypy.ini"
       - "Tools/build/check_extension_modules.py"
+      - "Tools/build/check_warnings.py"
       - "Tools/build/compute-changes.py"
       - "Tools/build/deepfreeze.py"
       - "Tools/build/generate_sbom.py"
