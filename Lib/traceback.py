@@ -1659,7 +1659,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                         module_result = _calculate_closed_name(wrong_name, i)
                         if module_result:
                             _close_name_list.append(module_result)
-                    _close_name_list.sorted()
+                    _close_name_list.sort()
                     return _closed_name_list[0]                   
                 else:                   
                     if wrong_name in sum(list_d, []):
@@ -1677,7 +1677,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                                 module_result = _calculate_closed_name(wrong_name, i)
                                 if module_result:
                                     _close_name_list.append(module_result)
-                            _close_name_list.sorted()
+                            _close_name_list.sort()
                             return _closed_name_list[0] 
                     else:
                         if (_closed_name := _calculate_closed_name(module_name, sorted(sys.stdlib_module_names))):
@@ -1687,7 +1687,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
                             module_result = _calculate_closed_name(wrong_name, i)
                             if module_result:
                                 _close_name_list.append(module_result)
-                        _close_name_list.sorted()
+                        _close_name_list.sort()
                         return _closed_name_list[0] 
                                 
                     if not os.path.exists(path) or not os.path.isdir(path):
