@@ -2715,6 +2715,7 @@ code_branchesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 }
 
 /*[clinic input]
+@permit_long_summary
 @text_signature "($self, /, **changes)"
 code.replace
 
@@ -2751,7 +2752,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_filename, PyObject *co_name,
                   PyObject *co_qualname, PyObject *co_linetable,
                   PyObject *co_exceptiontable)
-/*[clinic end generated code: output=e75c48a15def18b9 input=a455a89c57ac9d42]*/
+/*[clinic end generated code: output=e75c48a15def18b9 input=e944fdac8b456114]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
