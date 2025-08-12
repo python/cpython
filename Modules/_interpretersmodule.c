@@ -1276,8 +1276,8 @@ _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
 _interpreters.call
     id: object
     callable: object
-    args as args_obj: object(subclass_of='&PyTuple_Type', c_default='NULL') = ()
-    kwargs as kwargs_obj: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
+    args: object(subclass_of='&PyTuple_Type', c_default='NULL') = ()
+    kwargs: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
     *
     preserve_exc: bool = False
     restrict: bool = False
@@ -1289,9 +1289,9 @@ Pass the given args and kwargs, if possible.
 
 static PyObject *
 _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
-                        PyObject *args_obj, PyObject *kwargs_obj,
-                        int preserve_exc, int restrict)
-/*[clinic end generated code: output=d0de009172792592 input=b2b9f147c08b35fa]*/
+                        PyObject *args, PyObject *kwargs, int preserve_exc,
+                        int restrict)
+/*[clinic end generated code: output=e04c697326e0f482 input=858caec5becc34ed]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;

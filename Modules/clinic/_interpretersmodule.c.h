@@ -639,8 +639,8 @@ PyDoc_STRVAR(_interpreters_call__doc__,
 
 static PyObject *
 _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
-                        PyObject *args_obj, PyObject *kwargs_obj,
-                        int preserve_exc, int restrict);
+                        PyObject *args, PyObject *kwargs, int preserve_exc,
+                        int restrict);
 
 static PyObject *
 _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -677,8 +677,8 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *id;
     PyObject *callable;
-    PyObject *args_obj = NULL;
-    PyObject *kwargs_obj = NULL;
+    PyObject *__clinic_args = NULL;
+    PyObject *__clinic_kwargs = NULL;
     int preserve_exc = 0;
     int restrict = 0;
 
@@ -697,7 +697,7 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             _PyArg_BadArgument("call", "argument 'args'", "tuple", args[2]);
             goto exit;
         }
-        args_obj = args[2];
+        __clinic_args = args[2];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -707,7 +707,7 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             _PyArg_BadArgument("call", "argument 'kwargs'", "dict", args[3]);
             goto exit;
         }
-        kwargs_obj = args[3];
+        __clinic_kwargs = args[3];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
@@ -730,7 +730,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_call_impl(module, id, callable, args_obj, kwargs_obj, preserve_exc, restrict);
+    return_value = _interpreters_call_impl(module, id, callable, __clinic_args, __clinic_kwargs, preserve_exc, restrict);
 
 exit:
     return return_value;
@@ -1199,4 +1199,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=255754d4eba52c98 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17de7de23608e491 input=a9049054013a1b77]*/
