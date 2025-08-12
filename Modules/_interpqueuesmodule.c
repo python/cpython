@@ -1684,21 +1684,25 @@ _interpqueues_get_impl(PyObject *module, qidarg_converter_data qidarg)
     return res;
 }
 
+/*[clinic input]
+_interpqueues.bind
+    qid as qidarg: qidarg
+
+Take a reference to the identified queue.
+
+The queue is not destroyed until there are no references left.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_bind_impl(PyObject *module, qidarg_converter_data qidarg)
+/*[clinic end generated code: output=88ef140ddff25e90 input=3c96a605f31ba766]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:bind", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
 
     // XXX Check module state if bound already.
 
     int err = _queues_incref(&_globals.queues, qid);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
@@ -1706,12 +1710,6 @@ queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
 
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(queuesmod_bind_doc,
-"bind(qid)\n\
-\n\
-Take a reference to the identified queue.\n\
-The queue is not destroyed until there are no references left.");
 
 static PyObject *
 queuesmod_release(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1895,8 +1893,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_LIST_ALL_METHODDEF
     _INTERPQUEUES_PUT_METHODDEF
     _INTERPQUEUES_GET_METHODDEF
-    {"bind",                       _PyCFunction_CAST(queuesmod_bind),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_bind_doc},
+    _INTERPQUEUES_BIND_METHODDEF
     {"release",                    _PyCFunction_CAST(queuesmod_release),
      METH_VARARGS | METH_KEYWORDS, queuesmod_release_doc},
     {"get_maxsize",                _PyCFunction_CAST(queuesmod_get_maxsize),
