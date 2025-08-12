@@ -834,10 +834,13 @@ PyDoc_STRVAR(builtin_ord__doc__,
 "ord($module, character, /)\n"
 "--\n"
 "\n"
-"Return the Unicode code point for a one-character string.\n"
+"Return the ordinal value of a character.\n"
 "\n"
-"Return the value of the first byte for a bytes or bytearray object of\n"
-"length 1.");
+"If the argument is a one-character string, return the Unicode code\n"
+"point of that character.\n"
+"\n"
+"If the argument is a bytes or bytearray object of length 1, return its\n"
+"single byte value.");
 
 #define BUILTIN_ORD_METHODDEF    \
     {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
@@ -1271,4 +1274,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=49dbda5e85e9a0a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd5f80e3dc3082d5 input=a9049054013a1b77]*/

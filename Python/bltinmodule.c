@@ -2121,15 +2121,18 @@ ord as builtin_ord
     character as c: object
     /
 
-Return the Unicode code point for a one-character string.
+Return the ordinal value of a character.
 
-Return the value of the first byte for a bytes or bytearray object of
-length 1.
+If the argument is a one-character string, return the Unicode code
+point of that character.
+
+If the argument is a bytes or bytearray object of length 1, return its
+single byte value.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_ord(PyObject *module, PyObject *c)
-/*[clinic end generated code: output=4fa5e87a323bae71 input=99e491d094680598]*/
+/*[clinic end generated code: output=4fa5e87a323bae71 input=98d38480432e1177]*/
 {
     long ord;
     Py_ssize_t size;
