@@ -278,7 +278,7 @@ Known values:
     Python 3.14a7 3623 (Add BUILD_INTERPOLATION & BUILD_TEMPLATE opcodes)
     Python 3.14b1 3624 (Don't optimize LOAD_FAST when local is killed by DELETE_FAST)
     Python 3.14b3 3625 (Fix handling of opcodes that may leave operands on the stack when optimizing LOAD_FAST)
-    Python 3.14b5 3626 (Fix missing exception handlers in logical expression)
+    Python 3.14rc2 3626 (Fix missing exception handlers in logical expression)
 
     Python 3.15 will start with 3650
 
