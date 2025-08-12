@@ -242,14 +242,14 @@ are always available.  They are listed here in alphabetical order.
       in Python 3.2.
 
 
-.. function:: chr(i, /)
+.. function:: chr(codepoint, /)
 
-   Return the string representing a character whose Unicode code point is the
-   integer *i*.  For example, ``chr(97)`` returns the string ``'a'``, while
+   Return the string representing a character with the specified Unicode code point.
+   For example, ``chr(97)`` returns the string ``'a'``, while
    ``chr(8364)`` returns the string ``'€'``. This is the inverse of :func:`ord`.
 
    The valid range for the argument is from 0 through 1,114,111 (0x10FFFF in
-   base 16).  :exc:`ValueError` will be raised if *i* is outside that range.
+   base 16).  :exc:`ValueError` will be raised if it is outside that range.
 
 
 .. decorator:: classmethod
@@ -1559,12 +1559,17 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
 
-.. function:: ord(c, /)
+.. function:: ord(character, /)
 
-   Given a string representing one Unicode character, return an integer
+   The argument must be a one-character string or a :term:`bytes-like object`
+   of length 1.
+   If it is a one-character string, return an integer
    representing the Unicode code point of that character.  For example,
    ``ord('a')`` returns the integer ``97`` and ``ord('€')`` (Euro sign)
    returns ``8364``.  This is the inverse of :func:`chr`.
+
+   If the argument is a bytes-like object of length 1, return an integer value
+   of its element.
 
 
 .. function:: pow(base, exp, mod=None)
@@ -2059,7 +2064,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: type(object, /)
-           type(name, bases, dict, /, **kwds)
+           type(name, bases, dict, /, **kwargs)
 
    .. index:: pair: object; type
 

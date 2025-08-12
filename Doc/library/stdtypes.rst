@@ -1806,7 +1806,7 @@ expression support in the :mod:`re` module).
       'Python'
 
 
-.. method:: str.count(sub, start=0, stop=None, /)
+.. method:: str.count(sub, start=0, end=None, /)
 
    Return the number of non-overlapping occurrences of substring *sub* in the
    range [*start*, *end*].  Optional arguments *start* and *end* are
@@ -1861,7 +1861,7 @@ expression support in the :mod:`re` module).
       in :ref:`debug mode <debug-build>`.
 
 
-.. method:: str.endswith(suffix, start=0, stop=None, /)
+.. method:: str.endswith(suffix, start=0, end=None, /)
 
    Return ``True`` if the string ends with the specified *suffix*, otherwise return
    ``False``.  *suffix* can also be a tuple of suffixes to look for.  With optional
@@ -1905,7 +1905,7 @@ expression support in the :mod:`re` module).
       0123    01234
 
 
-.. method:: str.find(sub, start=0, stop=None, /)
+.. method:: str.find(sub, start=0, end=None, /)
 
    Return the lowest index in the string where substring *sub* is found within
    the slice ``s[start:end]``.  Optional arguments *start* and *end* are
@@ -1968,7 +1968,7 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.2
 
 
-.. method:: str.index(sub, start=0, stop=None, /)
+.. method:: str.index(sub, start=0, end=None, /)
 
    Like :meth:`~str.find`, but raise :exc:`ValueError` when the substring is
    not found.
@@ -2217,14 +2217,14 @@ expression support in the :mod:`re` module).
       *count* is now supported as a keyword argument.
 
 
-.. method:: str.rfind(sub, start=0, stop=None, /)
+.. method:: str.rfind(sub, start=0, end=None, /)
 
    Return the highest index in the string where substring *sub* is found, such
    that *sub* is contained within ``s[start:end]``.  Optional arguments *start*
    and *end* are interpreted as in slice notation.  Return ``-1`` on failure.
 
 
-.. method:: str.rindex(sub, start=0, stop=None, /)
+.. method:: str.rindex(sub, start=0, end=None, /)
 
    Like :meth:`rfind` but raises :exc:`ValueError` when the substring *sub* is not
    found.
@@ -2395,7 +2395,7 @@ expression support in the :mod:`re` module).
       ['Two lines', '']
 
 
-.. method:: str.startswith(prefix, start=0, stop=None, /)
+.. method:: str.startswith(prefix, start=0, end=None, /)
 
    Return ``True`` if string starts with the *prefix*, otherwise return ``False``.
    *prefix* can also be a tuple of prefixes to look for.  With optional *start*,
@@ -3141,8 +3141,8 @@ binary data. These restrictions are covered below.
 The following methods on bytes and bytearray objects can be used with
 arbitrary binary data.
 
-.. method:: bytes.count(sub, start=0, stop=None, /)
-            bytearray.count(sub, start=0, stop=None, /)
+.. method:: bytes.count(sub, start=0, end=None, /)
+            bytearray.count(sub, start=0, end=None, /)
 
    Return the number of non-overlapping occurrences of subsequence *sub* in
    the range [*start*, *end*].  Optional arguments *start* and *end* are
@@ -3234,8 +3234,8 @@ arbitrary binary data.
       in :ref:`debug mode <debug-build>`.
 
 
-.. method:: bytes.endswith(suffix, start=0, stop=None, /)
-            bytearray.endswith(suffix, start=0, stop=None, /)
+.. method:: bytes.endswith(suffix, start=0, end=None, /)
+            bytearray.endswith(suffix, start=0, end=None, /)
 
    Return ``True`` if the binary data ends with the specified *suffix*,
    otherwise return ``False``.  *suffix* can also be a tuple of suffixes to
@@ -3245,8 +3245,8 @@ arbitrary binary data.
    The suffix(es) to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.find(sub, start=0, stop=None, /)
-            bytearray.find(sub, start=0, stop=None, /)
+.. method:: bytes.find(sub, start=0, end=None, /)
+            bytearray.find(sub, start=0, end=None, /)
 
    Return the lowest index in the data where the subsequence *sub* is found,
    such that *sub* is contained in the slice ``s[start:end]``.  Optional
@@ -3269,8 +3269,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.index(sub, start=0, stop=None, /)
-            bytearray.index(sub, start=0, stop=None, /)
+.. method:: bytes.index(sub, start=0, end=None, /)
+            bytearray.index(sub, start=0, end=None, /)
 
    Like :meth:`~bytes.find`, but raise :exc:`ValueError` when the
    subsequence is not found.
@@ -3333,8 +3333,8 @@ arbitrary binary data.
       always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.rfind(sub, start=0, stop=None, /)
-            bytearray.rfind(sub, start=0, stop=None, /)
+.. method:: bytes.rfind(sub, start=0, end=None, /)
+            bytearray.rfind(sub, start=0, end=None, /)
 
    Return the highest index in the sequence where the subsequence *sub* is
    found, such that *sub* is contained within ``s[start:end]``.  Optional
@@ -3348,8 +3348,8 @@ arbitrary binary data.
       Also accept an integer in the range 0 to 255 as the subsequence.
 
 
-.. method:: bytes.rindex(sub, start=0, stop=None, /)
-            bytearray.rindex(sub, start=0, stop=None, /)
+.. method:: bytes.rindex(sub, start=0, end=None, /)
+            bytearray.rindex(sub, start=0, end=None, /)
 
    Like :meth:`~bytes.rfind` but raises :exc:`ValueError` when the
    subsequence *sub* is not found.
@@ -3374,8 +3374,8 @@ arbitrary binary data.
    The separator to search for may be any :term:`bytes-like object`.
 
 
-.. method:: bytes.startswith(prefix, start=0, stop=None, /)
-            bytearray.startswith(prefix, start=0, stop=None, /)
+.. method:: bytes.startswith(prefix, start=0, end=None, /)
+            bytearray.startswith(prefix, start=0, end=None, /)
 
    Return ``True`` if the binary data starts with the specified *prefix*,
    otherwise return ``False``.  *prefix* can also be a tuple of prefixes to
@@ -4501,10 +4501,10 @@ copying.
 
       .. versionadded:: 3.14
 
-  .. method:: index(value, start=0, stop=None, /)
+  .. method:: index(value, start=0, end=None, /)
 
       Return the index of the first occurrence of *value* (at or after
-      index *start* and before index *stop*).
+      index *start* and before index *end*).
 
       Raises a :exc:`ValueError` if *value* cannot be found.
 
