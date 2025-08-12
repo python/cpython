@@ -3,6 +3,7 @@
 import asyncio
 import argparse
 import os
+import platform
 import re
 import shlex
 import shutil
@@ -247,7 +248,13 @@ def make_host_python(context):
     # flags to be duplicated. So we don't use the `host` argument here.
     os.chdir(host_dir)
     run(["make", "-j", str(os.cpu_count())])
-    run(["make", "install", f"prefix={prefix_dir}"])
+
+    # The `make install` output is very verbose and rarely useful, so
+    # suppress it by default.
+    run(
+        ["make", "install", f"prefix={prefix_dir}"],
+        capture_output=not context.verbose,
+    )
 
 
 def build_all(context):
@@ -264,6 +271,18 @@ def clean(host):
 def clean_all(context):
     for host in HOSTS + ["build"]:
         clean(host)
+
+
+def setup_ci():
+    # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
+    if "GITHUB_ACTIONS" in os.environ and platform.system() == "Linux":
+        run(
+            ["sudo", "tee", "/etc/udev/rules.d/99-kvm4all.rules"],
+            input='KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"\n',
+            text=True,
+        )
+        run(["sudo", "udevadm", "control", "--reload-rules"])
+        run(["sudo", "udevadm", "trigger", "--name-match=kvm"])
 
 
 def setup_sdk():
@@ -578,6 +597,7 @@ async def gradle_task(context):
 
 
 async def run_testbed(context):
+    setup_ci()
     setup_sdk()
     setup_testbed()
 
@@ -671,11 +691,63 @@ def package(context):
                     else:
                         shutil.copy2(src, dst, follow_symlinks=False)
 
+        # Strip debug information.
+        if not context.debug:
+            so_files = glob(f"{temp_dir}/**/*.so", recursive=True)
+            run([android_env(context.host)["STRIP"], *so_files], log=False)
+
         dist_dir = subdir(context.host, "dist", create=True)
         package_path = shutil.make_archive(
             f"{dist_dir}/python-{version}-{context.host}", "gztar", temp_dir
         )
         print(f"Wrote {package_path}")
+        return package_path
+
+
+def ci(context):
+    for step in [
+        configure_build_python,
+        make_build_python,
+        configure_host_python,
+        make_host_python,
+        package,
+    ]:
+        caption = (
+            step.__name__.replace("_", " ")
+            .capitalize()
+            .replace("python", "Python")
+        )
+        print(f"::group::{caption}")
+        result = step(context)
+        if step is package:
+            package_path = result
+        print("::endgroup::")
+
+    if (
+        "GITHUB_ACTIONS" in os.environ
+        and (platform.system(), platform.machine()) != ("Linux", "x86_64")
+    ):
+        print(
+            "Skipping tests: GitHub Actions does not support the Android "
+            "emulator on this platform."
+        )
+    else:
+        with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+            print("::group::Tests")
+            # Prove the package is self-contained by using it to run the tests.
+            shutil.unpack_archive(package_path, temp_dir)
+
+            # Arguments are similar to --fast-ci, but in single-process mode.
+            launcher_args = ["--managed", "maxVersion", "-v"]
+            test_args = [
+                "--single-process", "--fail-env-changed", "--rerun", "--slowest",
+                "--verbose3", "-u", "all,-cpu", "--timeout=600"
+            ]
+            run(
+                ["./android.py", "test", *launcher_args, "--", *test_args],
+                cwd=temp_dir
+            )
+            print("::endgroup::")
 
 
 def env(context):
@@ -695,32 +767,40 @@ def parse_args():
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand", required=True)
 
+    def add_parser(*args, **kwargs):
+        parser = subcommands.add_parser(*args, **kwargs)
+        parser.add_argument(
+            "-v", "--verbose", action="count", default=0,
+            help="Show verbose output. Use twice to be even more verbose.")
+        return parser
+
     # Subcommands
-    build = subcommands.add_parser(
+    build = add_parser(
         "build", help="Run configure-build, make-build, configure-host and "
         "make-host")
-    configure_build = subcommands.add_parser(
+    configure_build = add_parser(
         "configure-build", help="Run `configure` for the build Python")
-    subcommands.add_parser(
+    add_parser(
         "make-build", help="Run `make` for the build Python")
-    configure_host = subcommands.add_parser(
+    configure_host = add_parser(
         "configure-host", help="Run `configure` for Android")
-    make_host = subcommands.add_parser(
+    make_host = add_parser(
         "make-host", help="Run `make` for Android")
 
-    subcommands.add_parser("clean", help="Delete all build directories")
-    subcommands.add_parser("build-testbed", help="Build the testbed app")
-    test = subcommands.add_parser("test", help="Run the testbed app")
-    package = subcommands.add_parser("package", help="Make a release package")
-    env = subcommands.add_parser("env", help="Print environment variables")
+    add_parser("clean", help="Delete all build directories")
+    add_parser("build-testbed", help="Build the testbed app")
+    test = add_parser("test", help="Run the testbed app")
+    package = add_parser("package", help="Make a release package")
+    ci = add_parser("ci", help="Run build, package and test")
+    env = add_parser("env", help="Print environment variables")
 
     # Common arguments
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build directories first")
 
-    host_commands = [build, configure_host, make_host, package]
+    host_commands = [build, configure_host, make_host, package, ci]
     if in_source_tree:
         host_commands.append(env)
     for subcommand in host_commands:
@@ -728,16 +808,11 @@ def parse_args():
             "host", metavar="HOST", choices=HOSTS,
             help="Host triplet: choices=[%(choices)s]")
 
-    for subcommand in build, configure_build, configure_host:
+    for subcommand in [build, configure_build, configure_host, ci]:
         subcommand.add_argument("args", nargs="*",
                                 help="Extra arguments to pass to `configure`")
 
     # Test arguments
-    test.add_argument(
-        "-v", "--verbose", action="count", default=0,
-        help="Show Gradle output, and non-Python logcat messages. "
-        "Use twice to include high-volume messages which are rarely useful.")
-
     device_group = test.add_mutually_exclusive_group(required=True)
     device_group.add_argument(
         "--connected", metavar="SERIAL", help="Run on a connected device. "
@@ -765,6 +840,12 @@ def parse_args():
         "args", nargs="*", help=f"Arguments to add to sys.argv. "
         f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
 
+    # Package arguments.
+    for subcommand in [package, ci]:
+        subcommand.add_argument(
+            "-g", action="store_true", default=False, dest="debug",
+            help="Include debug information in package")
+
     return parser.parse_args()
 
 
@@ -788,6 +869,7 @@ def main():
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
+        "ci": ci,
         "env": env,
     }
 
@@ -803,6 +885,8 @@ def main():
 def print_called_process_error(e):
     for stream_name in ["stdout", "stderr"]:
         content = getattr(e, stream_name)
+        if isinstance(content, bytes):
+            content = content.decode(*DECODE_ARGS)
         stream = getattr(sys, stream_name)
         if content:
             stream.write(content)
