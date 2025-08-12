@@ -1808,31 +1808,27 @@ _interpqueues_is_full_impl(PyObject *module, qidarg_converter_data qidarg)
     Py_RETURN_FALSE;
 }
 
+/*[clinic input]
+_interpqueues.get_count
+    qid as qidarg: qidarg
+
+Return the number of items in the queue.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_get_count(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_get_count_impl(PyObject *module, qidarg_converter_data qidarg)
+/*[clinic end generated code: output=df18967daf982771 input=2063e063d0cac8ea]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_count", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
 
     Py_ssize_t count = -1;
     int err = queue_get_count(&_globals.queues, qid, &count);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
     assert(count >= 0);
     return PyLong_FromSsize_t(count);
 }
-
-PyDoc_STRVAR(queuesmod_get_count_doc,
-"get_count(qid)\n\
-\n\
-Return the number of items in the queue.");
 
 static PyObject *
 queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1885,8 +1881,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_GET_MAXSIZE_METHODDEF
     _INTERPQUEUES_GET_QUEUE_DEFAULTS_METHODDEF
     _INTERPQUEUES_IS_FULL_METHODDEF
-    {"get_count",                  _PyCFunction_CAST(queuesmod_get_count),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_count_doc},
+    _INTERPQUEUES_GET_COUNT_METHODDEF
     {"_register_heap_types",       _PyCFunction_CAST(queuesmod__register_heap_types),
      METH_VARARGS | METH_KEYWORDS, NULL},
 
