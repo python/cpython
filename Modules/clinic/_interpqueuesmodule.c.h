@@ -164,4 +164,24 @@ _interpqueues_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5458f3e41a6b8650 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_interpqueues_list_all__doc__,
+"list_all($module, /)\n"
+"--\n"
+"\n"
+"Return the list of IDs for all queues.\n"
+"\n"
+"Each corresponding default unbound op and fallback is also included.");
+
+#define _INTERPQUEUES_LIST_ALL_METHODDEF    \
+    {"list_all", (PyCFunction)_interpqueues_list_all, METH_NOARGS, _interpqueues_list_all__doc__},
+
+static PyObject *
+_interpqueues_list_all_impl(PyObject *module);
+
+static PyObject *
+_interpqueues_list_all(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _interpqueues_list_all_impl(module);
+}
+/*[clinic end generated code: output=700d27c8f5e2eb72 input=a9049054013a1b77]*/

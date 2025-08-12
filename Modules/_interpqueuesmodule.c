@@ -1569,8 +1569,17 @@ _interpqueues_destroy_impl(PyObject *module, qidarg_converter_data qidarg)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_interpqueues.list_all
+
+Return the list of IDs for all queues.
+
+Each corresponding default unbound op and fallback is also included.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
+_interpqueues_list_all_impl(PyObject *module)
+/*[clinic end generated code: output=974280cb6442afdb input=ff9339d6385ed8ef]*/
 {
     int64_t count = 0;
     struct queue_id_and_info *qids = _queues_list_all(&_globals.queues, &count);
@@ -1600,12 +1609,6 @@ finally:
     PyMem_Free(qids);
     return ids;
 }
-
-PyDoc_STRVAR(queuesmod_list_all_doc,
-"list_all() -> [(qid, unboundop, fallback)]\n\
-\n\
-Return the list of IDs for all queues.\n\
-Each corresponding default unbound op and fallback is also included.");
 
 static PyObject *
 queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1896,8 +1899,7 @@ queuesmod__register_heap_types(PyObject *self, PyObject *args, PyObject *kwds)
 static PyMethodDef module_functions[] = {
     _INTERPQUEUES_CREATE_METHODDEF
     _INTERPQUEUES_DESTROY_METHODDEF
-    {"list_all",                   queuesmod_list_all,
-     METH_NOARGS,                  queuesmod_list_all_doc},
+    _INTERPQUEUES_LIST_ALL_METHODDEF
     {"put",                        _PyCFunction_CAST(queuesmod_put),
      METH_VARARGS | METH_KEYWORDS, queuesmod_put_doc},
     {"get",                        _PyCFunction_CAST(queuesmod_get),
