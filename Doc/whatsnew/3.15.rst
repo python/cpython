@@ -109,6 +109,18 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+http.server
+-----------
+
+* Added a new ``response_headers=`` keyword argument to
+  :class:`SimpleHTTPRequestHandler` to support custom headers in HTTP responses.
+  (Contributed by Anton I. Sipos in :gh:`135057`.)
+
+* Added a ``--header`` flag to the :program:`python -m http.server`
+  command-line interface to support custom headers in HTTP responses.
+  (Contributed by Anton I. Sipos in :gh:`135057`.)
+
+
 math
 ----
 
