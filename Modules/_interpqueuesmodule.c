@@ -16,8 +16,6 @@
 #undef HAS_FALLBACK
 #undef REGISTERS_HEAP_TYPES
 
-#include "clinic/_interpqueuesmodule.c.h"
-
 
 #define MODULE_NAME _interpqueues
 #define MODULE_NAME_STR Py_STRINGIFY(MODULE_NAME)
@@ -28,15 +26,6 @@
 module _interpqueues
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=cb1313f77fab132b]*/
-
-/*[python input]
-
-class qidarg_converter(CConverter):
-    type = 'int64_t'
-    converter = 'qidarg_converter'
-
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=c64fbf36771164d6]*/
 
 #define GLOBAL_MALLOC(TYPE) \
     PyMem_RawMalloc(sizeof(TYPE))
@@ -1482,6 +1471,15 @@ clear_interpreter(void *data)
 }
 
 
+/*[python input]
+
+class qidarg_converter(CConverter):
+    type = 'int64_t'
+    converter = 'qidarg_converter'
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c64fbf36771164d6]*/
+
 static int
 qidarg_converter(PyObject *arg, void *ptr)
 {
@@ -1493,6 +1491,8 @@ qidarg_converter(PyObject *arg, void *ptr)
     *qid_ptr = data.id;
     return res;
 }
+
+#include "clinic/_interpqueuesmodule.c.h"
 
 
 /*[clinic input]
