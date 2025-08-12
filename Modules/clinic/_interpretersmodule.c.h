@@ -107,7 +107,7 @@ PyDoc_STRVAR(_interpreters_destroy__doc__,
     {"destroy", _PyCFunction_CAST(_interpreters_destroy), METH_FASTCALL|METH_KEYWORDS, _interpreters_destroy__doc__},
 
 static PyObject *
-_interpreters_destroy_impl(PyObject *module, PyObject *id, int restricted);
+_interpreters_destroy_impl(PyObject *module, PyObject *id, int restrict);
 
 static PyObject *
 _interpreters_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -143,7 +143,7 @@ _interpreters_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *id;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -154,12 +154,12 @@ _interpreters_destroy(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    restricted = PyObject_IsTrue(args[1]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[1]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_destroy_impl(module, id, restricted);
+    return_value = _interpreters_destroy_impl(module, id, restrict);
 
 exit:
     return return_value;
@@ -278,7 +278,7 @@ PyDoc_STRVAR(_interpreters_set___main___attrs__doc__,
 
 static PyObject *
 _interpreters_set___main___attrs_impl(PyObject *module, PyObject *id,
-                                      PyObject *updates, int restricted);
+                                      PyObject *updates, int restrict);
 
 static PyObject *
 _interpreters_set___main___attrs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -315,7 +315,7 @@ _interpreters_set___main___attrs(PyObject *module, PyObject *const *args, Py_ssi
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *id;
     PyObject *updates;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -331,12 +331,12 @@ _interpreters_set___main___attrs(PyObject *module, PyObject *const *args, Py_ssi
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    restricted = PyObject_IsTrue(args[2]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[2]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_set___main___attrs_impl(module, id, updates, restricted);
+    return_value = _interpreters_set___main___attrs_impl(module, id, updates, restrict);
 
 exit:
     return return_value;
@@ -366,7 +366,7 @@ PyDoc_STRVAR(_interpreters_exec__doc__,
 
 static PyObject *
 _interpreters_exec_impl(PyObject *module, PyObject *id, PyObject *code,
-                        PyObject *shared, int restricted);
+                        PyObject *shared, int restrict);
 
 static PyObject *
 _interpreters_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -404,7 +404,7 @@ _interpreters_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *id;
     PyObject *code;
     PyObject *shared = NULL;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -430,12 +430,12 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    restricted = PyObject_IsTrue(args[3]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[3]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_exec_impl(module, id, code, shared, restricted);
+    return_value = _interpreters_exec_impl(module, id, code, shared, restrict);
 
 exit:
     return return_value;
@@ -455,7 +455,7 @@ PyDoc_STRVAR(_interpreters_run_string__doc__,
 static PyObject *
 _interpreters_run_string_impl(PyObject *module, PyObject *id,
                               PyObject *script, PyObject *shared,
-                              int restricted);
+                              int restrict);
 
 static PyObject *
 _interpreters_run_string(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -493,7 +493,7 @@ _interpreters_run_string(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *id;
     PyObject *script;
     PyObject *shared = NULL;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -523,12 +523,12 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    restricted = PyObject_IsTrue(args[3]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[3]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_run_string_impl(module, id, script, shared, restricted);
+    return_value = _interpreters_run_string_impl(module, id, script, shared, restrict);
 
 exit:
     return return_value;
@@ -550,7 +550,7 @@ PyDoc_STRVAR(_interpreters_run_func__doc__,
 
 static PyObject *
 _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
-                            PyObject *shared, int restricted);
+                            PyObject *shared, int restrict);
 
 static PyObject *
 _interpreters_run_func(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -588,7 +588,7 @@ _interpreters_run_func(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *id;
     PyObject *func;
     PyObject *shared = NULL;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -614,12 +614,12 @@ skip_optional_pos:
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    restricted = PyObject_IsTrue(args[3]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[3]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_run_func_impl(module, id, func, shared, restricted);
+    return_value = _interpreters_run_func_impl(module, id, func, shared, restrict);
 
 exit:
     return return_value;
@@ -640,7 +640,7 @@ PyDoc_STRVAR(_interpreters_call__doc__,
 static PyObject *
 _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
                         PyObject *args_obj, PyObject *kwargs_obj,
-                        int preserve_exc, int restricted);
+                        int preserve_exc, int restrict);
 
 static PyObject *
 _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -680,7 +680,7 @@ _interpreters_call(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *args_obj = NULL;
     PyObject *kwargs_obj = NULL;
     int preserve_exc = 0;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -725,12 +725,12 @@ skip_optional_pos:
             goto skip_optional_kwonly;
         }
     }
-    restricted = PyObject_IsTrue(args[5]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[5]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_call_impl(module, id, callable, args_obj, kwargs_obj, preserve_exc, restricted);
+    return_value = _interpreters_call_impl(module, id, callable, args_obj, kwargs_obj, preserve_exc, restrict);
 
 exit:
     return return_value;
@@ -804,7 +804,7 @@ PyDoc_STRVAR(_interpreters_is_running__doc__,
     {"is_running", _PyCFunction_CAST(_interpreters_is_running), METH_FASTCALL|METH_KEYWORDS, _interpreters_is_running__doc__},
 
 static PyObject *
-_interpreters_is_running_impl(PyObject *module, PyObject *id, int restricted);
+_interpreters_is_running_impl(PyObject *module, PyObject *id, int restrict);
 
 static PyObject *
 _interpreters_is_running(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -840,7 +840,7 @@ _interpreters_is_running(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *id;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -851,12 +851,12 @@ _interpreters_is_running(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    restricted = PyObject_IsTrue(args[1]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[1]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_is_running_impl(module, id, restricted);
+    return_value = _interpreters_is_running_impl(module, id, restrict);
 
 exit:
     return return_value;
@@ -873,7 +873,7 @@ PyDoc_STRVAR(_interpreters_get_config__doc__,
 
 static PyObject *
 _interpreters_get_config_impl(PyObject *module, PyObject *idobj,
-                              int restricted);
+                              int restrict);
 
 static PyObject *
 _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -909,7 +909,7 @@ _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *idobj;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -920,12 +920,12 @@ _interpreters_get_config(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    restricted = PyObject_IsTrue(args[1]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[1]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_get_config_impl(module, idobj, restricted);
+    return_value = _interpreters_get_config_impl(module, idobj, restrict);
 
 exit:
     return return_value;
@@ -999,7 +999,7 @@ PyDoc_STRVAR(_interpreters_incref__doc__,
 
 static PyObject *
 _interpreters_incref_impl(PyObject *module, PyObject *id, int implieslink,
-                          int restricted);
+                          int restrict);
 
 static PyObject *
 _interpreters_incref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1036,7 +1036,7 @@ _interpreters_incref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *id;
     int implieslink = 0;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1056,12 +1056,12 @@ _interpreters_incref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
             goto skip_optional_kwonly;
         }
     }
-    restricted = PyObject_IsTrue(args[2]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[2]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_incref_impl(module, id, implieslink, restricted);
+    return_value = _interpreters_incref_impl(module, id, implieslink, restrict);
 
 exit:
     return return_value;
@@ -1076,7 +1076,7 @@ PyDoc_STRVAR(_interpreters_decref__doc__,
     {"decref", _PyCFunction_CAST(_interpreters_decref), METH_FASTCALL|METH_KEYWORDS, _interpreters_decref__doc__},
 
 static PyObject *
-_interpreters_decref_impl(PyObject *module, PyObject *id, int restricted);
+_interpreters_decref_impl(PyObject *module, PyObject *id, int restrict);
 
 static PyObject *
 _interpreters_decref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1112,7 +1112,7 @@ _interpreters_decref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *argsbuf[2];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *id;
-    int restricted = 0;
+    int restrict = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -1123,12 +1123,12 @@ _interpreters_decref(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!noptargs) {
         goto skip_optional_kwonly;
     }
-    restricted = PyObject_IsTrue(args[1]);
-    if (restricted < 0) {
+    restrict = PyObject_IsTrue(args[1]);
+    if (restrict < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _interpreters_decref_impl(module, id, restricted);
+    return_value = _interpreters_decref_impl(module, id, restrict);
 
 exit:
     return return_value;
@@ -1199,4 +1199,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cf3f54caaa2dd6a2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=255754d4eba52c98 input=a9049054013a1b77]*/
