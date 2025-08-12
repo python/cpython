@@ -1652,22 +1652,27 @@ _interpqueues_put_impl(PyObject *module, qidarg_converter_data qidarg,
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_interpqueues.get
+    qid as qidarg: qidarg
+
+Return a new object from the data at the front of the queue.
+
+The unbound op is also returned.
+If there is nothing to receive then raise QueueEmpty.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_get_impl(PyObject *module, qidarg_converter_data qidarg)
+/*[clinic end generated code: output=39fc769d4921e857 input=ba7ffbfb10eaacc8]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:get", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
 
     PyObject *obj = NULL;
     int unboundop = 0;
     int err = queue_get(&_globals.queues, qid, &obj, &unboundop);
     // This is the only place that raises QueueEmpty.
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
@@ -1678,14 +1683,6 @@ queuesmod_get(PyObject *self, PyObject *args, PyObject *kwds)
     Py_DECREF(obj);
     return res;
 }
-
-PyDoc_STRVAR(queuesmod_get_doc,
-"get(qid) -> (obj, unboundop)\n\
-\n\
-Return a new object from the data at the front of the queue.\n\
-The unbound op is also returned.\n\
-\n\
-If there is nothing to receive then raise QueueEmpty.");
 
 static PyObject *
 queuesmod_bind(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1897,8 +1894,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_DESTROY_METHODDEF
     _INTERPQUEUES_LIST_ALL_METHODDEF
     _INTERPQUEUES_PUT_METHODDEF
-    {"get",                        _PyCFunction_CAST(queuesmod_get),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_doc},
+    _INTERPQUEUES_GET_METHODDEF
     {"bind",                       _PyCFunction_CAST(queuesmod_bind),
      METH_VARARGS | METH_KEYWORDS, queuesmod_bind_doc},
     {"release",                    _PyCFunction_CAST(queuesmod_release),
