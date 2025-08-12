@@ -3804,6 +3804,41 @@ class TestSlots(unittest.TestCase):
         # that we create internally.
         self.assertEqual(CorrectSuper.args, ["default", "default"])
 
+    def test_original_class_is_gced(self):
+        # gh-135228: Make sure when we replace the class with slots=True, the original class
+        # gets garbage collected.
+        def make_simple():
+            @dataclass(slots=True)
+            class SlotsTest:
+                pass
+
+            return SlotsTest
+
+        def make_with_annotations():
+            @dataclass(slots=True)
+            class SlotsTest:
+                x: int
+
+            return SlotsTest
+
+        def make_with_annotations_and_method():
+            @dataclass(slots=True)
+            class SlotsTest:
+                x: int
+
+                def method(self) -> int:
+                    return self.x
+
+            return SlotsTest
+
+        for make in (make_simple, make_with_annotations, make_with_annotations_and_method):
+            with self.subTest(make=make):
+                C = make()
+                support.gc_collect()
+                candidates = [cls for cls in object.__subclasses__() if cls.__name__ == 'SlotsTest'
+                              and cls.__firstlineno__ == make.__code__.co_firstlineno + 1]
+                self.assertEqual(candidates, [C])
+
 
 class TestDescriptors(unittest.TestCase):
     def test_set_name(self):
