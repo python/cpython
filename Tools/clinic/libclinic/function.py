@@ -169,12 +169,12 @@ class Function:
 
     @property
     def docstring_line_width(self) -> int:
-        """PEP 8 requires that docstrings are limited to 72 characters:
+        """Return the maximum line width for docstring lines.
 
-            The Python standard library is conservative and requires
-            limiting lines to 79 characters (and docstrings to 72).
-
-        Methods have an extra level of indentation, so we use 68.
+        Pydoc adds indentation when displaying functions and methods.
+        To keep the total width of within 80 characters, we use a
+        maximum of 76 characters for global functions and classes,
+        and 72 characters for methods.
         """
         if self.cls is not None and not self.kind.new_or_init:
             return 72
