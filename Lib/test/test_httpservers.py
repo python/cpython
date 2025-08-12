@@ -1489,25 +1489,33 @@ class CommandLineTestCase(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), '')
         self.assertIn('error', stderr.getvalue())
 
-    def test_response_headers_arg(self):
-        with mock.patch.object(HTTPServer, 'serve_forever'):
-            httpd = server._main(
-                ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2', '8080']
+    @mock.patch('http.server._make_server', wraps=server._make_server)
+    @mock.patch.object(HTTPServer, 'serve_forever')
+    def test_response_headers_arg(self, _, mock_make_server):
+        server._main(
+            ['-H', 'Set-Cookie', 'k=v', '-H', 'Set-Cookie', 'k2=v2', '8080']
+        )
+        # Get an instance of the server / RequestHandler by using
+        # the spied call args, then calling _make_server with them.
+        args, kwargs = mock_make_server.call_args
+        httpd = server._make_server(*args, **kwargs)
+
+        # Ensure the RequestHandler class is passed the correct response
+        # headers
+        request_handler_class = httpd.RequestHandlerClass
+        with mock.patch.object(
+            request_handler_class, '__init__'
+        ) as mock_handler_init:
+            mock_handler_init.return_value = None
+            # finish_request instantiates a request handler class,
+            # ensure response_headers are passed to it
+            httpd.finish_request(mock.Mock(), '127.0.0.1')
+            mock_handler_init.assert_called_once_with(
+                mock.ANY, mock.ANY, mock.ANY, directory=mock.ANY,
+                response_headers=[
+                    ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2']
+                ]
             )
-            request_handler_class = httpd.RequestHandlerClass
-            with mock.patch.object(
-                    request_handler_class, '__init__'
-            ) as mock_handler_init:
-                mock_handler_init.return_value = None
-                # finish_request instantiates a request handler class,
-                # ensure response_headers are passed to it
-                httpd.finish_request(mock.Mock(), '127.0.0.1')
-                mock_handler_init.assert_called_once_with(
-                    mock.ANY, mock.ANY, mock.ANY, directory=mock.ANY,
-                    response_headers=[
-                        ['Set-Cookie', 'k=v'], ['Set-Cookie', 'k2=v2']
-                    ]
-                )
 
 
 class CommandLineRunTimeTestCase(unittest.TestCase):

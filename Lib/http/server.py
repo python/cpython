@@ -977,6 +977,20 @@ def _get_best_family(*address):
     return family, sockaddr
 
 
+def _make_server(HandlerClass=BaseHTTPRequestHandler,
+         ServerClass=ThreadingHTTPServer,
+         protocol="HTTP/1.0", port=8000, bind=None,
+         tls_cert=None, tls_key=None, tls_password=None):
+    ServerClass.address_family, addr = _get_best_family(bind, port)
+    HandlerClass.protocol_version = protocol
+
+    if tls_cert:
+        return ServerClass(addr, HandlerClass, certfile=tls_cert,
+                             keyfile=tls_key, password=tls_password)
+    else:
+        return ServerClass(addr, HandlerClass)
+
+
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
@@ -986,16 +1000,11 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     This runs an HTTP server on port 8000 (or the port argument).
 
     """
-    ServerClass.address_family, addr = _get_best_family(bind, port)
-    HandlerClass.protocol_version = protocol
-
-    if tls_cert:
-        server = ServerClass(addr, HandlerClass, certfile=tls_cert,
-                             keyfile=tls_key, password=tls_password)
-    else:
-        server = ServerClass(addr, HandlerClass)
-
-    with server as httpd:
+    with _make_server(
+        HandlerClass=HandlerClass, ServerClass=ServerClass,
+        protocol=protocol, port=port, bind=bind, tls_cert=tls_cert,
+        tls_key=tls_key, tls_password=tls_password
+    ) as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
         protocol = 'HTTPS' if tls_cert else 'HTTP'
@@ -1008,7 +1017,6 @@ def test(HandlerClass=BaseHTTPRequestHandler,
         except KeyboardInterrupt:
             print("\nKeyboard interrupt received, exiting.")
             sys.exit(0)
-    return server
 
 
 def _main(args=None):
@@ -1077,7 +1085,7 @@ def _main(args=None):
 
     ServerClass = HTTPSDualStackServer if args.tls_cert else HTTPDualStackServer
 
-    return test(
+    test(
         HandlerClass=SimpleHTTPRequestHandler,
         ServerClass=ServerClass,
         port=args.port,
