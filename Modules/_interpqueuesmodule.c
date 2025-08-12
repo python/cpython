@@ -1738,30 +1738,27 @@ _interpqueues_release_impl(PyObject *module, qidarg_converter_data qidarg)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_interpqueues.get_maxsize
+    qid as qidarg: qidarg
+
+Return the maximum number of items in the queue.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_get_maxsize(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_get_maxsize_impl(PyObject *module,
+                               qidarg_converter_data qidarg)
+/*[clinic end generated code: output=6cefdf97233e62d2 input=0e217353c6384add]*/
 {
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:get_maxsize", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
 
     Py_ssize_t maxsize = -1;
     int err = queue_get_maxsize(&_globals.queues, qid, &maxsize);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
     return PyLong_FromLongLong(maxsize);
 }
-
-PyDoc_STRVAR(queuesmod_get_maxsize_doc,
-"get_maxsize(qid)\n\
-\n\
-Return the maximum number of items in the queue.");
 
 static PyObject *
 queuesmod_get_queue_defaults(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1892,8 +1889,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_GET_METHODDEF
     _INTERPQUEUES_BIND_METHODDEF
     _INTERPQUEUES_RELEASE_METHODDEF
-    {"get_maxsize",                _PyCFunction_CAST(queuesmod_get_maxsize),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_get_maxsize_doc},
+    _INTERPQUEUES_GET_MAXSIZE_METHODDEF
     {"get_queue_defaults",         _PyCFunction_CAST(queuesmod_get_queue_defaults),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_queue_defaults_doc},
     {"is_full",                    _PyCFunction_CAST(queuesmod_is_full),
