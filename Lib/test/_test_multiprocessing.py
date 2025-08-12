@@ -2851,14 +2851,7 @@ class _TestPool(BaseTestCase):
 
     @classmethod
     def setUpClass(cls):
-        # gh-135427
-        # In some of the tests, a forked child forks another child of itself. In that case, using
-        # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
-        # child of child, and a warnings_helper.ignore_warnings exception is raised.
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    message=".*fork.*may lead to deadlocks in the child.*",
-                                    category=DeprecationWarning)
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
             super().setUpClass()
             cls.pool = cls.Pool(4)
 
