@@ -1711,35 +1711,32 @@ _interpqueues_bind_impl(PyObject *module, qidarg_converter_data qidarg)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_interpqueues.release
+    qid as qidarg: qidarg
+
+Release a reference to the queue.
+
+The queue is destroyed once there are no references left.
+[clinic start generated code]*/
+
 static PyObject *
-queuesmod_release(PyObject *self, PyObject *args, PyObject *kwds)
+_interpqueues_release_impl(PyObject *module, qidarg_converter_data qidarg)
+/*[clinic end generated code: output=53a0180f7f311387 input=57923b1efa4772b5]*/
 {
     // Note that only the current interpreter is affected.
-    static char *kwlist[] = {"qid", NULL};
-    qidarg_converter_data qidarg = {0};
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&:release", kwlist,
-                                     qidarg_converter, &qidarg)) {
-        return NULL;
-    }
     int64_t qid = qidarg.id;
 
     // XXX Check module state if bound already.
     // XXX Update module state.
 
     int err = _queues_decref(&_globals.queues, qid);
-    if (handle_queue_error(err, self, qid)) {
+    if (handle_queue_error(err, module, qid)) {
         return NULL;
     }
 
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(queuesmod_release_doc,
-"release(qid)\n\
-\n\
-Release a reference to the queue.\n\
-The queue is destroyed once there are no references left.");
 
 static PyObject *
 queuesmod_get_maxsize(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1894,8 +1891,7 @@ static PyMethodDef module_functions[] = {
     _INTERPQUEUES_PUT_METHODDEF
     _INTERPQUEUES_GET_METHODDEF
     _INTERPQUEUES_BIND_METHODDEF
-    {"release",                    _PyCFunction_CAST(queuesmod_release),
-     METH_VARARGS | METH_KEYWORDS, queuesmod_release_doc},
+    _INTERPQUEUES_RELEASE_METHODDEF
     {"get_maxsize",                _PyCFunction_CAST(queuesmod_get_maxsize),
      METH_VARARGS | METH_KEYWORDS, queuesmod_get_maxsize_doc},
     {"get_queue_defaults",         _PyCFunction_CAST(queuesmod_get_queue_defaults),
