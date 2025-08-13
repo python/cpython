@@ -2,6 +2,8 @@ import argparse
 import _remote_debugging
 import os
 import pstats
+import socket
+import subprocess
 import statistics
 import sys
 import sysconfig
@@ -12,14 +14,111 @@ from _colorize import ANSIColors
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector
 
-FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+_FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+_MAX_STARTUP_ATTEMPTS = 5
+_STARTUP_RETRY_DELAY_SECONDS = 0.1
+_HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
+Supports the following target modes:
+  - -p PID: Profile an existing process by PID
+  - -m MODULE [ARGS...]: Profile a module as python -m module ...
+  - filename [ARGS...]: Profile the specified script by running it in a subprocess
+
+Examples:
+  # Profile process 1234 for 10 seconds with default settings
+  python -m profile.sample -p 1234
+
+  # Profile a script by running it in a subprocess
+  python -m profile.sample myscript.py arg1 arg2
+
+  # Profile a module by running it as python -m module in a subprocess
+  python -m profile.sample -m mymodule arg1 arg2
+
+  # Profile with custom interval and duration, save to file
+  python -m profile.sample -i 50 -d 30 -o profile.stats -p 1234
+
+  # Generate collapsed stacks for flamegraph
+  python -m profile.sample --collapsed -p 1234
+
+  # Profile all threads, sort by total time
+  python -m profile.sample -a --sort-tottime -p 1234
+
+  # Profile for 1 minute with 1ms sampling interval
+  python -m profile.sample -i 1000 -d 60 -p 1234
+
+  # Show only top 20 functions sorted by direct samples
+  python -m profile.sample --sort-nsamples -l 20 -p 1234
+
+  # Profile all threads and save collapsed stacks
+  python -m profile.sample -a --collapsed -o stacks.txt -p 1234
+
+  # Profile with real-time sampling statistics
+  python -m profile.sample --realtime-stats -p 1234
+
+  # Sort by sample percentage to find most sampled functions
+  python -m profile.sample --sort-sample-pct -p 1234
+
+  # Sort by cumulative samples to find functions most on call stack
+  python -m profile.sample --sort-nsamples-cumul -p 1234"""
+
+
+# Constants for socket synchronization
+_SYNC_TIMEOUT = 5.0
+_PROCESS_KILL_TIMEOUT = 2.0
+_READY_MESSAGE = b"ready"
+_RECV_BUFFER_SIZE = 1024
+
+
+def _run_with_sync(original_cmd):
+    """Run a command with socket-based synchronization and return the process."""
+    # Create a TCP socket for synchronization with better socket options
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sync_sock:
+        # Set SO_REUSEADDR to avoid "Address already in use" errors
+        sync_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sync_sock.bind(("127.0.0.1", 0))  # Let OS choose a free port
+        sync_port = sync_sock.getsockname()[1]
+        sync_sock.listen(1)
+        sync_sock.settimeout(_SYNC_TIMEOUT)
+
+        # Get current working directory to preserve it
+        cwd = os.getcwd()
+
+        # Build command using the sync coordinator
+        target_args = original_cmd[1:]  # Remove python executable
+        cmd = (sys.executable, "-m", "profile._sync_coordinator", str(sync_port), cwd) + tuple(target_args)
+
+        # Start the process with coordinator
+        process = subprocess.Popen(cmd)
+
+        try:
+            # Wait for ready signal with timeout
+            with sync_sock.accept()[0] as conn:
+                ready_signal = conn.recv(_RECV_BUFFER_SIZE)
+
+                if ready_signal != _READY_MESSAGE:
+                    raise RuntimeError(f"Invalid ready signal received: {ready_signal!r}")
+
+        except socket.timeout:
+            # If we timeout, kill the process and raise an error
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=_PROCESS_KILL_TIMEOUT)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+            raise RuntimeError("Process failed to signal readiness within timeout")
+
+        return process
+
+
+
 
 class SampleProfiler:
     def __init__(self, pid, sample_interval_usec, all_threads):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
-        if FREE_THREADED_BUILD:
+        if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
                 self.pid, all_threads=self.all_threads
             )
@@ -50,6 +149,7 @@ class SampleProfiler:
                     stack_frames = self.unwinder.get_stack_trace()
                     collector.collect(stack_frames)
                 except ProcessLookupError:
+                    duration_sec = current_time - start_time
                     break
                 except (RuntimeError, UnicodeDecodeError, MemoryError, OSError):
                     errors += 1
@@ -532,56 +632,54 @@ def _validate_collapsed_format_args(args, parser):
             f"The following options are only valid with --pstats format: {', '.join(invalid_opts)}"
         )
 
-    # Set default output filename for collapsed format
-    if not args.outfile:
+    # Set default output filename for collapsed format only if we have a PID
+    # For module/script execution, this will be set later with the subprocess PID
+    if not args.outfile and args.pid is not None:
         args.outfile = f"collapsed.{args.pid}.txt"
+
+
+def wait_for_process_and_sample(pid, sort_value, args):
+    """Sample the process immediately since it has already signaled readiness."""
+    # Set default collapsed filename with subprocess PID if not already set
+    filename = args.outfile
+    if not filename and args.format == "collapsed":
+        filename = f"collapsed.{pid}.txt"
+
+    sample(
+        pid,
+        sort=sort_value,
+        sample_interval_usec=args.interval,
+        duration_sec=args.duration,
+        filename=filename,
+        all_threads=args.all_threads,
+        limit=args.limit,
+        show_summary=not args.no_summary,
+        output_format=args.format,
+        realtime_stats=args.realtime_stats,
+    )
 
 
 def main():
     # Create the main parser
     parser = argparse.ArgumentParser(
-        description=(
-            "Sample a process's stack frames and generate profiling data.\n"
-            "Supports two output formats:\n"
-            "  - pstats: Detailed profiling statistics with sorting options\n"
-            "  - collapsed: Stack traces for generating flamegraphs\n"
-            "\n"
-            "Examples:\n"
-            "  # Profile process 1234 for 10 seconds with default settings\n"
-            "  python -m profile.sample 1234\n"
-            "\n"
-            "  # Profile with custom interval and duration, save to file\n"
-            "  python -m profile.sample -i 50 -d 30 -o profile.stats 1234\n"
-            "\n"
-            "  # Generate collapsed stacks for flamegraph\n"
-            "  python -m profile.sample --collapsed 1234\n"
-            "\n"
-            "  # Profile all threads, sort by total time\n"
-            "  python -m profile.sample -a --sort-tottime 1234\n"
-            "\n"
-            "  # Profile for 1 minute with 1ms sampling interval\n"
-            "  python -m profile.sample -i 1000 -d 60 1234\n"
-            "\n"
-            "  # Show only top 20 functions sorted by direct samples\n"
-            "  python -m profile.sample --sort-nsamples -l 20 1234\n"
-            "\n"
-            "  # Profile all threads and save collapsed stacks\n"
-            "  python -m profile.sample -a --collapsed -o stacks.txt 1234\n"
-            "\n"
-            "  # Profile with real-time sampling statistics\n"
-            "  python -m profile.sample --realtime-stats 1234\n"
-            "\n"
-            "  # Sort by sample percentage to find most sampled functions\n"
-            "  python -m profile.sample --sort-sample-pct 1234\n"
-            "\n"
-            "  # Sort by cumulative samples to find functions most on call stack\n"
-            "  python -m profile.sample --sort-nsamples-cumul 1234"
-        ),
+        description=_HELP_DESCRIPTION,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
-    # Required arguments
-    parser.add_argument("pid", type=int, help="Process ID to sample")
+    # Target selection
+    target_group = parser.add_mutually_exclusive_group(required=False)
+    target_group.add_argument(
+        "-p", "--pid", type=int, help="Process ID to sample"
+    )
+    target_group.add_argument(
+        "-m", "--module",
+        help="Run and profile a module as python -m module [ARGS...]"
+    )
+    parser.add_argument(
+        "args",
+        nargs=argparse.REMAINDER,
+        help="Script to run and profile, with optional arguments"
+    )
 
     # Sampling options
     sampling_group = parser.add_argument_group("Sampling configuration")
@@ -712,19 +810,55 @@ def main():
 
     sort_value = args.sort if args.sort is not None else 2
 
-    sample(
-        args.pid,
-        sample_interval_usec=args.interval,
-        duration_sec=args.duration,
-        filename=args.outfile,
-        all_threads=args.all_threads,
-        limit=args.limit,
-        sort=sort_value,
-        show_summary=not args.no_summary,
-        output_format=args.format,
-        realtime_stats=args.realtime_stats,
-    )
+    if args.module is not None and not args.module:
+        parser.error("argument -m/--module: expected one argument")
 
+    # Validate that we have exactly one target type
+    # Note: args can be present with -m (module arguments) but not as standalone script
+    has_pid = args.pid is not None
+    has_module = args.module is not None
+    has_script = bool(args.args) and args.module is None
+
+    target_count = sum([has_pid, has_module, has_script])
+
+    if target_count == 0:
+        parser.error("one of the arguments -p/--pid -m/--module or script name is required")
+    elif target_count > 1:
+        parser.error("only one target type can be specified: -p/--pid, -m/--module, or script")
+
+    if args.pid:
+        sample(
+            args.pid,
+            sample_interval_usec=args.interval,
+            duration_sec=args.duration,
+            filename=args.outfile,
+            all_threads=args.all_threads,
+            limit=args.limit,
+            sort=sort_value,
+            show_summary=not args.no_summary,
+            output_format=args.format,
+            realtime_stats=args.realtime_stats,
+        )
+    elif args.module or args.args:
+        if args.module:
+            cmd = (sys.executable, "-m", args.module, *args.args)
+        else:
+            cmd = (sys.executable, *args.args)
+
+        # Use synchronized process startup
+        process = _run_with_sync(cmd)
+
+        # Process has already signaled readiness, start sampling immediately
+        try:
+            wait_for_process_and_sample(process.pid, sort_value, args)
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                try:
+                    process.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
 
 if __name__ == "__main__":
     main()

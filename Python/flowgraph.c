@@ -3472,11 +3472,13 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                 instr->i_opcode = instr->i_opcode == JUMP_IF_FALSE ?
                                           POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE;
                 location loc = instr->i_loc;
+                basicblock *except = instr->i_except;
                 cfg_instr copy = {
                             .i_opcode = COPY,
                             .i_oparg = 1,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &copy));
                 cfg_instr to_bool = {
@@ -3484,6 +3486,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                             .i_oparg = 0,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
             }
@@ -3726,6 +3729,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = 0,
             .i_loc = loc,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
@@ -3733,6 +3737,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = 0,
             .i_loc = loc,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
     }
@@ -3763,6 +3768,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
                 .i_oparg = oldindex,
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
+                .i_except = NULL,
             };
             if (basicblock_insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
                 PyMem_RawFree(sorted);
@@ -3779,6 +3785,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = nfreevars,
             .i_loc = NO_LOCATION,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &copy_frees));
     }
