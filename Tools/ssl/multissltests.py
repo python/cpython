@@ -75,7 +75,7 @@ MULTISSL_DIR = os.path.abspath(os.path.join(PYTHONROOT, '..', 'multissl'))
 parser = argparse.ArgumentParser(
     prog='multissl',
     description=(
-        "Run CPython tests with multiple cryptography libraries versions."
+        "Run CPython tests with multiple cryptography libraries/versions."
     ),
 )
 parser.add_argument(
