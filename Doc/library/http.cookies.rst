@@ -322,4 +322,4 @@ The following example demonstrates how to use the :mod:`http.cookies` module.
    >>> print(C)
    Set-Cookie: cookies=7
    Set-Cookie: mixins="{"chips": "dark chocolate"}"
-   Set-Cookie: state="gooey"
+   Set-Cookie: state=gooey
