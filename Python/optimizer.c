@@ -114,6 +114,12 @@ _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     _PyExecutorObject **executor_ptr, int chain_depth)
 {
+    /* Make sure we have enough C stack space for the buffer */
+    int margin = 1 + sizeof(_PyUOpInstruction) * UOP_MAX_TRACE_LENGTH / _PyOS_STACK_MARGIN_BYTES;
+    if (_Py_ReachedRecursionLimitWithMargin(_PyThreadState_GET(), margin)) {
+        return 0;
+    }
+
     _PyStackRef *stack_pointer = frame->stackpointer;
     assert(_PyInterpreterState_GET()->jit);
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
