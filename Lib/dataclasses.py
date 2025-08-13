@@ -668,10 +668,8 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     annotations = {f.name: f.type for f in fields if f.init}
     annotations["return"] = None
 
-    locals = {**{'__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
-                 '__dataclass_builtins_object__': object,
-                 }
-              }
+    locals = {'__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
+              '__dataclass_builtins_object__': object}
 
     body_lines = []
     for f in fields:
