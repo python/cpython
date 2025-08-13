@@ -806,10 +806,16 @@ PyDoc_STRVAR(builtin_oct__doc__,
     {"oct", (PyCFunction)builtin_oct, METH_O, builtin_oct__doc__},
 
 PyDoc_STRVAR(builtin_ord__doc__,
-"ord($module, c, /)\n"
+"ord($module, character, /)\n"
 "--\n"
 "\n"
-"Return the Unicode code point for a one-character string.");
+"Return the ordinal value of a character.\n"
+"\n"
+"If the argument is a one-character string, return the Unicode code\n"
+"point of that character.\n"
+"\n"
+"If the argument is a bytes or bytearray object of length 1, return its\n"
+"single byte value.");
 
 #define BUILTIN_ORD_METHODDEF    \
     {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
@@ -1228,4 +1234,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=435d3f286a863c49 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f686ad843368963c input=a9049054013a1b77]*/
