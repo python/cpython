@@ -97,6 +97,7 @@ struct _ceval_runtime_state {
     // For example, we use a preallocated array
     // for the list of pending calls.
     struct _pending_calls pending_mainthread;
+    PyMutex unused_sys_trace_profile_mutex;  // kept for ABI compatibility
 };
 
 
