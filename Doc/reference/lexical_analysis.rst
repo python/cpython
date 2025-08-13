@@ -1370,6 +1370,9 @@ The following tokens are :dfn:`operators` -- they are used to combine
    <       >       <=      >=      ==      !=
    .       @       :=
 
+Plus (``+``) and minus (``-``) signs can also occur in
+:ref:`floating-point <floating>` and :ref:`imaginary` literals.
+
 .. index:: single: delimiters
 
 The following tokens are :dfn:`delimiters` -- simple tokens that
@@ -1387,6 +1390,10 @@ or delimiters.
 The period can also occur in :ref:`floating-point <floating>` and
 :ref:`imaginary` literals.
 
+The symbols ``{``, ``}``, ``!`` and ``:`` have special meaning in
+:ref:`formatted string literals <f-strings>` and
+:ref:`template string literals <t-strings>`.
+
 .. _lexical-ellipsis:
 
 A sequence of three periods (without whitespace between them) has a special
@@ -1403,6 +1410,10 @@ they serve lexically as delimiters, but also perform an operation:
 
    +=      -=      *=      **=     /=      //=     %=
    <<=     >>=     &=      |=      ^=      @=
+
+See :ref:`operator and delimiter tokens <token_operators_delimiters>`
+in the :mod:`!token` module documentation for names of the operator and
+delimiter tokens.
 
 The following printing ASCII characters have special meaning as part of other
 tokens or are otherwise significant to the lexical analyzer:
