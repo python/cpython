@@ -214,6 +214,13 @@ New modules
 Improved modules
 ================
 
+csv
+---
+
+* The :meth:`csv.Sniffer.sniff` delimiter detection has been optimized,
+  and is now up to 1.5x faster.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
+
 dbm
 ---
 
