@@ -2152,10 +2152,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    The default hook formats :attr:`!err_msg` and :attr:`!object` as:
    ``f'{err_msg}: {object!r}'``; use "Exception ignored in" error message
-   if :attr:`!err_msg` is ``None``.
+   if :attr:`!err_msg` is ``None``. Similar to the :mod:`traceback` module,
+   this adds color to exceptions by default. This can be disabled using
+   :ref:`environment variables <using-on-controlling-color>`.
 
    :func:`sys.unraisablehook` can be overridden to control how unraisable
    exceptions are handled.
+
+   .. versionchanged:: next
+      Exceptions are now printed with colorful text.
 
    .. seealso::
 
@@ -2191,8 +2196,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: api_version
 
-   The C API version for this interpreter.  Programmers may find this useful when
-   debugging version conflicts between Python and extension modules.
+   The C API version, equivalent to the C macro :c:macro:`PYTHON_API_VERSION`.
+   Defined for backwards compatibility.
+
+   Currently, this constant is not updated in new Python versions, and is not
+   useful for versioning. This may change in the future.
 
 
 .. data:: version_info

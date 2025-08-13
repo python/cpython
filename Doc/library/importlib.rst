@@ -206,6 +206,10 @@ Functions
        :exc:`ModuleNotFoundError` is raised when the module being reloaded lacks
        a :class:`~importlib.machinery.ModuleSpec`.
 
+   .. warning::
+      This function is not thread-safe. Calling it from multiple threads can result
+      in unexpected behavior. It's recommended to use the :class:`threading.Lock`
+      or other synchronization primitives for thread-safe module reloading.
 
 :mod:`importlib.abc` -- Abstract base classes related to import
 ---------------------------------------------------------------
@@ -389,6 +393,8 @@ ABC hierarchy::
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
        through :class:`importlib.resources.abc.TraversableResources`.
+       This class exists for backwards compatibility only with other ABCs in
+       this module.
 
     .. method:: get_data(path)
        :abstractmethod:
