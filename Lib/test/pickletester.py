@@ -1018,7 +1018,7 @@ class AbstractUnpickleTests:
         # to bypass truthy/falsy comparisons. These payloads should return
         # 0, not False.
         out1 = self.loads(b'I+0\n.')
-        self.assertTrue(str(out1) == str(0))
+        self.assertEqual(str(out1), '0')
         out2 = self.loads(b'I 0\n.')
         self.assertTrue(str(out2) == str(0))
 
