@@ -1422,38 +1422,10 @@ are always available.  They are listed here in alphabetical order.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled—this cannot be used in binary mode.
-   A variety of standard error handlers are available
-   (listed under :ref:`error-handlers`), though any
-   error handling name that has been registered with
+   A variety of standard error handlers are available,
+   though any error handling name that has been registered with
    :func:`codecs.register_error` is also valid.  The standard names
-   include:
-
-   * ``'strict'`` to raise a :exc:`ValueError` exception if there is
-     an encoding error.  The default value of ``None`` has the same
-     effect.
-
-   * ``'ignore'`` ignores errors.  Note that ignoring encoding errors
-     can lead to data loss.
-
-   * ``'replace'`` causes a replacement marker (such as ``'?'``) to be inserted
-     where there is malformed data.
-
-   * ``'surrogateescape'`` will represent any incorrect bytes as low
-     surrogate code units ranging from U+DC80 to U+DCFF.
-     These surrogate code units will then be turned back into
-     the same bytes when the ``surrogateescape`` error handler is used
-     when writing data.  This is useful for processing files in an
-     unknown encoding.
-
-   * ``'xmlcharrefreplace'`` is only supported when writing to a file.
-     Characters not supported by the encoding are replaced with the
-     appropriate XML character reference :samp:`&#{nnn};`.
-
-   * ``'backslashreplace'`` replaces malformed data by Python's backslashed
-     escape sequences.
-
-   * ``'namereplace'`` (also only supported when writing)
-     replaces unsupported characters with ``\N{...}`` escape sequences.
+   can be found in :ref:`error-handlers`.
 
    .. index::
       single: universal newlines; open() built-in function
