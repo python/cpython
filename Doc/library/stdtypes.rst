@@ -3440,14 +3440,14 @@ produce new objects.
       it always produces a new object, even if no changes were made.
 
 
-.. method:: bytes.lstrip(bytes=None, /)
-            bytearray.lstrip(bytes=None, /)
+.. method:: bytes.lstrip(chars=None, /)
+            bytearray.lstrip(chars=None, /)
 
    Return a copy of the sequence with specified leading bytes removed.  The
-   *bytes* argument is a binary sequence specifying the set of byte values to
+   *chars* argument is a binary sequence specifying the set of byte values to
    be removed - the name refers to the fact this method is usually used with
-   ASCII characters.  If omitted or ``None``, the *bytes* argument defaults
-   to removing ASCII whitespace.  The *bytes* argument is not a prefix;
+   ASCII characters.  If omitted or ``None``, the *chars* argument defaults
+   to removing ASCII whitespace.  The *chars* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
       >>> b'   spacious   '.lstrip()
@@ -3496,14 +3496,14 @@ produce new objects.
    :meth:`split` which is described in detail below.
 
 
-.. method:: bytes.rstrip(bytes=None, /)
-            bytearray.rstrip(bytes=None, /)
+.. method:: bytes.rstrip(chars=None, /)
+            bytearray.rstrip(chars=None, /)
 
    Return a copy of the sequence with specified trailing bytes removed.  The
-   *bytes* argument is a binary sequence specifying the set of byte values to
+   *chars* argument is a binary sequence specifying the set of byte values to
    be removed - the name refers to the fact this method is usually used with
-   ASCII characters.  If omitted or ``None``, the *bytes* argument defaults to
-   removing ASCII whitespace.  The *bytes* argument is not a suffix; rather,
+   ASCII characters.  If omitted or ``None``, the *chars* argument defaults to
+   removing ASCII whitespace.  The *chars* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
       >>> b'   spacious   '.rstrip()
@@ -3573,14 +3573,14 @@ produce new objects.
       [b'1', b'2', b'3']
 
 
-.. method:: bytes.strip(bytes=None, /)
-            bytearray.strip(bytes=None, /)
+.. method:: bytes.strip(chars=None, /)
+            bytearray.strip(chars=None, /)
 
    Return a copy of the sequence with specified leading and trailing bytes
-   removed. The *bytes* argument is a binary sequence specifying the set of
+   removed. The *chars* argument is a binary sequence specifying the set of
    byte values to be removed - the name refers to the fact this method is
-   usually used with ASCII characters.  If omitted or ``None``, the *bytes*
-   argument defaults to removing ASCII whitespace. The *bytes* argument is
+   usually used with ASCII characters.  If omitted or ``None``, the *chars*
+   argument defaults to removing ASCII whitespace. The *chars* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
 
