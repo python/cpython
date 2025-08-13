@@ -13,31 +13,25 @@
         }
 
         case _CHECK_PERIODIC: {
-            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-            QSBR_QUIESCENT_STATE(tstate);
-            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                int err = _Py_HandlePending(tstate);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (err != 0) {
-                    JUMP_TO_ERROR();
-                }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int err = check_periodics(tstate);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (err != 0) {
+                JUMP_TO_ERROR();
             }
             break;
         }
 
+        /* _CHECK_PERIODIC_AT_END is not a viable micro-op for tier 2 because it is replaced */
+
         case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
             oparg = CURRENT_OPARG();
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-                QSBR_QUIESCENT_STATE(tstate);
-                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    int err = _Py_HandlePending(tstate);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (err != 0) {
-                        JUMP_TO_ERROR();
-                    }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = check_periodics(tstate);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err != 0) {
+                    JUMP_TO_ERROR();
                 }
             }
             break;
@@ -7440,6 +7434,14 @@
 
         case _DEOPT: {
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            break;
+        }
+
+        case _HANDLE_PENDING_AND_DEOPT: {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int err = _Py_HandlePending(tstate);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
             break;
         }
 
