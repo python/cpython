@@ -145,7 +145,7 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
     }
     if (res < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "%T.__length_hint__() must return a positive int", o);
+                     "%T.__length_hint__() must return a non-negative int", o);
         return -1;
     }
     return res;
@@ -2817,7 +2817,7 @@ PyObject_GetIter(PyObject *o)
         PyObject *res = (*f)(o);
         if (res != NULL && !PyIter_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                         "%T.iter() must return an iterator, not %T",
+                         "%T.__iter__() must return an iterator, not %T",
                          o, res);
             Py_SETREF(res, NULL);
         }
@@ -2837,7 +2837,7 @@ PyObject_GetAIter(PyObject *o) {
     PyObject *it = (*f)(o);
     if (it != NULL && !PyAIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
-                     "%T.aiter() must return an async iterator, not %T",
+                     "%T.__aiter__() must return an async iterator, not %T",
                      o, it);
         Py_SETREF(it, NULL);
     }

@@ -3508,8 +3508,7 @@ mro_check(PyTypeObject *type, PyObject *mro)
         PyObject *obj = PyTuple_GET_ITEM(mro, i);
         if (!PyType_Check(obj)) {
             PyErr_Format(PyExc_TypeError,
-                         "%s.mro() returned a non-class ('%T')",
-                         type->tp_name, obj);
+                         "%N.mro() returned a non-class ('%T')", type, obj);
             return -1;
         }
         PyTypeObject *base = (PyTypeObject*)obj;
@@ -3517,8 +3516,8 @@ mro_check(PyTypeObject *type, PyObject *mro)
         if (!is_subtype_with_mro(lookup_tp_mro(solid), solid, solid_base(base))) {
             PyErr_Format(
                 PyExc_TypeError,
-                "%s.mro() returned base with unsuitable layout ('%.500s')",
-                type->tp_name, base->tp_name);
+                "%N.mro() returned base with unsuitable layout ('%.500s')",
+                type, base->tp_name);
             return -1;
         }
     }
