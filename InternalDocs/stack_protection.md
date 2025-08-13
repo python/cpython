@@ -30,7 +30,7 @@ The C stack looks like this:
 ```
 
 
-We get the current stack pointer using compiler intrinsics where available, or by taking the address of a (C) local variable. See `_Py_get_machine_stack_pointer()`.
+We get the current stack pointer using compiler intrinsics where available, or by taking the address of a C local variable. See `_Py_get_machine_stack_pointer()`.
 
 The soft and hard limits pointers are set by calling `_Py_InitializeRecursionLimits()` during thread initialization.
 
@@ -55,7 +55,7 @@ Either a recursive call is not checking `_Py_EnterRecursiveCall()`, or the amoun
 
 Likely causes:
 * Recursive code is not calling `_Py_EnterRecursiveCall()`
-* -O0 compilation flags, especially for Clang. With no optimization, C calls can consume a lot of stack space
+* `-O0` compilation flags, especially for Clang. With no optimization, C calls can consume a lot of stack space
 * Giant, complex functions in third-party C extensions. This is unlikely as the function in question would need to be more complicated than the bytecode interpreter.
 * `_PyOS_STACK_MARGIN_BYTES` is just too low.
 * `_Py_InitializeRecursionLimits()` is not setting the soft and hard limits correctly for that platform.
