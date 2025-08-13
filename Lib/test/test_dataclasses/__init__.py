@@ -2501,6 +2501,13 @@ class TestInit(unittest.TestCase):
         self.assertEqual(forwardref_annos, {'b': support.EqualToForwardRef('undefined', owner=B, is_class=True), 'return': None})
         self.assertEqual(string_annos, {'b': 'undefined', 'return': 'None'})
 
+        # Check `init=False` attributes don't get into the annotations of the __init__ function
+        @dataclass
+        class C:
+            c: str = field(init=False)
+
+        self.assertEqual(annotationlib.get_annotations(C.__init__), {'return': None})
+
 
 class TestRepr(unittest.TestCase):
     def test_repr(self):
