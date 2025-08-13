@@ -509,7 +509,7 @@ class _FuncBuilder:
         for name, fn in zip(self.names, fns):
             fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
             if annotations := self.method_annotations.get(name):
-                fn.__annotate__ = self.make_annotate_function(annotations)
+                fn.__annotate__ = _make_annotate_function(annotations)
 
             if self.unconditional_adds.get(name, False):
                 setattr(cls, name, fn)
@@ -525,33 +525,33 @@ class _FuncBuilder:
 
                     raise TypeError(error_msg)
 
-    @staticmethod
-    def make_annotate_function(annotations):
-        # Create an __annotate__ function for a dataclass
-        # Try to return annotations in the same format as they would be
-        # from a regular __init__ function
-        def __annotate__(format):
-            match format:
-                case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
-                    return {
-                        k: v.evaluate(format=format)
-                        if isinstance(v, annotationlib.ForwardRef) else v
-                        for k, v in annotations.items()
-                    }
-                case annotationlib.Format.STRING:
-                    string_annos = {}
-                    for k, v in annotations.items():
-                        if isinstance(v, str):
-                            string_annos[k] = v
-                        elif isinstance(v, annotationlib.ForwardRef):
-                            string_annos[k] = v.evaluate(format=annotationlib.Format.STRING)
-                        else:
-                            string_annos[k] = annotationlib.type_repr(v)
-                    return string_annos
-                case _:
-                    raise NotImplementedError(format)
 
-        return __annotate__
+def _make_annotate_function(annotations):
+    # Create an __annotate__ function for a dataclass
+    # Try to return annotations in the same format as they would be
+    # from a regular __init__ function
+    def __annotate__(format):
+        match format:
+            case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
+                return {
+                    k: v.evaluate(format=format)
+                    if isinstance(v, annotationlib.ForwardRef) else v
+                    for k, v in annotations.items()
+                }
+            case annotationlib.Format.STRING:
+                string_annos = {}
+                for k, v in annotations.items():
+                    if isinstance(v, str):
+                        string_annos[k] = v
+                    elif isinstance(v, annotationlib.ForwardRef):
+                        string_annos[k] = v.evaluate(format=annotationlib.Format.STRING)
+                    else:
+                        string_annos[k] = annotationlib.type_repr(v)
+                return string_annos
+            case _:
+                raise NotImplementedError(format)
+
+    return __annotate__
 
 
 def _field_assign(frozen, name, value, self_name):
