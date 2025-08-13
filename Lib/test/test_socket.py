@@ -2,8 +2,9 @@ import unittest
 from unittest import mock
 from test import support
 from test.support import (
-    is_apple, os_helper, refleak_helper, socket_helper, threading_helper
+    cpython_only, is_apple, os_helper, refleak_helper, socket_helper, threading_helper
 )
+from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
 import contextlib
@@ -256,6 +257,12 @@ HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
+
+class TestLazyImport(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("socket", {"array", "selectors"})
+
 
 class SocketTCPTest(unittest.TestCase):
 
@@ -1078,9 +1085,7 @@ class GeneralModuleTests(unittest.TestCase):
             'IPV6_USE_MIN_MTU',
         }
         for opt in opts:
-            self.assertTrue(
-                hasattr(socket, opt), f"Missing RFC3542 socket option '{opt}'"
-            )
+            self.assertHasAttr(socket, opt)
 
     def testHostnameRes(self):
         # Testing hostname resolution mechanisms
@@ -1533,6 +1538,40 @@ class GeneralModuleTests(unittest.TestCase):
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.assertFalse(reuse == 0, "failed to set reuse mode")
 
+    def test_setsockopt_errors(self):
+        # See issue #107546.
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # No error expected.
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 2 ** 100)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, - 2 ** 100)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, 2 ** 100, 1)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(2 ** 100, socket.SO_REUSEADDR, 1)
+
+        with self.assertRaisesRegex(TypeError, "socket option should be int, bytes-like object or None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, dict())
+
+        with self.assertRaisesRegex(TypeError, "requires 4 arguments when the third argument is None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, None)
+
+        with self.assertRaisesRegex(TypeError, "only takes 4 arguments when the third argument is None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2)
+
+        with self.assertRaisesRegex(TypeError, "takes at least 3 arguments"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
+
+        with self.assertRaisesRegex(TypeError, "takes at most 4 arguments"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2, 3)
+
     def testSendAfterClose(self):
         # testing send() after close() with timeout
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -1586,11 +1625,11 @@ class GeneralModuleTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "nt", "Windows specific")
     def test_sock_ioctl(self):
-        self.assertTrue(hasattr(socket.socket, 'ioctl'))
-        self.assertTrue(hasattr(socket, 'SIO_RCVALL'))
-        self.assertTrue(hasattr(socket, 'RCVALL_ON'))
-        self.assertTrue(hasattr(socket, 'RCVALL_OFF'))
-        self.assertTrue(hasattr(socket, 'SIO_KEEPALIVE_VALS'))
+        self.assertHasAttr(socket.socket, 'ioctl')
+        self.assertHasAttr(socket, 'SIO_RCVALL')
+        self.assertHasAttr(socket, 'RCVALL_ON')
+        self.assertHasAttr(socket, 'RCVALL_OFF')
+        self.assertHasAttr(socket, 'SIO_KEEPALIVE_VALS')
         s = socket.socket()
         self.addCleanup(s.close)
         self.assertRaises(ValueError, s.ioctl, -1, None)
@@ -6075,10 +6114,10 @@ class UDPLITETimeoutTest(SocketUDPLITETest):
 class TestExceptions(unittest.TestCase):
 
     def testExceptionTree(self):
-        self.assertTrue(issubclass(OSError, Exception))
-        self.assertTrue(issubclass(socket.herror, OSError))
-        self.assertTrue(issubclass(socket.gaierror, OSError))
-        self.assertTrue(issubclass(socket.timeout, OSError))
+        self.assertIsSubclass(OSError, Exception)
+        self.assertIsSubclass(socket.herror, OSError)
+        self.assertIsSubclass(socket.gaierror, OSError)
+        self.assertIsSubclass(socket.timeout, OSError)
         self.assertIs(socket.error, OSError)
         self.assertIs(socket.timeout, TimeoutError)
 

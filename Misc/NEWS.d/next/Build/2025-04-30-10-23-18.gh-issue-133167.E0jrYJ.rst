@@ -1,2 +1,0 @@
-Fix compilation process with ``--enable-optimizations`` and
-``--without-docstrings``.

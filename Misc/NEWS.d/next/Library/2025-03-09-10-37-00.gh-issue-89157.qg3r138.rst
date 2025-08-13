@@ -1,2 +1,0 @@
-Make the pure Python implementation of :func:`datetime.date.fromisoformat`,
-only accept ASCII strings for consistency with the C implementation.

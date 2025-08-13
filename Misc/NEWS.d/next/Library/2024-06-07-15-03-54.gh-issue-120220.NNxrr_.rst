@@ -1,3 +1,0 @@
-Deprecate the :class:`!tkinter.Variable` methods :meth:`!trace_variable`,
-:meth:`!trace_vdelete` and :meth:`!trace_vinfo`. Methods :meth:`!trace_add`,
-:meth:`!trace_remove` and :meth:`!trace_info` can be used instead.

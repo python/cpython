@@ -176,8 +176,8 @@ Cross platform
    :attr:`processor` is resolved late, on demand.
 
    Note: the first two attribute names differ from the names presented by
-   :func:`os.uname`, where they are named :attr:`sysname` and
-   :attr:`nodename`.
+   :func:`os.uname`, where they are named :attr:`!sysname` and
+   :attr:`!nodename`.
 
    Entries which cannot be determined are set to ``''``.
 
@@ -186,24 +186,6 @@ Cross platform
 
    .. versionchanged:: 3.9
       :attr:`processor` is resolved late instead of immediately.
-
-
-Java platform
--------------
-
-
-.. function:: java_ver(release='', vendor='', vminfo=('','',''), osinfo=('','',''))
-
-   Version interface for Jython.
-
-   Returns a tuple ``(release, vendor, vminfo, osinfo)`` with *vminfo* being a
-   tuple ``(vm_name, vm_release, vm_vendor)`` and *osinfo* being a tuple
-   ``(os_name, os_version, os_arch)``. Values which cannot be determined are set to
-   the defaults given as parameters (which all default to ``''``).
-
-   .. deprecated-removed:: 3.13 3.15
-      It was largely untested, had a confusing API,
-      and was only useful for Jython support.
 
 
 Windows platform

@@ -206,10 +206,6 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip("t'foo'")
         self.check_ast_roundtrip("t'foo {bar}'")
         self.check_ast_roundtrip("t'foo {bar!s:.2f}'")
-        self.check_ast_roundtrip("t'foo {bar}' f'{bar}'")
-        self.check_ast_roundtrip("f'{bar}' t'foo {bar}'")
-        self.check_ast_roundtrip("t'foo {bar}' fr'\\hello {bar}'")
-        self.check_ast_roundtrip("t'foo {bar}' u'bar'")
 
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
@@ -816,6 +812,15 @@ class CosmeticTestCase(ASTTestCase):
         self.check_ast_roundtrip("type A[*Ts = *int] = int")
         self.check_ast_roundtrip("def f[T: int = int, **P = int, *Ts = *int]():\n    pass")
         self.check_ast_roundtrip("class C[T: int = int, **P = int, *Ts = *int]():\n    pass")
+
+    def test_tstr(self):
+        self.check_ast_roundtrip("t'{a +    b}'")
+        self.check_ast_roundtrip("t'{a +    b:x}'")
+        self.check_ast_roundtrip("t'{a +    b!s}'")
+        self.check_ast_roundtrip("t'{ {a}}'")
+        self.check_ast_roundtrip("t'{ {a}=}'")
+        self.check_ast_roundtrip("t'{{a}}'")
+        self.check_ast_roundtrip("t''")
 
 
 class ManualASTCreationTestCase(unittest.TestCase):

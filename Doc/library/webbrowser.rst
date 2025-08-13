@@ -29,7 +29,7 @@ already registered browsers this browser is added to the front of the search lis
 if the part does not contain ``%s``, it is simply interpreted as the name of the
 browser to launch. [1]_
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
 
    The :envvar:`BROWSER` variable can now also be used to reorder the list of
    platform defaults. This is particularly useful on macOS where the platform

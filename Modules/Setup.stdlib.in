@@ -32,7 +32,6 @@
 ############################################################################
 # Modules that should always be present (POSIX and Windows):
 @MODULE_ARRAY_TRUE@array arraymodule.c
-@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c
 @MODULE__BISECT_TRUE@_bisect _bisectmodule.c
 @MODULE__CSV_TRUE@_csv _csv.c
 @MODULE__HEAPQ_TRUE@_heapq _heapqmodule.c
@@ -56,9 +55,6 @@
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
 @MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
 
-# needs libm and on some platforms librt
-@MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
-
 # _decimal uses libmpdec
 # either static libmpdec.a from Modules/_decimal/libmpdec or libmpdec.so
 # with ./configure --with-system-libmpdec
@@ -69,7 +65,7 @@
 @MODULE_BINASCII_TRUE@binascii binascii.c
 @MODULE__BZ2_TRUE@_bz2 _bz2module.c
 @MODULE__LZMA_TRUE@_lzma _lzmamodule.c
-@MODULE__ZSTD_TRUE@_zstd _zstd/_zstdmodule.c _zstd/zdict.c _zstd/compressor.c _zstd/decompressor.c
+@MODULE__ZSTD_TRUE@_zstd _zstd/_zstdmodule.c _zstd/zstddict.c _zstd/compressor.c _zstd/decompressor.c
 @MODULE_ZLIB_TRUE@zlib zlibmodule.c
 
 # dbm/gdbm
@@ -193,3 +189,9 @@
 # Limited API template modules; must be built as shared modules.
 @MODULE_XXLIMITED_TRUE@xxlimited xxlimited.c
 @MODULE_XXLIMITED_35_TRUE@xxlimited_35 xxlimited_35.c
+
+
+# for performance
+*static*
+
+@MODULE__ASYNCIO_TRUE@_asyncio _asynciomodule.c

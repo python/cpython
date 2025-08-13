@@ -121,8 +121,11 @@ Module contents
      :meth:`!__le__`, :meth:`!__gt__`, or :meth:`!__ge__`, then
      :exc:`TypeError` is raised.
 
-   - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
-     is generated according to how *eq* and *frozen* are set.
+   - *unsafe_hash*: If true, force ``dataclasses`` to create a
+     :meth:`~object.__hash__` method, even though it may not be safe to do so.
+     Otherwise, generate a :meth:`~object.__hash__` method according to how
+     *eq* and *frozen* are set.
+     The default value is ``False``.
 
      :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
@@ -304,9 +307,9 @@ Module contents
 
     .. versionadded:: 3.10
 
-   - ``doc``: optional docstring for this field.
+   - *doc*: optional docstring for this field.
 
-    .. versionadded:: 3.13
+    .. versionadded:: 3.14
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be

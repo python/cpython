@@ -1,4 +1,0 @@
-:func:`annotationlib.get_annotations` now uses the ``__annotate__``
-attribute if it is present, even if ``__annotations__`` is not present.
-Additionally, the function now raises a :py:exc:`TypeError` if it is passed
-an object that does not have any annotatins.

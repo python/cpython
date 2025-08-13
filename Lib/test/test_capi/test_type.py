@@ -264,3 +264,13 @@ class TypeTests(unittest.TestCase):
         ManualHeapType = _testcapi.ManualHeapType
         for i in range(100):
             self.assertIsInstance(ManualHeapType(), ManualHeapType)
+
+    def test_extension_managed_dict_type(self):
+        ManagedDictType = _testcapi.ManagedDictType
+        obj = ManagedDictType()
+        obj.foo = 42
+        self.assertEqual(obj.foo, 42)
+        self.assertEqual(obj.__dict__, {'foo': 42})
+        obj.__dict__ = {'bar': 3}
+        self.assertEqual(obj.__dict__, {'bar': 3})
+        self.assertEqual(obj.bar, 3)

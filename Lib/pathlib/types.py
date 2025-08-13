@@ -11,9 +11,10 @@ Protocols for supporting classes in pathlib.
 
 
 from abc import ABC, abstractmethod
-from glob import _PathGlobber
+from glob import _GlobberBase
 from io import text_encoding
-from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
+from pathlib._os import (magic_open, vfspath, ensure_distinct_paths,
+                         ensure_different_files, copyfileobj)
 from pathlib import PurePath, Path
 from typing import Optional, Protocol, runtime_checkable
 
@@ -60,6 +61,25 @@ class PathInfo(Protocol):
     def is_symlink(self) -> bool: ...
 
 
+class _PathGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for ReadablePath.
+    """
+
+    @staticmethod
+    def lexists(path):
+        return path.info.exists(follow_symlinks=False)
+
+    @staticmethod
+    def scandir(path):
+        return ((child.info, child.name, child) for child in path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        return path.with_segments(vfspath(path) + text)
+
+    stringify_path = staticmethod(vfspath)
+
+
 class _JoinablePath(ABC):
     """Abstract base class for pure path objects.
 
@@ -86,20 +106,19 @@ class _JoinablePath(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def __str__(self):
-        """Return the string representation of the path, suitable for
-        passing to system calls."""
+    def __vfspath__(self):
+        """Return the string representation of the path."""
         raise NotImplementedError
 
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        return _explode_path(str(self), self.parser.split)[0]
+        return _explode_path(vfspath(self), self.parser.split)[0]
 
     @property
     def name(self):
         """The final path component, if any."""
-        return self.parser.split(str(self))[1]
+        return self.parser.split(vfspath(self))[1]
 
     @property
     def suffix(self):
@@ -135,7 +154,7 @@ class _JoinablePath(ABC):
         split = self.parser.split
         if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        path = str(self)
+        path = vfspath(self)
         path = path.removesuffix(split(path)[1]) + name
         return self.with_segments(path)
 
@@ -168,7 +187,7 @@ class _JoinablePath(ABC):
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        anchor, parts = _explode_path(str(self), self.parser.split)
+        anchor, parts = _explode_path(vfspath(self), self.parser.split)
         if anchor:
             parts.append(anchor)
         return tuple(reversed(parts))
@@ -179,24 +198,24 @@ class _JoinablePath(ABC):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(str(self), *pathsegments)
+        return self.with_segments(vfspath(self), *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.with_segments(str(self), key)
+            return self.with_segments(vfspath(self), key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, str(self))
+            return self.with_segments(key, vfspath(self))
         except TypeError:
             return NotImplemented
 
     @property
     def parent(self):
         """The logical parent of the path."""
-        path = str(self)
+        path = vfspath(self)
         parent = self.parser.split(path)[0]
         if path != parent:
             return self.with_segments(parent)
@@ -206,7 +225,7 @@ class _JoinablePath(ABC):
     def parents(self):
         """A sequence of this path's logical parents."""
         split = self.parser.split
-        path = str(self)
+        path = vfspath(self)
         parent = split(path)[0]
         parents = []
         while path != parent:
@@ -223,7 +242,7 @@ class _JoinablePath(ABC):
         case_sensitive = self.parser.normcase('Aa') == 'Aa'
         globber = _PathGlobber(self.parser.sep, case_sensitive, recursive=True)
         match = globber.compile(pattern, altsep=self.parser.altsep)
-        return match(str(self)) is not None
+        return match(vfspath(self)) is not None
 
 
 class _ReadablePath(_JoinablePath):
@@ -412,7 +431,7 @@ class _WritablePath(_JoinablePath):
         while stack:
             src, dst = stack.pop()
             if not follow_symlinks and src.info.is_symlink():
-                dst.symlink_to(str(src.readlink()), src.info.is_dir())
+                dst.symlink_to(vfspath(src.readlink()), src.info.is_dir())
             elif src.info.is_dir():
                 children = src.iterdir()
                 dst.mkdir()

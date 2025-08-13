@@ -698,7 +698,9 @@ _default_mime_types()
 def _parse_args(args):
     from argparse import ArgumentParser
 
-    parser = ArgumentParser(description='map filename extensions to MIME types')
+    parser = ArgumentParser(
+        description='map filename extensions to MIME types', color=True
+    )
     parser.add_argument(
         '-e', '--extension',
         action='store_true',

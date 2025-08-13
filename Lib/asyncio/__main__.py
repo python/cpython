@@ -1,7 +1,6 @@
 import argparse
 import ast
 import asyncio
-import asyncio.tools
 import concurrent.futures
 import contextvars
 import inspect
@@ -11,8 +10,11 @@ import sys
 import threading
 import types
 import warnings
+from asyncio.tools import (TaskTableOutputFormat,
+                           display_awaited_by_tasks_table,
+                           display_awaited_by_tasks_tree)
 
-from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
+from _colorize import get_theme
 from _pyrepl.console import InteractiveColoredConsole
 
 from . import futures
@@ -64,7 +66,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback, context=self.context)
+        self.loop.call_soon_threadsafe(callback, context=self.context)
 
         try:
             return future.result()
@@ -103,8 +105,9 @@ class REPLThread(threading.Thread):
                     exec(startup_code, console.locals)
 
             ps1 = getattr(sys, "ps1", ">>> ")
-            if can_colorize() and CAN_USE_PYREPL:
-                ps1 = f"{ANSIColors.BOLD_MAGENTA}{ps1}{ANSIColors.RESET}"
+            if CAN_USE_PYREPL:
+                theme = get_theme().syntax
+                ps1 = f"{theme.prompt}{ps1}{theme.reset}"
             console.write(f"{ps1}import asyncio\n")
 
             if CAN_USE_PYREPL:
@@ -145,12 +148,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog="python3 -m asyncio",
         description="Interactive asyncio shell and CLI tools",
+        color=True,
     )
     subparsers = parser.add_subparsers(help="sub-commands", dest="command")
     ps = subparsers.add_parser(
         "ps", help="Display a table of all pending tasks in a process"
     )
     ps.add_argument("pid", type=int, help="Process ID to inspect")
+    formats = [fmt.value for fmt in TaskTableOutputFormat]
+    formats_to_show = [fmt for fmt in formats
+                       if fmt != TaskTableOutputFormat.bsv.value]
+    ps.add_argument("--format", choices=formats, default="table",
+                    metavar=f"{{{','.join(formats_to_show)}}}")
     pstree = subparsers.add_parser(
         "pstree", help="Display a tree of all pending tasks in a process"
     )
@@ -158,10 +167,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     match args.command:
         case "ps":
-            asyncio.tools.display_awaited_by_tasks_table(args.pid)
+            display_awaited_by_tasks_table(args.pid, format=args.format)
             sys.exit(0)
         case "pstree":
-            asyncio.tools.display_awaited_by_tasks_tree(args.pid)
+            display_awaited_by_tasks_tree(args.pid)
             sys.exit(0)
         case None:
             pass  # continue to the interactive shell

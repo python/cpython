@@ -21,6 +21,7 @@
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_import.h"        // _PyImport_ClearExtension()
@@ -120,7 +121,7 @@ get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit) / _PyOS_STACK_MARGIN_BYTES * 50);
     return PyLong_FromLong(remaining);
 }
 
@@ -1000,9 +1001,213 @@ get_co_localskinds(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
-jit_enabled(PyObject *self, PyObject *arg)
+get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
 {
-    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *codearg;
+    PyObject *globalnames = NULL;
+    PyObject *attrnames = NULL;
+    PyObject *globalsns = NULL;
+    PyObject *builtinsns = NULL;
+    static char *kwlist[] = {"code", "globalnames", "attrnames", "globalsns",
+                             "builtinsns", NULL};
+    if (!PyArg_ParseTupleAndKeywords(_args, _kwargs,
+                    "O|OOO!O!:get_code_var_counts", kwlist,
+                    &codearg, &globalnames, &attrnames,
+                    &PyDict_Type, &globalsns, &PyDict_Type, &builtinsns))
+    {
+        return NULL;
+    }
+    if (PyFunction_Check(codearg)) {
+        if (globalsns == NULL) {
+            globalsns = PyFunction_GET_GLOBALS(codearg);
+        }
+        if (builtinsns == NULL) {
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
+        }
+        codearg = PyFunction_GET_CODE(codearg);
+    }
+    else if (!PyCode_Check(codearg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument must be a code object or a function");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)codearg;
+
+    _PyCode_var_counts_t counts = {0};
+    _PyCode_GetVarCounts(code, &counts);
+    if (_PyCode_SetUnboundVarCounts(
+            tstate, code, &counts, globalnames, attrnames,
+            globalsns, builtinsns) < 0)
+    {
+        return NULL;
+    }
+
+#define SET_COUNT(DICT, STRUCT, NAME) \
+    do { \
+        PyObject *count = PyLong_FromLong(STRUCT.NAME); \
+        if (count == NULL) { \
+            goto error; \
+        } \
+        int res = PyDict_SetItemString(DICT, #NAME, count); \
+        Py_DECREF(count); \
+        if (res < 0) { \
+            goto error; \
+        } \
+    } while (0)
+
+    PyObject *locals = NULL;
+    PyObject *args = NULL;
+    PyObject *cells = NULL;
+    PyObject *hidden = NULL;
+    PyObject *unbound = NULL;
+    PyObject *globals = NULL;
+    PyObject *countsobj = PyDict_New();
+    if (countsobj == NULL) {
+        return NULL;
+    }
+    SET_COUNT(countsobj, counts, total);
+
+    // locals
+    locals = PyDict_New();
+    if (locals == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(countsobj, "locals", locals) < 0) {
+        goto error;
+    }
+    SET_COUNT(locals, counts.locals, total);
+
+    // locals.args
+    args = PyDict_New();
+    if (args == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(locals, "args", args) < 0) {
+        goto error;
+    }
+    SET_COUNT(args, counts.locals.args, total);
+    SET_COUNT(args, counts.locals.args, numposonly);
+    SET_COUNT(args, counts.locals.args, numposorkw);
+    SET_COUNT(args, counts.locals.args, numkwonly);
+    SET_COUNT(args, counts.locals.args, varargs);
+    SET_COUNT(args, counts.locals.args, varkwargs);
+
+    // locals.numpure
+    SET_COUNT(locals, counts.locals, numpure);
+
+    // locals.cells
+    cells = PyDict_New();
+    if (cells == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(locals, "cells", cells) < 0) {
+        goto error;
+    }
+    SET_COUNT(cells, counts.locals.cells, total);
+    SET_COUNT(cells, counts.locals.cells, numargs);
+    SET_COUNT(cells, counts.locals.cells, numothers);
+
+    // locals.hidden
+    hidden = PyDict_New();
+    if (hidden == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(locals, "hidden", hidden) < 0) {
+        goto error;
+    }
+    SET_COUNT(hidden, counts.locals.hidden, total);
+    SET_COUNT(hidden, counts.locals.hidden, numpure);
+    SET_COUNT(hidden, counts.locals.hidden, numcells);
+
+    // numfree
+    SET_COUNT(countsobj, counts, numfree);
+
+    // unbound
+    unbound = PyDict_New();
+    if (unbound == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(countsobj, "unbound", unbound) < 0) {
+        goto error;
+    }
+    SET_COUNT(unbound, counts.unbound, total);
+    SET_COUNT(unbound, counts.unbound, numattrs);
+    SET_COUNT(unbound, counts.unbound, numunknown);
+
+    // unbound.globals
+    globals = PyDict_New();
+    if (globals == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(unbound, "globals", globals) < 0) {
+        goto error;
+    }
+    SET_COUNT(globals, counts.unbound.globals, total);
+    SET_COUNT(globals, counts.unbound.globals, numglobal);
+    SET_COUNT(globals, counts.unbound.globals, numbuiltin);
+    SET_COUNT(globals, counts.unbound.globals, numunknown);
+
+#undef SET_COUNT
+
+    Py_DECREF(locals);
+    Py_DECREF(args);
+    Py_DECREF(cells);
+    Py_DECREF(hidden);
+    Py_DECREF(unbound);
+    Py_DECREF(globals);
+    return countsobj;
+
+error:
+    Py_DECREF(countsobj);
+    Py_XDECREF(locals);
+    Py_XDECREF(args);
+    Py_XDECREF(cells);
+    Py_XDECREF(hidden);
+    Py_XDECREF(unbound);
+    Py_XDECREF(globals);
+    return NULL;
+}
+
+static PyObject *
+verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *codearg;
+    PyObject *globalnames = NULL;
+    PyObject *globalsns = NULL;
+    PyObject *builtinsns = NULL;
+    static char *kwlist[] = {"code", "globalnames",
+                             "globalsns", "builtinsns", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "O|O!O!O!:get_code_var_counts", kwlist,
+                    &codearg, &PySet_Type, &globalnames,
+                    &PyDict_Type, &globalsns, &PyDict_Type, &builtinsns))
+    {
+        return NULL;
+    }
+    if (PyFunction_Check(codearg)) {
+        if (globalsns == NULL) {
+            globalsns = PyFunction_GET_GLOBALS(codearg);
+        }
+        if (builtinsns == NULL) {
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
+        }
+        codearg = PyFunction_GET_CODE(codearg);
+    }
+    else if (!PyCode_Check(codearg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument must be a code object or a function");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)codearg;
+
+    if (_PyCode_VerifyStateless(
+                tstate, code, globalnames, globalsns, builtinsns) < 0)
+    {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 #ifdef _Py_TIER2
@@ -1489,11 +1694,12 @@ create_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *
 destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"id", NULL};
+    static char *kwlist[] = {"id", "basic", NULL};
     PyObject *idobj = NULL;
+    int basic = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "O:destroy_interpreter", kwlist,
-                                     &idobj))
+                                     "O|p:destroy_interpreter", kwlist,
+                                     &idobj, &basic))
     {
         return NULL;
     }
@@ -1503,7 +1709,27 @@ destroy_interpreter(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    _PyXI_EndInterpreter(interp, NULL, NULL);
+    if (basic)
+    {
+        // Test the basic Py_EndInterpreter with weird out of order thread states
+        PyThreadState *t1, *t2;
+        PyThreadState *prev;
+        t1 = interp->threads.head;
+        if (t1 == NULL) {
+            t1 = PyThreadState_New(interp);
+        }
+        t2 = PyThreadState_New(interp);
+        prev = PyThreadState_Swap(t2);
+        PyThreadState_Clear(t1);
+        PyThreadState_Delete(t1);
+        Py_EndInterpreter(t2);
+        PyThreadState_Swap(prev);
+    }
+    else
+    {
+        // use the cross interpreter _PyXI_EndInterpreter normally
+        _PyXI_EndInterpreter(interp, NULL, NULL);
+    }
     Py_RETURN_NONE;
 }
 
@@ -1563,9 +1789,9 @@ finally:
 
 /* To run some code in a sub-interpreter.
 
-Generally you can use test.support.interpreters,
+Generally you can use the interpreters module,
 but we keep this helper as a distinct implementation.
-That's especially important for testing test.support.interpreters.
+That's especially important for testing the interpreters module.
 */
 static PyObject *
 run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1769,7 +1995,14 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     if (strcmp(mode, "xidata") == 0) {
-        if (_PyObject_GetXIData(tstate, obj, xidata) != 0) {
+        if (_PyObject_GetXIDataNoFallback(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "fallback") == 0) {
+        xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
+        if (_PyObject_GetXIData(tstate, obj, fallback, xidata) != 0)
+        {
             goto error;
         }
     }
@@ -1780,6 +2013,26 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     else if (strcmp(mode, "marshal") == 0) {
         if (_PyMarshal_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "code") == 0) {
+        if (_PyCode_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "func") == 0) {
+        if (_PyFunction_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "script") == 0) {
+        if (_PyCode_GetScriptXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "script-pure") == 0) {
+        if (_PyCode_GetPureScriptXIData(tstate, obj, xidata) != 0) {
             goto error;
         }
     }
@@ -1954,8 +2207,7 @@ get_code(PyObject *obj)
         return (PyCodeObject *)PyFunction_GetCode(obj);
     }
     return (PyCodeObject *)PyErr_Format(
-        PyExc_TypeError, "expected function or code object, got %s",
-        Py_TYPE(obj)->tp_name);
+        PyExc_TypeError, "expected function or code object, got %T", obj);
 }
 
 static PyObject *
@@ -2093,6 +2345,37 @@ incref_decref_delayed(PyObject *self, PyObject *op)
     Py_RETURN_NONE;
 }
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+
+EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
+    let idx = 0;
+    const encoder = new TextEncoder();
+    const bufs = [
+        encoder.encode("ab\n"),
+        encoder.encode("fi\n"),
+        encoder.encode("xy\n"),
+    ];
+    function sleep(t) {
+        return new Promise(res => setTimeout(res, t));
+    }
+    FS.createAsyncInputDevice("/dev", "blah", async () => {
+        await sleep(5);
+        return bufs[(idx ++) % 3];
+    });
+    return !!WebAssembly.promising;
+});
+
+static PyObject *
+emscripten_set_up_async_input_device(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+    if (emscripten_set_up_async_input_device_js()) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+#endif
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2125,7 +2408,10 @@ static PyMethodDef module_functions[] = {
     {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
-    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
+    {"get_code_var_counts", _PyCFunction_CAST(get_code_var_counts),
+     METH_VARARGS | METH_KEYWORDS, NULL},
+    {"verify_stateless_code", _PyCFunction_CAST(verify_stateless_code),
+     METH_VARARGS | METH_KEYWORDS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
@@ -2192,6 +2478,9 @@ static PyMethodDef module_functions[] = {
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
+#ifdef __EMSCRIPTEN__
+    {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
+#endif
     {NULL, NULL} /* sentinel */
 };
 

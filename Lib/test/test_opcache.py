@@ -1810,20 +1810,6 @@ class TestSpecializer(TestBase):
         self.assert_specialized(compare_op_str, "COMPARE_OP_STR")
         self.assert_no_opcode(compare_op_str, "COMPARE_OP")
 
-    @cpython_only
-    @requires_specialization_ft
-    def test_load_const(self):
-        def load_const():
-            def unused(): pass
-            # Currently, the empty tuple is immortal, and the otherwise
-            # unused nested function's code object is mortal. This test will
-            # have to use different values if either of that changes.
-            return ()
-
-        load_const()
-        self.assert_specialized(load_const, "LOAD_CONST_IMMORTAL")
-        self.assert_specialized(load_const, "LOAD_CONST_MORTAL")
-        self.assert_no_opcode(load_const, "LOAD_CONST")
 
     @cpython_only
     @requires_specialization_ft

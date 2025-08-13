@@ -11,6 +11,7 @@
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 
@@ -853,8 +854,8 @@ static const formatdef native_table[] = {
     {'e',       sizeof(short),  _Alignof(short),    nu_halffloat,   np_halffloat},
     {'f',       sizeof(float),  _Alignof(float),    nu_float,       np_float},
     {'d',       sizeof(double), _Alignof(double),   nu_double,      np_double},
-    {'F',       2*sizeof(float), _Alignof(float[2]), nu_float_complex, np_float_complex},
-    {'D',       2*sizeof(double), _Alignof(double[2]), nu_double_complex, np_double_complex},
+    {'F',       2*sizeof(float), _Alignof(float), nu_float_complex, np_float_complex},
+    {'D',       2*sizeof(double), _Alignof(double), nu_double_complex, np_double_complex},
     {'P',       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
     {0}
 };
@@ -1794,9 +1795,7 @@ s_dealloc(PyObject *op)
     PyStructObject *s = PyStructObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(s);
     PyObject_GC_UnTrack(s);
-    if (s->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, s->weakreflist);
     if (s->s_codes != NULL) {
         PyMem_Free(s->s_codes);
     }

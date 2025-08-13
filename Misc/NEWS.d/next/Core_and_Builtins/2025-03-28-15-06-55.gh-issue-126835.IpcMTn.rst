@@ -1,3 +1,0 @@
-Move constant folding to the peephole optimizer. Rename AST optimization
-related files (Python/ast_opt.c -> Python/ast_preprocess.c), structs (_PyASTOptimizeState -> _PyASTPreprocessState)
-and functions (_PyAST_Optimize -> _PyAST_Preprocess, _PyCompile_AstOptimize -> _PyCompile_AstPreprocess).

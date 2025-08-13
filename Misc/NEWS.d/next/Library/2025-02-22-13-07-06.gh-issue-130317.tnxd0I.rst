@@ -1,4 +1,0 @@
-Fix :c:func:`PyFloat_Pack2` and :c:func:`PyFloat_Unpack2` for NaN's with
-payload.  This corrects round-trip for :func:`struct.unpack` and
-:func:`struct.pack` in case of the IEEE 754 binary16 "half precision" type.
-Patch by Sergey B Kirpichev.

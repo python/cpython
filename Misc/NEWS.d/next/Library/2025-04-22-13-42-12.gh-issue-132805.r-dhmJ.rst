@@ -1,2 +1,0 @@
-Fix incorrect handling of nested non-constant values in the FORWARDREF
-format in :mod:`annotationlib`.

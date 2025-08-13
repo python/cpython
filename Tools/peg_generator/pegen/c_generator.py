@@ -44,7 +44,7 @@ EXTENSION_PREFIX = """\
 #    define MAXSTACK 4000
 #  endif
 #else
-#  define MAXSTACK 4000
+#  define MAXSTACK 6000
 #endif
 
 """
@@ -214,33 +214,47 @@ class CCallMakerVisitor(GrammarVisitor):
             call.assigned_variable_type = node.type
         return call
 
+    def assert_no_undefined_behavior(
+        self, call: FunctionCall, wrapper: str, expected_rtype: str | None,
+    ) -> None:
+        if call.return_type != expected_rtype:
+            raise RuntimeError(
+                f"{call.function} return type is incompatible with {wrapper}: "
+                f"expect: {expected_rtype}, actual: {call.return_type}"
+            )
+
     def lookahead_call_helper(self, node: Lookahead, positive: int) -> FunctionCall:
         call = self.generate_call(node.node)
-        if call.nodetype == NodeTypes.NAME_TOKEN:
-            return FunctionCall(
-                function=f"_PyPegen_lookahead_with_name",
-                arguments=[positive, call.function, *call.arguments],
-                return_type="int",
-            )
+        comment = None
+        if call.nodetype is NodeTypes.NAME_TOKEN:
+            function = "_PyPegen_lookahead_for_expr"
+            self.assert_no_undefined_behavior(call, function, "expr_ty")
+        elif call.nodetype is NodeTypes.STRING_TOKEN:
+            # _PyPegen_string_token() returns 'void *' instead of 'Token *';
+            # in addition, the overall function call would return 'expr_ty'.
+            assert call.function == "_PyPegen_string_token"
+            function = "_PyPegen_lookahead"
+            self.assert_no_undefined_behavior(call, function, "expr_ty")
         elif call.nodetype == NodeTypes.SOFT_KEYWORD:
-            return FunctionCall(
-                function=f"_PyPegen_lookahead_with_string",
-                arguments=[positive, call.function, *call.arguments],
-                return_type="int",
-            )
+            function = "_PyPegen_lookahead_with_string"
+            self.assert_no_undefined_behavior(call, function, "expr_ty")
         elif call.nodetype in {NodeTypes.GENERIC_TOKEN, NodeTypes.KEYWORD}:
-            return FunctionCall(
-                function=f"_PyPegen_lookahead_with_int",
-                arguments=[positive, call.function, *call.arguments],
-                return_type="int",
-                comment=f"token={node.node}",
-            )
+            function = "_PyPegen_lookahead_with_int"
+            self.assert_no_undefined_behavior(call, function, "Token *")
+            comment = f"token={node.node}"
+        elif call.return_type == "expr_ty":
+            function = "_PyPegen_lookahead_for_expr"
+        elif call.return_type == "stmt_ty":
+            function = "_PyPegen_lookahead_for_stmt"
         else:
-            return FunctionCall(
-                function=f"_PyPegen_lookahead",
-                arguments=[positive, f"(void *(*)(Parser *)) {call.function}", *call.arguments],
-                return_type="int",
-            )
+            function = "_PyPegen_lookahead"
+            self.assert_no_undefined_behavior(call, function, None)
+        return FunctionCall(
+            function=function,
+            arguments=[positive, call.function, *call.arguments],
+            return_type="int",
+            comment=comment,
+        )
 
     def visit_PositiveLookahead(self, node: PositiveLookahead) -> FunctionCall:
         return self.lookahead_call_helper(node, 1)

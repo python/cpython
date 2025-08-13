@@ -2784,6 +2784,43 @@ error:
     return -1;
 }
 #else   /* MS_WINDOWS */
+
+// The Windows Games API family doesn't expose GetNamedPipeHandleStateW so attempt
+// to load it directly from the Kernel32.dll
+#if !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
+BOOL
+GetNamedPipeHandleStateW(HANDLE hNamedPipe, LPDWORD lpState, LPDWORD lpCurInstances, LPDWORD lpMaxCollectionCount,
+                         LPDWORD lpCollectDataTimeout, LPWSTR lpUserName, DWORD nMaxUserNameSize)
+{
+    static int initialized = 0;
+    typedef BOOL(__stdcall* PGetNamedPipeHandleStateW) (
+        HANDLE hNamedPipe, LPDWORD lpState, LPDWORD lpCurInstances, LPDWORD lpMaxCollectionCount,
+        LPDWORD lpCollectDataTimeout, LPWSTR lpUserName, DWORD nMaxUserNameSize);
+    static PGetNamedPipeHandleStateW _GetNamedPipeHandleStateW;
+
+    if (initialized == 0) {
+        HMODULE api = LoadLibraryExW(L"Kernel32.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (api) {
+            _GetNamedPipeHandleStateW = (PGetNamedPipeHandleStateW)GetProcAddress(
+                api, "GetNamedPipeHandleStateW");
+        }
+        else {
+            _GetNamedPipeHandleStateW = NULL;
+        }
+        initialized = 1;
+    }
+
+    if (!_GetNamedPipeHandleStateW) {
+        SetLastError(E_NOINTERFACE);
+        return FALSE;
+    }
+
+    return _GetNamedPipeHandleStateW(
+        hNamedPipe, lpState, lpCurInstances, lpMaxCollectionCount, lpCollectDataTimeout, lpUserName, nMaxUserNameSize
+    );
+}
+#endif /* !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
+
 int
 _Py_get_blocking(int fd)
 {

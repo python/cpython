@@ -17,6 +17,87 @@ from libclinic.converter import (
 TypeSet = set[bltns.type[object]]
 
 
+class BaseUnsignedIntConverter(CConverter):
+    bitwise = False
+
+    def use_converter(self) -> None:
+        if self.converter:
+            self.add_include('pycore_long.h',
+                             f'{self.converter}()')
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        if self.bitwise:
+            result = self.format_code("""
+                {{{{
+                    Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof({type}),
+                            Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                            Py_ASNATIVEBYTES_ALLOW_INDEX |
+                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                    if (_bytes < 0) {{{{
+                        goto exit;
+                    }}}}
+                    if ((size_t)_bytes > sizeof({type})) {{{{
+                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "integer value out of range", 1) < 0)
+                        {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                }}}}
+                """,
+                argname=argname,
+                type=self.type,
+                bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi))
+            if self.format_unit in ('k', 'K'):
+                result = self.format_code("""
+                if (!PyIndex_Check({argname})) {{{{
+                    {bad_argument}
+                    goto exit;
+                }}}}""",
+                    argname=argname,
+                    bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi)) + result
+            return result
+
+        if not limited_capi:
+            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
+        return self.format_code("""
+            {{{{
+                Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof({type}),
+                        Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                        Py_ASNATIVEBYTES_ALLOW_INDEX |
+                        Py_ASNATIVEBYTES_REJECT_NEGATIVE |
+                        Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                if (_bytes < 0) {{{{
+                    goto exit;
+                }}}}
+                if ((size_t)_bytes > sizeof({type})) {{{{
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "Python int too large for C {type}");
+                    goto exit;
+                }}}}
+            }}}}
+            """,
+            argname=argname,
+            type=self.type)
+
+
+class uint8_converter(BaseUnsignedIntConverter):
+    type = "uint8_t"
+    converter = '_PyLong_UInt8_Converter'
+
+class uint16_converter(BaseUnsignedIntConverter):
+    type = "uint16_t"
+    converter = '_PyLong_UInt16_Converter'
+
+class uint32_converter(BaseUnsignedIntConverter):
+    type = "uint32_t"
+    converter = '_PyLong_UInt32_Converter'
+
+class uint64_converter(BaseUnsignedIntConverter):
+    type = "uint64_t"
+    converter = '_PyLong_UInt64_Converter'
+
+
 class bool_converter(CConverter):
     type = 'int'
     default_type = bool
@@ -124,13 +205,14 @@ class char_converter(CConverter):
 
 
 @add_legacy_c_converter('B', bitwise=True)
-class unsigned_char_converter(CConverter):
+class unsigned_char_converter(BaseUnsignedIntConverter):
     type = 'unsigned char'
     default_type = int
     format_unit = 'b'
     c_ignored_default = "'\0'"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
+        self.bitwise = bitwise
         if bitwise:
             self.format_unit = 'B'
 
@@ -150,19 +232,6 @@ class unsigned_char_converter(CConverter):
                     else if (ival > UCHAR_MAX) {{{{
                         PyErr_SetString(PyExc_OverflowError,
                                         "unsigned byte integer is greater than maximum");
-                        goto exit;
-                    }}}}
-                    else {{{{
-                        {paramname} = (unsigned char) ival;
-                    }}}}
-                }}}}
-                """,
-                argname=argname)
-        elif self.format_unit == 'B':
-            return self.format_code("""
-                {{{{
-                    unsigned long ival = PyLong_AsUnsignedLongMask({argname});
-                    if (ival == (unsigned long)-1 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
                     else {{{{
@@ -211,56 +280,17 @@ class short_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
-def format_inline_unsigned_int_converter(self: CConverter, argname: str) -> str:
-    return self.format_code("""
-        {{{{
-            Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof({type}),
-                    Py_ASNATIVEBYTES_NATIVE_ENDIAN |
-                    Py_ASNATIVEBYTES_ALLOW_INDEX |
-                    Py_ASNATIVEBYTES_REJECT_NEGATIVE |
-                    Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
-            if (_bytes < 0) {{{{
-                goto exit;
-            }}}}
-            if ((size_t)_bytes > sizeof({type})) {{{{
-                PyErr_SetString(PyExc_OverflowError,
-                                "Python int too large for C {type}");
-                goto exit;
-            }}}}
-        }}}}
-        """,
-        argname=argname,
-        type=self.type)
-
-
-class unsigned_short_converter(CConverter):
+class unsigned_short_converter(BaseUnsignedIntConverter):
     type = 'unsigned short'
     default_type = int
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
+        self.bitwise = bitwise
         if bitwise:
             self.format_unit = 'H'
         else:
             self.converter = '_PyLong_UnsignedShort_Converter'
-
-    def use_converter(self) -> None:
-        if self.converter == '_PyLong_UnsignedShort_Converter':
-            self.add_include('pycore_long.h',
-                             '_PyLong_UnsignedShort_Converter()')
-
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
-        if self.format_unit == 'H':
-            return self.format_code("""
-                {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
-                if ({paramname} == (unsigned short)-1 && PyErr_Occurred()) {{{{
-                    goto exit;
-                }}}}
-                """,
-                argname=argname)
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        return format_inline_unsigned_int_converter(self, argname)
 
 
 @add_legacy_c_converter('C', accept={str})
@@ -311,34 +341,17 @@ class int_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
-class unsigned_int_converter(CConverter):
+class unsigned_int_converter(BaseUnsignedIntConverter):
     type = 'unsigned int'
     default_type = int
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
+        self.bitwise = bitwise
         if bitwise:
             self.format_unit = 'I'
         else:
             self.converter = '_PyLong_UnsignedInt_Converter'
-
-    def use_converter(self) -> None:
-        if self.converter == '_PyLong_UnsignedInt_Converter':
-            self.add_include('pycore_long.h',
-                             '_PyLong_UnsignedInt_Converter()')
-
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
-        if self.format_unit == 'I':
-            return self.format_code("""
-                {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
-                if ({paramname} == (unsigned int)-1 && PyErr_Occurred()) {{{{
-                    goto exit;
-                }}}}
-                """,
-                argname=argname)
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        return format_inline_unsigned_int_converter(self, argname)
 
 
 class long_converter(CConverter):
@@ -359,37 +372,17 @@ class long_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
-class unsigned_long_converter(CConverter):
+class unsigned_long_converter(BaseUnsignedIntConverter):
     type = 'unsigned long'
     default_type = int
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
+        self.bitwise = bitwise
         if bitwise:
             self.format_unit = 'k'
         else:
             self.converter = '_PyLong_UnsignedLong_Converter'
-
-    def use_converter(self) -> None:
-        if self.converter == '_PyLong_UnsignedLong_Converter':
-            self.add_include('pycore_long.h',
-                             '_PyLong_UnsignedLong_Converter()')
-
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
-        if self.format_unit == 'k':
-            return self.format_code("""
-                if (!PyIndex_Check({argname})) {{{{
-                    {bad_argument}
-                    goto exit;
-                }}}}
-                {paramname} = PyLong_AsUnsignedLongMask({argname});
-                """,
-                argname=argname,
-                bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi),
-            )
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        return format_inline_unsigned_int_converter(self, argname)
 
 
 class long_long_converter(CConverter):
@@ -410,37 +403,17 @@ class long_long_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
-class unsigned_long_long_converter(CConverter):
+class unsigned_long_long_converter(BaseUnsignedIntConverter):
     type = 'unsigned long long'
     default_type = int
     c_ignored_default = "0"
 
     def converter_init(self, *, bitwise: bool = False) -> None:
+        self.bitwise = bitwise
         if bitwise:
             self.format_unit = 'K'
         else:
             self.converter = '_PyLong_UnsignedLongLong_Converter'
-
-    def use_converter(self) -> None:
-        if self.converter == '_PyLong_UnsignedLongLong_Converter':
-            self.add_include('pycore_long.h',
-                             '_PyLong_UnsignedLongLong_Converter()')
-
-    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
-        if self.format_unit == 'K':
-            return self.format_code("""
-                if (!PyIndex_Check({argname})) {{{{
-                    {bad_argument}
-                    goto exit;
-                }}}}
-                {paramname} = PyLong_AsUnsignedLongLongMask({argname});
-                """,
-                argname=argname,
-                bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi),
-            )
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        return format_inline_unsigned_int_converter(self, argname)
 
 
 class Py_ssize_t_converter(CConverter):
@@ -557,14 +530,10 @@ class slice_index_converter(CConverter):
                 argname=argname)
 
 
-class size_t_converter(CConverter):
+class size_t_converter(BaseUnsignedIntConverter):
     type = 'size_t'
     converter = '_PyLong_Size_t_Converter'
     c_ignored_default = "0"
-
-    def use_converter(self) -> None:
-        self.add_include('pycore_long.h',
-                         '_PyLong_Size_t_Converter()')
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'n':
@@ -575,9 +544,7 @@ class size_t_converter(CConverter):
                 }}}}
                 """,
                 argname=argname)
-        if not limited_capi:
-            return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        return format_inline_unsigned_int_converter(self, argname)
+        return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
 class fildes_converter(CConverter):

@@ -1,6 +1,0 @@
-Remove :meth:`!__reduce__` and :meth:`!__reduce_ex__` methods that always
-raise :exc:`TypeError` in the C implementation of :class:`io.FileIO`,
-:class:`io.BufferedReader`, :class:`io.BufferedWriter` and
-:class:`io.BufferedRandom` and replace them with default
-:meth:`!__getstate__` methods that raise :exc:`!TypeError`.
-This restores fine details of behavior of Python 3.11 and older versions.

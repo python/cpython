@@ -1,3 +1,0 @@
-:func:`fcntl.fcntl` and :func:`fcntl.ioctl` can now detect a buffer overflow
-and raise :exc:`SystemError`. The stack and memory can be corrupted in such
-case, so treat this error as fatal.

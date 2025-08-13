@@ -1,2 +1,0 @@
-Fix an overflow when handling the :ref:`K <capi-py-buildvalue-format-K>` format
-in :c:func:`Py_BuildValue`. Patch by Bénédikt Tran.
