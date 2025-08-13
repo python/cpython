@@ -1180,7 +1180,7 @@ instead of *f* at the beginning of rule and token names and in the prefix.
 .. grammar-snippet::
    :group: python-grammar
 
-   tstring:    `TSTRING_START` `tstring_middle`* `TSTRING_END`
+   tstring:    TSTRING_START tstring_middle* TSTRING_END
 
    <rest of the t-string grammar is omitted; see above>
 
