@@ -3295,15 +3295,15 @@ dir_fd, effective_ids, and follow_symlinks may not be implemented
   NotImplementedError.
 
 Note that most operations will use the effective uid/gid, therefore this
-  routine can be used in a suid/sgid environment to test if the invoking user
-  has the specified access to the path.
+  routine can be used in a suid/sgid environment to test if the invoking
+  user has the specified access to the path.
 
 [clinic start generated code]*/
 
 static int
 os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
                int effective_ids, int follow_symlinks)
-/*[clinic end generated code: output=cf84158bc90b1a77 input=3ffe4e650ee3bf20]*/
+/*[clinic end generated code: output=cf84158bc90b1a77 input=c33565f7584b99e4]*/
 {
     int return_value;
 

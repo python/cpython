@@ -1220,9 +1220,9 @@ are always available.  They are listed here in alphabetical order.
       Added the *strict* parameter.
 
 
-.. function:: max(iterable, *, key=None)
-              max(iterable, *, default, key=None)
-              max(arg1, arg2, *args, key=None)
+.. function:: max(iterable, /, *, key=None)
+              max(iterable, /, *, default, key=None)
+              max(arg1, arg2, /, *args, key=None)
 
    Return the largest item in an iterable or the largest of two or more
    arguments.
@@ -1258,9 +1258,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *, key=None)
-              min(iterable, *, default, key=None)
-              min(arg1, arg2, *args, key=None)
+.. function:: min(iterable, /, *, key=None)
+              min(iterable, /, *, default, key=None)
+              min(arg1, arg2, /, *args, key=None)
 
    Return the smallest item in an iterable or the smallest of two or more
    arguments.
@@ -1562,12 +1562,18 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
 
-.. function:: ord(c)
+.. function:: ord(character, /)
 
-   Given a string representing one Unicode character, return an integer
-   representing the Unicode code point of that character.  For example,
+   Return the ordinal value of a character.
+
+   If the argument is a one-character string, return the Unicode code point
+   of that character.  For example,
    ``ord('a')`` returns the integer ``97`` and ``ord('€')`` (Euro sign)
    returns ``8364``.  This is the inverse of :func:`chr`.
+
+   If the argument is a :class:`bytes` or :class:`bytearray` object of
+   length 1, return its single byte value.
+   For example, ``ord(b'a')`` returns the integer ``97``.
 
 
 .. function:: pow(base, exp, mod=None)
@@ -1729,8 +1735,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. class:: range(stop)
-           range(start, stop, step=1)
+.. class:: range(stop, /)
+           range(start, stop, step=1, /)
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
