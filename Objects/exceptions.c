@@ -1869,6 +1869,9 @@ ImportError_repr(PyObject *self)
 {
     int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
     PyImportErrorObject *exc = PyImportErrorObject_CAST(self);
+    if (exc->name == NULL && exc->path == NULL) {
+        return BaseException_repr(self);
+    }
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         goto error;
@@ -1880,10 +1883,10 @@ ImportError_repr(PyObject *self)
     if (PyUnicodeWriter_WriteSubstring(
         writer, r, 0, PyUnicode_GET_LENGTH(r) - 1) < 0)
     {
-        Py_XDECREF(r);
+        Py_DECREF(r);
         goto error;
     }
-    Py_XDECREF(r);
+    Py_DECREF(r);
     if (exc->name) {
         if (hasargs) {
             if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
