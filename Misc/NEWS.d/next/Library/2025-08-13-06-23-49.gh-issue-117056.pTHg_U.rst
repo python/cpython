@@ -1,0 +1,3 @@
+Keep compatible function signatures for public methods of different
+implementations of the :mod:`decimal` module (C extension and pure-Python).
+Patch by Sergey B Kirpichev.

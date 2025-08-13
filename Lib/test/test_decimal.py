@@ -5841,6 +5841,7 @@ class SignatureTest(unittest.TestCase):
                      'c': C.Decimal(1),
                      'exp': C.Decimal(1),
                      'modulo': C.Decimal(1),
+                     'object': C.Decimal(1),
                      'num': "1",
                      'f': 1.0,
                      'rounding': C.ROUND_HALF_UP,
@@ -5852,6 +5853,7 @@ class SignatureTest(unittest.TestCase):
                      'c': P.Decimal(1),
                      'exp': P.Decimal(1),
                      'modulo': P.Decimal(1),
+                     'memo': P.Decimal(1),
                      'num': "1",
                      'f': 1.0,
                      'rounding': P.ROUND_HALF_UP,
@@ -5876,15 +5878,31 @@ class SignatureTest(unittest.TestCase):
             if s == 'x': return 'a'
             if s == 'y': return 'b'
             if s == 'z': return 'c'
+            if s == 'object': return 'memo'  # __deepcopy__
             return s
+
+        bad_meths = {'Decimal': ['__abs__', '__add__', '__divmod__',
+                                 '__eq__', '__floordiv__', '__format__',
+                                 '__ge__', '__gt__', '__le__', '__lt__',
+                                 '__mod__', '__mul__', '__neg__',
+                                 '__new__', '__pos__', '__pow__', '__add__',
+                                 '__radd__', '__rdivmod__', '__rfloordiv__',
+                                 '__rmod__', '__rmul__', '__round__',
+                                 '__rpow__', '__rsub__', '__rtruediv__',
+                                 '__str__', '__sub__', '__truediv__'],
+                     'Context': ['__delattr__', '__init__', '__setattr__']}
 
         def doit(ty):
             p_type = getattr(P, ty)
             c_type = getattr(C, ty)
             for attr in dir(p_type):
-                if attr.startswith('_'):
+                if attr.startswith('_') and not attr.startswith('__'):
+                    continue
+                if attr in bad_meths[ty]:
                     continue
                 p_func = getattr(p_type, attr)
+                if not callable(p_func):
+                    continue
                 c_func = getattr(c_type, attr)
                 if inspect.isfunction(p_func):
                     p_sig = inspect.signature(p_func)
@@ -5901,7 +5919,7 @@ class SignatureTest(unittest.TestCase):
                     c_kind = [x.kind for x in c_sig.parameters.values()]
 
                     # 'self' parameter:
-                    self.assertIs(p_kind[0], POS_KWD)
+                    self.assertIs(p_kind[0], POS)
                     self.assertIs(c_kind[0], POS)
 
                     # remaining parameters:
