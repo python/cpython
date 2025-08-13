@@ -3445,8 +3445,7 @@ produce new objects.
 
    Return a copy of the sequence with specified leading bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
-   be removed - the name refers to the fact this method is usually used with
-   ASCII characters.  If omitted or ``None``, the *bytes* argument defaults
+   be removed.  If omitted or ``None``, the *bytes* argument defaults
    to removing ASCII whitespace.  The *bytes* argument is not a prefix;
    rather, all combinations of its values are stripped::
 
@@ -3501,8 +3500,7 @@ produce new objects.
 
    Return a copy of the sequence with specified trailing bytes removed.  The
    *bytes* argument is a binary sequence specifying the set of byte values to
-   be removed - the name refers to the fact this method is usually used with
-   ASCII characters.  If omitted or ``None``, the *bytes* argument defaults to
+   be removed.  If omitted or ``None``, the *bytes* argument defaults to
    removing ASCII whitespace.  The *bytes* argument is not a suffix; rather,
    all combinations of its values are stripped::
 
@@ -3578,8 +3576,7 @@ produce new objects.
 
    Return a copy of the sequence with specified leading and trailing bytes
    removed. The *bytes* argument is a binary sequence specifying the set of
-   byte values to be removed - the name refers to the fact this method is
-   usually used with ASCII characters.  If omitted or ``None``, the *bytes*
+   byte values to be removed.  If omitted or ``None``, the *bytes*
    argument defaults to removing ASCII whitespace. The *bytes* argument is
    not a prefix or suffix; rather, all combinations of its values are
    stripped::
