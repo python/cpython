@@ -902,13 +902,15 @@ static PyMethodDef framelocalsproxy_methods[] = {
     {"keys", framelocalsproxy_keys, METH_NOARGS, NULL},
     {"values", framelocalsproxy_values, METH_NOARGS, NULL},
     {"items", _PyCFunction_CAST(framelocalsproxy_items), METH_NOARGS, NULL},
-    {"get", _PyCFunction_CAST(framelocalsproxy_get), METH_FASTCALL, NULL},
-    {"pop", _PyCFunction_CAST(framelocalsproxy_pop), METH_FASTCALL, NULL},
+    {"get", _PyCFunction_CAST(framelocalsproxy_get), METH_FASTCALL,
+        PyDoc_STR("get($self, key, default=None, /)\n--\n\n")},
+    {"pop", _PyCFunction_CAST(framelocalsproxy_pop), METH_FASTCALL,
+        PyDoc_STR("pop($self, key, /)\n($self, key, default, /)\n--\n\n")},
     {
         "setdefault",
         _PyCFunction_CAST(framelocalsproxy_setdefault),
         METH_FASTCALL,
-        NULL
+        PyDoc_STR("setdefault($self, key, default=None, /)\n--\n\n")
     },
     {NULL, NULL}   /* sentinel */
 };

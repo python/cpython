@@ -1436,6 +1436,8 @@ zero_in_shape(PyMemoryViewObject *mv)
    size of the original input. Otherwise, an error is raised.
 */
 /*[clinic input]
+@text_signature "($self, format, /)"
+@text_signature "($self, format, shape, /)"
 memoryview.cast
 
     format: unicode
@@ -1447,7 +1449,7 @@ Cast a memoryview to a new format or shape.
 static PyObject *
 memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
                      PyObject *shape)
-/*[clinic end generated code: output=bae520b3a389cbab input=138936cc9041b1a3]*/
+/*[clinic end generated code: output=bae520b3a389cbab input=7a8da62fc30e35e4]*/
 {
     PyMemoryViewObject *mv = NULL;
     Py_ssize_t ndim = 1;
@@ -2315,6 +2317,8 @@ memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
 }
 
 /*[clinic input]
+@text_signature "($self, /, *, bytes_per_sep=1)"
+@text_signature "($self, /, sep, bytes_per_sep=1)"
 memoryview.hex
 
     sep: object = NULL
@@ -2340,7 +2344,7 @@ Example:
 static PyObject *
 memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
                     int bytes_per_sep)
-/*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
+/*[clinic end generated code: output=430ca760f94f3ca7 input=fdf8251033d71260]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     PyObject *bytes;

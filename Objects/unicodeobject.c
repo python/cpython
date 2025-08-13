@@ -13333,6 +13333,8 @@ unicode_swapcase_impl(PyObject *self)
 
 /*[clinic input]
 
+@text_signature "($self, x, /)"
+@text_signature "($self, x, y, z='', /)"
 @staticmethod
 str.maketrans as unicode_maketrans
 
@@ -13357,7 +13359,7 @@ must be a string, whose characters will be mapped to None in the result.
 
 static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
-/*[clinic end generated code: output=a925c89452bd5881 input=7bfbf529a293c6c5]*/
+/*[clinic end generated code: output=a925c89452bd5881 input=39cc0e989ac451fd]*/
 {
     PyObject *new = NULL, *key, *value;
     Py_ssize_t i = 0;
@@ -15703,8 +15705,12 @@ _PyUnicode_ExactDealloc(PyObject *op)
 }
 
 PyDoc_STRVAR(unicode_doc,
-"str(object='') -> str\n\
-str(bytes_or_buffer[, encoding[, errors]]) -> str\n\
+"str()\n\
+(object)\n\
+(object, encoding)\n\
+(object, encoding, errors)\n\
+(object, *, errors)\n\
+--\n\
 \n\
 Create a new string object from the given object. If encoding or\n\
 errors is specified, then the object must expose a data buffer\n\

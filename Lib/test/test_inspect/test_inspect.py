@@ -21,6 +21,7 @@ import sys
 import subprocess
 import time
 import types
+import typing
 import tempfile
 import textwrap
 import unicodedata
@@ -2924,19 +2925,27 @@ class MyParameter(inspect.Parameter):
     pass
 
 
+def _conv_signature(sig):
+    return (tuple((param.name,
+                   (... if param.default is param.empty else param.default),
+                   (... if param.annotation is param.empty
+                    else param.annotation),
+                   str(param.kind).lower())
+                   for param in sig.parameters.values()),
+            (... if sig.return_annotation is sig.empty
+             else sig.return_annotation))
+
 
 class TestSignatureObject(unittest.TestCase):
     @staticmethod
     def signature(func, **kw):
         sig = inspect.signature(func, **kw)
-        return (tuple((param.name,
-                       (... if param.default is param.empty else param.default),
-                       (... if param.annotation is param.empty
-                                                        else param.annotation),
-                       str(param.kind).lower())
-                                    for param in sig.parameters.values()),
-                (... if sig.return_annotation is sig.empty
-                                            else sig.return_annotation))
+        return _conv_signature(sig)
+
+    @staticmethod
+    def signatures(func, **kw):
+        sigs = inspect.signatures(func, **kw)
+        return [_conv_signature(sig) for sig in sigs]
 
     def test_signature_object(self):
         S = inspect.Signature
@@ -3025,6 +3034,69 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'more than one variadic keyword parameter'):
             S((kwargs, second_kwargs))
 
+    def test_multisignature_object(self):
+        def test(stop):
+            pass
+        def test2(start, stop, step=1):
+            pass
+        sig = inspect.signature(test)
+        sig2 = inspect.signature(test2)
+
+        self.assertRaises(ValueError, inspect.MultiSignature, [])
+
+        msig = inspect.MultiSignature([sig2])
+        self.assertEqual(str(msig), '(start, stop, step=1)')
+        self.assertEqual(repr(msig), '<MultiSignature (start, stop, step=1)>')
+        self.assertEqual(list(msig), [sig2])
+        self.assertEqual(msig, sig2)
+        self.assertEqual(sig2, msig)
+        self.assertEqual(hash(msig), hash(sig2))
+        self.assertEqual(msig.parameters, sig2.parameters)
+
+        msig = inspect.MultiSignature([sig, sig2])
+        self.assertEqual(str(msig), '(stop)\n(start, stop, step=1)')
+        self.assertEqual(repr(msig), '<MultiSignature (stop)|(start, stop, step=1)>')
+        self.assertEqual(list(msig), [sig, sig2])
+        self.assertNotEqual(msig, sig)
+        self.assertNotEqual(sig, msig)
+        self.assertNotEqual(msig, sig2)
+        self.assertNotEqual(sig2, msig)
+        self.assertEqual(list(msig.parameters), ['stop', 'start', 'step'])
+        self.assertEqual(msig.parameters['stop'], sig.parameters['stop'])
+        self.assertEqual(msig.parameters['start'], sig2.parameters['start'])
+        self.assertEqual(msig.parameters['step'], sig2.parameters['step'])
+        self.assertEqual(msig.return_annotation, inspect.Signature.empty)
+
+        msig2 = inspect.MultiSignature([inspect.signature(test),
+                                        inspect.signature(test2)])
+        self.assertEqual(msig, msig2)
+        self.assertEqual(hash(msig), hash(msig2))
+
+    def test_multisignature_return_annotation(self):
+        @inspect.signature
+        def sig(stop) -> 'x':
+            pass
+        @inspect.signature
+        def sig2(start, stop) -> list:
+            pass
+        @inspect.signature
+        def sig3(start, stop, step) -> list:
+            pass
+        @inspect.signature
+        def sig4(*args):
+            pass
+
+        msig = inspect.MultiSignature([sig2, sig3])
+        self.assertEqual(msig.return_annotation, list)
+
+        msig = inspect.MultiSignature([sig, sig2, sig3])
+        self.assertEqual(msig.return_annotation,
+                         typing.Union[typing.ForwardRef('x'), list])
+
+        msig = inspect.MultiSignature([sig, sig2, sig3, sig4])
+        self.assertEqual(msig.return_annotation,
+                         typing.Union[typing.ForwardRef('x'), list])
+
     def test_signature_object_pickle(self):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
         foo_partial = functools.partial(foo, a=1)
@@ -3052,6 +3124,19 @@ class TestSignatureObject(unittest.TestCase):
                 self.assertTrue(isinstance(sig_pickled, MySignature))
                 self.assertTrue(isinstance(sig_pickled.parameters['z'],
                                            MyParameter))
+
+    def test_multisignature_object_pickle(self):
+        @inspect.signature
+        def sig(stop):
+            pass
+        @inspect.signature
+        def sig2(start, stop, step=1):
+            pass
+        msig = inspect.MultiSignature([sig, sig2])
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                msig2 = pickle.loads(pickle.dumps(msig, proto))
+                self.assertEqual(msig2, msig)
 
     def test_signature_immutability(self):
         def test(a):
@@ -3242,10 +3327,6 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     'no signature found for builtin'):
             inspect.signature(_testcapi.docstring_no_signature)
-
-        with self.assertRaisesRegex(ValueError,
-                                    'no signature found for builtin'):
-            inspect.signature(str)
 
         cls = _testcapi.DocStringNoSignatureTest
         obj = _testcapi.DocStringNoSignatureTest()
@@ -3720,6 +3801,79 @@ class TestSignatureObject(unittest.TestCase):
                            ('c', ..., ..., "positional_only")),
                           ...))
 
+    def test_multisignature_on_partial(self):
+        from functools import partial
+
+        @inspect.signature
+        def sig(stop):
+            pass
+        @inspect.signature
+        def sig2(start, stop, step=1):
+            pass
+        def test(*args, **kwargs):
+            pass
+        test.__signature__ = inspect.MultiSignature([sig, sig2])
+
+        self.assertEqual(str(inspect.signature(partial(test))),
+                         '(stop)\n(start, stop, step=1)')
+        self.assertEqual(self.signature(partial(test)),
+                         ((('stop', ..., ..., 'positional_or_keyword'),
+                           ('start', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...))
+        self.assertEqual(self.signatures(partial(test)), [
+                         ((('stop', ..., ..., 'positional_or_keyword'),), ...),
+                         ((('start', ..., ..., 'positional_or_keyword'),
+                           ('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...)])
+
+        self.assertEqual(str(inspect.signature(partial(test, 5))),
+                         '()\n(stop, step=1)')
+        self.assertEqual(self.signature(partial(test, 5)),
+                         ((('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...))
+        self.assertEqual(self.signatures(partial(test, 5)), [
+                         ((), ...),
+                         ((('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...)])
+
+        self.assertEqual(str(inspect.signature(partial(test, 5, 10))),
+                         '(step=1)')
+        self.assertEqual(self.signature(partial(test, 5, 10)),
+                         ((('step', 1, ..., 'positional_or_keyword'),),
+                          ...))
+        self.assertEqual(self.signatures(partial(test, 5, 10)), [
+                         ((('step', 1, ..., 'positional_or_keyword'),),
+                          ...)])
+
+        self.assertEqual(str(inspect.signature(partial(test, stop=5))),
+                         '(*, stop=5)\n(start, *, stop=5, step=1)')
+        self.assertEqual(self.signature(partial(test, stop=5)),
+                         ((('stop', 5, ..., 'keyword_only'),
+                           ('start', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...))
+        self.assertEqual(self.signatures(partial(test, stop=5)), [
+                         ((('stop', 5, ..., 'keyword_only'),), ...),
+                         ((('start', ..., ..., 'positional_or_keyword'),
+                           ('stop', 5, ..., 'keyword_only'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...)])
+
+        self.assertEqual(str(inspect.signature(partial(partial(test, stop=5), 2))),
+                         '(*, stop=5, step=1)')
+        self.assertEqual(self.signature(partial(partial(test, stop=5), 2)),
+                         ((('stop', 5, ..., 'keyword_only'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...))
+        self.assertEqual(self.signatures(partial(partial(test, stop=5), 2)), [
+                         ((('stop', 5, ..., 'keyword_only'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...)])
+
     def test_signature_on_partialmethod(self):
         from functools import partialmethod
 
@@ -3770,6 +3924,228 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(self.signature(Spam.g, eval_str=False),
                          ((('self', ..., 'anno', 'positional_or_keyword'),),
                           ...))
+
+    def test_multisignature_on_partialmethod(self):
+        from functools import partialmethod
+
+        class A:
+            @inspect.signature
+            def sig1(self, stop):
+                pass
+            @inspect.signature
+            def sig2(self, start, stop, step=1):
+                pass
+
+            def test(*args, **kwargs):
+                pass
+            test.__signature__ = inspect.MultiSignature([sig1, sig2])
+
+            part1 = partialmethod(test, 5)
+            part2 = partialmethod(test, stop=5)
+
+        self.assertEqual(str(inspect.signature(A.part1)),
+                         '(self)\n(self, stop, step=1)')
+        self.assertEqual(str(inspect.signature(A().part1)),
+                         '()\n(stop, step=1)')
+        self.assertEqual(self.signature(A.part1),
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...))
+        self.assertEqual(self.signature(A().part1),
+                         ((('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...))
+        self.assertEqual(self.signatures(A.part1), [
+                         ((('self', ..., ..., 'positional_or_keyword'),), ...),
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...)])
+        self.assertEqual(self.signatures(A().part1), [
+                         ((), ...),
+                         ((('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...)])
+
+        self.assertEqual(str(inspect.signature(A.part2)),
+                         '(self, *, stop=5)\n(self, start, *, stop=5, step=1)')
+        self.assertEqual(str(inspect.signature(A().part2)),
+                         '(*, stop=5)\n(start, *, stop=5, step=1)')
+        self.assertEqual(self.signature(A.part2),
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('stop', 5, ..., 'keyword_only'),
+                           ('start', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...))
+        self.assertEqual(self.signature(A().part2),
+                         ((('stop', 5, ..., 'keyword_only'),
+                           ('start', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...))
+        self.assertEqual(self.signatures(A.part2), [
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('stop', 5, ..., 'keyword_only'),),
+                          ...),
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('start', ..., ..., 'positional_or_keyword'),
+                           ('stop', 5, ..., 'keyword_only'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...)])
+        self.assertEqual(self.signatures(A().part2), [
+                         ((('stop', 5, ..., 'keyword_only'),), ...),
+                         ((('start', ..., ..., 'positional_or_keyword'),
+                           ('stop', 5, ..., 'keyword_only'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...)])
+
+    def test_multisignature_on_partialmethod_different_self(self):
+        from functools import partialmethod
+
+        class A:
+            @inspect.signature
+            def sig1(self, stop):
+                pass
+            @inspect.signature
+            def sig2(self2, start, stop, step=1):
+                pass
+
+            def test(*args, **kwargs):
+                pass
+            test.__signature__ = inspect.MultiSignature([sig1, sig2])
+
+            part = partialmethod(test, 5)
+
+        self.assertEqual(str(inspect.signature(A.part)),
+                         '(self)\n(self2, stop, step=1)')
+        self.assertEqual(str(inspect.signature(A().part)),
+                         '()\n(stop, step=1)')
+        self.assertEqual(self.signature(A.part),
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('self2', ..., ..., 'positional_or_keyword'),
+                           ('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...))
+        self.assertEqual(self.signature(A().part),
+                         ((('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...))
+        self.assertEqual(self.signatures(A.part), [
+                         ((('self', ..., ..., 'positional_or_keyword'),), ...),
+                         ((('self2', ..., ..., 'positional_or_keyword'),
+                           ('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...)])
+        self.assertEqual(self.signatures(A().part), [
+                         ((), ...),
+                         ((('stop', ..., ..., 'positional_or_keyword'),
+                           ('step', 1, ..., 'positional_or_keyword')),
+                          ...)])
+
+    def test_multisignature_on_partialmethod_no_self(self):
+        from functools import partialmethod
+
+        class A:
+            @inspect.signature
+            def sig1(self, stop):
+                pass
+            @inspect.signature
+            def sig2(*, step=1):
+                pass
+
+            def test(*args, **kwargs):
+                pass
+            test.__signature__ = inspect.MultiSignature([sig1, sig2])
+
+            part = partialmethod(test)
+
+        self.assertEqual(str(inspect.signature(A.part)),
+                         '(self, stop)')
+        self.assertEqual(str(inspect.signature(A().part)),
+                         '(stop)')
+        self.assertEqual(self.signature(A.part),
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('stop', ..., ..., 'positional_or_keyword')),
+                          ...))
+        self.assertEqual(self.signature(A().part),
+                         ((('stop', ..., ..., 'positional_or_keyword'),), ...))
+        self.assertEqual(self.signatures(A.part), [
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('stop', ..., ..., 'positional_or_keyword')),
+                          ...)])
+        self.assertEqual(self.signatures(A().part), [
+                         ((('stop', ..., ..., 'positional_or_keyword'),), ...)])
+
+    def test_multisignature_on_partialmethod_varpositional_self(self):
+        from functools import partialmethod
+
+        class A:
+            @inspect.signature
+            def sig1(self, stop):
+                pass
+            @inspect.signature
+            def sig2(*args, step=1):
+                pass
+
+            def test1(*args, **kwargs):
+                pass
+            test1.__signature__ = inspect.MultiSignature([sig1, sig2])
+
+            part1 = partialmethod(test1, 5)
+
+            def test2(*args, **kwargs):
+                pass
+            test2.__signature__ = inspect.MultiSignature([sig2, sig1])
+
+            part2 = partialmethod(test2, 5)
+
+        self.assertEqual(str(inspect.signature(A.part1)),
+                         '(self)\n(*args, step=1)')
+        self.assertEqual(str(inspect.signature(A().part1)),
+                         '()\n(*args, step=1)')
+        self.assertEqual(self.signature(A.part1),
+                         ((('self', ..., ..., 'positional_or_keyword'),
+                           ('args', ..., ..., 'var_positional'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...))
+        self.assertEqual(self.signature(A().part1),
+                         ((('args', ..., ..., 'var_positional'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...))
+        self.assertEqual(self.signatures(A.part1), [
+                         ((('self', ..., ..., 'positional_or_keyword'),), ...),
+                         ((('args', ..., ..., 'var_positional'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...)])
+        self.assertEqual(self.signatures(A().part1), [
+                         ((), ...),
+                         ((('args', ..., ..., 'var_positional'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...)])
+
+        self.assertEqual(str(inspect.signature(A.part2)),
+                         '(*args, step=1)\n(self)')
+        self.assertEqual(str(inspect.signature(A().part2)),
+                         '(*args, step=1)\n()')
+        self.assertEqual(self.signature(A.part2),
+                         ((('args', ..., ..., 'var_positional'),
+                           ('step', 1, ..., 'keyword_only'),
+                           ('self', ..., ..., 'positional_or_keyword')),
+                          ...))
+        self.assertEqual(self.signature(A().part2),
+                         ((('args', ..., ..., 'var_positional'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...))
+        self.assertEqual(self.signatures(A.part2), [
+                         ((('args', ..., ..., 'var_positional'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...),
+                         ((('self', ..., ..., 'positional_or_keyword'),), ...)])
+        self.assertEqual(self.signatures(A().part2), [
+                         ((('args', ..., ..., 'var_positional'),
+                           ('step', 1, ..., 'keyword_only')),
+                          ...),
+                         ((), ...)])
 
     def test_signature_on_fake_partialmethod(self):
         def foo(a): pass
@@ -5626,14 +6002,132 @@ class TestBoundArguments(unittest.TestCase):
         ba = inspect.signature(foo).bind(1)
         self.assertIs(type(ba.arguments), dict)
 
+    def test_multisignature_bind(self):
+        @inspect.signature
+        def sig(stop):
+            pass
+        @inspect.signature
+        def sig2(start, stop, step=1):
+            pass
+        msig = inspect.MultiSignature([sig, sig2])
+
+        ba = msig.bind(5)
+        self.assertEqual(ba.args, (5,))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'stop': 5})
+        self.assertEqual(ba.signature, sig)
+
+        ba = msig.bind(5, 10)
+        self.assertEqual(ba.args, (5, 10))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5, 'stop': 10})
+        self.assertEqual(ba.signature, sig2)
+
+        ba = msig.bind(5, 10, 2)
+        self.assertEqual(ba.args, (5, 10, 2))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5, 'stop': 10, 'step': 2})
+        self.assertEqual(ba.signature, sig2)
+
+        ba = msig.bind(stop=5)
+        self.assertEqual(ba.args, (5,))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'stop': 5})
+        self.assertEqual(ba.signature, sig)
+
+        ba = msig.bind(start=5, stop=10)
+        self.assertEqual(ba.args, (5, 10))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5, 'stop': 10})
+        self.assertEqual(ba.signature, sig2)
+
+        ba = msig.bind(start=5, stop=10, step=2)
+        self.assertEqual(ba.args, (5, 10, 2))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5, 'stop': 10, 'step': 2})
+        self.assertEqual(ba.signature, sig2)
+
+        self.assertRaises(TypeError, msig.bind)
+        self.assertRaises(TypeError, msig.bind, start=5)
+        self.assertRaises(TypeError, msig.bind, step=2)
+        self.assertRaises(TypeError, msig.bind, 5, 10, 2, 3)
+
+    def test_multisignature_bind_partial(self):
+        @inspect.signature
+        def sig(stop):
+            pass
+        @inspect.signature
+        def sig2(start, stop, step=1):
+            pass
+        msig = inspect.MultiSignature([sig, sig2])
+
+        ba = msig.bind_partial(5, 10)
+        self.assertEqual(ba.args, (5, 10))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5, 'stop': 10})
+        self.assertEqual(ba.signature, sig2)
+
+        ba = msig.bind_partial(5, 10, 2)
+        self.assertEqual(ba.args, (5, 10, 2))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5, 'stop': 10, 'step': 2})
+        self.assertEqual(ba.signature, sig2)
+
+        ba = msig.bind_partial(stop=5)
+        self.assertEqual(ba.args, (5,))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'stop': 5})
+        self.assertEqual(ba.signature, msig)
+
+        ba = msig.bind_partial(start=5, stop=10)
+        self.assertEqual(ba.args, (5, 10))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5, 'stop': 10})
+        self.assertEqual(ba.signature, sig2)
+
+        ba = msig.bind_partial(start=5, stop=10, step=2)
+        self.assertEqual(ba.args, (5, 10, 2))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5, 'stop': 10, 'step': 2})
+        self.assertEqual(ba.signature, sig2)
+
+        ba = msig.bind_partial()
+        self.assertEqual(ba.args, ())
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {})
+        self.assertEqual(ba.signature, msig)
+        ba.apply_defaults()
+        self.assertEqual(ba.args, ())
+        self.assertEqual(ba.kwargs, {'step': 1})
+        self.assertEqual(ba.arguments, {'step': 1})
+
+        ba = msig.bind_partial(start=5)
+        self.assertEqual(ba.args, (5,))
+        self.assertEqual(ba.kwargs, {})
+        self.assertEqual(ba.arguments, {'start': 5})
+        self.assertEqual(ba.signature, sig2)
+        ba.apply_defaults()
+        self.assertEqual(ba.args, (5,))
+        self.assertEqual(ba.kwargs, {'step': 1})
+        self.assertEqual(ba.arguments, {'start': 5, 'step': 1})
+
+        ba = msig.bind_partial(step=2)
+        self.assertEqual(ba.args, ())
+        self.assertEqual(ba.kwargs, {'step': 2})
+        self.assertEqual(ba.arguments, {'step': 2})
+        ba.apply_defaults()
+        self.assertEqual(ba.args, ())
+        self.assertEqual(ba.kwargs, {'step': 2})
+        self.assertEqual(ba.arguments, {'step': 2})
+
+        self.assertRaises(TypeError, msig.bind_partial, 5)
+        self.assertRaises(TypeError, msig.bind_partial, 5, 10, 2, 3)
+
+
 class TestSignaturePrivateHelpers(unittest.TestCase):
-    def _strip_non_python_syntax(self, input,
-        clean_signature, self_parameter):
-        computed_clean_signature, \
-            computed_self_parameter = \
-            inspect._signature_strip_non_python_syntax(input)
-        self.assertEqual(computed_clean_signature, clean_signature)
-        self.assertEqual(computed_self_parameter, self_parameter)
+    def _strip_non_python_syntax(self, input, clean_signature, self_parameter):
+        self.assertEqual(list(inspect._signature_split(input)),
+                         [(clean_signature, self_parameter)])
 
     def test_signature_strip_non_python_syntax(self):
         self._strip_non_python_syntax(
@@ -5754,49 +6248,25 @@ class TestSignatureDefinitions(unittest.TestCase):
                 self.assertRaises(ValueError, inspect.signature, getattr(cls, name))
 
     def test_builtins_have_signatures(self):
-        no_signature = {'type', 'super', 'bytearray', 'bytes', 'dict', 'int', 'str'}
-        # These need PEP 457 groups
-        needs_groups = {"range", "slice", "dir", "getattr",
-                        "next", "iter", "vars"}
-        no_signature |= needs_groups
-        # These have unrepresentable parameter default values of NULL
-        unsupported_signature = {"anext"}
-        # These need *args support in Argument Clinic
-        needs_varargs = {"min", "max", "__build_class__"}
-        no_signature |= needs_varargs
+        no_signature = {'type', 'super'}
 
         methods_no_signature = {
-            'dict': {'update'},
             'object': {'__class__'},
         }
         methods_unsupported_signature = {
-            'bytearray': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
-            'bytes': {'count', 'endswith', 'find', 'hex', 'index', 'rfind', 'rindex', 'startswith'},
-            'dict': {'pop'},
-            'memoryview': {'cast', 'hex'},
-            'str': {'count', 'endswith', 'find', 'index', 'maketrans', 'rfind', 'rindex', 'startswith'},
+            'bytearray': {'count', 'endswith', 'find', 'index', 'rfind', 'rindex', 'startswith'},
+            'bytes': {'count', 'endswith', 'find', 'index', 'rfind', 'rindex', 'startswith'},
+            'str': {'count', 'endswith', 'find', 'index', 'rfind', 'rindex', 'startswith'},
         }
         self._test_module_has_signatures(builtins,
-                no_signature, unsupported_signature,
+                no_signature, (),
                 methods_no_signature, methods_unsupported_signature)
 
     def test_types_module_has_signatures(self):
-        unsupported_signature = {'CellType'}
-        methods_no_signature = {
-            'AsyncGeneratorType': {'athrow'},
-            'CoroutineType': {'throw'},
-            'GeneratorType': {'throw'},
-            'FrameLocalsProxyType': {'setdefault', 'pop', 'get'},
-        }
-        self._test_module_has_signatures(types,
-                unsupported_signature=unsupported_signature,
-                methods_no_signature=methods_no_signature)
+        self._test_module_has_signatures(types)
 
     def test_sys_module_has_signatures(self):
-        no_signature = {'getsizeof', 'set_asyncgen_hooks'}
-        no_signature |= {name for name in ['getobjects']
-                         if hasattr(sys, name)}
-        self._test_module_has_signatures(sys, no_signature)
+        self._test_module_has_signatures(sys)
 
     def test_abc_module_has_signatures(self):
         import abc
@@ -5808,12 +6278,10 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_codecs_module_has_signatures(self):
         import codecs
-        methods_no_signature = {'StreamReader': {'charbuffertype'}}
-        self._test_module_has_signatures(codecs,
-                methods_no_signature=methods_no_signature)
+        self._test_module_has_signatures(codecs)
 
     def test_collections_module_has_signatures(self):
-        no_signature = {'OrderedDict', 'defaultdict'}
+        no_signature = ()
         unsupported_signature = {'deque'}
         methods_no_signature = {
             'OrderedDict': {'update'},
@@ -5821,7 +6289,6 @@ class TestSignatureDefinitions(unittest.TestCase):
         methods_unsupported_signature = {
             'deque': {'index'},
             'OrderedDict': {'pop'},
-            'UserString': {'maketrans'},
         }
         self._test_module_has_signatures(collections,
                 no_signature, unsupported_signature,
@@ -5961,12 +6428,12 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_typing_module_has_signatures(self):
         import typing
         no_signature = {'ParamSpec', 'ParamSpecArgs', 'ParamSpecKwargs',
-                        'Text', 'TypeAliasType', 'TypeVar', 'TypeVarTuple'}
+                        'TypeAliasType', 'TypeVar', 'TypeVarTuple'}
         methods_no_signature = {
             'Generic': {'__class_getitem__', '__init_subclass__'},
         }
         methods_unsupported_signature = {
-            'Text': {'count', 'find', 'index', 'rfind', 'rindex', 'startswith', 'endswith', 'maketrans'},
+            'Text': {'count', 'find', 'index', 'rfind', 'rindex', 'startswith', 'endswith'},
         }
         self._test_module_has_signatures(typing, no_signature,
                 methods_no_signature=methods_no_signature,

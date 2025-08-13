@@ -468,8 +468,9 @@ class DSLParser:
 
     def at_text_signature(self, text_signature: str) -> None:
         if self.forced_text_signature:
-            fail("Called @text_signature twice!")
-        self.forced_text_signature = text_signature
+            self.forced_text_signature += '\n' + text_signature
+        else:
+            self.forced_text_signature = text_signature
 
     def parse(self, block: Block) -> None:
         self.reset()

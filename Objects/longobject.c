@@ -6175,6 +6175,8 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 }
 
 /*[clinic input]
+@text_signature "($self, /)"
+@text_signature "($self, ndigits, /)"
 int.__round__
 
     ndigits as o_ndigits: object = None
@@ -6187,7 +6189,7 @@ Rounding with an ndigits argument also returns an integer.
 
 static PyObject *
 int___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=954fda6b18875998 input=30c2aec788263144]*/
+/*[clinic end generated code: output=954fda6b18875998 input=148a9aa959f112a8]*/
 {
     /* To round an integer m to the nearest 10**n (n positive), we make use of
      * the divmod_near operation, defined by:
@@ -6563,8 +6565,9 @@ static PyGetSetDef long_getset[] = {
 };
 
 PyDoc_STRVAR(long_doc,
-"int([x]) -> integer\n\
-int(x, base=10) -> integer\n\
+"int(x=0, /)\n\
+(x, /, base=10)\n\
+--\n\
 \n\
 Convert a number or string to an integer, or return 0 if no arguments\n\
 are given.  If x is a number, return x.__int__().  For floating-point\n\

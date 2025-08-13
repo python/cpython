@@ -4545,13 +4545,15 @@ dict_clear_impl(PyDictObject *self)
 }
 
 /*[clinic input]
+@text_signature "($self, key, /)"
+@text_signature "($self, key, default, /)"
 dict.pop
 
     key: object
     default: object = NULL
     /
 
-D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
+Remove specified key and return the corresponding value.
 
 If the key is not found, return the default if given; otherwise,
 raise a KeyError.
@@ -4559,7 +4561,7 @@ raise a KeyError.
 
 static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
+/*[clinic end generated code: output=3abb47b89f24c21c input=30abdf0727d0f247]*/
 {
     return dict_pop_default((PyObject*)self, key, default_value);
 }
@@ -4783,10 +4785,19 @@ PyDoc_STRVAR(getitem__doc__,
 "__getitem__($self, key, /)\n--\n\nReturn self[key].");
 
 PyDoc_STRVAR(update__doc__,
-"D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.\n\
-If E is present and has a .keys() method, then does:  for k in E.keys(): D[k] = E[k]\n\
-If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v\n\
-In either case, this is followed by: for k in F:  D[k] = F[k]");
+"update($self, /, **kwargs)\n\
+($self, mapping_or_iterable, /, **kwargs)\n\
+--\n\
+\n\
+Update a dict from a mapping or iterable and keyword arguments.\n\
+\n\
+If the positional argument is present and has a .keys() method,\n\
+then does:\n\
+  for k in mapping_or_iterable.keys(): self[k] = mapping_or_iterable[k]\n\
+If it is present and lacks a .keys() method, then does:\n\
+  for k, v in mapping_or_iterable: self[k] = v\n\
+In either case, this is followed by:\n\
+  for k in kwargs:  self[k] = kwargs[k]");
 
 /* Forward */
 
@@ -4962,15 +4973,23 @@ dict_iter(PyObject *self)
 }
 
 PyDoc_STRVAR(dictionary_doc,
-"dict() -> new empty dictionary\n"
-"dict(mapping) -> new dictionary initialized from a mapping object's\n"
-"    (key, value) pairs\n"
-"dict(iterable) -> new dictionary initialized as if via:\n"
-"    d = {}\n"
-"    for k, v in iterable:\n"
-"        d[k] = v\n"
-"dict(**kwargs) -> new dictionary initialized with the name=value pairs\n"
-"    in the keyword argument list.  For example:  dict(one=1, two=2)");
+"dict(**kwargs)\n"
+"(mapping_or_iterable, /, **kwargs)\n"
+"--\n"
+"\n"
+"Create a new dictionary.\n"
+"\n"
+"If no arguments are supplied, create an empty dictionary:\n"
+"    dict() -> {}\n"
+"If the positional argument is a mapping object, a new dictionary will\n"
+"be initialized from its (key, value) pairs.\n"
+"If it is an iterable of pairs, a new dictionary will\n"
+"be initialized from these pairs.\n"
+"    dict([('one', 1), ('two', 2)]) -> {'one': 1, 'two': 2}\n"
+"If keyword arguments are supplied, new items will be added using the\n"
+"keyword name as a key and the argument value as a value:\n"
+"    dict(one=1, two=2) -> {'one': 1, 'two': 2}\n"
+"Positional and keyword arguments can be combined.");
 
 PyTypeObject PyDict_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)

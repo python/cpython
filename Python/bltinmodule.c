@@ -246,7 +246,9 @@ error:
 }
 
 PyDoc_STRVAR(build_class_doc,
-"__build_class__(func, name, /, *bases, [metaclass], **kwds) -> class\n\
+"__build_class__($module, func, name, /, *bases, **kwds)\n\
+($module, func, name, /, *bases, metaclass, **kwds)\n\
+--\n\
 \n\
 Internal helper function used by the class statement.");
 
@@ -904,7 +906,9 @@ builtin_dir(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(dir_doc,
-"dir([object]) -> list of strings\n"
+"dir($module, /)\n"
+"($module, object, /)\n"
+"--\n"
 "\n"
 "If called without an argument, return the names in the current scope.\n"
 "Else, return an alphabetized list of names comprising (some of) the attributes\n"
@@ -1247,7 +1251,9 @@ builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(getattr_doc,
-"getattr(object, name[, default]) -> value\n\
+"getattr($module, object, name, /)\n\
+($module, object, name, default, /)\n\
+--\n\
 \n\
 Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.\n\
 When a default argument is given, it is returned when the attribute doesn't\n\
@@ -1698,7 +1704,9 @@ builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(next_doc,
-"next(iterator[, default])\n\
+"next($module, iterator, /)\n\
+next($module, iterator, default, /)\n\
+--\n\
 \n\
 Return the next item from the iterator. If default is given and the iterator\n\
 is exhausted, it is returned instead of raising StopIteration.");
@@ -1817,8 +1825,9 @@ builtin_iter(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 }
 
 PyDoc_STRVAR(iter_doc,
-"iter(iterable) -> iterator\n\
-iter(callable, sentinel) -> iterator\n\
+"iter($module, iterable, /)\n\
+($module, callable, sentinel)\n\
+--\n\
 \n\
 Get an iterator from an object.  In the first form, the argument must\n\
 supply its own iterator, or be a sequence.\n\
@@ -1844,6 +1853,8 @@ builtin_aiter(PyObject *module, PyObject *async_iterable)
 PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
 
 /*[clinic input]
+@text_signature "($module, aiterator, /)"
+@text_signature "($module, aiterator, default, /)"
 anext as builtin_anext
 
     aiterator: object
@@ -1859,7 +1870,7 @@ it is returned instead of raising StopAsyncIteration.
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=2900e4a370d39550]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=0a1ca4f26c511583]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
@@ -2069,8 +2080,10 @@ builtin_min(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 }
 
 PyDoc_STRVAR(min_doc,
-"min(iterable, *[, default=obj, key=func]) -> value\n\
-min(arg1, arg2, *args, *[, key=func]) -> value\n\
+"min($module, iterable, /, *, key=None)\n\
+($module, iterable, /, *, default, key=None)\n\
+($module, arg1, arg2, /, *args, key=None)\n\
+--\n\
 \n\
 With a single iterable argument, return its smallest item. The\n\
 default keyword-only argument specifies an object to return if\n\
@@ -2086,8 +2099,10 @@ builtin_max(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 }
 
 PyDoc_STRVAR(max_doc,
-"max(iterable, *[, default=obj, key=func]) -> value\n\
-max(arg1, arg2, *args, *[, key=func]) -> value\n\
+"max($module, iterable, /, *, key=None)\n\
+($module, iterable, /, *, default, key=None)\n\
+($module, arg1, arg2, /, *args, key=None)\n\
+--\n\
 \n\
 With a single iterable argument, return its biggest item. The\n\
 default keyword-only argument specifies an object to return if\n\
@@ -2702,7 +2717,9 @@ builtin_vars(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(vars_doc,
-"vars([object]) -> dictionary\n\
+"vars($module, /)\n\
+vars($module, object, /)\n\
+--\n\
 \n\
 Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.");

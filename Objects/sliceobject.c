@@ -338,8 +338,9 @@ slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 PyDoc_STRVAR(slice_doc,
-"slice(stop)\n\
-slice(start, stop[, step])\n\
+"slice(stop, /)\n\
+(start, stop, step=1, /)\n\
+--\n\
 \n\
 Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 
