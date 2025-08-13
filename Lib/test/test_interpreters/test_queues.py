@@ -42,7 +42,7 @@ class LowLevelTests(TestBase):
         importlib.reload(queues)
 
     def test_create_destroy(self):
-        qid = _queues.create(2, REPLACE, -1)
+        qid = _queues.create(2, REPLACE)
         _queues.destroy(qid)
         self.assertEqual(get_num_queues(), 0)
         with self.assertRaises(queues.QueueNotFoundError):
@@ -56,7 +56,7 @@ class LowLevelTests(TestBase):
             '-c',
             dedent(f"""
                 import {_queues.__name__} as _queues
-                _queues.create(2, {REPLACE}, -1)
+                _queues.create(2, {REPLACE})
                 """),
         )
         self.assertEqual(stdout, '')
@@ -67,13 +67,13 @@ class LowLevelTests(TestBase):
 
     def test_bind_release(self):
         with self.subTest('typical'):
-            qid = _queues.create(2, REPLACE, -1)
+            qid = _queues.create(2, REPLACE)
             _queues.bind(qid)
             _queues.release(qid)
             self.assertEqual(get_num_queues(), 0)
 
         with self.subTest('bind too much'):
-            qid = _queues.create(2, REPLACE, -1)
+            qid = _queues.create(2, REPLACE)
             _queues.bind(qid)
             _queues.bind(qid)
             _queues.release(qid)
@@ -81,7 +81,7 @@ class LowLevelTests(TestBase):
             self.assertEqual(get_num_queues(), 0)
 
         with self.subTest('nested'):
-            qid = _queues.create(2, REPLACE, -1)
+            qid = _queues.create(2, REPLACE)
             _queues.bind(qid)
             _queues.bind(qid)
             _queues.release(qid)
@@ -89,9 +89,30 @@ class LowLevelTests(TestBase):
             self.assertEqual(get_num_queues(), 0)
 
         with self.subTest('release without binding'):
-            qid = _queues.create(2, REPLACE, -1)
+            qid = _queues.create(2, REPLACE)
             with self.assertRaises(queues.QueueError):
                 _queues.release(qid)
+
+    def test_parse_fallback(self):
+        # see https://github.com/python/cpython/pull/137686
+        # does not raise TypeError / OverflowError / ValueError
+        for arg in False, True, None, -1, 2**1000:
+            _queues.create(2, REPLACE, fallback=arg)
+        msg = r'create\(\) takes at most 2 positional arguments'
+        with self.assertRaisesRegex(TypeError, msg):
+            _queues.create(2, REPLACE, -1)
+
+        obj = None
+        unboundop = -1
+        for arg in False, True, None, -1, 2**1000:
+            qid = _queues.create(2, REPLACE)
+            _queues.put(qid, obj, unboundop, fallback=arg)
+            _queues.destroy(qid)
+        msg = r'put\(\) takes at most 3 positional arguments'
+        with self.assertRaisesRegex(TypeError, msg):
+            qid = _queues.create(2, REPLACE)
+            _queues.put(qid, obj, unboundop, -1)
+            _queues.destroy(qid)
 
 
 class QueueTests(TestBase):
