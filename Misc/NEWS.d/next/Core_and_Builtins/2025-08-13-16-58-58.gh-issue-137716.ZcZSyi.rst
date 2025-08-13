@@ -1,0 +1,1 @@
+Fix double period in AttributeError message for invalid mock assertions
