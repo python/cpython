@@ -2470,6 +2470,37 @@ class TestInit(unittest.TestCase):
 
         self.assertEqual(D(5).a, 10)
 
+    def test_annotate_function(self):
+        # Test that the __init__ function has correct annotate function
+        # See: https://github.com/python/cpython/issues/137530
+        # With no forward references
+        @dataclass
+        class A:
+            a: int
+
+        value_annos = annotationlib.get_annotations(A.__init__, format=annotationlib.Format.VALUE)
+        forwardref_annos = annotationlib.get_annotations(A.__init__, format=annotationlib.Format.FORWARDREF)
+        string_annos = annotationlib.get_annotations(A.__init__, format=annotationlib.Format.STRING)
+
+        self.assertEqual(value_annos, {'a': int, 'return': None})
+        self.assertEqual(forwardref_annos, {'a': int, 'return': None})
+        self.assertEqual(string_annos, {'a': 'int', 'return': 'None'})
+
+        # With forward references
+        @dataclass
+        class B:
+            b: undefined
+
+        # VALUE annotations should raise
+        with self.assertRaises(NameError):
+            _ = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.VALUE)
+
+        forwardref_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.FORWARDREF)
+        string_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.STRING)
+
+        self.assertEqual(forwardref_annos, {'b': support.EqualToForwardRef('undefined', owner=B, is_class=True), 'return': None})
+        self.assertEqual(string_annos, {'b': 'undefined', 'return': 'None'})
+
 
 class TestRepr(unittest.TestCase):
     def test_repr(self):
