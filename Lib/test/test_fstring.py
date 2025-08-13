@@ -1831,6 +1831,34 @@ print(f'''{{
         for case in valid_cases:
             compile(case, "<string>", "exec")
 
+    def test_raw_fstring_format_spec(self):
+        # Test raw f-string format spec behavior (Issue #137314).
+        #
+        # Raw f-strings should preserve literal backslashes in format specifications,
+        # not interpret them as escape sequences.
+        class UnchangedFormat:
+            """Test helper that returns the format spec unchanged."""
+            def __format__(self, format):
+                return format
+
+        # Test basic escape sequences
+        self.assertEqual(f"{UnchangedFormat():\xFF}", 'ÿ')
+        self.assertEqual(rf"{UnchangedFormat():\xFF}", '\\xFF')
+
+        # Test nested expressions with raw/non-raw combinations
+        self.assertEqual(rf"{UnchangedFormat():{'\xFF'}}", 'ÿ')
+        self.assertEqual(f"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+        self.assertEqual(rf"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+
+        # Test continuation character in format specs
+        self.assertEqual(f"""{UnchangedFormat():{'a'\
+                        'b'}}""", 'ab')
+        self.assertEqual(rf"""{UnchangedFormat():{'a'\
+                         'b'}}""", 'ab')
+
+        # Test multiple format specs in same raw f-string
+        self.assertEqual(rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}", '\\xFF \\n')
+
 
 if __name__ == '__main__':
     unittest.main()

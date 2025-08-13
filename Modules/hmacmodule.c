@@ -20,10 +20,6 @@
 #include "pycore_hashtable.h"
 #include "pycore_strhex.h"              // _Py_strhex()
 
-#include "_hashlib/hashlib_buffer.h"
-#include "_hashlib/hashlib_fetch.h"
-#include "_hashlib/hashlib_mutex.h"
-
 /*
  * Taken from blake2module.c. In the future, detection of SIMD support
  * should be delegated to https://github.com/python/cpython/pull/125011.
@@ -50,6 +46,8 @@
 #include "_hacl/Hacl_Streaming_Types.h" // Hacl_Streaming_Types_error_code
 
 #include <stdbool.h>
+
+#include "hashlib.h"
 
 // --- Reusable error messages ------------------------------------------------
 
@@ -658,7 +656,7 @@ find_hash_info(hmacmodule_state *state, PyObject *hash_info_ref)
     }
     if (rc == 0) {
         PyErr_Format(state->unknown_hash_error,
-                     _Py_HASHLIB_UNSUPPORTED_ALGORITHM, hash_info_ref);
+                     HASHLIB_UNSUPPORTED_ALGORITHM, hash_info_ref);
         return NULL;
     }
     assert(info != NULL);

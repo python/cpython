@@ -11,6 +11,8 @@
             break;
         }
 
+        /* _CHECK_PERIODIC_AT_END is not a viable micro-op for tier 2 */
+
         case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
             break;
         }
@@ -3198,11 +3200,19 @@
             break;
         }
 
+        case _HANDLE_PENDING_AND_DEOPT: {
+            break;
+        }
+
         case _ERROR_POP_N: {
             break;
         }
 
         case _TIER2_RESUME_CHECK: {
+            break;
+        }
+
+        case _COLD_EXIT: {
             break;
         }
 

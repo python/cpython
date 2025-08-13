@@ -117,6 +117,10 @@ jobs:
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
+          # Set MACOSX_DEPLOYMENT_TARGET and -Werror=unguarded-availability to
+          # make sure we don't break downstream distributors (like uv):
+          export CFLAGS_JIT='-Werror=unguarded-availability'
+          export MACOSX_DEPLOYMENT_TARGET=10.15
           ./configure --enable-experimental-jit --enable-universalsdk --with-universal-archs=universal2 ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
