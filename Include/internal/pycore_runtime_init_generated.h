@@ -1152,6 +1152,7 @@ extern "C" {
     INIT_ID(options), \
     INIT_ID(order), \
     INIT_ID(origin), \
+    INIT_ID(other), \
     INIT_ID(out_fd), \
     INIT_ID(outgoing), \
     INIT_ID(outpath), \
@@ -1211,6 +1212,7 @@ extern "C" {
     INIT_ID(return), \
     INIT_ID(reverse), \
     INIT_ID(reversed), \
+    INIT_ID(rounding), \
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
