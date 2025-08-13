@@ -436,13 +436,11 @@ def _tuple_str(obj_name, fields):
 def _tuple_compare_expand(op, fields):
     if fields:
         for f in fields[:-1]:
-            yield (
-                f'    if self.{f.name} != other.{f.name}:\n'
-                f'      return self.{f.name} {op} other.{f.name}'
-            )
-        yield f'    return self.{fields[-1].name} {op} other.{fields[-1].name}'
+            yield f'   if self.{f.name} != other.{f.name}:'
+            yield f'    return self.{f.name} {op} other.{f.name}'
+        yield f'   return self.{fields[-1].name} {op} other.{fields[-1].name}'
     else:
-        yield f'    return {op.endswith("=")}'
+        yield f'   return {op.endswith("=")}'
 
 
 class _FuncBuilder:
@@ -1148,11 +1146,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             # Create a comparison function.  If the fields in the object are
             # named 'x' and 'y'.
             # if self.x != other.x:
-            #     return self.x {op} other.x
+            #   return self.x {op} other.x
             # return self.y {op} other.y
+            self_guard = ['  if self is other:', '   return True'] if op.endswith("=") else []
             func_builder.add_fn(name,
                             ('self', 'other'),
-                            [ '  if other.__class__ is self.__class__:',
+                            [*self_guard,
+                              '  if other.__class__ is self.__class__:',
                               *_tuple_compare_expand(op, flds),
                               '  return NotImplemented'],
                             overwrite_error='Consider using functools.total_ordering')
