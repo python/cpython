@@ -5060,8 +5060,8 @@ can be used interchangeably to index the same dictionary entry.
       ``None``.
 
    .. method:: update(**kwargs)
-               update(mapping, **kwargs)
-               update(iterable, **kwargs)
+               update(mapping, /, **kwargs)
+               update(iterable, /, **kwargs)
 
       Update the dictionary with the key/value pairs from *mapping* or *iterable*, overwriting
       existing keys.  Return ``None``.
