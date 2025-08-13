@@ -54,7 +54,7 @@ def parse_warning_ignore_file(file_path: str) -> set[IgnoreRule]:
                         )
                         sys.exit(1)
                     if ignore_all:
-                        count = '0'
+                        count = "0"
 
                     files_with_expected_warnings.add(
                         IgnoreRule(
