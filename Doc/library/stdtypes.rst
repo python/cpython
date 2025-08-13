@@ -2568,8 +2568,8 @@ the equal sign, and the value of the expression.
 This is often useful for debugging::
 
    >>> number = 14.3
-   >>> 'number=14.3'
-   number=14.3
+   >>> f'{number=}'
+   'number=14.3'
 
 Whitespace before, inside and after the expression, as well as whitespace
 after the equal sign, is significant --- it is retained in the result::
@@ -2582,7 +2582,7 @@ Conversion specifier
 ^^^^^^^^^^^^^^^^^^^^
 
 By default, the value of a replacement field expression is converted to
-string using :func:`str`::
+a string using :func:`str`::
 
    >>> from fractions import Fraction
    >>> one_third = Fraction(1, 3)
