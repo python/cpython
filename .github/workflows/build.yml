@@ -369,6 +369,29 @@ jobs:
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
 
+  build-android:
+    name: Android (${{ matrix.arch }})
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Use the same runs-on configuration as build-macos and build-ubuntu.
+          - arch: aarch64
+            runs-on: ${{ github.repository_owner == 'python' && 'ghcr.io/cirruslabs/macos-runner:sonoma' || 'macos-14' }}
+          - arch: x86_64
+            runs-on: ubuntu-24.04
+
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build and test
+        run: ./Android/android.py ci ${{ matrix.arch }}-linux-android
+
   build-wasi:
     name: 'WASI'
     needs: build-context
@@ -676,6 +699,7 @@ jobs:
     - build-macos
     - build-ubuntu
     - build-ubuntu-ssltests
+    - build-android
     - build-wasi
     - test-hypothesis
     - build-asan
@@ -709,6 +733,7 @@ jobs:
             build-macos,
             build-ubuntu,
             build-ubuntu-ssltests,
+            build-android,
             build-wasi,
             test-hypothesis,
             build-asan,
