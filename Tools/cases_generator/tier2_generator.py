@@ -111,6 +111,8 @@ class Tier2Emitter(Emitter):
         self.emit("}\n")
         return not always_true(first_tkn)
 
+    periodic_if = deopt_if
+
     def oparg(
         self,
         tkn: Token,
