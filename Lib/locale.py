@@ -375,6 +375,8 @@ def _replace_encoding(code, encoding):
 def _append_modifier(code, modifier):
     if modifier == 'euro':
         if '.' not in code:
+            # Linux appears to require keeping the "@euro" modifier in place,
+            # even when using the ".ISO8859-15" encoding.
             return code + '.ISO8859-15@euro'
         _, _, encoding = code.partition('.')
         if encoding == 'UTF-8':
@@ -485,9 +487,9 @@ def _parse_localename(localename):
         # Deal with locale modifiers
         code, modifier = code.split('@', 1)
         if modifier == 'euro' and '.' not in code:
-            # Assume Latin-9 for @euro locales. This is bogus,
-            # since some systems may use other encodings for these
-            # locales.
+            # Assume ISO8859-15 for @euro locales. Do note that some systems
+            # may use other encodings for these locales, so this may not always
+            # be correct.
             return code + '@euro', 'ISO8859-15'
     else:
         modifier = ''
