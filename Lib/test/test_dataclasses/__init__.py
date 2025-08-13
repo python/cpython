@@ -2491,7 +2491,7 @@ class TestInit(unittest.TestCase):
         class B:
             b: undefined
 
-        # VALUE annotations should raise
+        # VALUE annotations should raise while unresolvable
         with self.assertRaises(NameError):
             _ = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.VALUE)
 
@@ -2499,6 +2499,17 @@ class TestInit(unittest.TestCase):
         string_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.STRING)
 
         self.assertEqual(forwardref_annos, {'b': support.EqualToForwardRef('undefined', owner=B, is_class=True), 'return': None})
+        self.assertEqual(string_annos, {'b': 'undefined', 'return': 'None'})
+
+        # Now VALUE and FORWARDREF should resolve, STRING should be unchanged
+        undefined = int
+
+        value_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.VALUE)
+        forwardref_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.FORWARDREF)
+        string_annos = annotationlib.get_annotations(B.__init__, format=annotationlib.Format.STRING)
+
+        self.assertEqual(value_annos, {'b': int, 'return': None})
+        self.assertEqual(forwardref_annos, {'b': int, 'return': None})
         self.assertEqual(string_annos, {'b': 'undefined', 'return': 'None'})
 
         # Check `init=False` attributes don't get into the annotations of the __init__ function
