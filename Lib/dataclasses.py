@@ -311,17 +311,17 @@ class Field:
     @recursive_repr()
     def __repr__(self):
         return ('Field('
-                f'name={self.name!r},'
-                f'type={self.type!r},'
-                f'default={self.default!r},'
-                f'default_factory={self.default_factory!r},'
-                f'init={self.init!r},'
-                f'repr={self.repr!r},'
-                f'hash={self.hash!r},'
-                f'compare={self.compare!r},'
-                f'metadata={self.metadata!r},'
-                f'kw_only={self.kw_only!r},'
-                f'doc={self.doc!r},'
+                f'name={self.name!r}, '
+                f'type={self.type!r}, '
+                f'default={self.default!r}, '
+                f'default_factory={self.default_factory!r}, '
+                f'init={self.init!r}, '
+                f'repr={self.repr!r}, '
+                f'hash={self.hash!r}, '
+                f'compare={self.compare!r}, '
+                f'metadata={self.metadata!r}, '
+                f'kw_only={self.kw_only!r}, '
+                f'doc={self.doc!r}, '
                 f'_field_type={self._field_type}'
                 ')')
 
@@ -372,15 +372,15 @@ class _DataclassParams:
 
     def __repr__(self):
         return ('_DataclassParams('
-                f'init={self.init!r},'
-                f'repr={self.repr!r},'
-                f'eq={self.eq!r},'
-                f'order={self.order!r},'
-                f'unsafe_hash={self.unsafe_hash!r},'
-                f'frozen={self.frozen!r},'
-                f'match_args={self.match_args!r},'
-                f'kw_only={self.kw_only!r},'
-                f'slots={self.slots!r},'
+                f'init={self.init!r}, '
+                f'repr={self.repr!r}, '
+                f'eq={self.eq!r}, '
+                f'order={self.order!r}, '
+                f'unsafe_hash={self.unsafe_hash!r}, '
+                f'frozen={self.frozen!r}, '
+                f'match_args={self.match_args!r}, '
+                f'kw_only={self.kw_only!r}, '
+                f'slots={self.slots!r}, '
                 f'weakref_slot={self.weakref_slot!r}'
                 ')')
 

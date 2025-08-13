@@ -68,12 +68,12 @@ class TestCase(unittest.TestCase):
         int_field = field(default=1, init=True, repr=False, doc='Docstring')
         int_field.name = "id"
         repr_output = repr(int_field)
-        expected_output = "Field(name='id',type=None," \
-                           f"default=1,default_factory={MISSING!r}," \
-                           "init=True,repr=False,hash=None," \
-                           "compare=True,metadata=mappingproxy({})," \
-                           f"kw_only={MISSING!r}," \
-                           "doc='Docstring'," \
+        expected_output = "Field(name='id', type=None, " \
+                           f"default=1, default_factory={MISSING!r}, " \
+                           "init=True, repr=False, hash=None, " \
+                           "compare=True, metadata=mappingproxy({}), " \
+                           f"kw_only={MISSING!r}, " \
+                           "doc='Docstring', " \
                            "_field_type=None)"
 
         self.assertEqual(repr_output, expected_output)
@@ -84,7 +84,7 @@ class TestCase(unittest.TestCase):
         rec_field.name = "id"
         repr_output = repr(rec_field)
 
-        self.assertIn(",type=...,", repr_output)
+        self.assertIn(", type=..., ", repr_output)
 
     def test_recursive_annotation(self):
         class C:
@@ -94,7 +94,7 @@ class TestCase(unittest.TestCase):
         class D:
             C: C = field()
 
-        self.assertIn(",type=...,", repr(D.__dataclass_fields__["C"]))
+        self.assertIn(", type=..., ", repr(D.__dataclass_fields__["C"]))
 
     def test_dataclass_params_repr(self):
         # Even though this is testing an internal implementation detail,
@@ -104,10 +104,10 @@ class TestCase(unittest.TestCase):
         class Some: pass
 
         repr_output = repr(Some.__dataclass_params__)
-        expected_output = "_DataclassParams(init=True,repr=True," \
-                          "eq=True,order=False,unsafe_hash=False,frozen=True," \
-                          "match_args=True,kw_only=False," \
-                          "slots=True,weakref_slot=False)"
+        expected_output = "_DataclassParams(init=True, repr=True, " \
+                          "eq=True, order=False, unsafe_hash=False, frozen=True, " \
+                          "match_args=True, kw_only=False, " \
+                          "slots=True, weakref_slot=False)"
         self.assertEqual(repr_output, expected_output)
 
     def test_dataclass_params_signature(self):
