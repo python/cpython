@@ -3516,7 +3516,7 @@ mro_check(PyTypeObject *type, PyObject *mro)
         if (!is_subtype_with_mro(lookup_tp_mro(solid), solid, solid_base(base))) {
             PyErr_Format(
                 PyExc_TypeError,
-                "%N.mro() returned base with unsuitable layout ('%T')",
+                "%N.mro() returned base with unsuitable layout ('%N')",
                 type, base);
             return -1;
         }
