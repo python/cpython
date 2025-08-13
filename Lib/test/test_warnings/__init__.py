@@ -398,6 +398,8 @@ class FilterTests(BaseTest):
         with self.assertRaises(ValueError):
             self.module.simplefilter('ignore', lineno=-1)
 
+    # these tests fail if python is run with -O, so check __debug__
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
     def test_invalid_category_types(self):
         with self.assertRaises(TypeError):
             self.module.filterwarnings("ignore", category="notawarning")

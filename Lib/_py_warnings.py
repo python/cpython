@@ -255,13 +255,13 @@ def _valid_warning_category(category):
     Return True if category is a Warning subclass or tuple of such.
     Always perform class checks; only perform tuple iteration in debug mode.
     """
+    if not __debug__:
+        return True
     if isinstance(category, type) and issubclass(category, Warning):
         return True
     if isinstance(category, tuple):
-        if __debug__:
-            return all(isinstance(c, type) and issubclass(c, Warning)
-                       for c in category)
-        return True
+        return all(isinstance(c, type) and issubclass(c, Warning)
+                    for c in category)
     return False
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
