@@ -1,2 +1,2 @@
 Added validation for the ``category`` argument in
-:func:`warnings.filterwarnings()` and :func:`warnings.simplefilter()`.
+:func:`warnings.filterwarnings` and :func:`warnings.simplefilter`.
