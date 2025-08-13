@@ -1356,8 +1356,6 @@ static PyObject *
 faulthandler__raise_exception_impl(PyObject *module, unsigned int code,
                                    unsigned int flags)
 /*[clinic end generated code: output=2346cf318eab10dc input=43a5ba0eb7794504]*/
-static PyObject *
-faulthandler_raise_exception(PyObject *self, PyObject *args)
 {
     faulthandler_suppress_crash_report();
     RaiseException(code, flags, 0, NULL);
