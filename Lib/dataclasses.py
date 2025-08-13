@@ -433,15 +433,6 @@ def _tuple_str(obj_name, fields):
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
 
 
-def _tuple_compare_expand(op, fields):
-    for f in fields:
-        yield f'   if self.{f.name} != other.{f.name}:'
-        # ? use "op[0]" here since gated by "!=", probably not worth it
-        yield f'    return self.{f.name} {op} other.{f.name}'
-    # the instances are equal here, return constant
-    yield f'   return {op.endswith("=")}'
-
-
 class _FuncBuilder:
     def __init__(self, globals):
         self.names = []
@@ -1149,14 +1140,21 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             # if self.y != other.y:
             #   return self.y {op} other.y
             # return {op.endswith("=")}
-
-            # __eq__ has this self guard, add here for consistency
-            self_guard = ['  if self is other:', '   return True'] if op.endswith("=") else []
+            return_when_equal = f'   return {op.endswith("=")}'
             func_builder.add_fn(name,
                             ('self', 'other'),
-                            [*self_guard,
+                            [ '  if self is other:',
+                              # __eq__ has this self guard, add here for consistency
+                              return_when_equal,
                               '  if other.__class__ is self.__class__:',
-                              *_tuple_compare_expand(op, flds),
+                              *(
+                                f'   if self.{f.name} != other.{f.name}:\n'
+                                # ? use "op[0]" here since gated by "!=", probably not worth confusion
+                                f'    return self.{f.name} {op} other.{f.name}'
+                                for f in flds
+                              ),
+                              # the instances are equal here, return constant
+                              return_when_equal,
                               '  return NotImplemented'],
                             overwrite_error='Consider using functools.total_ordering')
 
