@@ -1359,9 +1359,8 @@ Operators and delimiters
 
 .. index:: single: operators
 
-The following tokens are operators -- they can be put between two
-:ref:`expressions <expressions>` (or in front of an expression)
-to make a larger expression.
+The following tokens are :dfn:`operators` -- they are used to combine
+:ref:`expressions <expressions>`.
 
 .. code-block:: none
 
@@ -1369,11 +1368,12 @@ to make a larger expression.
    +       -       *       **      /       //      %
    <<      >>      &       |       ^       ~
    <       >       <=      >=      ==      !=
-   @       :=      .
+   .       @       :=
 
 .. index:: single: delimiters
 
-The following tokens serve as delimiters in the grammar:
+The following tokens are :dfn:`delimiters` -- simple tokens that
+are not operators:
 
 .. code-block:: none
 
@@ -1381,20 +1381,23 @@ The following tokens serve as delimiters in the grammar:
    ,       :       !       ;       =       ->
    .       @
 
-The period can also occur in floating-point and imaginary literals;
-the period and the ``@`` can also serve as operators.
+The period (``.``) and at-sign (``@``) can serve either as operators
+or delimiters.
+
+The period can also occur in :ref:`floating-point <floating>` and
+:ref:`imaginary` literals.
 
 .. _lexical-ellipsis:
 
-A sequence of three periods has a special meaning as an
-:py:data:`Ellipsis` literal:
+A sequence of three periods (without whitespace between them) has a special
+meaning as an :py:data:`Ellipsis` literal:
 
 .. code-block:: none
 
    ...
 
-The following :ref:`augmented assignment <augassign>` operators serve
-lexically as delimiters, but also perform an operation:
+The following tokens are :ref:`augmented assignment <augassign>` operators:
+they serve lexically as delimiters, but also perform an operation:
 
 .. code-block:: none
 
