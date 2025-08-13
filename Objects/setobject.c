@@ -40,6 +40,7 @@
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED()
 #include "pycore_pyerrors.h"            // _PyErr_SetKeyError()
 #include "pycore_setobject.h"           // _PySet_NextEntry() definition
+#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 
 #include "stringlib/eq.h"               // unicode_eq()
 #include <stddef.h>                     // offsetof()
@@ -211,11 +212,28 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     return set_add_entry_takeref(so, Py_NewRef(key), hash);
 }
 
+static void
+set_unhashable_type(PyObject *key)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    if (!Py_IS_TYPE(exc, (PyTypeObject*)PyExc_TypeError)) {
+        PyErr_SetRaisedException(exc);
+        return;
+    }
+
+    PyErr_Format(PyExc_TypeError,
+                 "cannot use '%T' as a set element (%S)",
+                 key, exc);
+    Py_DECREF(exc);
+}
+
 int
 _PySet_AddTakeRef(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        set_unhashable_type(key);
         Py_DECREF(key);
         return -1;
     }
@@ -384,6 +402,7 @@ set_add_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        set_unhashable_type(key);
         return -1;
     }
     return set_add_entry(so, key, hash);
@@ -394,6 +413,7 @@ set_contains_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        set_unhashable_type(key);
         return -1;
     }
     return set_contains_entry(so, key, hash);
@@ -404,6 +424,7 @@ set_discard_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        set_unhashable_type(key);
         return -1;
     }
     return set_discard_entry(so, key, hash);
@@ -516,9 +537,7 @@ set_dealloc(PyObject *self)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
-    Py_TRASHCAN_BEGIN(so, set_dealloc)
-    if (so->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) so);
+    FT_CLEAR_WEAKREFS(self, so->weakreflist);
 
     for (entry = so->table; used > 0; entry++) {
         if (entry->key && entry->key != dummy) {
@@ -529,7 +548,6 @@ set_dealloc(PyObject *self)
     if (so->table != so->smalltable)
         PyMem_Free(so->table);
     Py_TYPE(so)->tp_free(so);
-    Py_TRASHCAN_END
 }
 
 static PyObject *

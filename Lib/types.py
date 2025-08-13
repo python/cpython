@@ -58,7 +58,10 @@ except ImportError:
         raise TypeError
     except TypeError as exc:
         TracebackType = type(exc.__traceback__)
-        FrameType = type(exc.__traceback__.tb_frame)
+
+    _f = (lambda: sys._getframe())()
+    FrameType = type(_f)
+    FrameLocalsProxyType = type(_f.f_locals)
 
     GetSetDescriptorType = type(FunctionType.__code__)
     MemberDescriptorType = type(FunctionType.__globals__)
@@ -250,7 +253,6 @@ class DynamicClassAttribute:
 
 
 class _GeneratorWrapper:
-    # TODO: Implement this in C.
     def __init__(self, gen):
         self.__wrapped = gen
         self.__isgen = gen.__class__ is GeneratorType
@@ -305,7 +307,6 @@ def coroutine(func):
         # Check if 'func' is a generator function.
         # (0x20 == CO_GENERATOR)
         if co_flags & 0x20:
-            # TODO: Implement this in C.
             co = func.__code__
             # 0x100 == CO_ITERABLE_COROUTINE
             func.__code__ = co.replace(co_flags=co.co_flags | 0x100)

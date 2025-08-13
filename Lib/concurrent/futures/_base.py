@@ -558,6 +558,33 @@ class Future(object):
             self._condition.notify_all()
         self._invoke_callbacks()
 
+    def _get_snapshot(self):
+        """Get a snapshot of the future's current state.
+
+        This method atomically retrieves the state in one lock acquisition,
+        which is significantly faster than multiple method calls.
+
+        Returns:
+            Tuple of (done, cancelled, result, exception)
+            - done: True if the future is done (cancelled or finished)
+            - cancelled: True if the future was cancelled
+            - result: The result if available and not cancelled
+            - exception: The exception if available and not cancelled
+        """
+        # Fast path: check if already finished without lock
+        if self._state == FINISHED:
+            return True, False, self._result, self._exception
+
+        # Need lock for other states since they can change
+        with self._condition:
+            # We have to check the state again after acquiring the lock
+            # because it may have changed in the meantime.
+            if self._state == FINISHED:
+                return True, False, self._result, self._exception
+            if self._state in {CANCELLED, CANCELLED_AND_NOTIFIED}:
+                return True, True, None, None
+            return False, False, None, None
+
     __class_getitem__ = classmethod(types.GenericAlias)
 
 class Executor(object):

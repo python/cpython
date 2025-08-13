@@ -1154,44 +1154,44 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: locals()
 
-    Return a mapping object representing the current local symbol table, with
-    variable names as the keys, and their currently bound references as the
-    values.
+   Return a mapping object representing the current local symbol table, with
+   variable names as the keys, and their currently bound references as the
+   values.
 
-    At module scope, as well as when using :func:`exec` or :func:`eval` with
-    a single namespace, this function returns the same namespace as
-    :func:`globals`.
+   At module scope, as well as when using :func:`exec` or :func:`eval` with
+   a single namespace, this function returns the same namespace as
+   :func:`globals`.
 
-    At class scope, it returns the namespace that will be passed to the
-    metaclass constructor.
+   At class scope, it returns the namespace that will be passed to the
+   metaclass constructor.
 
-    When using ``exec()`` or ``eval()`` with separate local and global
-    arguments, it returns the local namespace passed in to the function call.
+   When using ``exec()`` or ``eval()`` with separate local and global
+   arguments, it returns the local namespace passed in to the function call.
 
-    In all of the above cases, each call to ``locals()`` in a given frame of
-    execution will return the *same* mapping object. Changes made through
-    the mapping object returned from ``locals()`` will be visible as assigned,
-    reassigned, or deleted local variables, and assigning, reassigning, or
-    deleting local variables will immediately affect the contents of the
-    returned mapping object.
+   In all of the above cases, each call to ``locals()`` in a given frame of
+   execution will return the *same* mapping object. Changes made through
+   the mapping object returned from ``locals()`` will be visible as assigned,
+   reassigned, or deleted local variables, and assigning, reassigning, or
+   deleting local variables will immediately affect the contents of the
+   returned mapping object.
 
-    In an :term:`optimized scope` (including functions, generators, and
-    coroutines), each call to ``locals()`` instead returns a fresh dictionary
-    containing the current bindings of the function's local variables and any
-    nonlocal cell references. In this case, name binding changes made via the
-    returned dict are *not* written back to the corresponding local variables
-    or nonlocal cell references, and assigning, reassigning, or deleting local
-    variables and nonlocal cell references does *not* affect the contents
-    of previously returned dictionaries.
+   In an :term:`optimized scope` (including functions, generators, and
+   coroutines), each call to ``locals()`` instead returns a fresh dictionary
+   containing the current bindings of the function's local variables and any
+   nonlocal cell references. In this case, name binding changes made via the
+   returned dict are *not* written back to the corresponding local variables
+   or nonlocal cell references, and assigning, reassigning, or deleting local
+   variables and nonlocal cell references does *not* affect the contents
+   of previously returned dictionaries.
 
-    Calling ``locals()`` as part of a comprehension in a function, generator, or
-    coroutine is equivalent to calling it in the containing scope, except that
-    the comprehension's initialised iteration variables will be included. In
-    other scopes, it behaves as if the comprehension were running as a nested
-    function.
+   Calling ``locals()`` as part of a comprehension in a function, generator, or
+   coroutine is equivalent to calling it in the containing scope, except that
+   the comprehension's initialised iteration variables will be included. In
+   other scopes, it behaves as if the comprehension were running as a nested
+   function.
 
-    Calling ``locals()`` as part of a generator expression is equivalent to
-    calling it in a nested generator function.
+   Calling ``locals()`` as part of a generator expression is equivalent to
+   calling it in a nested generator function.
 
    .. versionchanged:: 3.12
       The behaviour of ``locals()`` in a comprehension has been updated as
@@ -1220,9 +1220,9 @@ are always available.  They are listed here in alphabetical order.
       Added the *strict* parameter.
 
 
-.. function:: max(iterable, *, key=None)
-              max(iterable, *, default, key=None)
-              max(arg1, arg2, *args, key=None)
+.. function:: max(iterable, /, *, key=None)
+              max(iterable, /, *, default, key=None)
+              max(arg1, arg2, /, *args, key=None)
 
    Return the largest item in an iterable or the largest of two or more
    arguments.
@@ -1258,9 +1258,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *, key=None)
-              min(iterable, *, default, key=None)
-              min(arg1, arg2, *args, key=None)
+.. function:: min(iterable, /, *, key=None)
+              min(iterable, /, *, default, key=None)
+              min(arg1, arg2, /, *args, key=None)
 
    Return the smallest item in an iterable or the smallest of two or more
    arguments.
@@ -1562,12 +1562,18 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
 
-.. function:: ord(c)
+.. function:: ord(character, /)
 
-   Given a string representing one Unicode character, return an integer
-   representing the Unicode code point of that character.  For example,
+   Return the ordinal value of a character.
+
+   If the argument is a one-character string, return the Unicode code point
+   of that character.  For example,
    ``ord('a')`` returns the integer ``97`` and ``ord('€')`` (Euro sign)
    returns ``8364``.  This is the inverse of :func:`chr`.
+
+   If the argument is a :class:`bytes` or :class:`bytearray` object of
+   length 1, return its single byte value.
+   For example, ``ord(b'a')`` returns the integer ``97``.
 
 
 .. function:: pow(base, exp, mod=None)
@@ -1577,7 +1583,7 @@ are always available.  They are listed here in alphabetical order.
    ``pow(base, exp) % mod``). The two-argument form ``pow(base, exp)`` is
    equivalent to using the power operator: ``base**exp``.
 
-   The arguments must have numeric types.  With mixed operand types, the
+   When arguments are builtin numeric types with mixed operand types, the
    coercion rules for binary arithmetic operators apply.  For :class:`int`
    operands, the result has the same type as the operands (after coercion)
    unless the second argument is negative; in that case, all arguments are
@@ -1729,8 +1735,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. class:: range(stop)
-           range(start, stop, step=1)
+.. class:: range(stop, /)
+           range(start, stop, step=1, /)
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
@@ -1839,14 +1845,14 @@ are always available.  They are listed here in alphabetical order.
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
    ``None``.
 
+   Slice objects have read-only data attributes :attr:`!start`,
+   :attr:`!stop`, and :attr:`!step` which merely return the argument
+   values (or their default).  They have no other explicit functionality;
+   however, they are used by NumPy and other third-party packages.
+
    .. attribute:: slice.start
    .. attribute:: slice.stop
    .. attribute:: slice.step
-
-      Slice objects have read-only data attributes :attr:`!start`,
-      :attr:`!stop`, and :attr:`!step` which merely return the argument
-      values (or their default).  They have no other explicit functionality;
-      however, they are used by NumPy and other third-party packages.
 
    Slice objects are also generated when extended indexing syntax is used.  For
    example: ``a[start:stop:step]`` or ``a[start:stop, i]``.  See

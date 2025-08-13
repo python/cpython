@@ -1,4 +1,0 @@
-Improve error message when an object supporting the synchronous (resp.
-asynchronous) context manager protocol is entered using :keyword:`async
-with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
-:keyword:`async with`). Patch by Bénédikt Tran.

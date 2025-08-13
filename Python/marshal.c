@@ -38,7 +38,7 @@ module marshal
  * On Windows PGO builds, the r_object function overallocates its stack and
  * can cause a stack overflow. We reduce the maximum depth for all Windows
  * releases to protect against this.
- * #if defined(MS_WINDOWS) && defined(_DEBUG)
+ * #if defined(MS_WINDOWS) && defined(Py_DEBUG)
  */
 #if defined(MS_WINDOWS)
 #  define MAX_MARSHAL_STACK_DEPTH 1000
@@ -1656,6 +1656,9 @@ r_object(RFILE *p)
     case TYPE_SLICE:
     {
         Py_ssize_t idx = r_ref_reserve(flag, p);
+        if (idx < 0) {
+            break;
+        }
         PyObject *stop = NULL;
         PyObject *step = NULL;
         PyObject *start = r_object(p);

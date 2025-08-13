@@ -460,7 +460,7 @@ def _check_bracketed_netloc(netloc):
 # https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
 def _check_bracketed_host(hostname):
     if hostname.startswith('v'):
-        if not re.match(r"\Av[a-fA-F0-9]+\..+\Z", hostname):
+        if not re.match(r"\Av[a-fA-F0-9]+\..+\z", hostname):
             raise ValueError(f"IPvFuture address is invalid")
     else:
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4

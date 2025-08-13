@@ -55,8 +55,10 @@ from the previous chapter.  This file defines three things:
 #. How the :class:`!Custom` **type** behaves: this is the ``CustomType`` struct,
    which defines a set of flags and function pointers that the interpreter
    inspects when specific operations are requested.
-#. How to initialize the :mod:`!custom` module: this is the ``PyInit_custom``
-   function and the associated ``custommodule`` struct.
+#. How to define and execute the :mod:`!custom` module: this is the
+   ``PyInit_custom`` function and the associated ``custom_module`` struct for
+   defining the module, and the ``custom_module_exec`` function to set up
+   a fresh module object.
 
 The first bit is::
 
@@ -171,18 +173,18 @@ implementation provided by the API function :c:func:`PyType_GenericNew`. ::
    .tp_new = PyType_GenericNew,
 
 Everything else in the file should be familiar, except for some code in
-:c:func:`!PyInit_custom`::
+:c:func:`!custom_module_exec`::
 
-   if (PyType_Ready(&CustomType) < 0)
-       return;
+   if (PyType_Ready(&CustomType) < 0) {
+       return -1;
+   }
 
 This initializes the :class:`!Custom` type, filling in a number of members
 to the appropriate default values, including :c:member:`~PyObject.ob_type` that we initially
 set to ``NULL``. ::
 
    if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
-       Py_DECREF(m);
-       return NULL;
+       return -1;
    }
 
 This adds the type to the module dictionary.  This allows us to create
@@ -275,7 +277,7 @@ be an instance of a subclass.
    The explicit cast to ``CustomObject *`` above is needed because we defined
    ``Custom_dealloc`` to take a ``PyObject *`` argument, as the ``tp_dealloc``
    function pointer expects to receive a ``PyObject *`` argument.
-   By assigning to the the ``tp_dealloc`` slot of a type, we declare
+   By assigning to the ``tp_dealloc`` slot of a type, we declare
    that it can only be called with instances of our ``CustomObject``
    class, so the cast to ``(CustomObject *)`` is safe.
    This is object-oriented polymorphism, in C!
@@ -875,27 +877,22 @@ but let the base class handle it by calling its own :c:member:`~PyTypeObject.tp_
 The :c:type:`PyTypeObject` struct supports a :c:member:`~PyTypeObject.tp_base`
 specifying the type's concrete base class.  Due to cross-platform compiler
 issues, you can't fill that field directly with a reference to
-:c:type:`PyList_Type`; it should be done later in the module initialization
+:c:type:`PyList_Type`; it should be done in the :c:data:`Py_mod_exec`
 function::
 
-   PyMODINIT_FUNC
-   PyInit_sublist(void)
+   static int
+   sublist_module_exec(PyObject *m)
    {
-       PyObject* m;
        SubListType.tp_base = &PyList_Type;
-       if (PyType_Ready(&SubListType) < 0)
-           return NULL;
-
-       m = PyModule_Create(&sublistmodule);
-       if (m == NULL)
-           return NULL;
-
-       if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
-           Py_DECREF(m);
-           return NULL;
+       if (PyType_Ready(&SubListType) < 0) {
+           return -1;
        }
 
-       return m;
+       if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
+           return -1;
+       }
+
+       return 0;
    }
 
 Before calling :c:func:`PyType_Ready`, the type structure must have the

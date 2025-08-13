@@ -386,19 +386,13 @@ else:
     Task = _CTask = _asyncio.Task
 
 
-def create_task(coro, *, name=None, context=None):
+def create_task(coro, **kwargs):
     """Schedule the execution of a coroutine object in a spawn task.
 
     Return a Task object.
     """
     loop = events.get_running_loop()
-    if context is None:
-        # Use legacy API if context is not needed
-        task = loop.create_task(coro, name=name)
-    else:
-        task = loop.create_task(coro, name=name, context=context)
-
-    return task
+    return loop.create_task(coro, **kwargs)
 
 
 # wait() and as_completed() similar to those in PEP 3148.
@@ -914,6 +908,25 @@ def gather(*coros_or_futures, return_exceptions=False):
     return outer
 
 
+def _log_on_exception(fut):
+    if fut.cancelled():
+        return
+
+    exc = fut.exception()
+    if exc is None:
+        return
+
+    context = {
+        'message':
+        f'{exc.__class__.__name__} exception in shielded future',
+        'exception': exc,
+        'future': fut,
+    }
+    if fut._source_traceback:
+        context['source_traceback'] = fut._source_traceback
+    fut._loop.call_exception_handler(context)
+
+
 def shield(arg):
     """Wait for a future, shielding it from cancellation.
 
@@ -959,14 +972,11 @@ def shield(arg):
     else:
         cur_task = None
 
-    def _inner_done_callback(inner, cur_task=cur_task):
-        if cur_task is not None:
-            futures.future_discard_from_awaited_by(inner, cur_task)
+    def _clear_awaited_by_callback(inner):
+        futures.future_discard_from_awaited_by(inner, cur_task)
 
+    def _inner_done_callback(inner):
         if outer.cancelled():
-            if not inner.cancelled():
-                # Mark inner's result as retrieved.
-                inner.exception()
             return
 
         if inner.cancelled():
@@ -978,10 +988,16 @@ def shield(arg):
             else:
                 outer.set_result(inner.result())
 
-
     def _outer_done_callback(outer):
         if not inner.done():
             inner.remove_done_callback(_inner_done_callback)
+            # Keep only one callback to log on cancel
+            inner.remove_done_callback(_log_on_exception)
+            inner.add_done_callback(_log_on_exception)
+
+    if cur_task is not None:
+        inner.add_done_callback(_clear_awaited_by_callback)
+
 
     inner.add_done_callback(_inner_done_callback)
     outer.add_done_callback(_outer_done_callback)
@@ -1030,9 +1046,9 @@ def create_eager_task_factory(custom_task_constructor):
         used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
         """
 
-    def factory(loop, coro, *, name=None, context=None):
+    def factory(loop, coro, *, eager_start=True, **kwargs):
         return custom_task_constructor(
-            coro, loop=loop, name=name, context=context, eager_start=True)
+            coro, loop=loop, eager_start=eager_start, **kwargs)
 
     return factory
 
