@@ -277,6 +277,8 @@ Known values:
     Python 3.14a7 3622 (Store annotations in different class dict keys)
     Python 3.14a7 3623 (Add BUILD_INTERPOLATION & BUILD_TEMPLATE opcodes)
     Python 3.14b1 3624 (Don't optimize LOAD_FAST when local is killed by DELETE_FAST)
+    Python 3.14b3 3625 (Fix handling of opcodes that may leave operands on the stack when optimizing LOAD_FAST)
+    Python 3.14rc2 3626 (Fix missing exception handlers in logical expression)
     Python 3.15a0 3650 (Initial version)
     Python 3.15a1 3651 (Simplify LOAD_CONST)
     Python 3.15a1 3652 (Virtual iterators)
