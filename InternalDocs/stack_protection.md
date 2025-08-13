@@ -3,7 +3,7 @@
 CPython protects against stack overflow in the form of runaway, or just very deep, recursion by raising a `RecursionError` instead of just crashing.
 Protection against pure Python stack recursion has existed since very early, but in 3.12 we added protection against stack overflow
 in C code. This was initially implemented using a counter and later improved in 3.14 to use the actual stack depth.
-For those platforms that support it (Windows, Mac, and most linuxes) we query the operating system to find the stack bounds.
+For those platforms that support it (Windows, Mac, and most Linuxes) we query the operating system to find the stack bounds.
 For other platforms we use conserative estimates.
 
 
@@ -36,7 +36,7 @@ The soft and hard limits pointers are set by calling `_Py_InitializeRecursionLim
 
 Recursion checks are performed by `_Py_EnterRecursiveCall()` or `_Py_EnterRecursiveCallTstate()` which compare the stack pointer to the soft limit. If the stack pointer is lower than the soft limit, then `_Py_CheckRecursiveCall()` is called which checks against both the hard and soft limits:
 
-```Py
+```python
 kb_used = (stack_top - stack_pointer)>>10
 if stack_pointer < hard_limit:
     FatalError(f"Unrecoverable stack overflow (used {kb_used} kB)")
@@ -44,8 +44,7 @@ elif stack_pointer < soft_limit:
     raise RecursionError(f"Stack overflow (used {kb_used} kB)")
 ```
 
-### Diagnosing and fixing stack overflows.
-
+### Diagnosing and fixing stack overflows
 
 For stack protection to work correctly the amount of stack consumed between calls to `_Py_EnterRecursiveCall()` must be less than `_PyOS_STACK_MARGIN_BYTES`.
 
