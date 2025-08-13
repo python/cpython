@@ -571,7 +571,7 @@ Decimal objects
       >>> Decimal(321).exp()
       Decimal('2.561702493119680037517373933E+139')
 
-   .. classmethod:: from_float(f)
+   .. classmethod:: from_float(f, /)
 
       Alternative constructor that only accepts instances of :class:`float` or
       :class:`int`.
@@ -598,7 +598,7 @@ Decimal objects
 
       .. versionadded:: 3.1
 
-   .. classmethod:: from_number(number)
+   .. classmethod:: from_number(number, /)
 
       Alternative constructor that only accepts instances of
       :class:`float`, :class:`int` or :class:`Decimal`, but not strings
@@ -989,7 +989,7 @@ Each thread has its own current context which is accessed or changed using the
    Return the current context for the active thread.
 
 
-.. function:: setcontext(c)
+.. function:: setcontext(c, /)
 
    Set the current context for the active thread to *c*.
 
