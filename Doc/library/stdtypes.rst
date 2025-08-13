@@ -1696,7 +1696,8 @@ multiple fragments.
 .. index::
    single: string; str (built-in class)
 
-.. class:: str(object='')
+.. class:: str(*, encoding='utf-8', errors='strict')
+           str(object)
            str(object, encoding, errors='strict')
            str(object, *, errors)
 

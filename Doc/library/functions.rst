@@ -1940,7 +1940,8 @@ are always available.  They are listed here in alphabetical order.
    single: string; str() (built-in function)
 
 .. _func-str:
-.. class:: str(object='')
+.. class:: str(*, encoding='utf-8', errors='strict')
+           str(object)
            str(object, encoding, errors='strict')
            str(object, *, errors)
    :noindex:
