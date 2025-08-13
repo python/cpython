@@ -434,12 +434,12 @@ def _tuple_str(obj_name, fields):
 
 
 def _tuple_compare_expand(op, fields):
-    op_without_eq = op[0]
-    op_has_eq = op[-1] == "="
     for f in fields:
         yield f'   if self.{f.name} != other.{f.name}:'
-        yield f'    return self.{f.name} {op_without_eq} other.{f.name}'
-    yield f'   return {op_has_eq}'
+        # ? use "op[0]" here since gated by "!=", probably not worth it
+        yield f'    return self.{f.name} {op} other.{f.name}'
+    # the instances are equal here, return constant
+    yield f'   return {op.endswith("=")}'
 
 
 class _FuncBuilder:
@@ -1145,10 +1145,12 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             # Create a comparison function.  If the fields in the object are
             # named 'x' and 'y'.
             # if self.x != other.x:
-            #   return self.x {op[0]} other.x
+            #   return self.x {op} other.x
             # if self.y != other.y:
-            #   return self.y {op[0]} other.y
+            #   return self.y {op} other.y
             # return {op.endswith("=")}
+
+            # __eq__ has this self guard, add here for consistency
             self_guard = ['  if self is other:', '   return True'] if op.endswith("=") else []
             func_builder.add_fn(name,
                             ('self', 'other'),
