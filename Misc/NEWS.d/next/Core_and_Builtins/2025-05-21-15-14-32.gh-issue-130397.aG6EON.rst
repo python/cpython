@@ -1,0 +1,3 @@
+Remove special-casing for C stack depth limits for WASI. Due to
+WebAssembly's built-in stack protection this does not pose a security
+concern.

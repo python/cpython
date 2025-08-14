@@ -1,0 +1,2 @@
+Disable constant folding for ``~`` with a boolean argument.
+This moves the deprecation warning from compile time to runtime.

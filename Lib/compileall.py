@@ -317,7 +317,9 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Utilities to support installing Python libraries.')
+        description='Utilities to support installing Python libraries.',
+        color=True,
+    )
     parser.add_argument('-l', action='store_const', const=0,
                         default=None, dest='maxlevels',
                         help="don't recurse into subdirectories")

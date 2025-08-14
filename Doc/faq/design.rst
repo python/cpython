@@ -328,7 +328,7 @@ Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
 `Cython <https://cython.org/>`_ compiles a modified version of Python with
-optional annotations into C extensions.  `Nuitka <https://www.nuitka.net/>`_ is
+optional annotations into C extensions.  `Nuitka <https://nuitka.net/>`_ is
 an up-and-coming compiler of Python into C++ code, aiming to support the full
 Python language.
 
@@ -345,7 +345,7 @@ to perform a garbage collection, obtain debugging statistics, and tune the
 collector's parameters.
 
 Other implementations (such as `Jython <https://www.jython.org>`_ or
-`PyPy <https://www.pypy.org>`_), however, can rely on a different mechanism
+`PyPy <https://pypy.org>`_), however, can rely on a different mechanism
 such as a full-blown garbage collector.  This difference can cause some
 subtle porting problems if your Python code depends on the behavior of the
 reference counting implementation.
@@ -420,10 +420,12 @@ strings representing the files in the current directory.  Functions which
 operate on this output would generally not break if you added another file or
 two to the directory.
 
-Tuples are immutable, meaning that once a tuple has been created, you can't
-replace any of its elements with a new value.  Lists are mutable, meaning that
-you can always change a list's elements.  Only immutable elements can be used as
-dictionary keys, and hence only tuples and not lists can be used as keys.
+Tuples are :term:`immutable`, meaning that once a tuple has been created, you can't
+replace any of its elements with a new value.  Lists are :term:`mutable`, meaning that
+you can always change a list's elements.  Only :term:`hashable` objects can
+be used as dictionary keys. Most immutable types are hashable, which is why
+tuples, but not lists, can be used as keys. Note, however, that a tuple is
+only hashable if all of its elements are hashable.
 
 
 How are lists implemented in CPython?

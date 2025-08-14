@@ -3,7 +3,7 @@ import os.path
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import IO, Any, Dict, List, Optional, Set, Text, Tuple
+from typing import IO, Any, Callable, Dict, List, Optional, Set, Text, Tuple
 
 from pegen import grammar
 from pegen.grammar import (
@@ -130,7 +130,7 @@ class CCallMakerVisitor(GrammarVisitor):
         self.gen = parser_generator
         self.exact_tokens = exact_tokens
         self.non_exact_tokens = non_exact_tokens
-        self.cache: Dict[Any, FunctionCall] = {}
+        self.cache: Dict[str, str] = {}
         self.cleanup_statements: List[str] = []
 
     def keyword_helper(self, keyword: str) -> FunctionCall:
@@ -206,21 +206,6 @@ class CCallMakerVisitor(GrammarVisitor):
                 comment=f"token='{val}'",
             )
 
-    def visit_Rhs(self, node: Rhs) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        if node.can_be_inlined:
-            self.cache[node] = self.generate_call(node.alts[0].items[0])
-        else:
-            name = self.gen.artificial_rule_from_rhs(node)
-            self.cache[node] = FunctionCall(
-                assigned_variable=f"{name}_var",
-                function=f"{name}_rule",
-                arguments=["p"],
-                comment=f"{node}",
-            )
-        return self.cache[node]
-
     def visit_NamedItem(self, node: NamedItem) -> FunctionCall:
         call = self.generate_call(node.item)
         if node.name:
@@ -229,33 +214,47 @@ class CCallMakerVisitor(GrammarVisitor):
             call.assigned_variable_type = node.type
         return call
 
+    def assert_no_undefined_behavior(
+        self, call: FunctionCall, wrapper: str, expected_rtype: str | None,
+    ) -> None:
+        if call.return_type != expected_rtype:
+            raise RuntimeError(
+                f"{call.function} return type is incompatible with {wrapper}: "
+                f"expect: {expected_rtype}, actual: {call.return_type}"
+            )
+
     def lookahead_call_helper(self, node: Lookahead, positive: int) -> FunctionCall:
         call = self.generate_call(node.node)
-        if call.nodetype == NodeTypes.NAME_TOKEN:
-            return FunctionCall(
-                function=f"_PyPegen_lookahead_with_name",
-                arguments=[positive, call.function, *call.arguments],
-                return_type="int",
-            )
+        comment = None
+        if call.nodetype is NodeTypes.NAME_TOKEN:
+            function = "_PyPegen_lookahead_for_expr"
+            self.assert_no_undefined_behavior(call, function, "expr_ty")
+        elif call.nodetype is NodeTypes.STRING_TOKEN:
+            # _PyPegen_string_token() returns 'void *' instead of 'Token *';
+            # in addition, the overall function call would return 'expr_ty'.
+            assert call.function == "_PyPegen_string_token"
+            function = "_PyPegen_lookahead"
+            self.assert_no_undefined_behavior(call, function, "expr_ty")
         elif call.nodetype == NodeTypes.SOFT_KEYWORD:
-            return FunctionCall(
-                function=f"_PyPegen_lookahead_with_string",
-                arguments=[positive, call.function, *call.arguments],
-                return_type="int",
-            )
+            function = "_PyPegen_lookahead_with_string"
+            self.assert_no_undefined_behavior(call, function, "expr_ty")
         elif call.nodetype in {NodeTypes.GENERIC_TOKEN, NodeTypes.KEYWORD}:
-            return FunctionCall(
-                function=f"_PyPegen_lookahead_with_int",
-                arguments=[positive, call.function, *call.arguments],
-                return_type="int",
-                comment=f"token={node.node}",
-            )
+            function = "_PyPegen_lookahead_with_int"
+            self.assert_no_undefined_behavior(call, function, "Token *")
+            comment = f"token={node.node}"
+        elif call.return_type == "expr_ty":
+            function = "_PyPegen_lookahead_for_expr"
+        elif call.return_type == "stmt_ty":
+            function = "_PyPegen_lookahead_for_stmt"
         else:
-            return FunctionCall(
-                function=f"_PyPegen_lookahead",
-                arguments=[positive, f"(void *(*)(Parser *)) {call.function}", *call.arguments],
-                return_type="int",
-            )
+            function = "_PyPegen_lookahead"
+            self.assert_no_undefined_behavior(call, function, None)
+        return FunctionCall(
+            function=function,
+            arguments=[positive, call.function, *call.arguments],
+            return_type="int",
+            comment=comment,
+        )
 
     def visit_PositiveLookahead(self, node: PositiveLookahead) -> FunctionCall:
         return self.lookahead_call_helper(node, 1)
@@ -302,44 +301,62 @@ class CCallMakerVisitor(GrammarVisitor):
             comment=f"{node}",
         )
 
-    def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_repeat(node.node, False)
-        self.cache[node] = FunctionCall(
+    def _generate_artificial_rule_call(
+        self,
+        node: Any,
+        prefix: str,
+        rule_generation_func: Callable[[], str],
+        return_type: Optional[str] = None,
+    ) -> FunctionCall:
+        node_str = f"{node}"
+        key = f"{prefix}_{node_str}"
+        if key in self.cache:
+            name = self.cache[key]
+        else:
+            name = rule_generation_func()
+            self.cache[key] = name
+
+        return FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
-            return_type="asdl_seq *",
-            comment=f"{node}",
+            return_type=return_type,
+            comment=node_str,
         )
-        return self.cache[node]
+
+    def visit_Rhs(self, node: Rhs) -> FunctionCall:
+        if node.can_be_inlined:
+            return self.generate_call(node.alts[0].items[0])
+
+        return self._generate_artificial_rule_call(
+            node,
+            "rhs",
+            lambda: self.gen.artificial_rule_from_rhs(node),
+        )
+
+    def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
+        return self._generate_artificial_rule_call(
+            node,
+            "repeat0",
+            lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=False),
+            "asdl_seq *",
+        )
 
     def visit_Repeat1(self, node: Repeat1) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_repeat(node.node, True)
-        self.cache[node] = FunctionCall(
-            assigned_variable=f"{name}_var",
-            function=f"{name}_rule",
-            arguments=["p"],
-            return_type="asdl_seq *",
-            comment=f"{node}",
+        return self._generate_artificial_rule_call(
+            node,
+            "repeat1",
+            lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=True),
+            "asdl_seq *",
         )
-        return self.cache[node]
 
     def visit_Gather(self, node: Gather) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_gather(node)
-        self.cache[node] = FunctionCall(
-            assigned_variable=f"{name}_var",
-            function=f"{name}_rule",
-            arguments=["p"],
-            return_type="asdl_seq *",
-            comment=f"{node}",
+        return self._generate_artificial_rule_call(
+            node,
+            "gather",
+            lambda: self.gen.artificial_rule_from_gather(node),
+            "asdl_seq *",
         )
-        return self.cache[node]
 
     def visit_Group(self, node: Group) -> FunctionCall:
         return self.generate_call(node.rhs)
@@ -377,7 +394,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.cleanup_statements: List[str] = []
 
     def add_level(self) -> None:
-        self.print("if (p->level++ == MAXSTACK) {")
+        self.print("if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {")
         with self.indent():
             self.print("_Pypegen_stack_overflow(p);")
         self.print("}")

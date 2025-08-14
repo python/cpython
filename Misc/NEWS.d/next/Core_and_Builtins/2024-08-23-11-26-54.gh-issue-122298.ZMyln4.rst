@@ -1,3 +1,0 @@
-Restore printout of GC stats when ``gc.set_debug(gc.DEBUG_STATS)`` is
-called. This featue was accidentally removed when implementing incremental
-GC.

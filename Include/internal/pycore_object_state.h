@@ -11,6 +11,14 @@ extern "C" {
 #include "pycore_freelist_state.h"  // _Py_freelists
 #include "pycore_hashtable.h"       // _Py_hashtable_t
 
+
+/* Reference tracer state */
+struct _reftracer_runtime_state {
+    PyRefTracer tracer_func;
+    void* tracer_data;
+};
+
+
 struct _py_object_runtime_state {
 #ifdef Py_REF_DEBUG
     Py_ssize_t interpreter_leaks;

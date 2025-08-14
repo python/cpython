@@ -60,9 +60,36 @@ This module defines the following functions:
 
 The following exceptions are available:
 
-.. exception:: TOMLDecodeError
+.. exception:: TOMLDecodeError(msg, doc, pos)
 
-   Subclass of :exc:`ValueError`.
+   Subclass of :exc:`ValueError` with the following additional attributes:
+
+   .. attribute:: msg
+
+      The unformatted error message.
+
+   .. attribute:: doc
+
+      The TOML document being parsed.
+
+   .. attribute:: pos
+
+      The index of *doc* where parsing failed.
+
+   .. attribute:: lineno
+
+      The line corresponding to *pos*.
+
+   .. attribute:: colno
+
+      The column corresponding to *pos*.
+
+   .. versionchanged:: 3.14
+      Added the *msg*, *doc* and *pos* parameters.
+      Added the :attr:`msg`, :attr:`doc`, :attr:`pos`, :attr:`lineno` and :attr:`colno` attributes.
+
+   .. deprecated:: 3.14
+      Passing free-form positional arguments is deprecated.
 
 
 Examples
