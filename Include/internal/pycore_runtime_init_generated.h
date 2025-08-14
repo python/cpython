@@ -833,6 +833,7 @@ extern "C" {
     INIT_ID(c_exception), \
     INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
+    INIT_ID(c_stack), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \

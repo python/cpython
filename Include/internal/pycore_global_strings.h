@@ -326,6 +326,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(c_exception)
         STRUCT_FOR_ID(c_parameter_type)
         STRUCT_FOR_ID(c_return)
+        STRUCT_FOR_ID(c_stack)
         STRUCT_FOR_ID(cached_datetime_module)
         STRUCT_FOR_ID(cached_statements)
         STRUCT_FOR_ID(cadata)

@@ -149,7 +149,7 @@ exit:
 }
 
 PyDoc_STRVAR(faulthandler_py_enable__doc__,
-"enable($module, /, file=sys.stderr, all_threads=True)\n"
+"enable($module, /, file=sys.stderr, all_threads=True, c_stack=True)\n"
 "--\n"
 "\n"
 "Enable the fault handler.");
@@ -159,7 +159,7 @@ PyDoc_STRVAR(faulthandler_py_enable__doc__,
 
 static PyObject *
 faulthandler_py_enable_impl(PyObject *module, PyObject *file,
-                            int all_threads);
+                            int all_threads, int c_stack);
 
 static PyObject *
 faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -167,7 +167,7 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 2
+    #define NUM_KEYWORDS 3
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -176,7 +176,7 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(file), &_Py_ID(all_threads), },
+        .ob_item = { &_Py_ID(file), &_Py_ID(all_threads), &_Py_ID(c_stack), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -185,20 +185,21 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"file", "all_threads", NULL};
+    static const char * const _keywords[] = {"file", "all_threads", "c_stack", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "enable",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *file = NULL;
     int all_threads = 1;
+    int c_stack = 1;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 0, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -211,12 +212,21 @@ faulthandler_py_enable(PyObject *module, PyObject *const *args, Py_ssize_t nargs
             goto skip_optional_pos;
         }
     }
-    all_threads = PyObject_IsTrue(args[1]);
-    if (all_threads < 0) {
+    if (args[1]) {
+        all_threads = PyObject_IsTrue(args[1]);
+        if (all_threads < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    c_stack = PyObject_IsTrue(args[2]);
+    if (c_stack < 0) {
         goto exit;
     }
 skip_optional_pos:
-    return_value = faulthandler_py_enable_impl(module, file, all_threads);
+    return_value = faulthandler_py_enable_impl(module, file, all_threads, c_stack);
 
 exit:
     return return_value;
@@ -275,8 +285,7 @@ PyDoc_STRVAR(faulthandler_dump_traceback_later__doc__,
 "\n"
 "Dump the traceback of all threads in timeout seconds.\n"
 "\n"
-"Dump the traceback of all threads each timeout seconds if repeat is True.\n"
-"\n"
+"If repeat is True, the tracebacks of all threads are dumped every timeout seconds.\n"
 "If exit is true, call _exit(1) which is not safe.");
 
 #define FAULTHANDLER_DUMP_TRACEBACK_LATER_METHODDEF    \
@@ -676,4 +685,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=1c53a409616703b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d39dd5a293f3d9a input=a9049054013a1b77]*/

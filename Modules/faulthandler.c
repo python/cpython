@@ -589,17 +589,17 @@ faulthandler.enable as faulthandler_py_enable
 
     file: object(py_default="sys.stderr") = NULL
     all_threads: bool = True
+    c_stack: bool = True
 
 Enable the fault handler.
 [clinic start generated code]*/
 
 static PyObject *
 faulthandler_py_enable_impl(PyObject *module, PyObject *file,
-                            int all_threads)
-/*[clinic end generated code: output=348b6cfd9d6ac905 input=7bc5873504899ae6]*/
+                            int all_threads, int c_stack)
+/*[clinic end generated code: output=580d89b5eb62f1cb input=77277746a88b25ca]*/
 {
     int fd;
-    int c_stack = 1;
     PyThreadState *tstate;
 
     fd = faulthandler_get_fileno(&file);
@@ -788,7 +788,7 @@ static PyObject *
 faulthandler_dump_traceback_later_impl(PyObject *module,
                                        PyObject *timeout_obj, int repeat,
                                        PyObject *file, int exit)
-/*[clinic end generated code: output=a24d80d694d25ba2 input=aef7567b1048af00]*/
+/*[clinic end generated code: output=a24d80d694d25ba2 input=e474dbd9c8ac52cd]*/
 {
     PyTime_t timeout, timeout_us;
     int fd;
