@@ -780,8 +780,7 @@ faulthandler.dump_traceback_later
 
 Dump the traceback of all threads in timeout seconds.
 
-Dump the traceback of all threads each timeout seconds if repeat is True.
-
+If repeat is True, the tracebacks of all threads are dumped every timeout seconds.
 If exit is true, call _exit(1) which is not safe.
 [clinic start generated code]*/
 
