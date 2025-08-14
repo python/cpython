@@ -12,7 +12,7 @@ from urllib.request import urlretrieve
 def retrieve_with_retries(download_location, output_path, reporthook,
                           max_retries=7):
     """Download a file with exponential backoff retry and save to disk."""
-    for attempt in range(max_retries):
+    for attempt in range(max_retries + 1):
         try:
             resp = urlretrieve(
                 download_location,
