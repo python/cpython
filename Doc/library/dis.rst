@@ -1998,3 +1998,74 @@ instructions:
 .. data:: opmap
 
    Dictionary :term:`mapping`
+
+   Dictionary mapping operation names to bytecodes.
+
+
+.. data:: cmp_op
+
+   Sequence of all compare operation names.
+
+
+.. data:: hasarg
+
+   Sequence of bytecodes that use their argument.
+
+   .. versionadded:: 3.12
+
+
+.. data:: hasconst
+
+   Sequence of bytecodes that access a constant.
+
+
+.. data:: hasfree
+
+   Sequence of bytecodes that access a :term:`free (closure) variable <closure variable>`.
+   'free' in this context refers to names in the current scope that are
+   referenced by inner scopes or names in outer scopes that are referenced
+   from this scope.  It does *not* include references to global or builtin scopes.
+
+
+.. data:: hasname
+
+   Sequence of bytecodes that access an attribute by name.
+
+
+.. data:: hasjump
+
+   Sequence of bytecodes that have a jump target. All jumps
+   are relative.
+
+   .. versionadded:: 3.13
+
+.. data:: haslocal
+
+   Sequence of bytecodes that access a local variable.
+
+
+.. data:: hascompare
+
+   Sequence of bytecodes of Boolean operations.
+
+.. data:: hasexc
+
+   Sequence of bytecodes that set an exception handler.
+
+   .. versionadded:: 3.12
+
+
+.. data:: hasjrel
+
+   Sequence of bytecodes that have a relative jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. Use :data:`hasjump`.
+
+
+.. data:: hasjabs
+
+   Sequence of bytecodes that have an absolute jump target.
+
+   .. deprecated:: 3.13
+      All jumps are now relative. This list is empty.
