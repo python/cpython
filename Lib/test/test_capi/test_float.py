@@ -101,11 +101,7 @@ class CAPIFloatTest(unittest.TestCase):
         self.assertRaises(RuntimeError, asdouble, BadFloat3())
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(asdouble(BadIndex2()), 1.)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(asdouble(BadFloat2()), 4.25)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning, asdouble, BadFloat2())
+        self.assertRaises(TypeError, asdouble, BadFloat2())
         self.assertRaises(TypeError, asdouble, object())
         self.assertRaises(TypeError, asdouble, NULL)
 
