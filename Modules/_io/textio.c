@@ -251,7 +251,7 @@ _io_IncrementalNewlineDecoder___init___impl(nldecoder_object *self,
 {
 
     if (errors == NULL) {
-        errors = &_Py_ID(strict);
+        errors = &_Py_ID(replace);
     }
     else {
         errors = Py_NewRef(errors);
