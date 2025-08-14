@@ -1,4 +1,6 @@
+import contextlib
 import copy
+import io
 import itertools
 import os
 import pickle
@@ -755,15 +757,17 @@ class CommandLineTest(unittest.TestCase):
         self.addCleanup(platform.invalidate_caches)
 
     def invoke_platform(self, *flags):
-        with support.captured_stdout() as output:
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
             platform._main(args=flags)
         return output.getvalue()
 
     @support.force_not_colorized
     def test_unknown_flag(self):
+        output = io.StringIO()
         with self.assertRaises(SystemExit):
             # suppress argparse error message
-            with support.captured_stderr() as output:
+            with contextlib.redirect_stderr(output):
                 _ = self.invoke_platform('--unknown')
         self.assertStartsWith(output.getvalue(), "usage: ")
 
@@ -800,9 +804,12 @@ class CommandLineTest(unittest.TestCase):
 
     @support.force_not_colorized
     def test_help(self):
+        output = io.StringIO()
+
         with self.assertRaises(SystemExit):
-            with support.captured_stdout() as output:
+            with contextlib.redirect_stdout(output):
                 platform._main(args=["--help"])
+
         self.assertStartsWith(output.getvalue(), "usage:")
 
 

@@ -15,7 +15,7 @@ import random
 import string
 from test import support
 import shutil
-from test.support import (Error, captured_stderr, cpython_only, ALWAYS_EQ,
+from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
                           requires_subprocess)
 from test.support.os_helper import TESTFN, unlink
@@ -597,7 +597,7 @@ class CAPIExceptionFormattingMixin:
             callable()
             self.fail("No exception thrown.")
         except Exception as e:
-            with captured_stderr() as tbstderr:
+            with captured_output("stderr") as tbstderr:
                 exception_print(e, self.LEGACY)
             return tbstderr.getvalue().splitlines()[slice_start:slice_end]
 
@@ -1814,11 +1814,11 @@ class TracebackFormatMixin:
             traceback_print(tb, file_)
             python_fmt  = file_.getvalue()
             # Call all _tb and _exc functions
-            with captured_stderr() as tbstderr:
+            with captured_output("stderr") as tbstderr:
                 traceback.print_tb(tb)
             tbfile = StringIO()
             traceback.print_tb(tb, file=tbfile)
-            with captured_stderr() as excstderr:
+            with captured_output("stderr") as excstderr:
                 traceback.print_exc()
             excfmt = traceback.format_exc()
             excfile = StringIO()
@@ -1855,7 +1855,7 @@ class TracebackFormatMixin:
     def test_stack_format(self):
         # Verify _stack functions. Note we have to use _getframe(1) to
         # compare them without this frame appearing in the output
-        with captured_stderr() as ststderr:
+        with captured_output("stderr") as ststderr:
             traceback.print_stack(sys._getframe(1))
         stfile = StringIO()
         traceback.print_stack(sys._getframe(1), file=stfile)
@@ -1868,7 +1868,7 @@ class TracebackFormatMixin:
     def test_print_stack(self):
         def prn():
             traceback.print_stack()
-        with captured_stderr() as stderr:
+        with captured_output("stderr") as stderr:
             prn()
         lineno = prn.__code__.co_firstlineno
         self.assertEqual(stderr.getvalue().splitlines()[-4:], [
@@ -1889,7 +1889,7 @@ class TracebackFormatMixin:
         def f():
             f()
 
-        with captured_stderr() as stderr_f:
+        with captured_output("stderr") as stderr_f:
             try:
                 f()
             except RecursionError:
@@ -1940,7 +1940,7 @@ class TracebackFormatMixin:
                 return g(count-1) + 1
             raise ValueError
 
-        with captured_stderr() as stderr_g:
+        with captured_output("stderr") as stderr_g:
             try:
                 g()
             except ValueError:
@@ -1980,7 +1980,7 @@ class TracebackFormatMixin:
                 return h(count-1)
             g()
 
-        with captured_stderr() as stderr_h:
+        with captured_output("stderr") as stderr_h:
             try:
                 h()
             except ValueError:
@@ -2010,7 +2010,7 @@ class TracebackFormatMixin:
         self.assertEqual(actual, expected)
 
         # Check the boundary conditions. First, test just below the cutoff.
-        with captured_stderr() as stderr_g:
+        with captured_output("stderr") as stderr_g:
             try:
                 g(traceback._RECURSIVE_CUTOFF)
             except ValueError:
@@ -2042,7 +2042,7 @@ class TracebackFormatMixin:
         self.assertEqual(actual, expected)
 
         # Second, test just above the cutoff.
-        with captured_stderr() as stderr_g:
+        with captured_output("stderr") as stderr_g:
             try:
                 g(traceback._RECURSIVE_CUTOFF + 1)
             except ValueError:
@@ -2114,7 +2114,7 @@ class TracebackFormatMixin:
             except UnhashableException as e:
                 exc_val = e
 
-        with captured_stderr() as stderr_f:
+        with captured_output("stderr") as stderr_f:
             exception_print(exc_val)
 
         tb = stderr_f.getvalue().strip().splitlines()
@@ -2135,7 +2135,7 @@ class TracebackFormatMixin:
         from _testcapi import exception_print
         LIMIT = 75
         eg = self.deep_eg()
-        with captured_stderr() as stderr_f:
+        with captured_output("stderr") as stderr_f:
             with support.infinite_recursion(max_depth=LIMIT):
                 exception_print(eg)
         output = stderr_f.getvalue()
@@ -2146,7 +2146,7 @@ class TracebackFormatMixin:
     def test_exception_group_deep_recursion_traceback(self):
         LIMIT = 75
         eg = self.deep_eg()
-        with captured_stderr() as stderr_f:
+        with captured_output("stderr") as stderr_f:
             with support.infinite_recursion(max_depth=LIMIT):
                 traceback.print_exception(type(eg), eg, eg.__traceback__)
         output = stderr_f.getvalue()
@@ -2156,7 +2156,7 @@ class TracebackFormatMixin:
     @cpython_only
     def test_print_exception_bad_type_capi(self):
         from _testcapi import exception_print
-        with captured_stderr() as stderr:
+        with captured_output("stderr") as stderr:
             with support.catch_unraisable_exception():
                 exception_print(42)
         self.assertEqual(
@@ -3013,7 +3013,7 @@ class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         e = self.get_exception(e)
         s = ''.join(
             traceback.format_exception(type(e), e, e.__traceback__))
-        with captured_stderr() as sio:
+        with captured_output("stderr") as sio:
             traceback.print_exception(type(e), e, e.__traceback__)
         self.assertEqual(sio.getvalue(), s)
         return s
@@ -3029,7 +3029,7 @@ class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     def get_report(self, e):
         from _testcapi import exception_print
         e = self.get_exception(e)
-        with captured_stderr() as s:
+        with captured_output("stderr") as s:
             exception_print(e)
         return s.getvalue()
 
@@ -4833,7 +4833,7 @@ class TestColorizedTraceback(unittest.TestCase):
             foo()
             self.fail("No exception thrown.")
         except Exception as e:
-            with captured_stderr() as tbstderr:
+            with captured_output("stderr") as tbstderr:
                 with unittest.mock.patch('_colorize.can_colorize', return_value=True):
                     exception_print(e)
             actual = tbstderr.getvalue().splitlines()

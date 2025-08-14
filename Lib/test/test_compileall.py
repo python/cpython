@@ -2,6 +2,7 @@ import compileall
 import contextlib
 import filecmp
 import importlib.util
+import io
 import os
 import py_compile
 import shutil
@@ -88,7 +89,7 @@ class CompileallTestsBase:
             os.utime(self.source_path, (2**32 - 1, 2**32 - 1))
         except (OverflowError, OSError):
             self.skipTest("filesystem doesn't support timestamps near 2**32")
-        with support.captured_stdout():
+        with contextlib.redirect_stdout(io.StringIO()):
             self.assertTrue(compileall.compile_file(self.source_path))
 
     def test_larger_than_32_bit_times(self):
@@ -98,7 +99,7 @@ class CompileallTestsBase:
             os.utime(self.source_path, (2**35, 2**35))
         except (OverflowError, OSError):
             self.skipTest("filesystem doesn't support large timestamps")
-        with support.captured_stdout():
+        with contextlib.redirect_stdout(io.StringIO()):
             self.assertTrue(compileall.compile_file(self.source_path))
 
     def recreation_check(self, metadata):
@@ -205,7 +206,7 @@ class CompileallTestsBase:
     def test_compile_file_encoding_fallback(self):
         # Bug 44666 reported that compile_file failed when sys.stdout.encoding is None
         self.add_bad_source_file()
-        with support.captured_stdout():
+        with contextlib.redirect_stdout(io.StringIO()):
             self.assertFalse(compileall.compile_file(self.bad_source_path))
 
 
@@ -509,7 +510,8 @@ class EncodingTest(unittest.TestCase):
         shutil.rmtree(self.directory)
 
     def test_error(self):
-        with support.captured_stdout() as buffer:
+        buffer = io.TextIOWrapper(io.BytesIO(), encoding='ascii')
+        with contextlib.redirect_stdout(buffer):
             compiled = compileall.compile_dir(self.directory)
         self.assertFalse(compiled)  # should not be successful
         buffer.seek(0)

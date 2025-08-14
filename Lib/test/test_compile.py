@@ -1,4 +1,6 @@
+import contextlib
 import dis
+import io
 import itertools
 import math
 import opcode
@@ -965,7 +967,8 @@ class TestSpecifics(unittest.TestCase):
             for mode in ["exec", "single"]:
                 with self.subTest(opt=opt, mode=mode):
                     code = compile(src, "<test>", mode, optimize=opt)
-                    with support.captured_stdout() as output:
+                    output = io.StringIO()
+                    with contextlib.redirect_stdout(output):
                         dis.dis(code)
                     self.assertNotIn('NOP', output.getvalue())
 

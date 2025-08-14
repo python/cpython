@@ -879,7 +879,7 @@ class TestBasicOps(unittest.TestCase):
         def run(r1, r2):
             result = []
             for i, j in zip_longest(r1, r2, fillvalue=0):
-                with support.captured_stdout():
+                with support.captured_output('stdout'):
                     print((i, j))
                 result.append((i, j))
             return result

@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import io
 import re
 import sqlite3
 import test.support
@@ -45,7 +46,8 @@ def check_tracebacks(self, cm, exc, exc_regex, msg_regex, obj_name):
     """Convenience context manager for testing callback tracebacks."""
     sqlite3.enable_callback_tracebacks(True)
     try:
-        with test.support.captured_stderr():
+        buf = io.StringIO()
+        with contextlib.redirect_stderr(buf):
             yield
 
         self.assertEqual(cm.unraisable.exc_type, exc)

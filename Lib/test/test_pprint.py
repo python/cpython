@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import collections
+import contextlib
 import dataclasses
 import io
 import itertools
@@ -11,7 +12,7 @@ import types
 import unittest
 from collections.abc import ItemsView, KeysView, Mapping, MappingView, ValuesView
 
-from test.support import cpython_only, captured_stdout
+from test.support import cpython_only
 from test.support.import_helper import ensure_lazy_imports
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
@@ -175,7 +176,7 @@ class QueryTestCase(unittest.TestCase):
                             "expected isreadable for %r" % (safe,))
 
     def test_stdout_is_None(self):
-        with captured_stdout():
+        with contextlib.redirect_stdout(None):
             # smoke test - there is no output to check
             value = 'this should not fail'
             pprint.pprint(value)

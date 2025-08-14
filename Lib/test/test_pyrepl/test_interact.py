@@ -1,9 +1,11 @@
+import contextlib
+import io
 import unittest
 import warnings
 from unittest.mock import patch
 from textwrap import dedent
 
-from test import support
+from test.support import force_not_colorized
 
 from _pyrepl.console import InteractiveColoredConsole
 from _pyrepl.simple_interact import _more_lines
@@ -26,10 +28,11 @@ class TestSimpleInteract(unittest.TestCase):
         a
         """)
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
+        f = io.StringIO()
         with (
             patch.object(InteractiveColoredConsole, "showsyntaxerror") as showsyntaxerror,
             patch.object(InteractiveColoredConsole, "runsource", wraps=console.runsource) as runsource,
-            support.captured_stdout(),
+            contextlib.redirect_stdout(f),
         ):
             more = console.push(code, filename="<stdin>", _symbol="single")  # type: ignore[call-arg]
         self.assertFalse(more)
@@ -45,19 +48,21 @@ class TestSimpleInteract(unittest.TestCase):
         a
         """)
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
-        with support.captured_stdout() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
             more = console.push(code, filename="<stdin>", _symbol="single")  # type: ignore[call-arg]
         self.assertFalse(more)
         self.assertEqual(f.getvalue(), "1\n")
 
-    @support.force_not_colorized
+    @force_not_colorized
     def test_multiple_statements_fail_early(self):
         console = InteractiveColoredConsole()
         code = dedent("""\
         raise Exception('foobar')
         print('spam', 'eggs', sep='&')
         """)
-        with support.captured_stderr() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
             console.runsource(code)
         self.assertIn('Exception: foobar', f.getvalue())
         self.assertNotIn('spam&eggs', f.getvalue())
@@ -66,7 +71,8 @@ class TestSimpleInteract(unittest.TestCase):
         namespace = {}
         code = ""
         console = InteractiveColoredConsole(namespace, filename="<stdin>")
-        with support.captured_stdout() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
             more = console.push(code, filename="<stdin>", _symbol="single")  # type: ignore[call-arg]
         self.assertFalse(more)
         self.assertEqual(f.getvalue(), "")
@@ -81,24 +87,27 @@ class TestSimpleInteract(unittest.TestCase):
     def test_runsource_returns_false_for_successful_compilation(self):
         console = InteractiveColoredConsole()
         source = "print('Hello, world!')"
-        with support.captured_stdout():
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
             result = console.runsource(source)
         self.assertFalse(result)
 
-    @support.force_not_colorized
+    @force_not_colorized
     def test_runsource_returns_false_for_failed_compilation(self):
         console = InteractiveColoredConsole()
         source = "print('Hello, world!'"
-        with support.captured_stderr() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
             result = console.runsource(source)
         self.assertFalse(result)
         self.assertIn('SyntaxError', f.getvalue())
 
-    @support.force_not_colorized
+    @force_not_colorized
     def test_runsource_show_syntax_error_location(self):
         console = InteractiveColoredConsole()
         source = "def f(x, x): ..."
-        with support.captured_stderr() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
             result = console.runsource(source)
         self.assertFalse(result)
         r = """
@@ -125,7 +134,8 @@ SyntaxError: duplicate parameter 'x' in function definition"""
     def test_runsource_survives_null_bytes(self):
         console = InteractiveColoredConsole()
         source = "\x00\n"
-        with support.captured_stderr() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
             result = console.runsource(source)
         self.assertFalse(result)
         self.assertIn("source code string cannot contain null bytes", f.getvalue())
@@ -136,7 +146,8 @@ SyntaxError: duplicate parameter 'x' in function definition"""
         x: int = 1
         print(__annotate__(1))
         """)
-        with support.captured_stdout() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
             result = console.runsource(source)
         self.assertFalse(result)
         self.assertEqual(f.getvalue(), "{'x': <class 'int'>}\n")
@@ -148,14 +159,16 @@ SyntaxError: duplicate parameter 'x' in function definition"""
         def g(x: int): ...
         print(g.__annotations__)
         """)
-        with support.captured_stdout() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
             result = console.runsource(source)
         self.assertFalse(result)
         self.assertEqual(f.getvalue(), "{'x': 'int'}\n")
 
     def test_future_barry_as_flufl(self):
         console = InteractiveColoredConsole()
-        with support.captured_stdout() as f:
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
             result = console.runsource("from __future__ import barry_as_FLUFL\n")
             result = console.runsource("""print("black" <> 'blue')\n""")
         self.assertFalse(result)
