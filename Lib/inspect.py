@@ -1056,7 +1056,7 @@ class BlockFinder:
     """Provide a tokeneater() method to detect the end of a code block."""
     def __init__(self):
         self.indent = 0
-        self.islambda = False  # used also for generator expressions
+        self.singleline = False
         self.started = False
         self.passline = False
         self.indecorator = False
@@ -1074,13 +1074,13 @@ class BlockFinder:
                 # For "def" and "class" scan to the end of the block.
                 # For "lambda" and generator expression scan to
                 # the end of the logical line.
-                self.islambda = token not in ("def", "class")
+                self.singleline = token not in ("def", "class")
                 self.started = True
             self.passline = True    # skip to the end of the line
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
-            if self.islambda:       # lambdas always end at the first NEWLINE
+            if self.singleline:
                 raise EndOfBlock
             # hitting a NEWLINE when in a decorator without args
             # ends the decorator
