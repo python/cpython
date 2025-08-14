@@ -56,7 +56,7 @@ class StdStreamTest(unittest.TestCase):
     def test_skip_invalid_stderr(self):
         parser = argparse.ArgumentParser()
         with (
-            contextlib.redirect_stderr(None),
+            captured_stderr(),
             mock.patch('argparse._sys.exit')
         ):
             parser.exit(status=0, message='foo')

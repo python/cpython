@@ -1,7 +1,6 @@
 import _ast_unparse
 import ast
 import builtins
-import contextlib
 import copy
 import dis
 import enum
@@ -14,7 +13,6 @@ import textwrap
 import types
 import unittest
 import weakref
-from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 try:
@@ -3417,11 +3415,9 @@ class CommandLineTests(unittest.TestCase):
         Path(self.filename).write_text(self.text_normalize(content))
 
     def invoke_ast(self, *flags):
-        stderr = StringIO()
-        stdout = StringIO()
         with (
-            contextlib.redirect_stdout(stdout),
-            contextlib.redirect_stderr(stderr),
+            support.captured_stdout() as stdout,
+            support.captured_stderr() as stderr,
         ):
             ast.main(args=[*flags, self.filename])
         self.assertEqual(stderr.getvalue(), '')
@@ -3462,9 +3458,8 @@ class CommandLineTests(unittest.TestCase):
     def test_help_message(self):
         for flag in ('-h', '--help', '--unknown'):
             with self.subTest(flag=flag):
-                output = StringIO()
                 with self.assertRaises(SystemExit):
-                    with contextlib.redirect_stderr(output):
+                    with support.captured_stderr() as output:
                         ast.main(args=flag)
                 self.assertStartsWith(output.getvalue(), 'usage: ')
 

@@ -1,7 +1,6 @@
 import _thread
 import asyncio
 import contextlib
-import io
 import os
 import subprocess
 import sys
@@ -199,14 +198,14 @@ class InterpreterPoolExecutorTest(
             nonlocal count
             count += 1
 
-        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+        with support.captured_stderr() as stderr:
             with self.executor_type(initializer=init1) as executor:
                 fut = executor.submit(lambda: None)
         self.assertIn('NotShareableError', stderr.getvalue())
         with self.assertRaises(BrokenInterpreterPool):
             fut.result()
 
-        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+        with support.captured_stderr() as stderr:
             with self.executor_type(initializer=init2) as executor:
                 fut = executor.submit(lambda: None)
         self.assertIn('NotShareableError', stderr.getvalue())
@@ -219,7 +218,7 @@ class InterpreterPoolExecutorTest(
                 raise NotImplementedError
         spam = Spam()
 
-        with contextlib.redirect_stderr(io.StringIO()) as stderr:
+        with support.captured_stderr() as stderr:
             with self.executor_type(initializer=spam.initializer) as executor:
                 fut = executor.submit(lambda: None)
         self.assertIn('NotShareableError', stderr.getvalue())
@@ -230,7 +229,7 @@ class InterpreterPoolExecutorTest(
     def test_init_exception_in_script(self):
         executor = self.executor_type(initializer='raise Exception("spam")')
         with executor:
-            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with support.captured_stderr() as stderr:
                 fut = executor.submit('pass')
                 with self.assertRaises(BrokenInterpreterPool):
                     fut.result()
@@ -244,7 +243,7 @@ class InterpreterPoolExecutorTest(
         executor = self.executor_type(initializer=fail,
                                       initargs=(Exception, 'spam'))
         with executor:
-            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with support.captured_stderr() as stderr:
                 fut = executor.submit(noop)
                 with self.assertRaises(BrokenInterpreterPool):
                     fut.result()

@@ -2072,7 +2072,7 @@ class ExceptHookTests(BaseTestCase):
 
     @force_not_colorized
     def test_excepthook(self):
-        with support.captured_output("stderr") as stderr:
+        with support.captured_stderr() as stderr:
             thread = ThreadRunFail(name="excepthook thread")
             thread.start()
             thread.join()
@@ -2088,7 +2088,7 @@ class ExceptHookTests(BaseTestCase):
     def test_excepthook_thread_None(self):
         # threading.excepthook called with thread=None: log the thread
         # identifier in this case.
-        with support.captured_output("stderr") as stderr:
+        with support.captured_stderr() as stderr:
             try:
                 raise ValueError("bug")
             except Exception as exc:
@@ -2111,7 +2111,7 @@ class ExceptHookTests(BaseTestCase):
                 sys.exit(1)
 
         # threading.excepthook() silently ignores SystemExit
-        with support.captured_output("stderr") as stderr:
+        with support.captured_stderr() as stderr:
             thread = ThreadExit()
             thread.start()
             thread.join()
@@ -2151,7 +2151,7 @@ class ExceptHookTests(BaseTestCase):
 
         with support.swap_attr(threading, 'excepthook', threading_hook), \
              support.swap_attr(sys, 'excepthook', sys_hook), \
-             support.captured_output('stderr') as stderr:
+             support.captured_stderr() as stderr:
             thread = ThreadRunFail()
             thread.start()
             thread.join()
@@ -2162,7 +2162,7 @@ class ExceptHookTests(BaseTestCase):
 
     def test_original_excepthook(self):
         def run_thread():
-            with support.captured_output("stderr") as output:
+            with support.captured_stderr() as output:
                 thread = ThreadRunFail(name="excepthook thread")
                 thread.start()
                 thread.join()

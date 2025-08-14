@@ -1295,7 +1295,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             def __del__(self_):
                 self.assertEqual(self_.a, 1)
                 self.assertEqual(self_.b, 2)
-        with support.captured_output('stderr') as s:
+        with support.captured_stderr() as s:
             h = H()
             del h
         self.assertEqual(s.getvalue(), '')

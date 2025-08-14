@@ -195,7 +195,7 @@ class ExceptHookTest(unittest.TestCase):
         self.assertEndsWith(err, "SyntaxError: msg\n")
 
     def test_excepthook(self):
-        with test.support.captured_output("stderr") as stderr:
+        with test.support.captured_stderr() as stderr:
             with test.support.catch_unraisable_exception():
                 sys.excepthook(1, '1', 1)
         self.assertTrue("TypeError: print_exception(): Exception expected for " \
@@ -1485,7 +1485,7 @@ class UnraisableHookTest(unittest.TestCase):
         def hook_func(*args):
             raise Exception("hook_func failed")
 
-        with test.support.captured_output("stderr") as stderr:
+        with test.support.captured_stderr() as stderr:
             with test.support.swap_attr(sys, 'unraisablehook', hook_func):
                 err_writeunraisable(ValueError(42), "custom hook fail")
 

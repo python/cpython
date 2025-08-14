@@ -1,4 +1,3 @@
-import contextlib
 import itertools
 import os
 import re
@@ -3181,8 +3180,7 @@ class CommandLineTest(unittest.TestCase):
             fp.write(content)
 
     def invoke_tokenize(self, *flags):
-        output = StringIO()
-        with contextlib.redirect_stdout(output):
+        with support.captured_stdout() as output:
             tokenize._main(args=[*flags, self.filename])
         return self.text_normalize(output.getvalue())
 
@@ -3209,7 +3207,7 @@ class CommandLineTest(unittest.TestCase):
 
         with self.assertRaises(SystemExit):
             # suppress argparse error message
-            with contextlib.redirect_stderr(StringIO()):
+            with support.captured_stderr():
                 _ = self.invoke_tokenize('--unknown')
 
     def test_without_flag(self):

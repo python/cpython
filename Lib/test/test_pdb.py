@@ -17,7 +17,7 @@ import zipapp
 import zipfile
 
 from asyncio.events import _set_event_loop_policy
-from contextlib import ExitStack, redirect_stdout
+from contextlib import ExitStack
 from io import StringIO
 from test import support
 from test.support import has_socket_support, os_helper
@@ -4571,7 +4571,7 @@ class ChecklineTests(unittest.TestCase):
         with open(os_helper.TESTFN, "w") as f:
             f.write(s)
         num_lines = len(s.splitlines()) + 2  # Test for EOF
-        with redirect_stdout(StringIO()):
+        with support.captured_stdout():
             db = pdb.Pdb()
             for lineno in range(num_lines):
                 self.assertFalse(db.checkline(os_helper.TESTFN, lineno))

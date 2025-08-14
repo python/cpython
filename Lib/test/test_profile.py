@@ -7,10 +7,11 @@ import os
 from difflib import unified_diff
 from io import StringIO
 from test.support.os_helper import TESTFN, unlink, temp_dir, change_cwd
-from contextlib import contextmanager, redirect_stdout
+from contextlib import contextmanager
 
 import profile
 from test.profilee import testfunc, timer
+from test.support import captured_stdout
 from test.support.script_helper import assert_python_failure, assert_python_ok
 
 
@@ -93,7 +94,7 @@ class ProfileTest(unittest.TestCase):
         self.assertTrue(os.path.exists(TESTFN))
 
     def test_run_with_sort_by_values(self):
-        with redirect_stdout(StringIO()) as f:
+        with captured_stdout() as f:
             self.profilermodule.run("int('1')", sort=('tottime', 'stdname'))
         self.assertIn("Ordered by: internal time, standard name", f.getvalue())
 

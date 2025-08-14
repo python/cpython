@@ -1,7 +1,6 @@
 # Minimal tests for dis module
 
 import ast
-import contextlib
 import dis
 import functools
 import io
@@ -13,9 +12,9 @@ import tempfile
 import textwrap
 import types
 import unittest
-from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only,
-                          os_helper, import_helper, reset_code)
+from test.support import (captured_stderr, captured_stdout,
+                          requires_debug_ranges, requires_specialization,
+                          cpython_only, os_helper, import_helper, reset_code)
 from test.support.bytecode_helper import BytecodeTestCase
 
 
@@ -971,8 +970,7 @@ class DisTests(DisTestBase):
 
     def get_disassembly(self, func, lasti=-1, wrapper=True, **kwargs):
         # We want to test the default printing behaviour, not the file arg
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
+        with captured_stdout() as output:
             if wrapper:
                 dis.dis(func, **kwargs)
             else:
@@ -988,8 +986,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_compare(got, expected)
         # Add checks for dis.disco
         if hasattr(func, '__code__'):
-            got_disco = io.StringIO()
-            with contextlib.redirect_stdout(got_disco):
+            with captured_stdout() as got_disco:
                 dis.disco(func.__code__, **kwargs)
             self.do_disassembly_compare(got_disco.getvalue(), expected)
 
@@ -1709,8 +1706,7 @@ def _stringify_instruction(instr):
     return base + "),"
 
 def _prepare_test_cases():
-    ignore = io.StringIO()
-    with contextlib.redirect_stdout(ignore):
+    with captured_stdout():
         f = outer()
         inner = f()
     _instructions_outer = dis.get_instructions(outer, first_line=expected_outer_line)
@@ -2428,8 +2424,7 @@ class TestDisTraceback(DisTestBase):
         return super().setUp()
 
     def get_disassembly(self, tb):
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
+        with captured_stdout() as output:
             dis.distb(tb)
         return output.getvalue()
 
@@ -2455,8 +2450,7 @@ class TestDisTraceback(DisTestBase):
 class TestDisTracebackWithFile(TestDisTraceback):
     # Run the `distb` tests again, using the file arg instead of print
     def get_disassembly(self, tb):
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
+        with captured_stdout() as output:
             dis.distb(tb, file=output)
         return output.getvalue()
 
@@ -2506,8 +2500,7 @@ class TestDisCLI(unittest.TestCase):
             fp.write(self.text_normalize(content))
 
     def invoke_dis(self, *flags):
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
+        with captured_stdout() as output:
             dis.main(args=[*flags, self.filename])
         return self.text_normalize(output.getvalue())
 
@@ -2541,7 +2534,7 @@ class TestDisCLI(unittest.TestCase):
 
         with self.assertRaises(SystemExit):
             # suppress argparse error message
-            with contextlib.redirect_stderr(io.StringIO()):
+            with captured_stderr():
                 _ = self.invoke_dis('--unknown')
 
     def test_show_cache(self):

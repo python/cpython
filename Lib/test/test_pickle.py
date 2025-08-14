@@ -2,7 +2,6 @@ from _compat_pickle import (IMPORT_MAPPING, REVERSE_IMPORT_MAPPING,
                             NAME_MAPPING, REVERSE_NAME_MAPPING)
 import builtins
 import collections
-import contextlib
 import io
 import pickle
 import struct
@@ -728,8 +727,7 @@ class CommandLineTest(unittest.TestCase):
             pickle.dump(data, f)
 
     def invoke_pickle(self, *flags):
-        output = io.StringIO()
-        with contextlib.redirect_stdout(output):
+        with support.captured_stdout() as output:
             pickle._main(args=[*flags, self.filename])
         return self.text_normalize(output.getvalue())
 
@@ -754,10 +752,9 @@ class CommandLineTest(unittest.TestCase):
 
     @support.force_not_colorized
     def test_unknown_flag(self):
-        stderr = io.StringIO()
         with self.assertRaises(SystemExit):
             # check that the parser help is shown
-            with contextlib.redirect_stderr(stderr):
+            with support.captured_stderr() as stderr:
                 _ = self.invoke_pickle('--unknown')
         self.assertStartsWith(stderr.getvalue(), 'usage: ')
 

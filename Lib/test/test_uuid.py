@@ -1145,8 +1145,7 @@ class CommandLineTestCases:
     uuid = None  # to be defined in subclasses
 
     def do_test_standalone_uuid(self, version):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
+        with support.captured_stdout() as stdout:
             self.uuid.main()
         output = stdout.getvalue().strip()
         u = self.uuid.UUID(output)
@@ -1178,8 +1177,7 @@ class CommandLineTestCases:
 
     @mock.patch.object(sys, "argv", [""])
     def test_cli_uuid4_outputted_with_no_args(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
+        with support.captured_stdout() as stdout:
             self.uuid.main()
 
         output = stdout.getvalue().strip()
@@ -1191,8 +1189,7 @@ class CommandLineTestCases:
 
     @mock.patch.object(sys, "argv", ["", "-C", "3"])
     def test_cli_uuid4_outputted_with_count(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
+        with support.captured_stdout() as stdout:
             self.uuid.main()
 
         output = stdout.getvalue().strip().splitlines()
@@ -1206,8 +1203,7 @@ class CommandLineTestCases:
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
     def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
+        with support.captured_stdout() as stdout:
             self.uuid.main()
 
         output = stdout.getvalue().strip()
@@ -1220,8 +1216,7 @@ class CommandLineTestCases:
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid5", "-n", "@dns", "-N", "python.org"])
     def test_cli_uuid5_ouputted_with_valid_namespace_and_name(self):
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
+        with support.captured_stdout() as stdout:
             self.uuid.main()
 
         output = stdout.getvalue().strip()

@@ -891,7 +891,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         with self.module.catch_warnings():
             self.module.filterwarnings("always", category=UserWarning)
             del self.module.showwarning
-            with support.captured_output('stderr') as stream:
+            with support.captured_stderr() as stream:
                 self.module.warn(text)
                 result = stream.getvalue()
         self.assertIn(text, result)
@@ -905,7 +905,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             show = self.module._showwarnmsg
             try:
                 del self.module._showwarnmsg
-                with support.captured_output('stderr') as stream:
+                with support.captured_stderr() as stream:
                     self.module.warn(text)
                     result = stream.getvalue()
             finally:
@@ -918,7 +918,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             with self.module.catch_warnings():
                 self.module.filterwarnings("always", category=UserWarning)
                 self.module.showwarning = print
-                with support.captured_output('stdout'):
+                with support.captured_stdout():
                     self.module.warn('Warning!')
                 self.module.showwarning = 23
                 self.assertRaises(TypeError, self.module.warn, "Warning!")
@@ -933,7 +933,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             with self.module.catch_warnings():
                 self.module.filterwarnings("always", category=UserWarning)
                 del self.module.showwarning
-                with support.captured_output('stderr') as stream:
+                with support.captured_stderr() as stream:
                     warning_tests.inner(text)
                     result = stream.getvalue()
             self.assertEqual(result.count('\n'), 2,
