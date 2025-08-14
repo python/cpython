@@ -253,7 +253,7 @@ Adapt the ``_elementtree`` extension module to multi-phase init
 .. section: Library
 
 Avoid potential unexpected ``freeaddrinfo`` call (double free) in
-:mod:`socket` when when a libc ``getaddrinfo()`` implementation leaves
+:mod:`socket` when a libc ``getaddrinfo()`` implementation leaves
 garbage in an output pointer when returning an error. Original patch by
 Sergey G. Brester.
 

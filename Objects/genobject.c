@@ -17,6 +17,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_warnings.h"      // _PyErr_WarnUnawaitedCoroutine()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 #include "opcode_ids.h"           // RESUME, etc
@@ -161,8 +162,7 @@ gen_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(gen);
 
-    if (gen->gi_weakreflist != NULL)
-        PyObject_ClearWeakRefs(self);
+    FT_CLEAR_WEAKREFS(self, gen->gi_weakreflist);
 
     _PyObject_GC_TRACK(self);
 
@@ -1092,14 +1092,14 @@ _PyCoro_GetAwaitableIter(PyObject *o)
             if (PyCoro_CheckExact(res) || gen_is_coroutine(res)) {
                 /* __await__ must return an *iterator*, not
                    a coroutine or another awaitable (see PEP 492) */
-                PyErr_SetString(PyExc_TypeError,
-                                "__await__() returned a coroutine");
+                PyErr_Format(PyExc_TypeError,
+                             "%T.__await__() must return an iterator, "
+                             "not coroutine", o);
                 Py_CLEAR(res);
             } else if (!PyIter_Check(res)) {
                 PyErr_Format(PyExc_TypeError,
-                             "__await__() returned non-iterator "
-                             "of type '%.100s'",
-                             Py_TYPE(res)->tp_name);
+                             "%T.__await__() must return an iterator, "
+                             "not %T", o, res);
                 Py_CLEAR(res);
             }
         }

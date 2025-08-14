@@ -57,32 +57,6 @@ context does not affect the conversion and is only passed to determine if\n\
 the InvalidOperation trap is active.\n\
 \n");
 
-PyDoc_STRVAR(doc_adjusted,
-"adjusted($self, /)\n--\n\n\
-Return the adjusted exponent of the number.  Defined as exp + digits - 1.\n\
-\n");
-
-PyDoc_STRVAR(doc_as_tuple,
-"as_tuple($self, /)\n--\n\n\
-Return a tuple representation of the number.\n\
-\n");
-
-PyDoc_STRVAR(doc_as_integer_ratio,
-"as_integer_ratio($self, /)\n--\n\n\
-Decimal.as_integer_ratio() -> (int, int)\n\
-\n\
-Return a pair of integers, whose ratio is exactly equal to the original\n\
-Decimal and with a positive denominator. The ratio is in lowest terms.\n\
-Raise OverflowError on infinities and a ValueError on NaNs.\n\
-\n");
-
-PyDoc_STRVAR(doc_canonical,
-"canonical($self, /)\n--\n\n\
-Return the canonical encoding of the argument.  Currently, the encoding\n\
-of a Decimal instance is always canonical, so this operation returns its\n\
-argument unchanged.\n\
-\n");
-
 PyDoc_STRVAR(doc_compare,
 "compare($self, /, other, context=None)\n--\n\n\
 Compare self to other.  Return a decimal value:\n\
@@ -132,71 +106,11 @@ and no rounding is performed. As an exception, the C version may raise\n\
 InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
-PyDoc_STRVAR(doc_conjugate,
-"conjugate($self, /)\n--\n\n\
-Return self.\n\
-\n");
-
-PyDoc_STRVAR(doc_copy_abs,
-"copy_abs($self, /)\n--\n\n\
-Return the absolute value of the argument.  This operation is unaffected by\n\
-context and is quiet: no flags are changed and no rounding is performed.\n\
-\n");
-
-PyDoc_STRVAR(doc_copy_negate,
-"copy_negate($self, /)\n--\n\n\
-Return the negation of the argument.  This operation is unaffected by context\n\
-and is quiet: no flags are changed and no rounding is performed.\n\
-\n");
-
-PyDoc_STRVAR(doc_copy_sign,
-"copy_sign($self, /, other, context=None)\n--\n\n\
-Return a copy of the first operand with the sign set to be the same as the\n\
-sign of the second operand. For example:\n\
-\n\
-    >>> Decimal('2.3').copy_sign(Decimal('-1.5'))\n\
-    Decimal('-2.3')\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
-\n");
-
 PyDoc_STRVAR(doc_exp,
 "exp($self, /, context=None)\n--\n\n\
 Return the value of the (natural) exponential function e**x at the given\n\
 number.  The function always uses the ROUND_HALF_EVEN mode and the result\n\
 is correctly rounded.\n\
-\n");
-
-PyDoc_STRVAR(doc_from_float,
-"from_float($type, f, /)\n--\n\n\
-Class method that converts a float to a decimal number, exactly.\n\
-Since 0.1 is not exactly representable in binary floating point,\n\
-Decimal.from_float(0.1) is not the same as Decimal('0.1').\n\
-\n\
-    >>> Decimal.from_float(0.1)\n\
-    Decimal('0.1000000000000000055511151231257827021181583404541015625')\n\
-    >>> Decimal.from_float(float('nan'))\n\
-    Decimal('NaN')\n\
-    >>> Decimal.from_float(float('inf'))\n\
-    Decimal('Infinity')\n\
-    >>> Decimal.from_float(float('-inf'))\n\
-    Decimal('-Infinity')\n\
-\n\
-\n");
-
-PyDoc_STRVAR(doc_from_number,
-"from_number($type, number, /)\n--\n\n\
-Class method that converts a real number to a decimal number, exactly.\n\
-\n\
-    >>> Decimal.from_number(314)              # int\n\
-    Decimal('314')\n\
-    >>> Decimal.from_number(0.1)              # float\n\
-    Decimal('0.1000000000000000055511151231257827021181583404541015625')\n\
-    >>> Decimal.from_number(Decimal('3.14'))  # another decimal instance\n\
-    Decimal('3.14')\n\
-\n\
 \n");
 
 PyDoc_STRVAR(doc_fma,
@@ -365,52 +279,6 @@ For example, Decimal('32.100') and Decimal('0.321000e+2') both normalize\n\
 to the equivalent value Decimal('32.1').\n\
 \n");
 
-PyDoc_STRVAR(doc_number_class,
-"number_class($self, /, context=None)\n--\n\n\
-Return a string describing the class of the operand.  The returned value\n\
-is one of the following ten strings:\n\
-\n\
-    * '-Infinity', indicating that the operand is negative infinity.\n\
-    * '-Normal', indicating that the operand is a negative normal number.\n\
-    * '-Subnormal', indicating that the operand is negative and subnormal.\n\
-    * '-Zero', indicating that the operand is a negative zero.\n\
-    * '+Zero', indicating that the operand is a positive zero.\n\
-    * '+Subnormal', indicating that the operand is positive and subnormal.\n\
-    * '+Normal', indicating that the operand is a positive normal number.\n\
-    * '+Infinity', indicating that the operand is positive infinity.\n\
-    * 'NaN', indicating that the operand is a quiet NaN (Not a Number).\n\
-    * 'sNaN', indicating that the operand is a signaling NaN.\n\
-\n\
-\n");
-
-PyDoc_STRVAR(doc_quantize,
-"quantize($self, /, exp, rounding=None, context=None)\n--\n\n\
-Return a value equal to the first operand after rounding and having the\n\
-exponent of the second operand.\n\
-\n\
-    >>> Decimal('1.41421356').quantize(Decimal('1.000'))\n\
-    Decimal('1.414')\n\
-\n\
-Unlike other operations, if the length of the coefficient after the quantize\n\
-operation would be greater than precision, then an InvalidOperation is signaled.\n\
-This guarantees that, unless there is an error condition, the quantized exponent\n\
-is always equal to that of the right-hand operand.\n\
-\n\
-Also unlike other operations, quantize never signals Underflow, even if the\n\
-result is subnormal and inexact.\n\
-\n\
-If the exponent of the second operand is larger than that of the first, then\n\
-rounding may be necessary. In this case, the rounding mode is determined by the\n\
-rounding argument if given, else by the given context argument; if neither\n\
-argument is given, the rounding mode of the current thread's context is used.\n\
-\n");
-
-PyDoc_STRVAR(doc_radix,
-"radix($self, /)\n--\n\n\
-Return Decimal(10), the radix (base) in which the Decimal class does\n\
-all its arithmetic. Included for compatibility with the specification.\n\
-\n");
-
 PyDoc_STRVAR(doc_remainder_near,
 "remainder_near($self, /, other, context=None)\n--\n\n\
 Return the remainder from dividing self by other.  This differs from\n\
@@ -432,15 +300,6 @@ positive then rotation is to the left; otherwise rotation is to the right.\n\
 The coefficient of the first operand is padded on the left with zeros to\n\
 length precision if necessary. The sign and exponent of the first operand are\n\
 unchanged.\n\
-\n");
-
-PyDoc_STRVAR(doc_same_quantum,
-"same_quantum($self, /, other, context=None)\n--\n\n\
-Test whether self and other have the same exponent or whether both are NaN.\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
 PyDoc_STRVAR(doc_scaleb,
@@ -465,38 +324,6 @@ PyDoc_STRVAR(doc_sqrt,
 "sqrt($self, /, context=None)\n--\n\n\
 Return the square root of the argument to full precision. The result is\n\
 correctly rounded using the ROUND_HALF_EVEN rounding mode.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_eng_string,
-"to_eng_string($self, /, context=None)\n--\n\n\
-Convert to an engineering-type string.  Engineering notation has an exponent\n\
-which is a multiple of 3, so there are up to 3 digits left of the decimal\n\
-place. For example, Decimal('123E+1') is converted to Decimal('1.23E+3').\n\
-\n\
-The value of context.capitals determines whether the exponent sign is lower\n\
-or upper case. Otherwise, the context does not affect the operation.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral,
-"to_integral($self, /, rounding=None, context=None)\n--\n\n\
-Identical to the to_integral_value() method.  The to_integral() name has been\n\
-kept for compatibility with older versions.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral_exact,
-"to_integral_exact($self, /, rounding=None, context=None)\n--\n\n\
-Round to the nearest integer, signaling Inexact or Rounded as appropriate if\n\
-rounding occurs.  The rounding mode is determined by the rounding parameter\n\
-if given, else by the given context. If neither parameter is given, then the\n\
-rounding mode of the current default context is used.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral_value,
-"to_integral_value($self, /, rounding=None, context=None)\n--\n\n\
-Round to the nearest integer without signaling Inexact or Rounded.  The\n\
-rounding mode is determined by the rounding parameter if given, else by\n\
-the given context. If neither parameter is given, then the rounding mode\n\
-of the current default context is used.\n\
 \n");
 
 

@@ -1,0 +1,3 @@
+While performing garbage collection, clear weakrefs to unreachable objects
+that are created during running of finalizers.  If those weakrefs were are
+not cleared, they could reveal unreachable objects.

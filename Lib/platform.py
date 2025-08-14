@@ -612,6 +612,9 @@ def system_alias(system, release, version):
 
 ### Various internal helpers
 
+# Table for cleaning up characters in filenames.
+_SIMPLE_SUBSTITUTIONS = str.maketrans(r' /\:;"()', r'_-------')
+
 def _platform(*args):
 
     """ Helper to format the platform string in a filename
@@ -621,28 +624,13 @@ def _platform(*args):
     platform = '-'.join(x.strip() for x in filter(len, args))
 
     # Cleanup some possible filename obstacles...
-    platform = platform.replace(' ', '_')
-    platform = platform.replace('/', '-')
-    platform = platform.replace('\\', '-')
-    platform = platform.replace(':', '-')
-    platform = platform.replace(';', '-')
-    platform = platform.replace('"', '-')
-    platform = platform.replace('(', '-')
-    platform = platform.replace(')', '-')
+    platform = platform.translate(_SIMPLE_SUBSTITUTIONS)
 
     # No need to report 'unknown' information...
     platform = platform.replace('unknown', '')
 
     # Fold '--'s and remove trailing '-'
-    while True:
-        cleaned = platform.replace('--', '-')
-        if cleaned == platform:
-            break
-        platform = cleaned
-    while platform and platform[-1] == '-':
-        platform = platform[:-1]
-
-    return platform
+    return re.sub(r'-{2,}', '-', platform).rstrip('-')
 
 def _node(default=''):
 
