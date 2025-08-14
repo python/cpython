@@ -1694,7 +1694,7 @@ to speed up repeated connections from the same clients.
    :class:`SSLError` will be raised.
 
    .. note::
-      when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
+      When connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       return details about the negotiated cipher.
 
 .. method:: SSLContext.set_ciphersuites(ciphersuites)
@@ -1706,7 +1706,7 @@ to speed up repeated connections from the same clients.
    use of all the specified ciphers), an :class:`SSLError` will be raised.
 
    .. note::
-      when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
+      When connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       return details about the negotiated cipher.
 
 .. method:: SSLContext.set_groups(groups)
