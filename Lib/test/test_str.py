@@ -150,7 +150,7 @@ class StrTest(string_tests.StringLikeTest,
         self.assertTypedEqual(ascii('\U0001f40d'), r"'\U0001f40d'")
         self.assertTypedEqual(ascii(StrSubclass('abc')), "'abc'")
         self.assertTypedEqual(ascii(WithRepr('<abc>')), '<abc>')
-        self.assertTypedEqual(ascii(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(ascii(WithRepr(StrSubclass('<abc>'))), '<abc>')
         self.assertTypedEqual(ascii(WithRepr('<\U0001f40d>')), r'<\U0001f40d>')
         self.assertTypedEqual(ascii(WithRepr(StrSubclass('<\U0001f40d>'))), r'<\U0001f40d>')
         self.assertRaises(TypeError, ascii, WithRepr(b'byte-repr'))
@@ -194,9 +194,9 @@ class StrTest(string_tests.StringLikeTest,
         self.assertTypedEqual(repr('\U0001f40d'), "'\U0001f40d'")
         self.assertTypedEqual(repr(StrSubclass('abc')), "'abc'")
         self.assertTypedEqual(repr(WithRepr('<abc>')), '<abc>')
-        self.assertTypedEqual(repr(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(repr(WithRepr(StrSubclass('<abc>'))), '<abc>')
         self.assertTypedEqual(repr(WithRepr('<\U0001f40d>')), '<\U0001f40d>')
-        self.assertTypedEqual(repr(WithRepr(StrSubclass('<\U0001f40d>'))), StrSubclass('<\U0001f40d>'))
+        self.assertTypedEqual(repr(WithRepr(StrSubclass('<\U0001f40d>'))), '<\U0001f40d>')
         self.assertRaises(TypeError, repr, WithRepr(b'byte-repr'))
 
     def test_iterators(self):
@@ -2415,7 +2415,7 @@ class StrTest(string_tests.StringLikeTest,
                 return self.value
 
         self.assertTypedEqual(str(WithStr('abc')), 'abc')
-        self.assertTypedEqual(str(WithStr(StrSubclass('abc'))), StrSubclass('abc'))
+        self.assertTypedEqual(str(WithStr(StrSubclass('abc'))), 'abc')
         self.assertTypedEqual(StrSubclass(WithStr('abc')), StrSubclass('abc'))
         self.assertTypedEqual(StrSubclass(WithStr(StrSubclass('abc'))),
                               StrSubclass('abc'))
@@ -2423,7 +2423,7 @@ class StrTest(string_tests.StringLikeTest,
                               StrSubclass('abc'))
 
         self.assertTypedEqual(str(StrWithStr('abc')), 'abc')
-        self.assertTypedEqual(str(StrWithStr(StrSubclass('abc'))), StrSubclass('abc'))
+        self.assertTypedEqual(str(StrWithStr(StrSubclass('abc'))), 'abc')
         self.assertTypedEqual(StrSubclass(StrWithStr('abc')), StrSubclass('abc'))
         self.assertTypedEqual(StrSubclass(StrWithStr(StrSubclass('abc'))),
                               StrSubclass('abc'))
@@ -2431,7 +2431,7 @@ class StrTest(string_tests.StringLikeTest,
                               StrSubclass('abc'))
 
         self.assertTypedEqual(str(WithRepr('<abc>')), '<abc>')
-        self.assertTypedEqual(str(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(str(WithRepr(StrSubclass('<abc>'))), '<abc>')
         self.assertTypedEqual(StrSubclass(WithRepr('<abc>')), StrSubclass('<abc>'))
         self.assertTypedEqual(StrSubclass(WithRepr(StrSubclass('<abc>'))),
                               StrSubclass('<abc>'))
