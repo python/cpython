@@ -55,9 +55,6 @@
 @MODULE_CMATH_TRUE@cmath cmathmodule.c
 @MODULE__STATISTICS_TRUE@_statistics _statisticsmodule.c
 
-# needs libm and on some platforms librt
-@MODULE__DATETIME_TRUE@_datetime _datetimemodule.c
-
 # _decimal uses libmpdec
 # either static libmpdec.a from Modules/_decimal/libmpdec or libmpdec.so
 # with ./configure --with-system-libmpdec

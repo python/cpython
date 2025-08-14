@@ -39,7 +39,7 @@ Current installers provide a
 `universal2 binary <https://en.wikipedia.org/wiki/Universal_binary>`_ build
 of Python which runs natively on all Macs (Apple Silicon and Intel) that are
 supported by a wide range of macOS versions,
-currently typically from at least **macOS 10.13 High Sierra** on.
+currently typically from at least **macOS 10.15 Catalina** on.
 
 The downloaded file is a standard macOS installer package file (``.pkg``).
 File integrity information (checksum, size, sigstore signature, etc) for each file is included

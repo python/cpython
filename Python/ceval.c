@@ -452,7 +452,11 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES;
 #else
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && !defined(__NetBSD__)
+/// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size
+/// (on alpine at least) is much smaller than expected and imposes undue limits
+/// compared to the old stack size estimation.  (We assume musl is not glibc.)
+#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && \
+        !defined(__NetBSD__) && (defined(__GLIBC__) || !defined(__linux__))
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
@@ -1154,7 +1158,7 @@ enter_tier_two:
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
-    assert(next_uop->opcode == _START_EXECUTOR);
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
 tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
@@ -1207,6 +1211,7 @@ jump_to_error_target:
         printf(" @ %d -> %s]\n",
                (int)(next_uop - current_executor->trace - 1),
                _PyOpcode_OpName[frame->instr_ptr->op.code]);
+        fflush(stdout);
     }
 #endif
     assert(next_uop[-1].format == UOP_FORMAT_JUMP);
@@ -2505,21 +2510,10 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    HEAD_UNLOCK(runtime);
-
-    while (ts) {
-        if (_PyEval_SetProfile(ts, func, arg) < 0) {
-            PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
-        }
-        HEAD_LOCK(runtime);
-        ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(runtime);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetProfileAllThreads(interp, func, arg) < 0) {
+        /* Log _PySys_Audit() error */
+        PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
     }
 }
 
@@ -2536,21 +2530,10 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    HEAD_UNLOCK(runtime);
-
-    while (ts) {
-        if (_PyEval_SetTrace(ts, func, arg) < 0) {
-            PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
-        }
-        HEAD_LOCK(runtime);
-        ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(runtime);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetTraceAllThreads(interp, func, arg) < 0) {
+        /* Log _PySys_Audit() error */
+        PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
     }
 }
 

@@ -1290,6 +1290,13 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: 3.5
 
+.. method:: SSLSocket.group()
+
+   Return the group used for doing key agreement on this connection. If no
+   connection has been established, returns ``None``.
+
+   .. versionadded:: next
+
 .. method:: SSLSocket.compression()
 
    Return the compression algorithm being used as a string, or ``None``
@@ -1647,6 +1654,25 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.6
 
+.. method:: SSLContext.get_groups(*, include_aliases=False)
+
+   Get a list of groups implemented for key agreement, taking into
+   account the current TLS :attr:`~SSLContext.minimum_version` and
+   :attr:`~SSLContext.maximum_version` values.  For example::
+
+       >>> ctx = ssl.create_default_context()
+       >>> ctx.minimum_version = ssl.TLSVersion.TLSv1_3
+       >>> ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+       >>> ctx.get_groups()  # doctest: +SKIP
+       ['secp256r1', 'secp384r1', 'secp521r1', 'x25519', 'x448', ...]
+
+   By default, this method returns only the preferred IANA names for the
+   available groups. However, if the ``include_aliases`` parameter is set to
+   :const:`True` this method will also return any associated aliases such as
+   the ECDH curve names supported in older versions of OpenSSL.
+
+   .. versionadded:: next
+
 .. method:: SSLContext.set_default_verify_paths()
 
    Load a set of default "certification authority" (CA) certificates from
@@ -1671,6 +1697,19 @@ to speed up repeated connections from the same clients.
 
       TLS 1.3 cipher suites cannot be disabled with
       :meth:`~SSLContext.set_ciphers`.
+
+.. method:: SSLContext.set_groups(groups)
+
+   Set the groups allowed for key agreement for sockets created with this
+   context.  It should be a string in the `OpenSSL group list format
+   <https://docs.openssl.org/master/man3/SSL_CTX_set1_groups_list/>`_.
+
+   .. note::
+
+      When connected, the :meth:`SSLSocket.group` method of SSL sockets will
+      return the group used for key agreement on that connection.
+
+   .. versionadded:: next
 
 .. method:: SSLContext.set_alpn_protocols(protocols)
 

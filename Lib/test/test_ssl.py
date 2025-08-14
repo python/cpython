@@ -48,6 +48,9 @@ Py_DEBUG_WIN32 = support.Py_DEBUG and sys.platform == 'win32'
 PROTOCOLS = sorted(ssl._PROTOCOL_NAMES)
 HOST = socket_helper.HOST
 IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
+CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
+CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
+CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
@@ -960,6 +963,25 @@ class ContextTests(unittest.TestCase):
             len(intersection), 2, f"\ngot: {sorted(names)}\nexpected: {sorted(expected)}"
         )
 
+    def test_set_groups(self):
+        ctx = ssl.create_default_context()
+        # We use P-256 and P-384 (FIPS 186-4) that are alloed by OpenSSL
+        # even if FIPS module is enabled. Ignoring unknown groups is only
+        # supported since OpenSSL 3.3.
+        self.assertIsNone(ctx.set_groups('P-256:P-384'))
+
+        self.assertRaises(ssl.SSLError, ctx.set_groups, 'P-256:foo')
+        if CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS:
+            self.assertIsNone(ctx.set_groups('P-256:?foo'))
+
+    @unittest.skipUnless(CAN_GET_AVAILABLE_OPENSSL_GROUPS,
+                         "OpenSSL version doesn't support getting groups")
+    def test_get_groups(self):
+        ctx = ssl.create_default_context()
+        # By default, only return official IANA names.
+        self.assertNotIn('P-256', ctx.get_groups())
+        self.assertIn('P-256', ctx.get_groups(include_aliases=True))
+
     def test_options(self):
         # Test default SSLContext options
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -1238,6 +1260,25 @@ class ContextTests(unittest.TestCase):
             ctx.load_cert_chain(CERTFILE_PROTECTED, password=getpass_exception)
         # Make sure the password function isn't called if it isn't needed
         ctx.load_cert_chain(CERTFILE, password=getpass_exception)
+
+    @threading_helper.requires_working_threading()
+    def test_load_cert_chain_thread_safety(self):
+        # gh-134698: _ssl detaches the thread state (and as such,
+        # releases the GIL and critical sections) around expensive
+        # OpenSSL calls. Unfortunately, OpenSSL structures aren't
+        # thread-safe, so executing these calls concurrently led
+        # to crashes.
+        ctx = ssl.create_default_context()
+
+        def race():
+            ctx.load_cert_chain(CERTFILE)
+
+        threads = [threading.Thread(target=race) for _ in range(8)]
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+
+            self.assertIsNone(cm.exc_value)
 
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -2701,6 +2742,8 @@ def server_params_test(client_context, server_context, indata=b"FOO\n",
                 'session_reused': s.session_reused,
                 'session': s.session,
             })
+            if CAN_GET_SELECTED_OPENSSL_GROUP:
+                stats.update({'group': s.group()})
             s.close()
         stats['server_alpn_protocols'] = server.selected_alpn_protocols
         stats['server_shared_ciphers'] = server.shared_ciphers
@@ -3851,6 +3894,8 @@ class ThreadedTests(unittest.TestCase):
                 with self.assertRaises(OSError):
                     s.connect((HOST, server.port))
         self.assertIn("NO_SHARED_CIPHER", server.conn_errors[0])
+        self.assertIsNone(s.cipher())
+        self.assertIsNone(s.group())
 
     def test_version_basic(self):
         """
@@ -4121,6 +4166,38 @@ class ThreadedTests(unittest.TestCase):
         server_context.set_ecdh_curve("secp384r1")
         server_context.set_ciphers("ECDHE:!eNULL:!aNULL")
         server_context.minimum_version = ssl.TLSVersion.TLSv1_2
+        with self.assertRaises(ssl.SSLError):
+            server_params_test(client_context, server_context,
+                               chatty=True, connectionchatty=True,
+                               sni_name=hostname)
+
+    def test_groups(self):
+        # server secp384r1, client auto
+        client_context, server_context, hostname = testing_context()
+
+        server_context.set_groups("secp384r1")
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+        if CAN_GET_SELECTED_OPENSSL_GROUP:
+            self.assertEqual(stats['group'], "secp384r1")
+
+        # server auto, client secp384r1
+        client_context, server_context, hostname = testing_context()
+        client_context.set_groups("secp384r1")
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+        if CAN_GET_SELECTED_OPENSSL_GROUP:
+            self.assertEqual(stats['group'], "secp384r1")
+
+        # server / client curve mismatch
+        client_context, server_context, hostname = testing_context()
+        client_context.set_groups("prime256v1")
+        server_context.set_groups("secp384r1")
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_3
         with self.assertRaises(ssl.SSLError):
             server_params_test(client_context, server_context,
                                chatty=True, connectionchatty=True,
@@ -4549,6 +4626,42 @@ class ThreadedTests(unittest.TestCase):
         with server:
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
+
+    def test_thread_recv_while_main_thread_sends(self):
+        # GH-137583: Locking was added to calls to send() and recv() on SSL
+        # socket objects. This seemed fine at the surface level because those
+        # calls weren't re-entrant, but recv() calls would implicitly mimick
+        # holding a lock by blocking until it received data. This means that
+        # if a thread started to infinitely block until data was received, calls
+        # to send() would deadlock, because it would wait forever on the lock
+        # that the recv() call held.
+        data = b"1" * 1024
+        event = threading.Event()
+        def background(sock):
+            event.set()
+            received = sock.recv(len(data))
+            self.assertEqual(received, data)
+
+        client_context, server_context, hostname = testing_context()
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as sock:
+                sock.connect((HOST, server.port))
+                sock.settimeout(1)
+                sock.setblocking(1)
+                # Ensure that the server is ready to accept requests
+                sock.sendall(b"123")
+                self.assertEqual(sock.recv(3), b"123")
+                with threading_helper.catch_threading_exception() as cm:
+                    thread = threading.Thread(target=background,
+                                              args=(sock,), daemon=True)
+                    thread.start()
+                    event.wait()
+                    sock.sendall(data)
+                    thread.join()
+                    if cm.exc_value is not None:
+                        raise cm.exc_value
 
 
 @unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,

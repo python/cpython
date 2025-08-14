@@ -137,8 +137,9 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 BUILTIN_EXCEPTION_LIMIT = object()
 
 
-def _print_exception_bltin(exc, /):
-    file = sys.stderr if sys.stderr is not None else sys.__stderr__
+def _print_exception_bltin(exc, file=None, /):
+    if file is None:
+        file = sys.stderr if sys.stderr is not None else sys.__stderr__
     colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
@@ -1106,6 +1107,11 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
+                sys.flags.no_site and \
+                getattr(exc_value, "name", None) not in sys.stdlib_module_names:
+            self._str += (". Site initialization is disabled, did you forget to "
+                + "add the site-packages directory to sys.path?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
