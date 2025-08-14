@@ -744,8 +744,11 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info.__dict__), 3)
         pointer_bits = 64 if sys.maxsize > 2**32 else 32
         self.assertEqual(info.pointer_bits, pointer_bits)
-        for flag in ["Py_GIL_DISABLED", "Py_DEBUG"]:
-            self.assertEqual(getattr(info, flag, None),
+        for attr, flag in [
+            ("free_threaded", "Py_GIL_DISABLED"),
+            ("debug", "Py_DEBUG"),
+        ]:
+            self.assertEqual(getattr(info, attr, None),
                              bool(sysconfig.get_config_var(flag)))
 
     @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")

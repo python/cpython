@@ -3268,7 +3268,7 @@ PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
-abi_info -- a named tuple with information about the ABI.\n\
+abi_info -- Python ABI information.\n\
 builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
@@ -3665,7 +3665,7 @@ make_abi_info(void)
 #else
     value = Py_False;
 #endif
-    res = PyDict_SetItemString(abi_info, "Py_GIL_DISABLED", value);
+    res = PyDict_SetItemString(abi_info, "free_threaded", value);
     if (res < 0) {
         goto error;
     }
@@ -3675,7 +3675,7 @@ make_abi_info(void)
 #else
     value = Py_False;
 #endif
-    res = PyDict_SetItemString(abi_info, "Py_DEBUG", value);
+    res = PyDict_SetItemString(abi_info, "debug", value);
     if (res < 0) {
         goto error;
     }

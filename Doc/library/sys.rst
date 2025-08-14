@@ -19,11 +19,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    *pointer_bits* is the width of pointers in bits, as an integer, equivalent
    to ``8 * sizeof(void *)``, i.e. usually ``32`` or ``64``.
 
-   *Py_GIL_DISABLED* is a boolean indicating whether the interpreter was built
+   *free_threaded* is a boolean indicating whether the interpreter was built
    with the GIL disabled, i.e. with the :option:`--disable-gil` option,
    aka free-threading.
 
-   *Py_DEBUG* is a boolean indicating whether the interpreter was built in
+   *debug* is a boolean indicating whether the interpreter was built in
    :ref:`debug mode <debug-build>`, i.e. with the :option:`--with-pydebug` option.
 
    .. versionadded:: next
