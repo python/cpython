@@ -1,0 +1,1 @@
+Add support for arbitrary multiple inheritance with :class:`typing.NamedTuple`.
