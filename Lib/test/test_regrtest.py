@@ -5,8 +5,10 @@ Note: test_regrtest cannot be run twice in parallel.
 """
 
 import _colorize
+import contextlib
 import dataclasses
 import glob
+import io
 import locale
 import os.path
 import platform
@@ -364,7 +366,7 @@ class ParseArgsTestCase(unittest.TestCase):
     def test_nowindows(self):
         for opt in '-n', '--nowindows':
             with self.subTest(opt=opt):
-                with support.captured_stderr() as stderr:
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
                     ns = self.parse_args([opt])
                 self.assertTrue(ns.nowindows)
                 err = stderr.getvalue()
