@@ -14,7 +14,7 @@
 
 --------------
 
-The :mod:`dis` module supports the analysis of CPython :term:`bytecode` by
+The :mod:`dis` module supports the analysis of :term:`CPython` :term:`bytecode` by
 disassembling it. The CPython bytecode which this module takes as an input is
 defined in the file :file:`Include/opcode.h` and used by the compiler and the
 interpreter.
@@ -141,9 +141,9 @@ code.
                     show_caches=False, adaptive=False, show_offsets=False,\
                     show_positions=False)
 
-   Analyse the bytecode corresponding to a function, generator, asynchronous
-   generator, coroutine, method, string of source code, or a code object (as
-   returned by :func:`compile`).
+   Analyse the bytecode corresponding to a function, :term:`generator`,
+   :term:`asynchronous generator`, :term:`coroutine`, method, string of source code,
+   or a code object (as returned by :func:`compile`).
 
    This is a convenience wrapper around many of the functions listed below, most
    notably :func:`get_instructions`, as iterating over a :class:`Bytecode`
@@ -194,7 +194,7 @@ code.
       code object, like :func:`code_info`.
 
    .. versionchanged:: 3.7
-      This can now handle coroutine and asynchronous generator objects.
+      This can now handle :term:`coroutine` and :term:`asynchronous generator` objects.
 
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
@@ -230,7 +230,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
 .. function:: code_info(x)
 
    Return a formatted multi-line string with detailed code object information
-   for the supplied function, generator, asynchronous generator, coroutine,
+   for the supplied function, :term:`generator`, :term:`asynchronous generator`, :term:`coroutine`,
    method, source code string or code object.
 
    Note that the exact contents of code info strings are highly implementation
@@ -262,13 +262,13 @@ operation is being performed, so the intermediate analysis object isn't useful:
                   adaptive=False, show_offsets=False, show_positions=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
-   method, a function, a generator, an asynchronous generator, a coroutine,
+   method, a function, a :term:`generator`, an :term:`asynchronous generator`, a :term:`coroutine`,
    a code object, a string of source code or a byte sequence of raw bytecode.
    For a module, it disassembles all functions. For a class, it disassembles
    all methods (including class and static methods). For a code object or
    sequence of raw bytecode, it prints one line per bytecode instruction.
    It also recursively disassembles nested code objects. These can include
-   generator expressions, nested functions, the bodies of nested classes,
+   :term:`generator expressions <generator expression>`, nested functions, the bodies of nested classes,
    and the code objects used for :ref:`annotation scopes <annotation-scopes>`.
    Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
@@ -293,7 +293,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Implemented recursive disassembling and added *depth* parameter.
 
    .. versionchanged:: 3.7
-      This can now handle coroutine and asynchronous generator objects.
+      This can now handle :term:`coroutine` and :term:`asynchronous generator` objects.
 
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
@@ -364,10 +364,10 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False)
 
-   Return an iterator over the instructions in the supplied function, method,
+   Return an :term:`iterator` over the instructions in the supplied function, method,
    source code string or code object.
 
-   The iterator generates a series of :class:`Instruction` named tuples giving
+   The iterator generates a series of :class:`Instruction` :term:`named tuples <named tuple>` giving
    the details of each operation in the supplied code.
 
    If *first_line* is not ``None``, it indicates the line number that should be
@@ -390,7 +390,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the :meth:`~codeobject.co_lines` method
+   This :term:`generator` function uses the :meth:`~codeobject.co_lines` method
    of the :ref:`code object <code-objects>` *code* to find the offsets which
    are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
@@ -604,7 +604,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 .. opcode:: END_SEND
 
    Implements ``del STACK[-2]``.
-   Used to clean up when a generator exits.
+   Used to clean up when a :term:`generator` exits.
 
    .. versionadded:: 3.12
 
@@ -763,7 +763,7 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: GET_AWAITABLE (where)
 
    Implements ``STACK[-1] = get_awaitable(STACK[-1])``, where ``get_awaitable(o)``
-   returns ``o`` if ``o`` is a coroutine object or a generator object with
+   returns ``o`` if ``o`` is a :term:`coroutine` object or a :term:`generator` object with
    the :data:`~inspect.CO_ITERABLE_COROUTINE` flag, or resolves
    ``o.__await__``.
 
@@ -800,7 +800,7 @@ not have to be) the original ``STACK[-2]``.
 .. opcode:: END_ASYNC_FOR
 
    Terminates an :keyword:`async for` loop.  Handles an exception raised
-   when awaiting a next item. The stack contains the async iterable in
+   when awaiting a next item. The stack contains the async :term:`iterable` in
    ``STACK[-2]`` and the raised exception in ``STACK[-1]``. Both are popped.
    If the exception is not :exc:`StopAsyncIteration`, it is re-raised.
 
@@ -830,7 +830,7 @@ not have to be) the original ``STACK[-2]``.
       item = STACK.pop()
       set.add(STACK[-i], item)
 
-   Used to implement set comprehensions.
+   Used to implement :term:`set comprehensions <set comprehension>`.
 
 
 .. opcode:: LIST_APPEND (i)
@@ -840,7 +840,7 @@ not have to be) the original ``STACK[-2]``.
       item = STACK.pop()
       list.append(STACK[-i], item)
 
-   Used to implement list comprehensions.
+   Used to implement :term:`list comprehensions <list comprehension>`.
 
 
 .. opcode:: MAP_ADD (i)
@@ -997,7 +997,7 @@ iterations of the loop.
 
 .. opcode:: MATCH_KEYS
 
-   ``STACK[-1]`` is a tuple of mapping keys, and ``STACK[-2]`` is the match subject.
+   ``STACK[-1]`` is a tuple of :term:`mapping` keys, and ``STACK[-2]`` is the match subject.
    If ``STACK[-2]`` contains all of the keys in ``STACK[-1]``, push a :class:`tuple`
    containing the corresponding values. Otherwise, push ``None``.
 
@@ -1032,7 +1032,7 @@ iterations of the loop.
 
 .. opcode:: UNPACK_EX (counts)
 
-   Implements assignment with a starred target: Unpacks an iterable in ``STACK[-1]``
+   Implements assignment with a starred target: Unpacks an :term:`iterable` in ``STACK[-1]``
    into individual values, where the total number of values can be smaller than the
    number of items in the iterable: one of the new values will be a list of all
    leftover items.
@@ -1102,8 +1102,8 @@ iterations of the loop.
 
 .. opcode:: LOAD_LOCALS
 
-   Pushes a reference to the locals dictionary onto the stack.  This is used
-   to prepare namespace dictionaries for :opcode:`LOAD_FROM_DICT_OR_DEREF`
+   Pushes a reference to the locals :term:`dictionary` onto the stack.  This is used
+   to prepare :term:`namespace` dictionaries for :opcode:`LOAD_FROM_DICT_OR_DEREF`
    and :opcode:`LOAD_FROM_DICT_OR_GLOBALS`.
 
    .. versionadded:: 3.12
@@ -1111,7 +1111,7 @@ iterations of the loop.
 
 .. opcode:: LOAD_FROM_DICT_OR_GLOBALS (i)
 
-   Pops a mapping off the stack and looks up the value for ``co_names[namei]``.
+   Pops a :term:`mapping` off the stack and looks up the value for ``co_names[namei]``.
    If the name is not found there, looks it up in the globals and then the builtins,
    similar to :opcode:`LOAD_GLOBAL`.
    This is used for loading global variables in
@@ -1188,7 +1188,7 @@ iterations of the loop.
 
 .. opcode:: BUILD_MAP (count)
 
-   Pushes a new dictionary object onto the stack.  Pops ``2 * count`` items
+   Pushes a new :term:`dictionary` object onto the stack.  Pops ``2 * count`` items
    so that the dictionary holds *count* entries:
    ``{..., STACK[-4]: STACK[-3], STACK[-2]: STACK[-1]}``.
 
@@ -1321,7 +1321,7 @@ iterations of the loop.
 
    Imports the module ``co_names[namei]``.  ``STACK[-1]`` and ``STACK[-2]`` are
    popped and provide the *fromlist* and *level* arguments of :func:`__import__`.
-   The module object is pushed onto the stack.  The current namespace is not affected: for a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
+   The module object is pushed onto the stack.  The current :term:`namespace` is not affected: for a proper import statement, a subsequent :opcode:`STORE_FAST` instruction
    modifies the namespace.
 
 
@@ -1432,7 +1432,7 @@ iterations of the loop.
 
 .. opcode:: LOAD_FAST_BORROW (var_num)
 
-   Pushes a borrowed reference to the local ``co_varnames[var_num]`` onto the
+   Pushes a :term:`borrowed reference` to the local ``co_varnames[var_num]`` onto the
    stack.
 
    .. versionadded:: 3.14
@@ -1511,7 +1511,7 @@ iterations of the loop.
 
 .. opcode:: LOAD_FROM_DICT_OR_DEREF (i)
 
-   Pops a mapping off the stack and looks up the name associated with
+   Pops a :term:`mapping` off the stack and looks up the name associated with
    slot ``i`` of the "fast locals" storage in this mapping.
    If the name is not found there, loads it from the cell contained in
    slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
@@ -1564,12 +1564,12 @@ iterations of the loop.
 
 .. opcode:: CALL (argc)
 
-   Calls a callable object with the number of arguments specified by ``argc``.
+   Calls a :term:`callable` object with the number of arguments specified by ``argc``.
    On the stack are (in ascending order):
 
    * The callable
    * ``self`` or ``NULL``
-   * The remaining positional arguments
+   * The remaining :term:`positional arguments <positional argument>`
 
    ``argc`` is the total of the positional arguments, excluding ``self``.
 
@@ -1583,7 +1583,7 @@ iterations of the loop.
       The callable now always appears at the same position on the stack.
 
    .. versionchanged:: 3.13
-      Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
+      Calls with :term:`keyword arguments <keyword argument>` are now handled by :opcode:`CALL_KW`.
 
 
 .. opcode:: CALL_KW (argc)
@@ -1591,7 +1591,7 @@ iterations of the loop.
    Calls a callable object with the number of arguments specified by ``argc``,
    including one or more named arguments. On the stack are (in ascending order):
 
-   * The callable
+   * The :term:`callable`
    * ``self`` or ``NULL``
    * The remaining positional arguments
    * The named arguments
@@ -1611,10 +1611,10 @@ iterations of the loop.
 
    Calls a callable object with variable set of positional and keyword
    arguments.  If the lowest bit of *flags* is set, the top of the stack
-   contains a mapping object containing additional keyword arguments.
-   Before the callable is called, the mapping object and iterable object
+   contains a :term:`mapping` object containing additional :term:`keyword arguments <keyword argument>`.
+   Before the :term:`callable` is called, the mapping object and :term:`iterable` object
    are each "unpacked" and their contents passed in as keyword and
-   positional arguments respectively.
+   :term:`positional arguments <positional argument>` respectively.
    ``CALL_FUNCTION_EX`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
@@ -1636,7 +1636,7 @@ iterations of the loop.
    Pushes a new function object on the stack built from the code object at ``STACK[-1]``.
 
    .. versionchanged:: 3.10
-      Flag value ``0x04`` is a tuple of strings instead of dictionary
+      Flag value ``0x04`` is a tuple of strings instead of :term:`dictionary`
 
    .. versionchanged:: 3.11
       Qualified name at ``STACK[-1]`` was removed.
@@ -1655,8 +1655,8 @@ iterations of the loop.
    * ``0x01`` a tuple of default values for positional-only and
      positional-or-keyword parameters in positional order
    * ``0x02`` a dictionary of keyword-only parameters' default values
-   * ``0x04`` a tuple of strings containing parameters' annotations
-   * ``0x08`` a tuple containing cells for free variables, making a closure
+   * ``0x04`` a tuple of strings containing parameters' :term:`annotations <annotation>`
+   * ``0x08`` a tuple containing cells for :term:`free variables <free variable>`, making a closure
 
    .. versionadded:: 3.13
 
@@ -1701,7 +1701,7 @@ iterations of the loop.
    * ``oparg == 2``: call :func:`repr` on *value*
    * ``oparg == 3``: call :func:`ascii` on *value*
 
-   Used for implementing formatted string literals (f-strings).
+   Used for implementing formatted string literals (:term:`f-strings <f-string>`).
 
    .. versionadded:: 3.13
 
@@ -1757,7 +1757,7 @@ iterations of the loop.
    The ``context`` operand consists of two parts. The lowest two bits
    indicate where the ``RESUME`` occurs:
 
-   * ``0`` The start of a function, which is neither a generator, coroutine
+   * ``0`` The start of a function, which is neither a :term:`generator`, :term:`coroutine`
      nor an async generator
    * ``1`` After a ``yield`` expression
    * ``2`` After a ``yield from`` expression
@@ -1775,7 +1775,7 @@ iterations of the loop.
 .. opcode:: RETURN_GENERATOR
 
    Create a generator, coroutine, or async generator from the current frame.
-   Used as first opcode of in code object for the above mentioned callables.
+   Used as first opcode of in code object for the above mentioned :term:`callables <callable>`.
    Clear the current frame and return the newly created generator.
 
    .. versionadded:: 3.11
@@ -1828,7 +1828,7 @@ iterations of the loop.
    | ``INTRINSIC_1_INVALID``           | Not valid                         |
    +-----------------------------------+-----------------------------------+
    | ``INTRINSIC_PRINT``               | Prints the argument to standard   |
-   |                                   | out. Used in the REPL.            |
+   |                                   | out. Used in the :term:`REPL`.    |
    +-----------------------------------+-----------------------------------+
    | ``INTRINSIC_IMPORT_STAR``         | Performs ``import *`` for the     |
    |                                   | named module.                     |
@@ -1836,7 +1836,8 @@ iterations of the loop.
    | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
    |                                   | ``StopIteration`` exception.      |
    +-----------------------------------+-----------------------------------+
-   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an async generator value    |
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an async                    |
+   |                                   | :term:`generator` value           |
    +-----------------------------------+-----------------------------------+
    | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
    |                                   | operation                         |
@@ -1858,7 +1859,7 @@ iterations of the loop.
    |                                   | :class:`typing.TypeAliasType`;    |
    |                                   | used in the :keyword:`type`       |
    |                                   | statement. The argument is a tuple|
-   |                                   | of the type alias's name,         |
+   |                                   | of the :term:`type alias`'s name, |
    |                                   | type parameters, and value.       |
    +-----------------------------------+-----------------------------------+
 
@@ -1901,7 +1902,7 @@ iterations of the loop.
 
 .. opcode:: LOAD_SPECIAL
 
-   Performs special method lookup on ``STACK[-1]``.
+   Performs :term:`special method` lookup on ``STACK[-1]``.
    If ``type(STACK[-1]).__xxx__`` is a method, leave
    ``type(STACK[-1]).__xxx__; STACK[-1]`` on the stack.
    If ``type(STACK[-1]).__xxx__`` is not a method, leave
@@ -1938,7 +1939,7 @@ but are replaced by real opcodes or removed before bytecode is generated.
    ``target``.
 
    This variant is used in :keyword:`with` and :keyword:`async with`
-   constructs, which push the return value of the context manager's
+   constructs, which push the return value of the :term:`context manager`'s
    :meth:`~object.__enter__` or :meth:`~object.__aenter__` to the stack.
 
 
@@ -1996,73 +1997,4 @@ instructions:
 
 .. data:: opmap
 
-   Dictionary mapping operation names to bytecodes.
-
-
-.. data:: cmp_op
-
-   Sequence of all compare operation names.
-
-
-.. data:: hasarg
-
-   Sequence of bytecodes that use their argument.
-
-   .. versionadded:: 3.12
-
-
-.. data:: hasconst
-
-   Sequence of bytecodes that access a constant.
-
-
-.. data:: hasfree
-
-   Sequence of bytecodes that access a :term:`free (closure) variable <closure variable>`.
-   'free' in this context refers to names in the current scope that are
-   referenced by inner scopes or names in outer scopes that are referenced
-   from this scope.  It does *not* include references to global or builtin scopes.
-
-
-.. data:: hasname
-
-   Sequence of bytecodes that access an attribute by name.
-
-
-.. data:: hasjump
-
-   Sequence of bytecodes that have a jump target. All jumps
-   are relative.
-
-   .. versionadded:: 3.13
-
-.. data:: haslocal
-
-   Sequence of bytecodes that access a local variable.
-
-
-.. data:: hascompare
-
-   Sequence of bytecodes of Boolean operations.
-
-.. data:: hasexc
-
-   Sequence of bytecodes that set an exception handler.
-
-   .. versionadded:: 3.12
-
-
-.. data:: hasjrel
-
-   Sequence of bytecodes that have a relative jump target.
-
-   .. deprecated:: 3.13
-      All jumps are now relative. Use :data:`hasjump`.
-
-
-.. data:: hasjabs
-
-   Sequence of bytecodes that have an absolute jump target.
-
-   .. deprecated:: 3.13
-      All jumps are now relative. This list is empty.
+   Dictionary :term:`mapping`
