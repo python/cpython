@@ -583,19 +583,18 @@ class TestSpecifics(unittest.TestCase):
         with open(fname, encoding='utf-8') as f:
             fcontents = f.read()
         sample_code = [
-            [2, '<assign>', 'x = 5'],
-            [2, '<ifblock>', """if True:\n    pass\n"""],
-            [1, '<forblock>', """for n in [1, 2, 3]:\n    print(n)\n"""],
-            [1, '<deffunc>', """def foo():\n    pass\nfoo()\n"""],
-            [0, fname, fcontents],
+            ['<assign>', 'x = 5'],
+            ['<ifblock>', """if True:\n    pass\n"""],
+            ['<forblock>', """for n in [1, 2, 3]:\n    print(n)\n"""],
+            ['<deffunc>', """def foo():\n    pass\nfoo()\n"""],
+            [fname, fcontents],
         ]
 
-        for optval, fname, code in sample_code:
-            co1 = compile(code, '%s1' % fname, 'exec', optimize=optval)
-            ast = compile(code, '%s2' % fname, 'exec', _ast.PyCF_ONLY_AST,
-                          optimize=optval)
+        for fname, code in sample_code:
+            co1 = compile(code, '%s1' % fname, 'exec')
+            ast = compile(code, '%s2' % fname, 'exec', _ast.PyCF_ONLY_AST)
             self.assertTrue(type(ast) == _ast.Module)
-            co2 = compile(ast, '%s3' % fname, 'exec', optimize=optval)
+            co2 = compile(ast, '%s3' % fname, 'exec')
             self.assertEqual(co1, co2)
             # the code object's filename comes from the second compilation step
             self.assertEqual(co2.co_filename, '%s3' % fname)
