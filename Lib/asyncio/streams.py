@@ -271,7 +271,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._closed.set_exception(exc)
         super().connection_lost(exc)
         self._stream_reader_wr = None
-        self._stream_writer = None
         self._task = None
         self._transport = None
 

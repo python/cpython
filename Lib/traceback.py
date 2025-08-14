@@ -137,8 +137,9 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 BUILTIN_EXCEPTION_LIMIT = object()
 
 
-def _print_exception_bltin(exc, /):
-    file = sys.stderr if sys.stderr is not None else sys.__stderr__
+def _print_exception_bltin(exc, file=None, /):
+    if file is None:
+        file = sys.stderr if sys.stderr is not None else sys.__stderr__
     colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
@@ -540,7 +541,7 @@ class StackSummary(list):
         colorize = kwargs.get("colorize", False)
         row = []
         filename = frame_summary.filename
-        if frame_summary.filename.startswith("<stdin>-"):
+        if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
             theme = _colorize.get_theme(force_color=True).traceback
