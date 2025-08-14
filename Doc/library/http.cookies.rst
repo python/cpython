@@ -28,10 +28,10 @@ The character set, :data:`string.ascii_letters`, :data:`string.digits` and
 in a cookie name (as :attr:`~Morsel.key`).
 
 .. versionchanged:: 3.3
-   Allowed ':' as a valid cookie name character.
+   Allowed '``:``' as a valid cookie name character.
 
 .. versionchanged:: next
-   Allowed '"' as a valid cookie value character.
+   Allowed '``"``' as a valid cookie value character.
 
 .. note::
 
