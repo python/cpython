@@ -24,7 +24,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    aka free-threading.
 
    *Py_DEBUG* is a boolean indicating whether the interpreter was built in
-   debug mode, i.e. with the :option:`--with-pydebug` option.
+   :ref:`debug mode <debug-build>`, i.e. with the :option:`--with-pydebug` option.
 
    .. versionadded:: next
 
