@@ -1220,9 +1220,9 @@ are always available.  They are listed here in alphabetical order.
       Added the *strict* parameter.
 
 
-.. function:: max(iterable, *, key=None)
-              max(iterable, *, default, key=None)
-              max(arg1, arg2, *args, key=None)
+.. function:: max(iterable, /, *, key=None)
+              max(iterable, /, *, default, key=None)
+              max(arg1, arg2, /, *args, key=None)
 
    Return the largest item in an iterable or the largest of two or more
    arguments.
@@ -1258,9 +1258,9 @@ are always available.  They are listed here in alphabetical order.
    :ref:`typememoryview` for more information.
 
 
-.. function:: min(iterable, *, key=None)
-              min(iterable, *, default, key=None)
-              min(arg1, arg2, *args, key=None)
+.. function:: min(iterable, /, *, key=None)
+              min(iterable, /, *, default, key=None)
+              min(arg1, arg2, /, *args, key=None)
 
    Return the smallest item in an iterable or the smallest of two or more
    arguments.
@@ -1422,38 +1422,10 @@ are always available.  They are listed here in alphabetical order.
 
    *errors* is an optional string that specifies how encoding and decoding
    errors are to be handled—this cannot be used in binary mode.
-   A variety of standard error handlers are available
-   (listed under :ref:`error-handlers`), though any
-   error handling name that has been registered with
+   A variety of standard error handlers are available,
+   though any error handling name that has been registered with
    :func:`codecs.register_error` is also valid.  The standard names
-   include:
-
-   * ``'strict'`` to raise a :exc:`ValueError` exception if there is
-     an encoding error.  The default value of ``None`` has the same
-     effect.
-
-   * ``'ignore'`` ignores errors.  Note that ignoring encoding errors
-     can lead to data loss.
-
-   * ``'replace'`` causes a replacement marker (such as ``'?'``) to be inserted
-     where there is malformed data.
-
-   * ``'surrogateescape'`` will represent any incorrect bytes as low
-     surrogate code units ranging from U+DC80 to U+DCFF.
-     These surrogate code units will then be turned back into
-     the same bytes when the ``surrogateescape`` error handler is used
-     when writing data.  This is useful for processing files in an
-     unknown encoding.
-
-   * ``'xmlcharrefreplace'`` is only supported when writing to a file.
-     Characters not supported by the encoding are replaced with the
-     appropriate XML character reference :samp:`&#{nnn};`.
-
-   * ``'backslashreplace'`` replaces malformed data by Python's backslashed
-     escape sequences.
-
-   * ``'namereplace'`` (also only supported when writing)
-     replaces unsupported characters with ``\N{...}`` escape sequences.
+   can be found in :ref:`error-handlers`.
 
    .. index::
       single: universal newlines; open() built-in function
@@ -1562,12 +1534,18 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
 
-.. function:: ord(c)
+.. function:: ord(character, /)
 
-   Given a string representing one Unicode character, return an integer
-   representing the Unicode code point of that character.  For example,
+   Return the ordinal value of a character.
+
+   If the argument is a one-character string, return the Unicode code point
+   of that character.  For example,
    ``ord('a')`` returns the integer ``97`` and ``ord('€')`` (Euro sign)
    returns ``8364``.  This is the inverse of :func:`chr`.
+
+   If the argument is a :class:`bytes` or :class:`bytearray` object of
+   length 1, return its single byte value.
+   For example, ``ord(b'a')`` returns the integer ``97``.
 
 
 .. function:: pow(base, exp, mod=None)
@@ -1729,8 +1707,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. class:: range(stop)
-           range(start, stop, step=1)
+.. class:: range(stop, /)
+           range(start, stop, step=1, /)
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
