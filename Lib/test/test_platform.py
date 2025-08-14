@@ -762,14 +762,13 @@ class CommandLineTest(unittest.TestCase):
             platform._main(args=flags)
         return output.getvalue()
 
-    @support.force_not_colorized
     def test_unknown_flag(self):
-        output = io.StringIO()
         with self.assertRaises(SystemExit):
+            output = io.StringIO()
             # suppress argparse error message
             with contextlib.redirect_stderr(output):
                 _ = self.invoke_platform('--unknown')
-        self.assertStartsWith(output.getvalue(), "usage: ")
+            self.assertStartsWith(output, "usage: ")
 
     def test_invocation(self):
         flags = (
