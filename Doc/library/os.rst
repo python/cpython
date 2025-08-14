@@ -3178,7 +3178,7 @@ features:
    .. attribute:: st_atime
 
    Time of most recent access expressed in seconds since the Unix epoch
-      (see the :mod:`time` module).
+   (see the :mod:`time` module).
 
    .. attribute:: st_mtime
 
@@ -3198,7 +3198,7 @@ features:
    .. attribute:: st_atime_ns
 
    Time of most recent access expressed in nanoseconds since the Unix epoch
-      as an integer.
+   as an integer.
 
       .. versionadded:: 3.3
 
@@ -3225,7 +3225,7 @@ features:
 
    Time of file creation expressed in seconds since the Unix epoch
    (see the :mod:`time` module). This attribute is not always available,
-      and may raise :exc:`AttributeError`.
+   and may raise :exc:`AttributeError`.
 
       .. versionchanged:: 3.12
          ``st_birthtime`` is now available on Windows.
@@ -3233,8 +3233,8 @@ features:
    .. attribute:: st_birthtime_ns
 
    Time of file creation expressed in nanoseconds since the Unix epoch as an
-      integer. This attribute is not always available, and may raise
-      :exc:`AttributeError`.
+   integer. This attribute is not always available, and may raise
+   :exc:`AttributeError`.
 
       .. versionadded:: 3.12
 
