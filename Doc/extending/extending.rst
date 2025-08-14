@@ -1086,7 +1086,7 @@ user-defined class, and let's further suppose that the class defined a
 :meth:`!__del__` method.  If this class instance has a reference count of 1,
 disposing of it will call its :meth:`!__del__` method. Internally,
 :c:func:`PyList_SetItem` calls :c:func:`Py_DECREF` on the replaced item,
-which invokes replaced item's corrresponding
+which invokes replaced item's corresponding
 :c:member:`~PyTypeObject.tp_dealloc` function (that is
 :c:func:`subtype_dealloc` in case of Python class instance). During
 deallocation, :c:func:`subtype_dealloc` calls
