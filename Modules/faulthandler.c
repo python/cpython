@@ -1395,26 +1395,26 @@ PyExec_faulthandler(PyObject *module) {
     /* Add constants for unit tests */
 #ifdef MS_WINDOWS
     /* RaiseException() codes (prefixed by an underscore) */
-    if (PyModule_AddIntConstant(module, "_EXCEPTION_ACCESS_VIOLATION",
-                                EXCEPTION_ACCESS_VIOLATION)) {
+    if (PyModule_Add(module, "_EXCEPTION_ACCESS_VIOLATION",
+                     PyLong_FromUnsignedLong(EXCEPTION_ACCESS_VIOLATION))) {
         return -1;
     }
-    if (PyModule_AddIntConstant(module, "_EXCEPTION_INT_DIVIDE_BY_ZERO",
-                                EXCEPTION_INT_DIVIDE_BY_ZERO)) {
+    if (PyModule_Add(module, "_EXCEPTION_INT_DIVIDE_BY_ZERO",
+                     PyLong_FromUnsignedLong(EXCEPTION_INT_DIVIDE_BY_ZERO))) {
         return -1;
     }
-    if (PyModule_AddIntConstant(module, "_EXCEPTION_STACK_OVERFLOW",
-                                EXCEPTION_STACK_OVERFLOW)) {
+    if (PyModule_Add(module, "_EXCEPTION_STACK_OVERFLOW",
+                     PyLong_FromUnsignedLong(EXCEPTION_STACK_OVERFLOW))) {
         return -1;
     }
 
     /* RaiseException() flags (prefixed by an underscore) */
-    if (PyModule_AddIntConstant(module, "_EXCEPTION_NONCONTINUABLE",
-                                EXCEPTION_NONCONTINUABLE)) {
+    if (PyModule_Add(module, "_EXCEPTION_NONCONTINUABLE",
+                     PyLong_FromUnsignedLong(EXCEPTION_NONCONTINUABLE))) {
         return -1;
     }
-    if (PyModule_AddIntConstant(module, "_EXCEPTION_NONCONTINUABLE_EXCEPTION",
-                                EXCEPTION_NONCONTINUABLE_EXCEPTION)) {
+    if (PyModule_Add(module, "_EXCEPTION_NONCONTINUABLE_EXCEPTION",
+                     PyLong_FromUnsignedLong(EXCEPTION_NONCONTINUABLE_EXCEPTION))) {
         return -1;
     }
 #endif
