@@ -1,0 +1,1 @@
+Windows Python print(...) no longer errors by default, when printing emoticons like 🎯
