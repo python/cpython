@@ -1085,10 +1085,10 @@ the original item 1.  Now let's suppose the original item 1 was an instance of a
 user-defined class, and let's further suppose that the class defined a
 :meth:`!__del__` method.  If this class instance has a reference count of 1,
 disposing of it will call its :meth:`!__del__` method. Internally,
-:c:func:`PyList_SetItem` calls :c:func:`Py_XDECREF` on the replaced item,
-which invokes the object's ``tp_dealloc`` function (``subtype_dealloc`` for Python
-class instances). During deallocation, ``subtype_dealloc`` calls ``tp_finalize``,
-which is mapped to the ``__del__`` method for Python classes (see :pep:`442`).
+:c:func:`PyList_SetItem` calls :c:func:`Py_DECREF` on the replaced item,
+which invokes replaced item's corrresponding :c:member:`~PyTypeObject.tp_dealloc` function (i.e :c:func:`subtype_dealloc` in case of Python
+class instance). During deallocation, :c:func:`subtype_dealloc` calls :c:member:`~PyTypeObject.tp_finalize`,
+which is mapped to the :meth:`!__del__` method for class instances (see :pep:`442`).
 This entire sequence happens synchronously within the :c:func:`PyList_SetItem` call.
 
 Since it is written in Python, the :meth:`!__del__` method can execute arbitrary
