@@ -1,1 +1,1 @@
-Fix a bug in the JIT with many local variables causing a segfault.
+Fix the JIT handling of many local variables. This previously caused a segfault.

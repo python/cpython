@@ -491,7 +491,7 @@ optimize_uops(
 
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
-        return -1;
+        return 0;
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
