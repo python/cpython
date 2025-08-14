@@ -759,6 +759,7 @@ class CommandLineTest(unittest.TestCase):
             platform._main(args=flags)
         return output.getvalue()
 
+    @support.force_not_colorized
     def test_unknown_flag(self):
         with self.assertRaises(SystemExit):
             # suppress argparse error message
