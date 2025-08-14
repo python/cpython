@@ -1020,7 +1020,7 @@ class AbstractUnpickleTests:
         out1 = self.loads(b'I+0\n.')
         self.assertEqual(str(out1), '0')
         out2 = self.loads(b'I 0\n.')
-        self.assertTrue(str(out2) == str(0))
+        self.assertEqual(str(out2), '0')
 
     def test_zero_padded_integers(self):
         self.assertEqual(self.loads(b'I010\n.'), 10)
