@@ -3177,18 +3177,18 @@ features:
 
    .. attribute:: st_atime
 
-      Time of most recent access expressed in seconds since the epoch
+   Time of most recent access expressed in seconds since the Unix epoch
       (see the :mod:`time` module).
 
    .. attribute:: st_mtime
 
-      Time of most recent content modification expressed in seconds since
-      the epoch (see the :mod:`time` module).
+   Time of most recent content modification expressed in seconds since
+   the Unix epoch (see the :mod:`time` module).
 
    .. attribute:: st_ctime
 
-      Time of most recent metadata change expressed in seconds since the
-      epoch (see the :mod:`time` module).
+   Time of most recent metadata change expressed in seconds since the
+   Unix epoch (see the :mod:`time` module).
 
       .. versionchanged:: 3.12
          ``st_ctime`` is deprecated on Windows. Use ``st_birthtime`` for
@@ -3197,22 +3197,22 @@ features:
 
    .. attribute:: st_atime_ns
 
-      Time of most recent access expressed in nanoseconds since the epoch
+   Time of most recent access expressed in nanoseconds since the Unix epoch
       as an integer.
 
       .. versionadded:: 3.3
 
    .. attribute:: st_mtime_ns
 
-      Time of most recent content modification expressed in nanoseconds since
-      the epoch as an integer.
+   Time of most recent content modification expressed in nanoseconds since
+   the Unix epoch as an integer.
 
       .. versionadded:: 3.3
 
    .. attribute:: st_ctime_ns
 
-      Time of most recent metadata change expressed in nanoseconds since the
-      epoch as an integer.
+   Time of most recent metadata change expressed in nanoseconds since the
+   Unix epoch as an integer.
 
       .. versionadded:: 3.3
 
@@ -3223,7 +3223,7 @@ features:
 
    .. attribute:: st_birthtime
 
-      Time of file creation expressed in seconds since the epoch
+   Time of file creation expressed in seconds since the Unix epoch
    (see the :mod:`time` module). This attribute is not always available,
       and may raise :exc:`AttributeError`.
 
@@ -3232,7 +3232,7 @@ features:
 
    .. attribute:: st_birthtime_ns
 
-      Time of file creation expressed in nanoseconds since the epoch as an
+   Time of file creation expressed in nanoseconds since the Unix epoch as an
       integer. This attribute is not always available, and may raise
       :exc:`AttributeError`.
 
