@@ -538,8 +538,6 @@ def _make_annotate_function(__class__, method_name, annotation_fields, return_ty
     # Try to return annotations in the same format as they would be
     # from a regular __init__ function
 
-    # annotations should be in FORWARDREF format at this stage
-
     def __annotate__(format, /):
         Format = annotationlib.Format
         match format:
