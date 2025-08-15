@@ -309,6 +309,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(bit_offset)
         STRUCT_FOR_ID(bit_size)
         STRUCT_FOR_ID(block)
+        STRUCT_FOR_ID(blocking)
         STRUCT_FOR_ID(bound)
         STRUCT_FOR_ID(buffer)
         STRUCT_FOR_ID(buffer_callback)

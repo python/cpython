@@ -816,6 +816,7 @@ extern "C" {
     INIT_ID(bit_offset), \
     INIT_ID(bit_size), \
     INIT_ID(block), \
+    INIT_ID(blocking), \
     INIT_ID(bound), \
     INIT_ID(buffer), \
     INIT_ID(buffer_callback), \
