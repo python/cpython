@@ -1,0 +1,1 @@
+Modify object to BaseGroupExceptionGroup
