@@ -1,8 +1,10 @@
 import signal
 import sys
 import textwrap
+import threading
 from test import list_tests, support
 from test.support import cpython_only
+from test.support import threading_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_failure, assert_python_ok
 import pickle
@@ -378,6 +380,33 @@ class ListTest(list_tests.CommonTest):
             return r
 
         self.assertEqual(foo(list(range(10))), 45)
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED and
+                         support.check_sanitizer(thread=True),
+                         'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading(self):
+        def mutate(b, l):
+            d = [None] * 100
+            b.wait()
+
+            for _ in range(100):
+                l.extend(d)
+                del l[:]
+
+        NUM_THREADS = 10
+        barrier = threading.Barrier(len(NUM_THREADS))
+        threads = []
+        l = []
+
+        for _ in range(NUM_THREADS):
+            thread = threading.Thread(target=mutate, args=(barrier, l))
+
+            threads.append(thread)
+
+        with threading_helper.start_threads(threads):
+            pass
 
 
 if __name__ == "__main__":
