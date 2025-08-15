@@ -461,22 +461,22 @@ SyntaxError: / must be ahead of *
 >>> def foo(a,*b=3,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: var-positional parameter cannot have default value
+SyntaxError: var-positional parameter's default value cannot be changed because it has the immutable default value ()
 
 >>> def foo(a,*b: int=,c):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: var-positional parameter cannot have default value
+SyntaxError: var-positional parameter's default value cannot be changed because it has the immutable default value ()
 
 >>> def foo(a,**b=3):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: var-keyword parameter cannot have default value
+SyntaxError: var-keyword parameter's default value cannot be changed because it has the immutable default value {}
 
 >>> def foo(a,**b: int=3):
 ...    pass
 Traceback (most recent call last):
-SyntaxError: var-keyword parameter cannot have default value
+SyntaxError: var-keyword parameter's default value cannot be changed because it has the immutable default value {}
 
 >>> def foo(a,*a, b, **c, d):
 ...    pass
@@ -577,11 +577,11 @@ SyntaxError: expected comma between / and *
 
 >>> lambda a,*b=3,c: None
 Traceback (most recent call last):
-SyntaxError: var-positional parameter cannot have default value
+SyntaxError: var-positional parameter's default value cannot be changed because it has the immutable default value ()
 
 >>> lambda a,**b=3: None
 Traceback (most recent call last):
-SyntaxError: var-keyword parameter cannot have default value
+SyntaxError: var-keyword parameter's default value cannot be changed because it has the immutable default value {}
 
 >>> lambda a, *a, b, **c, d: None
 Traceback (most recent call last):
