@@ -2669,7 +2669,7 @@ urllib
   ``myopener.retrieve()`` can be replaced with
   :func:`~urllib.request.urlretrieve`.
   Customisations to the opener classes can be replaced by passing
-  customised handlers to :func:`~urllib.request.build_opener`.
+  customized handlers to :func:`~urllib.request.build_opener`.
   (Contributed by Barney Gale in :gh:`84850`.)
 
 
