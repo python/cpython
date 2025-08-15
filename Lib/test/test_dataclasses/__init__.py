@@ -2470,10 +2470,13 @@ class TestInit(unittest.TestCase):
 
         self.assertEqual(D(5).a, 10)
 
+
+class TestInitAnnotate(unittest.TestCase):
+    # Tests for the generated __annotate__ function for __init__
+    # See: https://github.com/python/cpython/issues/137530
+
     def test_annotate_function(self):
-        # Test that the __init__ function has correct annotate function
-        # See: https://github.com/python/cpython/issues/137530
-        # With no forward references
+        # No forward references
         @dataclass
         class A:
             a: int
@@ -2486,6 +2489,9 @@ class TestInit(unittest.TestCase):
         self.assertEqual(forwardref_annos, {'a': int, 'return': None})
         self.assertEqual(string_annos, {'a': 'int', 'return': 'None'})
 
+        self.assertTrue(getattr(A.__init__.__annotate__, "_generated_by_dataclasses"))
+
+    def test_annotate_function_forwardref(self):
         # With forward references
         @dataclass
         class B:
@@ -2512,8 +2518,7 @@ class TestInit(unittest.TestCase):
         self.assertEqual(forwardref_annos, {'b': int, 'return': None})
         self.assertEqual(string_annos, {'b': 'undefined', 'return': 'None'})
 
-        del undefined  # Remove so we can use the name in later examples
-
+    def test_annotate_function_init_false(self):
         # Check `init=False` attributes don't get into the annotations of the __init__ function
         @dataclass
         class C:
@@ -2521,17 +2526,45 @@ class TestInit(unittest.TestCase):
 
         self.assertEqual(annotationlib.get_annotations(C.__init__), {'return': None})
 
-
+    def test_annotate_function_contains_forwardref(self):
         # Check string annotations on objects containing a ForwardRef
         @dataclass
         class D:
             d: list[undefined]
+
+        with self.assertRaises(NameError):
+            annotationlib.get_annotations(D.__init__)
+
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__, format=annotationlib.Format.FORWARDREF),
+            {"d": list[support.EqualToForwardRef("undefined", is_class=True, owner=D)], "return": None}
+        )
 
         self.assertEqual(
             annotationlib.get_annotations(D.__init__, format=annotationlib.Format.STRING),
             {"d": "list[undefined]", "return": "None"}
         )
 
+        # Now test when it is defined
+        undefined = str
+
+        # VALUE should now resolve
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__),
+            {"d": list[str], "return": None}
+        )
+
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__, format=annotationlib.Format.FORWARDREF),
+            {"d": list[str], "return": None}
+        )
+
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__, format=annotationlib.Format.STRING),
+            {"d": "list[undefined]", "return": "None"}
+        )
+
+    def test_annotate_function_not_replaced(self):
         # Check that __annotate__ is not replaced on non-generated __init__ functions
         @dataclass(slots=True)
         class E:
@@ -2542,6 +2575,26 @@ class TestInit(unittest.TestCase):
         self.assertEqual(
             annotationlib.get_annotations(E.__init__), {"x": int, "return": None}
         )
+
+        self.assertFalse(hasattr(E.__init__.__annotate__, "_generated_by_dataclasses"))
+
+    def test_init_false_forwardref(self):
+        # Currently this raises a NameError even though the ForwardRef
+        # is not in the __init__ method
+
+        @dataclass
+        class F:
+            not_in_init: list[undefined] = field(init=False, default=None)
+            in_init: int
+
+        annos = annotationlib.get_annotations(F.__init__, format=annotationlib.Format.FORWARDREF)
+        self.assertEqual(
+            annos,
+            {"in_init": int, "return": None},
+        )
+
+        with self.assertRaises(NameError):
+            annos = annotationlib.get_annotations(F.__init__)  # NameError on not_in_init
 
 
 class TestRepr(unittest.TestCase):

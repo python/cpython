@@ -537,36 +537,34 @@ def _make_annotate_function(cls, annotations):
     # annotations should be in FORWARDREF format at this stage
 
     def __annotate__(format, /):
+        Format = annotationlib.Format
         match format:
-            case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
-                return {
-                    k: v.evaluate(format=format)
-                    if isinstance(v, annotationlib.ForwardRef) else v
-                    for k, v in annotations.items()
-                }
-
-            case annotationlib.Format.STRING:
+            case Format.VALUE | Format.FORWARDREF | Format.STRING:
                 cls_annotations = {}
                 for base in reversed(cls.__mro__):
                     cls_annotations.update(
                         annotationlib.get_annotations(base, format=format)
                     )
 
-                string_annos = {}
+                new_annotations = {}
                 for k, v in annotations.items():
                     try:
-                        string_annos[k] = cls_annotations[k]
+                        new_annotations[k] = cls_annotations[k]
                     except KeyError:
                         # This should be the return value
-                        string_annos[k] = annotationlib.type_repr(v)
-                return string_annos
+                        if format == Format.STRING:
+                            new_annotations[k] = annotationlib.type_repr(v)
+                        else:
+                            new_annotations[k] = v
+
+                return new_annotations
 
             case _:
                 raise NotImplementedError(format)
 
     # This is a flag for _add_slots to know it needs to regenerate this method
     # In order to remove references to the original class when it is replaced
-    __annotate__.__generated_by_dataclasses = True
+    __annotate__._generated_by_dataclasses = True
 
     return __annotate__
 
@@ -1399,7 +1397,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
     # Fix references in generated __annotate__ methods
     method = getattr(newcls, "__init__")
-    update_annotations = getattr(method.__annotate__, "__generated_by_dataclasses", False)
+    update_annotations = getattr(method.__annotate__, "_generated_by_dataclasses", False)
 
     if update_annotations:
         new_annotations = {}
