@@ -97,7 +97,7 @@ should not be used in programs.
           exit(code=None)
 
    Objects that when printed, print a message like "Use quit() or Ctrl-D
-   (i.e. EOF) to exit", and when accessed directly in the interactive 
+   (i.e. EOF) to exit", and when accessed directly in the interactive
    interpreter or called as functions, raise :exc:`SystemExit` with the
    specified exit code.
 
