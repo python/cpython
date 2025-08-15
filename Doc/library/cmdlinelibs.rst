@@ -1,7 +1,7 @@
 .. _cmdlinelibs:
 
 ********************************
-Command-Line interface libraries
+Command-line interface libraries
 ********************************
 
 The modules described in this chapter assist with implementing
