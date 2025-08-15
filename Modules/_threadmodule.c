@@ -927,9 +927,9 @@ _thread_lock___enter___impl(lockobject *self)
 
 /*[clinic input]
 _thread.lock.__exit__
-    exc_type:  object
+    exc_type: object
     exc_value: object
-    exc_tb:    object
+    exc_tb: object
     /
 
 Release the lock.
