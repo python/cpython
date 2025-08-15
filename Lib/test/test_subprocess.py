@@ -3377,8 +3377,8 @@ class POSIXProcessTestCase(BaseTestCase):
             proc.wait()
 
         # Verify the exception contains proper information
-        exc = cm.exception
-        self.assertIn('%d is already waited on externally' % proc.pid, str(exc))
+        self.assertIn(f'{proc.pid} is already waited on externally',
+                      str(cm.exception))
         proc.kill()
 
     def test_send_signal_race(self):
