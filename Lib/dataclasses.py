@@ -443,8 +443,9 @@ class _FuncBuilder:
         self.unconditional_adds = {}
         self.method_annotations = {}
 
-    def add_fn(self, name, args, body, *, locals=None, annotations=None,
-               overwrite_error=False, unconditional_add=False, decorator=None):
+    def add_fn(self, name, args, body, *, locals=None, return_type=MISSING,
+               overwrite_error=False, unconditional_add=False, decorator=None,
+               annotation_fields=None):
         if locals is not None:
             self.locals.update(locals)
 
@@ -465,8 +466,8 @@ class _FuncBuilder:
 
         self.names.append(name)
 
-        if annotations is not None:
-            self.method_annotations[name] = annotations
+        if annotation_fields is not None:
+            self.method_annotations[name] = (annotation_fields, return_type)
 
         args = ','.join(args)
         body = '\n'.join(body)
@@ -508,10 +509,13 @@ class _FuncBuilder:
         # Now that we've generated the functions, assign them into cls.
         for name, fn in zip(self.names, fns):
             fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
-            if annotations := self.method_annotations.get(name):
-                annotate_fn = _make_annotate_function(cls, annotations)
-                annotate_fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}.__annotate__"
 
+            try:
+                annotation_fields, return_type = self.method_annotations[name]
+            except KeyError:
+                pass
+            else:
+                annotate_fn = _make_annotate_function(cls, name, annotation_fields, return_type)
                 fn.__annotate__ = annotate_fn
 
             if self.unconditional_adds.get(name, False):
@@ -529,7 +533,7 @@ class _FuncBuilder:
                     raise TypeError(error_msg)
 
 
-def _make_annotate_function(cls, annotations):
+def _make_annotate_function(__class__, method_name, annotation_fields, return_type):
     # Create an __annotate__ function for a dataclass
     # Try to return annotations in the same format as they would be
     # from a regular __init__ function
@@ -541,21 +545,20 @@ def _make_annotate_function(cls, annotations):
         match format:
             case Format.VALUE | Format.FORWARDREF | Format.STRING:
                 cls_annotations = {}
-                for base in reversed(cls.__mro__):
+                for base in reversed(__class__.__mro__):
                     cls_annotations.update(
                         annotationlib.get_annotations(base, format=format)
                     )
 
                 new_annotations = {}
-                for k, v in annotations.items():
-                    try:
-                        new_annotations[k] = cls_annotations[k]
-                    except KeyError:
-                        # This should be the return value
-                        if format == Format.STRING:
-                            new_annotations[k] = annotationlib.type_repr(v)
-                        else:
-                            new_annotations[k] = v
+                for k in annotation_fields:
+                    new_annotations[k] = cls_annotations[k]
+
+                if return_type is not MISSING:
+                    if format == Format.STRING:
+                        new_annotations["return"] = annotationlib.type_repr(return_type)
+                    else:
+                        new_annotations["return"] = return_type
 
                 return new_annotations
 
@@ -565,6 +568,7 @@ def _make_annotate_function(cls, annotations):
     # This is a flag for _add_slots to know it needs to regenerate this method
     # In order to remove references to the original class when it is replaced
     __annotate__._generated_by_dataclasses = True
+    __annotate__.__qualname__ = f"{__class__.__qualname__}.{method_name}.__annotate__"
 
     return __annotate__
 
@@ -680,8 +684,7 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                 raise TypeError(f'non-default argument {f.name!r} '
                                 f'follows default argument {seen_default.name!r}')
 
-    annotations = {f.name: f.type for f in fields if f.init}
-    annotations["return"] = None
+    annotation_fields = [f.name for f in fields if f.init]
 
     locals = {'__dataclass_HAS_DEFAULT_FACTORY__': _HAS_DEFAULT_FACTORY,
               '__dataclass_builtins_object__': object}
@@ -715,7 +718,8 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         [self_name] + _init_params,
                         body_lines,
                         locals=locals,
-                        annotations=annotations)
+                        return_type=None,
+                        annotation_fields=annotation_fields)
 
 
 def _frozen_get_del_attr(cls, fields, func_builder):
@@ -1395,26 +1399,10 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
         else:
             f.type = ann
 
-    # Fix references in generated __annotate__ methods
-    method = getattr(newcls, "__init__")
-    update_annotations = getattr(method.__annotate__, "_generated_by_dataclasses", False)
-
-    if update_annotations:
-        new_annotations = {}
-
-        # Get the previous annotations to know what to replace
-        old_annotations = method.__annotate__(annotationlib.Format.FORWARDREF)
-
-        for k, v in old_annotations.items():
-            try:
-                new_annotations[k] = newcls_ann[k]
-            except KeyError:
-                new_annotations[k] = v
-
-        new_annotate = _make_annotate_function(newcls, new_annotations)
-        new_annotate.__qualname__ = f"{newcls.__qualname__}.__init__.__annotate__"
-
-        setattr(method, "__annotate__", new_annotate)
+    # Fix the class reference in the __annotate__ method
+    init_annotate = newcls.__init__.__annotate__
+    if getattr(init_annotate, "_generated_by_dataclasses", False):
+        _update_func_cell_for__class__(init_annotate, cls, newcls)
 
     return newcls
 
