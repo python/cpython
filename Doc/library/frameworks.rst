@@ -10,6 +10,6 @@ This chapter is no longer maintained, and the modules it contained have been mov
 Please see the following pages for their new locations:
 
 
-* :mod:`turtle` — :doc:`Graphical User Interfaces with Tk <library/tk>`
-* :mod:`cmd` — :doc:`Command Line Interface Libraries <library/cmdlinelibs>`
-* :mod:`shlex` — :doc:`Unix Specific Services <library/unix>`
+* :mod:`turtle` — :doc:`Graphical User Interfaces with Tk <./tk>`
+* :mod:`cmd` — :doc:`Command Line Interface Libraries <./cmdlinelibs>`
+* :mod:`shlex` — :doc:`Unix Specific Services <./unix>`
