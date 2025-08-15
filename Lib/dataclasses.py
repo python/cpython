@@ -509,7 +509,10 @@ class _FuncBuilder:
         for name, fn in zip(self.names, fns):
             fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
             if annotations := self.method_annotations.get(name):
-                fn.__annotate__ = _make_annotate_function(cls, annotations)
+                annotate_fn = _make_annotate_function(cls, annotations)
+                annotate_fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}.__annotate__"
+
+                fn.__annotate__ = annotate_fn
 
             if self.unconditional_adds.get(name, False):
                 setattr(cls, name, fn)
@@ -533,7 +536,7 @@ def _make_annotate_function(cls, annotations):
 
     # annotations should be in FORWARDREF format at this stage
 
-    def __annotate__(format):
+    def __annotate__(format, /):
         match format:
             case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
                 return {
@@ -1379,6 +1382,41 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
                 or _update_func_cell_for__class__(member.fset, cls, newcls)
                 or _update_func_cell_for__class__(member.fdel, cls, newcls)):
                 break
+
+    # Get new annotations to remove references to the original class
+    # in forward references
+    newcls_ann = annotationlib.get_annotations(
+        newcls, format=annotationlib.Format.FORWARDREF)
+
+    # Fix references in dataclass Fields
+    for f in getattr(newcls, _FIELDS).values():
+        try:
+            ann = newcls_ann[f.name]
+        except KeyError:
+            pass
+        else:
+            f.type = ann
+
+    # Fix references in generated __annotate__ methods
+    method = getattr(newcls, "__init__")
+    update_annotations = getattr(method.__annotate__, "__generated_by_dataclasses", False)
+
+    if update_annotations:
+        new_annotations = {}
+
+        # Get the previous annotations to know what to replace
+        old_annotations = method.__annotate__(annotationlib.Format.FORWARDREF)
+
+        for k, v in old_annotations.items():
+            try:
+                new_annotations[k] = newcls_ann[k]
+            except KeyError:
+                new_annotations[k] = v
+
+        new_annotate = _make_annotate_function(newcls, new_annotations)
+        new_annotate.__qualname__ = f"{newcls.__qualname__}.__init__.__annotate__"
+
+        setattr(method, "__annotate__", new_annotate)
 
     return newcls
 
