@@ -3379,6 +3379,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # Verify the exception contains proper information
         exc = cm.exception
         self.assertIn('%d is already waited on externally' % proc.pid, str(exc))
+        proc.kill()
 
     def test_send_signal_race(self):
         # bpo-38630: send_signal() must poll the process exit status to reduce
