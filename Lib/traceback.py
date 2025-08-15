@@ -541,7 +541,7 @@ class StackSummary(list):
         colorize = kwargs.get("colorize", False)
         row = []
         filename = frame_summary.filename
-        if frame_summary.filename.startswith("<stdin>-"):
+        if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
             theme = _colorize.get_theme(force_color=True).traceback
@@ -1322,7 +1322,6 @@ class TracebackException:
             lines = source.splitlines()
 
         error_code = lines[line -1 if line > 0 else 0:end_line]
-        error_code[0] = error_code[0][offset:]
         error_code = textwrap.dedent('\n'.join(error_code))
 
         # Do not continue if the source is too large
@@ -1338,7 +1337,8 @@ class TracebackException:
             if token.type != tokenize.NAME:
                 continue
             # Only consider NAME tokens on the same line as the error
-            if from_filename and token.start[0]+line != end_line+1:
+            the_end = end_line if line == 0 else end_line + 1
+            if from_filename and token.start[0]+line != the_end:
                 continue
             wrong_name = token.string
             if wrong_name in keyword.kwlist:

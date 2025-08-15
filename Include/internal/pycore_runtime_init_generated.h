@@ -816,6 +816,7 @@ extern "C" {
     INIT_ID(bit_offset), \
     INIT_ID(bit_size), \
     INIT_ID(block), \
+    INIT_ID(blocking), \
     INIT_ID(bound), \
     INIT_ID(buffer), \
     INIT_ID(buffer_callback), \
@@ -1152,6 +1153,7 @@ extern "C" {
     INIT_ID(options), \
     INIT_ID(order), \
     INIT_ID(origin), \
+    INIT_ID(other), \
     INIT_ID(out_fd), \
     INIT_ID(outgoing), \
     INIT_ID(outpath), \
@@ -1211,6 +1213,7 @@ extern "C" {
     INIT_ID(return), \
     INIT_ID(reverse), \
     INIT_ID(reversed), \
+    INIT_ID(rounding), \
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
