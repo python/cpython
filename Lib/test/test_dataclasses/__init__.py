@@ -2512,12 +2512,25 @@ class TestInit(unittest.TestCase):
         self.assertEqual(forwardref_annos, {'b': int, 'return': None})
         self.assertEqual(string_annos, {'b': 'undefined', 'return': 'None'})
 
+        del undefined  # Remove so we can use the name in later examples
+
         # Check `init=False` attributes don't get into the annotations of the __init__ function
         @dataclass
         class C:
             c: str = field(init=False)
 
         self.assertEqual(annotationlib.get_annotations(C.__init__), {'return': None})
+
+
+        # Check string annotations on objects containing a ForwardRef
+        @dataclass
+        class D:
+            d: list[undefined]
+
+        self.assertEqual(
+            annotationlib.get_annotations(D.__init__, format=annotationlib.Format.STRING),
+            {"d": "list[undefined]", "return": "None"}
+        )
 
 
 class TestRepr(unittest.TestCase):

@@ -509,7 +509,7 @@ class _FuncBuilder:
         for name, fn in zip(self.names, fns):
             fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
             if annotations := self.method_annotations.get(name):
-                fn.__annotate__ = _make_annotate_function(annotations)
+                fn.__annotate__ = _make_annotate_function(cls, annotations)
 
             if self.unconditional_adds.get(name, False):
                 setattr(cls, name, fn)
@@ -526,10 +526,13 @@ class _FuncBuilder:
                     raise TypeError(error_msg)
 
 
-def _make_annotate_function(annotations):
+def _make_annotate_function(cls, annotations):
     # Create an __annotate__ function for a dataclass
     # Try to return annotations in the same format as they would be
     # from a regular __init__ function
+
+    # annotations should be in FORWARDREF format at this stage
+
     def __annotate__(format):
         match format:
             case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
@@ -538,18 +541,29 @@ def _make_annotate_function(annotations):
                     if isinstance(v, annotationlib.ForwardRef) else v
                     for k, v in annotations.items()
                 }
+
             case annotationlib.Format.STRING:
+                cls_annotations = {}
+                for base in reversed(cls.__mro__):
+                    cls_annotations.update(
+                        annotationlib.get_annotations(base, format=format)
+                    )
+
                 string_annos = {}
                 for k, v in annotations.items():
-                    if isinstance(v, str):
-                        string_annos[k] = v
-                    elif isinstance(v, annotationlib.ForwardRef):
-                        string_annos[k] = v.evaluate(format=annotationlib.Format.STRING)
-                    else:
+                    try:
+                        string_annos[k] = cls_annotations[k]
+                    except KeyError:
+                        # This should be the return value
                         string_annos[k] = annotationlib.type_repr(v)
                 return string_annos
+
             case _:
                 raise NotImplementedError(format)
+
+    # This is a flag for _add_slots to know it needs to regenerate this method
+    # In order to remove references to the original class when it is replaced
+    __annotate__.__generated_by_dataclasses = True
 
     return __annotate__
 
