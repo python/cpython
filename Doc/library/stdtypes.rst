@@ -5064,7 +5064,7 @@ can be used interchangeably to index the same dictionary entry.
                update(mapping, /, **kwargs)
                update(iterable, /, **kwargs)
 
-      Update the dictionary with the key/value pairs from *mapping* or *iterable*, overwriting
+      Update the dictionary with the key/value pairs from *mapping* or *iterable* and *kwargs*, overwriting
       existing keys.  Return ``None``.
 
       :meth:`update` accepts either another object with a ``keys()`` method (in
