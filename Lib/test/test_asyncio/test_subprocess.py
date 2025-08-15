@@ -607,11 +607,8 @@ class SubprocessMixin:
 
             # kill the process (but asyncio is not notified immediately)
             proc.kill()
-            try:
+            with self.assertRaises(ProcessLookupError):
                 proc.wait()
-            except ProcessLookupError:
-                # Process already exited, which is expected
-                pass
 
             proc.kill = mock.Mock()
             proc_returncode = proc.poll()
