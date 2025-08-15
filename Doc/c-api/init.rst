@@ -1103,7 +1103,7 @@ the blocked thread.
 
 Gross? Yes. This prevents random crashes and/or unexpectedly skipped C++
 finalizations further up the call stack when such threads were forcibly exited
-here in CPython 3.13 and earlier. The CPython runtime GIL acquiring C APIs
+here in CPython 3.13.7 and earlier. The CPython runtime GIL acquiring C APIs
 have never had any error reporting or handling expectations at GIL acquisition
 time that would've allowed for graceful exit from this situation. Changing that
 would require new stable C APIs and rewriting the majority of C code in the
