@@ -7,7 +7,7 @@
 :c:func:`Py_EndInterpreter` now explicitly untracks all objects currently
 tracked by the GC. Previously, if an object was used later by another
 interpreter, calling :c:func:`PyObject_GC_UnTrack` on the object crashed if
-the previous or the next object of the :c:type:`PyGC_Head` structure became
+the previous or the next object of the :c:type:`!PyGC_Head` structure became
 a dangling pointer. Patch by Victor Stinner.
 
 ..
@@ -258,7 +258,7 @@ instruction which performs the same operation, but without the loop.
 .. nonce: ADVaPT
 .. section: Core and Builtins
 
-The code called from :c:func:`_PyErr_Display` was refactored to improve
+The code called from :c:func:`!_PyErr_Display` was refactored to improve
 error handling. It now exits immediately upon an unrecoverable error.
 
 ..
@@ -775,8 +775,8 @@ Ensure that :func:`math.expm1` does not raise on underflow.
 .. nonce: s9PuyF
 .. section: Library
 
-Adding :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` constants from FreeBSD
-into the fcntl module.
+Adding :const:`!F_DUP2FD` and :const:`!F_DUP2FD_CLOEXEC` constants from FreeBSD
+into the :mod:`fcntl` module.
 
 ..
 
@@ -1161,7 +1161,7 @@ no-op now.
 .. nonce: Lq2_gR
 .. section: C API
 
-Replaced deprecated usage of :c:func:`PyImport_ImportModuleNoBlock` with
+Replaced deprecated usage of :c:func:`!PyImport_ImportModuleNoBlock` with
 :c:func:`PyImport_ImportModule` in stdlib modules. Patch by Kumar Aditya.
 
 ..

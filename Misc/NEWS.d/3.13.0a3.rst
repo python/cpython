@@ -269,7 +269,7 @@ Correctly compute end column offsets for multiline tokens in the
 .. nonce: 4ADN7i
 .. section: Core and Builtins
 
-Fix None.__ne__(None) returning NotImplemented instead of False
+Fix ``None.__ne__(None)`` returning ``NotImplemented`` instead of ``False``.
 
 ..
 
@@ -449,8 +449,8 @@ well-formed for surrogateescape encoding. Patch by Sidney Markowitz.
 .. nonce: N8E1zw
 .. section: Core and Builtins
 
-Use the object's actual class name in :meth:`_io.FileIO.__repr__`,
-:meth:`_io._WindowsConsoleIO` and :meth:`_io.TextIOWrapper.__repr__`, to
+Use the object's actual class name in :meth:`!_io.FileIO.__repr__`,
+:meth:`!_io._WindowsConsoleIO` and :meth:`!_io.TextIOWrapper.__repr__`, to
 make these methods subclass friendly.
 
 ..
@@ -555,7 +555,7 @@ Added :data:`mmap.MAP_NORESERVE`, :data:`mmap.MAP_NOEXTEND`,
 .. nonce: kXoCy0
 .. section: Library
 
-:func:`asyncio.TaskGroup()` and :func:`asyncio.timeout()` context managers
+:func:`asyncio.TaskGroup` and :func:`asyncio.timeout` context managers
 now handle :exc:`~asyncio.CancelledError` subclasses as well as exact
 :exc:`!CancelledError`.
 
@@ -607,9 +607,9 @@ with the documentation)
 .. nonce: xN2LuL
 .. section: Library
 
-:func:`asyncio.Condition.wait()` now re-raises the same
+:func:`asyncio.Condition.wait` now re-raises the same
 :exc:`CancelledError` instance that may have caused it to be interrupted.
-Fixed race condition in :func:`asyncio.Semaphore.aquire` when interrupted
+Fixed race condition in :func:`asyncio.Semaphore.acquire` when interrupted
 with a :exc:`CancelledError`.
 
 ..
@@ -863,7 +863,7 @@ Fixed tarfile list() method to show file type.
 .. nonce: jLWGlr
 .. section: Library
 
-:meth:`asyncio.futures.Future.set_exception()` now transforms
+:meth:`asyncio.futures.Future.set_exception` now transforms
 :exc:`StopIteration` into :exc:`RuntimeError` instead of hanging or other
 misbehavior. Patch contributed by Jamie Phan.
 
@@ -928,7 +928,7 @@ on Windows.
 .. section: Library
 
 Fix :func:`shutil.copymode` and :func:`shutil.copystat` on Windows.
-Previously they worked differenly if *dst* is a symbolic link: they modified
+Previously they worked differently if *dst* is a symbolic link: they modified
 the permission bits of *dst* itself rather than the file it points to if
 *follow_symlinks* is true or *src* is not a symbolic link, and did not
 modify the permission bits if *follow_symlinks* is false and *src* is a
@@ -1550,8 +1550,8 @@ addresses are encountered instead of potentially inaccurate values. Add
 optional *strict* parameter to these two functions: use ``strict=False`` to
 get the old behavior, accept malformed inputs. ``getattr(email.utils,
 'supports_strict_parsing', False)`` can be use to check if the *strict*
-paramater is available. Patch by Thomas Dwyer and Victor Stinner to improve
-the CVE-2023-27043 fix.
+parameter is available. Patch by Thomas Dwyer and Victor Stinner to improve
+the :cve:`2023-27043` fix.
 
 ..
 
@@ -1615,7 +1615,7 @@ method of :class:`itertools.pairwise`.
 .. section: Library
 
 Small (10 - 20%) and trivial performance improvement of
-:func:`urrlib.request.getproxies_environment`, typically useful when there
+:func:`urllib.request.getproxies_environment`, typically useful when there
 are many environment variables to go over.
 
 ..
@@ -1805,7 +1805,7 @@ size.
 .. nonce: xPOBBY
 .. section: Library
 
-:func:`warnings.filterwarnings()` and :func:`warnings.simplefilter()` now
+:func:`warnings.filterwarnings` and :func:`warnings.simplefilter` now
 raise appropriate exceptions instead of ``AssertionError``. Patch
 contributed by Rémi Lapeyre.
 

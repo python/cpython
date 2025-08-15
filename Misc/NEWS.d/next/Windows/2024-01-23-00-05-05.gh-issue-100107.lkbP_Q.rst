@@ -1,1 +1,0 @@
-The ``py.exe`` launcher will no longer attempt to run the Microsoft Store redirector when launching a script containing a ``/usr/bin/env`` shebang

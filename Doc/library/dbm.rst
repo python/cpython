@@ -1,5 +1,5 @@
-:mod:`dbm` --- Interfaces to Unix "databases"
-=============================================
+:mod:`!dbm` --- Interfaces to Unix "databases"
+==============================================
 
 .. module:: dbm
    :synopsis: Interfaces to various Unix "database" formats.
@@ -8,11 +8,21 @@
 
 --------------
 
-:mod:`dbm` is a generic interface to variants of the DBM database ---
-:mod:`dbm.gnu` or :mod:`dbm.ndbm`.  If none of these modules is installed, the
-slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There
+:mod:`dbm` is a generic interface to variants of the DBM database:
+
+* :mod:`dbm.sqlite3`
+* :mod:`dbm.gnu`
+* :mod:`dbm.ndbm`
+
+If none of these modules are installed, the
+slow-but-simple implementation in module :mod:`dbm.dumb` will be used. There
 is a `third party interface <https://www.jcea.es/programacion/pybsddb.htm>`_ to
 the Oracle Berkeley DB.
+
+.. note::
+   None of the underlying modules will automatically shrink the disk space used by
+   the database file. However, :mod:`dbm.sqlite3`, :mod:`dbm.gnu` and :mod:`dbm.dumb`
+   provide a :meth:`!reorganize` method that can be used for this purpose.
 
 
 .. exception:: error
@@ -25,8 +35,8 @@ the Oracle Berkeley DB.
 .. function:: whichdb(filename)
 
    This function attempts to guess which of the several simple database modules
-   available --- :mod:`dbm.gnu`, :mod:`dbm.ndbm` or :mod:`dbm.dumb` --- should
-   be used to open a given file.
+   available --- :mod:`dbm.sqlite3`, :mod:`dbm.gnu`, :mod:`dbm.ndbm`,
+   or :mod:`dbm.dumb` --- should be used to open a given file.
 
    Return one of the following values:
 
@@ -55,10 +65,6 @@ the Oracle Berkeley DB.
 .. |mode_param_doc| replace::
    The Unix file access mode of the file (default: octal ``0o666``),
    used only when the database has to be created.
-
-.. |incompat_note| replace::
-   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
-   and can not be used interchangeably.
 
 .. function:: open(file, flag='r', mode=0o666)
 
@@ -144,6 +150,59 @@ then prints out the contents of the database::
 
 The individual submodules are described in the following sections.
 
+:mod:`dbm.sqlite3` --- SQLite backend for dbm
+---------------------------------------------
+
+.. module:: dbm.sqlite3
+   :platform: All
+   :synopsis: SQLite backend for dbm
+
+.. versionadded:: 3.13
+
+**Source code:** :source:`Lib/dbm/sqlite3.py`
+
+--------------
+
+This module uses the standard library :mod:`sqlite3` module to provide an
+SQLite backend for the :mod:`dbm` module.
+The files created by :mod:`dbm.sqlite3` can thus be opened by :mod:`sqlite3`,
+or any other SQLite browser, including the SQLite CLI.
+
+.. include:: ../includes/wasm-notavail.rst
+
+.. function:: open(filename, /, flag="r", mode=0o666)
+
+   Open an SQLite database.
+   The returned object behaves like a :term:`mapping`,
+   implements a :meth:`!close` method,
+   and supports a "closing" context manager via the :keyword:`with` keyword.
+
+   :param filename:
+      The path to the database to be opened.
+   :type filename: :term:`path-like object`
+
+   :param str flag:
+
+      * ``'r'`` (default): |flag_r|
+      * ``'w'``: |flag_w|
+      * ``'c'``: |flag_c|
+      * ``'n'``: |flag_n|
+
+   :param mode:
+      The Unix file access mode of the file (default: octal ``0o666``),
+      used only when the database has to be created.
+
+   .. method:: sqlite3.reorganize()
+
+      If you have carried out a lot of deletions and would like to shrink the space
+      used on disk, this method will reorganize the database; otherwise, deleted file
+      space will be kept and reused as new (key, value) pairs are added.
+
+      .. note::
+         While reorganizing, as much as two times the size of the original database is required
+         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
+
+      .. versionadded:: next
 
 :mod:`dbm.gnu` --- GNU database manager
 ---------------------------------------
@@ -160,11 +219,12 @@ The :mod:`dbm.gnu` module provides an interface to the :abbr:`GDBM (GNU dbm)`
 library, similar to the :mod:`dbm.ndbm` module, but with additional
 functionality like crash tolerance.
 
-:class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always converted to :class:`bytes` before storing,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
+.. note::
 
-.. note:: |incompat_note|
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   and can not be used interchangeably.
+
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 .. exception:: error
 
@@ -194,6 +254,9 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
       * ``'s'``: Synchronized mode.
         Changes to the database will be written immediately to the file.
       * ``'u'``: Do not lock database.
+      * ``'m'``: Do not use :manpage:`mmap(2)`.
+        This may harm performance, but improve crash tolerance.
+        .. versionadded:: next
 
       Not all flags are valid for all versions of GDBM.
       See the :data:`open_flags` member for a list of supported flag characters.
@@ -211,8 +274,9 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
       A string of characters the *flag* parameter of :meth:`~dbm.gnu.open` supports.
 
-   In addition to the dictionary-like methods, :class:`gdbm` objects have the
-   following methods and attributes:
+   :class:`!gdbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. method:: gdbm.firstkey()
 
@@ -239,6 +303,10 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
       objects will not shorten the length of a database file except by using this
       reorganization; otherwise, deleted file space will be kept and reused as new
       (key, value) pairs are added.
+
+      .. note::
+         While reorganizing, as much as one time the size of the original database is required
+         in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
 
    .. method:: gdbm.sync()
 
@@ -269,14 +337,13 @@ and the :meth:`!items` and :meth:`!values` methods are not supported.
 
 The :mod:`dbm.ndbm` module provides an interface to the
 :abbr:`NDBM (New Database Manager)` library.
-:class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
-except that keys and values are always stored as :class:`bytes`,
-and the :meth:`!items` and :meth:`!values` methods are not supported.
-
 This module can be used with the "classic" NDBM interface or the
 :abbr:`GDBM (GNU dbm)` compatibility interface.
 
-.. note:: |incompat_note|
+.. note::
+
+   The file formats created by :mod:`dbm.gnu` and :mod:`dbm.ndbm` are incompatible
+   and can not be used interchangeably.
 
 .. warning::
 
@@ -284,6 +351,8 @@ This module can be used with the "classic" NDBM interface or the
    size of values, which can result in corrupted database files
    when storing values larger than this limit. Reading such corrupted files can
    result in a hard crash (segmentation fault).
+
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 .. exception:: error
 
@@ -314,8 +383,9 @@ This module can be used with the "classic" NDBM interface or the
    :param int mode:
       |mode_param_doc|
 
-   In addition to the dictionary-like methods, :class:`!ndbm` objects
-   provide the following method:
+   :class:`!ndbm` objects behave similar to :term:`mappings <mapping>`,
+   but :meth:`!items` and :meth:`!values` methods are not supported.
+   The following methods are also provided:
 
    .. versionchanged:: 3.11
       Accepts :term:`path-like object` for filename.
@@ -354,8 +424,6 @@ The :mod:`dbm.dumb` module provides a persistent :class:`dict`-like
 interface which is written entirely in Python.
 Unlike other :mod:`dbm` backends, such as :mod:`dbm.gnu`, no
 external library is required.
-As with other :mod:`dbm` backends,
-the keys and values are always stored as :class:`bytes`.
 
 The :mod:`!dbm.dumb` module defines the following:
 
@@ -394,6 +462,11 @@ The :mod:`!dbm.dumb` module defines the following:
       with a sufficiently large/complex entry due to stack depth limitations in
       Python's AST compiler.
 
+   .. warning::
+      :mod:`dbm.dumb` does not support concurrent read/write access. (Multiple
+      simultaneous read accesses are safe.) When a program has the database open
+      for writing, no other program should have it open for reading or writing.
+
    .. versionchanged:: 3.5
       :func:`~dbm.dumb.open` always creates a new database when *flag* is ``'n'``.
 
@@ -411,9 +484,20 @@ The :mod:`!dbm.dumb` module defines the following:
    .. method:: dumbdbm.sync()
 
       Synchronize the on-disk directory and data files.  This method is called
-      by the :meth:`Shelve.sync` method.
+      by the :meth:`shelve.Shelf.sync` method.
 
    .. method:: dumbdbm.close()
 
       Close the database.
 
+   .. method:: dumbdbm.reorganize()
+
+      If you have carried out a lot of deletions and would like to shrink the space
+      used on disk, this method will reorganize the database; otherwise, deleted file
+      space will not be reused.
+
+      .. note::
+         While reorganizing, no additional free disk space is required. However, be aware
+         that this factor changes for each :mod:`dbm` submodule.
+
+      .. versionadded:: next

@@ -1,12 +1,15 @@
-from test.support import verbose, reap_children
-from test.support.os_helper import TESTFN, unlink
+import unittest
+from test.support import (
+    is_android, is_apple_mobile, is_wasm32, reap_children, verbose
+)
 from test.support.import_helper import import_module
+from test.support.os_helper import TESTFN, unlink
 
-# Skip these tests if termios or fcntl are not available
+# Skip these tests if termios is not available
 import_module('termios')
-# fcntl is a proxy for not being one of the wasm32 platforms even though we
-# don't use this module... a proper check for what crashes those is needed.
-import_module("fcntl")
+
+if is_android or is_apple_mobile or is_wasm32:
+    raise unittest.SkipTest("pty is not available on this platform")
 
 import errno
 import os
@@ -17,8 +20,6 @@ import select
 import signal
 import socket
 import io # readline
-import unittest
-import warnings
 
 TEST_STRING_1 = b"I wish to buy a fish license.\n"
 TEST_STRING_2 = b"For my pet fish, Eric.\n"
@@ -133,8 +134,10 @@ class PtyTest(unittest.TestCase):
                 new_dim = tty.tcgetwinsize(pty.STDIN_FILENO)
                 self.assertEqual(new_dim, target_dim,
                                  "pty.STDIN_FILENO window size unchanged")
-            except OSError:
-                warnings.warn("Failed to set pty.STDIN_FILENO window size.")
+            except OSError as e:
+                logging.getLogger(__name__).warning(
+                    "Failed to set pty.STDIN_FILENO window size.", exc_info=e,
+                )
                 pass
 
         try:

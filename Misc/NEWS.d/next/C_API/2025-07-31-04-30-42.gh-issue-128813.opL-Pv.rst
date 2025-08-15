@@ -1,0 +1,5 @@
+Functions :c:func:`_Py_c_sum`, :c:func:`_Py_c_diff`, :c:func:`_Py_c_neg`,
+:c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and previously
+undocumented :c:func:`_Py_c_abs` are :term:`soft deprecated`.  Deprecate also
+:c:member:`~PyComplexObject.cval` field of the :c:type:`PyComplexObject` type.
+Patch by Sergey B Kirpichev.

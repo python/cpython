@@ -6,7 +6,8 @@
 #include "pycore_ceval.h"         // Py_MakePendingCalls()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_parking_lot.h"
-#include "pycore_time.h"          // _PyTime_t
+#include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -197,6 +198,8 @@ typedef struct {
     PyObject *weakreflist;
 } simplequeueobject;
 
+#define simplequeueobject_CAST(op)  ((simplequeueobject *)(op))
+
 /*[clinic input]
 module _queue
 class _queue.SimpleQueue "simplequeueobject *" "simplequeue_get_state_by_type(type)->SimpleQueueType"
@@ -204,28 +207,30 @@ class _queue.SimpleQueue "simplequeueobject *" "simplequeue_get_state_by_type(ty
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=0a4023fe4d198c8d]*/
 
 static int
-simplequeue_clear(simplequeueobject *self)
+simplequeue_clear(PyObject *op)
 {
+    simplequeueobject *self = simplequeueobject_CAST(op);
     RingBuf_Fini(&self->buf);
     return 0;
 }
 
 static void
-simplequeue_dealloc(simplequeueobject *self)
+simplequeue_dealloc(PyObject *op)
 {
+    simplequeueobject *self = simplequeueobject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
 
     PyObject_GC_UnTrack(self);
-    (void)simplequeue_clear(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
-    Py_TYPE(self)->tp_free(self);
+    (void)simplequeue_clear(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-simplequeue_traverse(simplequeueobject *self, visitproc visit, void *arg)
+simplequeue_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    simplequeueobject *self = simplequeueobject_CAST(op);
     RingBuf *buf = &self->buf;
     for (Py_ssize_t i = 0, num_items = buf->num_items; i < num_items; i++) {
         Py_VISIT(RingBuf_At(buf, i));
@@ -266,8 +271,10 @@ typedef struct {
 } HandoffData;
 
 static void
-maybe_handoff_item(HandoffData *data, PyObject **item, int has_more_waiters)
+maybe_handoff_item(void *arg, void *park_arg, int has_more_waiters)
 {
+    HandoffData *data = (HandoffData*)arg;
+    PyObject **item = (PyObject**)park_arg;
     if (item == NULL) {
         // No threads were waiting
         data->handed_off = false;
@@ -307,7 +314,7 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
     if (self->has_threads_waiting) {
         // Try to hand the item off directly if there are threads waiting
         _PyParkingLot_Unpark(&self->has_threads_waiting,
-                             (_Py_unpark_fn_t *)maybe_handoff_item, &data);
+                             maybe_handoff_item, &data);
     }
     if (!data.handed_off) {
         if (RingBuf_Put(&self->buf, item) < 0) {
@@ -372,13 +379,13 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
                             int block, PyObject *timeout_obj)
 /*[clinic end generated code: output=5c2cca914cd1e55b input=f7836c65e5839c51]*/
 {
-    _PyTime_t endtime = 0;
+    PyTime_t endtime = 0;
 
     // XXX Use PyThread_ParseTimeoutArg().
 
     if (block != 0 && !Py_IsNone(timeout_obj)) {
         /* With timeout */
-        _PyTime_t timeout;
+        PyTime_t timeout;
         if (_PyTime_FromSecondsObject(&timeout,
                                       timeout_obj, _PyTime_ROUND_CEILING) < 0) {
             return NULL;
@@ -514,7 +521,7 @@ queue_clear(PyObject *m)
 static void
 queue_free(void *m)
 {
-    queue_clear((PyObject *)m);
+    (void)queue_clear((PyObject *)m);
 }
 
 #include "clinic/_queuemodule.c.h"
@@ -594,6 +601,7 @@ queuemodule_exec(PyObject *module)
 static PyModuleDef_Slot queuemodule_slots[] = {
     {Py_mod_exec, queuemodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -1,0 +1,1 @@
+Add colorization to :func:`sys.unraisablehook` by default.

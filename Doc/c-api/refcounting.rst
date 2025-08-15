@@ -23,11 +23,20 @@ of Python objects.
 
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
 
-   .. versionchanged:: 3.11
-      The parameter type is no longer :c:expr:`const PyObject*`.
+   .. note::
+
+      On :term:`free threaded <free threading>` builds of Python, returning 1
+      isn't sufficient to determine if it's safe to treat *o* as having no
+      access by other threads. Use :c:func:`PyUnstable_Object_IsUniquelyReferenced`
+      for that instead.
+
+      See also the function :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary()`.
 
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
+
+   .. versionchanged:: 3.11
+      The parameter type is no longer :c:expr:`const PyObject*`.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
@@ -62,7 +71,7 @@ of Python objects.
    ``NULL``, use :c:func:`Py_XINCREF`.
 
    Do not expect this function to actually modify *o* in any way.
-   For at least `some objects <https://peps.python.org/pep-0683/>`_,
+   For at least :pep:`some objects <0683>`,
    this function has no effect.
 
    .. versionchanged:: 3.12
@@ -130,7 +139,7 @@ of Python objects.
    use :c:func:`Py_XDECREF`.
 
    Do not expect this function to actually modify *o* in any way.
-   For at least `some objects <https://peps.python.org/pep-0683/>`_,
+   For at least :pep:`some objects <683>`,
    this function has no effect.
 
    .. warning::
@@ -201,7 +210,7 @@ of Python objects.
 
         Py_SETREF(dst, src);
 
-   That arranges to set *dst* to *src* _before_ releasing the reference
+   That arranges to set *dst* to *src* *before* releasing the reference
    to the old value of *dst*, so that any code triggered as a side-effect
    of *dst* getting torn down no longer believes *dst* points
    to a valid object.

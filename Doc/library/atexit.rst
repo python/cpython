@@ -1,5 +1,5 @@
-:mod:`atexit` --- Exit handlers
-===============================
+:mod:`!atexit` --- Exit handlers
+================================
 
 .. module:: atexit
    :synopsis: Register and execute cleanup functions.

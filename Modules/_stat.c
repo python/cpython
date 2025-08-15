@@ -11,11 +11,10 @@
  *
  */
 
-#include "pyconfig.h"   // Py_GIL_DISABLED
-
-#ifndef Py_GIL_DISABLED
 // Need limited C API version 3.13 for PyModule_Add() on Windows
-#define Py_LIMITED_API 0x030d0000
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "Python.h"
@@ -58,7 +57,7 @@ typedef unsigned short mode_t;
  * Only the names are defined by POSIX but not their value. All common file
  * types seems to have the same numeric value on all platforms, though.
  *
- * pyport.h guarantees S_IFMT, S_IFDIR, S_IFCHR, S_IFREG and S_IFLNK
+ * fileutils.h guarantees S_IFMT, S_IFDIR, S_IFCHR, S_IFREG and S_IFLNK
  */
 
 #ifndef S_IFBLK
@@ -87,7 +86,7 @@ typedef unsigned short mode_t;
 
 
 /* S_ISXXX()
- * pyport.h defines S_ISDIR(), S_ISREG() and S_ISCHR()
+ * fileutils.h defines S_ISDIR(), S_ISREG() and S_ISCHR()
  */
 
 #ifndef S_ISBLK
@@ -296,9 +295,21 @@ _PyLong_AsMode_t(PyObject *op)
     unsigned long value;
     mode_t mode;
 
-    value = PyLong_AsUnsignedLong(op);
-    if ((value == (unsigned long)-1) && PyErr_Occurred())
+    if (PyLong_Check(op)) {
+        value = PyLong_AsUnsignedLong(op);
+    }
+    else {
+        op = PyNumber_Index(op);
+        if (op == NULL) {
+            return (mode_t)-1;
+        }
+        value = PyLong_AsUnsignedLong(op);
+        Py_DECREF(op);
+    }
+
+    if ((value == (unsigned long)-1) && PyErr_Occurred()) {
         return (mode_t)-1;
+    }
 
     mode = (mode_t)value;
     if ((unsigned long)mode != value) {
@@ -507,7 +518,7 @@ S_IWOTH: write by others\n\
 S_IXOTH: execute by others\n\
 \n"
 
-"UF_SETTABLE: mask of owner changable flags\n\
+"UF_SETTABLE: mask of owner changeable flags\n\
 UF_NODUMP: do not dump file\n\
 UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\
@@ -680,6 +691,7 @@ stat_exec(PyObject *module)
 static PyModuleDef_Slot stat_slots[] = {
     {Py_mod_exec, stat_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

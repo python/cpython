@@ -1,3 +1,0 @@
-The free-threaded build now has its own thread-safe GC implementation that
-uses mimalloc to find GC tracked objects. It is non-generational, unlike the
-existing GC implementation.

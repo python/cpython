@@ -1,9 +1,15 @@
-import _testinternalcapi
 import unittest
 import types
+from test.support import import_helper
+
+
+_testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 
 class TestRareEventCounters(unittest.TestCase):
+    def setUp(self):
+        _testinternalcapi.reset_rare_event_counters()
+
     def test_set_class(self):
         class A:
             pass
@@ -70,6 +76,15 @@ class TestRareEventCounters(unittest.TestCase):
                 orig_counter + 1,
                 _testinternalcapi.get_rare_event_counters()["func_modification"]
             )
+
+
+class TestOptimizerSymbols(unittest.TestCase):
+
+    @unittest.skipUnless(hasattr(_testinternalcapi, "uop_symbols_test"),
+                "requires _testinternalcapi.uop_symbols_test")
+    def test_optimizer_symbols(self):
+        _testinternalcapi.uop_symbols_test()
+
 
 if __name__ == "__main__":
     unittest.main()
