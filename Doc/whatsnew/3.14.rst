@@ -2293,7 +2293,7 @@ gc
   means that maximum pause times are reduced
   by an order of magnitude or more for larger heaps.
 
-  Because of this optimisation, the meaning of the results of
+  Because of this optimization, the meaning of the results of
   :meth:`~gc.get_threshold` and :meth:`~gc.set_threshold` have changed,
   along with :meth:`~gc.get_count` and :meth:`~gc.get_stats`.
 
@@ -2343,7 +2343,7 @@ pdb
 
 * :mod:`pdb` now supports two backends, based on either
   :func:`sys.settrace` or :mod:`sys.monitoring`.
-  Using the :ref:`pdb CLI <pdb-commandline>` or :func:`breakpoint`
+  Using the :ref:`pdb CLI <pdb-cli>` or :func:`breakpoint`
   will always use the :mod:`sys.monitoring` backend.
   Explicitly instantiating :class:`pdb.Pdb` and its derived classes
   will use the :func:`sys.settrace` backend by default, which is configurable.
