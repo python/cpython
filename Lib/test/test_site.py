@@ -802,6 +802,55 @@ class _pthFileTests(unittest.TestCase):
             )], env=env)
         self.assertTrue(rc, "sys.path is incorrect")
 
+class TestSiteCLI(unittest.TestCase):
+    """Tests for the site module command-line interface."""
+
+    @support.requires_subprocess()
+    def test_cli_no_args(self):
+        """Test 'python -m site' with no arguments."""
+        output = subprocess.check_output([sys.executable, '-m', 'site'],
+                                       text=True, stderr=subprocess.STDOUT)
+        self.assertIn('sys.path', output)
+        self.assertIn('USER_BASE:', output)
+        self.assertIn('USER_SITE:', output)
+        self.assertIn('ENABLE_USER_SITE:', output)
+
+    @support.requires_subprocess()
+    def test_cli_user_site(self):
+        """Test 'python -m site --user-site'."""
+        output = subprocess.check_output([sys.executable, '-m', 'site', '--user-site'],
+                                       text=True, stderr=subprocess.STDOUT)
+        self.assertIn('site-packages', output.strip())
+        self.assertNotIn('sys.path', output)
+
+    @support.requires_subprocess()
+    def test_cli_user_base(self):
+        """Test 'python -m site --user-base'."""
+        output = subprocess.check_output([sys.executable, '-m', 'site', '--user-base'],
+                                       text=True, stderr=subprocess.STDOUT)
+        self.assertNotIn('site-packages', output)
+        self.assertNotIn('sys.path', output)
+        self.assertTrue(len(output.strip()) > 0)
+
+    @support.requires_subprocess()
+    def test_cli_user_base_and_user_site(self):
+        """Test 'python -m site --user-base --user-site'."""
+        output = subprocess.check_output([sys.executable, '-m', 'site', '--user-base', '--user-site'],
+                                       text=True, stderr=subprocess.STDOUT)
+        lines = output.strip().split('\n')
+        self.assertEqual(len(lines), 1)
+        paths = lines[0].split(':')
+        self.assertEqual(len(paths), 2)
+        self.assertNotIn('site-packages', paths[0])
+        self.assertIn('site-packages', paths[1])
+
+    @support.requires_subprocess()
+    def test_cli_invalid_option(self):
+        """Test 'python -m site' with invalid option."""
+        with self.assertRaises(subprocess.CalledProcessError) as cm:
+            subprocess.check_output([sys.executable, '-m', 'site', '--invalid'],
+                                   text=True, stderr=subprocess.STDOUT)
+        self.assertNotEqual(cm.exception.returncode, 0)
 
 if __name__ == "__main__":
     unittest.main()
