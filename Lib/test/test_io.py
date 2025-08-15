@@ -4337,8 +4337,8 @@ class MiscIOTest(unittest.TestCase):
 
         f = self.open(os_helper.TESTFN, "w+", encoding="utf-8")
         self.assertEqual(f.mode,            "w+")
-        self.assertEqual(f.buffer.mode,     "rb+") # Does it really matter?
-        self.assertEqual(f.buffer.raw.mode, "rb+")
+        self.assertEqual(f.buffer.mode,     "wb+") # Does it really matter?
+        self.assertEqual(f.buffer.raw.mode, "wb+")
 
         g = self.open(f.fileno(), "wb", closefd=False)
         self.assertEqual(g.mode,     "wb")
