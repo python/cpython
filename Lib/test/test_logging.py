@@ -4926,6 +4926,20 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         f.format(r)
         self.assertEqual(exc_text, r.exc_text)
 
+    def test_multiple_formatters_set_exc_text(self):
+        # Tests that exc_text is changed when set_exc_text option is set on the Formatter
+        r = self.get_record()
+        r.exc_info = (ZeroDivisionError, ZeroDivisionError(), None)
+
+        f = logging.Formatter('${%(message)s}')
+        f.format(r)
+        self.assertIsNotNone(r.exc_text)
+        exc_text = r.exc_text
+
+        f = logging.Formatter('%(asctime)s', set_exc_text=True)
+        f.format(r)
+        self.assertNotEqual(exc_text, r.exc_text)
+
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
