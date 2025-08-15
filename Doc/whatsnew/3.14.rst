@@ -3047,11 +3047,15 @@ Porting to Python 3.14
   loading objects onto the operands stack by :term:`borrowing <borrowed reference>`
   references when possible. This can lead to smaller reference count values
   compared to previous Python versions, because the creation of :term:`strong
-  references <strong reference>` is avoided in the Python interpreter. This
-  generally does not affect existing code, but C API extensions that checked
-  :c:func:`Py_REFCNT` of ``1`` to determine if an object is not referenced by
-  any other code should instead use :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary`
-  as a safer replacement.
+  references <strong reference>` is avoided in the Python interpreter.
+
+  This means that in Python 3.14, the :term:`reference count` of an object can
+  be ``1`` even when an object has more than one reference in the interpreter
+  stack. This generally does not affect existing code, but C API extensions
+  that checked :c:func:`Py_REFCNT` of ``1`` to determine if an object is not
+  referenced by any other code should instead use
+  :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` as a safer
+  replacement.
 
 
 * Private functions promoted to public C APIs:
