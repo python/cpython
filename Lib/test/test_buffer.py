@@ -2867,7 +2867,7 @@ class TestBufferProtocol(unittest.TestCase):
                 self.assertEqual(m2.ndim, 1)
                 self.assertEqual(m2.shape, (m.nbytes // size,))
                 self.assertTrue(m2.contiguous)
-        
+
         m3 = m[::-1]
         with self.assertRaises(TypeError):
             m3.cast('B')
