@@ -2157,7 +2157,8 @@ expression support in the :mod:`re` module).
       'three!'
 
 
-.. staticmethod:: str.maketrans(x[, y[, z]])
+.. staticmethod:: str.maketrans(dict, /)
+                  str.maketrans(from, to, remove='', /)
 
    This static method returns a translation table usable for :meth:`str.translate`.
 
@@ -2167,8 +2168,8 @@ expression support in the :mod:`re` module).
    converted to ordinals.
 
    If there are two arguments, they must be strings of equal length, and in the
-   resulting dictionary, each character in x will be mapped to the character at
-   the same position in y.  If there is a third argument, it must be a string,
+   resulting dictionary, each character in *from* will be mapped to the character at
+   the same position in *to*.  If there is a third argument, it must be a string,
    whose characters will be mapped to ``None`` in the result.
 
 
