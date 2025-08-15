@@ -32,6 +32,19 @@ Typical usage:
     >>> uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
     UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')
 
+    # make a UUID based on the host ID and current time
+    # reordered for improved DB locality
+    >>> uuid.uuid6()
+    UUID('1f0799c0-98b9-62db-92c6-a0d365b91053')
+
+    # make a UUID using time-ordered value field
+    >>> uuid.uuid7()
+    UUID('0198ac49-534e-7149-941a-12f66dec646a')
+
+    # make a UUID using three customizable fields
+    >>> uuid.uuid8(0x12345678, 0x9abcdef0, 0x11223344)
+    UUID('00001234-5678-8ef0-8000-000011223344')
+
     # make a UUID from a string of hex digits (braces and hyphens ignored)
     >>> x = uuid.UUID('{00010203-0405-0607-0809-0a0b0c0d0e0f}')
 
