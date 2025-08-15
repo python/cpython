@@ -883,12 +883,12 @@ Release the lock.
 
 Allows another thread that is blocked waiting for
 the lock to acquire the lock.  The lock must be in the locked state,
-but it needn't be locked by the same thread that unlocks it.");
+but it needn't be locked by the same thread that unlocks it.
 [clinic start generated code]*/
 
 static PyObject *
 _thread_lock_release_impl(lockobject *self)
-/*[clinic end generated code: output=a4ab0d75d6e9fb73 input=ed3d336b9d9123f5]*/
+/*[clinic end generated code: output=a4ab0d75d6e9fb73 input=dfe48f962dfe99b4]*/
 {
     /* Sanity check: the lock must be locked */
     if (_PyMutex_TryUnlock(&self->lock) < 0) {

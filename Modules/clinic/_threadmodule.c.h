@@ -172,7 +172,7 @@ PyDoc_STRVAR(_thread_lock_release__doc__,
 "\n"
 "Allows another thread that is blocked waiting for\n"
 "the lock to acquire the lock.  The lock must be in the locked state,\n"
-"but it needn\'t be locked by the same thread that unlocks it.\");");
+"but it needn\'t be locked by the same thread that unlocks it.");
 
 #define _THREAD_LOCK_RELEASE_METHODDEF    \
     {"release", (PyCFunction)_thread_lock_release, METH_NOARGS, _thread_lock_release__doc__},
@@ -770,4 +770,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=c12cc3b748cb2882 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b53b6681f575fb70 input=a9049054013a1b77]*/
