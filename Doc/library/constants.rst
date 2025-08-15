@@ -106,7 +106,7 @@ should not be used in programs.
 
    Object that when printed, prints the message "Type help() for interactive
    help, or help(object) for help about object.", and when accessed directly
-   in the interactive interpreter, invokes the built-in help system 
+   in the interactive interpreter, invokes the built-in help system
    (see :func:`help`).
 
 .. data:: copyright
