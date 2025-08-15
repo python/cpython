@@ -266,8 +266,7 @@ http.client
 http.cookies
 ------------
 
-* Allow '``"``' double quotes in cookie values with a more lenient regex for
-  double-quoted strings.
+* Allow '``"``' double quotes in cookie values.
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
