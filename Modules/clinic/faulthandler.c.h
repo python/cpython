@@ -285,8 +285,8 @@ PyDoc_STRVAR(faulthandler_dump_traceback_later__doc__,
 "\n"
 "Dump the traceback of all threads in timeout seconds.\n"
 "\n"
-"If repeat is True, the tracebacks of all threads are dumped every timeout seconds.\n"
-"If exit is true, call _exit(1) which is not safe.");
+"If repeat is true, the tracebacks of all threads are dumped every timeout\n"
+"seconds. If exit is true, call _exit(1) which is not safe.");
 
 #define FAULTHANDLER_DUMP_TRACEBACK_LATER_METHODDEF    \
     {"dump_traceback_later", _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_FASTCALL|METH_KEYWORDS, faulthandler_dump_traceback_later__doc__},
@@ -685,4 +685,4 @@ exit:
 #ifndef FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
     #define FAULTHANDLER__RAISE_EXCEPTION_METHODDEF
 #endif /* !defined(FAULTHANDLER__RAISE_EXCEPTION_METHODDEF) */
-/*[clinic end generated code: output=1d39dd5a293f3d9a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31bf0149d0d02ccf input=a9049054013a1b77]*/

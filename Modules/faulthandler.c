@@ -780,15 +780,15 @@ faulthandler.dump_traceback_later
 
 Dump the traceback of all threads in timeout seconds.
 
-If repeat is True, the tracebacks of all threads are dumped every timeout seconds.
-If exit is true, call _exit(1) which is not safe.
+If repeat is true, the tracebacks of all threads are dumped every timeout
+seconds. If exit is true, call _exit(1) which is not safe.
 [clinic start generated code]*/
 
 static PyObject *
 faulthandler_dump_traceback_later_impl(PyObject *module,
                                        PyObject *timeout_obj, int repeat,
                                        PyObject *file, int exit)
-/*[clinic end generated code: output=a24d80d694d25ba2 input=e474dbd9c8ac52cd]*/
+/*[clinic end generated code: output=a24d80d694d25ba2 input=fd005625ecc2ba9a]*/
 {
     PyTime_t timeout, timeout_us;
     int fd;
