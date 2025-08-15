@@ -178,8 +178,8 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
 
   build-windows-msi:
-    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      Windows MSI${{ '' }}
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: Windows MSI${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
     if: fromJSON(needs.build-context.outputs.run-windows-msi)
     strategy:
@@ -270,7 +270,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        openssl_ver: [3.0.16, 3.1.8, 3.2.4, 3.3.3, 3.4.1]
+        openssl_ver: [3.0.17, 3.2.5, 3.3.4, 3.4.2, 3.5.2]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -396,6 +396,29 @@ jobs:
       run: ./python -c 'import ssl; print(ssl.OPENSSL_VERSION)' | grep AWS-LC
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
+
+  build-android:
+    name: Android (${{ matrix.arch }})
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Use the same runs-on configuration as build-macos and build-ubuntu.
+          - arch: aarch64
+            runs-on: ${{ github.repository_owner == 'python' && 'ghcr.io/cirruslabs/macos-runner:sonoma' || 'macos-14' }}
+          - arch: x86_64
+            runs-on: ubuntu-24.04
+
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build and test
+        run: ./Android/android.py ci ${{ matrix.arch }}-linux-android
 
   build-wasi:
     name: 'WASI'
@@ -586,8 +609,8 @@ jobs:
       run: xvfb-run make ci
 
   build-san:
-    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      Sanitizers${{ '' }}
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: Sanitizers${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
@@ -705,6 +728,7 @@ jobs:
     - build-ubuntu
     - build-ubuntu-ssltests-awslc
     - build-ubuntu-ssltests-openssl
+    - build-android
     - build-wasi
     - test-hypothesis
     - build-asan
@@ -740,6 +764,7 @@ jobs:
             build-ubuntu,
             build-ubuntu-ssltests-awslc,
             build-ubuntu-ssltests-openssl,
+            build-android,
             build-wasi,
             test-hypothesis,
             build-asan,

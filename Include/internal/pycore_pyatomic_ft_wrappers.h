@@ -111,6 +111,8 @@ extern "C" {
     _Py_atomic_load_ullong_relaxed(&value)
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) \
     (void)_Py_atomic_add_ssize(&value, new_value)
+#define FT_MUTEX_LOCK(lock) PyMutex_Lock(lock)
+#define FT_MUTEX_UNLOCK(lock) PyMutex_Unlock(lock)
 
 #define FT_ATOMIC_MEMCPY_PTR_STORE_RELAXED(dest, src, n) \
     _Py_atomic_memcpy_ptr_store_relaxed(dest, src, (size_t)(n))
@@ -165,6 +167,8 @@ extern "C" {
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) value
 #define FT_ATOMIC_STORE_ULLONG_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) (void)(value += new_value)
+#define FT_MUTEX_LOCK(lock) do {} while (0)
+#define FT_MUTEX_UNLOCK(lock) do {} while (0)
 
 #define FT_ATOMIC_MEMCPY_PTR_STORE_RELAXED(dest, src, n) memcpy(dest, src, n)
 #define FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(dest, src, n) memmove(dest, src, n)
