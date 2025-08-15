@@ -383,7 +383,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         size = 0;
         align = 0;
         union_size = 0;
-        total_align = forced_alignment;
+        total_align = forced_alignment == 0 ? 1 : forced_alignment;
         stginfo->ffi_type_pointer.type = FFI_TYPE_STRUCT;
         stginfo->ffi_type_pointer.elements = PyMem_New(ffi_type *, len + 1);
         if (stginfo->ffi_type_pointer.elements == NULL) {
@@ -570,6 +570,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     /* Adjust the size according to the alignment requirements */
+    assert(total_align != 0);
     aligned_size = ((size + total_align - 1) / total_align) * total_align;
 
     if (isStruct) {

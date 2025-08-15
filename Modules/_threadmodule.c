@@ -8,7 +8,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -259,6 +259,12 @@ _PyThread_AfterFork(struct _pythread_runtime_state *state)
     llist_for_each_safe(node, &state->handles) {
         ThreadHandle *handle = llist_data(node, ThreadHandle, node);
         if (handle->ident == current) {
+            continue;
+        }
+
+        // Keep handles for threads that have not been started yet. They are
+        // safe to start in the child process.
+        if (handle->state == THREAD_HANDLE_NOT_STARTED) {
             continue;
         }
 
@@ -1361,8 +1367,7 @@ typedef struct {
 static void
 localdummy_dealloc(localdummyobject *self)
 {
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+    FT_CLEAR_WEAKREFS((PyObject *) self, self->weakreflist);
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject*)self);
     Py_DECREF(tp);
@@ -2275,9 +2280,12 @@ thread_excepthook(PyObject *module, PyObject *args)
     PyObject *exc_tb = PyStructSequence_GET_ITEM(args, 2);
     PyObject *thread = PyStructSequence_GET_ITEM(args, 3);
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
+    if (_PySys_GetOptionalAttr( &_Py_ID(stderr), &file) < 0) {
+        return NULL;
+    }
     if (file == NULL || file == Py_None) {
+        Py_XDECREF(file);
         if (thread == Py_None) {
             /* do nothing if sys.stderr is None and thread is None */
             Py_RETURN_NONE;
@@ -2294,9 +2302,6 @@ thread_excepthook(PyObject *module, PyObject *args)
             Py_RETURN_NONE;
         }
     }
-    else {
-        Py_INCREF(file);
-    }
 
     int res = thread_excepthook_file(file, exc_type, exc_value, exc_tb,
                                      thread);
@@ -2309,7 +2314,7 @@ thread_excepthook(PyObject *module, PyObject *args)
 }
 
 PyDoc_STRVAR(excepthook_doc,
-"_excepthook($module, (exc_type, exc_value, exc_traceback, thread), /)\n\
+"_excepthook($module, args, /)\n\
 --\n\
 \n\
 Handle uncaught Thread.run() exception.");

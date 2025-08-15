@@ -3341,19 +3341,15 @@ PyObject *
 PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *path_importer_cache = PySys_GetObject("path_importer_cache");
+    PyObject *path_importer_cache = _PySys_GetRequiredAttrString("path_importer_cache");
     if (path_importer_cache == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.path_importer_cache");
         return NULL;
     }
-    Py_INCREF(path_importer_cache);
-    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
     if (path_hooks == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.path_hooks");
         Py_DECREF(path_importer_cache);
         return NULL;
     }
-    Py_INCREF(path_hooks);
     PyObject *importer = get_path_importer(tstate, path_importer_cache, path_hooks, path);
     Py_DECREF(path_hooks);
     Py_DECREF(path_importer_cache);
@@ -3655,15 +3651,31 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 
     PyTime_t t1 = 0, accumulated_copy = accumulated;
 
-    PyObject *sys_path = PySys_GetObject("path");
-    PyObject *sys_meta_path = PySys_GetObject("meta_path");
-    PyObject *sys_path_hooks = PySys_GetObject("path_hooks");
+    PyObject *sys_path, *sys_meta_path, *sys_path_hooks;
+    if (_PySys_GetOptionalAttrString("path", &sys_path) < 0) {
+        return NULL;
+    }
+    if (_PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
+        Py_XDECREF(sys_path);
+        return NULL;
+    }
+    if (_PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
+        Py_XDECREF(sys_meta_path);
+        Py_XDECREF(sys_path);
+        return NULL;
+    }
     if (_PySys_Audit(tstate, "import", "OOOOO",
                      abs_name, Py_None, sys_path ? sys_path : Py_None,
                      sys_meta_path ? sys_meta_path : Py_None,
                      sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
+        Py_XDECREF(sys_path_hooks);
+        Py_XDECREF(sys_meta_path);
+        Py_XDECREF(sys_path);
         return NULL;
     }
+    Py_XDECREF(sys_path_hooks);
+    Py_XDECREF(sys_meta_path);
+    Py_XDECREF(sys_path);
 
 
     /* XOptions is initialized after first some imports.
@@ -3818,15 +3830,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                 }
 
                 final_mod = import_get_module(tstate, to_return);
-                Py_DECREF(to_return);
                 if (final_mod == NULL) {
                     if (!_PyErr_Occurred(tstate)) {
                         _PyErr_Format(tstate, PyExc_KeyError,
                                       "%R not in sys.modules as expected",
                                       to_return);
                     }
+                    Py_DECREF(to_return);
                     goto error;
                 }
+
+                Py_DECREF(to_return);
             }
         }
         else {
@@ -4111,10 +4125,8 @@ _PyImport_FiniCore(PyInterpreterState *interp)
 static int
 init_zipimport(PyThreadState *tstate, int verbose)
 {
-    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
     if (path_hooks == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "unable to get sys.path_hooks");
         return -1;
     }
 
@@ -4134,12 +4146,14 @@ init_zipimport(PyThreadState *tstate, int verbose)
         int err = PyList_Insert(path_hooks, 0, zipimporter);
         Py_DECREF(zipimporter);
         if (err < 0) {
+            Py_DECREF(path_hooks);
             return -1;
         }
         if (verbose) {
             PySys_WriteStderr("# installed zipimport hook\n");
         }
     }
+    Py_DECREF(path_hooks);
 
     return 0;
 }

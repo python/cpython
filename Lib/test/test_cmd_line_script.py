@@ -88,6 +88,8 @@ def _make_test_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     importlib.invalidate_caches()
     return to_return
 
+
+@support.force_not_colorized_test_class
 class CmdLineTest(unittest.TestCase):
     def _check_output(self, script_name, exit_code, data,
                              expected_file, expected_argv0,
@@ -658,7 +660,7 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
-                    b'          ^^^^^^^^',
+                    b'             ^^',
                     b'SyntaxError: invalid escape sequence \'\\q\''
                 ],
             )

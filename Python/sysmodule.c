@@ -44,7 +44,9 @@ Data members:
 #endif
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #endif /* MS_WINDOWS */
 
@@ -85,34 +87,93 @@ _PySys_GetAttr(PyThreadState *tstate, PyObject *name)
     return value;
 }
 
-static PyObject *
-_PySys_GetObject(PyInterpreterState *interp, const char *name)
+ PyObject *
+_PySys_GetRequiredAttr(PyObject *name)
 {
-    PyObject *sysdict = interp->sysdict;
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        return NULL;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sysdict = tstate->interp->sysdict;
     if (sysdict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no sys module");
         return NULL;
     }
     PyObject *value;
-    if (PyDict_GetItemStringRef(sysdict, name, &value) != 1) {
+    if (PyDict_GetItemRef(sysdict, name, &value) == 0) {
+        PyErr_Format(PyExc_RuntimeError, "lost sys.%U", name);
+    }
+    return value;
+}
+
+PyObject *
+_PySys_GetRequiredAttrString(const char *name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no sys module");
         return NULL;
     }
-    Py_DECREF(value);  // return a borrowed reference
+    PyObject *value;
+    if (PyDict_GetItemStringRef(sysdict, name, &value) == 0) {
+        PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
+    }
     return value;
+}
+
+int
+_PySys_GetOptionalAttr(PyObject *name, PyObject **value)
+{
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        *value = NULL;
+        return -1;
+    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        *value = NULL;
+        return 0;
+    }
+    return PyDict_GetItemRef(sysdict, name, value);
+}
+
+int
+_PySys_GetOptionalAttrString(const char *name, PyObject **value)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        *value = NULL;
+        return 0;
+    }
+    return PyDict_GetItemStringRef(sysdict, name, value);
 }
 
 PyObject *
 PySys_GetObject(const char *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-
+    PyObject *sysdict = tstate->interp->sysdict;
+    if (sysdict == NULL) {
+        return NULL;
+    }
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    PyObject *value = _PySys_GetObject(tstate->interp, name);
+    PyObject *value;
+    (void) PyDict_GetItemStringRef(sysdict, name, &value);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     if (_PyErr_Occurred(tstate)) {
         PyErr_FormatUnraisable("Exception ignored in PySys_GetObject()");
     }
     _PyErr_SetRaisedException(tstate, exc);
+    Py_XDECREF(value);  // return a borrowed reference
     return value;
 }
 
@@ -123,6 +184,10 @@ sys_set_object(PyInterpreterState *interp, PyObject *key, PyObject *v)
         return -1;
     }
     PyObject *sd = interp->sysdict;
+    if (sd == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no sys module");
+        return -1;
+    }
     if (v == NULL) {
         if (PyDict_Pop(sd, key, NULL) < 0) {
             return -1;
@@ -748,9 +813,13 @@ sys_displayhook(PyObject *module, PyObject *o)
     }
     if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), Py_None) != 0)
         return NULL;
-    outf = _PySys_GetAttr(tstate, &_Py_ID(stdout));
-    if (outf == NULL || outf == Py_None) {
+    outf = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+    if (outf == NULL) {
+        return NULL;
+    }
+    if (outf == Py_None) {
         _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.stdout");
+        Py_DECREF(outf);
         return NULL;
     }
     if (PyFile_WriteObject(o, outf, 0) != 0) {
@@ -761,17 +830,23 @@ sys_displayhook(PyObject *module, PyObject *o)
             _PyErr_Clear(tstate);
             err = sys_displayhook_unencodable(outf, o);
             if (err) {
+                Py_DECREF(outf);
                 return NULL;
             }
         }
         else {
+            Py_DECREF(outf);
             return NULL;
         }
     }
-    if (PyFile_WriteObject(_Py_LATIN1_CHR('\n'), outf, Py_PRINT_RAW) != 0)
+    if (PyFile_WriteObject(_Py_LATIN1_CHR('\n'), outf, Py_PRINT_RAW) != 0) {
+        Py_DECREF(outf);
         return NULL;
-    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), o) != 0)
+    }
+    Py_DECREF(outf);
+    if (PyObject_SetAttr(builtins, _Py_LATIN1_CHR('_'), o) != 0) {
         return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1618,6 +1693,9 @@ _sys_getwindowsversion_from_kernel32(void)
         !GetFileVersionInfoW(kernel32_path, 0, verblock_size, verblock) ||
         !VerQueryValueW(verblock, L"", (LPVOID)&ffi, &ffi_len)) {
         PyErr_SetFromWindowsErr(0);
+        if (verblock) {
+            PyMem_RawFree(verblock);
+        }
         return NULL;
     }
 
@@ -2798,7 +2876,10 @@ _PySys_ReadPreinitXOptions(PyConfig *config)
 static PyObject *
 get_warnoptions(PyThreadState *tstate)
 {
-    PyObject *warnoptions = _PySys_GetAttr(tstate, &_Py_ID(warnoptions));
+    PyObject *warnoptions;
+    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+        return NULL;
+    }
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
         /* PEP432 TODO: we can reach this if warnoptions is NULL in the main
         *  interpreter config. When that happens, we need to properly set
@@ -2810,6 +2891,7 @@ get_warnoptions(PyThreadState *tstate)
          * call optional for embedding applications, thus making this
          * reachable again.
          */
+        Py_XDECREF(warnoptions);
         warnoptions = PyList_New(0);
         if (warnoptions == NULL) {
             return NULL;
@@ -2818,7 +2900,6 @@ get_warnoptions(PyThreadState *tstate)
             Py_DECREF(warnoptions);
             return NULL;
         }
-        Py_DECREF(warnoptions);
     }
     return warnoptions;
 }
@@ -2832,22 +2913,30 @@ PySys_ResetWarnOptions(void)
         return;
     }
 
-    PyObject *warnoptions = _PySys_GetAttr(tstate, &_Py_ID(warnoptions));
-    if (warnoptions == NULL || !PyList_Check(warnoptions))
+    PyObject *warnoptions;
+    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+        PyErr_Clear();
         return;
-    PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
+    }
+    if (warnoptions != NULL && PyList_Check(warnoptions)) {
+        PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
+    }
+    Py_XDECREF(warnoptions);
 }
 
 static int
 _PySys_AddWarnOptionWithError(PyThreadState *tstate, PyObject *option)
 {
+    assert(tstate != NULL);
     PyObject *warnoptions = get_warnoptions(tstate);
     if (warnoptions == NULL) {
         return -1;
     }
     if (PyList_Append(warnoptions, option)) {
+        Py_DECREF(warnoptions);
         return -1;
     }
+    Py_DECREF(warnoptions);
     return 0;
 }
 
@@ -2856,11 +2945,11 @@ PyAPI_FUNC(void)
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+    assert(!_PyErr_Occurred(tstate));
     if (_PySys_AddWarnOptionWithError(tstate, option) < 0) {
         /* No return value, therefore clear error state if possible */
-        if (tstate) {
-            _PyErr_Clear(tstate);
-        }
+        _PyErr_Clear(tstate);
     }
 }
 
@@ -2888,16 +2977,24 @@ _Py_COMP_DIAG_POP
 PyAPI_FUNC(int)
 PySys_HasWarnOptions(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *warnoptions = _PySys_GetAttr(tstate, &_Py_ID(warnoptions));
-    return (warnoptions != NULL && PyList_Check(warnoptions)
-            && PyList_GET_SIZE(warnoptions) > 0);
+    PyObject *warnoptions;
+    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+        PyErr_Clear();
+        return 0;
+    }
+    int r = (warnoptions != NULL && PyList_Check(warnoptions) &&
+             PyList_GET_SIZE(warnoptions) > 0);
+    Py_XDECREF(warnoptions);
+    return r;
 }
 
 static PyObject *
 get_xoptions(PyThreadState *tstate)
 {
-    PyObject *xoptions = _PySys_GetAttr(tstate, &_Py_ID(_xoptions));
+    PyObject *xoptions;
+    if (_PySys_GetOptionalAttr(&_Py_ID(_xoptions), &xoptions) < 0) {
+        return NULL;
+    }
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
         /* PEP432 TODO: we can reach this if xoptions is NULL in the main
         *  interpreter config. When that happens, we need to properly set
@@ -2909,6 +3006,7 @@ get_xoptions(PyThreadState *tstate)
          * call optional for embedding applications, thus making this
          * reachable again.
          */
+        Py_XDECREF(xoptions);
         xoptions = PyDict_New();
         if (xoptions == NULL) {
             return NULL;
@@ -2917,7 +3015,6 @@ get_xoptions(PyThreadState *tstate)
             Py_DECREF(xoptions);
             return NULL;
         }
-        Py_DECREF(xoptions);
     }
     return xoptions;
 }
@@ -2956,11 +3053,13 @@ _PySys_AddXOptionWithError(const wchar_t *s)
     }
     Py_DECREF(name);
     Py_DECREF(value);
+    Py_DECREF(opts);
     return 0;
 
 error:
     Py_XDECREF(name);
     Py_XDECREF(value);
+    Py_XDECREF(opts);
     return -1;
 }
 
@@ -2983,7 +3082,9 @@ PyObject *
 PySys_GetXOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return get_xoptions(tstate);
+    PyObject *opts = get_xoptions(tstate);
+    Py_XDECREF(opts);
+    return opts;
 }
 
 /* XXX This doc string is too long to be a single string literal in VC++ 5.0.
@@ -3719,16 +3820,15 @@ _PySys_UpdateConfig(PyThreadState *tstate)
 #undef COPY_WSTR
 
     // sys.flags
-    PyObject *flags = _PySys_GetObject(interp, "flags"); // borrowed ref
+    PyObject *flags = _PySys_GetRequiredAttrString("flags");
     if (flags == NULL) {
-        if (!_PyErr_Occurred(tstate)) {
-            _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.flags");
-        }
         return -1;
     }
     if (set_flags_from_config(interp, flags) < 0) {
+        Py_DECREF(flags);
         return -1;
     }
+    Py_DECREF(flags);
 
     SET_SYS("dont_write_bytecode", PyBool_FromLong(!config->write_bytecode));
 
@@ -3960,12 +4060,15 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
                 Py_FatalError("can't compute path0 from argv");
             }
 
-            PyObject *sys_path = _PySys_GetAttr(tstate, &_Py_ID(path));
-            if (sys_path != NULL) {
+            PyObject *sys_path;
+            if (_PySys_GetOptionalAttr(&_Py_ID(path), &sys_path) < 0) {
+                Py_FatalError("can't get sys.path");
+            }
+            else if (sys_path != NULL) {
                 if (PyList_Insert(sys_path, 0, path0) < 0) {
-                    Py_DECREF(path0);
                     Py_FatalError("can't prepend path0 to sys.path");
                 }
+                Py_DECREF(sys_path);
             }
             Py_DECREF(path0);
         }
@@ -4053,8 +4156,8 @@ sys_write(PyObject *key, FILE *fp, const char *format, va_list va)
     PyThreadState *tstate = _PyThreadState_GET();
 
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    file = _PySys_GetAttr(tstate, key);
     written = PyOS_vsnprintf(buffer, sizeof(buffer), format, va);
+    file = _PySys_GetRequiredAttr(key);
     if (sys_pyfile_write(buffer, file) != 0) {
         _PyErr_Clear(tstate);
         fputs(buffer, fp);
@@ -4064,6 +4167,7 @@ sys_write(PyObject *key, FILE *fp, const char *format, va_list va)
         if (sys_pyfile_write(truncated, file) != 0)
             fputs(truncated, fp);
     }
+    Py_XDECREF(file);
     _PyErr_SetRaisedException(tstate, exc);
 }
 
@@ -4095,15 +4199,16 @@ sys_format(PyObject *key, FILE *fp, const char *format, va_list va)
     PyThreadState *tstate = _PyThreadState_GET();
 
     PyObject *exc = _PyErr_GetRaisedException(tstate);
-    file = _PySys_GetAttr(tstate, key);
     message = PyUnicode_FromFormatV(format, va);
     if (message != NULL) {
+        file = _PySys_GetRequiredAttr(key);
         if (sys_pyfile_write_unicode(message, file) != 0) {
             _PyErr_Clear(tstate);
             utf8 = PyUnicode_AsUTF8(message);
             if (utf8 != NULL)
                 fputs(utf8, fp);
         }
+        Py_XDECREF(file);
         Py_DECREF(message);
     }
     _PyErr_SetRaisedException(tstate, exc);

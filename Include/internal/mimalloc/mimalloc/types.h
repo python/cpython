@@ -235,7 +235,7 @@ typedef size_t     mi_threadid_t;
 
 // free lists contain blocks
 typedef struct mi_block_s {
-  mi_encoded_t next;
+  _Atomic(mi_encoded_t) next;
 } mi_block_t;
 
 
@@ -678,7 +678,7 @@ void _mi_stat_counter_increase(mi_stat_counter_t* stat, size_t amount);
 // Thread Local data
 // ------------------------------------------------------
 
-// A "span" is is an available range of slices. The span queues keep
+// A "span" is an available range of slices. The span queues keep
 // track of slice spans of at most the given `slice_count` (but more than the previous size class).
 typedef struct mi_span_queue_s {
   mi_slice_t* first;

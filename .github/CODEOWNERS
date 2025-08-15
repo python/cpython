@@ -8,7 +8,7 @@
 .github/**                    @ezio-melotti @hugovk
 
 # pre-commit
-.pre-commit-config.yaml       @hugovk @AlexWaygood
+.pre-commit-config.yaml       @hugovk
 .ruff.toml                    @hugovk @AlexWaygood
 
 # Build system
@@ -194,7 +194,6 @@ Doc/c-api/stable.rst          @encukou
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
-**/*queue*                    @rhettinger
 **/*bisect*                   @rhettinger
 **/*heapq*                    @rhettinger
 **/*functools*                @rhettinger
@@ -245,8 +244,8 @@ Modules/_interp*module.c      @ericsnowcurrently
 Lib/test/test_interpreters/   @ericsnowcurrently
 
 # Android
-**/*Android*                  @mhsmith
-**/*android*                  @mhsmith
+**/*Android*                  @mhsmith @freakboy3742
+**/*android*                  @mhsmith @freakboy3742
 
 # iOS (but not termios)
 **/iOS*                       @freakboy3742
@@ -267,3 +266,7 @@ Lib/test/test_interpreters/   @ericsnowcurrently
 # Config Parser
 Lib/configparser.py           @jaraco
 Lib/test/test_configparser.py @jaraco
+
+# Colorize
+Lib/_colorize.py              @hugovk
+Lib/test/test__colorize.py    @hugovk

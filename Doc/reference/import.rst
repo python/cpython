@@ -123,6 +123,8 @@ Importing ``parent.one`` will implicitly execute ``parent/__init__.py`` and
 ``parent/three/__init__.py`` respectively.
 
 
+.. _reference-namespace-package:
+
 Namespace packages
 ------------------
 

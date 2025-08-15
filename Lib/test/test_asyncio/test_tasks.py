@@ -2694,17 +2694,17 @@ class BaseTaskTests:
         initial_refcount = sys.getrefcount(obj)
 
         coro = coroutine_function()
-        loop = asyncio.new_event_loop()
-        task = asyncio.Task.__new__(asyncio.Task)
+        with contextlib.closing(asyncio.EventLoop()) as loop:
+            task = asyncio.Task.__new__(asyncio.Task)
 
-        for _ in range(5):
-            with self.assertRaisesRegex(RuntimeError, 'break'):
-                task.__init__(coro, loop=loop, context=obj, name=Break())
+            for _ in range(5):
+                with self.assertRaisesRegex(RuntimeError, 'break'):
+                    task.__init__(coro, loop=loop, context=obj, name=Break())
 
-        coro.close()
-        del task
+            coro.close()
+            del task
 
-        self.assertEqual(sys.getrefcount(obj), initial_refcount)
+            self.assertEqual(sys.getrefcount(obj), initial_refcount)
 
 
 def add_subclass_tests(cls):

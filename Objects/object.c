@@ -1584,7 +1584,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     else {
         PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
         if (dictptr != NULL) {
-            dict = *dictptr;
+            dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*dictptr);
         }
         else {
             dict = NULL;
@@ -1692,7 +1692,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         else {
             PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
             if (dictptr) {
+#ifdef Py_GIL_DISABLED
+                dict = _Py_atomic_load_ptr_acquire(dictptr);
+#else
                 dict = *dictptr;
+#endif
             }
         }
     }

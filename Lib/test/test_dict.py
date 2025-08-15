@@ -265,6 +265,39 @@ class DictTest(unittest.TestCase):
 
         self.assertRaises(ValueError, {}.update, [(1, 2, 3)])
 
+    def test_update_shared_keys(self):
+        class MyClass: pass
+
+        # Subclass str to enable us to create an object during the
+        # dict.update() call.
+        class MyStr(str):
+            def __hash__(self):
+                return super().__hash__()
+
+            def __eq__(self, other):
+                # Create an object that shares the same PyDictKeysObject as
+                # obj.__dict__.
+                obj2 = MyClass()
+                obj2.a = "a"
+                obj2.b = "b"
+                obj2.c = "c"
+                return super().__eq__(other)
+
+        obj = MyClass()
+        obj.a = "a"
+        obj.b = "b"
+
+        x = {}
+        x[MyStr("a")] = MyStr("a")
+
+        # gh-132617: this previously raised "dict mutated during update" error
+        x.update(obj.__dict__)
+
+        self.assertEqual(x, {
+            MyStr("a"): "a",
+            "b": "b",
+        })
+
     def test_fromkeys(self):
         self.assertEqual(dict.fromkeys('abc'), {'a':None, 'b':None, 'c':None})
         d = {}
@@ -312,16 +345,33 @@ class DictTest(unittest.TestCase):
         self.assertRaises(Exc, baddict2.fromkeys, [1])
 
         # test fast path for dictionary inputs
+        res = dict(zip(range(6), [0]*6))
         d = dict(zip(range(6), range(6)))
-        self.assertEqual(dict.fromkeys(d, 0), dict(zip(range(6), [0]*6)))
+        self.assertEqual(dict.fromkeys(d, 0), res)
+        # test fast path for set inputs
+        d = set(range(6))
+        self.assertEqual(dict.fromkeys(d, 0), res)
+        # test slow path for other iterable inputs
+        d = list(range(6))
+        self.assertEqual(dict.fromkeys(d, 0), res)
 
+        # test fast path when object's constructor returns large non-empty dict
         class baddict3(dict):
             def __new__(cls):
                 return d
-        d = {i : i for i in range(10)}
+        d = {i : i for i in range(1000)}
         res = d.copy()
         res.update(a=None, b=None, c=None)
         self.assertEqual(baddict3.fromkeys({"a", "b", "c"}), res)
+
+        # test slow path when object is a proper subclass of dict
+        class baddict4(dict):
+            def __init__(self):
+                dict.__init__(self, d)
+        d = {i : i for i in range(1000)}
+        res = d.copy()
+        res.update(a=None, b=None, c=None)
+        self.assertEqual(baddict4.fromkeys({"a", "b", "c"}), res)
 
     def test_copy(self):
         d = {1: 1, 2: 2, 3: 3}
@@ -989,6 +1039,18 @@ class DictTest(unittest.TestCase):
             pass
         self._tracked(MyDict())
 
+    @support.cpython_only
+    def test_track_lazy_instance_dicts(self):
+        class C:
+            pass
+        o = C()
+        d = o.__dict__
+        self._not_tracked(d)
+        o.untracked = 42
+        self._not_tracked(d)
+        o.tracked = []
+        self._tracked(d)
+
     def make_shared_key_dict(self, n):
         class C:
             pass
@@ -1103,10 +1165,8 @@ class DictTest(unittest.TestCase):
         a = C()
         a.x = 1
         d = a.__dict__
-        before_resize = sys.getsizeof(d)
         d[2] = 2 # split table is resized to a generic combined table
 
-        self.assertGreater(sys.getsizeof(d), before_resize)
         self.assertEqual(list(d), ['x', 2])
 
     def test_iterator_pickling(self):

@@ -17,7 +17,8 @@ race:set_allocator_unlocked
 
 # https://gist.github.com/swtaarrs/8e0e365e1d9cecece3269a2fb2f2b8b8
 race:sock_recv_impl
-# https://gist.github.com/swtaarrs/08dfe7883b4c975c31ecb39388987a67
+
+# gh-124878: race condition when interpreter finalized while daemon thread runs
 race:free_threadstate
 
 
@@ -46,6 +47,9 @@ race_top:write_thread_id
 race_top:PyThreadState_Clear
 # Only seen on macOS, sample: https://gist.github.com/aisk/dda53f5d494a4556c35dde1fce03259c
 race_top:set_default_allocator_unlocked
+
+# gh-127266: type slot updates are not thread-safe (test_opcache.test_load_attr_method_lazy_dict)
+race_top:update_one_slot
 
 # https://gist.github.com/mpage/6962e8870606cfc960e159b407a0cb40
 thread:pthread_create

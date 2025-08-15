@@ -75,6 +75,8 @@ class InstanceMethod:
     id = _testcapi.instancemethod(id)
     testfunction = _testcapi.instancemethod(testfunction)
 
+
+@support.force_not_colorized_test_class
 class CAPITest(unittest.TestCase):
 
     def test_instancemethod(self):
@@ -892,36 +894,6 @@ class CAPITest(unittest.TestCase):
         _testcapi.clear_managed_dict(c)
         self.assertEqual(c.__dict__, {})
 
-    def test_eval_get_func_name(self):
-        def function_example(): ...
-
-        class A:
-            def method_example(self): ...
-
-        self.assertEqual(_testcapi.eval_get_func_name(function_example),
-                         "function_example")
-        self.assertEqual(_testcapi.eval_get_func_name(A.method_example),
-                         "method_example")
-        self.assertEqual(_testcapi.eval_get_func_name(A().method_example),
-                         "method_example")
-        self.assertEqual(_testcapi.eval_get_func_name(sum), "sum")  # c function
-        self.assertEqual(_testcapi.eval_get_func_name(A), "type")
-
-    def test_eval_get_func_desc(self):
-        def function_example(): ...
-
-        class A:
-            def method_example(self): ...
-
-        self.assertEqual(_testcapi.eval_get_func_desc(function_example),
-                         "()")
-        self.assertEqual(_testcapi.eval_get_func_desc(A.method_example),
-                         "()")
-        self.assertEqual(_testcapi.eval_get_func_desc(A().method_example),
-                         "()")
-        self.assertEqual(_testcapi.eval_get_func_desc(sum), "()")  # c function
-        self.assertEqual(_testcapi.eval_get_func_desc(A), " object")
-
     def test_function_get_code(self):
         import types
 
@@ -1179,19 +1151,6 @@ class CAPITest(unittest.TestCase):
         def genf(): yield
         gen = genf()
         self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
-
-    def test_pyeval_getlocals(self):
-        # Test PyEval_GetLocals()
-        x = 1
-        self.assertEqual(_testcapi.pyeval_getlocals(),
-            {'self': self,
-             'x': 1})
-
-        y = 2
-        self.assertEqual(_testcapi.pyeval_getlocals(),
-            {'self': self,
-             'x': 1,
-             'y': 2})
 
 
 @requires_limited_api
@@ -3225,6 +3184,23 @@ class TestPyThreadId(unittest.TestCase):
             self.assertGreater(tid, 0)
         self.assertEqual(len(set(py_thread_ids)), len(py_thread_ids),
                          py_thread_ids)
+
+
+class TestCEval(unittest.TestCase):
+   def test_ceval_decref(self):
+        code = textwrap.dedent("""
+            import _testcapi
+            _testcapi.toggle_reftrace_printer(True)
+            l1 = []
+            l2 = []
+            del l1
+            del l2
+            _testcapi.toggle_reftrace_printer(False)
+        """)
+        _, out, _ = assert_python_ok("-c", code)
+        lines = out.decode("utf-8").splitlines()
+        self.assertEqual(lines.count("CREATE list"), 2)
+        self.assertEqual(lines.count("DESTROY list"), 2)
 
 
 if __name__ == "__main__":

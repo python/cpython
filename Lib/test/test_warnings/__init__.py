@@ -1628,6 +1628,25 @@ class DeprecatedTests(unittest.TestCase):
         instance = Child(42)
         self.assertEqual(instance.a, 42)
 
+    def test_do_not_shadow_user_arguments(self):
+        new_called = False
+        new_called_cls = None
+
+        @deprecated("MyMeta will go away soon")
+        class MyMeta(type):
+            def __new__(mcs, name, bases, attrs, cls=None):
+                nonlocal new_called, new_called_cls
+                new_called = True
+                new_called_cls = cls
+                return super().__new__(mcs, name, bases, attrs)
+
+        with self.assertWarnsRegex(DeprecationWarning, "MyMeta will go away soon"):
+            class Foo(metaclass=MyMeta, cls='haha'):
+                pass
+
+        self.assertTrue(new_called)
+        self.assertEqual(new_called_cls, 'haha')
+
     def test_existing_init_subclass(self):
         @deprecated("C will go away soon")
         class C:
@@ -1807,9 +1826,69 @@ class DeprecatedTests(unittest.TestCase):
         self.assertFalse(inspect.iscoroutinefunction(Cls.sync))
         self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
 
+    def test_inspect_class_signature(self):
+        class Cls1:  # no __init__ or __new__
+            pass
+
+        class Cls2:  # __new__ only
+            def __new__(cls, x, y):
+                return super().__new__(cls)
+
+        class Cls3:  # __init__ only
+            def __init__(self, x, y):
+                pass
+
+        class Cls4:  # __new__ and __init__
+            def __new__(cls, x, y):
+                return super().__new__(cls)
+
+            def __init__(self, x, y):
+                pass
+
+        class Cls5(Cls1):  # inherits no __init__ or __new__
+            pass
+
+        class Cls6(Cls2):  # inherits __new__ only
+            pass
+
+        class Cls7(Cls3):  # inherits __init__ only
+            pass
+
+        class Cls8(Cls4):  # inherits __new__ and __init__
+            pass
+
+        # The `@deprecated` decorator will update the class in-place.
+        # Test the child classes first.
+        for cls in reversed((Cls1, Cls2, Cls3, Cls4, Cls5, Cls6, Cls7, Cls8)):
+            with self.subTest(f'class {cls.__name__} signature'):
+                try:
+                    original_signature = inspect.signature(cls)
+                except ValueError:
+                    original_signature = None
+                try:
+                    original_new_signature = inspect.signature(cls.__new__)
+                except ValueError:
+                    original_new_signature = None
+
+                deprecated_cls = deprecated("depr")(cls)
+
+                try:
+                    deprecated_signature = inspect.signature(deprecated_cls)
+                except ValueError:
+                    deprecated_signature = None
+                self.assertEqual(original_signature, deprecated_signature)
+
+                try:
+                    deprecated_new_signature = inspect.signature(deprecated_cls.__new__)
+                except ValueError:
+                    deprecated_new_signature = None
+                self.assertEqual(original_new_signature, deprecated_new_signature)
+
+
 def setUpModule():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
+
 
 tearDownModule = setUpModule
 

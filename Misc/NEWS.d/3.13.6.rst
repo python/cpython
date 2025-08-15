@@ -1,0 +1,663 @@
+.. date: 2025-08-06-06-29-12
+.. gh-issue: 137450
+.. nonce: JZypb7
+.. release date: 2025-08-06
+.. section: macOS
+
+macOS installer shell path management improvements: separate the installer
+``Shell profile updater`` postinstall script from the ``Update Shell
+Profile.command`` to enable more robust error handling.
+
+..
+
+.. date: 2025-07-27-02-17-40
+.. gh-issue: 137134
+.. nonce: pjgITs
+.. section: macOS
+
+Update macOS installer to ship with SQLite version 3.50.4.
+
+..
+
+.. date: 2025-07-27-02-16-53
+.. gh-issue: 137134
+.. nonce: W0WpDF
+.. section: Windows
+
+Update Windows installer to ship with SQLite 3.50.4.
+
+..
+
+.. date: 2025-06-26-15-58-13
+.. gh-issue: 135968
+.. nonce: C4v_-W
+.. section: Tools/Demos
+
+Stubs for ``strip`` are now provided as part of an iOS install.
+
+..
+
+.. date: 2025-06-26-15-15-35
+.. gh-issue: 135966
+.. nonce: EBpF8Y
+.. section: Tests
+
+The iOS testbed now handles the ``app_packages`` folder as a site directory.
+
+..
+
+.. date: 2025-06-19-15-29-38
+.. gh-issue: 135494
+.. nonce: FVl9a0
+.. section: Tests
+
+Fix regrtest to support excluding tests from ``--pgo`` tests. Patch by
+Victor Stinner.
+
+..
+
+.. date: 2025-06-14-13-20-17
+.. gh-issue: 135489
+.. nonce: Uh0yVO
+.. section: Tests
+
+Show verbose output for failing tests during PGO profiling step with
+--enable-optimizations.
+
+..
+
+.. date: 2025-06-25-14-13-39
+.. gh-issue: 135661
+.. nonce: idjQ0B
+.. section: Security
+
+Fix parsing start and end tags in :class:`html.parser.HTMLParser` according
+to the HTML5 standard.
+
+* Whitespaces no longer accepted between ``</`` and the tag name.
+  E.g. ``</ script>`` does not end the script section.
+
+* Vertical tabulation (``\v``) and non-ASCII whitespaces no longer recognized
+  as whitespaces. The only whitespaces are ``\t\n\r\f`` and space.
+
+* Null character (U+0000) no longer ends the tag name.
+
+* Attributes and slashes after the tag name in end tags are now ignored,
+  instead of terminating after the first ``>`` in quoted attribute value.
+  E.g. ``</script/foo=">"/>``.
+
+* Multiple slashes and whitespaces between the last attribute and closing ``>``
+  are now ignored in both start and end tags. E.g. ``<a foo=bar/ //>``.
+
+* Multiple ``=`` between attribute name and value are no longer collapsed.
+  E.g. ``<a foo==bar>`` produces attribute "foo" with value "=bar".
+
+..
+
+.. date: 2025-06-18-13-28-08
+.. gh-issue: 102555
+.. nonce: nADrzJ
+.. section: Security
+
+Fix comment parsing in :class:`html.parser.HTMLParser` according to the
+HTML5 standard. ``--!>`` now ends the comment. ``-- >`` no longer ends the
+comment. Support abnormally ended empty comments ``<-->`` and ``<--->``.
+
+..
+
+.. date: 2025-06-13-15-55-22
+.. gh-issue: 135462
+.. nonce: KBeJpc
+.. section: Security
+
+Fix quadratic complexity in processing specially crafted input in
+:class:`html.parser.HTMLParser`. End-of-file errors are now handled
+according to the HTML5 specs -- comments and declarations are automatically
+closed, tags are ignored.
+
+..
+
+.. date: 2025-06-09-20-38-25
+.. gh-issue: 118350
+.. nonce: KgWCcP
+.. section: Security
+
+Fix support of escapable raw text mode (elements "textarea" and "title") in
+:class:`html.parser.HTMLParser`.
+
+..
+
+.. date: 2025-08-05-09-32-00
+.. gh-issue: 132710
+.. nonce: ApU3TZ
+.. section: Library
+
+If possible, ensure that :func:`uuid.getnode` returns the same result even
+across different processes. Previously, the result was constant only within
+the same process. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-08-01-15-07-59
+.. gh-issue: 137273
+.. nonce: 4V8Xmv
+.. section: Library
+
+Fix debug assertion failure in :func:`locale.setlocale` on Windows.
+
+..
+
+.. date: 2025-07-30-18-07-33
+.. gh-issue: 137257
+.. nonce: XBtzf2
+.. section: Library
+
+Bump the version of pip bundled in ensurepip to version 25.2
+
+..
+
+.. date: 2025-07-28-23-11-29
+.. gh-issue: 81325
+.. nonce: jMJFBe
+.. section: Library
+
+:class:`tarfile.TarFile` now accepts a :term:`path-like <path-like object>`
+when working on a tar archive. (Contributed by Alexander Enrique Urieles
+Nieto in :gh:`81325`.)
+
+..
+
+.. date: 2025-07-25-09-21-56
+.. gh-issue: 130522
+.. nonce: Crwq68
+.. section: Library
+
+Fix unraisable :exc:`TypeError` raised during :term:`interpreter shutdown`
+in the :mod:`threading` module.
+
+..
+
+.. date: 2025-07-23-00-35-29
+.. gh-issue: 130577
+.. nonce: c7EITy
+.. section: Library
+
+:mod:`tarfile` now validates archives to ensure member offsets are
+non-negative.  (Contributed by Alexander Enrique Urieles Nieto in
+:gh:`130577`.)
+
+..
+
+.. date: 2025-07-11-23-04-39
+.. gh-issue: 136549
+.. nonce: oAi8u4
+.. section: Library
+
+Fix signature of :func:`threading.excepthook`.
+
+..
+
+.. date: 2025-07-11-03-39-15
+.. gh-issue: 136523
+.. nonce: s7caKL
+.. section: Library
+
+Fix :class:`wave.Wave_write` emitting an unraisable when open raises.
+
+..
+
+.. date: 2025-07-10-10-18-19
+.. gh-issue: 52876
+.. nonce: 9Vjrd8
+.. section: Library
+
+Add missing ``keepends`` (default ``True``) parameter to
+:meth:`!codecs.StreamReaderWriter.readline` and
+:meth:`!codecs.StreamReaderWriter.readlines`.
+
+..
+
+.. date: 2025-06-30-11-12-24
+.. gh-issue: 85702
+.. nonce: 0Lrbwu
+.. section: Library
+
+If ``zoneinfo._common.load_tzdata`` is given a package without a resource a
+:exc:`zoneinfo.ZoneInfoNotFoundError` is raised rather than a
+:exc:`PermissionError`. Patch by Victor Stinner.
+
+..
+
+.. date: 2025-06-28-11-32-57
+.. gh-issue: 134759
+.. nonce: AjjKcG
+.. section: Library
+
+Fix :exc:`UnboundLocalError` in :func:`email.message.Message.get_payload`
+when the payload to decode is a :class:`bytes` object. Patch by Kliment
+Lamonov.
+
+..
+
+.. date: 2025-06-27-13-34-28
+.. gh-issue: 136028
+.. nonce: RY727g
+.. section: Library
+
+Fix parsing month names containing "İ" (U+0130, LATIN CAPITAL LETTER I WITH
+DOT ABOVE) in :func:`time.strptime`. This affects locales az_AZ, ber_DZ,
+ber_MA and crh_UA.
+
+..
+
+.. date: 2025-06-26-17-28-49
+.. gh-issue: 135995
+.. nonce: pPrDCt
+.. section: Library
+
+In the palmos encoding, make byte ``0x9b`` decode to ``›`` (U+203A - SINGLE
+RIGHT-POINTING ANGLE QUOTATION MARK).
+
+..
+
+.. date: 2025-06-26-11-52-40
+.. gh-issue: 53203
+.. nonce: TMigBr
+.. section: Library
+
+Fix :func:`time.strptime` for ``%c`` and ``%x`` formats on locales byn_ER,
+wal_ET and lzh_TW, and for ``%X`` format on locales ar_SA, bg_BG and lzh_TW.
+
+..
+
+.. date: 2025-06-25-18-16-45
+.. gh-issue: 91555
+.. nonce: 3cj4M9
+.. section: Library
+
+An earlier change, which was introduced in 3.13.4, has been reverted. It
+disabled logging for a logger during handling of log messages for that
+logger. Since the reversion, the behaviour should be as it was before
+3.13.4.
+
+..
+
+.. date: 2025-06-24-14-43-24
+.. gh-issue: 135878
+.. nonce: Db4roX
+.. section: Library
+
+Fixes a crash of :class:`types.SimpleNamespace` on :term:`free threading`
+builds, when several threads were calling its :meth:`~object.__repr__`
+method at the same time.
+
+..
+
+.. date: 2025-06-24-10-52-35
+.. gh-issue: 135836
+.. nonce: s37351
+.. section: Library
+
+Fix :exc:`IndexError` in :meth:`asyncio.loop.create_connection` that could
+occur when non-\ :exc:`OSError` exception is raised during connection and
+socket's ``close()`` raises :exc:`!OSError`.
+
+..
+
+.. date: 2025-06-23-11-04-25
+.. gh-issue: 135836
+.. nonce: -C-c4v
+.. section: Library
+
+Fix :exc:`IndexError` in :meth:`asyncio.loop.create_connection` that could
+occur when the Happy Eyeballs algorithm resulted in an empty exceptions list
+during connection attempts.
+
+..
+
+.. date: 2025-06-23-10-19-11
+.. gh-issue: 135855
+.. nonce: -J0AGF
+.. section: Library
+
+Raise :exc:`TypeError` instead of :exc:`SystemError` when
+:func:`!_interpreters.set___main___attrs` is passed a non-dict object. Patch
+by Brian Schubert.
+
+..
+
+.. date: 2025-06-22-16-23-44
+.. gh-issue: 135815
+.. nonce: 0DandH
+.. section: Library
+
+:mod:`netrc`: skip security checks if :func:`os.getuid` is missing. Patch by
+Bénédikt Tran.
+
+..
+
+.. date: 2025-06-22-02-16-17
+.. gh-issue: 135640
+.. nonce: FXyFL6
+.. section: Library
+
+Address bug where it was possible to call
+:func:`xml.etree.ElementTree.ElementTree.write` on an ElementTree object
+with an invalid root element. This behavior blanked the file passed to
+``write`` if it already existed.
+
+..
+
+.. date: 2025-06-16-12-37-02
+.. gh-issue: 135444
+.. nonce: An2eeA
+.. section: Library
+
+Fix :meth:`asyncio.DatagramTransport.sendto` to account for datagram header
+size when data cannot be sent.
+
+..
+
+.. date: 2025-06-14-14-19-13
+.. gh-issue: 135497
+.. nonce: 1pzwdA
+.. section: Library
+
+Fix :func:`os.getlogin` failing for longer usernames on BSD-based platforms.
+
+..
+
+.. date: 2025-06-14-12-06-55
+.. gh-issue: 135487
+.. nonce: KdVFff
+.. section: Library
+
+Fix :meth:`!reprlib.Repr.repr_int` when given integers with more than
+:func:`sys.get_int_max_str_digits` digits. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-06-10-21-42-04
+.. gh-issue: 135335
+.. nonce: WnUqb_
+.. section: Library
+
+:mod:`multiprocessing`: Flush ``stdout`` and ``stderr`` after preloading
+modules in the ``forkserver``.
+
+..
+
+.. date: 2025-06-08-10-22-22
+.. gh-issue: 135244
+.. nonce: Y2SOTJ
+.. section: Library
+
+:mod:`uuid`: when the MAC address cannot be determined, the 48-bit node ID
+is now generated with a cryptographically-secure pseudo-random number
+generator (CSPRNG) as per :rfc:`RFC 9562, §6.10.3 <9562#section-6.10-3>`.
+This affects :func:`~uuid.uuid1`.
+
+..
+
+.. date: 2025-06-03-12-59-17
+.. gh-issue: 135069
+.. nonce: xop30V
+.. section: Library
+
+Fix the "Invalid error handling" exception in
+:class:`!encodings.idna.IncrementalDecoder` to correctly replace the
+'errors' parameter.
+
+..
+
+.. date: 2025-05-26-10-52-27
+.. gh-issue: 134698
+.. nonce: aJ1mZ1
+.. section: Library
+
+Fix a crash when calling methods of :class:`ssl.SSLContext` or
+:class:`ssl.SSLSocket` across multiple threads.
+
+..
+
+.. date: 2025-05-16-12-40-37
+.. gh-issue: 132124
+.. nonce: T_5Odx
+.. section: Library
+
+On POSIX-compliant systems, :func:`!multiprocessing.util.get_temp_dir` now
+ignores :envvar:`TMPDIR` (and similar environment variables) if the path
+length of ``AF_UNIX`` socket files exceeds the platform-specific maximum
+length when using the *forkserver* start method. Patch by Bénédikt Tran.
+
+..
+
+.. date: 2025-05-05-22-11-24
+.. gh-issue: 133439
+.. nonce: LpmyFz
+.. section: Library
+
+Fix dot commands with trailing spaces are mistaken for multi-line SQL
+statements in the sqlite3 command-line interface.
+
+..
+
+.. date: 2025-04-30-19-32-18
+.. gh-issue: 132969
+.. nonce: EagQ3G
+.. section: Library
+
+Prevent the :class:`~concurrent.futures.ProcessPoolExecutor` executor
+thread, which remains running when :meth:`shutdown(wait=False)
+<concurrent.futures.Executor.shutdown>`, from attempting to adjust the
+pool's worker processes after the object state has already been reset during
+shutdown. A combination of conditions, including a worker process having
+terminated abormally, resulted in an exception and a potential hang when the
+still-running executor thread attempted to replace dead workers within the
+pool.
+
+..
+
+.. date: 2025-04-06-14-34-29
+.. gh-issue: 130664
+.. nonce: JF2r-U
+.. section: Library
+
+Support the ``'_'`` digit separator in formatting of the integral part of
+:class:`~decimal.Decimal`'s.  Patch by Sergey B Kirpichev.
+
+..
+
+.. date: 2025-03-16-17-40-00
+.. gh-issue: 85702
+.. nonce: qudq12
+.. section: Library
+
+If ``zoneinfo._common.load_tzdata`` is given a package without a resource a
+``ZoneInfoNotFoundError`` is raised rather than a :exc:`IsADirectoryError`.
+
+..
+
+.. date: 2025-03-11-05-24-14
+.. gh-issue: 130664
+.. nonce: g0yNMm
+.. section: Library
+
+Handle corner-case for :class:`~fractions.Fraction`'s formatting: treat
+zero-padding (preceding the width field by a zero (``'0'``) character) as an
+equivalent to a fill character of ``'0'`` with an alignment type of ``'='``,
+just as in case of :class:`float`'s.
+
+..
+
+.. date: 2025-06-10-17-02-06
+.. gh-issue: 135171
+.. nonce: quHvts
+.. section: Documentation
+
+Document that the :term:`iterator` for the leftmost :keyword:`!for` clause
+in the generator expression is created immediately.
+
+..
+
+.. date: 2025-08-05-17-22-24
+.. gh-issue: 58124
+.. nonce: q1__53
+.. section: Core and Builtins
+
+Fix name of the Python encoding in Unicode errors of the code page codec:
+use "cp65000" and "cp65001" instead of "CP_UTF7" and "CP_UTF8" which are not
+valid Python code names. Patch by Victor Stinner.
+
+..
+
+.. date: 2025-08-02-23-04-57
+.. gh-issue: 137314
+.. nonce: wjEdzD
+.. section: Core and Builtins
+
+Fixed a regression where raw f-strings incorrectly interpreted escape
+sequences in format specifications. Raw f-strings now properly preserve
+literal backslashes in format specs, matching the behavior from Python 3.11.
+For example, ``rf"{obj:\xFF}"`` now correctly produces ``'\\xFF'`` instead
+of ``'ÿ'``. Patch by Pablo Galindo.
+
+..
+
+.. date: 2025-07-11-13-45-48
+.. gh-issue: 136541
+.. nonce: uZ_-Ju
+.. section: Core and Builtins
+
+Fix some issues with the perf trampolines on x86-64 and aarch64.  The
+trampolines were not being generated correctly for some cases, which could
+lead to the perf integration not working correctly. Patch by Pablo Galindo.
+
+..
+
+.. date: 2025-07-06-14-53-19
+.. gh-issue: 109700
+.. nonce: KVNQQi
+.. section: Core and Builtins
+
+Fix memory error handling in :c:func:`PyDict_SetDefault`.
+
+..
+
+.. date: 2025-06-26-15-25-51
+.. gh-issue: 78465
+.. nonce: MbDN8X
+.. section: Core and Builtins
+
+Fix error message for ``cls.__new__(cls, ...)`` where ``cls`` is not
+instantiable builtin or extension type (with ``tp_new`` set to ``NULL``).
+
+..
+
+.. date: 2025-06-23-18-08-32
+.. gh-issue: 135871
+.. nonce: 50C528
+.. section: Core and Builtins
+
+Non-blocking mutex lock attempts now return immediately when the lock is
+busy instead of briefly spinning in the :term:`free threading` build.
+
+..
+
+.. date: 2025-06-17-22-34-58
+.. gh-issue: 135607
+.. nonce: ucsLVu
+.. section: Core and Builtins
+
+Fix potential :mod:`weakref` races in an object's destructor on the
+:term:`free threaded <free threading>` build.
+
+..
+
+.. date: 2025-06-14-01-01-14
+.. gh-issue: 135496
+.. nonce: ER0Me3
+.. section: Core and Builtins
+
+Fix typo in the f-string conversion type error ("exclamanation" ->
+"exclamation").
+
+..
+
+.. date: 2025-06-09-23-57-37
+.. gh-issue: 130077
+.. nonce: MHknDB
+.. section: Core and Builtins
+
+Properly raise custom syntax errors when incorrect syntax containing names
+that are prefixes of soft keywords is encountered.  Patch by Pablo Galindo.
+
+..
+
+.. date: 2025-06-06-02-24-42
+.. gh-issue: 135148
+.. nonce: r-t2sC
+.. section: Core and Builtins
+
+Fixed a bug where f-string debug expressions (using =) would incorrectly
+strip out parts of strings containing escaped quotes and # characters. Patch
+by Pablo Galindo.
+
+..
+
+.. date: 2025-06-03-21-06-22
+.. gh-issue: 133136
+.. nonce: Usnvri
+.. section: Core and Builtins
+
+Limit excess memory usage in the :term:`free threading` build when a large
+dictionary or list is resized and accessed by multiple threads.
+
+..
+
+.. date: 2025-05-27-20-29-00
+.. gh-issue: 132617
+.. nonce: EmUfQQ
+.. section: Core and Builtins
+
+Fix :meth:`dict.update` modification check that could incorrectly raise a
+"dict mutated during update" error when a different dictionary was modified
+that happens to share the same underlying keys object.
+
+..
+
+.. date: 2025-05-17-20-56-05
+.. gh-issue: 91153
+.. nonce: afgtG2
+.. section: Core and Builtins
+
+Fix a crash when a :class:`bytearray` is concurrently mutated during item
+assignment.
+
+..
+
+.. date: 2025-04-16-12-01-13
+.. gh-issue: 127971
+.. nonce: pMDOQ0
+.. section: Core and Builtins
+
+Fix off-by-one read beyond the end of a string in string search.
+
+..
+
+.. date: 2024-11-18-12-17-45
+.. gh-issue: 125723
+.. nonce: tW_hFG
+.. section: Core and Builtins
+
+Fix crash with ``gi_frame.f_locals`` when generator frames outlive their
+generator. Patch by Mikhail Efimov.
+
+..
+
+.. date: 2025-06-14-10-32-11
+.. gh-issue: 135497
+.. nonce: ajlV4F
+.. section: Build
+
+Fix the detection of ``MAXLOGNAME`` in the ``configure.ac`` script.

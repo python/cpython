@@ -79,7 +79,7 @@ _PyPegen_parse(Parser *p)
 # ~
 #   Commit to the current alternative, even if it fails to parse.
 # &&e
-#   Eager parse e. The parser will not backtrack and will immediately 
+#   Eager parse e. The parser will not backtrack and will immediately
 #   fail with SyntaxError if e cannot be parsed.
 #
 
@@ -207,7 +207,7 @@ import_name[stmt_ty]: 'import' a=dotted_as_names { _PyAST_Import(a, EXTRA) }
 # note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
 import_from[stmt_ty]:
     | 'from' a=('.' | '...')* b=dotted_name 'import' c=import_from_targets {
-        _PyAST_ImportFrom(b->v.Name.id, c, _PyPegen_seq_count_dots(a), EXTRA) }
+        _PyPegen_checked_future_import(p, b->v.Name.id, c, _PyPegen_seq_count_dots(a), EXTRA) }
     | 'from' a=('.' | '...')+ 'import' b=import_from_targets {
         _PyAST_ImportFrom(NULL, b, _PyPegen_seq_count_dots(a), EXTRA) }
 import_from_targets[asdl_alias_seq*]:
@@ -640,7 +640,7 @@ type_alias[stmt_ty]:
 # Type parameter declaration
 # --------------------------
 
-type_params[asdl_type_param_seq*]: 
+type_params[asdl_type_param_seq*]:
     | invalid_type_params
     | '[' t=type_param_seq ']' {
         CHECK_VERSION(asdl_type_param_seq *, 12, "Type parameter lists are", t) }
@@ -1307,13 +1307,13 @@ invalid_group:
 invalid_import:
     | a='import' ','.dotted_name+ 'from' dotted_name {
         RAISE_SYNTAX_ERROR_STARTING_FROM(a, "Did you mean to use 'from ... import ...' instead?") }
-    | 'import' token=NEWLINE { 
+    | 'import' token=NEWLINE {
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 
 invalid_import_from_targets:
     | import_from_as_names ',' NEWLINE {
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
-    | token=NEWLINE { 
+    | token=NEWLINE {
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
 
 invalid_with_stmt:
@@ -1437,5 +1437,5 @@ invalid_factor:
 invalid_type_params:
     | '[' token=']' {
         RAISE_SYNTAX_ERROR_STARTING_FROM(
-            token, 
+            token,
             "Type parameter list cannot be empty")}

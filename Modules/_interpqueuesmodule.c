@@ -718,8 +718,11 @@ _queue_is_full(_queue *queue, int *p_is_full)
         return err;
     }
 
-    assert(queue->items.count <= queue->items.maxsize);
-    *p_is_full = queue->items.count == queue->items.maxsize;
+    assert(queue->items.maxsize <= 0
+           || queue->items.count <= queue->items.maxsize);
+    *p_is_full = queue->items.maxsize > 0
+        ? queue->items.count == queue->items.maxsize
+        : 0;
 
     _queue_unlock(queue);
     return 0;
@@ -1934,8 +1937,7 @@ static int
 module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
-    traverse_module_state(state, visit, arg);
-    return 0;
+    return traverse_module_state(state, visit, arg);
 }
 
 static int
@@ -1944,8 +1946,7 @@ module_clear(PyObject *mod)
     module_state *state = get_module_state(mod);
 
     // Now we clear the module state.
-    clear_module_state(state);
-    return 0;
+    return clear_module_state(state);
 }
 
 static void

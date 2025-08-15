@@ -110,7 +110,7 @@ Here is a short script to test three string methods::
       unittest.main()
 
 
-A testcase is created by subclassing :class:`unittest.TestCase`.  The three
+A test case is created by subclassing :class:`unittest.TestCase`.  The three
 individual tests are defined with methods whose names start with the letters
 ``test``.  This naming convention informs the test runner about which methods
 represent tests.
@@ -1579,7 +1579,8 @@ Test cases
 
       .. versionadded:: 3.13
 
-   .. coroutinemethod:: asyncSetUp()
+   .. method:: asyncSetUp()
+      :async:
 
       Method called to prepare the test fixture. This is called after :meth:`setUp`.
       This is called immediately before calling the test method; other than
@@ -1587,7 +1588,8 @@ Test cases
       will be considered an error rather than a test failure. The default implementation
       does nothing.
 
-   .. coroutinemethod:: asyncTearDown()
+   .. method:: asyncTearDown()
+      :async:
 
       Method called immediately after the test method has been called and the
       result recorded.  This is called before :meth:`tearDown`. This is called even if
@@ -1603,7 +1605,8 @@ Test cases
 
       This method accepts a coroutine that can be used as a cleanup function.
 
-   .. coroutinemethod:: enterAsyncContext(cm)
+   .. method:: enterAsyncContext(cm)
+      :async:
 
       Enter the supplied :term:`asynchronous context manager`.  If successful,
       also add its :meth:`~object.__aexit__` method as a cleanup function by
@@ -2497,7 +2500,7 @@ To add cleanup code that must be run even in the case of an exception, use
    .. versionadded:: 3.8
 
 
-.. classmethod:: enterModuleContext(cm)
+.. function:: enterModuleContext(cm)
 
    Enter the supplied :term:`context manager`.  If successful, also
    add its :meth:`~object.__exit__` method as a cleanup function by

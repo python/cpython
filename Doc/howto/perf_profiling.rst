@@ -162,12 +162,12 @@ the :option:`!-X` option takes precedence over the environment variable.
 
 Example, using the environment variable::
 
-   $ PYTHONPERFSUPPORT=1 perf record -F 9999 -g -o perf.data python script.py
+   $ PYTHONPERFSUPPORT=1 perf record -F 9999 -g -o perf.data python my_script.py
    $ perf report -g -i perf.data
 
 Example, using the :option:`!-X` option::
 
-   $ perf record -F 9999 -g -o perf.data python -X perf script.py
+   $ perf record -F 9999 -g -o perf.data python -X perf my_script.py
    $ perf report -g -i perf.data
 
 Example, using the :mod:`sys` APIs in file :file:`example.py`:
@@ -236,7 +236,7 @@ When using the perf JIT mode, you need an extra step before you can run ``perf
 report``. You need to call the ``perf inject`` command to inject the JIT
 information into the ``perf.data`` file.::
 
-    $ perf record -F 9999 -g --call-graph dwarf -o perf.data python -Xperf_jit my_script.py
+    $ perf record -F 9999 -g -k 1 --call-graph dwarf -o perf.data python -Xperf_jit my_script.py
     $ perf inject -i perf.data --jit --output perf.jit.data
     $ perf report -g -i perf.jit.data
 
@@ -254,13 +254,28 @@ files in the current directory which are ELF images for all the JIT trampolines
 that were created by Python.
 
 .. warning::
-    Notice that when using ``--call-graph dwarf`` the ``perf`` tool will take
+    When using ``--call-graph dwarf``, the ``perf`` tool will take
     snapshots of the stack of the process being profiled and save the
-    information in the ``perf.data`` file. By default the size of the stack dump
-    is 8192 bytes but the user can change the size by passing the size after
-    comma like ``--call-graph dwarf,4096``. The size of the stack dump is
-    important because if the size is too small ``perf`` will not be able to
-    unwind the stack and the output will be incomplete. On the other hand, if
-    the size is too big, then ``perf`` won't be able to sample the process as
-    frequently as it would like as the overhead will be higher.
+    information in the ``perf.data`` file. By default, the size of the stack dump
+    is 8192 bytes, but you can change the size by passing it after
+    a comma like ``--call-graph dwarf,16384``.
 
+    The size of the stack dump is important because if the size is too small
+    ``perf`` will not be able to unwind the stack and the output will be
+    incomplete. On the other hand, if the size is too big, then ``perf`` won't
+    be able to sample the process as frequently as it would like as the overhead
+    will be higher.
+
+    The stack size is particularly important when profiling Python code compiled
+    with low optimization levels (like ``-O0``), as these builds tend to have
+    larger stack frames. If you are compiling Python with ``-O0`` and not seeing
+    Python functions in your profiling output, try increasing the stack dump
+    size to 65528 bytes (the maximum)::
+
+        $ perf record -F 9999 -g -k 1 --call-graph dwarf,65528 -o perf.data python -Xperf_jit my_script.py
+
+    Different compilation flags can significantly impact stack sizes:
+
+    - Builds with ``-O0`` typically have much larger stack frames than those with ``-O1`` or higher
+    - Adding optimizations (``-O1``, ``-O2``, etc.) typically reduces stack size
+    - Frame pointers (``-fno-omit-frame-pointer``) generally provide more reliable stack unwinding

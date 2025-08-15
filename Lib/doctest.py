@@ -94,6 +94,7 @@ __all__ = [
 
 import __future__
 import difflib
+import functools
 import inspect
 import linecache
 import os
@@ -1140,7 +1141,9 @@ class DocTestFinder:
         if inspect.ismethod(obj): obj = obj.__func__
         if isinstance(obj, property):
             obj = obj.fget
-        if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
+        if isinstance(obj, functools.cached_property):
+            obj = obj.func
+        if inspect.isroutine(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
             obj = inspect.unwrap(obj)
             try:
@@ -1558,7 +1561,7 @@ class DocTestRunner:
         save_displayhook = sys.displayhook
         sys.displayhook = sys.__displayhook__
         saved_can_colorize = _colorize.can_colorize
-        _colorize.can_colorize = lambda: False
+        _colorize.can_colorize = lambda *args, **kwargs: False
         color_variables = {"PYTHON_COLORS": None, "FORCE_COLOR": None}
         for key in color_variables:
             color_variables[key] = os.environ.pop(key, None)
@@ -1989,8 +1992,8 @@ def testmod(m=None, name=None, globs=None, verbose=None,
     from module m (or the current module if m is not supplied), starting
     with m.__doc__.
 
-    Also test examples reachable from dict m.__test__ if it exists and is
-    not None.  m.__test__ maps names to functions, classes and strings;
+    Also test examples reachable from dict m.__test__ if it exists.
+    m.__test__ maps names to functions, classes and strings;
     function and class docstrings are tested even if the name is private;
     strings are tested directly, as if they were docstrings.
 

@@ -62,7 +62,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback, context=self.context)
+        self.loop.call_soon_threadsafe(callback, context=self.context)
 
         try:
             return future.result()
@@ -75,7 +75,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
-
+            return self.STATEMENT_FAILED
 
 class REPLThread(threading.Thread):
 

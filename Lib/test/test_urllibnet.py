@@ -2,6 +2,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from test.support.testcase import ExtraAssertions
 
 import contextlib
 import socket
@@ -34,7 +35,7 @@ class URLTimeoutTest(unittest.TestCase):
             f.read()
 
 
-class urlopenNetworkTests(unittest.TestCase):
+class urlopenNetworkTests(unittest.TestCase, ExtraAssertions):
     """Tests urllib.request.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
@@ -70,8 +71,7 @@ class urlopenNetworkTests(unittest.TestCase):
         with self.urlopen(self.url) as open_url:
             for attr in ("read", "readline", "readlines", "fileno", "close",
                          "info", "geturl"):
-                self.assertTrue(hasattr(open_url, attr), "object returned from "
-                                "urlopen lacks the %s attribute" % attr)
+                self.assertHasAttr(open_url, attr)
             self.assertTrue(open_url.read(), "calling 'read' failed")
 
     def test_readlines(self):

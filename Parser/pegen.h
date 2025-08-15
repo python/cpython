@@ -132,10 +132,11 @@ int _PyPegen_insert_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_update_memo(Parser *p, int mark, int type, void *node);
 int _PyPegen_is_memoized(Parser *p, int type, void *pres);
 
-int _PyPegen_lookahead_with_name(int, expr_ty (func)(Parser *), Parser *);
-int _PyPegen_lookahead_with_int(int, Token *(func)(Parser *, int), Parser *, int);
-int _PyPegen_lookahead_with_string(int , expr_ty (func)(Parser *, const char*), Parser *, const char*);
 int _PyPegen_lookahead(int, void *(func)(Parser *), Parser *);
+int _PyPegen_lookahead_for_expr(int, expr_ty (func)(Parser *), Parser *);
+int _PyPegen_lookahead_for_stmt(int, stmt_ty (func)(Parser *), Parser *);
+int _PyPegen_lookahead_with_int(int, Token *(func)(Parser *, int), Parser *, int);
+int _PyPegen_lookahead_with_string(int, expr_ty (func)(Parser *, const char*), Parser *, const char*);
 
 Token *_PyPegen_expect_token(Parser *p, int type);
 void* _PyPegen_expect_forced_result(Parser *p, void* result, const char* expected);
@@ -346,6 +347,8 @@ mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
+stmt_ty _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq *,
+                                       int , int, int , int , int , PyArena *);
 
 // Parser API
 

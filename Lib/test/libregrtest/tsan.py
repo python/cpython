@@ -13,6 +13,7 @@ TSAN_TESTS = [
     'test_importlib',
     'test_io',
     'test_logging',
+    'test_opcache',
     'test_queue',
     'test_signal',
     'test_socket',
@@ -28,6 +29,6 @@ TSAN_TESTS = [
 ]
 
 
-def setup_tsan_tests(cmdline_args):
+def setup_tsan_tests(cmdline_args) -> None:
     if not cmdline_args:
         cmdline_args[:] = TSAN_TESTS[:]

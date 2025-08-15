@@ -853,6 +853,15 @@ class StrTest(string_tests.StringLikeTest,
         self.assertTrue('\U0001F46F'.isprintable())
         self.assertFalse('\U000E0020'.isprintable())
 
+    @support.requires_resource('cpu')
+    def test_isprintable_invariant(self):
+        for codepoint in range(sys.maxunicode + 1):
+            char = chr(codepoint)
+            category = unicodedata.category(char)
+            self.assertEqual(char.isprintable(),
+                             category[0] not in ('C', 'Z')
+                             or char == ' ')
+
     def test_surrogates(self):
         for s in ('a\uD800b\uDFFF', 'a\uDFFFb\uD800',
                   'a\uD800b\uDFFFa', 'a\uDFFFb\uD800a'):
@@ -1222,10 +1231,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('{0:\x00^6}'.format(3), '\x00\x003\x00\x00\x00')
         self.assertEqual('{0:<6}'.format(3), '3     ')
 
-        self.assertEqual('{0:\x00<6}'.format(3.14), '3.14\x00\x00')
-        self.assertEqual('{0:\x01<6}'.format(3.14), '3.14\x01\x01')
-        self.assertEqual('{0:\x00^6}'.format(3.14), '\x003.14\x00')
-        self.assertEqual('{0:^6}'.format(3.14), ' 3.14 ')
+        self.assertEqual('{0:\x00<6}'.format(3.25), '3.25\x00\x00')
+        self.assertEqual('{0:\x01<6}'.format(3.25), '3.25\x01\x01')
+        self.assertEqual('{0:\x00^6}'.format(3.25), '\x003.25\x00')
+        self.assertEqual('{0:^6}'.format(3.25), ' 3.25 ')
 
         self.assertEqual('{0:\x00<12}'.format(3+2.0j), '(3+2j)\x00\x00\x00\x00\x00\x00')
         self.assertEqual('{0:\x01<12}'.format(3+2.0j), '(3+2j)\x01\x01\x01\x01\x01\x01')

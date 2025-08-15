@@ -250,14 +250,23 @@ The special characters are:
      ``[a\-z]``) or if it's placed as the first or last character
      (e.g. ``[-a]`` or ``[a-]``), it will match a literal ``'-'``.
 
-   * Special characters lose their special meaning inside sets.  For example,
+   * Special characters except backslash lose their special meaning inside sets.
+     For example,
      ``[(+*)]`` will match any of the literal characters ``'('``, ``'+'``,
      ``'*'``, or ``')'``.
 
    .. index:: single: \ (backslash); in regular expressions
 
-   * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
-     inside a set, although the characters they match depend on the flags_ used.
+   * Backslash either escapes characters which have special meaning in a set
+     such as ``'-'``, ``']'``, ``'^'`` and ``'\\'`` itself or signals
+     a special sequence which represents a single character such as
+     ``\xa0`` or ``\n`` or a character class such as ``\w`` or ``\S``
+     (defined below).
+     Note that ``\b`` represents a single "backspace" character,
+     not a word boundary as outside a set, and numeric escapes
+     such as ``\1`` are always octal escapes, not group references.
+     Special sequences which do not match a single character such as ``\A``
+     and ``\Z`` are not allowed.
 
    .. index:: single: ^ (caret); in regular expressions
 
@@ -979,8 +988,8 @@ Functions
    That way, separator components are always found at the same relative
    indices within the result list.
 
-   Empty matches for the pattern split the string only when not adjacent
-   to a previous empty match.
+   Adjacent empty matches are not possible, but an empty match can occur
+   immediately after a non-empty match.
 
    .. code:: pycon
 
@@ -1083,9 +1092,12 @@ Functions
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
-   occurrences will be replaced. Empty matches for the pattern are replaced only
-   when not adjacent to a previous empty match, so ``sub('x*', '-', 'abxd')`` returns
-   ``'-a-b--d-'``.
+   occurrences will be replaced.
+
+   Adjacent empty matches are not possible, but an empty match can occur
+   immediately after a non-empty match.
+   As a result, ``sub('x*', '-', 'abxd')`` returns ``'-a-b--d-'``
+   instead of ``'-a-b-d-'``.
 
    .. index:: single: \g; in regular expressions
 
@@ -1116,8 +1128,7 @@ Functions
    .. versionchanged:: 3.7
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
-      Empty matches for the pattern are replaced when adjacent to a previous
-      non-empty match.
+      An empty match can occur immediately after a non-empty match.
 
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.

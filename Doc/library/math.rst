@@ -10,8 +10,8 @@
 
 --------------
 
-This module provides access to the mathematical functions defined by the C
-standard.
+This module provides access to common mathematical functions and constants,
+including those defined by the C standard.
 
 These functions cannot be used with complex numbers; use the functions of the
 same name from the :mod:`cmath` module if you require support for complex
@@ -144,8 +144,7 @@ Number-theoretic functions
 
 .. function:: factorial(n)
 
-   Return *n* factorial as an integer.  Raises :exc:`ValueError` if *n* is not integral or
-   is negative.
+   Return factorial of the nonnegative integer *n*.
 
    .. versionchanged:: 3.10
       Floats with integral values (like ``5.0``) are no longer accepted.
@@ -350,8 +349,8 @@ Floating point manipulation functions
 
    *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
    nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
-   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any ``x`` and
-   rel_tol less than ``1.0``.  So add an appropriate positive abs_tol argument
+   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any nonzero ``x`` and
+   *rel_tol* less than ``1.0``.  So add an appropriate positive *abs_tol* argument
    to the call.
 
    The IEEE 754 special values of ``NaN``, ``inf``, and ``-inf`` will be
@@ -775,7 +774,7 @@ Constants
    The mathematical constant *τ* = 6.283185..., to available precision.
    Tau is a circle constant equal to 2\ *π*, the ratio of a circle's circumference to
    its radius. To learn more about Tau, check out Vi Hart's video `Pi is (still)
-   Wrong <https://www.youtube.com/watch?v=jG7vhMMXagQ>`_, and start celebrating
+   Wrong <https://vimeo.com/147792667>`_, and start celebrating
    `Tau day <https://tauday.com/>`_ by eating twice as much pie!
 
    .. versionadded:: 3.6

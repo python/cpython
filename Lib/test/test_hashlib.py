@@ -10,7 +10,9 @@ import hashlib
 import importlib
 import io
 import itertools
+import logging
 import os
+import re
 import sys
 import sysconfig
 import threading
@@ -25,24 +27,17 @@ from test.support import threading_helper
 from http.client import HTTPException
 
 
-default_builtin_hashes = {'md5', 'sha1', 'sha256', 'sha512', 'sha3', 'blake2'}
+default_builtin_hashes = {'md5', 'sha1', 'sha2', 'sha3', 'blake2'}
 # --with-builtin-hashlib-hashes override
 builtin_hashes = sysconfig.get_config_var("PY_BUILTIN_HASHLIB_HASHES")
 if builtin_hashes is None:
     builtin_hashes = default_builtin_hashes
 else:
-    builtin_hashes = {
-        m.strip() for m in builtin_hashes.strip('"').lower().split(",")
-    }
+    builtin_hash_names = builtin_hashes.strip('"').lower().split(",")
+    builtin_hashes = set(map(str.strip, builtin_hash_names))
 
-# hashlib with and without OpenSSL backend for PBKDF2
-# only import builtin_hashlib when all builtin hashes are available.
-# Otherwise import prints noise on stderr
+# Public 'hashlib' module with OpenSSL backend for PBKDF2.
 openssl_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
-if builtin_hashes == default_builtin_hashes:
-    builtin_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
-else:
-    builtin_hashlib = None
 
 try:
     from _hashlib import HASH, HASHXOF, openssl_md_meth_names, get_fips_mode
@@ -113,7 +108,11 @@ class HashLibTestCase(unittest.TestCase):
             return importlib.import_module(module_name)
         except ModuleNotFoundError as error:
             if self._warn_on_extension_import and module_name in builtin_hashes:
-                warnings.warn(f'Did a C extension fail to compile? {error}')
+                logging.getLogger(__name__).warning(
+                    'Did a C extension fail to compile? %s',
+                    error,
+                    exc_info=error,
+                )
         return None
 
     def __init__(self, *args, **kwargs):
@@ -135,11 +134,10 @@ class HashLibTestCase(unittest.TestCase):
         # of hashlib.new given the algorithm name.
         for algorithm, constructors in self.constructors_to_test.items():
             constructors.add(getattr(hashlib, algorithm))
-            def _test_algorithm_via_hashlib_new(data=None, _alg=algorithm, **kwargs):
-                if data is None:
-                    return hashlib.new(_alg, **kwargs)
-                return hashlib.new(_alg, data, **kwargs)
-            constructors.add(_test_algorithm_via_hashlib_new)
+            def c(*args, __algorithm_name=algorithm, **kwargs):
+                return hashlib.new(__algorithm_name, *args, **kwargs)
+            c.__name__ = f'do_test_algorithm_via_hashlib_new_{algorithm}'
+            constructors.add(c)
 
         _hashlib = self._conditional_import_module('_hashlib')
         self._hashlib = _hashlib
@@ -245,6 +243,79 @@ class HashLibTestCase(unittest.TestCase):
         if self._hashlib is not None:
             self._hashlib.new("md5", usedforsecurity=False)
             self._hashlib.openssl_md5(usedforsecurity=False)
+
+    @unittest.skipIf(get_fips_mode(), "skip in FIPS mode")
+    def test_clinic_signature(self):
+        for constructor in self.hash_constructors:
+            with self.subTest(constructor.__name__):
+                constructor(b'')
+                constructor(data=b'')
+                constructor(string=b'')  # should be deprecated in the future
+
+            digest_name = constructor(b'').name
+            with self.subTest(digest_name):
+                hashlib.new(digest_name, b'')
+                hashlib.new(digest_name, data=b'')
+                hashlib.new(digest_name, string=b'')
+                # Make sure that _hashlib contains the constructor
+                # to test when using a combination of libcrypto and
+                # interned hash implementations.
+                if self._hashlib and digest_name in self._hashlib._constructors:
+                    self._hashlib.new(digest_name, b'')
+                    self._hashlib.new(digest_name, data=b'')
+                    self._hashlib.new(digest_name, string=b'')
+
+    @unittest.skipIf(get_fips_mode(), "skip in FIPS mode")
+    def test_clinic_signature_errors(self):
+        nomsg = b''
+        mymsg = b'msg'
+        conflicting_call = re.escape(
+            "'data' and 'string' are mutually exclusive "
+            "and support for 'string' keyword parameter "
+            "is slated for removal in a future version."
+        )
+        duplicated_param = re.escape("given by name ('data') and position")
+        unexpected_param = re.escape("got an unexpected keyword argument '_'")
+        for args, kwds, errmsg in [
+            # Reject duplicated arguments before unknown keyword arguments.
+            ((nomsg,), dict(data=nomsg, _=nomsg), duplicated_param),
+            ((mymsg,), dict(data=nomsg, _=nomsg), duplicated_param),
+            # Reject duplicated arguments before conflicting ones.
+            *itertools.product(
+                [[nomsg], [mymsg]],
+                [dict(data=nomsg), dict(data=nomsg, string=nomsg)],
+                [duplicated_param]
+            ),
+            # Reject unknown keyword arguments before conflicting ones.
+            *itertools.product(
+                [()],
+                [
+                    dict(_=None),
+                    dict(data=nomsg, _=None),
+                    dict(string=nomsg, _=None),
+                    dict(string=nomsg, data=nomsg, _=None),
+                ],
+                [unexpected_param]
+            ),
+            ((nomsg,), dict(_=None), unexpected_param),
+            ((mymsg,), dict(_=None), unexpected_param),
+            # Reject conflicting arguments.
+            [(nomsg,), dict(string=nomsg), conflicting_call],
+            [(mymsg,), dict(string=nomsg), conflicting_call],
+            [(), dict(data=nomsg, string=nomsg), conflicting_call],
+        ]:
+            for constructor in self.hash_constructors:
+                digest_name = constructor(b'').name
+                with self.subTest(constructor.__name__, args=args, kwds=kwds):
+                    with self.assertRaisesRegex(TypeError, errmsg):
+                        constructor(*args, **kwds)
+                with self.subTest(digest_name, args=args, kwds=kwds):
+                    with self.assertRaisesRegex(TypeError, errmsg):
+                        hashlib.new(digest_name, *args, **kwds)
+                    if (self._hashlib and
+                            digest_name in self._hashlib._constructors):
+                        with self.assertRaisesRegex(TypeError, errmsg):
+                            self._hashlib.new(digest_name, *args, **kwds)
 
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
@@ -706,8 +777,6 @@ class HashLibTestCase(unittest.TestCase):
         self.assertRaises(ValueError, constructor, node_offset=-1)
         self.assertRaises(OverflowError, constructor, node_offset=max_offset+1)
 
-        self.assertRaises(TypeError, constructor, data=b'')
-        self.assertRaises(TypeError, constructor, string=b'')
         self.assertRaises(TypeError, constructor, '')
 
         constructor(
@@ -1184,6 +1253,15 @@ class KDFTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             with open(os_helper.TESTFN, "wb") as f:
                 hashlib.file_digest(f, "sha256")
+
+        class NonBlocking:
+            def readinto(self, buf):
+                return None
+            def readable(self):
+                return True
+
+        with self.assertRaises(BlockingIOError):
+            hashlib.file_digest(NonBlocking(), hashlib.sha256)
 
 
 if __name__ == "__main__":

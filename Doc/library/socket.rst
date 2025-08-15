@@ -143,18 +143,23 @@ created.  Socket addresses are represented as follows:
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
 
-  - :const:`BTPROTO_HCI` accepts ``(device_id,)`` where ``device_id`` is
-    either an integer or a string with the Bluetooth address of the
-    interface. (This depends on your OS; NetBSD and DragonFlyBSD expect
-    a Bluetooth address while everything else expects an integer.)
+  - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
+
+    - On Linux it accepts a tuple ``(device_id,)`` where ``device_id``
+      is an integer specifying the number of the Bluetooth device.
+    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
+      where ``bdaddr`` is the Bluetooth address as a string.
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
 
-  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
-    :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
-    supported under FreeBSD.
+    .. versionchanged:: 3.13.3
+       FreeBSD support added.
+
+  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
+    the Bluetooth address as a string or a :class:`bytes` object.
+    (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
+    This protocol is not supported under FreeBSD.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
   cryptography. An algorithm socket is configured with a tuple of two to four
@@ -337,10 +342,10 @@ Exceptions
 Constants
 ^^^^^^^^^
 
-   The AF_* and SOCK_* constants are now :class:`AddressFamily` and
-   :class:`SocketKind` :class:`.IntEnum` collections.
+The AF_* and SOCK_* constants are now :class:`AddressFamily` and
+:class:`SocketKind` :class:`.IntEnum` collections.
 
-   .. versionadded:: 3.4
+.. versionadded:: 3.4
 
 .. data:: AF_UNIX
           AF_INET
@@ -464,6 +469,9 @@ Constants
 
    .. versionchanged:: 3.11
       NetBSD support was added.
+
+   .. versionchanged:: 3.13.4
+      Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
 
 .. data:: CAN_BCM
           CAN_BCM_*
@@ -630,10 +638,9 @@ Constants
           HCI_TIME_STAMP
           HCI_DATA_DIR
 
-   For use with :const:`BTPROTO_HCI`. :const:`HCI_FILTER` is not
-   available for NetBSD or DragonFlyBSD. :const:`HCI_TIME_STAMP` and
-   :const:`HCI_DATA_DIR` are not available for FreeBSD, NetBSD, or
-   DragonFlyBSD.
+   For use with :const:`BTPROTO_HCI`. :const:`!HCI_FILTER` is only
+   available on Linux and FreeBSD. :const:`!HCI_TIME_STAMP` and
+   :const:`!HCI_DATA_DIR` are only available on Linux.
 
 .. data:: AF_QIPCRTR
 
@@ -662,9 +669,9 @@ Constants
    Constant to optimize CPU locality, to be used in conjunction with
    :data:`SO_REUSEPORT`.
 
-  .. versionadded:: 3.11
+   .. versionadded:: 3.11
 
-  .. availability:: Linux >= 3.9
+   .. availability:: Linux >= 3.9
 
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW
@@ -838,10 +845,10 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
-   If *dualstack_ipv6* is true and the platform supports it the socket will
-   be able to accept both IPv4 and IPv6 connections, else it will raise
-   :exc:`ValueError`. Most POSIX platforms and Windows are supposed to support
-   this functionality.
+   If *dualstack_ipv6* is true, *family* is :data:`AF_INET6` and the platform
+   supports it the socket will be able to accept both IPv4 and IPv6 connections,
+   else it will raise :exc:`ValueError`. Most POSIX platforms and Windows are
+   supposed to support this functionality.
    When this functionality is enabled the address returned by
    :meth:`socket.getpeername` when an IPv4 connection occurs will be an IPv6
    address represented as an IPv4-mapped IPv6 address.
@@ -1373,7 +1380,7 @@ The :mod:`socket` module also offers various network-related services:
    The *fds* parameter is a sequence of file descriptors.
    Consult :meth:`~socket.sendmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
       Unix platforms supporting :meth:`~socket.sendmsg`
       and :const:`SCM_RIGHTS` mechanism.
@@ -1387,9 +1394,9 @@ The :mod:`socket` module also offers various network-related services:
    Return ``(msg, list(fds), flags, addr)``.
    Consult :meth:`~socket.recvmsg` for the documentation of these parameters.
 
-   .. availability:: Unix, Windows, not WASI.
+   .. availability:: Unix, not WASI.
 
-      Unix platforms supporting :meth:`~socket.sendmsg`
+      Unix platforms supporting :meth:`~socket.recvmsg`
       and :const:`SCM_RIGHTS` mechanism.
 
    .. versionadded:: 3.9
@@ -1650,11 +1657,6 @@ to sockets.
    by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
    See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
    *flags*; it defaults to zero.
-
-   .. note::
-
-      For best match with hardware and network realities, the value of  *bufsize*
-      should be a relatively small power of 2, for example, 4096.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise

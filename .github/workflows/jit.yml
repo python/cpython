@@ -25,6 +25,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   interpreter:
     name: Interpreter (Debug)
@@ -114,8 +117,7 @@ jobs:
       - name: Native Windows
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
-          choco upgrade llvm -y
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -123,8 +125,7 @@ jobs:
       - name: Emulated Windows
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         run: |
-          choco upgrade llvm -y
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
       - name: Native macOS
@@ -171,6 +172,7 @@ jobs:
     name: Free-Threaded (Debug)
     needs: interpreter
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:

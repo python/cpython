@@ -10,6 +10,7 @@ import re
 import sys
 import copy
 import functools
+import operator
 import pickle
 import tempfile
 import textwrap
@@ -736,6 +737,37 @@ class BaseBytesTest:
         check(b'%i %*.*b', (10, 5, 3, b'abc',), b'10   abc')
         check(b'%i%b %*.*b', (10, b'3', 5, 3, b'abc',), b'103   abc')
         check(b'%c', b'a', b'a')
+
+        class PseudoFloat:
+            def __init__(self, value):
+                self.value = float(value)
+            def __int__(self):
+                return int(self.value)
+
+        pi = PseudoFloat(3.1415)
+
+        exceptions_params = [
+            ('%x format: an integer is required, not float', b'%x', 3.14),
+            ('%X format: an integer is required, not float', b'%X', 2.11),
+            ('%o format: an integer is required, not float', b'%o', 1.79),
+            ('%x format: an integer is required, not PseudoFloat', b'%x', pi),
+            ('%x format: an integer is required, not complex', b'%x', 3j),
+            ('%X format: an integer is required, not complex', b'%X', 2j),
+            ('%o format: an integer is required, not complex', b'%o', 1j),
+            ('%u format: a real number is required, not complex', b'%u', 3j),
+            # See https://github.com/python/cpython/issues/130928 as for why
+            # the exception message contains '%d' instead of '%i'.
+            ('%d format: a real number is required, not complex', b'%i', 2j),
+            ('%d format: a real number is required, not complex', b'%d', 2j),
+            (
+                r'%c requires an integer in range\(256\) or a single byte',
+                b'%c', pi
+            ),
+        ]
+
+        for msg, format_bytes, value in exceptions_params:
+            with self.assertRaisesRegex(TypeError, msg):
+                operator.mod(format_bytes, value)
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
@@ -1795,6 +1827,8 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertEqual(b3, b'xcxcxc')
 
     def test_mutating_index(self):
+        # bytearray slice assignment can call into python code
+        # that reallocates the internal buffer
         # See gh-91153
 
         class Boom:
@@ -1811,6 +1845,39 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b = bytearray(b'Now you see me...')
             with self.assertRaises(IndexError):
                 self._testlimitedcapi.sequence_setitem(b, 0, Boom())
+
+    def test_mutating_index_inbounds(self):
+        # gh-91153 continued
+        # Ensure buffer is not broken even if length is correct
+
+        class MutatesOnIndex:
+            def __init__(self):
+                self.ba = bytearray(0x180)
+
+            def __index__(self):
+                self.ba.clear()
+                self.new_ba = bytearray(0x180)  # to catch out-of-bounds writes
+                self.ba.extend([0] * 0x180)     # to check bounds checks
+                return 0
+
+        with self.subTest("skip_bounds_safety"):
+            instance = MutatesOnIndex()
+            instance.ba[instance] = ord("?")
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_capi"):
+            instance = MutatesOnIndex()
+            instance.ba[instance] = ord("?")
+            self._testlimitedcapi.sequence_setitem(instance.ba, instance, ord("?"))
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_slice"):
+            instance = MutatesOnIndex()
+            instance.ba[instance:1] = [ord("?")]
+            self.assertEqual(instance.ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(instance.new_ba, bytearray(0x180), "Wrong object altered")
 
 
 class AssortedBytesTest(unittest.TestCase):

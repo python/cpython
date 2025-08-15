@@ -41,10 +41,6 @@
 // Starting size of the array of qsbr thread states
 #define MIN_ARRAY_SIZE 8
 
-// For _Py_qsbr_deferred_advance(): the number of deferrals before advancing
-// the write sequence.
-#define QSBR_DEFERRED_LIMIT 10
-
 // Allocate a QSBR thread state from the freelist
 static struct _qsbr_thread_state *
 qsbr_allocate(struct _qsbr_shared *shared)
@@ -117,13 +113,9 @@ _Py_qsbr_advance(struct _qsbr_shared *shared)
 }
 
 uint64_t
-_Py_qsbr_deferred_advance(struct _qsbr_thread_state *qsbr)
+_Py_qsbr_shared_next(struct _qsbr_shared *shared)
 {
-    if (++qsbr->deferrals < QSBR_DEFERRED_LIMIT) {
-        return _Py_qsbr_shared_current(qsbr->shared) + QSBR_INCR;
-    }
-    qsbr->deferrals = 0;
-    return _Py_qsbr_advance(qsbr->shared);
+    return _Py_qsbr_shared_current(shared) + QSBR_INCR;
 }
 
 static uint64_t
@@ -161,6 +153,7 @@ bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
     assert(_Py_atomic_load_int_relaxed(&_PyThreadState_GET()->state) == _Py_THREAD_ATTACHED);
+    assert(((_PyThreadStateImpl *)_PyThreadState_GET())->qsbr == qsbr);
 
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
@@ -205,15 +198,15 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
         }
         _PyEval_StartTheWorld(interp);
     }
-    PyMutex_Unlock(&shared->mutex);
-
-    if (qsbr == NULL) {
-        return -1;
-    }
 
     // Return an index rather than the pointer because the array may be
     // resized and the pointer invalidated.
-    return (struct _qsbr_pad *)qsbr - shared->array;
+    Py_ssize_t index = -1;
+    if (qsbr != NULL) {
+        index = (struct _qsbr_pad *)qsbr - shared->array;
+    }
+    PyMutex_Unlock(&shared->mutex);
+    return index;
 }
 
 void

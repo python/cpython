@@ -31,12 +31,20 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(repr(f), '<tkinter.Frame object .top.child>')
 
     def test_generated_names(self):
+        class Button2(tkinter.Button):
+            pass
+
         t = tkinter.Toplevel(self.root)
         f = tkinter.Frame(t)
         f2 = tkinter.Frame(t)
+        self.assertNotEqual(str(f), str(f2))
         b = tkinter.Button(f2)
-        for name in str(b).split('.'):
+        b2 = Button2(f2)
+        for name in str(b).split('.') + str(b2).split('.'):
             self.assertFalse(name.isidentifier(), msg=repr(name))
+        b3 = tkinter.Button(f2)
+        b4 = Button2(f2)
+        self.assertEqual(len({str(b), str(b2), str(b3), str(b4)}), 4)
 
     @requires_tk(8, 6, 6)
     def test_tk_busy(self):

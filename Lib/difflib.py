@@ -78,8 +78,8 @@ class SequenceMatcher:
     sequences.  As a rule of thumb, a .ratio() value over 0.6 means the
     sequences are close matches:
 
-    >>> print(round(s.ratio(), 3))
-    0.866
+    >>> print(round(s.ratio(), 2))
+    0.87
     >>>
 
     If you're only interested in where the sequences match,
@@ -1628,7 +1628,7 @@ _file_template = """
 </html>"""
 
 _styles = """
-        table.diff {font-family:Courier; border:medium;}
+        table.diff {font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace; border:medium}
         .diff_header {background-color:#e0e0e0}
         td.diff_header {text-align:right}
         .diff_next {background-color:#c0c0c0}

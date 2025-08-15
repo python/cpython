@@ -144,7 +144,7 @@ extern PyObject* _PyTraceMalloc_GetTraces(void);
 extern PyObject* _PyTraceMalloc_GetObjectTraceback(PyObject *obj);
 
 /* Initialize tracemalloc */
-extern int _PyTraceMalloc_Init(void);
+extern PyStatus _PyTraceMalloc_Init(void);
 
 /* Start tracemalloc */
 extern int _PyTraceMalloc_Start(int max_nframe);

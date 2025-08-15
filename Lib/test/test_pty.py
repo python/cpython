@@ -135,8 +135,10 @@ class PtyTest(unittest.TestCase):
                 new_dim = tty.tcgetwinsize(pty.STDIN_FILENO)
                 self.assertEqual(new_dim, target_dim,
                                  "pty.STDIN_FILENO window size unchanged")
-            except OSError:
-                warnings.warn("Failed to set pty.STDIN_FILENO window size.")
+            except OSError as e:
+                logging.getLogger(__name__).warning(
+                    "Failed to set pty.STDIN_FILENO window size.", exc_info=e,
+                )
                 pass
 
         try:

@@ -232,7 +232,23 @@ Fundamental data types
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_int`       | :c:expr:`int`                            | int                        |
 +----------------------+------------------------------------------+----------------------------+
+| :class:`c_int8`      | :c:type:`int8_t`                         | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int16`     | :c:type:`int16_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int32`     | :c:type:`int32_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_int64`     | :c:type:`int64_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
 | :class:`c_uint`      | :c:expr:`unsigned int`                   | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint8`     | :c:type:`uint8_t`                        | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint16`    | :c:type:`uint16_t`                       | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint32`    | :c:type:`uint32_t`                       | int                        |
++----------------------+------------------------------------------+----------------------------+
+| :class:`c_uint64`    | :c:type:`uint64_t`                       | int                        |
 +----------------------+------------------------------------------+----------------------------+
 | :class:`c_long`      | :c:expr:`long`                           | int                        |
 +----------------------+------------------------------------------+----------------------------+
@@ -292,7 +308,7 @@ Since these types are mutable, their value can also be changed afterwards::
 Assigning a new value to instances of the pointer types :class:`c_char_p`,
 :class:`c_wchar_p`, and :class:`c_void_p` changes the *memory location* they
 point to, *not the contents* of the memory block (of course not, because Python
-bytes objects are immutable)::
+string objects are immutable)::
 
    >>> s = "Hello, World"
    >>> c_s = c_wchar_p(s)
@@ -671,7 +687,7 @@ This must be set to a positive integer and specifies the maximum alignment for t
 This is what ``#pragma pack(n)`` also does in MSVC.
 It is also possible to set a minimum alignment for how the subclass itself is packed in the
 same way ``#pragma align(n)`` works in MSVC.
-This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+This can be achieved by specifying a :attr:`~Structure._align_` class attribute
 in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
@@ -1940,35 +1956,55 @@ Utility functions
    pointer.
 
 
-.. function:: create_string_buffer(init_or_size, size=None)
+.. function:: create_string_buffer(init, size=None)
+              create_string_buffer(size)
 
    This function creates a mutable character buffer. The returned object is a
    ctypes array of :class:`c_char`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   bytes object which will be used to initialize the array items.
+   If *size* is given (and not ``None``), it must be an :class:`int`.
+   It specifies the size of the returned array.
 
-   If a bytes object is specified as first argument, the buffer is made one item
-   larger than its length so that the last element in the array is a NUL
-   termination character. An integer can be passed as second argument which allows
-   specifying the size of the array if the length of the bytes should not be used.
+   If the *init* argument is given, it must be :class:`bytes`. It is used
+   to initialize the array items. Bytes not initialized this way are
+   set to zero (NUL).
+
+   If *size* is not given (or if it is ``None``), the buffer is made one element
+   larger than *init*, effectively adding a NUL terminator.
+
+   If both arguments are given, *size* must not be less than ``len(init)``.
+
+   .. warning::
+
+      If *size* is equal to ``len(init)``, a NUL terminator is
+      not added. Do not treat such a buffer as a C string.
+
+   For example::
+
+      >>> bytes(create_string_buffer(2))
+      b'\x00\x00'
+      >>> bytes(create_string_buffer(b'ab'))
+      b'ab\x00'
+      >>> bytes(create_string_buffer(b'ab', 2))
+      b'ab'
+      >>> bytes(create_string_buffer(b'ab', 4))
+      b'ab\x00\x00'
+      >>> bytes(create_string_buffer(b'abcdef', 2))
+      Traceback (most recent call last):
+         ...
+      ValueError: byte string too long
 
    .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
 
-.. function:: create_unicode_buffer(init_or_size, size=None)
+.. function:: create_unicode_buffer(init, size=None)
+              create_unicode_buffer(size)
 
    This function creates a mutable unicode character buffer. The returned object is
    a ctypes array of :class:`c_wchar`.
 
-   *init_or_size* must be an integer which specifies the size of the array, or a
-   string which will be used to initialize the array items.
-
-   If a string is specified as first argument, the buffer is made one item
-   larger than the length of the string so that the last element in the array is a
-   NUL termination character. An integer can be passed as second argument which
-   allows specifying the size of the array if the length of the string should not
-   be used.
+   The function takes the same arguments as :func:`~create_string_buffer` except
+   *init* must be a string and *size* counts :class:`c_wchar`.
 
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
@@ -2328,7 +2364,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_int8
 
-   Represents the C 8-bit :c:expr:`signed int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`signed int` datatype.  It is an alias for
    :class:`c_byte`.
 
 
@@ -2403,7 +2439,7 @@ These are the fundamental ctypes data types:
 
 .. class:: c_uint8
 
-   Represents the C 8-bit :c:expr:`unsigned int` datatype.  Usually an alias for
+   Represents the C 8-bit :c:expr:`unsigned int` datatype.  It is an alias for
    :class:`c_ubyte`.
 
 

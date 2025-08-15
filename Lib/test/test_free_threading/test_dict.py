@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Thread
+from threading import Thread, Barrier
 from unittest import TestCase
 
 try:
@@ -141,6 +141,25 @@ class TestDict(TestCase):
         for thread_list in lists:
             for ref in thread_list:
                 self.assertIsNone(ref())
+
+    def test_getattr_setattr(self):
+        NUM_THREADS = 10
+        b = Barrier(NUM_THREADS)
+
+        def closure(b, c):
+            b.wait()
+            for i in range(10):
+                getattr(c, f'attr_{i}', None)
+                setattr(c, f'attr_{i}', 99)
+
+        class MyClass:
+            pass
+
+        o = MyClass()
+        threads = [Thread(target=closure, args=(b, o))
+                for _ in range(NUM_THREADS)]
+        with threading_helper.start_threads(threads):
+            pass
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_dict_version(self):

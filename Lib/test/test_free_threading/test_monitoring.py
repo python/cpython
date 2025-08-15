@@ -2,6 +2,7 @@
 environment to verify things are thread-safe in a free-threaded build"""
 
 import sys
+import threading
 import time
 import unittest
 import weakref
@@ -190,6 +191,40 @@ class SetProfileMultiThreaded(InstrumentationMultiThreadedMixin, TestCase):
         else:
             sys.setprofile(None)
         self.set = not self.set
+
+
+@threading_helper.requires_working_threading()
+class SetProfileAllMultiThreaded(TestCase):
+    def test_profile_all_threads(self):
+        done = threading.Event()
+
+        def func():
+            pass
+
+        def bg_thread():
+            while not done.is_set():
+                func()
+                func()
+                func()
+                func()
+                func()
+
+        def my_profile(frame, event, arg):
+            return None
+
+        bg_threads = []
+        for i in range(10):
+            t = threading.Thread(target=bg_thread)
+            t.start()
+            bg_threads.append(t)
+
+        for i in range(100):
+            threading.setprofile_all_threads(my_profile)
+            threading.setprofile_all_threads(None)
+
+        done.set()
+        for t in bg_threads:
+            t.join()
 
 
 @threading_helper.requires_working_threading()

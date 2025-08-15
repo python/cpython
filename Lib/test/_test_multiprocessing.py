@@ -512,6 +512,11 @@ class _TestProcess(BaseTestCase):
         time.sleep(100)
 
     @classmethod
+    def _sleep_some_event(cls, event):
+        event.set()
+        time.sleep(100)
+
+    @classmethod
     def _test_sleep(cls, delay):
         time.sleep(delay)
 
@@ -519,7 +524,8 @@ class _TestProcess(BaseTestCase):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        p = self.Process(target=self._sleep_some)
+        event = self.Event()
+        p = self.Process(target=self._sleep_some_event, args=(event,))
         p.daemon = True
         p.start()
 
@@ -537,8 +543,11 @@ class _TestProcess(BaseTestCase):
         self.assertTimingAlmostEqual(join.elapsed, 0.0)
         self.assertEqual(p.is_alive(), True)
 
-        # XXX maybe terminating too soon causes the problems on Gentoo...
-        time.sleep(1)
+        timeout = support.SHORT_TIMEOUT
+        if not event.wait(timeout):
+            p.terminate()
+            p.join()
+            self.fail(f"event not signaled in {timeout} seconds")
 
         meth(p)
 
@@ -588,12 +597,16 @@ class _TestProcess(BaseTestCase):
     def test_active_children(self):
         self.assertEqual(type(self.active_children()), list)
 
-        p = self.Process(target=time.sleep, args=(DELTA,))
+        event = self.Event()
+        p = self.Process(target=event.wait, args=())
         self.assertNotIn(p, self.active_children())
 
-        p.daemon = True
-        p.start()
-        self.assertIn(p, self.active_children())
+        try:
+            p.daemon = True
+            p.start()
+            self.assertIn(p, self.active_children())
+        finally:
+            event.set()
 
         p.join()
         self.assertNotIn(p, self.active_children())
@@ -1577,14 +1590,13 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
     def assertReachesEventually(self, func, value):
-        for i in range(10):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
             try:
                 if func() == value:
                     break
             except NotImplementedError:
                 break
-            time.sleep(DELTA)
-        time.sleep(DELTA)
+
         self.assertReturnsIfImplemented(value, func)
 
     def check_invariant(self, cond):
@@ -1606,20 +1618,17 @@ class _TestCondition(BaseTestCase):
         p = self.Process(target=self.f, args=(cond, sleeping, woken))
         p.daemon = True
         p.start()
-        self.addCleanup(p.join)
 
-        p = threading.Thread(target=self.f, args=(cond, sleeping, woken))
-        p.daemon = True
-        p.start()
-        self.addCleanup(p.join)
+        t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
+        t.daemon = True
+        t.start()
 
         # wait for both children to start sleeping
         sleeping.acquire()
         sleeping.acquire()
 
         # check no process/thread has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(0, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 0)
 
         # wake up one process/thread
         cond.acquire()
@@ -1627,8 +1636,7 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check one process/thread has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(1, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 1)
 
         # wake up another
         cond.acquire()
@@ -1636,12 +1644,13 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check other has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(2, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 2)
 
         # check state is not mucked up
         self.check_invariant(cond)
-        p.join()
+
+        threading_helper.join_thread(t)
+        join_process(p)
 
     def test_notify_all(self):
         cond = self.Condition()
@@ -1649,18 +1658,19 @@ class _TestCondition(BaseTestCase):
         woken = self.Semaphore(0)
 
         # start some threads/processes which will timeout
+        workers = []
         for i in range(3):
             p = self.Process(target=self.f,
                              args=(cond, sleeping, woken, TIMEOUT1))
             p.daemon = True
             p.start()
-            self.addCleanup(p.join)
+            workers.append(p)
 
             t = threading.Thread(target=self.f,
                                  args=(cond, sleeping, woken, TIMEOUT1))
             t.daemon = True
             t.start()
-            self.addCleanup(t.join)
+            workers.append(t)
 
         # wait for them all to sleep
         for i in range(6):
@@ -1679,12 +1689,12 @@ class _TestCondition(BaseTestCase):
             p = self.Process(target=self.f, args=(cond, sleeping, woken))
             p.daemon = True
             p.start()
-            self.addCleanup(p.join)
+            workers.append(p)
 
             t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
             t.daemon = True
             t.start()
-            self.addCleanup(t.join)
+            workers.append(t)
 
         # wait for them to all sleep
         for i in range(6):
@@ -1700,10 +1710,16 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check they have all woken
-        self.assertReachesEventually(lambda: get_value(woken), 6)
+        for i in range(6):
+            woken.acquire()
+        self.assertReturnsIfImplemented(0, get_value, woken)
 
         # check state is not mucked up
         self.check_invariant(cond)
+
+        for w in workers:
+            # NOTE: join_process and join_thread are the same
+            threading_helper.join_thread(w)
 
     def test_notify_n(self):
         cond = self.Condition()
@@ -1711,16 +1727,17 @@ class _TestCondition(BaseTestCase):
         woken = self.Semaphore(0)
 
         # start some threads/processes
+        workers = []
         for i in range(3):
             p = self.Process(target=self.f, args=(cond, sleeping, woken))
             p.daemon = True
             p.start()
-            self.addCleanup(p.join)
+            workers.append(p)
 
             t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
             t.daemon = True
             t.start()
-            self.addCleanup(t.join)
+            workers.append(t)
 
         # wait for them to all sleep
         for i in range(6):
@@ -1754,6 +1771,10 @@ class _TestCondition(BaseTestCase):
 
         # check state is not mucked up
         self.check_invariant(cond)
+
+        for w in workers:
+            # NOTE: join_process and join_thread are the same
+            threading_helper.join_thread(w)
 
     def test_timeout(self):
         cond = self.Condition()
@@ -6430,6 +6451,35 @@ class _TestSpawnedSysPath(BaseTestCase):
         self.assertEqual(child_sys_path[1:], sys.path[1:])
         self.assertIsNone(import_error, msg=f"child could not import {self._mod_name}")
 
+    def test_std_streams_flushed_after_preload(self):
+        # gh-135335: Check fork server flushes standard streams after
+        # preloading modules
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver specific test")
+
+        # Create a test module in the temporary directory on the child's path
+        # TODO: This can all be simplified once gh-126631 is fixed and we can
+        #       use __main__ instead of a module.
+        dirname = os.path.join(self._temp_dir, 'preloaded_module')
+        init_name = os.path.join(dirname, '__init__.py')
+        os.mkdir(dirname)
+        with open(init_name, "w") as f:
+            cmd = '''if 1:
+                import sys
+                print('stderr', end='', file=sys.stderr)
+                print('stdout', end='', file=sys.stdout)
+            '''
+            f.write(cmd)
+
+        name = os.path.join(os.path.dirname(__file__), 'mp_preload_flush.py')
+        env = {'PYTHONPATH': self._temp_dir}
+        _, out, err = test.support.script_helper.assert_python_ok(name, **env)
+
+        # Check stderr first, as it is more likely to be useful to see in the
+        # event of a failure.
+        self.assertEqual(err.decode().rstrip(), 'stderr')
+        self.assertEqual(out.decode().rstrip(), 'stdout')
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
@@ -6472,6 +6522,28 @@ class MiscTestCase(unittest.TestCase):
         rc, out, err = script_helper.assert_python_ok(testfn)
         self.assertEqual("332833500", out.decode('utf-8').strip())
         self.assertFalse(err, msg=err.decode('utf-8'))
+
+    def test_forked_thread_not_started(self):
+        # gh-134381: Ensure that a thread that has not been started yet in
+        # the parent process can be started within a forked child process.
+
+        if multiprocessing.get_start_method() != "fork":
+            self.skipTest("fork specific test")
+
+        q = multiprocessing.Queue()
+        t = threading.Thread(target=lambda: q.put("done"), daemon=True)
+
+        def child():
+            t.start()
+            t.join()
+
+        p = multiprocessing.Process(target=child)
+        p.start()
+        p.join(support.SHORT_TIMEOUT)
+
+        self.assertEqual(p.exitcode, 0)
+        self.assertEqual(q.get_nowait(), "done")
+        close_queue(q)
 
 
 #

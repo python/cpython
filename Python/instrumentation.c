@@ -264,48 +264,42 @@ get_events(_Py_GlobalMonitors *m, int tool_id)
     return result;
 }
 
-/* Line delta.
- * 8 bit value.
- * if line_delta == -128:
- *     line = None # represented as -1
- * elif line_delta == -127 or line_delta == -126:
- *     line = PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
+/* Module code can have line 0, even though modules start at line 1,
+ * so -1 is a legal delta. */
+#define NO_LINE (-2)
+
+/* Returns the line delta. Defined as:
+ * if line is None:
+ *     line_delta = NO_LINE
  * else:
- *     line = first_line  + (offset >> OFFSET_SHIFT) + line_delta;
+ *     line_delta = line - first_line
  */
-
-#define NO_LINE -128
-#define COMPUTED_LINE_LINENO_CHANGE -127
-#define COMPUTED_LINE -126
-
-#define OFFSET_SHIFT 4
-
-static int8_t
-compute_line_delta(PyCodeObject *code, int offset, int line)
+static int
+compute_line_delta(PyCodeObject *code, int line)
 {
     if (line < 0) {
+        assert(line == -1);
         return NO_LINE;
     }
-    int delta = line - code->co_firstlineno - (offset >> OFFSET_SHIFT);
-    if (delta <= INT8_MAX && delta > COMPUTED_LINE) {
-        return delta;
-    }
-    return COMPUTED_LINE;
+    int delta = line - code->co_firstlineno;
+    assert(delta > NO_LINE);
+    return delta;
 }
 
 static int
-compute_line(PyCodeObject *code, int offset, int8_t line_delta)
+compute_line(PyCodeObject *code, int line_delta)
 {
-    if (line_delta > COMPUTED_LINE) {
-        return code->co_firstlineno + (offset >> OFFSET_SHIFT) + line_delta;
-    }
     if (line_delta == NO_LINE) {
-
         return -1;
     }
-    assert(line_delta == COMPUTED_LINE || line_delta == COMPUTED_LINE_LINENO_CHANGE);
-    /* Look it up */
-    return PyCode_Addr2Line(code, offset * sizeof(_Py_CODEUNIT));
+    assert(line_delta > NO_LINE);
+    return code->co_firstlineno + line_delta;
+}
+
+static inline uint8_t
+get_original_opcode(_PyCoLineInstrumentationData *line_data, int index)
+{
+    return line_data->data[index*line_data->bytes_per_entry];
 }
 
 int
@@ -317,7 +311,7 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
     assert(opcode != 0);
     assert(opcode != RESERVED);
     if (opcode == INSTRUMENTED_LINE) {
-        opcode = code->_co_monitoring->lines[offset].original_opcode;
+        opcode = get_original_opcode(code->_co_monitoring->lines, offset);
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
         opcode = code->_co_monitoring->per_instruction_opcodes[offset];
@@ -342,6 +336,51 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
     return 1 + _PyOpcode_Caches[opcode];
 }
 
+static inline uint8_t *
+get_original_opcode_ptr(_PyCoLineInstrumentationData *line_data, int index)
+{
+    return &line_data->data[index*line_data->bytes_per_entry];
+}
+
+static inline void
+set_original_opcode(_PyCoLineInstrumentationData *line_data, int index, uint8_t opcode)
+{
+    line_data->data[index*line_data->bytes_per_entry] = opcode;
+}
+
+static inline int
+get_line_delta(_PyCoLineInstrumentationData *line_data, int index)
+{
+    uint8_t *ptr = &line_data->data[index*line_data->bytes_per_entry+1];
+    assert(line_data->bytes_per_entry >= 2);
+    uint32_t value = *ptr;
+    for (int idx = 2; idx < line_data->bytes_per_entry; idx++) {
+        ptr++;
+        int shift = (idx-1)*8;
+        value |= ((uint32_t)(*ptr)) << shift;
+    }
+    assert(value < INT_MAX);
+    /* NO_LINE is stored as zero. */
+    return ((int)value) + NO_LINE;
+}
+
+static inline void
+set_line_delta(_PyCoLineInstrumentationData *line_data, int index, int line_delta)
+{
+    /* Store line_delta + 2 as we need -2 to represent no line number */
+    assert(line_delta >= NO_LINE);
+    uint32_t adjusted = line_delta - NO_LINE;
+    uint8_t *ptr = &line_data->data[index*line_data->bytes_per_entry+1];
+    assert(adjusted < (1ULL << ((line_data->bytes_per_entry-1)*8)));
+    assert(line_data->bytes_per_entry >= 2);
+    *ptr = adjusted & 0xff;
+    for (int idx = 2; idx < line_data->bytes_per_entry; idx++) {
+        ptr++;
+        adjusted >>= 8;
+        *ptr = adjusted & 0xff;
+    }
+}
+
 #ifdef INSTRUMENT_DEBUG
 
 static void
@@ -361,11 +400,15 @@ dump_instrumentation_data_lines(PyCodeObject *code, _PyCoLineInstrumentationData
     if (lines == NULL) {
         fprintf(out, ", lines = NULL");
     }
-    else if (lines[i].original_opcode == 0) {
-        fprintf(out, ", lines = {original_opcode = No LINE (0), line_delta = %d)", lines[i].line_delta);
-    }
     else {
-        fprintf(out, ", lines = {original_opcode = %s, line_delta = %d)", _PyOpcode_OpName[lines[i].original_opcode], lines[i].line_delta);
+        int opcode = get_original_opcode(lines, i);
+        int line_delta = get_line_delta(lines, i);
+        if (opcode == 0) {
+            fprintf(out, ", lines = {original_opcode = No LINE (0), line_delta = %d)", line_delta);
+        }
+        else {
+            fprintf(out, ", lines = {original_opcode = %s, line_delta = %d)", _PyOpcode_OpName[opcode], line_delta);
+        }
     }
 }
 
@@ -415,6 +458,12 @@ dump_local_monitors(const char *prefix, _Py_LocalMonitors monitors, FILE*out)
     }
 }
 
+/** NOTE:
+ * Do not use PyCode_Addr2Line to determine the line number in instrumentation,
+ * as `PyCode_Addr2Line` uses the monitoring data if it is available.
+ */
+
+
 /* No error checking -- Don't use this for anything but experimental debugging */
 static void
 dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
@@ -432,6 +481,8 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
     dump_local_monitors("Active", data->active_monitors, out);
     int code_len = (int)Py_SIZE(code);
     bool starred = false;
+    PyCodeAddressRange range;
+    _PyCode_InitAddressRange(code, &range);
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(code, i)) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
@@ -439,7 +490,7 @@ dump_instrumentation_data(PyCodeObject *code, int star, FILE*out)
             fprintf(out, "**  ");
             starred = true;
         }
-        fprintf(out, "Offset: %d, line: %d %s: ", i, PyCode_Addr2Line(code, i*2), _PyOpcode_OpName[opcode]);
+        fprintf(out, "Offset: %d, line: %d %s: ", i, _PyCode_CheckLineNumber(i*2, &range), _PyOpcode_OpName[opcode]);
         dump_instrumentation_data_tools(code, data->tools, i, out);
         dump_instrumentation_data_lines(code, data->lines, i, out);
         dump_instrumentation_data_line_tools(code, data->line_tools, i, out);
@@ -504,10 +555,12 @@ sanity_check_instrumentation(PyCodeObject *code)
         code->_co_monitoring->active_monitors,
         active_monitors));
     int code_len = (int)Py_SIZE(code);
+    PyCodeAddressRange range;
+    _PyCode_InitAddressRange(co, &range);
     for (int i = 0; i < code_len;) {
         _Py_CODEUNIT *instr = &_PyCode_CODE(code)[i];
         int opcode = instr->op.code;
-        int base_opcode = _Py_GetBaseOpcode(code, i);
+        int base_opcode = _Py_GetBaseCodeUnit(code, i).op.code;
         CHECK(valid_opcode(opcode));
         CHECK(valid_opcode(base_opcode));
         if (opcode == INSTRUMENTED_INSTRUCTION) {
@@ -518,8 +571,8 @@ sanity_check_instrumentation(PyCodeObject *code)
         }
         if (opcode == INSTRUMENTED_LINE) {
             CHECK(data->lines);
-            CHECK(valid_opcode(data->lines[i].original_opcode));
-            opcode = data->lines[i].original_opcode;
+            opcode = get_original_opcode(data->lines, i);
+            CHECK(valid_opcode(opcode));
             CHECK(opcode != END_FOR);
             CHECK(opcode != RESUME);
             CHECK(opcode != RESUME_CHECK);
@@ -534,7 +587,7 @@ sanity_check_instrumentation(PyCodeObject *code)
              * *and* we are executing a INSTRUMENTED_LINE instruction
              * that has de-instrumented itself, then we will execute
              * an invalid INSTRUMENTED_INSTRUCTION */
-            CHECK(data->lines[i].original_opcode != INSTRUMENTED_INSTRUCTION);
+            CHECK(get_original_opcode(data->lines, i) != INSTRUMENTED_INSTRUCTION);
         }
         if (opcode == INSTRUMENTED_INSTRUCTION) {
             CHECK(data->per_instruction_opcodes[i] != 0);
@@ -549,9 +602,9 @@ sanity_check_instrumentation(PyCodeObject *code)
             }
             CHECK(active_monitors.tools[event] != 0);
         }
-        if (data->lines && base_opcode != END_FOR) {
-            int line1 = compute_line(code, i, data->lines[i].line_delta);
-            int line2 = PyCode_Addr2Line(code, i*sizeof(_Py_CODEUNIT));
+        if (data->lines && get_original_opcode(data->lines, i)) {
+            int line1 = compute_line(code, get_line_delta(data->lines, i));
+            int line2 = _PyCode_CheckLineNumber(i*sizeof(_Py_CODEUNIT), &range);
             CHECK(line1 == line2);
         }
         CHECK(valid_opcode(opcode));
@@ -584,7 +637,7 @@ int _Py_GetBaseOpcode(PyCodeObject *code, int i)
 {
     int opcode = _PyCode_CODE(code)[i].op.code;
     if (opcode == INSTRUMENTED_LINE) {
-        opcode = code->_co_monitoring->lines[i].original_opcode;
+        opcode = get_original_opcode(code->_co_monitoring->lines, i);
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
         opcode = code->_co_monitoring->per_instruction_opcodes[i];
@@ -609,7 +662,7 @@ de_instrument(PyCodeObject *code, int i, int event)
     int opcode = *opcode_ptr;
     assert(opcode != ENTER_EXECUTOR);
     if (opcode == INSTRUMENTED_LINE) {
-        opcode_ptr = &code->_co_monitoring->lines[i].original_opcode;
+        opcode_ptr = get_original_opcode_ptr(code->_co_monitoring->lines, i);
         opcode = *opcode_ptr;
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
@@ -636,10 +689,10 @@ de_instrument_line(PyCodeObject *code, int i)
     if (opcode != INSTRUMENTED_LINE) {
         return;
     }
-    _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
-    int original_opcode = lines->original_opcode;
+    _PyCoLineInstrumentationData *lines = code->_co_monitoring->lines;
+    int original_opcode = get_original_opcode(lines, i);
     if (original_opcode == INSTRUMENTED_INSTRUCTION) {
-        lines->original_opcode = code->_co_monitoring->per_instruction_opcodes[i];
+        set_original_opcode(lines, i, code->_co_monitoring->per_instruction_opcodes[i]);
     }
     CHECK(original_opcode != 0);
     CHECK(original_opcode == _PyOpcode_Deopt[original_opcode]);
@@ -657,7 +710,7 @@ de_instrument_per_instruction(PyCodeObject *code, int i)
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode = *opcode_ptr;
     if (opcode == INSTRUMENTED_LINE) {
-        opcode_ptr = &code->_co_monitoring->lines[i].original_opcode;
+        opcode_ptr = get_original_opcode_ptr(code->_co_monitoring->lines, i);
         opcode = *opcode_ptr;
     }
     if (opcode != INSTRUMENTED_INSTRUCTION) {
@@ -682,8 +735,7 @@ instrument(PyCodeObject *code, int i)
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode =*opcode_ptr;
     if (opcode == INSTRUMENTED_LINE) {
-        _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
-        opcode_ptr = &lines->original_opcode;
+        opcode_ptr = get_original_opcode_ptr(code->_co_monitoring->lines, i);
         opcode = *opcode_ptr;
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
@@ -714,9 +766,8 @@ instrument_line(PyCodeObject *code, int i)
     if (opcode == INSTRUMENTED_LINE) {
         return;
     }
-    _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
-    lines->original_opcode = _PyOpcode_Deopt[opcode];
-    CHECK(lines->original_opcode > 0);
+    set_original_opcode(code->_co_monitoring->lines, i, _PyOpcode_Deopt[opcode]);
+    CHECK(get_line_delta(code->_co_monitoring->lines, i) > NO_LINE);
     *opcode_ptr = INSTRUMENTED_LINE;
 }
 
@@ -727,8 +778,7 @@ instrument_per_instruction(PyCodeObject *code, int i)
     uint8_t *opcode_ptr = &instr->op.code;
     int opcode = *opcode_ptr;
     if (opcode == INSTRUMENTED_LINE) {
-        _PyCoLineInstrumentationData *lines = &code->_co_monitoring->lines[i];
-        opcode_ptr = &lines->original_opcode;
+        opcode_ptr = get_original_opcode_ptr(code->_co_monitoring->lines, i);
         opcode = *opcode_ptr;
     }
     if (opcode == INSTRUMENTED_INSTRUCTION) {
@@ -1204,18 +1254,16 @@ _Py_call_instrumentation_exc2(
     call_instrumentation_vector_protected(tstate, event, frame, instr, 4, args);
 }
 
-
 int
 _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
 {
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
     assert(monitoring != NULL);
     assert(monitoring->lines != NULL);
-    assert(index >= code->_co_firsttraceable);
     assert(index < Py_SIZE(code));
-    _PyCoLineInstrumentationData *line_data = &monitoring->lines[index];
-    int8_t line_delta = line_data->line_delta;
-    int line = compute_line(code, index, line_delta);
+    _PyCoLineInstrumentationData *line_data = monitoring->lines;
+    int line_delta = get_line_delta(line_data, index);
+    int line = compute_line(code, line_delta);
     return line;
 }
 
@@ -1228,29 +1276,20 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     int i = (int)(instr - _PyCode_CODE(code));
 
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
-    _PyCoLineInstrumentationData *line_data = &monitoring->lines[i];
+    _PyCoLineInstrumentationData *line_data = monitoring->lines;
     PyInterpreterState *interp = tstate->interp;
-    int8_t line_delta = line_data->line_delta;
-    int line = 0;
-
-    if (line_delta == COMPUTED_LINE_LINENO_CHANGE) {
-        // We know the line number must have changed, don't need to calculate
-        // the line number for now because we might not need it.
-        line = -1;
-    } else {
-        line = compute_line(code, i, line_delta);
-        assert(line >= 0);
-        assert(prev != NULL);
-        int prev_index = (int)(prev - _PyCode_CODE(code));
-        int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
-        if (prev_line == line) {
-            int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
-            /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
-             * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
-             */
-            if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
-                goto done;
-            }
+    int line = _Py_Instrumentation_GetLine(code, i);
+    assert(line >= 0);
+    assert(prev != NULL);
+    int prev_index = (int)(prev - _PyCode_CODE(code));
+    int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
+    if (prev_line == line) {
+        int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
+        /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
+            * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
+            */
+        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
+            goto done;
         }
     }
 
@@ -1275,12 +1314,6 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                 tstate->tracing++;
                 /* Call c_tracefunc directly, having set the line number. */
                 Py_INCREF(frame_obj);
-                if (line == -1 && line_delta > COMPUTED_LINE) {
-                    /* Only assign f_lineno if it's easy to calculate, otherwise
-                     * do lazy calculation by setting the f_lineno to 0.
-                     */
-                    line = compute_line(code, i, line_delta);
-                }
                 frame_obj->f_lineno = line;
                 int err = tstate->c_tracefunc(tstate->c_traceobj, frame_obj, PyTrace_LINE, Py_None);
                 frame_obj->f_lineno = 0;
@@ -1296,11 +1329,6 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     }
     if (tools == 0) {
         goto done;
-    }
-
-    if (line == -1) {
-        /* Need to calculate the line number now for monitoring events */
-        line = compute_line(code, i, line_delta);
     }
     PyObject *line_obj = PyLong_FromLong(line);
     if (line_obj == NULL) {
@@ -1333,7 +1361,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     Py_DECREF(line_obj);
     uint8_t original_opcode;
 done:
-    original_opcode = line_data->original_opcode;
+    original_opcode = get_original_opcode(line_data, i);
     assert(original_opcode != 0);
     assert(original_opcode != INSTRUMENTED_LINE);
     assert(_PyOpcode_Deopt[original_opcode] == original_opcode);
@@ -1399,9 +1427,10 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
     PyInterpreterState *is = _PyInterpreterState_GET();
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     assert(0 <= event_id && event_id < _PY_MONITORING_EVENTS);
-    PyObject *callback = _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id],
-                                                 Py_XNewRef(obj));
-
+    _PyEval_StopTheWorld(is);
+    PyObject *callback = is->monitoring_callables[tool_id][event_id];
+    is->monitoring_callables[tool_id][event_id] = Py_XNewRef(obj);
+    _PyEval_StartTheWorld(is);
     return callback;
 }
 
@@ -1418,7 +1447,7 @@ initialize_tools(PyCodeObject *code)
         int opcode = instr->op.code;
         assert(opcode != ENTER_EXECUTOR);
         if (opcode == INSTRUMENTED_LINE) {
-            opcode = code->_co_monitoring->lines[i].original_opcode;
+            opcode = get_original_opcode(code->_co_monitoring->lines, i);
         }
         if (opcode == INSTRUMENTED_INSTRUCTION) {
             opcode = code->_co_monitoring->per_instruction_opcodes[i];
@@ -1461,63 +1490,57 @@ initialize_tools(PyCodeObject *code)
     }
 }
 
-#define NO_LINE -128
-
 static void
-initialize_lines(PyCodeObject *code)
+initialize_lines(PyCodeObject *code, int bytes_per_entry)
 {
     ASSERT_WORLD_STOPPED_OR_LOCKED(code);
     _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
 
     assert(line_data != NULL);
+    line_data->bytes_per_entry = bytes_per_entry;
     int code_len = (int)Py_SIZE(code);
     PyCodeAddressRange range;
     _PyCode_InitAddressRange(code, &range);
-    for (int i = 0; i < code->_co_firsttraceable && i < code_len; i++) {
-        line_data[i].original_opcode = 0;
-        line_data[i].line_delta = -127;
-    }
     int current_line = -1;
-    for (int i = code->_co_firsttraceable; i < code_len; ) {
+    for (int i = 0; i < code_len; ) {
         int opcode = _Py_GetBaseOpcode(code, i);
         int line = _PyCode_CheckLineNumber(i*(int)sizeof(_Py_CODEUNIT), &range);
-        line_data[i].line_delta = compute_line_delta(code, i, line);
+        set_line_delta(line_data, i, compute_line_delta(code, line));
         int length = _PyInstruction_GetLength(code, i);
-        switch (opcode) {
-            case END_ASYNC_FOR:
-            case END_FOR:
-            case END_SEND:
-            case RESUME:
-                /* END_FOR cannot start a line, as it is skipped by FOR_ITER
-                 * END_SEND cannot start a line, as it is skipped by SEND
-                 * RESUME must not be instrumented with INSTRUMENT_LINE */
-                line_data[i].original_opcode = 0;
-                break;
-            default:
-                /* Set original_opcode to the opcode iff the instruction
-                 * starts a line, and thus should be instrumented.
-                 * This saves having to perform this check every time the
-                 * we turn instrumentation on or off, and serves as a sanity
-                 * check when debugging.
-                 */
-                if (line != current_line && line >= 0) {
-                    line_data[i].original_opcode = opcode;
-                    if (line_data[i].line_delta == COMPUTED_LINE) {
-                        /* Label this line as a line with a line number change
-                         * which could help the monitoring callback to quickly
-                         * identify the line number change.
-                         */
-                        line_data[i].line_delta = COMPUTED_LINE_LINENO_CHANGE;
+        if (i < code->_co_firsttraceable) {
+            set_original_opcode(line_data, i, 0);
+        }
+        else {
+            switch (opcode) {
+                case END_ASYNC_FOR:
+                case END_FOR:
+                case END_SEND:
+                case RESUME:
+                    /* END_FOR cannot start a line, as it is skipped by FOR_ITER
+                    * END_SEND cannot start a line, as it is skipped by SEND
+                    * RESUME and POP_ITER must not be instrumented with INSTRUMENTED_LINE */
+                    set_original_opcode(line_data, i, 0);
+                    break;
+                default:
+                    /* Set original_opcode to the opcode iff the instruction
+                    * starts a line, and thus should be instrumented.
+                    * This saves having to perform this check every time the
+                    * we turn instrumentation on or off, and serves as a sanity
+                    * check when debugging.
+                    */
+                    if (line != current_line && line >= 0) {
+                        set_original_opcode(line_data, i, opcode);
+                        CHECK(get_line_delta(line_data, i) != NO_LINE);
                     }
-                }
-                else {
-                    line_data[i].original_opcode = 0;
-                }
-                current_line = line;
+                    else {
+                        set_original_opcode(line_data, i, 0);
+                    }
+                    current_line = line;
+            }
         }
         for (int j = 1; j < length; j++) {
-            line_data[i+j].original_opcode = 0;
-            line_data[i+j].line_delta = NO_LINE;
+            set_original_opcode(line_data, i+j, 0);
+            set_line_delta(line_data, i+j, NO_LINE);
         }
         i += length;
     }
@@ -1559,13 +1582,9 @@ initialize_lines(PyCodeObject *code)
                 continue;
         }
         assert(target >= 0);
-        if (line_data[target].line_delta != NO_LINE) {
-            line_data[target].original_opcode = _Py_GetBaseOpcode(code, target);
-            if (line_data[target].line_delta == COMPUTED_LINE_LINENO_CHANGE) {
-                // If the line is a jump target, we are not sure if the line
-                // number changes, so we set it to COMPUTED_LINE.
-                line_data[target].line_delta = COMPUTED_LINE;
-            }
+        if (get_line_delta(line_data, target) != NO_LINE) {
+            int opcode = _Py_GetBaseOpcode(code, target);
+            set_original_opcode(line_data, target, opcode);
         }
     }
     /* Scan exception table */
@@ -1587,9 +1606,8 @@ initialize_lines(PyCodeObject *code)
          * END_ASYNC_FOR is a bit special as it marks the end of
          * an `async for` loop, which should not generate its own
          * line event. */
-        if (line_data[handler].line_delta != NO_LINE &&
-            original_opcode != END_ASYNC_FOR) {
-            line_data[handler].original_opcode = original_opcode;
+        if (get_line_delta(line_data, handler) != NO_LINE && original_opcode != END_ASYNC_FOR) {
+            set_original_opcode(line_data, handler, original_opcode);
         }
     }
 }
@@ -1652,12 +1670,39 @@ update_instrumentation_data(PyCodeObject *code, PyInterpreterState *interp)
     }
     if (all_events.tools[PY_MONITORING_EVENT_LINE]) {
         if (code->_co_monitoring->lines == NULL) {
-            code->_co_monitoring->lines = PyMem_Malloc(code_len * sizeof(_PyCoLineInstrumentationData));
+            PyCodeAddressRange range;
+            _PyCode_InitAddressRange(code, &range);
+            int max_line = code->co_firstlineno + 1;
+            _PyCode_InitAddressRange(code, &range);
+            for (int i = code->_co_firsttraceable; i < code_len; ) {
+                int line = _PyCode_CheckLineNumber(i*(int)sizeof(_Py_CODEUNIT), &range);
+                if (line > max_line) {
+                    max_line = line;
+                }
+                int length = _PyInstruction_GetLength(code, i);
+                i += length;
+            }
+            int bytes_per_entry;
+            int max_delta = max_line - code->co_firstlineno;
+            /* We store delta+2 in the table, so 253 is max for one byte */
+            if (max_delta < 256+NO_LINE) {
+                bytes_per_entry = 2;
+            }
+            else if (max_delta < (1 << 16)+NO_LINE) {
+                bytes_per_entry = 3;
+            }
+            else if (max_delta < (1 << 24)+NO_LINE) {
+                bytes_per_entry = 4;
+            }
+            else {
+                bytes_per_entry = 5;
+            }
+            code->_co_monitoring->lines = PyMem_Malloc(1 + code_len * bytes_per_entry);
             if (code->_co_monitoring->lines == NULL) {
                 PyErr_NoMemory();
                 return -1;
             }
-            initialize_lines(code);
+            initialize_lines(code, bytes_per_entry);
         }
         if (multitools && code->_co_monitoring->line_tools == NULL) {
             code->_co_monitoring->line_tools = PyMem_Malloc(code_len);
@@ -1773,7 +1818,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (removed_line_tools) {
         _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
         for (int i = code->_co_firsttraceable; i < code_len;) {
-            if (line_data[i].original_opcode) {
+            if (get_original_opcode(line_data, i)) {
                 remove_line_tools(code, i, removed_line_tools);
             }
             i += _PyInstruction_GetLength(code, i);
@@ -1800,7 +1845,7 @@ force_instrument_lock_held(PyCodeObject *code, PyInterpreterState *interp)
     if (new_line_tools) {
         _PyCoLineInstrumentationData *line_data = code->_co_monitoring->lines;
         for (int i = code->_co_firsttraceable; i < code_len;) {
-            if (line_data[i].original_opcode) {
+            if (get_original_opcode(line_data, i)) {
                 add_line_tools(code, i, new_line_tools);
             }
             i += _PyInstruction_GetLength(code, i);
@@ -2403,18 +2448,22 @@ PyObject *_Py_CreateMonitoringObject(void)
     err = PyObject_SetAttrString(events, "NO_EVENTS", _PyLong_GetZero());
     if (err) goto error;
     PyObject *val = PyLong_FromLong(PY_MONITORING_DEBUGGER_ID);
+    assert(val != NULL); /* Can't return NULL because the int is small. */
     err = PyObject_SetAttrString(mod, "DEBUGGER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_COVERAGE_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "COVERAGE_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_PROFILER_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "PROFILER_ID", val);
     Py_DECREF(val);
     if (err) goto error;
     val = PyLong_FromLong(PY_MONITORING_OPTIMIZER_ID);
+    assert(val != NULL);
     err = PyObject_SetAttrString(mod, "OPTIMIZER_ID", val);
     Py_DECREF(val);
     if (err) goto error;

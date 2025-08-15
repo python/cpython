@@ -13,7 +13,6 @@ import itertools
 import locale
 import os
 import pickle
-import platform
 import select
 import selectors
 import shutil
@@ -2397,8 +2396,8 @@ class TestInvalidFD(unittest.TestCase):
         support.is_emscripten or support.is_wasi,
         "musl libc issue on Emscripten/WASI, bpo-46390"
     )
-    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_fpathconf(self):
+        self.assertIn("PC_NAME_MAX", os.pathconf_names)
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
         self.check_bool(os.pathconf, "PC_NAME_MAX")
@@ -4127,13 +4126,8 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
-    # 1 ms accuracy is reliably achievable on every platform except Android
-    # emulators, where we allow 10 ms (gh-108277).
-    if sys.platform == "android" and platform.android_ver().is_emulator:
-        CLOCK_RES_PLACES = 2
-    else:
-        CLOCK_RES_PLACES = 3
-
+    # gh-126112: Use 10 ms to tolerate slow buildbots
+    CLOCK_RES_PLACES = 2  # 10 ms
     CLOCK_RES = 10 ** -CLOCK_RES_PLACES
     CLOCK_RES_NS = 10 ** (9 - CLOCK_RES_PLACES)
 
@@ -4188,6 +4182,9 @@ class TimerfdTests(unittest.TestCase):
         # confirm if timerfd is readable and read() returns 1 as bytes.
         self.assertEqual(self.read_count_signaled(fd), 1)
 
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "gh-131263: Skip on NetBSD due to system freeze "
+                     "with negative timer values")
     def test_timerfd_negative(self):
         one_sec_in_nsec = 10**9
         fd = self.timerfd_create(time.CLOCK_REALTIME)

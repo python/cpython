@@ -3,6 +3,7 @@
 import os
 import platform
 import shlex
+import sys
 import sysconfig
 from test import support
 

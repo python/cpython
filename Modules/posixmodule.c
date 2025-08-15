@@ -52,10 +52,6 @@
 #  include "winreparse.h"
 #endif
 
-#if !defined(EX_OK) && defined(EXIT_SUCCESS)
-#  define EX_OK EXIT_SUCCESS
-#endif
-
 #ifdef __APPLE__
  /* Needed for the implementation of os.statvfs */
 #  include <sys/param.h>
@@ -290,6 +286,10 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SYSEXITS_H
 #  include <sysexits.h>
+#endif
+
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#  define EX_OK EXIT_SUCCESS
 #endif
 
 #ifdef HAVE_SYS_LOADAVG_H
@@ -3078,18 +3078,22 @@ class Py_off_t_return_converter(long_return_converter):
     type = 'Py_off_t'
     conversion_fn = 'PyLong_FromPy_off_t'
 
-class path_confname_converter(CConverter):
+class confname_converter(CConverter):
     type="int"
-    converter="conv_path_confname"
+    converter="conv_confname"
 
-class confstr_confname_converter(path_confname_converter):
-    converter='conv_confstr_confname'
+    def converter_init(self, *, table):
+        self.table = table
 
-class sysconf_confname_converter(path_confname_converter):
-    converter="conv_sysconf_confname"
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            if (!{converter}(module, {argname}, &{paramname}, "{table}")) {{{{
+                goto exit;
+            }}}}
+        """, argname=argname, converter=self.converter, table=self.table)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=577cb476e5d64960]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=a6199b1618d73f53]*/
 
 /*[clinic input]
 
@@ -3298,7 +3302,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #endif
 
 
-#ifdef HAVE_TTYNAME
+#ifdef HAVE_TTYNAME_R
 /*[clinic input]
 os.ttyname
 
@@ -3370,12 +3374,12 @@ Change the current working directory to the specified path.
 
 path may always be specified as a string.
 On some platforms, path may also be specified as an open file descriptor.
-  If this functionality is unavailable, using it raises an exception.
+If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
 static PyObject *
 os_chdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=3be6400eee26eaae input=1a4a15b4d12cb15d]*/
+/*[clinic end generated code: output=3be6400eee26eaae input=a74ceab5d72adf74]*/
 {
     int result;
 
@@ -8718,14 +8722,14 @@ os_ptsname_impl(PyObject *module, int fd)
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_LOGIN_TTY) || defined(HAVE_DEV_PTMX)
 #ifdef HAVE_PTY_H
 #include <pty.h>
-#ifdef HAVE_UTMP_H
-#include <utmp.h>
-#endif /* HAVE_UTMP_H */
 #elif defined(HAVE_LIBUTIL_H)
 #include <libutil.h>
 #elif defined(HAVE_UTIL_H)
 #include <util.h>
 #endif /* HAVE_PTY_H */
+#ifdef HAVE_UTMP_H
+#include <utmp.h>
+#endif /* HAVE_UTMP_H */
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>
 #endif
@@ -9460,6 +9464,24 @@ os_getlogin_impl(PyObject *module)
     }
     else
         result = PyErr_SetFromWindowsErr(GetLastError());
+#elif defined (HAVE_GETLOGIN_R)
+# if defined (HAVE_MAXLOGNAME)
+    char name[MAXLOGNAME + 1];
+# elif defined (HAVE_UT_NAMESIZE)
+    char name[UT_NAMESIZE + 1];
+# else
+    char name[256];
+# endif
+    int err = getlogin_r(name, sizeof(name));
+    if (err) {
+        int old_errno = errno;
+        errno = -err;
+        posix_error();
+        errno = old_errno;
+    }
+    else {
+        result = PyUnicode_DecodeFSDefault(name);
+    }
 #else
     char *name;
     int old_errno = errno;
@@ -9533,42 +9555,33 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
 
     Py_RETURN_NONE;
 #else /* !MS_WINDOWS */
-    PyObject *result;
     DWORD sig = (DWORD)signal;
-    DWORD err;
-    HANDLE handle;
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
     if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
         if (GenerateConsoleCtrlEvent(sig, (DWORD)pid) == 0) {
-            err = GetLastError();
-            PyErr_SetFromWindowsErr(err);
+            return PyErr_SetFromWindowsErr(0);
         }
-        else {
-            Py_RETURN_NONE;
-        }
+        Py_RETURN_NONE;
     }
 #endif /* HAVE_WINDOWS_CONSOLE_IO */
 
     /* If the signal is outside of what GenerateConsoleCtrlEvent can use,
        attempt to open and terminate the process. */
-    handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
+    HANDLE handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
     if (handle == NULL) {
-        err = GetLastError();
-        return PyErr_SetFromWindowsErr(err);
+        return PyErr_SetFromWindowsErr(0);
     }
 
-    if (TerminateProcess(handle, sig) == 0) {
-        err = GetLastError();
-        result = PyErr_SetFromWindowsErr(err);
-    } else {
-        result = Py_NewRef(Py_None);
-    }
-
+    BOOL res = TerminateProcess(handle, sig);
     CloseHandle(handle);
-    return result;
+    if (res == 0) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
 #endif /* !MS_WINDOWS */
 }
 #endif /* HAVE_KILL */
@@ -13512,46 +13525,38 @@ struct constdef {
 };
 
 static int
-conv_confname(PyObject *arg, int *valuep, struct constdef *table,
-              size_t tablesize)
+conv_confname(PyObject *module, PyObject *arg, int *valuep, const char *tablename)
 {
-    if (PyLong_Check(arg)) {
+    if (PyUnicode_Check(arg)) {
+        PyObject *table = PyObject_GetAttrString(module, tablename);
+        if (table == NULL) {
+            return 0;
+        }
+
+        arg = PyObject_GetItem(table, arg);
+        Py_DECREF(table);
+        if (arg == NULL) {
+            PyErr_SetString(
+                PyExc_ValueError, "unrecognized configuration name");
+            return 0;
+        }
+    } else {
+        Py_INCREF(arg);  // Match the Py_DECREF below.
+    }
+
+    int success = 0;
+    if (!PyLong_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError,
+            "configuration names must be strings or integers");
+    } else {
         int value = PyLong_AsInt(arg);
-        if (value == -1 && PyErr_Occurred())
-            return 0;
-        *valuep = value;
-        return 1;
-    }
-    else {
-        /* look up the value in the table using a binary search */
-        size_t lo = 0;
-        size_t mid;
-        size_t hi = tablesize;
-        int cmp;
-        const char *confname;
-        if (!PyUnicode_Check(arg)) {
-            PyErr_SetString(PyExc_TypeError,
-                "configuration names must be strings or integers");
-            return 0;
+        if (!(value == -1 && PyErr_Occurred())) {
+            *valuep = value;
+            success = 1;
         }
-        confname = PyUnicode_AsUTF8(arg);
-        if (confname == NULL)
-            return 0;
-        while (lo < hi) {
-            mid = (lo + hi) / 2;
-            cmp = strcmp(confname, table[mid].name);
-            if (cmp < 0)
-                hi = mid;
-            else if (cmp > 0)
-                lo = mid + 1;
-            else {
-                *valuep = table[mid].value;
-                return 1;
-            }
-        }
-        PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
-        return 0;
     }
+    Py_DECREF(arg);
+    return success;
 }
 
 
@@ -13642,14 +13647,6 @@ static struct constdef  posix_constants_pathconf[] = {
     {"PC_TIMESTAMP_RESOLUTION", _PC_TIMESTAMP_RESOLUTION},
 #endif
 };
-
-static int
-conv_path_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_pathconf,
-                         sizeof(posix_constants_pathconf)
-                           / sizeof(struct constdef));
-}
 #endif
 
 
@@ -13658,7 +13655,7 @@ conv_path_confname(PyObject *arg, int *valuep)
 os.fpathconf -> long
 
     fd: fildes
-    name: path_confname
+    name: confname(table="pathconf_names")
     /
 
 Return the configuration limit name for the file descriptor fd.
@@ -13668,7 +13665,7 @@ If there is no limit, return -1.
 
 static long
 os_fpathconf_impl(PyObject *module, int fd, int name)
-/*[clinic end generated code: output=d5b7042425fc3e21 input=5b8d2471cfaae186]*/
+/*[clinic end generated code: output=d5b7042425fc3e21 input=023d44589c9ed6aa]*/
 {
     long limit;
 
@@ -13686,7 +13683,7 @@ os_fpathconf_impl(PyObject *module, int fd, int name)
 /*[clinic input]
 os.pathconf -> long
     path: path_t(allow_fd='PATH_HAVE_FPATHCONF')
-    name: path_confname
+    name: confname(table="pathconf_names")
 
 Return the configuration limit name for the file or directory path.
 
@@ -13697,7 +13694,7 @@ On some platforms, path may also be specified as an open file descriptor.
 
 static long
 os_pathconf_impl(PyObject *module, path_t *path, int name)
-/*[clinic end generated code: output=5bedee35b293a089 input=bc3e2a985af27e5e]*/
+/*[clinic end generated code: output=5bedee35b293a089 input=6f6072f57b10c787]*/
 {
     long limit;
 
@@ -13874,19 +13871,11 @@ static struct constdef posix_constants_confstr[] = {
 #endif
 };
 
-static int
-conv_confstr_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_confstr,
-                         sizeof(posix_constants_confstr)
-                           / sizeof(struct constdef));
-}
-
 
 /*[clinic input]
 os.confstr
 
-    name: confstr_confname
+    name: confname(table="confstr_names")
     /
 
 Return a string-valued system configuration variable.
@@ -13894,7 +13883,7 @@ Return a string-valued system configuration variable.
 
 static PyObject *
 os_confstr_impl(PyObject *module, int name)
-/*[clinic end generated code: output=bfb0b1b1e49b9383 input=18fb4d0567242e65]*/
+/*[clinic end generated code: output=bfb0b1b1e49b9383 input=4c6ffca2837ec959]*/
 {
     PyObject *result = NULL;
     char buffer[255];
@@ -14431,18 +14420,10 @@ static struct constdef posix_constants_sysconf[] = {
 #endif
 };
 
-static int
-conv_sysconf_confname(PyObject *arg, int *valuep)
-{
-    return conv_confname(arg, valuep, posix_constants_sysconf,
-                         sizeof(posix_constants_sysconf)
-                           / sizeof(struct constdef));
-}
-
 
 /*[clinic input]
 os.sysconf -> long
-    name: sysconf_confname
+    name: confname(table="sysconf_names")
     /
 
 Return an integer-valued system configuration variable.
@@ -14450,7 +14431,7 @@ Return an integer-valued system configuration variable.
 
 static long
 os_sysconf_impl(PyObject *module, int name)
-/*[clinic end generated code: output=3662f945fc0cc756 input=279e3430a33f29e4]*/
+/*[clinic end generated code: output=3662f945fc0cc756 input=930b8f23b5d15086]*/
 {
     long value;
 
@@ -14463,40 +14444,15 @@ os_sysconf_impl(PyObject *module, int name)
 #endif /* HAVE_SYSCONF */
 
 
-/* This code is used to ensure that the tables of configuration value names
- * are in sorted order as required by conv_confname(), and also to build
- * the exported dictionaries that are used to publish information about the
- * names available on the host platform.
- *
- * Sorting the table at runtime ensures that the table is properly ordered
- * when used, even for platforms we're not able to test on.  It also makes
- * it easier to add additional entries to the tables.
- */
-
-static int
-cmp_constdefs(const void *v1,  const void *v2)
-{
-    const struct constdef *c1 =
-    (const struct constdef *) v1;
-    const struct constdef *c2 =
-    (const struct constdef *) v2;
-
-    return strcmp(c1->name, c2->name);
-}
-
 static int
 setup_confname_table(struct constdef *table, size_t tablesize,
                      const char *tablename, PyObject *module)
 {
-    PyObject *d = NULL;
-    size_t i;
-
-    qsort(table, tablesize, sizeof(struct constdef), cmp_constdefs);
-    d = PyDict_New();
+    PyObject *d = PyDict_New();
     if (d == NULL)
         return -1;
 
-    for (i=0; i < tablesize; ++i) {
+    for (size_t i=0; i < tablesize; ++i) {
         PyObject *o = PyLong_FromLong(table[i].value);
         if (o == NULL || PyDict_SetItemString(d, table[i].name, o) == -1) {
             Py_XDECREF(o);

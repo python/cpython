@@ -204,6 +204,26 @@ class AST_Tests(unittest.TestCase):
         # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
         compile(tree, "<string>", "exec")
 
+    def test_negative_locations_for_compile(self):
+        # See https://github.com/python/cpython/issues/130775
+        alias = ast.alias(name='traceback', lineno=0, col_offset=0)
+        for attrs in (
+            {'lineno': -2, 'col_offset': 0},
+            {'lineno': 0, 'col_offset': -2},
+            {'lineno': 0, 'col_offset': -2, 'end_col_offset': -2},
+            {'lineno': -2, 'end_lineno': -2, 'col_offset': 0},
+        ):
+            with self.subTest(attrs=attrs):
+                tree = ast.Module(body=[
+                    ast.Import(names=[alias], **attrs)
+                ], type_ignores=[])
+
+                # It used to crash on this step:
+                compile(tree, "<string>", "exec")
+
+                # This also must not crash:
+                ast.parse(tree, optimize=2)
+
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
         self.assertIsNone(slc.upper)
@@ -940,6 +960,17 @@ class AST_Tests(unittest.TestCase):
             ):
                 compile(expr, "<test>", "eval")
 
+    def test_constant_as_unicode_name(self):
+        constants = [
+            ("True", b"Tru\xe1\xb5\x89"),
+            ("False", b"Fal\xc5\xbfe"),
+            ("None", b"N\xc2\xbane"),
+        ]
+        for constant in constants:
+            with self.assertRaisesRegex(ValueError,
+                f"identifier field can't represent '{constant[0]}' constant"):
+                ast.parse(constant[1], mode="eval")
+
     def test_precedence_enum(self):
         class _Precedence(enum.IntEnum):
             """Precedence table that originated from python grammar."""
@@ -1316,9 +1347,21 @@ Module(
         )
 
         check_node(
+            ast.MatchSingleton(value=[]),
+            empty="MatchSingleton(value=[])",
+            full="MatchSingleton(value=[])",
+        )
+
+        check_node(
             ast.Constant(value=None),
             empty="Constant(value=None)",
             full="Constant(value=None)",
+        )
+
+        check_node(
+            ast.Constant(value=[]),
+            empty="Constant(value=[])",
+            full="Constant(value=[])",
         )
 
         check_node(
@@ -3193,7 +3236,7 @@ class ASTMainTests(unittest.TestCase):
 def compare(left, right):
     return ast.dump(left) == ast.dump(right)
 
-class ASTOptimiziationTests(unittest.TestCase):
+class ASTOptimizationTests(unittest.TestCase):
     binop = {
         "+": ast.Add(),
         "-": ast.Sub(),

@@ -11,6 +11,7 @@
 #include "pycore_bytesobject.h"   // _PyBytesWriter
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 
@@ -1639,8 +1640,7 @@ s_dealloc(PyStructObject *s)
 {
     PyTypeObject *tp = Py_TYPE(s);
     PyObject_GC_UnTrack(s);
-    if (s->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)s);
+    FT_CLEAR_WEAKREFS((PyObject *)s, s->weakreflist);
     if (s->s_codes != NULL) {
         PyMem_Free(s->s_codes);
     }

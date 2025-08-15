@@ -23,6 +23,21 @@ def make_dummy_object(_):
     return MyObject()
 
 
+# Used in test_swallows_falsey_exceptions
+def raiser(exception, msg='std'):
+    raise exception(msg)
+
+
+class FalseyBoolException(Exception):
+    def __bool__(self):
+        return False
+
+
+class FalseyLenException(Exception):
+    def __len__(self):
+        return 0
+
+
 class ExecutorTest:
     # Executor.shutdown() and context manager usage is tested by
     # ExecutorShutdownTest.
@@ -128,4 +143,20 @@ class ExecutorTest:
             wr = weakref.ref(obj)
             del obj
             support.gc_collect()  # For PyPy or other GCs.
-            self.assertIsNone(wr())
+
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if wr() is None:
+                    break
+
+    def test_swallows_falsey_exceptions(self):
+        # see gh-132063: Prevent exceptions that evaluate as falsey
+        # from being ignored.
+        # Recall: `x` is falsey if `len(x)` returns 0 or `bool(x)` returns False.
+
+        msg = 'boolbool'
+        with self.assertRaisesRegex(FalseyBoolException, msg):
+            self.executor.submit(raiser, FalseyBoolException, msg).result()
+
+        msg = 'lenlen'
+        with self.assertRaisesRegex(FalseyLenException, msg):
+            self.executor.submit(raiser, FalseyLenException, msg).result()

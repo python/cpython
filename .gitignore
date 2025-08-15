@@ -38,6 +38,7 @@ tags
 TAGS
 .vs/
 .vscode/
+.cache/
 gmon.out
 .coverage
 .mypy_cache/
@@ -137,11 +138,12 @@ Tools/unicode/data/
 # hendrikmuhs/ccache-action@v1
 /.ccache
 /cross-build/
-/jit_stencils.h
+/jit_stencils*.h
 /platform
 /profile-clean-stamp
 /profile-run-stamp
 /profile-bolt-stamp
+/profile-gen-stamp
 /pybuilddir.txt
 /pyconfig.h
 /python-config

@@ -24,6 +24,7 @@ you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
 
+import logging
 import math
 import os, sys
 import operator
@@ -1058,6 +1059,11 @@ class FormatTest:
             (',%', '123.456789', '12,345.6789%'),
             (',e', '123456', '1.23456e+5'),
             (',E', '123456', '1.23456E+5'),
+            # ... with '_' instead
+            ('_', '1234567', '1_234_567'),
+            ('07_', '1234.56', '1_234.56'),
+            ('_', '1.23456789', '1.23456789'),
+            ('_%', '123.456789', '12_345.6789%'),
 
             # negative zero: default behavior
             ('.1f', '-0', '-0.0'),
@@ -4458,6 +4464,15 @@ class Coverage:
             self.assertIs(Decimal("NaN").fma(7, 1).is_nan(), True)
             # three arg power
             self.assertEqual(pow(Decimal(10), 2, 7), 2)
+            if self.decimal == C:
+                self.assertEqual(pow(10, Decimal(2), 7), 2)
+                self.assertEqual(pow(10, 2, Decimal(7)), 2)
+            else:
+                # XXX: Three-arg power doesn't use __rpow__.
+                self.assertRaises(TypeError, pow, 10, Decimal(2), 7)
+                # XXX: There is no special method to dispatch on the
+                # third arg of three-arg power.
+                self.assertRaises(TypeError, pow, 10, 2, Decimal(7))
             # exp
             self.assertEqual(Decimal("1.01").exp(), 3)
             # is_normal
@@ -5923,8 +5938,9 @@ def tearDownModule():
     if C: C.setcontext(ORIGINAL_CONTEXT[C].copy())
     P.setcontext(ORIGINAL_CONTEXT[P].copy())
     if not C:
-        warnings.warn('C tests skipped: no module named _decimal.',
-                      UserWarning)
+        logging.getLogger(__name__).warning(
+            'C tests skipped: no module named _decimal.'
+        )
     if not orig_sys_decimal is sys.modules['decimal']:
         raise TestFailed("Internal error: unbalanced number of changes to "
                          "sys.modules['decimal'].")

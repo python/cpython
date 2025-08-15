@@ -11,7 +11,9 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GetIDObject()
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>        // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
 #include <sched.h>          // sched_yield()
@@ -3554,8 +3556,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    traverse_module_state(state, visit, arg);
-    return 0;
+    return traverse_module_state(state, visit, arg);
 }
 
 static int
@@ -3565,8 +3566,7 @@ module_clear(PyObject *mod)
     assert(state != NULL);
 
     // Now we clear the module state.
-    clear_module_state(state);
-    return 0;
+    return clear_module_state(state);
 }
 
 static void

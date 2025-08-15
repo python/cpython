@@ -8,8 +8,6 @@
 
 /* TODO: Cull includes following phase split */
 
-#include <stdbool.h>
-
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj()
@@ -27,6 +25,8 @@
 
 #include "errcode.h"              // E_EOF
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
+
+#include <stdbool.h>
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -109,17 +109,35 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
         flags = &local_flags;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *v = _PySys_GetAttr(tstate, &_Py_ID(ps1));
-    if (v == NULL) {
-        _PySys_SetAttr(&_Py_ID(ps1), v = PyUnicode_FromString(">>> "));
-        Py_XDECREF(v);
+    PyObject *v;
+    if (_PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
+        PyErr_Print();
+        return -1;
     }
-    v = _PySys_GetAttr(tstate, &_Py_ID(ps2));
     if (v == NULL) {
-        _PySys_SetAttr(&_Py_ID(ps2), v = PyUnicode_FromString("... "));
-        Py_XDECREF(v);
+        v = PyUnicode_FromString(">>> ");
+        if (v == NULL) {
+            PyErr_Clear();
+        }
+        if (_PySys_SetAttr(&_Py_ID(ps1), v) < 0) {
+            PyErr_Clear();
+        }
     }
+    Py_XDECREF(v);
+    if (_PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
+        PyErr_Print();
+        return -1;
+    }
+    if (v == NULL) {
+        v = PyUnicode_FromString("... ");
+        if (v == NULL) {
+            PyErr_Clear();
+        }
+        if (_PySys_SetAttr(&_Py_ID(ps2), v) < 0) {
+            PyErr_Clear();
+        }
+    }
+    Py_XDECREF(v);
 
 #ifdef Py_REF_DEBUG
     int show_ref_count = _Py_GetConfig()->show_ref_count;
@@ -179,31 +197,37 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
                     PyCompilerFlags *flags, PyArena *arena,
                     mod_ty *pmod, PyObject** interactive_src)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     // Get sys.stdin.encoding (as UTF-8)
-    PyObject *attr;  // borrowed ref
+    PyObject *attr;
     PyObject *encoding_obj = NULL;
     const char *encoding = NULL;
     if (fp == stdin) {
-        attr = _PySys_GetAttr(tstate, &_Py_ID(stdin));
-        if (attr && attr != Py_None) {
-            encoding_obj = PyObject_GetAttr(attr, &_Py_ID(encoding));
-            if (encoding_obj) {
+        if (_PySys_GetOptionalAttr(&_Py_ID(stdin), &attr) < 0) {
+            PyErr_Clear();
+        }
+        else if (attr != NULL && attr != Py_None) {
+            if (PyObject_GetOptionalAttr(attr, &_Py_ID(encoding), &encoding_obj) < 0) {
+                PyErr_Clear();
+            }
+            else if (encoding_obj && PyUnicode_Check(encoding_obj)) {
                 encoding = PyUnicode_AsUTF8(encoding_obj);
                 if (!encoding) {
                     PyErr_Clear();
                 }
             }
         }
+        Py_XDECREF(attr);
     }
 
     // Get sys.ps1 (as UTF-8)
-    attr = _PySys_GetAttr(tstate, &_Py_ID(ps1));
     PyObject *ps1_obj = NULL;
     const char *ps1 = "";
-    if (attr != NULL) {
+    if (_PySys_GetOptionalAttr(&_Py_ID(ps1), &attr) < 0) {
+        PyErr_Clear();
+    }
+    else if (attr != NULL) {
         ps1_obj = PyObject_Str(attr);
+        Py_DECREF(attr);
         if (ps1_obj == NULL) {
             PyErr_Clear();
         }
@@ -217,11 +241,14 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     }
 
     // Get sys.ps2 (as UTF-8)
-    attr = _PySys_GetAttr(tstate, &_Py_ID(ps2));
     PyObject *ps2_obj = NULL;
     const char *ps2 = "";
-    if (attr != NULL) {
+    if (_PySys_GetOptionalAttr(&_Py_ID(ps2), &attr) < 0) {
+        PyErr_Clear();
+    }
+    else if (attr != NULL) {
         ps2_obj = PyObject_Str(attr);
+        Py_DECREF(attr);
         if (ps2_obj == NULL) {
             PyErr_Clear();
         }
@@ -621,9 +648,11 @@ _Py_HandleSystemExit(int *exitcode_p)
         Py_SETREF(exc, code);
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *sys_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    if (sys_stderr != NULL && sys_stderr != Py_None) {
+    PyObject *sys_stderr;
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &sys_stderr) < 0) {
+        PyErr_Clear();
+    }
+    else if (sys_stderr != NULL && sys_stderr != Py_None) {
         if (PyFile_WriteObject(exc, sys_stderr, Py_PRINT_RAW) < 0) {
             PyErr_Clear();
         }
@@ -635,6 +664,7 @@ _Py_HandleSystemExit(int *exitcode_p)
         fflush(stderr);
     }
     PySys_WriteStderr("\n");
+    Py_XDECREF(sys_stderr);
     Py_CLEAR(exc);
     *exitcode_p = 1;
     return 1;
@@ -654,7 +684,7 @@ handle_system_exit(void)
 static void
 _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
 {
-    PyObject *typ = NULL, *tb = NULL;
+    PyObject *typ = NULL, *tb = NULL, *hook = NULL;
     handle_system_exit();
 
     PyObject *exc = _PyErr_GetRaisedException(tstate);
@@ -683,7 +713,9 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
             _PyErr_Clear(tstate);
         }
     }
-    PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(excepthook));
+    if (_PySys_GetOptionalAttr(&_Py_ID(excepthook), &hook) < 0) {
+        PyErr_Clear();
+    }
     if (_PySys_Audit(tstate, "sys.excepthook", "OOOO", hook ? hook : Py_None,
                      typ, exc, tb) < 0) {
         if (PyErr_ExceptionMatches(PyExc_RuntimeError)) {
@@ -717,6 +749,7 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
     }
 
 done:
+    Py_XDECREF(hook);
     Py_XDECREF(typ);
     Py_XDECREF(exc);
     Py_XDECREF(tb);
@@ -1165,17 +1198,24 @@ fallback:
 void
 PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+        PyObject *exc = PyErr_GetRaisedException();
+        _PyObject_Dump(value);
+        fprintf(stderr, "lost sys.stderr\n");
+        _PyObject_Dump(exc);
+        Py_DECREF(exc);
+        return;
+    }
     if (file == NULL) {
         _PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
         return;
     }
     if (file == Py_None) {
+        Py_DECREF(file);
         return;
     }
-    Py_INCREF(file);
     _PyErr_Display(file, NULL, value, tb);
     Py_DECREF(file);
 }
@@ -1282,11 +1322,15 @@ PyRun_FileExFlags(FILE *fp, const char *filename, int start, PyObject *globals,
 static void
 flush_io_stream(PyThreadState *tstate, PyObject *name)
 {
-    PyObject *f = _PySys_GetAttr(tstate, name);
+    PyObject *f;
+    if (_PySys_GetOptionalAttr(name, &f) < 0) {
+        PyErr_Clear();
+    }
     if (f != NULL) {
         if (_PyFile_Flush(f) < 0) {
             PyErr_Clear();
         }
+        Py_DECREF(f);
     }
 }
 
@@ -1342,6 +1386,29 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 }
 
 static PyObject *
+get_interactive_filename(PyObject *filename, Py_ssize_t count)
+{
+    PyObject *result;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
+
+    if (len >= 2
+            && PyUnicode_ReadChar(filename, 0) == '<'
+            && PyUnicode_ReadChar(filename, len - 1) == '>') {
+        PyObject *middle = PyUnicode_Substring(filename, 1, len-1);
+        if (middle == NULL) {
+            return NULL;
+        }
+        result = PyUnicode_FromFormat("<%U-%d>", middle, count);
+        Py_DECREF(middle);
+    } else {
+        result = PyUnicode_FromFormat(
+            "%U-%d", filename, count);
+    }
+    return result;
+
+}
+
+static PyObject *
 run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena, PyObject* interactive_src,
             int generate_new_source)
@@ -1351,8 +1418,8 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
     if (interactive_src) {
         PyInterpreterState *interp = tstate->interp;
         if (generate_new_source) {
-            interactive_filename = PyUnicode_FromFormat(
-                "%U-%d", filename, interp->_interactive_src_count++);
+            interactive_filename = get_interactive_filename(
+                filename, interp->_interactive_src_count++);
         } else {
             Py_INCREF(interactive_filename);
         }
@@ -1398,7 +1465,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
         PyObject* result = PyObject_CallFunction(
             print_tb_func, "OOO",
-            interactive_filename,
+            co,
             interactive_src,
             filename
         );

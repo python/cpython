@@ -1,4 +1,5 @@
 import os
+import re
 import token
 import tokenize
 import unittest
@@ -6,10 +7,13 @@ from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
 from test import support
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
 from test.support import os_helper
 from test.support.script_helper import run_test_script, make_script, run_python_until_end
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
+
 
 # Converts a source string into a list of textual representation
 # of the tokens such as:
@@ -599,22 +603,6 @@ f'''__{
     OP         '}'           (6, 0) (6, 1)
     FSTRING_MIDDLE '__'          (6, 1) (6, 3)
     FSTRING_END "'''"         (6, 3) (6, 6)
-    """)
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    OP         '{'           (1, 4) (1, 5)
-    NL         '\\n'          (1, 5) (1, 6)
-    NAME       'x'           (2, 4) (2, 5)
-    OP         ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    NL         '\\n'          (2, 7) (2, 8)
-    OP         '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
         self.check_tokenize("""\
@@ -1819,6 +1807,22 @@ class UntokenizeTest(TestCase):
         self.assertEqual(tokenize.untokenize(iter(tokens)), b'Hello ')
 
 
+def contains_ambiguous_backslash(source):
+    """Return `True` if the source contains a backslash on a
+    line by itself. For example:
+
+    a = (1
+        \\
+    )
+
+    Code like this cannot be untokenized exactly. This is because
+    the tokenizer does not produce any tokens for the line containing
+    the backslash and so there is no way to know its indent.
+    """
+    pattern = re.compile(br'\n\s*\\\r?\n')
+    return pattern.search(source) is not None
+
+
 class TestRoundtrip(TestCase):
 
     def check_roundtrip(self, f):
@@ -1828,6 +1832,9 @@ class TestRoundtrip(TestCase):
         Both sequences are converted back to source code via
         tokenize.untokenize(), and the latter tokenized again to 2-tuples.
         The test fails if the 3 pair tokenizations do not match.
+
+        If the source code can be untokenized unambiguously, the
+        untokenized code must match the original code exactly.
 
         When untokenize bugs are fixed, untokenize with 5-tuples should
         reproduce code that does not contain a backslash continuation
@@ -1851,6 +1858,13 @@ class TestRoundtrip(TestCase):
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
         tokens2_from5 = [tok[:2] for tok in tokenize.tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
+
+        if not contains_ambiguous_backslash(code):
+            # The BOM does not produce a token so there is no way to preserve it.
+            code_without_bom = code.removeprefix(b'\xef\xbb\xbf')
+            readline = iter(code_without_bom.splitlines(keepends=True)).__next__
+            untokenized_code = tokenize.untokenize(tokenize.tokenize(readline))
+            self.assertEqual(code_without_bom, untokenized_code)
 
     def check_line_extraction(self, f):
         if isinstance(f, str):
@@ -2440,21 +2454,6 @@ f'''__{
     FSTRING_END "'''"         (6, 3) (6, 6)
     """)
 
-        self.check_tokenize("""\
-f'__{
-    x:d
-}__'""", """\
-    FSTRING_START "f'"          (1, 0) (1, 2)
-    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
-    LBRACE     '{'           (1, 4) (1, 5)
-    NAME       'x'           (2, 4) (2, 5)
-    COLON      ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
-    RBRACE     '}'           (3, 0) (3, 1)
-    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
-    FSTRING_END "'"           (3, 3) (3, 4)
-    """)
-
     def test_function(self):
 
         self.check_tokenize('def d22(a, b, c=2, d=2, *k): pass', """\
@@ -3008,6 +3007,10 @@ async def f():
             "'''sdfsdf''",
             "("*1000+"a"+")"*1000,
             "]",
+            """\
+            f'__{
+                x:d
+            }__'""",
         ]:
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)

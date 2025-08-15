@@ -10,6 +10,7 @@
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_StatsOn()
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
 #include "osdefs.h"               // DELIM
 
@@ -129,9 +130,6 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
 #ifdef Py_DEBUG
     SPEC(run_presite, WSTR_OPT),
 #endif
-#ifdef __APPLE__
-    SPEC(use_system_logger, BOOL),
-#endif
 
     {NULL, 0, 0},
 };
@@ -159,7 +157,7 @@ Options (and corresponding environment variables):\n\
 -h     : print this help message and exit (also -? or --help)\n\
 -i     : inspect interactively after running script; forces a prompt even\n\
          if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
--I     : isolate Python from the user's environment (implies -E and -s)\n\
+-I     : isolate Python from the user's environment (implies -E, -P and -s)\n\
 -m mod : run library module as a script (terminates option list)\n\
 -O     : remove assert and __debug__-dependent statements; add .opt-1 before\n\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
@@ -213,6 +211,8 @@ The following implementation-specific options are available:\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
          also PYTHONNODEBUGRANGES\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
+-X perf_jit: support the Linux \"perf\" profiler with DWARF support;\n\
+         also PYTHON_PERF_JIT_SUPPORT=1\n\
 "
 #ifdef Py_DEBUG
 "-X presite=MOD: import this module before site; also PYTHON_PRESITE\n"
@@ -748,9 +748,6 @@ config_check_consistency(const PyConfig *config)
     assert(config->cpu_count != 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
-#ifdef __APPLE__
-    assert(config->use_system_logger >= 0);
-#endif
 #ifdef Py_STATS
     assert(config->_pystats >= 0);
 #endif
@@ -853,9 +850,6 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
-#ifdef __APPLE__
-    config->use_system_logger = 0;
-#endif
 #ifdef Py_GIL_DISABLED
     config->enable_gil = _PyConfig_GIL_DEFAULT;
 #endif
@@ -883,9 +877,6 @@ config_init_defaults(PyConfig *config)
     config->pathconfig_warnings = 1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
-#endif
-#ifdef __APPLE__
-    config->use_system_logger = 0;
 #endif
 }
 
@@ -921,9 +912,6 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
-#endif
-#ifdef __APPLE__
-    config->use_system_logger = 0;
 #endif
 }
 
@@ -3230,10 +3218,13 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 
 #define DUMP_SYS(NAME) \
         do { \
-            obj = PySys_GetObject(#NAME); \
             PySys_FormatStderr("  sys.%s = ", #NAME); \
+            if (_PySys_GetOptionalAttrString(#NAME, &obj) < 0) { \
+                PyErr_Clear(); \
+            } \
             if (obj != NULL) { \
                 PySys_FormatStderr("%A", obj); \
+                Py_DECREF(obj); \
             } \
             else { \
                 PySys_WriteStderr("(not set)"); \
@@ -3251,7 +3242,8 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     DUMP_SYS(exec_prefix);
 #undef DUMP_SYS
 
-    PyObject *sys_path = PySys_GetObject("path");  /* borrowed reference */
+    PyObject *sys_path;
+    (void) _PySys_GetOptionalAttrString("path", &sys_path);
     if (sys_path != NULL && PyList_Check(sys_path)) {
         PySys_WriteStderr("  sys.path = [\n");
         Py_ssize_t len = PyList_GET_SIZE(sys_path);
@@ -3261,6 +3253,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
         }
         PySys_WriteStderr("  ]\n");
     }
+    Py_XDECREF(sys_path);
 
     _PyErr_SetRaisedException(tstate, exc);
 }

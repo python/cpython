@@ -135,7 +135,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize()
+    colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -204,7 +204,7 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
+    """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
     print_exception(sys.exception(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
@@ -212,15 +212,15 @@ def format_exc(limit=None, chain=True):
     return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    """This is a shorthand for 'print_exception(sys.last_exc, limit=limit, file=file, chain=chain)'."""
     if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
 
     if hasattr(sys, "last_exc"):
-        print_exception(sys.last_exc, limit, file, chain)
+        print_exception(sys.last_exc, limit=limit, file=file, chain=chain)
     else:
         print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                        limit, file, chain)
+                        limit=limit, file=file, chain=chain)
 
 
 #
@@ -288,11 +288,11 @@ class FrameSummary:
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_lines', '_lines_dedented', 'locals')
+                 'name', '_lines', '_lines_dedented', 'locals', '_code')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
-            end_lineno=None, colno=None, end_colno=None):
+            end_lineno=None, colno=None, end_colno=None, **kwargs):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -308,6 +308,7 @@ class FrameSummary:
         self.colno = colno
         self.end_colno = end_colno
         self.name = name
+        self._code = kwargs.get("_code")
         self._lines = line
         self._lines_dedented = None
         if lookup_line:
@@ -347,7 +348,10 @@ class FrameSummary:
             lines = []
             for lineno in range(self.lineno, self.end_lineno + 1):
                 # treat errors (empty string) and empty lines (newline) as the same
-                lines.append(linecache.getline(self.filename, lineno).rstrip())
+                line = linecache.getline(self.filename, lineno).rstrip()
+                if not line and self._code is not None and self.filename.startswith("<"):
+                    line = linecache._getline_from_code(self._code, lineno).rstrip()
+                lines.append(line)
             self._lines = "\n".join(lines) + "\n"
 
     @property
@@ -480,9 +484,13 @@ class StackSummary(list):
                 f_locals = f.f_locals
             else:
                 f_locals = None
-            result.append(FrameSummary(
-                filename, lineno, name, lookup_line=False, locals=f_locals,
-                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
+            result.append(
+                FrameSummary(filename, lineno, name,
+                    lookup_line=False, locals=f_locals,
+                    end_lineno=end_lineno, colno=colno, end_colno=end_colno,
+                    _code=f.f_code,
+                )
+            )
         for filename in fnames:
             linecache.checkcache(filename)
 
@@ -520,7 +528,7 @@ class StackSummary(list):
         colorize = kwargs.get("colorize", False)
         row = []
         filename = frame_summary.filename
-        if frame_summary.filename.startswith("<stdin>-"):
+        if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
             row.append('  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
@@ -1108,7 +1116,7 @@ class TracebackException:
             queue = [(self, exc_value)]
             while queue:
                 te, e = queue.pop()
-                if (e and e.__cause__ is not None
+                if (e is not None and e.__cause__ is not None
                     and id(e.__cause__) not in _seen):
                     cause = TracebackException(
                         type(e.__cause__),
@@ -1129,7 +1137,7 @@ class TracebackException:
                                     not e.__suppress_context__)
                 else:
                     need_context = True
-                if (e and e.__context__ is not None
+                if (e is not None and e.__context__ is not None
                     and need_context and id(e.__context__) not in _seen):
                     context = TracebackException(
                         type(e.__context__),
@@ -1144,7 +1152,7 @@ class TracebackException:
                 else:
                     context = None
 
-                if e and isinstance(e, BaseExceptionGroup):
+                if e is not None and isinstance(e, BaseExceptionGroup):
                     exceptions = []
                     for exc in e.exceptions:
                         texc = TracebackException(
@@ -1283,7 +1291,7 @@ class TracebackException:
             filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
-        if text is not None:
+        if isinstance(text, str):
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
@@ -1292,10 +1300,17 @@ class TracebackException:
             spaces = len(rtext) - len(ltext)
             if self.offset is None:
                 yield '    {}\n'.format(ltext)
-            else:
+            elif isinstance(self.offset, int):
                 offset = self.offset
                 if self.lineno == self.end_lineno:
-                    end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                    end_offset = (
+                        self.end_offset
+                        if (
+                            isinstance(self.end_offset, int)
+                            and self.end_offset != 0
+                        )
+                        else offset
+                    )
                 else:
                     end_offset = len(rtext) + 1
 
@@ -1475,7 +1490,11 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     if isinstance(exc_value, AttributeError):
         obj = exc_value.obj
         try:
-            d = dir(obj)
+            try:
+                d = dir(obj)
+            except TypeError:  # Attributes are unsortable, e.g. int and str
+                d = list(obj.__class__.__dict__.keys()) + list(obj.__dict__.keys())
+            d = sorted([x for x in d if isinstance(x, str)])
             hide_underscored = (wrong_name[:1] != '_')
             if hide_underscored and tb is not None:
                 while tb.tb_next is not None:
@@ -1490,7 +1509,11 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     elif isinstance(exc_value, ImportError):
         try:
             mod = __import__(exc_value.name)
-            d = dir(mod)
+            try:
+                d = dir(mod)
+            except TypeError:  # Attributes are unsortable, e.g. int and str
+                d = list(mod.__dict__.keys())
+            d = sorted([x for x in d if isinstance(x, str)])
             if wrong_name[:1] != '_':
                 d = [x for x in d if x[:1] != '_']
         except Exception:
@@ -1508,12 +1531,17 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             + list(frame.f_globals)
             + list(frame.f_builtins)
         )
+        d = [x for x in d if isinstance(x, str)]
 
         # Check first if we are in a method and the instance
         # has the wrong name as attribute
         if 'self' in frame.f_locals:
             self = frame.f_locals['self']
-            if hasattr(self, wrong_name):
+            try:
+                has_wrong_name = hasattr(self, wrong_name)
+            except Exception:
+                has_wrong_name = False
+            if has_wrong_name:
                 return f"self.{wrong_name}"
 
     try:

@@ -523,15 +523,7 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
             break;
         }
 
-        if (converted == INCOMPLETE_CHARACTER) {
-            /* Incomplete character. This should never happen,
-               since we provide everything that we have -
-               unless there is a bug in the C library, or I
-               misunderstood how mbrtowc works. */
-            goto decode_error;
-        }
-
-        if (converted == DECODE_ERROR) {
+        if (converted == DECODE_ERROR || converted == INCOMPLETE_CHARACTER) {
             if (!surrogateescape) {
                 goto decode_error;
             }

@@ -154,7 +154,7 @@ More events may be added in the future.
 
 These events are attributes of the :mod:`!sys.monitoring.events` namespace.
 Each event is represented as a power-of-2 integer constant.
-To define a set of events, simply bitwise or the individual events together.
+To define a set of events, simply bitwise OR the individual events together.
 For example, to specify both :monitoring-event:`PY_RETURN` and :monitoring-event:`PY_START`
 events, use the expression ``PY_RETURN | PY_START``.
 
@@ -166,6 +166,8 @@ events, use the expression ``PY_RETURN | PY_START``.
           ...
 
 Events are divided into three groups:
+
+.. _monitoring-event-local:
 
 Local events
 ''''''''''''
@@ -312,13 +314,12 @@ To register a callable for events call
    it is unregistered and returned.
    Otherwise :func:`register_callback` returns ``None``.
 
+   .. audit-event:: sys.monitoring.register_callback func sys.monitoring.register_callback
 
 Functions can be unregistered by calling
 ``sys.monitoring.register_callback(tool_id, event, None)``.
 
 Callback functions can be registered and unregistered at any time.
-
-Registering or unregistering a callback function will generate a :func:`sys.audit` event.
 
 
 Callback function arguments

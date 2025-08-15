@@ -149,6 +149,14 @@ class Test_pygettext(unittest.TestCase):
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
 
+    def test_output_option(self):
+        for opt in ('-o', '--output='):
+            with temp_cwd():
+                assert_python_ok(self.script, f'{opt}test')
+                self.assertTrue(os.path.exists('test'))
+                res = assert_python_ok(self.script, f'{opt}-')
+                self.assertIn(b'Project-Id-Version: PACKAGE VERSION', res.out)
+
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
             with self.subTest(doc):
@@ -369,15 +377,8 @@ class Test_pygettext(unittest.TestCase):
 
     def test_pygettext_output(self):
         """Test that the pygettext output exactly matches snapshots."""
-        for input_file in DATA_DIR.glob('*.py'):
-            output_file = input_file.with_suffix('.pot')
-            with self.subTest(input_file=f'i18n_data/{input_file}'):
-                contents = input_file.read_text(encoding='utf-8')
-                with temp_cwd(None):
-                    Path(input_file.name).write_text(contents)
-                    assert_python_ok('-Xutf8', self.script, '--docstrings', input_file.name)
-                    output = Path('messages.pot').read_text(encoding='utf-8')
-
+        for input_file, output_file, output in extract_from_snapshots():
+            with self.subTest(input_file=input_file):
                 expected = output_file.read_text(encoding='utf-8')
                 self.assert_POT_equal(expected, output)
 
@@ -408,15 +409,37 @@ class Test_pygettext(unittest.TestCase):
             self.assertNotIn(text3, data)
 
 
-def update_POT_snapshots():
-    for input_file in DATA_DIR.glob('*.py'):
-        output_file = input_file.with_suffix('.pot')
+def extract_from_snapshots():
+    snapshots = {
+        'messages.py': ('--docstrings',),
+        'fileloc.py': ('--docstrings',),
+        'docstrings.py': ('--docstrings',),
+        # == Test character escaping
+        # Escape ascii and unicode:
+        'escapes.py': ('--escape',),
+        # Escape only ascii and let unicode pass through:
+        ('escapes.py', 'ascii-escapes.pot'): (),
+    }
+
+    for filename, args in snapshots.items():
+        if isinstance(filename, tuple):
+            filename, output_file = filename
+            output_file = DATA_DIR / output_file
+            input_file = DATA_DIR / filename
+        else:
+            input_file = DATA_DIR / filename
+            output_file = input_file.with_suffix('.pot')
         contents = input_file.read_bytes()
         with temp_cwd(None):
             Path(input_file.name).write_bytes(contents)
-            assert_python_ok('-Xutf8', Test_pygettext.script, '--docstrings', input_file.name)
-            output = Path('messages.pot').read_text(encoding='utf-8')
+            assert_python_ok('-Xutf8', Test_pygettext.script, *args,
+                             input_file.name)
+            yield (input_file, output_file,
+                   Path('messages.pot').read_text(encoding='utf-8'))
 
+
+def update_POT_snapshots():
+    for _, output_file, output in extract_from_snapshots():
         output = normalize_POT_file(output)
         output_file.write_text(output, encoding='utf-8')
 

@@ -68,7 +68,8 @@ free_list_items(PyObject** items, bool use_qsbr)
 #ifdef Py_GIL_DISABLED
     _PyListArray *array = _Py_CONTAINER_OF(items, _PyListArray, ob_item);
     if (use_qsbr) {
-        _PyMem_FreeDelayed(array);
+        size_t size = sizeof(_PyListArray) + array->allocated * sizeof(PyObject *);
+        _PyMem_FreeDelayed(array, size);
     }
     else {
         PyMem_Free(array);
@@ -451,7 +452,6 @@ int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
 {
-    PyObject **p;
     if (!PyList_Check(op)) {
         Py_XDECREF(newitem);
         PyErr_BadInternalCall();
@@ -467,8 +467,9 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
         ret = -1;
         goto end;
     }
-    p = self->ob_item + i;
-    Py_XSETREF(*p, newitem);
+    PyObject *tmp = self->ob_item[i];
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[i], newitem);
+    Py_XDECREF(tmp);
     ret = 0;
 end:;
     Py_END_CRITICAL_SECTION();
@@ -498,8 +499,8 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
         where = n;
     items = self->ob_item;
     for (i = n; --i >= where; )
-        items[i+1] = items[i];
-    items[where] = Py_NewRef(v);
+        FT_ATOMIC_STORE_PTR_RELAXED(items[i+1], items[i]);
+    FT_ATOMIC_STORE_PTR_RELEASE(items[where], Py_NewRef(v));
     return 0;
 }
 
@@ -585,6 +586,7 @@ list_repr_impl(PyListObject *v)
 {
     PyObject *s;
     _PyUnicodeWriter writer;
+    PyObject *item = NULL;
     Py_ssize_t i = Py_ReprEnter((PyObject*)v);
     if (i != 0) {
         return i > 0 ? PyUnicode_FromString("[...]") : NULL;
@@ -601,12 +603,15 @@ list_repr_impl(PyListObject *v)
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
     for (i = 0; i < Py_SIZE(v); ++i) {
+        /* Hold a strong reference since repr(item) can mutate the list */
+        item = Py_NewRef(v->ob_item[i]);
+
         if (i > 0) {
             if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
                 goto error;
         }
 
-        s = PyObject_Repr(v->ob_item[i]);
+        s = PyObject_Repr(item);
         if (s == NULL)
             goto error;
 
@@ -615,6 +620,7 @@ list_repr_impl(PyListObject *v)
             goto error;
         }
         Py_DECREF(s);
+        Py_CLEAR(item);
     }
 
     writer.overallocate = 0;
@@ -625,6 +631,7 @@ list_repr_impl(PyListObject *v)
     return _PyUnicodeWriter_Finish(&writer);
 
 error:
+    Py_XDECREF(item);
     _PyUnicodeWriter_Dealloc(&writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;

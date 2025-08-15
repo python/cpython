@@ -44,8 +44,20 @@
 
 #if defined(__APPLE__)
 #  include <AvailabilityMacros.h>
+#  include <TargetConditionals.h>
 #  include <mach-o/loader.h>
-#  include <os/log.h>
+// The os_log unified logging APIs were introduced in macOS 10.12, iOS 10.0,
+// tvOS 10.0, and watchOS 3.0; we enable the use of the system logger
+// automatically on non-macOS platforms.
+#  if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#    define USE_APPLE_SYSTEM_LOG 1
+#  else
+#    define USE_APPLE_SYSTEM_LOG 0
+#  endif
+
+#  if USE_APPLE_SYSTEM_LOG
+#    include <os/log.h>
+#  endif
 #endif
 
 #ifdef HAVE_SIGNAL_H
@@ -75,7 +87,7 @@ static PyStatus init_sys_streams(PyThreadState *tstate);
 #ifdef __ANDROID__
 static PyStatus init_android_streams(PyThreadState *tstate);
 #endif
-#if defined(__APPLE__)
+#if defined(__APPLE__) && USE_APPLE_SYSTEM_LOG
 static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
@@ -689,6 +701,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return  _PyStatus_NO_MEMORY();
     }
 
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     PyThreadState *tstate = _PyThreadState_New(interp,
                                                _PyThreadState_WHENCE_INIT);
     if (tstate == NULL) {
@@ -1258,12 +1275,10 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 #endif
-#if defined(__APPLE__)
-    if (config->use_system_logger) {
-        status = init_apple_streams(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+#if defined(__APPLE__) && USE_APPLE_SYSTEM_LOG
+    status = init_apple_streams(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 #endif
 
@@ -1278,8 +1293,12 @@ init_interp_main(PyThreadState *tstate)
 
     if (is_main_interp) {
         /* Initialize warnings. */
-        PyObject *warnoptions = PySys_GetObject("warnoptions");
-        if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
+        PyObject *warnoptions;
+        if (_PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
+            return _PyStatus_ERR("can't initialize warnings");
+        }
+        if (warnoptions != NULL && PyList_Check(warnoptions) &&
+            PyList_Size(warnoptions) > 0)
         {
             PyObject *warnings_module = PyImport_ImportModule("warnings");
             if (warnings_module == NULL) {
@@ -1288,6 +1307,7 @@ init_interp_main(PyThreadState *tstate)
             }
             Py_XDECREF(warnings_module);
         }
+        Py_XDECREF(warnoptions);
 
         interp->runtime->initialized = 1;
     }
@@ -1697,8 +1717,10 @@ finalize_modules(PyThreadState *tstate)
 #endif
 
     // Stop watching __builtin__ modifications
-    PyDict_Unwatch(0, interp->builtins);
-
+    if (PyDict_Unwatch(0, interp->builtins) < 0) {
+        // might happen if interp is cleared before watching the __builtin__
+        PyErr_Clear();
+    }
     PyObject *modules = _PyImport_GetModules(interp);
     if (modules == NULL) {
         // Already done
@@ -1798,24 +1820,33 @@ file_is_closed(PyObject *fobj)
 static int
 flush_std_files(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *fout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
-    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
     int status = 0;
 
-    if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        if (_PyFile_Flush(fout) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on flushing sys.stdout");
+    if (_PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
+        status = -1;
+    }
+    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+        if (_PyFile_Flush(file) < 0) {
             status = -1;
         }
     }
+    if (status < 0) {
+        PyErr_FormatUnraisable("Exception ignored on flushing sys.stdout");
+    }
+    Py_XDECREF(file);
 
-    if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        if (_PyFile_Flush(ferr) < 0) {
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+        PyErr_Clear();
+        status = -1;
+    }
+    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+        if (_PyFile_Flush(file) < 0) {
             PyErr_Clear();
             status = -1;
         }
     }
+    Py_XDECREF(file);
 
     return status;
 }
@@ -2134,7 +2165,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     /* Disable tracemalloc after all Python objects have been destroyed,
        so it is possible to use tracemalloc in objects destructor. */
-    _PyTraceMalloc_Fini();
+    _PyTraceMalloc_Stop();
 
     /* Finalize any remaining import state */
     // XXX Move these up to where finalize_modules() is currently.
@@ -2186,6 +2217,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
+    _PyTraceMalloc_Fini();
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2354,15 +2387,13 @@ new_interpreter(PyThreadState **tstate_p,
 error:
     *tstate_p = NULL;
     if (tstate != NULL) {
-        PyThreadState_Clear(tstate);
-        _PyThreadState_Detach(tstate);
-        PyThreadState_Delete(tstate);
+        Py_EndInterpreter(tstate);
+    } else {
+        PyInterpreterState_Delete(interp);
     }
     if (save_tstate != NULL) {
         _PyThreadState_Attach(save_tstate);
     }
-    PyInterpreterState_Delete(interp);
-
     return status;
 }
 
@@ -2933,7 +2964,7 @@ done:
 
 #endif  // __ANDROID__
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && USE_APPLE_SYSTEM_LOG
 
 static PyObject *
 apple_log_write_impl(PyObject *self, PyObject *args)
@@ -2944,14 +2975,9 @@ apple_log_write_impl(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    // Call the underlying Apple logging API. The os_log unified logging APIs
-    // were introduced in macOS 10.12, iOS 10.0, tvOS 10.0, and watchOS 3.0;
-    // this call is a no-op on older versions.
-    #if TARGET_OS_IPHONE || (TARGET_OS_OSX && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_12)
     // Pass the user-provided text through explicit %s formatting
     // to avoid % literals being interpreted as a formatting directive.
     os_log_with_type(OS_LOG_DEFAULT, logtype, "%s", text);
-    #endif
     Py_RETURN_NONE;
 }
 
@@ -2986,7 +3012,6 @@ init_apple_streams(PyThreadState *tstate)
     if (result == NULL) {
         goto error;
     }
-
     goto done;
 
 error:
@@ -3000,7 +3025,7 @@ done:
     return status;
 }
 
-#endif  // __APPLE__
+#endif  // __APPLE__ && USE_APPLE_SYSTEM_LOG
 
 
 static void
@@ -3030,10 +3055,14 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
         return 0;
     }
 
-    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *ferr;
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
+        _PyErr_Clear(tstate);
+    }
     if (ferr == NULL || ferr == Py_None) {
         /* sys.stderr is not set yet or set to None,
            no need to try to display the exception */
+        Py_XDECREF(ferr);
         Py_DECREF(exc);
         return 0;
     }
@@ -3049,6 +3078,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     if (_PyFile_Flush(ferr) < 0) {
         _PyErr_Clear(tstate);
     }
+    Py_DECREF(ferr);
 
     return has_tb;
 }

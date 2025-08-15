@@ -21,8 +21,6 @@
  * objects.
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
@@ -56,6 +54,8 @@
  * rare, so the exact value is unimportant.
  */
 #define STACK_USE_GUIDELINE 30
+
+#include <stdbool.h>
 
 #undef SUCCESS
 #undef ERROR
@@ -6616,8 +6616,8 @@ compiler_warn(struct compiler *c, location loc,
     if (msg == NULL) {
         return ERROR;
     }
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
-                                 loc.lineno, NULL, NULL) < 0)
+    if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
+                                             c->c_filename, loc.lineno) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError

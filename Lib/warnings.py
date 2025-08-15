@@ -413,7 +413,7 @@ def warn_explicit(message, category, filename, lineno,
               "Unrecognized action (%r) in warnings.filters:\n %s" %
               (action, item))
     # Print message and context
-    msg = WarningMessage(message, category, filename, lineno, source)
+    msg = WarningMessage(message, category, filename, lineno, source=source)
     _showwarnmsg(msg)
 
 
@@ -589,7 +589,7 @@ class deprecated:
             original_new = arg.__new__
 
             @functools.wraps(original_new)
-            def __new__(cls, *args, **kwargs):
+            def __new__(cls, /, *args, **kwargs):
                 if cls is arg:
                     warn(msg, category=category, stacklevel=stacklevel + 1)
                 if original_new is not object.__new__:

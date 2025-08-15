@@ -220,8 +220,15 @@ if "_PYTHON_PROJECT_BASE" in os.environ:
 def is_python_build(check_home=None):
     if check_home is not None:
         import warnings
-        warnings.warn("check_home argument is deprecated and ignored.",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            (
+                'The check_home argument of sysconfig.is_python_build is '
+                'deprecated and its value is ignored. '
+                'It will be removed in Python 3.15.'
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
     for fn in ("Setup", "Setup.local"):
         if os.path.isfile(os.path.join(_PROJECT_BASE, "Modules", fn)):
             return True
@@ -594,7 +601,8 @@ def get_platform():
        solaris-2.6-sun4u
 
     Windows will return one of:
-       win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+       win-amd64 (64-bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
+       win-arm64 (64-bit Windows on ARM64 (aka AArch64)
        win32 (all others - specifically, sys.platform is returned)
 
     For other non-POSIX platforms, currently just returns 'sys.platform'.
@@ -694,6 +702,9 @@ def expand_makefile_vars(s, vars):
     you're fine.  Returns a variable-expanded version of 's'.
     """
     import re
+
+    _findvar1_rx = r"\$\(([A-Za-z][A-Za-z0-9_]*)\)"
+    _findvar2_rx = r"\${([A-Za-z][A-Za-z0-9_]*)}"
 
     # This algorithm does multiple expansion, so if vars['foo'] contains
     # "${bar}", it will expand ${foo} to ${bar}, and then expand

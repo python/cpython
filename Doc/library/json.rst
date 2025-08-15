@@ -18,12 +18,17 @@ is a lightweight data interchange format inspired by
 `JavaScript <https://en.wikipedia.org/wiki/JavaScript>`_ object literal syntax
 (although it is not a strict subset of JavaScript [#rfc-errata]_ ).
 
+.. note::
+   The term "object" in the context of JSON processing in Python can be
+   ambiguous. All values in Python are objects. In JSON, an object refers to
+   any data wrapped in curly braces, similar to a Python dictionary.
+
 .. warning::
    Be cautious when parsing JSON data from untrusted sources. A malicious
    JSON string may cause the decoder to consume considerable CPU and memory
    resources. Limiting the size of data to be parsed is recommended.
 
-:mod:`json` exposes an API familiar to users of the standard library
+This module exposes an API familiar to users of the standard library
 :mod:`marshal` and :mod:`pickle` modules.
 
 Encoding basic Python object hierarchies::
@@ -60,7 +65,7 @@ Pretty printing::
         "6": 7
     }
 
-Specializing JSON object encoding::
+Customizing JSON object encoding::
 
    >>> import json
    >>> def custom_json(obj):
@@ -83,7 +88,7 @@ Decoding JSON::
     >>> json.load(io)
     ['streaming API']
 
-Specializing JSON object decoding::
+Customizing JSON object decoding::
 
     >>> import json
     >>> def as_complex(dct):
@@ -258,36 +263,86 @@ Basic Usage
       the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
       keys.
 
-.. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+.. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
+                   parse_int=None, parse_constant=None, \
+                   object_pairs_hook=None, **kw)
 
-   Deserialize *fp* (a ``.read()``-supporting :term:`text file` or
-   :term:`binary file` containing a JSON document) to a Python object using
-   this :ref:`conversion table <json-to-py-table>`.
+   Deserialize *fp* to a Python object
+   using the :ref:`JSON-to-Python conversion table <json-to-py-table>`.
 
-   *object_hook* is an optional function that will be called with the result of
-   any object literal decoded (a :class:`dict`).  The return value of
-   *object_hook* will be used instead of the :class:`dict`.  This feature can
-   be used to implement custom decoders (e.g. `JSON-RPC
-   <https://www.jsonrpc.org>`_ class hinting).
+   :param fp:
+      A ``.read()``-supporting :term:`text file` or :term:`binary file`
+      containing the JSON document to be deserialized.
+   :type fp: :term:`file-like object`
 
-   *object_pairs_hook* is an optional function that will be called with the
-   result of any object literal decoded with an ordered list of pairs.  The
-   return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders.  If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :param cls:
+      If set, a custom JSON decoder.
+      Additional keyword arguments to :func:`!load`
+      will be passed to the constructor of *cls*.
+      If ``None`` (the default), :class:`!JSONDecoder` is used.
+   :type cls: a :class:`JSONDecoder` subclass
+
+   :param object_hook:
+      If set, a function that is called with the result of
+      any JSON object literal decoded (a :class:`dict`).
+      The return value of this function will be used
+      instead of the :class:`dict`.
+      This feature can be used to implement custom decoders,
+      for example `JSON-RPC <https://www.jsonrpc.org>`_ class hinting.
+      Default ``None``.
+   :type object_hook: :term:`callable` | None
+
+   :param object_pairs_hook:
+      If set, a function that is called with the result of
+      any JSON object literal decoded with an ordered list of pairs.
+      The return value of this function will be used
+      instead of the :class:`dict`.
+      This feature can be used to implement custom decoders.
+      If *object_hook* is also set, *object_pairs_hook* takes priority.
+      Default ``None``.
+   :type object_pairs_hook: :term:`callable` | None
+
+   :param parse_float:
+      If set, a function that is called with
+      the string of every JSON float to be decoded.
+      If ``None`` (the default), it is equivalent to ``float(num_str)``.
+      This can be used to parse JSON floats into custom datatypes,
+      for example :class:`decimal.Decimal`.
+   :type parse_float: :term:`callable` | None
+
+   :param parse_int:
+      If set, a function that is called with
+      the string of every JSON int to be decoded.
+      If ``None`` (the default), it is equivalent to ``int(num_str)``.
+      This can be used to parse JSON integers into custom datatypes,
+      for example :class:`float`.
+   :type parse_int: :term:`callable` | None
+
+   :param parse_constant:
+      If set, a function that is called with one of the following strings:
+      ``'-Infinity'``, ``'Infinity'``, or ``'NaN'``.
+      This can be used to raise an exception
+      if invalid JSON numbers are encountered.
+      Default ``None``.
+   :type parse_constant: :term:`callable` | None
+
+   :raises JSONDecodeError:
+      When the data being deserialized is not a valid JSON document.
+
+   :raises UnicodeDecodeError:
+      When the data being deserialized does not contain
+      UTF-8, UTF-16 or UTF-32 encoded data.
 
    .. versionchanged:: 3.1
-      Added support for *object_pairs_hook*.
 
-   *parse_float* is an optional function that will be called with the string of
-   every JSON float to be decoded.  By default, this is equivalent to
-   ``float(num_str)``.  This can be used to use another datatype or parser for
-   JSON floats (e.g. :class:`decimal.Decimal`).
+      * Added the optional *object_pairs_hook* parameter.
+      * *parse_constant* doesn't get called on 'null', 'true', 'false' anymore.
 
-   *parse_int* is an optional function that will be called with the string of
-   every JSON int to be decoded.  By default, this is equivalent to
-   ``int(num_str)``.  This can be used to use another datatype or parser for
-   JSON integers (e.g. :class:`float`).
+   .. versionchanged:: 3.6
+
+      * All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+      * *fp* can now be a :term:`binary file`.
+        The input encoding should be UTF-8, UTF-16 or UTF-32.
 
    .. versionchanged:: 3.11
       The default *parse_int* of :func:`int` now limits the maximum length of
@@ -295,37 +350,12 @@ Basic Usage
       conversion length limitation <int_max_str_digits>` to help avoid denial
       of service attacks.
 
-   *parse_constant* is an optional function that will be called with one of the
-   following strings: ``'-Infinity'``, ``'Infinity'``, ``'NaN'``.  This can be
-   used to raise an exception if invalid JSON numbers are encountered.
-
-   .. versionchanged:: 3.1
-      *parse_constant* doesn't get called on 'null', 'true', 'false' anymore.
-
-   To use a custom :class:`JSONDecoder` subclass, specify it with the ``cls``
-   kwarg; otherwise :class:`JSONDecoder` is used.  Additional keyword arguments
-   will be passed to the constructor of the class.
-
-   If the data being deserialized is not a valid JSON document, a
-   :exc:`JSONDecodeError` will be raised.
-
-   .. versionchanged:: 3.6
-      All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
-
-   .. versionchanged:: 3.6
-      *fp* can now be a :term:`binary file`. The input encoding should be
-      UTF-8, UTF-16 or UTF-32.
-
 .. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
+   Identical to :func:`load`, but instead of a file-like object,
+   deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
    instance containing a JSON document) to a Python object using this
    :ref:`conversion table <json-to-py-table>`.
-
-   The other arguments have the same meaning as in :func:`load`.
-
-   If the data being deserialized is not a valid JSON document, a
-   :exc:`JSONDecodeError` will be raised.
 
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
@@ -461,8 +491,8 @@ Encoders and Decoders
    (to raise :exc:`TypeError`).
 
    If *skipkeys* is false (the default), a :exc:`TypeError` will be raised when
-   trying to encode keys that are not :class:`str`, :class:`int`, :class:`float`
-   or ``None``.  If *skipkeys* is true, such items are simply skipped.
+   trying to encode keys that are not :class:`str`, :class:`int`, :class:`float`,
+   :class:`bool` or ``None``.  If *skipkeys* is true, such items are simply skipped.
 
    If *ensure_ascii* is true (the default), the output is guaranteed to
    have all incoming non-ASCII characters escaped.  If *ensure_ascii* is

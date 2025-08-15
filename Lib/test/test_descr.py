@@ -15,6 +15,7 @@ import weakref
 from copy import deepcopy
 from contextlib import redirect_stdout
 from test import support
+from test.support.testcase import ExtraAssertions
 
 try:
     import _testcapi
@@ -403,15 +404,7 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(range(sys.maxsize).__len__(), sys.maxsize)
 
 
-class ClassPropertiesAndMethods(unittest.TestCase):
-
-    def assertHasAttr(self, obj, name):
-        self.assertTrue(hasattr(obj, name),
-                        '%r has no attribute %r' % (obj, name))
-
-    def assertNotHasAttr(self, obj, name):
-        self.assertFalse(hasattr(obj, name),
-                         '%r has unexpected attribute %r' % (obj, name))
+class ClassPropertiesAndMethods(unittest.TestCase, ExtraAssertions):
 
     def test_python_dicts(self):
         # Testing Python subclass of dict...
@@ -1197,10 +1190,9 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             pass
         else:
             self.fail("[''] slots not caught")
-        class C(object):
+
+        class WithValidIdentifiers(object):
             __slots__ = ["a", "a_b", "_a", "A0123456789Z"]
-        # XXX(nnorwitz): was there supposed to be something tested
-        # from the class above?
 
         # Test a single string is not expanded as a sequence.
         class C(object):
@@ -1596,7 +1588,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         cm_dict = {'__annotations__': {},
                    '__doc__': (
                        "f docstring"
-                       if support.HAVE_DOCSTRINGS
+                       if support.HAVE_PY_DOCSTRINGS
                        else None
                     ),
                    '__module__': __name__,
@@ -5185,10 +5177,15 @@ class MiscTests(unittest.TestCase):
 
         with self.assertWarnsRegex(RuntimeWarning, 'X'):
             X = type('X', (Base,), {MyKey(): 5})
+
+        # Note that the access below uses getattr() rather than normally
+        # accessing the attribute.  That is done to avoid the bytecode
+        # specializer activating on repeated runs of the test.
+
         # mykey is read from Base
-        self.assertEqual(X.mykey, 'from Base')
+        self.assertEqual(getattr(X, 'mykey'), 'from Base')
         # mykey2 is read from Base2 because MyKey.__eq__ has set __bases__
-        self.assertEqual(X.mykey2, 'from Base2')
+        self.assertEqual(getattr(X, 'mykey2'), 'from Base2')
 
 
 class PicklingTests(unittest.TestCase):

@@ -330,6 +330,64 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         # shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
+    @classmethod
+    def _failing_task_gh_132969(cls, n):
+        raise ValueError("failing task")
+
+    @classmethod
+    def _good_task_gh_132969(cls, n):
+        time.sleep(0.1 * n)
+        return n
+
+    def _run_test_issue_gh_132969(self, max_workers):
+        # max_workers=2 will repro exception
+        # max_workers=4 will repro exception and then hang
+
+        # Repro conditions
+        #   max_tasks_per_child=1
+        #   a task ends abnormally
+        #   shutdown(wait=False) is called
+        start_method = self.get_context().get_start_method()
+        if (start_method == "fork" or
+           (start_method == "forkserver" and sys.platform.startswith("win"))):
+                self.skipTest(f"Skipping test for {start_method = }")
+        executor = futures.ProcessPoolExecutor(
+                max_workers=max_workers,
+                max_tasks_per_child=1,
+                mp_context=self.get_context())
+        f1 = executor.submit(ProcessPoolShutdownTest._good_task_gh_132969, 1)
+        f2 = executor.submit(ProcessPoolShutdownTest._failing_task_gh_132969, 2)
+        f3 = executor.submit(ProcessPoolShutdownTest._good_task_gh_132969, 3)
+        result = 0
+        try:
+            result += f1.result()
+            result += f2.result()
+            result += f3.result()
+        except ValueError:
+            # stop processing results upon first exception
+            pass
+
+        # Ensure that the executor cleans up after called
+        # shutdown with wait=False
+        executor_manager_thread = executor._executor_manager_thread
+        executor.shutdown(wait=False)
+        time.sleep(0.2)
+        executor_manager_thread.join()
+        return result
+
+    def test_shutdown_gh_132969_case_1(self):
+        # gh-132969: test that exception "object of type 'NoneType' has no len()"
+        # is not raised when shutdown(wait=False) is called.
+        result = self._run_test_issue_gh_132969(2)
+        self.assertEqual(result, 1)
+
+    def test_shutdown_gh_132969_case_2(self):
+        # gh-132969: test that process does not hang and
+        # exception "object of type 'NoneType' has no len()" is not raised
+        # when shutdown(wait=False) is called.
+        result = self._run_test_issue_gh_132969(4)
+        self.assertEqual(result, 1)
+
 
 create_executor_tests(globals(), ProcessPoolShutdownTest,
                       executor_mixins=(ProcessPoolForkMixin,

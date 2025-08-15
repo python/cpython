@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 
 #include "clinic/classobject.c.h"
@@ -238,8 +239,7 @@ static void
 method_dealloc(PyMethodObject *im)
 {
     _PyObject_GC_UNTRACK(im);
-    if (im->im_weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *)im);
+    FT_CLEAR_WEAKREFS((PyObject*)im, im->im_weakreflist);
     Py_DECREF(im->im_func);
     Py_XDECREF(im->im_self);
     PyObject_GC_Del(im);

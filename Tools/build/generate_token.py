@@ -1,10 +1,17 @@
 #! /usr/bin/env python3
 # This script generates token related files from Grammar/Tokens:
 #
-#   Doc/library/token-list.inc
-#   Include/token.h
-#   Parser/token.c
-#   Lib/token.py
+#   make_rst:
+#       Doc/library/token-list.inc
+#       Doc/library/token.rst  (checked, not generated)
+#   make_h:
+#       Include/token.h
+#   make_c:
+#       Parser/token.c
+#   make_py:
+#       Lib/token.py
+
+import re
 
 
 SCRIPT_NAME = 'Tools/build/generate_token.py'
@@ -199,23 +206,51 @@ def make_c(infile, outfile='Parser/token.c'):
 
 token_inc_template = f"""\
 .. {AUTO_GENERATED_BY_SCRIPT}
-%s
-.. data:: N_TOKENS
 
-.. data:: NT_OFFSET
+.. list-table::
+   :align: left
+   :header-rows: 1
+
+   * - Token
+     - Value
+%s
 """
 
-def make_rst(infile, outfile='Doc/library/token-list.inc'):
+def make_rst(infile, outfile='Doc/library/token-list.inc',
+             rstfile='Doc/library/token.rst'):
     tok_names, ERRORTOKEN, string_to_tok = load_tokens(infile)
     tok_to_string = {value: s for s, value in string_to_tok.items()}
 
+    needs_handwritten_doc = set()
+
     names = []
-    for value, name in enumerate(tok_names[:ERRORTOKEN + 1]):
-        names.append('.. data:: %s' % (name,))
+    for value, name in enumerate(tok_names):
         if value in tok_to_string:
-            names.append('')
-            names.append('   Token value for ``"%s"``.' % tok_to_string[value])
-        names.append('')
+            assert name.isupper()
+            names.append(f'   * - .. data:: {name}')
+            names.append(f'     - ``"{tok_to_string[value]}"``')
+        else:
+            needs_handwritten_doc.add(name)
+
+    has_handwritten_doc = set()
+    with open(rstfile) as fileobj:
+        tokendef_re = re.compile(r'.. data:: ([0-9A-Z_]+)\s*')
+        for line in fileobj:
+            if match := tokendef_re.fullmatch(line):
+                has_handwritten_doc.add(match[1])
+
+    # Exclude non-token constants in token.py
+    has_handwritten_doc -= {'N_TOKENS', 'NT_OFFSET', 'EXACT_TOKEN_TYPES'}
+
+    if needs_handwritten_doc != has_handwritten_doc:
+        message_parts = [f'ERROR: {rstfile} does not document all tokens!']
+        undocumented = needs_handwritten_doc - has_handwritten_doc
+        extra = has_handwritten_doc - needs_handwritten_doc
+        if undocumented:
+            message_parts.append(f'Undocumented tokens: {undocumented}')
+        if extra:
+            message_parts.append(f'Documented nonexistent tokens: {extra}')
+        exit('\n'.join(message_parts))
 
     if update_file(outfile, token_inc_template % '\n'.join(names)):
         print("%s regenerated from %s" % (outfile, infile))

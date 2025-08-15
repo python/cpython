@@ -56,8 +56,8 @@ Some facts and figures:
    +------------------+---------------------------------------------+
    | mode             | action                                      |
    +==================+=============================================+
-   | ``'r' or 'r:*'`` | Open for reading with transparent           |
-   |                  | compression (recommended).                  |
+   | ``'r'`` or       | Open for reading with transparent           |
+   | ``'r:*'``        | compression (recommended).                  |
    +------------------+---------------------------------------------+
    | ``'r:'``         | Open for reading exclusively without        |
    |                  | compression.                                |
@@ -85,10 +85,11 @@ Some facts and figures:
    |                  | Raise a :exc:`FileExistsError` exception    |
    |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
-   | ``'a' or 'a:'``  | Open for appending with no compression. The |
-   |                  | file is created if it does not exist.       |
+   | ``'a'`` or       | Open for appending with no compression. The |
+   | ``'a:'``         | file is created if it does not exist.       |
    +------------------+---------------------------------------------+
-   | ``'w' or 'w:'``  | Open for uncompressed writing.              |
+   | ``'w'`` or       | Open for uncompressed writing.              |
+   | ``'w:'``         |                                             |
    +------------------+---------------------------------------------+
    | ``'w:gz'``       | Open for gzip compressed writing.           |
    +------------------+---------------------------------------------+
@@ -248,6 +249,15 @@ The :mod:`tarfile` module defines the following exceptions:
 
    Raised to refuse extracting a symbolic link pointing outside the destination
    directory.
+
+.. exception:: LinkFallbackError
+
+   Raised to refuse emulating a link (hard or symbolic) by extracting another
+   archive member, when that member would be rejected by the filter location.
+   The exception that was raised to reject the replacement member is available
+   as :attr:`!BaseException.__context__`.
+
+   .. versionadded:: 3.13.4
 
 
 The following constants are available at the module level:
@@ -1052,6 +1062,12 @@ reused in custom filters:
   Implements the ``'data'`` filter.
   In addition to what ``tar_filter`` does:
 
+  - Normalize link targets (:attr:`TarInfo.linkname`) using
+    :func:`os.path.normpath`.
+    Note that this removes internal ``..`` components, which may change the
+    meaning of the link if the path in :attr:`!TarInfo.linkname` traverses
+    symbolic links.
+
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract links (hard or soft)
     that link to absolute paths, or ones that link outside the destination.
 
@@ -1080,6 +1096,10 @@ reused in custom filters:
 
   Return the modified ``TarInfo`` member.
 
+  .. versionchanged:: 3.13.4
+
+     Link targets are now normalized.
+
 
 .. _tarfile-extraction-refuse:
 
@@ -1106,6 +1126,7 @@ Here is an incomplete list of things to consider:
 * Extract to a :func:`new temporary directory <tempfile.mkdtemp>`
   to prevent e.g. exploiting pre-existing links, and to make it easier to
   clean up after a failed extraction.
+* Disallow symbolic links if you do not need the functionality.
 * When working with untrusted data, use external (e.g. OS-level) limits on
   disk, memory and CPU usage.
 * Check filenames against an allow-list of characters
@@ -1283,6 +1304,9 @@ Command-line options
 Examples
 --------
 
+Reading examples
+~~~~~~~~~~~~~~~~~~~
+
 How to extract an entire tar archive to the current working directory::
 
    import tarfile
@@ -1305,6 +1329,23 @@ a generator function instead of a list::
    tar.extractall(members=py_files(tar))
    tar.close()
 
+How to read a gzip compressed tar archive and display some member information::
+
+   import tarfile
+   tar = tarfile.open("sample.tar.gz", "r:gz")
+   for tarinfo in tar:
+       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
+       if tarinfo.isreg():
+           print("a regular file.")
+       elif tarinfo.isdir():
+           print("a directory.")
+       else:
+           print("something else.")
+   tar.close()
+
+Writing examples
+~~~~~~~~~~~~~~~~
+
 How to create an uncompressed tar archive from a list of filenames::
 
    import tarfile
@@ -1320,19 +1361,15 @@ The same example using the :keyword:`with` statement::
         for name in ["foo", "bar", "quux"]:
             tar.add(name)
 
-How to read a gzip compressed tar archive and display some member information::
+How to create and write an archive to stdout using
+:data:`sys.stdout.buffer <sys.stdout>` in the *fileobj* parameter
+in :meth:`TarFile.add`::
 
-   import tarfile
-   tar = tarfile.open("sample.tar.gz", "r:gz")
-   for tarinfo in tar:
-       print(tarinfo.name, "is", tarinfo.size, "bytes in size and is ", end="")
-       if tarinfo.isreg():
-           print("a regular file.")
-       elif tarinfo.isdir():
-           print("a directory.")
-       else:
-           print("something else.")
-   tar.close()
+    import sys
+    import tarfile
+    with tarfile.open("sample.tar.gz", "w|gz", fileobj=sys.stdout.buffer) as tar:
+        for name in ["foo", "bar", "quux"]:
+            tar.add(name)
 
 How to create an archive and reset the user information using the *filter*
 parameter in :meth:`TarFile.add`::

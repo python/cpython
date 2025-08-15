@@ -29,6 +29,9 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
+* `libmpdec <https://www.bytereef.org/mpdecimal/doc/libmpdec/>`_ 2.5.0
+  for the :mod:`decimal` module.
+
 * Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
@@ -313,6 +316,10 @@ General Options
    * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
 
    By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+
+   .. note::
+
+      When building CPython with JIT enabled, ensure that your system has Python 3.11 or later installed.
 
    .. versionadded:: 3.13
 
@@ -764,6 +771,9 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
+   To improve ASan detection capabilities you may also want to combine this
+   with :option:`--without-pymalloc` to disable the specialized small-object
+   allocator whose allocations are not tracked by ASan.
 
    .. versionadded:: 3.6
 
@@ -944,14 +954,20 @@ See :source:`Mac/README.rst`.
 
    Options:
 
-   * ``universal2``;
-   * ``32-bit``;
-   * ``64-bit``;
-   * ``3-way``;
-   * ``intel``;
-   * ``intel-32``;
-   * ``intel-64``;
-   * ``all``.
+   * ``universal2`` (x86-64 and arm64);
+   * ``32-bit`` (PPC and i386);
+   * ``64-bit``  (PPC64 and x86-64);
+   * ``3-way`` (i386, PPC and x86-64);
+   * ``intel`` (i386 and x86-64);
+   * ``intel-32`` (i386);
+   * ``intel-64`` (x86-64);
+   * ``all``  (PPC, i386, PPC64 and x86-64).
+
+   Note that values for this configuration item are *not* the same as the
+   identifiers used for universal binary wheels on macOS. See the Python
+   Packaging User Guide for details on the `packaging platform compatibility
+   tags used on macOS
+   <https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#macos>`_
 
 .. option:: --with-framework-name=FRAMEWORK
 

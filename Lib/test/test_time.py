@@ -157,10 +157,19 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(int(time.mktime(time.localtime(self.t))),
                          int(self.t))
 
-    def test_sleep(self):
+    def test_sleep_exceptions(self):
+        self.assertRaises(TypeError, time.sleep, [])
+        self.assertRaises(TypeError, time.sleep, "a")
+        self.assertRaises(TypeError, time.sleep, complex(0, 0))
+
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
-        time.sleep(1.2)
+        self.assertRaises(ValueError, time.sleep, -0.1)
+
+    def test_sleep(self):
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2]:
+            with self.subTest(value=value):
+                time.sleep(value)
 
     def test_epoch(self):
         # bpo-43869: Make sure that Python use the same Epoch on all platforms:
@@ -330,11 +339,11 @@ class TimeTestCase(unittest.TestCase):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
             time.strptime('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
-        # additional check for IndexError branch (issue #19545)
+        self.assertTrue(e.exception.__suppress_context__)
+        # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
-            time.strptime('19', '%Y %')
-        self.assertIsNone(e.exception.__context__)
+            time.strptime('%', '%')
+        self.assertTrue(e.exception.__suppress_context__)
 
     def test_strptime_leap_year(self):
         # GH-70647: warns if parsing a format with a day and no year.

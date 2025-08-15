@@ -1325,9 +1325,9 @@ x = (
 
     def test_conversions(self):
         self.assertEqual(f'{3.14:10.10}', '      3.14')
-        self.assertEqual(f'{3.14!s:10.10}', '3.14      ')
-        self.assertEqual(f'{3.14!r:10.10}', '3.14      ')
-        self.assertEqual(f'{3.14!a:10.10}', '3.14      ')
+        self.assertEqual(f'{1.25!s:10.10}', '1.25      ')
+        self.assertEqual(f'{1.25!r:10.10}', '1.25      ')
+        self.assertEqual(f'{1.25!a:10.10}', '1.25      ')
 
         self.assertEqual(f'{"a"}', 'a')
         self.assertEqual(f'{"a"!r}', "'a'")
@@ -1336,7 +1336,7 @@ x = (
         # Conversions can have trailing whitespace after them since it
         # does not provide any significance
         self.assertEqual(f"{3!s  }", "3")
-        self.assertEqual(f'{3.14!s  :10.10}', '3.14      ')
+        self.assertEqual(f'{1.25!s  :10.10}', '1.25      ')
 
         # Not a conversion.
         self.assertEqual(f'{"a!r"}', "a!r")
@@ -1370,7 +1370,7 @@ x = (
         for conv in ' s', ' s ':
             self.assertAllRaise(SyntaxError,
                                 "f-string: conversion type must come right after the"
-                                " exclamanation mark",
+                                " exclamation mark",
                                 ["f'{3!" + conv + "}'"])
 
         self.assertAllRaise(SyntaxError,
@@ -1641,6 +1641,18 @@ x = (
         self.assertEqual(f"{1+2 = # my comment
   }", '1+2 = \n  3')
 
+        self.assertEqual(f'{""" # booo
+  """=}', '""" # booo\n  """=\' # booo\\n  \'')
+
+        self.assertEqual(f'{" # nooo "=}', '" # nooo "=\' # nooo \'')
+        self.assertEqual(f'{" \" # nooo \" "=}', '" \\" # nooo \\" "=\' " # nooo " \'')
+
+        self.assertEqual(f'{ # some comment goes here
+  """hello"""=}',  ' \n  """hello"""=\'hello\'')
+        self.assertEqual(f'{"""# this is not a comment
+        a""" # this is a comment
+        }', '# this is not a comment\n        a')
+
         # These next lines contains tabs.  Backslash escapes don't
         # work in f-strings.
         # patchcheck doesn't like these tabs.  So the only way to test
@@ -1649,6 +1661,15 @@ x = (
         # the tabs to spaces just to shut up patchcheck.
         #self.assertEqual(f'X{x =}Y', 'Xx\t='+repr(x)+'Y')
         #self.assertEqual(f'X{x =       }Y', 'Xx\t=\t'+repr(x)+'Y')
+
+    def test_debug_expressions_are_raw_strings(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            self.assertEqual(eval("""f'{b"\\N{OX}"=}'"""), 'b"\\N{OX}"=b\'\\\\N{OX}\'')
+        self.assertEqual(f'{r"\xff"=}', 'r"\\xff"=\'\\\\xff\'')
+        self.assertEqual(f'{r"\n"=}', 'r"\\n"=\'\\\\n\'')
+        self.assertEqual(f"{'\''=}", "'\\''=\"'\"")
+        self.assertEqual(f'{'\xc5'=}', r"'\xc5'='Å'")
 
     def test_walrus(self):
         x = 20
@@ -1757,6 +1778,77 @@ print(f'''{{
 
         for s in ["", "some string"]:
             self.assertEqual(get_code(f"'{s}'"), get_code(f"f'{s}'"))
+
+    def test_gh129093(self):
+        self.assertEqual(f'{1==2=}', '1==2=False')
+        self.assertEqual(f'{1 == 2=}', '1 == 2=False')
+        self.assertEqual(f'{1!=2=}', '1!=2=True')
+        self.assertEqual(f'{1 != 2=}', '1 != 2=True')
+
+        self.assertEqual(f'{(1) != 2=}', '(1) != 2=True')
+        self.assertEqual(f'{(1*2) != (3)=}', '(1*2) != (3)=True')
+
+        self.assertEqual(f'{1 != 2 == 3 != 4=}', '1 != 2 == 3 != 4=False')
+        self.assertEqual(f'{1 == 2 != 3 == 4=}', '1 == 2 != 3 == 4=False')
+
+        self.assertEqual(f'{f'{1==2=}'=}', "f'{1==2=}'='1==2=False'")
+        self.assertEqual(f'{f'{1 == 2=}'=}', "f'{1 == 2=}'='1 == 2=False'")
+        self.assertEqual(f'{f'{1!=2=}'=}', "f'{1!=2=}'='1!=2=True'")
+        self.assertEqual(f'{f'{1 != 2=}'=}', "f'{1 != 2=}'='1 != 2=True'")
+
+    def test_newlines_in_format_specifiers(self):
+        cases = [
+            """f'{1:d\n}'""",
+            """f'__{
+                1:d
+            }__'""",
+            '''f"{value:.
+               {'2f'}}"''',
+            '''f"{value:
+               {'.2f'}f}"''',
+            '''f"{value:
+                #{'x'}}"''',
+        ]
+        self.assertAllRaise(SyntaxError, "f-string: newlines are not allowed in format specifiers", cases)
+
+        valid_cases = [
+            """f'''__{
+                1:d
+            }__'''""",
+            """f'''{1:d\n}'''""",
+        ]
+
+        for case in valid_cases:
+            compile(case, "<string>", "exec")
+
+    def test_raw_fstring_format_spec(self):
+        # Test raw f-string format spec behavior (Issue #137314).
+        #
+        # Raw f-strings should preserve literal backslashes in format specifications,
+        # not interpret them as escape sequences.
+        class UnchangedFormat:
+            """Test helper that returns the format spec unchanged."""
+            def __format__(self, format):
+                return format
+
+        # Test basic escape sequences
+        self.assertEqual(f"{UnchangedFormat():\xFF}", 'ÿ')
+        self.assertEqual(rf"{UnchangedFormat():\xFF}", '\\xFF')
+
+        # Test nested expressions with raw/non-raw combinations
+        self.assertEqual(rf"{UnchangedFormat():{'\xFF'}}", 'ÿ')
+        self.assertEqual(f"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+        self.assertEqual(rf"{UnchangedFormat():{r'\xFF'}}", '\\xFF')
+
+        # Test continuation character in format specs
+        self.assertEqual(f"""{UnchangedFormat():{'a'\
+                        'b'}}""", 'ab')
+        self.assertEqual(rf"""{UnchangedFormat():{'a'\
+                         'b'}}""", 'ab')
+
+        # Test multiple format specs in same raw f-string
+        self.assertEqual(rf"{UnchangedFormat():\xFF} {UnchangedFormat():\n}", '\\xFF \\n')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -72,7 +72,7 @@ extern void _Py_ForgetReference(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
-   designated initializer conflicts in C++20. If we use the deinition in
+   designated initializer conflicts in C++20. If we use the definition in
    object.h, we will be mixing designated and non-designated initializers in
    pycore objects which is forbiddent in C++20. However, if we then use
    designated initializers in object.h then Extensions without designated break.
@@ -155,11 +155,32 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
     }
 #endif
+    // Although the ref count was increased by `n` (which may be greater than 1)
+    // it is only a single increment (i.e. addition) operation, so only 1 refcnt
+    // increment operation is counted.
+    _Py_INCREF_STAT_INC();
 }
 #define _Py_RefcntAdd(op, n) _Py_RefcntAdd(_PyObject_CAST(op), n)
 
 extern void _Py_SetImmortal(PyObject *op);
 extern void _Py_SetImmortalUntracked(PyObject *op);
+
+// Checks if an object has a single, unique reference. If the caller holds a
+// unique reference, it may be able to safely modify the object in-place.
+static inline int
+_PyObject_IsUniquelyReferenced(PyObject *ob)
+{
+#if !defined(Py_GIL_DISABLED)
+    return Py_REFCNT(ob) == 1;
+#else
+    // NOTE: the entire ob_ref_shared field must be zero, including flags, to
+    // ensure that other threads cannot concurrently create new references to
+    // this object.
+    return (_Py_IsOwnedByCurrentThread(ob) &&
+            _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local) == 1 &&
+            _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared) == 0);
+#endif
+}
 
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.

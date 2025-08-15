@@ -2149,7 +2149,8 @@ dummy_func(
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL);
-            assert(PyDict_CheckExact((PyObject *)dict));
+            DEOPT_IF(!PyDict_CheckExact((PyObject *)dict));
+
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
             PyObject *old_value;
@@ -3631,7 +3632,7 @@ dummy_func(
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append);
-            assert(self != NULL);
+            DEOPT_IF(self == NULL);
             DEOPT_IF(!PyList_Check(self));
             STAT_INC(CALL, hit);
             if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
@@ -3686,12 +3687,14 @@ dummy_func(
                 args--;
                 total_args++;
             }
+            DEOPT_IF(total_args == 0);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
             DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
             PyTypeObject *d_type = method->d_common.d_type;
             PyObject *self = args[0];
+            assert(self != NULL);
             DEOPT_IF(!Py_IS_TYPE(self, d_type));
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
@@ -3754,11 +3757,13 @@ dummy_func(
                 total_args++;
             }
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            DEOPT_IF(total_args == 0);
             /* Builtin METH_FASTCALL methods, without keywords */
             DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL);
             PyObject *self = args[0];
+            assert(self != NULL);
             DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyCFunctionFast cfunc =

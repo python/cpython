@@ -31,6 +31,7 @@ import weakref
 import platform
 import sysconfig
 import functools
+from contextlib import nullcontext
 try:
     import ctypes
 except ImportError:
@@ -183,7 +184,8 @@ if is_ubuntu():
         for ctx in ctxs:
             if (
                 hasattr(ctx, "minimum_version") and
-                ctx.minimum_version <= ssl.TLSVersion.TLSv1_1
+                ctx.minimum_version <= ssl.TLSVersion.TLSv1_1 and
+                ctx.security_level > 1
             ):
                 ctx.set_ciphers("@SECLEVEL=1:ALL")
 else:
@@ -1264,6 +1266,25 @@ class ContextTests(unittest.TestCase):
         # Make sure the password function isn't called if it isn't needed
         ctx.load_cert_chain(CERTFILE, password=getpass_exception)
 
+    @threading_helper.requires_working_threading()
+    def test_load_cert_chain_thread_safety(self):
+        # gh-134698: _ssl detaches the thread state (and as such,
+        # releases the GIL and critical sections) around expensive
+        # OpenSSL calls. Unfortunately, OpenSSL structures aren't
+        # thread-safe, so executing these calls concurrently led
+        # to crashes.
+        ctx = ssl.create_default_context()
+
+        def race():
+            ctx.load_cert_chain(CERTFILE)
+
+        threads = [threading.Thread(target=race) for _ in range(8)]
+        with threading_helper.catch_threading_exception() as cm:
+            with threading_helper.start_threads(threads):
+                pass
+
+            self.assertIsNone(cm.exc_value)
+
     def test_load_verify_locations(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_verify_locations(CERTFILE)
@@ -1348,10 +1369,14 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ssl.SSLError):
             ctx.load_verify_locations(cadata=cacert_der + b"A")
 
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_load_dh_params(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ctx.load_dh_params(DHFILE)
+        try:
+            ctx.load_dh_params(DHFILE)
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
         if os.name != 'nt':
             ctx.load_dh_params(BYTES_DHFILE)
         self.assertRaises(TypeError, ctx.load_dh_params)
@@ -1676,12 +1701,17 @@ class SSLErrorTests(unittest.TestCase):
         self.assertEqual(str(e), "foo")
         self.assertEqual(e.errno, 1)
 
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_lib_reason(self):
         # Test the library and reason attributes
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        with self.assertRaises(ssl.SSLError) as cm:
-            ctx.load_dh_params(CERTFILE)
+        try:
+            with self.assertRaises(ssl.SSLError) as cm:
+                ctx.load_dh_params(CERTFILE)
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
+
         self.assertEqual(cm.exception.library, 'PEM')
         regex = "(NO_START_LINE|UNSUPPORTED_PUBLIC_KEY_TYPE)"
         self.assertRegex(cm.exception.reason, regex)
@@ -2801,6 +2831,14 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
                                  % (expect_success, stats['version']))
 
 
+def supports_kx_alias(ctx, aliases):
+    for cipher in ctx.get_ciphers():
+        for alias in aliases:
+            if f"Kx={alias}" in cipher['description']:
+                return True
+    return False
+
+
 class ThreadedTests(unittest.TestCase):
 
     @support.requires_resource('walltime')
@@ -2861,7 +2899,10 @@ class ThreadedTests(unittest.TestCase):
                 self.test_alpn_protocols,
                 self.test_getpeercert,
                 self.test_crl_check,
-                self.test_check_hostname_idn,
+                functools.partial(
+                    self.test_check_hostname_idn,
+                    warnings_filters=False,  # gh-126483
+                ),
                 self.test_wrong_cert_tls12,
                 self.test_wrong_cert_tls13,
             ):
@@ -3107,7 +3148,7 @@ class ThreadedTests(unittest.TestCase):
                 cipher = s.cipher()[0].split('-')
                 self.assertTrue(cipher[:2], ('ECDHE', 'ECDSA'))
 
-    def test_check_hostname_idn(self):
+    def test_check_hostname_idn(self, warnings_filters=True):
         if support.verbose:
             sys.stdout.write("\n")
 
@@ -3162,16 +3203,30 @@ class ThreadedTests(unittest.TestCase):
                                      server_hostname="python.example.org") as s:
                 with self.assertRaises(ssl.CertificateError):
                     s.connect((HOST, server.port))
-        with ThreadedEchoServer(context=server_context, chatty=True) as server:
-            with warnings_helper.check_no_resource_warning(self):
-                with self.assertRaises(UnicodeError):
-                    context.wrap_socket(socket.socket(),
-                            server_hostname='.pythontest.net')
-        with ThreadedEchoServer(context=server_context, chatty=True) as server:
-            with warnings_helper.check_no_resource_warning(self):
-                with self.assertRaises(UnicodeDecodeError):
-                    context.wrap_socket(socket.socket(),
-                            server_hostname=b'k\xf6nig.idn.pythontest.net')
+        with (
+            ThreadedEchoServer(context=server_context, chatty=True) as server,
+            (
+                warnings_helper.check_no_resource_warning(self)
+                if warnings_filters
+                else nullcontext()
+            ),
+            self.assertRaises(UnicodeError),
+        ):
+            context.wrap_socket(socket.socket(), server_hostname='.pythontest.net')
+
+        with (
+            ThreadedEchoServer(context=server_context, chatty=True) as server,
+            (
+                warnings_helper.check_no_resource_warning(self)
+                if warnings_filters
+                else nullcontext()
+            ),
+            self.assertRaises(UnicodeDecodeError),
+        ):
+            context.wrap_socket(
+                socket.socket(),
+                server_hostname=b'k\xf6nig.idn.pythontest.net',
+            )
 
     def test_wrong_cert_tls12(self):
         """Connecting when the server rejects the client's certificate
@@ -4060,13 +4115,22 @@ class ThreadedTests(unittest.TestCase):
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
 
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_dh_params(self):
-        # Check we can get a connection with ephemeral Diffie-Hellman
+        # Check we can get a connection with ephemeral finite-field
+        # Diffie-Hellman (if supported).
         client_context, server_context, hostname = testing_context()
+        dhe_aliases = {"ADH", "EDH", "DHE"}
+        if not (supports_kx_alias(client_context, dhe_aliases)
+                and supports_kx_alias(server_context, dhe_aliases)):
+            self.skipTest("libssl doesn't support ephemeral DH")
         # test scenario needs TLS <= 1.2
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
-        server_context.load_dh_params(DHFILE)
+        try:
+            server_context.load_dh_params(DHFILE)
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
         server_context.set_ciphers("kEDH")
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
         stats = server_params_test(client_context, server_context,
@@ -4074,7 +4138,7 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
         cipher = stats["cipher"][0]
         parts = cipher.split("-")
-        if "ADH" not in parts and "EDH" not in parts and "DHE" not in parts:
+        if not dhe_aliases.intersection(parts):
             self.fail("Non-DH key exchange: " + cipher[0])
 
     def test_ecdh_curve(self):
@@ -4520,6 +4584,42 @@ class ThreadedTests(unittest.TestCase):
             with client_context.wrap_socket(socket.socket()) as s:
                 s.connect((HOST, server.port))
 
+    def test_thread_recv_while_main_thread_sends(self):
+        # GH-137583: Locking was added to calls to send() and recv() on SSL
+        # socket objects. This seemed fine at the surface level because those
+        # calls weren't re-entrant, but recv() calls would implicitly mimick
+        # holding a lock by blocking until it received data. This means that
+        # if a thread started to infinitely block until data was received, calls
+        # to send() would deadlock, because it would wait forever on the lock
+        # that the recv() call held.
+        data = b"1" * 1024
+        event = threading.Event()
+        def background(sock):
+            event.set()
+            received = sock.recv(len(data))
+            self.assertEqual(received, data)
+
+        client_context, server_context, hostname = testing_context()
+        server = ThreadedEchoServer(context=server_context)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as sock:
+                sock.connect((HOST, server.port))
+                sock.settimeout(1)
+                sock.setblocking(1)
+                # Ensure that the server is ready to accept requests
+                sock.sendall(b"123")
+                self.assertEqual(sock.recv(3), b"123")
+                with threading_helper.catch_threading_exception() as cm:
+                    thread = threading.Thread(target=background,
+                                              args=(sock,), daemon=True)
+                    thread.start()
+                    event.wait()
+                    sock.sendall(data)
+                    thread.join()
+                    if cm.exc_value is not None:
+                        raise cm.exc_value
+
 
 @unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
 class TestPostHandshakeAuth(unittest.TestCase):
@@ -4846,14 +4946,18 @@ class TestSSLDebug(unittest.TestCase):
             return len(list(f))
 
     @requires_keylog
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_keylog_defaults(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ctx.keylog_filename, None)
 
         self.assertFalse(os.path.isfile(os_helper.TESTFN))
-        ctx.keylog_filename = os_helper.TESTFN
+        try:
+            ctx.keylog_filename = os_helper.TESTFN
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
         self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
         self.assertTrue(os.path.isfile(os_helper.TESTFN))
         self.assertEqual(self.keylog_lines(), 1)
@@ -4870,12 +4974,17 @@ class TestSSLDebug(unittest.TestCase):
             ctx.keylog_filename = 1
 
     @requires_keylog
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
 
-        client_context.keylog_filename = os_helper.TESTFN
+        try:
+            client_context.keylog_filename = os_helper.TESTFN
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
+
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
             with client_context.wrap_socket(socket.socket(),
@@ -4908,7 +5017,6 @@ class TestSSLDebug(unittest.TestCase):
     @requires_keylog
     @unittest.skipIf(sys.flags.ignore_environment,
                      "test is not compatible with ignore_environment")
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_keylog_env(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with unittest.mock.patch.dict(os.environ):
@@ -4918,7 +5026,12 @@ class TestSSLDebug(unittest.TestCase):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             self.assertEqual(ctx.keylog_filename, None)
 
-            ctx = ssl.create_default_context()
+            try:
+                ctx = ssl.create_default_context()
+            except RuntimeError:
+                if Py_DEBUG_WIN32:
+                    self.skipTest("not supported on Win32 debug build")
+                raise
             self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
 
             ctx = ssl._create_stdlib_context()

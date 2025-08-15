@@ -31,8 +31,7 @@ import urllib.parse
 import warnings
 
 from test.support import (
-    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess,
-    is_apple, is_emscripten, is_wasi
+    SHORT_TIMEOUT, check_disallow_instantiation, requires_subprocess
 )
 from test.support import gc_collect
 from test.support import threading_helper, import_helper
@@ -661,6 +660,14 @@ class SerializeTests(unittest.TestCase):
 class OpenTests(unittest.TestCase):
     _sql = "create table test(id integer)"
 
+    def test_open_with_bytes_path(self):
+        path = os.fsencode(TESTFN)
+        self.addCleanup(unlink, path)
+        self.assertFalse(os.path.exists(path))
+        with contextlib.closing(sqlite.connect(path)) as cx:
+            self.assertTrue(os.path.exists(path))
+            cx.execute(self._sql)
+
     def test_open_with_path_like_object(self):
         """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
@@ -671,14 +678,21 @@ class OpenTests(unittest.TestCase):
             self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
 
-    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(is_apple, "skipped on Apple platforms")
-    @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
-    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
-    def test_open_with_undecodable_path(self):
+    def get_undecodable_path(self):
         path = TESTFN_UNDECODABLE
+        if not path:
+            self.skipTest("only works if there are undecodable paths")
+        try:
+            open(path, 'wb').close()
+        except OSError:
+            self.skipTest(f"can't create file with undecodable path {path!r}")
+        unlink(path)
+        return path
+
+    @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
+    def test_open_with_undecodable_path(self):
+        path = self.get_undecodable_path()
         self.addCleanup(unlink, path)
-        self.assertFalse(os.path.exists(path))
         with contextlib.closing(sqlite.connect(path)) as cx:
             self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
@@ -718,14 +732,10 @@ class OpenTests(unittest.TestCase):
                 cx.execute(self._sql)
 
     @unittest.skipIf(sys.platform == "win32", "skipped on Windows")
-    @unittest.skipIf(is_apple, "skipped on Apple platforms")
-    @unittest.skipIf(is_emscripten or is_wasi, "not supported on Emscripten/WASI")
-    @unittest.skipUnless(TESTFN_UNDECODABLE, "only works if there are undecodable paths")
     def test_open_undecodable_uri(self):
-        path = TESTFN_UNDECODABLE
+        path = self.get_undecodable_path()
         self.addCleanup(unlink, path)
         uri = "file:" + urllib.parse.quote(path)
-        self.assertFalse(os.path.exists(path))
         with contextlib.closing(sqlite.connect(uri, uri=True)) as cx:
             self.assertTrue(os.path.exists(path))
             cx.execute(self._sql)
@@ -1945,6 +1955,71 @@ class MultiprocessTests(unittest.TestCase):
             proc.communicate()
             raise
         self.assertEqual(proc.returncode, 0)
+
+
+class RowTests(unittest.TestCase):
+
+    def setUp(self):
+        self.cx = sqlite.connect(":memory:")
+        self.cx.row_factory = sqlite.Row
+
+    def tearDown(self):
+        self.cx.close()
+
+    def test_row_keys(self):
+        cu = self.cx.execute("SELECT 1 as first, 2 as second")
+        row = cu.fetchone()
+        self.assertEqual(row.keys(), ["first", "second"])
+
+    def test_row_length(self):
+        cu = self.cx.execute("SELECT 1, 2, 3")
+        row = cu.fetchone()
+        self.assertEqual(len(row), 3)
+
+    def test_row_getitem(self):
+        cu = self.cx.execute("SELECT 1 as a, 2 as b")
+        row = cu.fetchone()
+        self.assertEqual(row[0], 1)
+        self.assertEqual(row[1], 2)
+        self.assertEqual(row["a"], 1)
+        self.assertEqual(row["b"], 2)
+        for key in "nokey", 4, 1.2:
+            with self.subTest(key=key):
+                with self.assertRaises(IndexError):
+                    row[key]
+
+    def test_row_equality(self):
+        c1 = self.cx.execute("SELECT 1 as a")
+        r1 = c1.fetchone()
+
+        c2 = self.cx.execute("SELECT 1 as a")
+        r2 = c2.fetchone()
+
+        self.assertIsNot(r1, r2)
+        self.assertEqual(r1, r2)
+
+        c3 = self.cx.execute("SELECT 1 as b")
+        r3 = c3.fetchone()
+
+        self.assertNotEqual(r1, r3)
+
+    def test_row_no_description(self):
+        cu = self.cx.cursor()
+        self.assertIsNone(cu.description)
+
+        row = sqlite.Row(cu, ())
+        self.assertEqual(row.keys(), [])
+        with self.assertRaisesRegex(IndexError, "nokey"):
+            row["nokey"]
+
+    def test_row_is_a_sequence(self):
+        from collections.abc import Sequence
+
+        cu = self.cx.execute("SELECT 1")
+        row = cu.fetchone()
+
+        self.assertTrue(issubclass(sqlite.Row, Sequence))
+        self.assertTrue(isinstance(row, Sequence))
 
 
 if __name__ == "__main__":

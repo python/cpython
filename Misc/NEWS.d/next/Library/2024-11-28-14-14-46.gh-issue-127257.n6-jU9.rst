@@ -1,2 +1,0 @@
-In :mod:`ssl`, system call failures that OpenSSL reports using
-``ERR_LIB_SYS`` are now raised as :exc:`OSError`.

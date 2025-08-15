@@ -1181,10 +1181,13 @@ class _SelectorSocketTransport(_SelectorTransport):
         return True
 
     def _call_connection_lost(self, exc):
-        super()._call_connection_lost(exc)
-        if self._empty_waiter is not None:
-            self._empty_waiter.set_exception(
-                ConnectionError("Connection is closed by peer"))
+        try:
+            super()._call_connection_lost(exc)
+        finally:
+            self._write_ready = None
+            if self._empty_waiter is not None:
+                self._empty_waiter.set_exception(
+                    ConnectionError("Connection is closed by peer"))
 
     def _make_empty_waiter(self):
         if self._empty_waiter is not None:
@@ -1199,13 +1202,13 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def close(self):
         self._read_ready_cb = None
-        self._write_ready = None
         super().close()
 
 
 class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTransport):
 
     _buffer_factory = collections.deque
+    _header_size = 8
 
     def __init__(self, loop, sock, protocol, address=None,
                  waiter=None, extra=None):
@@ -1279,13 +1282,13 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
 
         # Ensure that what we buffer is immutable.
         self._buffer.append((bytes(data), addr))
-        self._buffer_size += len(data) + 8  # include header bytes
+        self._buffer_size += len(data) + self._header_size
         self._maybe_pause_protocol()
 
     def _sendto_ready(self):
         while self._buffer:
             data, addr = self._buffer.popleft()
-            self._buffer_size -= len(data)
+            self._buffer_size -= len(data) + self._header_size
             try:
                 if self._extra['peername']:
                     self._sock.send(data)
@@ -1293,7 +1296,7 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
                     self._sock.sendto(data, addr)
             except (BlockingIOError, InterruptedError):
                 self._buffer.appendleft((data, addr))  # Try again later.
-                self._buffer_size += len(data)
+                self._buffer_size += len(data) + self._header_size
                 break
             except OSError as exc:
                 self._protocol.error_received(exc)

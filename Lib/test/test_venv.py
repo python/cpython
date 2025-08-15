@@ -26,6 +26,7 @@ from test.support import (captured_stdout, captured_stderr,
                           requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
                                     TESTFN, FakePath)
+from test.support.testcase import ExtraAssertions
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -64,7 +65,7 @@ def check_output(cmd, encoding=None):
         )
     return out, err
 
-class BaseTest(unittest.TestCase):
+class BaseTest(unittest.TestCase, ExtraAssertions):
     """Base class for venv tests."""
     maxDiff = 80 * 50
 
@@ -110,10 +111,6 @@ class BaseTest(unittest.TestCase):
         with open(self.get_env_file(*args), 'r', encoding=encoding) as f:
             result = f.read()
         return result
-
-    def assertEndsWith(self, string, tail):
-        if not string.endswith(tail):
-            self.fail(f"String {string!r} does not end with {tail!r}")
 
 class BasicTest(BaseTest):
     """Test venv module functionality."""

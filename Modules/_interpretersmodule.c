@@ -331,7 +331,7 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
     int flags = 0;
 
     if (PyUnicode_Check(arg)) {
-        assert(PyUnicode_CheckExact(arg)
+        assert(PyUnicode_Check(arg)
                && (check_code_str((PyUnicodeObject *)arg) == NULL));
         codestr = PyUnicode_AsUTF8AndSize(arg, &len);
         if (codestr == NULL) {
@@ -462,7 +462,12 @@ _run_in_interpreter(PyInterpreterState *interp,
 
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
-        assert(!PyErr_Occurred());
+        if (PyErr_Occurred()) {
+            // If an error occured at this step, it means that interp
+            // was not prepared and switched.
+            return -1;
+        }
+        // Now, apply the error from another interpreter:
         PyObject *excinfo = _PyXI_ApplyError(session.error);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
@@ -806,8 +811,8 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *id, *updates;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "OO|$p:" MODULE_NAME_STR ".set___main___attrs",
-                                     kwlist, &id, &updates, &restricted))
+                                     "OO!|$p:" MODULE_NAME_STR ".set___main___attrs",
+                                     kwlist, &id, &PyDict_Type, &updates, &restricted))
     {
         return NULL;
     }
@@ -821,16 +826,14 @@ interp_set___main___attrs(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     // Check the updates.
-    if (updates != Py_None) {
-        Py_ssize_t size = PyObject_Size(updates);
-        if (size < 0) {
-            return NULL;
-        }
-        if (size == 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "arg 2 must be a non-empty mapping");
-            return NULL;
-        }
+    Py_ssize_t size = PyDict_Size(updates);
+    if (size < 0) {
+        return NULL;
+    }
+    if (size == 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "arg 2 must be a non-empty dict");
+        return NULL;
     }
 
     _PyXI_session session = {0};
@@ -1108,7 +1111,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
@@ -1537,8 +1540,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    traverse_module_state(state, visit, arg);
-    return 0;
+    return traverse_module_state(state, visit, arg);
 }
 
 static int
@@ -1546,8 +1548,7 @@ module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    clear_module_state(state);
-    return 0;
+    return clear_module_state(state);
 }
 
 static void

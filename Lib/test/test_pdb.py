@@ -2810,6 +2810,57 @@ def test_pdb_f_trace_lines():
     (Pdb) continue
     """
 
+def test_pdb_frame_refleak():
+    """
+    pdb should not leak reference to frames
+
+    >>> def frame_leaker(container):
+    ...     import sys
+    ...     container.append(sys._getframe())
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> def test_function():
+    ...     import gc
+    ...     container = []
+    ...     frame_leaker(container)  # c
+    ...     print(len(gc.get_referrers(container[0])))
+    ...     container = []
+    ...     frame_leaker(container)  # n c
+    ...     print(len(gc.get_referrers(container[0])))
+    ...     container = []
+    ...     frame_leaker(container)  # r c
+    ...     print(len(gc.get_referrers(container[0])))
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue',
+    ...     'next',
+    ...     'continue',
+    ...     'return',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    1
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) next
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()
+    -> pass
+    (Pdb) continue
+    1
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(4)frame_leaker()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_pdb_frame_refleak[0]>(5)frame_leaker()->None
+    -> pass
+    (Pdb) continue
+    1
+    """
+
 def test_pdb_function_break():
     """Testing the line number of break on function
 
@@ -3971,7 +4022,9 @@ class ChecklineTests(unittest.TestCase):
 
 @support.requires_subprocess()
 class PdbTestReadline(unittest.TestCase):
-    def setUpClass():
+
+    @classmethod
+    def setUpClass(cls):
         # Ensure that the readline module is loaded
         # If this fails, the test is skipped because SkipTest will be raised
         readline = import_module('readline')

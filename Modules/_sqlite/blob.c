@@ -4,6 +4,7 @@
 
 #include "blob.h"
 #include "util.h"
+#include "pycore_weakref.h"    // FT_CLEAR_WEAKREFS()
 
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/blob.c.h"
@@ -51,9 +52,7 @@ blob_dealloc(pysqlite_Blob *self)
 
     close_blob(self);
 
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
-    }
+    FT_CLEAR_WEAKREFS((PyObject*)self, self->in_weakreflist);
     tp->tp_clear((PyObject *)self);
     tp->tp_free(self);
     Py_DECREF(tp);

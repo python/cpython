@@ -91,17 +91,21 @@ The following options are accepted:
 
 .. program:: dis
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Display usage and exit.
 
-.. cmdoption:: -C, --show-caches
+.. option:: -C, --show-caches
 
    Show inline caches.
 
-.. cmdoption:: -O, --show-offsets
+   .. versionadded:: 3.13
+
+.. option:: -O, --show-offsets
 
    Show offsets of instructions.
+
+   .. versionadded:: 3.13
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code received from stdin.
@@ -488,7 +492,7 @@ details of bytecode instructions as :class:`Instruction` instances:
       :class:`dis.Positions` object holding the
       start and end locations that are covered by this instruction.
 
-   .. data::cache_info
+   .. data:: cache_info
 
       Information about the cache entries of this instruction, as
       triplets of the form ``(name, size, data)``, where the ``name``
@@ -1335,9 +1339,6 @@ iterations of the loop.
    If ``STACK[-1]`` is not ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
 
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
-
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -1348,9 +1349,6 @@ iterations of the loop.
 
    If ``STACK[-1]`` is ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
-
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
 
    .. versionadded:: 3.11
 
@@ -1639,7 +1637,7 @@ iterations of the loop.
    * ``oparg == 2``: call :func:`repr` on *value*
    * ``oparg == 3``: call :func:`ascii` on *value*
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1652,7 +1650,7 @@ iterations of the loop.
       result = value.__format__("")
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1665,7 +1663,7 @@ iterations of the loop.
       result = value.__format__(spec)
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 

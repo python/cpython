@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 from test import support
 from test.support import (
     is_apple, os_helper, refleak_helper, socket_helper, threading_helper
@@ -27,6 +28,7 @@ import tempfile
 import threading
 import time
 import traceback
+import warnings
 from weakref import proxy
 try:
     import multiprocessing
@@ -178,6 +180,17 @@ def _have_socket_bluetooth():
     return True
 
 
+def _have_socket_bluetooth_l2cap():
+    """Check whether BTPROTO_L2CAP sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 def _have_socket_hyperv():
     """Check whether AF_HYPERV sockets are supported on this host."""
     try:
@@ -197,6 +210,24 @@ def socket_setdefaulttimeout(timeout):
         yield
     finally:
         socket.setdefaulttimeout(old_timeout)
+
+
+@contextlib.contextmanager
+def downgrade_malformed_data_warning():
+    # This warning happens on macos and win, but does not always happen on linux.
+    if sys.platform not in {"win32", "darwin"}:
+        yield
+        return
+
+    with warnings.catch_warnings():
+        # TODO: gh-110012, we should investigate why this warning is happening
+        # and fix it properly.
+        warnings.filterwarnings(
+            action="always",
+            message="received malformed or improperly-truncated ancillary data",
+            category=RuntimeWarning,
+        )
+        yield
 
 
 HAVE_SOCKET_CAN = _have_socket_can()
@@ -219,6 +250,8 @@ HAVE_SOCKET_UDPLITE = (
     and not (support.is_android and platform.android_ver().api_level < 29))
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
+
+HAVE_SOCKET_BLUETOOTH_L2CAP = _have_socket_bluetooth_l2cap()
 
 HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
@@ -521,6 +554,8 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 @unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
+@unittest.skipUnless(get_cid() != 2,  # VMADDR_CID_HOST
+                     "This test can only be run on a virtual guest.")
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -2601,6 +2636,143 @@ class BasicBluetoothTest(unittest.TestCase):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             pass
 
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
+    def testBindBrEdrL2capSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
+            # First user PSM in BR/EDR L2CAP
+            psm = 0x1001
+            f.bind((socket.BDADDR_ANY, psm))
+            addr = f.getsockname()
+            self.assertEqual(addr, (socket.BDADDR_ANY, psm))
+
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
+    def testBadL2capAddr(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
+            with self.assertRaises(OSError):
+                f.bind((socket.BDADDR_ANY, 0, 0))
+            with self.assertRaises(OSError):
+                f.bind((socket.BDADDR_ANY,))
+            with self.assertRaises(OSError):
+                f.bind(socket.BDADDR_ANY)
+            with self.assertRaises(OSError):
+                f.bind((socket.BDADDR_ANY.encode(), 0x1001))
+            with self.assertRaises(OSError):
+                f.bind(('\ud812', 0x1001))
+
+    def testBindRfcommSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
+            channel = 0
+            try:
+                s.bind((socket.BDADDR_ANY, channel))
+            except OSError as err:
+                if sys.platform == 'win32' and err.winerror == 10050:
+                    self.skipTest(str(err))
+                raise
+            addr = s.getsockname()
+            self.assertEqual(addr, (mock.ANY, channel))
+            self.assertRegex(addr[0], r'(?i)[0-9a-f]{2}(?::[0-9a-f]{2}){4}')
+            if sys.platform != 'win32':
+                self.assertEqual(addr, (socket.BDADDR_ANY, channel))
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
+            s.bind(addr)
+            addr2 = s.getsockname()
+            self.assertEqual(addr2, addr)
+
+    def testBadRfcommAddr(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
+            channel = 0
+            with self.assertRaises(OSError):
+                s.bind((socket.BDADDR_ANY.encode(), channel))
+            with self.assertRaises(OSError):
+                s.bind((socket.BDADDR_ANY,))
+            with self.assertRaises(OSError):
+                s.bind((socket.BDADDR_ANY, channel, 0))
+            with self.assertRaises(OSError):
+                s.bind((socket.BDADDR_ANY + '\0', channel))
+            with self.assertRaises(OSError):
+                s.bind('\ud812')
+            with self.assertRaises(OSError):
+                s.bind(('invalid', channel))
+
+    @unittest.skipUnless(hasattr(socket, 'BTPROTO_HCI'), 'Bluetooth HCI sockets required for this test')
+    def testBindHciSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s:
+            if sys.platform.startswith(('netbsd', 'dragonfly', 'freebsd')):
+                s.bind(socket.BDADDR_ANY)
+                addr = s.getsockname()
+                self.assertEqual(addr, socket.BDADDR_ANY)
+            else:
+                dev = 0
+                try:
+                    s.bind((dev,))
+                except OSError as err:
+                    if err.errno in (errno.EINVAL, errno.ENODEV):
+                        self.skipTest(str(err))
+                    raise
+                addr = s.getsockname()
+                self.assertEqual(addr, dev)
+
+    @unittest.skipUnless(hasattr(socket, 'BTPROTO_HCI'), 'Bluetooth HCI sockets required for this test')
+    def testBadHciAddr(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s:
+            if sys.platform.startswith(('netbsd', 'dragonfly', 'freebsd')):
+                with self.assertRaises(OSError):
+                    s.bind(socket.BDADDR_ANY.encode())
+                with self.assertRaises(OSError):
+                    s.bind((socket.BDADDR_ANY,))
+                with self.assertRaises(OSError):
+                    s.bind(socket.BDADDR_ANY + '\0')
+                with self.assertRaises((ValueError, OSError)):
+                    s.bind(socket.BDADDR_ANY + ' '*100)
+                with self.assertRaises(OSError):
+                    s.bind('\ud812')
+                with self.assertRaises(OSError):
+                    s.bind('invalid')
+                with self.assertRaises(OSError):
+                    s.bind(b'invalid')
+            else:
+                dev = 0
+                with self.assertRaises(OSError):
+                    s.bind(())
+                with self.assertRaises(OSError):
+                    s.bind((dev, 0))
+                with self.assertRaises(OSError):
+                    s.bind(dev)
+                with self.assertRaises(OSError):
+                    s.bind(socket.BDADDR_ANY)
+                with self.assertRaises(OSError):
+                    s.bind(socket.BDADDR_ANY.encode())
+
+    @unittest.skipUnless(hasattr(socket, 'BTPROTO_SCO'), 'Bluetooth SCO sockets required for this test')
+    def testBindScoSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
+            s.bind(socket.BDADDR_ANY)
+            addr = s.getsockname()
+            self.assertEqual(addr, socket.BDADDR_ANY)
+
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
+            s.bind(socket.BDADDR_ANY.encode())
+            addr = s.getsockname()
+            self.assertEqual(addr, socket.BDADDR_ANY)
+
+    @unittest.skipUnless(hasattr(socket, 'BTPROTO_SCO'), 'Bluetooth SCO sockets required for this test')
+    def testBadScoAddr(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
+            with self.assertRaises(OSError):
+                s.bind((socket.BDADDR_ANY,))
+            with self.assertRaises(OSError):
+                s.bind((socket.BDADDR_ANY.encode(),))
+            with self.assertRaises(ValueError):
+                s.bind(socket.BDADDR_ANY + '\0')
+            with self.assertRaises(ValueError):
+                s.bind(socket.BDADDR_ANY.encode() + b'\0')
+            with self.assertRaises(UnicodeEncodeError):
+                s.bind('\ud812')
+            with self.assertRaises(OSError):
+                s.bind('invalid')
+            with self.assertRaises(OSError):
+                s.bind(b'invalid')
+
 
 @unittest.skipUnless(HAVE_SOCKET_HYPERV,
                      'Hyper-V sockets required for this test.')
@@ -3941,8 +4113,9 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         # mindata and maxdata bytes when received with buffer size
         # ancbuf, and that any complete file descriptor numbers are
         # valid.
-        msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
-                                                   len(MSG), ancbuf)
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
+            msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
+                                                       len(MSG), ancbuf)
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
         self.checkFlags(flags, eor=True, checkset=socket.MSG_CTRUNC)
@@ -4293,8 +4466,9 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
                                   socket.IPV6_RECVHOPLIMIT, 1)
         self.misc_event.set()
-        msg, ancdata, flags, addr = self.doRecvmsg(
-            self.serv_sock, len(MSG), socket.CMSG_LEN(SIZEOF_INT) - 1)
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
+            msg, ancdata, flags, addr = self.doRecvmsg(
+                self.serv_sock, len(MSG), socket.CMSG_LEN(SIZEOF_INT) - 1)
 
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
@@ -4397,9 +4571,10 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
                                   socket.IPV6_RECVTCLASS, 1)
         self.misc_event.set()
-        msg, ancdata, flags, addr = self.doRecvmsg(
-            self.serv_sock, len(MSG),
-            socket.CMSG_SPACE(SIZEOF_INT) + socket.CMSG_LEN(SIZEOF_INT) - 1)
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
+            msg, ancdata, flags, addr = self.doRecvmsg(
+                self.serv_sock, len(MSG),
+                socket.CMSG_SPACE(SIZEOF_INT) + socket.CMSG_LEN(SIZEOF_INT) - 1)
 
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)

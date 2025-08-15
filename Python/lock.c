@@ -8,7 +8,9 @@
 #include "pycore_time.h"          // _PyTime_Add()
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>            // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
 #  include <sched.h>              // sched_yield()
@@ -56,7 +58,7 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
             return PY_LOCK_ACQUIRED;
         }
     }
-    else if (timeout == 0) {
+    if (timeout == 0) {
         return PY_LOCK_FAILURE;
     }
 

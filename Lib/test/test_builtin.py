@@ -380,7 +380,7 @@ class BuiltinTest(unittest.TestCase):
             # test both direct compilation and compilation via AST
                 codeobjs = []
                 codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
-                tree = ast.parse(codestr)
+                tree = ast.parse(codestr, optimize=optval)
                 codeobjs.append(compile(tree, "<test>", "exec", optimize=optval))
                 for code in codeobjs:
                     ns = {}
@@ -974,8 +974,24 @@ class BuiltinTest(unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+        my_closure = tuple(my_closure)
+
+        # should fail: anything passed to closure= isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=int)
+
+        # should fail: correct closure= argument isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=my_closure)
 
         # should fail: closure tuple with one non-cell-var
+        my_closure = list(my_closure)
         my_closure[0] = int
         my_closure = tuple(my_closure)
         self.assertRaises(TypeError,
@@ -1575,6 +1591,29 @@ class BuiltinTest(unittest.TestCase):
             sys.stdin = savestdin
             sys.stdout = savestdout
             fp.close()
+
+    def test_input_gh130163(self):
+        class X(io.StringIO):
+            def __getattribute__(self, name):
+                nonlocal patch
+                if patch:
+                    patch = False
+                    sys.stdout = X()
+                    sys.stderr = X()
+                    sys.stdin = X('input\n')
+                    support.gc_collect()
+                return io.StringIO.__getattribute__(self, name)
+
+        with (support.swap_attr(sys, 'stdout', None),
+              support.swap_attr(sys, 'stderr', None),
+              support.swap_attr(sys, 'stdin', None)):
+            patch = False
+            # the only references:
+            sys.stdout = X()
+            sys.stderr = X()
+            sys.stdin = X('input\n')
+            patch = True
+            input()  # should not crash
 
     # test_int(): see test_int.py for tests of built-in function int().
 
@@ -2735,7 +2774,8 @@ class TestType(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocTestSuite
-    tests.addTest(DocTestSuite(builtins))
+    if sys.float_repr_style == 'short':
+        tests.addTest(DocTestSuite(builtins))
     return tests
 
 if __name__ == "__main__":

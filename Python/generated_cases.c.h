@@ -1590,7 +1590,7 @@
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append, CALL);
-            assert(self != NULL);
+            DEOPT_IF(self == NULL, CALL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
             if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
@@ -1627,11 +1627,13 @@
                     total_args++;
                 }
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+                DEOPT_IF(total_args == 0, CALL);
                 /* Builtin METH_FASTCALL methods, without keywords */
                 DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
                 PyMethodDef *meth = method->d_method;
                 DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL);
                 PyObject *self = args[0];
+                assert(self != NULL);
                 DEOPT_IF(!Py_IS_TYPE(self, method->d_common.d_type), CALL);
                 STAT_INC(CALL, hit);
                 PyCFunctionFast cfunc =
@@ -1676,12 +1678,14 @@
                     args--;
                     total_args++;
                 }
+                DEOPT_IF(total_args == 0, CALL);
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
                 DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
                 PyMethodDef *meth = method->d_method;
                 DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
                 PyTypeObject *d_type = method->d_common.d_type;
                 PyObject *self = args[0];
+                assert(self != NULL);
                 DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
                 STAT_INC(CALL, hit);
                 int nargs = total_args - 1;
@@ -5587,7 +5591,7 @@
             assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner);
             DEOPT_IF(dict == NULL, STORE_ATTR);
-            assert(PyDict_CheckExact((PyObject *)dict));
+            DEOPT_IF(!PyDict_CheckExact((PyObject *)dict), STORE_ATTR);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, STORE_ATTR);
             PyObject *old_value;

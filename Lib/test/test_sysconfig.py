@@ -689,5 +689,26 @@ class MakefileTests(unittest.TestCase):
         })
 
 
+class DeprecationTests(unittest.TestCase):
+    def deprecated(self, removal_version, deprecation_msg=None, error=Exception, error_msg=None):
+        if sys.version_info >= removal_version:
+            return self.assertRaises(error, msg=error_msg)
+        else:
+            return self.assertWarns(DeprecationWarning, msg=deprecation_msg)
+
+    def test_is_python_build_check_home(self):
+        with self.deprecated(
+            removal_version=(3, 15),
+            deprecation_msg=(
+                'The check_home argument of sysconfig.is_python_build is '
+                'deprecated and its value is ignored. '
+                'It will be removed in Python 3.15.'
+            ),
+            error=TypeError,
+            error_msg="is_python_build() takes 0 positional arguments but 1 were given",
+        ):
+            sysconfig.is_python_build('foo')
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,9 @@ from test.support import (
     MISSING_C_DOCSTRINGS,
 )
 from test.test_import import no_rerun
+from test.support.script_helper import assert_python_ok
+from test.support.import_helper import import_fresh_module
+
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
@@ -492,8 +495,8 @@ class TypesTests(unittest.TestCase):
         # and a number after the decimal.  This is tricky, because
         # a totally empty format specifier means something else.
         # So, just use a sign flag
-        test(1e200, '+g', '+1e+200')
-        test(1e200, '+', '+1e+200')
+        test(1.25e200, '+g', '+1.25e+200')
+        test(1.25e200, '+', '+1.25e+200')
 
         test(1.1e200, '+g', '+1.1e+200')
         test(1.1e200, '+', '+1.1e+200')
@@ -628,6 +631,25 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
         self.assertIsInstance(int.__new__, types.BuiltinMethodType)
 
+    def test_method_descriptor_crash(self):
+        # gh-132747: The default __get__() implementation in C was unable
+        # to handle a second argument of None when called from Python
+        import _io
+        import io
+        import _queue
+
+        to_check = [
+            # (method, instance)
+            (_io._TextIOBase.read, io.StringIO()),
+            (_queue.SimpleQueue.put, _queue.SimpleQueue()),
+            (str.capitalize, "nobody expects the spanish inquisition")
+        ]
+
+        for method, instance in to_check:
+            with self.subTest(method=method, instance=instance):
+                bound = method.__get__(instance)
+                self.assertIsInstance(bound, types.BuiltinMethodType)
+
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
 
@@ -647,6 +669,24 @@ class TypesTests(unittest.TestCase):
 
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
+
+    def test_call_unbound_crash(self):
+        # GH-131998: The specialized instruction would get tricked into dereferencing
+        # a bound "self" that didn't exist if subsequently called unbound.
+        code = """if True:
+
+        def call(part):
+            [] + ([] + [])
+            part.pop()
+
+        for _ in range(3):
+            call(['a'])
+        try:
+            call(list)
+        except TypeError:
+            pass
+        """
+        assert_python_ok("-c", code)
 
 
 class UnionTests(unittest.TestCase):
@@ -1756,6 +1796,15 @@ class ClassCreationTests(unittest.TestCase):
 
         with self.assertRaises(RuntimeWarning):
             type("SouthPonies", (Model,), {})
+
+    def test_tuple_subclass_as_bases(self):
+        # gh-132176: it used to crash on using
+        # tuple subclass for as base classes.
+        class TupleSubclass(tuple): pass
+
+        typ = type("typ", TupleSubclass((int, object)), {})
+        self.assertEqual(typ.__bases__, (int, object))
+        self.assertEqual(type(typ.__bases__), TupleSubclass)
 
 
 class SimpleNamespaceTests(unittest.TestCase):

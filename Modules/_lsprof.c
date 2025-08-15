@@ -652,6 +652,7 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
         PyObject *meth = Py_TYPE(callable)->tp_descr_get(
             callable, self_arg, (PyObject*)Py_TYPE(self_arg));
         if (meth == NULL) {
+            PyErr_Clear();
             return NULL;
         }
         if (PyCFunction_Check(meth)) {

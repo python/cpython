@@ -36,7 +36,7 @@ def load_tests(loader, tests, ignore):
                 optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
                 ))
     howto_tests = os.path.join(REPO_ROOT, 'Doc/howto/enum.rst')
-    if os.path.exists(howto_tests):
+    if os.path.exists(howto_tests) and sys.float_repr_style == 'short':
         tests.addTests(doctest.DocFileSuite(
                 howto_tests,
                 module_relative=False,
@@ -463,6 +463,7 @@ class _EnumTests:
             self.assertEqual(str(TE), "<flag 'MainEnum'>")
             self.assertEqual(format(TE), "<flag 'MainEnum'>")
             self.assertTrue(TE(5) is self.dupe2)
+            self.assertTrue(7 in TE)
         else:
             self.assertEqual(repr(TE), "<enum 'MainEnum'>")
             self.assertEqual(str(TE), "<enum 'MainEnum'>")
@@ -1352,7 +1353,7 @@ class TestSpecial(unittest.TestCase):
                 red = 1
                 green = 2
                 blue = 3
-                def red(self):
+                def red(self):  # noqa: F811
                     return 'red'
         #
         with self.assertRaises(TypeError):
@@ -1360,7 +1361,7 @@ class TestSpecial(unittest.TestCase):
                 @enum.property
                 def red(self):
                     return 'redder'
-                red = 1
+                red = 1  # noqa: F811
                 green = 2
                 blue = 3
 
@@ -1581,6 +1582,17 @@ class TestSpecial(unittest.TestCase):
             X = 1
         self.assertIn(IntEnum1.X, IntFlag1)
         self.assertIn(IntFlag1.X, IntEnum1)
+
+    def test_contains_does_not_call_missing(self):
+        class AnEnum(Enum):
+            UNKNOWN = None
+            LUCKY = 3
+            @classmethod
+            def _missing_(cls, *values):
+                return cls.UNKNOWN
+        self.assertTrue(None in AnEnum)
+        self.assertTrue(3 in AnEnum)
+        self.assertFalse(7 in AnEnum)
 
     def test_inherited_data_type(self):
         class HexInt(int):
@@ -4968,6 +4980,7 @@ class Color(enum.Enum)
  |      `value` is in `cls` if:
  |      1) `value` is a member of `cls`, or
  |      2) `value` is the value of one of the `cls`'s members.
+ |      3) `value` is a pseudo-member (flags)
  |
  |  __getitem__(name)
  |      Return the member matching `name`.

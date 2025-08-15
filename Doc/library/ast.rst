@@ -263,9 +263,9 @@ Literals
 .. class:: Constant(value)
 
    A constant value. The ``value`` attribute of the ``Constant`` literal contains the
-   Python object it represents. The values represented can be simple types
-   such as a number, string or ``None``, but also immutable container types
-   (tuples and frozensets) if all of their elements are constant.
+   Python object it represents. The values represented can be instances of :class:`str`,
+   :class:`bytes`, :class:`int`, :class:`float`, :class:`complex`, and :class:`bool`,
+   and the constants :data:`None` and :data:`Ellipsis`.
 
    .. doctest::
 
@@ -1185,7 +1185,7 @@ Control flow
 
    .. doctest::
 
-        >> print(ast.dump(ast.parse("""
+        >>> print(ast.dump(ast.parse("""
         ... while x:
         ...    ...
         ... else:
@@ -1755,6 +1755,43 @@ Pattern matching
                                     value=Constant(value=Ellipsis))])])])
 
    .. versionadded:: 3.10
+
+
+Type annotations
+^^^^^^^^^^^^^^^^
+
+.. class:: TypeIgnore(lineno, tag)
+
+   A ``# type: ignore`` comment located at *lineno*.
+   *tag* is the optional tag specified by the form ``# type: ignore <tag>``.
+
+   .. doctest::
+
+      >>> print(ast.dump(ast.parse('x = 1 # type: ignore', type_comments=True), indent=4))
+      Module(
+          body=[
+              Assign(
+                  targets=[
+                      Name(id='x', ctx=Store())],
+                  value=Constant(value=1))],
+          type_ignores=[
+              TypeIgnore(lineno=1, tag='')])
+      >>> print(ast.dump(ast.parse('x: bool = 1 # type: ignore[assignment]', type_comments=True), indent=4))
+      Module(
+          body=[
+              AnnAssign(
+                  target=Name(id='x', ctx=Store()),
+                  annotation=Name(id='bool', ctx=Load()),
+                  value=Constant(value=1),
+                  simple=1)],
+          type_ignores=[
+              TypeIgnore(lineno=1, tag='[assignment]')])
+
+   .. note::
+      :class:`!TypeIgnore` nodes are not generated when the *type_comments* parameter
+      is set to ``False`` (default).  See :func:`ast.parse` for more details.
+
+   .. versionadded:: 3.8
 
 .. _ast-type-params:
 
@@ -2403,8 +2440,9 @@ and classes for traversing abstract syntax trees:
    indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
    that string is used to indent each level.
 
-   If *show_empty* is ``False`` (the default), empty lists and fields that are ``None``
-   will be omitted from the output.
+   If *show_empty* is false (the default), optional empty lists will be
+   omitted from the output.
+   Optional ``None`` values are always omitted.
 
    .. versionchanged:: 3.9
       Added the *indent* option.

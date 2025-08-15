@@ -40,6 +40,7 @@
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED()
 #include "pycore_pyerrors.h"            // _PyErr_SetKeyError()
 #include "pycore_setobject.h"           // _PySet_NextEntry() definition
+#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 #include <stddef.h>                     // offsetof()
 #include "clinic/setobject.c.h"
 
@@ -400,7 +401,7 @@ set_empty_to_minsize(PySetObject *so)
     FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, 0);
     so->mask = PySet_MINSIZE - 1;
     so->table = so->smalltable;
-    so->hash = -1;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->hash, -1);
 }
 
 static int
@@ -498,8 +499,7 @@ set_dealloc(PySetObject *so)
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
     Py_TRASHCAN_BEGIN(so, set_dealloc)
-    if (so->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) so);
+    FT_CLEAR_WEAKREFS((PyObject *) so, so->weakreflist);
 
     for (entry = so->table; used > 0; entry++) {
         if (entry->key && entry->key != dummy) {
@@ -531,9 +531,18 @@ set_repr_lock_held(PySetObject *so)
         return PyUnicode_FromFormat("%s()", Py_TYPE(so)->tp_name);
     }
 
-    keys = PySequence_List((PyObject *)so);
-    if (keys == NULL)
+    // gh-129967: avoid PySequence_List because it might re-lock the object
+    // lock or the GIL and allow something to clear the set from underneath us.
+    keys = PyList_New(so->used);
+    if (keys == NULL) {
         goto done;
+    }
+
+    Py_ssize_t pos = 0, idx = 0;
+    setentry *entry;
+    while (set_next(so, &pos, &entry)) {
+        PyList_SET_ITEM(keys, idx++, Py_NewRef(entry->key));
+    }
 
     /* repr(keys)[1:-1] */
     listrepr = PyObject_Repr(keys);
@@ -709,17 +718,14 @@ _shuffle_bits(Py_uhash_t h)
    large primes with "interesting bit patterns" and that passed tests
    for good collision statistics on a variety of problematic datasets
    including powersets and graph structures (such as David Eppstein's
-   graph recipes in Lib/test/test_set.py) */
+   graph recipes in Lib/test/test_set.py). */
 
 static Py_hash_t
-frozenset_hash(PyObject *self)
+frozenset_hash_impl(PyObject *self)
 {
-    PySetObject *so = (PySetObject *)self;
+    PySetObject *so = _PySet_CAST(self);
     Py_uhash_t hash = 0;
     setentry *entry;
-
-    if (so->hash != -1)
-        return so->hash;
 
     /* Xor-in shuffled bits from every entry's hash field because xor is
        commutative and a frozenset hash should be independent of order.
@@ -753,7 +759,21 @@ frozenset_hash(PyObject *self)
     if (hash == (Py_uhash_t)-1)
         hash = 590923713UL;
 
-    so->hash = hash;
+    return (Py_hash_t)hash;
+}
+
+static Py_hash_t
+frozenset_hash(PyObject *self)
+{
+    PySetObject *so = _PySet_CAST(self);
+    Py_uhash_t hash;
+
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(so->hash) != -1) {
+        return FT_ATOMIC_LOAD_SSIZE_RELAXED(so->hash);
+    }
+
+    hash = frozenset_hash_impl(self);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->hash, hash);
     return hash;
 }
 
@@ -1193,10 +1213,12 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 
     if (PyType_IsSubtype(Py_TYPE(a), &PyFrozenSet_Type)  &&
         PyType_IsSubtype(Py_TYPE(b), &PyFrozenSet_Type)) {
-        h = a->hash;     a->hash = b->hash;  b->hash = h;
+        h = FT_ATOMIC_LOAD_SSIZE_RELAXED(a->hash);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(a->hash, FT_ATOMIC_LOAD_SSIZE_RELAXED(b->hash));
+        FT_ATOMIC_STORE_SSIZE_RELAXED(b->hash, h);
     } else {
-        a->hash = -1;
-        b->hash = -1;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(a->hash, -1);
+        FT_ATOMIC_STORE_SSIZE_RELAXED(b->hash, -1);
     }
 }
 
@@ -2077,9 +2099,9 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
     case Py_EQ:
         if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
             Py_RETURN_FALSE;
-        if (v->hash != -1  &&
-            ((PySetObject *)w)->hash != -1 &&
-            v->hash != ((PySetObject *)w)->hash)
+        Py_hash_t v_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(v->hash);
+        Py_hash_t w_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(((PySetObject *)w)->hash);
+        if (v_hash != -1 && w_hash != -1 && v_hash != w_hash)
             Py_RETURN_FALSE;
         return set_issubset(v, w);
     case Py_NE:

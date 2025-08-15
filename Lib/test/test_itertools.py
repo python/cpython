@@ -1,5 +1,6 @@
 import doctest
 import unittest
+import itertools
 from test import support
 from test.support import threading_helper, script_helper
 from itertools import *
@@ -2844,7 +2845,7 @@ class SizeofTest(unittest.TestCase):
 
 
 def load_tests(loader, tests, pattern):
-    tests.addTest(doctest.DocTestSuite())
+    tests.addTest(doctest.DocTestSuite(itertools))
     return tests
 
 

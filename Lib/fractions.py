@@ -481,6 +481,9 @@ class Fraction(numbers.Rational):
         trim_point = not alternate_form
         exponent_indicator = "E" if presentation_type in "EFG" else "e"
 
+        if align == '=' and fill == '0':
+            zeropad = True
+
         # Round to get the digits we need, figure out where to place the point,
         # and decide whether to use scientific notation. 'point_pos' is the
         # relative to the _end_ of the digit string: that is, it's the number

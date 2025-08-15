@@ -1,6 +1,7 @@
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 #include "_iomodule.h"
 
 /* Implementation note: the buffer is always at least one character longer
@@ -617,9 +618,7 @@ stringio_dealloc(stringio *self)
     }
     _PyUnicodeWriter_Dealloc(&self->writer);
     (void)stringio_clear(self);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) self);
-    }
+    FT_CLEAR_WEAKREFS((PyObject *) self, self->weakreflist);
     tp->tp_free(self);
     Py_DECREF(tp);
 }

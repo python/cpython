@@ -3,6 +3,7 @@ from test import support
 from test.support import os_helper
 from test.support import requires_subprocess
 from test.support import warnings_helper
+from test.support.testcase import ExtraAssertions
 from test import test_urllib
 from unittest import mock
 
@@ -724,7 +725,7 @@ def sanepathname2url(path):
     return urlpath
 
 
-class HandlerTests(unittest.TestCase):
+class HandlerTests(unittest.TestCase, ExtraAssertions):
 
     def test_ftp(self):
         class MockFTPWrapper:
@@ -789,6 +790,7 @@ class HandlerTests(unittest.TestCase):
             headers = r.info()
             self.assertEqual(headers.get("Content-type"), mimetype)
             self.assertEqual(int(headers["Content-length"]), len(data))
+            r.close()
 
     def test_file(self):
         import email.utils
@@ -1178,15 +1180,15 @@ class HandlerTests(unittest.TestCase):
         r = MockResponse(200, "OK", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         r = MockResponse(202, "Accepted", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         r = MockResponse(206, "Partial content", {}, "", url)
         newr = h.http_response(req, r)
         self.assertIs(r, newr)
-        self.assertFalse(hasattr(o, "proto"))  # o.error not called
+        self.assertNotHasAttr(o, "proto")  # o.error not called
         # anything else calls o.error (and MockOpener returns None, here)
         r = MockResponse(502, "Bad gateway", {}, "", url)
         self.assertIsNone(h.http_response(req, r))
@@ -1229,10 +1231,11 @@ class HandlerTests(unittest.TestCase):
                 try:
                     method(req, MockFile(), code, "Blah",
                            MockHeaders({"location": to_url}))
-                except urllib.error.HTTPError:
+                except urllib.error.HTTPError as err:
                     # 307 and 308 in response to POST require user OK
                     self.assertIn(code, (307, 308))
                     self.assertIsNotNone(data)
+                    err.close()
                 self.assertEqual(o.req.get_full_url(), to_url)
                 try:
                     self.assertEqual(o.req.get_method(), "GET")
@@ -1268,9 +1271,10 @@ class HandlerTests(unittest.TestCase):
             while 1:
                 redirect(h, req, "http://example.com/")
                 count = count + 1
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as err:
             # don't stop until max_repeats, because cookies may introduce state
             self.assertEqual(count, urllib.request.HTTPRedirectHandler.max_repeats)
+            err.close()
 
         # detect endless non-repeating chain of redirects
         req = Request(from_url, origin_req_host="example.com")
@@ -1280,9 +1284,10 @@ class HandlerTests(unittest.TestCase):
             while 1:
                 redirect(h, req, "http://example.com/%d" % count)
                 count = count + 1
-        except urllib.error.HTTPError:
+        except urllib.error.HTTPError as err:
             self.assertEqual(count,
                              urllib.request.HTTPRedirectHandler.max_redirections)
+            err.close()
 
     def test_invalid_redirect(self):
         from_url = "http://example.com/a.html"
@@ -1296,9 +1301,11 @@ class HandlerTests(unittest.TestCase):
 
         for scheme in invalid_schemes:
             invalid_url = scheme + '://' + schemeless_url
-            self.assertRaises(urllib.error.HTTPError, h.http_error_302,
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                h.http_error_302(
                     req, MockFile(), 302, "Security Loophole",
                     MockHeaders({"location": invalid_url}))
+            cm.exception.close()
 
         for scheme in valid_schemes:
             valid_url = scheme + '://' + schemeless_url
@@ -1396,7 +1403,7 @@ class HandlerTests(unittest.TestCase):
                 response = opener.open('http://example.com/')
                 expected = b'GET ' + result + b' '
                 request = handler.last_buf
-                self.assertTrue(request.startswith(expected), repr(request))
+                self.assertStartsWith(request, expected)
 
     def test_redirect_head_request(self):
         from_url = "http://example.com/a.html"
@@ -1426,7 +1433,8 @@ class HandlerTests(unittest.TestCase):
                              [tup[0:2] for tup in o.calls])
 
     def test_proxy_no_proxy(self):
-        os.environ['no_proxy'] = 'python.org'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['no_proxy'] = 'python.org'
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1438,10 +1446,10 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "www.python.org")
         o.open(req)
         self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
 
     def test_proxy_no_proxy_all(self):
-        os.environ['no_proxy'] = '*'
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env['no_proxy'] = '*'
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com"))
         o.add_handler(ph)
@@ -1449,7 +1457,6 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(req.host, "www.python.org")
         o.open(req)
         self.assertEqual(req.host, "www.python.org")
-        del os.environ['no_proxy']
 
     def test_proxy_https(self):
         o = OpenerDirector()
@@ -1827,7 +1834,7 @@ class HandlerTests(unittest.TestCase):
         self.assertTrue(conn.fakesock.closed, "Connection not closed")
 
 
-class MiscTests(unittest.TestCase):
+class MiscTests(unittest.TestCase, ExtraAssertions):
 
     def opener_has_handler(self, opener, handler_class):
         self.assertTrue(any(h.__class__ == handler_class
@@ -1886,19 +1893,21 @@ class MiscTests(unittest.TestCase):
         url = code = fp = None
         hdrs = 'Content-Length: 42'
         err = urllib.error.HTTPError(url, code, msg, hdrs, fp)
-        self.assertTrue(hasattr(err, 'reason'))
+        self.assertHasAttr(err, 'reason')
         self.assertEqual(err.reason, 'something bad happened')
-        self.assertTrue(hasattr(err, 'headers'))
+        self.assertHasAttr(err, 'headers')
         self.assertEqual(err.headers, 'Content-Length: 42')
         expected_errmsg = 'HTTP Error %s: %s' % (err.code, err.msg)
         self.assertEqual(str(err), expected_errmsg)
         expected_errmsg = '<HTTPError %s: %r>' % (err.code, err.msg)
         self.assertEqual(repr(err), expected_errmsg)
+        err.close()
 
     def test_gh_98778(self):
         x = urllib.error.HTTPError("url", 405, "METHOD NOT ALLOWED", None, None)
         self.assertEqual(getattr(x, "__notes__", ()), ())
         self.assertIsInstance(x.fp.read(), bytes)
+        x.close()
 
     def test_parse_proxy(self):
         parse_proxy_test_cases = [

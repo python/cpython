@@ -32,7 +32,7 @@ optionally support installing free-threaded Python binaries.  The installers
 are available at https://www.python.org/downloads/.
 
 For information on other platforms, see the `Installing a Free-Threaded Python
-<https://py-free-threading.github.io/installing_cpython/>`_, a
+<https://py-free-threading.github.io/installing-cpython/>`_, a
 community-maintained installation guide for installing free-threaded Python.
 
 When building CPython from source, the :option:`--disable-gil` configure option
@@ -43,7 +43,7 @@ Identifying free-threaded Python
 ================================
 
 To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
-and :attr:`sys.version` contain "experimental free-threading build".
+and :data:`sys.version` contain "experimental free-threading build".
 The new :func:`sys._is_gil_enabled` function can be used to check whether
 the GIL is actually disabled in the running process.
 

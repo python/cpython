@@ -17,7 +17,7 @@ from test.support import import_helper
 from test.support import is_emscripten, is_wasi
 from test.support import infinite_recursion
 from test.support import os_helper
-from test.support.os_helper import TESTFN, FakePath
+from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
 from test.test_pathlib import test_pathlib_abc
 from test.test_pathlib.test_pathlib_abc import needs_posix, needs_windows, needs_symlinks
 
@@ -479,12 +479,16 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertEqual(P('c:/').as_uri(), 'file:///c:/')
         self.assertEqual(P('c:/a/b.c').as_uri(), 'file:///c:/a/b.c')
         self.assertEqual(P('c:/a/b%#c').as_uri(), 'file:///c:/a/b%25%23c')
-        self.assertEqual(P('c:/a/b\xe9').as_uri(), 'file:///c:/a/b%C3%A9')
         self.assertEqual(P('//some/share/').as_uri(), 'file://some/share/')
         self.assertEqual(P('//some/share/a/b.c').as_uri(),
                          'file://some/share/a/b.c')
-        self.assertEqual(P('//some/share/a/b%#c\xe9').as_uri(),
-                         'file://some/share/a/b%25%23c%C3%A9')
+
+        from urllib.parse import quote_from_bytes
+        QUOTED_FS_NONASCII = quote_from_bytes(os.fsencode(FS_NONASCII))
+        self.assertEqual(P('c:/a/b' + FS_NONASCII).as_uri(),
+                         'file:///c:/a/b' + QUOTED_FS_NONASCII)
+        self.assertEqual(P('//some/share/a/b%#c' + FS_NONASCII).as_uri(),
+                         'file://some/share/a/b%25%23c' + QUOTED_FS_NONASCII)
 
     @needs_windows
     def test_ordering_windows(self):
@@ -781,7 +785,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         os.chown(link, -1, gid_2, follow_symlinks=False)
 
         expected_gid = link.stat(follow_symlinks=False).st_gid
-        expected_name = self._get_pw_name_or_skip_test(expected_gid)
+        expected_name = self._get_gr_name_or_skip_test(expected_gid)
 
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
@@ -1391,7 +1395,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         p7 = P(f'~{fakename}/Documents')
 
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('HOME', None)
+            env.unset('HOME')
 
             self.assertEqual(p1.expanduser(), P(userhome) / 'Documents')
             self.assertEqual(p2.expanduser(), P(userhome) / 'Documents')
@@ -1504,10 +1508,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_expanduser_windows(self):
         P = self.cls
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('HOME', None)
-            env.pop('USERPROFILE', None)
-            env.pop('HOMEPATH', None)
-            env.pop('HOMEDRIVE', None)
+            env.unset('HOME', 'USERPROFILE', 'HOMEPATH', 'HOMEDRIVE')
             env['USERNAME'] = 'alice'
 
             # test that the path returns unchanged
@@ -1545,8 +1546,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             env['HOMEPATH'] = 'Users\\alice'
             check()
 
-            env.pop('HOMEDRIVE', None)
-            env.pop('HOMEPATH', None)
+            env.unset('HOMEDRIVE', 'HOMEPATH')
             env['USERPROFILE'] = 'C:\\Users\\alice'
             check()
 

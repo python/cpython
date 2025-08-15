@@ -30,7 +30,8 @@ class bool_converter(CConverter):
             fail(f"bool_converter: illegal 'accept' argument {accept!r}")
         if self.default is not unspecified and self.default is not unknown:
             self.default = bool(self.default)
-            self.c_default = str(int(self.default))
+            if self.c_default in {'Py_True', 'Py_False'}:
+                self.c_default = str(int(self.default))
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'i':

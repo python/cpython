@@ -77,6 +77,7 @@ extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
 extern PyObject* PyInit__contextvars(void);
 extern PyObject* PyInit__tokenize(void);
+extern PyObject* PyInit__suggestions(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -137,6 +138,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"_datetime", PyInit__datetime},
     {"_functools", PyInit__functools},
     {"_json", PyInit__json},
+    {"_suggestions", PyInit__suggestions},
 
     {"xxsubtype", PyInit_xxsubtype},
     {"_interpreters", PyInit__interpreters},

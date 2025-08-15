@@ -74,7 +74,7 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
-        return tempfile.mktemp(prefix='listener-', dir=util.get_temp_dir())
+        return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
         return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
                                (os.getpid(), next(_mmap_counter)), dir="")
@@ -846,7 +846,7 @@ _MD5_DIGEST_LEN = 16
 _LEGACY_LENGTHS = (_MD5ONLY_MESSAGE_LENGTH, _MD5_DIGEST_LEN)
 
 
-def _get_digest_name_and_payload(message: bytes) -> (str, bytes):
+def _get_digest_name_and_payload(message):  # type: (bytes) -> tuple[str, bytes]
     """Returns a digest name and the payload for a response hash.
 
     If a legacy protocol is detected based on the message length

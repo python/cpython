@@ -82,6 +82,9 @@ Type Objects
    error (e.g. no more watcher IDs available), return ``-1`` and set an
    exception.
 
+   In free-threaded builds, :c:func:`PyType_AddWatcher` is not thread-safe,
+   so it must be called at start up (before spawning the first thread).
+
    .. versionadded:: 3.12
 
 
@@ -264,6 +267,10 @@ Type Objects
    and other places where a method's defining class cannot be passed using the
    :c:type:`PyCMethod` calling convention.
 
+   The returned reference is :term:`borrowed <borrowed reference>` from *type*,
+   and will be valid as long as you hold a reference to *type*.
+   Do not release it with :c:func:`Py_DECREF` or similar.
+
    .. versionadded:: 3.11
 
 .. c:function:: int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
@@ -412,6 +419,9 @@ The following functions and structs are used to create
       class need *in addition* to the superclass.
       Use :c:func:`PyObject_GetTypeData` to get a pointer to subclass-specific
       memory reserved this way.
+      For negative :c:member:`!basicsize`, Python will insert padding when
+      needed to meet :c:member:`~PyTypeObject.tp_basicsize`'s alignment
+      requirements.
 
       .. versionchanged:: 3.12
 

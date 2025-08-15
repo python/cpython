@@ -1,5 +1,6 @@
 """Test program for the fcntl C module.
 """
+import errno
 import multiprocessing
 import platform
 import os
@@ -10,7 +11,7 @@ from test.support import (
     cpython_only, get_pagesize, is_apple, requires_subprocess, verbose
 )
 from test.support.import_helper import import_module
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import TESTFN, unlink, make_bad_fd
 
 
 # Skip test if no fcntl module.
@@ -135,16 +136,21 @@ class TestFcntl(unittest.TestCase):
         or platform.system() == "Android",
         "this platform returns EINVAL for F_NOTIFY DN_MULTISHOT")
     def test_fcntl_64_bit(self):
-        # Issue #1309352: fcntl shouldn't fail when the third arg fits in a
+        # Issue GH-42434: fcntl shouldn't fail when the third arg fits in a
         # C 'long' but not in a C 'int'.
         try:
             cmd = fcntl.F_NOTIFY
-            # This flag is larger than 2**31 in 64-bit builds
+            # DN_MULTISHOT is >= 2**31 in 64-bit builds
             flags = fcntl.DN_MULTISHOT
         except AttributeError:
             self.skipTest("F_NOTIFY or DN_MULTISHOT unavailable")
         fd = os.open(os.path.dirname(os.path.abspath(TESTFN)), os.O_RDONLY)
         try:
+            try:
+                fcntl.fcntl(fd, cmd, fcntl.DN_DELETE)
+            except OSError as exc:
+                if exc.errno == errno.EINVAL:
+                    self.skipTest("F_NOTIFY not available by this environment")
             fcntl.fcntl(fd, cmd, flags)
         finally:
             os.close(fd)
@@ -221,6 +227,15 @@ class TestFcntl(unittest.TestCase):
         finally:
             os.close(test_pipe_r)
             os.close(test_pipe_w)
+
+    @unittest.skipUnless(hasattr(fcntl, 'F_DUPFD'), 'need fcntl.F_DUPFD')
+    def test_bad_fd(self):
+        # gh-134744: Test error handling
+        fd = make_bad_fd()
+        with self.assertRaises(OSError):
+            fcntl.fcntl(fd, fcntl.F_DUPFD, 0)
+        with self.assertRaises(OSError):
+            fcntl.fcntl(fd, fcntl.F_DUPFD, b'\0' * 1024)
 
 
 if __name__ == '__main__':

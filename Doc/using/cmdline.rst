@@ -290,9 +290,15 @@ Miscellaneous options
 
 .. option:: -i
 
-   When a script is passed as first argument or the :option:`-c` option is used,
-   enter interactive mode after executing the script or the command, even when
-   :data:`sys.stdin` does not appear to be a terminal.  The
+   Enter interactive mode after execution.
+
+   Using the :option:`-i` option will enter interactive mode in any of the following circumstances\:
+
+   * When a script is passed as first argument
+   * When the :option:`-c` option is used
+   * When the :option:`-m` option is used
+
+   Interactive mode will start even when :data:`sys.stdin` does not appear to be a terminal. The
    :envvar:`PYTHONSTARTUP` file is not read.
 
    This can be useful to inspect global variables or a stack trace when a script
@@ -1197,7 +1203,7 @@ conflict.
 
 .. envvar:: PYTHON_BASIC_REPL
 
-   If this variable is set to ``1``, the interpreter will not attempt to
+   If this variable is set to any value, the interpreter will not attempt to
    load the Python-based :term:`REPL` that requires :mod:`curses` and
    :mod:`readline`, and will instead use the traditional parser-based
    :term:`REPL`.
@@ -1220,6 +1226,14 @@ conflict.
 
    See also the :option:`-X gil <-X>` command-line option, which takes
    precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
+
+   .. versionadded:: 3.13
+
+.. envvar:: PYTHON_JIT
+
+   On builds where experimental just-in-time compilation is available, this
+   variable can force the JIT to be disabled (``0``) or enabled (``1``) at
+   interpreter startup.
 
    .. versionadded:: 3.13
 

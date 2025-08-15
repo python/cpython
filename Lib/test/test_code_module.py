@@ -5,8 +5,8 @@ import unittest
 from textwrap import dedent
 from contextlib import ExitStack
 from unittest import mock
+from test.support import force_not_colorized_test_class
 from test.support import import_helper
-
 
 code = import_helper.import_module('code')
 
@@ -30,6 +30,7 @@ class MockSys:
         del self.sysmod.ps2
 
 
+@force_not_colorized_test_class
 class TestInteractiveConsole(unittest.TestCase, MockSys):
     maxDiff = None
 
@@ -49,9 +50,9 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact()
         self.assertEqual(self.sysmod.ps2, '... ')
-        self.sysmod.ps1 = 'custom2> '
+        self.sysmod.ps2 = 'custom2> '
         self.console.interact()
-        self.assertEqual(self.sysmod.ps1, 'custom2> ')
+        self.assertEqual(self.sysmod.ps2, 'custom2> ')
 
     def test_console_stderr(self):
         self.infunc.side_effect = ["'antioch'", "", EOFError('Finished')]

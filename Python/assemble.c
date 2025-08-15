@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
@@ -8,6 +6,7 @@
 #include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
 #include "pycore_symtable.h"        // _Py_SourceLocation
 
+#include <stdbool.h>
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
@@ -291,17 +290,15 @@ write_location_info_entry(struct assembler* a, location loc, int isize)
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
     }
-    if (loc.lineno < 0) {
+    if (loc.lineno == NO_LOCATION.lineno) {
         write_location_info_none(a, isize);
         return SUCCESS;
     }
     int line_delta = loc.lineno - a->a_lineno;
     int column = loc.col_offset;
     int end_column = loc.end_col_offset;
-    assert(column >= -1);
-    assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
-        if (loc.end_lineno == loc.lineno || loc.end_lineno == -1) {
+        if (loc.end_lineno == loc.lineno || loc.end_lineno < 0) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = loc.lineno;
             return SUCCESS;
@@ -504,7 +501,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
 
     // This counter mirrors the fix done in fix_cell_offsets().
-    int numdropped = 0;
+    int numdropped = 0, cellvar_offset = -1;
     pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &k, &v)) {
         int has_name = PyDict_Contains(umd->u_varnames, k);
@@ -515,14 +512,14 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
             continue;
         }
 
-        int offset = PyLong_AsInt(v);
-        if (offset == -1 && PyErr_Occurred()) {
+        cellvar_offset = PyLong_AsInt(v);
+        if (cellvar_offset == -1 && PyErr_Occurred()) {
             return ERROR;
         }
-        assert(offset >= 0);
-        offset += nlocals - numdropped;
-        assert(offset < nlocalsplus);
-        _Py_set_localsplus_info(offset, k, CO_FAST_CELL, names, kinds);
+        assert(cellvar_offset >= 0);
+        cellvar_offset += nlocals - numdropped;
+        assert(cellvar_offset < nlocalsplus);
+        _Py_set_localsplus_info(cellvar_offset, k, CO_FAST_CELL, names, kinds);
     }
 
     pos = 0;
@@ -534,6 +531,10 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         assert(offset >= 0);
         offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
+        /* XXX If the assertion below fails it is most likely because a freevar
+           was added to u_freevars with the wrong index due to not taking into
+           account cellvars already present, see gh-128632. */
+        assert(offset > cellvar_offset);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
     return SUCCESS;

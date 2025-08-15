@@ -48,17 +48,25 @@ class SqliteInteractiveConsole(InteractiveConsole):
         Return True if more input is needed; buffering is done automatically.
         Return False is input is a complete statement ready for execution.
         """
-        match source:
-            case ".version":
-                print(f"{sqlite3.sqlite_version}")
-            case ".help":
-                print("Enter SQL code and press enter.")
-            case ".quit":
-                sys.exit(0)
-            case _:
-                if not sqlite3.complete_statement(source):
-                    return True
-                execute(self._cur, source)
+        if not source or source.isspace():
+            return False
+        if source[0] == ".":
+            match source[1:].strip():
+                case "version":
+                    print(f"{sqlite3.sqlite_version}")
+                case "help":
+                    print("Enter SQL code and press enter.")
+                case "quit":
+                    sys.exit(0)
+                case "":
+                    pass
+                case _ as unknown:
+                    self.write("Error: unknown command or invalid arguments:"
+                               f'  "{unknown}".\n')
+        else:
+            if not sqlite3.complete_statement(source):
+                return True
+            execute(self._cur, source)
         return False
 
 

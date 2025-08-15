@@ -969,3 +969,21 @@ PyInit__test_shared_gil_only(void)
 {
     return PyModuleDef_Init(&shared_gil_only_def);
 }
+
+
+static PyModuleDef_Slot no_multiple_interpreter_slot_slots[] = {
+    {Py_mod_exec, execfunc},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static PyModuleDef no_multiple_interpreter_slot_def = TEST_MODULE_DEF(
+    "_test_no_multiple_interpreter_slot",
+    no_multiple_interpreter_slot_slots,
+    testexport_methods);
+
+PyMODINIT_FUNC
+PyInit__test_no_multiple_interpreter_slot(void)
+{
+    return PyModuleDef_Init(&no_multiple_interpreter_slot_def);
+}

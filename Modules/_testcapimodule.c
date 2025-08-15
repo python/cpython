@@ -2647,18 +2647,6 @@ test_frame_getvarstring(PyObject *self, PyObject *args)
 
 
 static PyObject *
-eval_get_func_name(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncName(func));
-}
-
-static PyObject *
-eval_get_func_desc(PyObject *self, PyObject *func)
-{
-    return PyUnicode_FromString(PyEval_GetFuncDesc(func));
-}
-
-static PyObject *
 gen_get_code(PyObject *self, PyObject *gen)
 {
     if (!PyGen_Check(gen)) {
@@ -3081,52 +3069,6 @@ function_set_closure(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *
-check_pyimport_addmodule(PyObject *self, PyObject *args)
-{
-    const char *name;
-    if (!PyArg_ParseTuple(args, "s", &name)) {
-        return NULL;
-    }
-
-    // test PyImport_AddModuleRef()
-    PyObject *module = PyImport_AddModuleRef(name);
-    if (module == NULL) {
-        return NULL;
-    }
-    assert(PyModule_Check(module));
-    // module is a strong reference
-
-    // test PyImport_AddModule()
-    PyObject *module2 = PyImport_AddModule(name);
-    if (module2 == NULL) {
-        goto error;
-    }
-    assert(PyModule_Check(module2));
-    assert(module2 == module);
-    // module2 is a borrowed ref
-
-    // test PyImport_AddModuleObject()
-    PyObject *name_obj = PyUnicode_FromString(name);
-    if (name_obj == NULL) {
-        goto error;
-    }
-    PyObject *module3 = PyImport_AddModuleObject(name_obj);
-    Py_DECREF(name_obj);
-    if (module3 == NULL) {
-        goto error;
-    }
-    assert(PyModule_Check(module3));
-    assert(module3 == module);
-    // module3 is a borrowed ref
-
-    return module;
-
-error:
-    Py_DECREF(module);
-    return NULL;
-}
-
 
 static PyObject *
 test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
@@ -3332,12 +3274,6 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
     Py_RETURN_NONE;
 }
 
-static PyObject *
-pyeval_getlocals(PyObject *module, PyObject *Py_UNUSED(args))
-{
-    return Py_XNewRef(PyEval_GetLocals());
-}
-
 struct atexit_data {
     int called;
     PyThreadState *tstate;
@@ -3382,6 +3318,130 @@ test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
     if (data.called != amount) {
         PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
         return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static void
+tracemalloc_track_race_thread(void *data)
+{
+    PyTraceMalloc_Track(123, 10, 1);
+    PyTraceMalloc_Untrack(123, 10);
+
+    PyThread_type_lock lock = (PyThread_type_lock)data;
+    PyThread_release_lock(lock);
+}
+
+// gh-128679: Test fix for tracemalloc.stop() race condition
+static PyObject *
+tracemalloc_track_race(PyObject *self, PyObject *args)
+{
+#define NTHREAD 50
+    PyObject *tracemalloc = NULL;
+    PyObject *stop = NULL;
+    PyThread_type_lock locks[NTHREAD];
+    memset(locks, 0, sizeof(locks));
+
+    // Call tracemalloc.start()
+    tracemalloc = PyImport_ImportModule("tracemalloc");
+    if (tracemalloc == NULL) {
+        goto error;
+    }
+    PyObject *start = PyObject_GetAttrString(tracemalloc, "start");
+    if (start == NULL) {
+        goto error;
+    }
+    PyObject *res = PyObject_CallNoArgs(start);
+    Py_DECREF(start);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    stop = PyObject_GetAttrString(tracemalloc, "stop");
+    Py_CLEAR(tracemalloc);
+    if (stop == NULL) {
+        goto error;
+    }
+
+    // Start threads
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = PyThread_allocate_lock();
+        if (!lock) {
+            PyErr_NoMemory();
+            goto error;
+        }
+        locks[i] = lock;
+        PyThread_acquire_lock(lock, 1);
+
+        unsigned long thread;
+        thread = PyThread_start_new_thread(tracemalloc_track_race_thread,
+                                           (void*)lock);
+        if (thread == (unsigned long)-1) {
+            PyErr_SetString(PyExc_RuntimeError, "can't start new thread");
+            goto error;
+        }
+    }
+
+    // Call tracemalloc.stop() while threads are running
+    res = PyObject_CallNoArgs(stop);
+    Py_CLEAR(stop);
+    if (res == NULL) {
+        goto error;
+    }
+    Py_DECREF(res);
+
+    // Wait until threads complete with the GIL released
+    Py_BEGIN_ALLOW_THREADS
+    for (size_t i = 0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_acquire_lock(lock, 1);
+        PyThread_release_lock(lock);
+    }
+    Py_END_ALLOW_THREADS
+
+    // Free threads locks
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        PyThread_free_lock(lock);
+    }
+    Py_RETURN_NONE;
+
+error:
+    Py_CLEAR(tracemalloc);
+    Py_CLEAR(stop);
+    for (size_t i=0; i < NTHREAD; i++) {
+        PyThread_type_lock lock = locks[i];
+        if (lock) {
+            PyThread_free_lock(lock);
+        }
+    }
+    return NULL;
+#undef NTHREAD
+}
+
+static int
+_reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
+{
+    if (event == PyRefTracer_CREATE) {
+        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
+    }
+    else {  // PyRefTracer_DESTROY
+        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+    }
+    return 0;
+}
+
+// A simple reftrace printer for very simple tests
+static PyObject *
+toggle_reftrace_printer(PyObject *ob, PyObject *arg)
+{
+    if (arg == Py_True) {
+        PyRefTracer_SetTracer(_reftrace_printer, NULL);
+    }
+    else {
+        PyRefTracer_SetTracer(NULL, NULL);
     }
     Py_RETURN_NONE;
 }
@@ -3508,8 +3568,6 @@ static PyMethodDef TestMethods[] = {
     {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", test_frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", test_frame_getvarstring, METH_VARARGS, NULL},
-    {"eval_get_func_name", eval_get_func_name, METH_O, NULL},
-    {"eval_get_func_desc", eval_get_func_desc, METH_O, NULL},
     {"gen_get_code", gen_get_code, METH_O, NULL},
     {"get_feature_macros", get_feature_macros, METH_NOARGS, NULL},
     {"test_code_api", test_code_api, METH_NOARGS, NULL},
@@ -3526,12 +3584,12 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"function_get_closure", function_get_closure, METH_O, NULL},
     {"function_set_closure", function_set_closure, METH_VARARGS, NULL},
-    {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
     {"function_set_warning", function_set_warning, METH_NOARGS},
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
-    {"pyeval_getlocals", pyeval_getlocals, METH_NOARGS},
     {"test_atexit", test_atexit, METH_NOARGS},
+    {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
+    {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

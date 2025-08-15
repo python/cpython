@@ -13,7 +13,7 @@ The following modules have a command-line interface.
 * :mod:`cProfile`: see :ref:`profile <profile-cli>`
 * :ref:`difflib <difflib-interface>`
 * :ref:`dis <dis-cli>`
-* :mod:`doctest`
+* :ref:`doctest <doctest-cli>`
 * :mod:`!encodings.rot_13`
 * :mod:`ensurepip`
 * :mod:`filecmp`
@@ -28,7 +28,7 @@ The following modules have a command-line interface.
 * :mod:`pdb`
 * :mod:`pickle`
 * :ref:`pickletools <pickletools-cli>`
-* :mod:`platform`
+* :ref:`platform <platform-cli>`
 * :mod:`poplib`
 * :ref:`profile <profile-cli>`
 * :mod:`pstats`

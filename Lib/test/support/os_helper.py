@@ -1,6 +1,7 @@
 import collections.abc
 import contextlib
 import errno
+import logging
 import os
 import re
 import stat
@@ -378,8 +379,12 @@ if sys.platform.startswith("win"):
             # Increase the timeout and try again
             time.sleep(timeout)
             timeout *= 2
-        warnings.warn('tests may fail, delete still pending for ' + pathname,
-                      RuntimeWarning, stacklevel=4)
+        logging.getLogger(__name__).warning(
+            'tests may fail, delete still pending for %s',
+            pathname,
+            stack_info=True,
+            stacklevel=4,
+        )
 
     def _unlink(filename):
         _waitfor(os.unlink, filename)
@@ -494,9 +499,14 @@ def temp_dir(path=None, quiet=False):
         except OSError as exc:
             if not quiet:
                 raise
-            warnings.warn(f'tests may fail, unable to create '
-                          f'temporary directory {path!r}: {exc}',
-                          RuntimeWarning, stacklevel=3)
+            logging.getLogger(__name__).warning(
+                "tests may fail, unable to create temporary directory %r: %s",
+                path,
+                exc,
+                exc_info=exc,
+                stack_info=True,
+                stacklevel=3,
+            )
     if dir_created:
         pid = os.getpid()
     try:
@@ -527,9 +537,15 @@ def change_cwd(path, quiet=False):
     except OSError as exc:
         if not quiet:
             raise
-        warnings.warn(f'tests may fail, unable to change the current working '
-                      f'directory to {path!r}: {exc}',
-                      RuntimeWarning, stacklevel=3)
+        logging.getLogger(__name__).warning(
+            'tests may fail, unable to change the current working directory '
+            'to %r: %s',
+            path,
+            exc,
+            exc_info=exc,
+            stack_info=True,
+            stacklevel=3,
+        )
     try:
         yield os.getcwd()
     finally:
@@ -614,7 +630,7 @@ def fd_count():
     """
     if sys.platform.startswith(('linux', 'android', 'freebsd', 'emscripten')):
         fd_path = "/proc/self/fd"
-    elif sys.platform == "darwin":
+    elif support.is_apple:
         fd_path = "/dev/fd"
     else:
         fd_path = None
@@ -632,8 +648,7 @@ def fd_count():
     if hasattr(os, 'sysconf'):
         try:
             MAXFD = os.sysconf("SC_OPEN_MAX")
-        except (OSError, ValueError):
-            # gh-118201: ValueError is raised intermittently on iOS
+        except OSError:
             pass
 
     old_modes = None
@@ -694,9 +709,10 @@ else:
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):
+    """Class to help protect the environment variable properly.
 
-    """Class to help protect the environment variable properly.  Can be used as
-    a context manager."""
+    Can be used as a context manager.
+    """
 
     def __init__(self):
         self._environ = os.environ
@@ -730,8 +746,10 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
     def set(self, envvar, value):
         self[envvar] = value
 
-    def unset(self, envvar):
-        del self[envvar]
+    def unset(self, envvar, /, *envvars):
+        """Unset one or more environment variables."""
+        for ev in (envvar, *envvars):
+            del self[ev]
 
     def copy(self):
         # We do what os.environ.copy() does.

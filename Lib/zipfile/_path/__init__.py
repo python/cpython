@@ -7,18 +7,17 @@ https://github.com/python/importlib_metadata/wiki/Development-Methodology
 for more detail.
 """
 
-import io
-import posixpath
-import zipfile
-import itertools
 import contextlib
+import io
+import itertools
 import pathlib
+import posixpath
 import re
 import stat
 import sys
+import zipfile
 
 from .glob import Translator
-
 
 __all__ = ['Path']
 
@@ -192,11 +191,13 @@ class FastLookup(CompleteDirs):
         self.__lookup = super()._name_set()
         return self.__lookup
 
-
 def _extract_text_encoding(encoding=None, *args, **kwargs):
     # compute stack level so that the caller of the caller sees any warning.
     is_pypy = sys.implementation.name == 'pypy'
-    stack_level = 3 + is_pypy
+    # PyPy no longer special cased after 7.3.19 (or maybe 7.3.18)
+    # See jaraco/zipp#143
+    is_old_pypi = is_pypy and sys.pypy_version_info < (7, 3, 19)
+    stack_level = 3 + is_old_pypi
     return io.text_encoding(encoding, stack_level), args, kwargs
 
 
@@ -351,7 +352,7 @@ class Path:
         return io.TextIOWrapper(stream, encoding, *args, **kwargs)
 
     def _base(self):
-        return pathlib.PurePosixPath(self.at or self.root.filename)
+        return pathlib.PurePosixPath(self.at) if self.at else self.filename
 
     @property
     def name(self):

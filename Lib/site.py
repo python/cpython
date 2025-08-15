@@ -75,6 +75,7 @@ import builtins
 import _sitebuiltins
 import io
 import stat
+import errno
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -576,6 +577,11 @@ def register_readline():
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
                 pass
+            except OSError:
+                if errno.EROFS:
+                    pass  # gh-128066: read-only file system
+                else:
+                    raise
 
         atexit.register(write_history)
 

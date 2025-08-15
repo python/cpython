@@ -46,6 +46,7 @@ import weakref
 import types
 
 from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper
+from test.support.testcase import ExtraAssertions
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -54,21 +55,7 @@ NOT_A_BASE_TYPE = "type 'typing.%s' is not an acceptable base type"
 CANNOT_SUBCLASS_INSTANCE = 'Cannot subclass an instance of %s'
 
 
-class BaseTestCase(TestCase):
-
-    def assertIsSubclass(self, cls, class_or_tuple, msg=None):
-        if not issubclass(cls, class_or_tuple):
-            message = '%r is not a subclass of %r' % (cls, class_or_tuple)
-            if msg is not None:
-                message += ' : %s' % msg
-            raise self.failureException(message)
-
-    def assertNotIsSubclass(self, cls, class_or_tuple, msg=None):
-        if issubclass(cls, class_or_tuple):
-            message = '%r is a subclass of %r' % (cls, class_or_tuple)
-            if msg is not None:
-                message += ' : %s' % msg
-            raise self.failureException(message)
+class BaseTestCase(TestCase, ExtraAssertions):
 
     def clear_caches(self):
         for f in typing._cleanups:
@@ -822,7 +809,7 @@ def template_replace(templates: list[str], replacements: dict[str, list[str]]) -
 
     Example 1: Suppose that:
       templates = ["dog_breed are awesome", "dog_breed are cool"]
-      replacements = ["dog_breed": ["Huskies", "Beagles"]]
+      replacements = {"dog_breed": ["Huskies", "Beagles"]}
     Then we would return:
       [
           ("Huskies are awesome", "Huskies are cool"),
@@ -1248,10 +1235,6 @@ class UnpackTests(BaseTestCase):
 
 
 class TypeVarTupleTests(BaseTestCase):
-
-    def assertEndsWith(self, string, tail):
-        if not string.endswith(tail):
-            self.fail(f"String {string!r} does not end with {tail!r}")
 
     def test_name(self):
         Ts = TypeVarTuple('Ts')
@@ -2951,6 +2934,23 @@ class ProtocolTests(BaseTestCase):
 
         self.assertNotIsInstance(D(), E)
         self.assertNotIsInstance(E(), D)
+
+    def test_inheritance_from_object(self):
+        # Inheritance from object is specifically allowed, unlike other nominal classes
+        class P(Protocol, object):
+            x: int
+
+        self.assertEqual(typing.get_protocol_members(P), {'x'})
+
+        class OldGeneric(Protocol, Generic[T], object):
+            y: T
+
+        self.assertEqual(typing.get_protocol_members(OldGeneric), {'y'})
+
+        class NewGeneric[T](Protocol, object):
+            z: T
+
+        self.assertEqual(typing.get_protocol_members(NewGeneric), {'z'})
 
     def test_no_instantiation(self):
         class P(Protocol): pass
@@ -5176,6 +5176,18 @@ class GenericTests(BaseTestCase):
                 z = pickle.dumps(s, proto)
                 x = pickle.loads(z)
                 self.assertEqual(s, x)
+
+        # Test ParamSpec args and kwargs
+        global PP
+        PP = ParamSpec('PP')
+        for thing in [PP.args, PP.kwargs]:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    self.assertEqual(
+                        pickle.loads(pickle.dumps(thing, proto)),
+                        thing,
+                    )
+        del PP
 
     def test_copy_and_deepcopy(self):
         T = TypeVar('T')
@@ -8361,6 +8373,22 @@ class TypedDictTests(BaseTestCase):
 
         self.assertIs(TD2.__total__, True)
 
+    def test_total_with_assigned_value(self):
+        class TD(TypedDict):
+            __total__ = "some_value"
+
+        self.assertIs(TD.__total__, True)
+
+        class TD2(TypedDict, total=True):
+            __total__ = "some_value"
+
+        self.assertIs(TD2.__total__, True)
+
+        class TD3(TypedDict, total=False):
+            __total__ = "some value"
+
+        self.assertIs(TD3.__total__, False)
+
     def test_optional_keys(self):
         class Point2Dor3D(Point2D, total=False):
             z: int
@@ -8829,13 +8857,13 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Child1.__mutable_keys__, frozenset({'b'}))
 
         class Base2(TypedDict):
-            a: ReadOnly[int]
+            a: int
 
         class Child2(Base2):
-            b: str
+            b: ReadOnly[str]
 
-        self.assertEqual(Child1.__readonly_keys__, frozenset({'a'}))
-        self.assertEqual(Child1.__mutable_keys__, frozenset({'b'}))
+        self.assertEqual(Child2.__readonly_keys__, frozenset({'b'}))
+        self.assertEqual(Child2.__mutable_keys__, frozenset({'a'}))
 
     def test_cannot_make_mutable_key_readonly(self):
         class Base(TypedDict):
@@ -9997,6 +10025,18 @@ class ConcatenateTests(BaseTestCase):
         C4 = collections.abc.Callable[Concatenate[int, T, P], T]
         self.assertEqual(C4.__args__, (Concatenate[int, T, P], T))
         self.assertEqual(C4.__parameters__, (T, P))
+
+    def test_invalid_uses(self):
+        with self.assertRaisesRegex(TypeError, 'Concatenate of no types'):
+            Concatenate[()]
+        with self.assertRaisesRegex(
+            TypeError,
+            (
+                'The last parameter to Concatenate should be a '
+                'ParamSpec variable or ellipsis'
+            ),
+        ):
+            Concatenate[int]
 
     def test_var_substitution(self):
         T = TypeVar('T')

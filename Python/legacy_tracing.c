@@ -479,13 +479,16 @@ setup_profile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject 
         }
     }
 
+    _PyEval_StopTheWorld(tstate->interp);
     int delta = (func != NULL) - (tstate->c_profilefunc != NULL);
     tstate->c_profilefunc = func;
     *old_profileobj = tstate->c_profileobj;
     tstate->c_profileobj = Py_XNewRef(arg);
     tstate->interp->sys_profiling_threads += delta;
     assert(tstate->interp->sys_profiling_threads >= 0);
-    return tstate->interp->sys_profiling_threads;
+    Py_ssize_t profiling_threads = tstate->interp->sys_profiling_threads;
+    _PyEval_StartTheWorld(tstate->interp);
+    return profiling_threads;
 }
 
 int
@@ -574,13 +577,16 @@ setup_tracing(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject 
         }
     }
 
+    _PyEval_StopTheWorld(tstate->interp);
     int delta = (func != NULL) - (tstate->c_tracefunc != NULL);
     tstate->c_tracefunc = func;
     *old_traceobj = tstate->c_traceobj;
     tstate->c_traceobj = Py_XNewRef(arg);
     tstate->interp->sys_tracing_threads += delta;
     assert(tstate->interp->sys_tracing_threads >= 0);
-    return tstate->interp->sys_tracing_threads;
+    Py_ssize_t tracing_threads = tstate->interp->sys_tracing_threads;
+    _PyEval_StartTheWorld(tstate->interp);
+    return tracing_threads;
 }
 
 int
@@ -596,10 +602,10 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
         return -1;
     }
-    assert(tstate->interp->sys_tracing_threads >= 0);
     // needs to be decref'd outside of the lock
     PyObject *old_traceobj;
     LOCK_SETUP();
+    assert(tstate->interp->sys_tracing_threads >= 0);
     Py_ssize_t tracing_threads = setup_tracing(tstate, func, arg, &old_traceobj);
     UNLOCK_SETUP();
     Py_XDECREF(old_traceobj);
