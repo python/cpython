@@ -2333,8 +2333,8 @@ io
 pathlib
 -------
 
-* :func:`.Path.read_bytes` now opens files in unbuffered mode,
-  which is between 9% and 17% faster to a file's bytes in full.
+* :func:`Path.read_bytes <pathlib.Path.read_bytes>` now uses unbuffered mode
+  to open files, which is between 9% and 17% faster to read in full.
   (Contributed by Cody Maloney in :gh:`120754`.)
 
 
