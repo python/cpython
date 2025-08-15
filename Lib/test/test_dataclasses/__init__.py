@@ -3893,7 +3893,15 @@ class TestSlots(unittest.TestCase):
 
             return SlotsTest
 
-        for make in (make_simple, make_with_annotations, make_with_annotations_and_method):
+        def make_with_forwardref():
+            @dataclass(slots=True)
+            class SlotsTest:
+                x: undefined
+                y: list[undefined]
+
+            return SlotsTest
+
+        for make in (make_simple, make_with_annotations, make_with_annotations_and_method, make_with_forwardref):
             with self.subTest(make=make):
                 C = make()
                 support.gc_collect()
