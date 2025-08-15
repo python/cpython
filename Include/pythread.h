@@ -33,9 +33,9 @@ PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
  * destructors.
  *
  * In either case there is a risk of invalid references remaining to data on the
- * thread stack.
+ * thread stack.  This is deprecated in 3.14 onwards.  Retained for API compat.
  */
-Py_DEPRECATED(3.14) PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
+PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
