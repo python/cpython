@@ -223,7 +223,7 @@ _thread_lock___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_thread_lock___exit____doc__,
-"__exit__($self, exc_type=None, exc_value=None, exc_tb=None, /)\n"
+"__exit__($self, exc_type, exc_value, exc_tb, /)\n"
 "--\n"
 "\n"
 "Release the lock.");
@@ -239,26 +239,16 @@ static PyObject *
 _thread_lock___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *exc_type = Py_None;
-    PyObject *exc_value = Py_None;
-    PyObject *exc_tb = Py_None;
+    PyObject *exc_type;
+    PyObject *exc_value;
+    PyObject *exc_tb;
 
-    if (!_PyArg_CheckPositional("__exit__", nargs, 0, 3)) {
+    if (!_PyArg_CheckPositional("__exit__", nargs, 3, 3)) {
         goto exit;
     }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
     exc_type = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
     exc_value = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
-    }
     exc_tb = args[2];
-skip_optional:
     return_value = _thread_lock___exit___impl((lockobject *)self, exc_type, exc_value, exc_tb);
 
 exit:
@@ -478,7 +468,7 @@ _thread_RLock_release(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_thread_RLock___exit____doc__,
-"__exit__($self, exc_type=None, exc_value=None, exc_tb=None, /)\n"
+"__exit__($self, exc_type, exc_value, exc_tb, /)\n"
 "--\n"
 "\n"
 "Release the lock.");
@@ -494,26 +484,16 @@ static PyObject *
 _thread_RLock___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *exc_type = Py_None;
-    PyObject *exc_value = Py_None;
-    PyObject *exc_tb = Py_None;
+    PyObject *exc_type;
+    PyObject *exc_value;
+    PyObject *exc_tb;
 
-    if (!_PyArg_CheckPositional("__exit__", nargs, 0, 3)) {
+    if (!_PyArg_CheckPositional("__exit__", nargs, 3, 3)) {
         goto exit;
     }
-    if (nargs < 1) {
-        goto skip_optional;
-    }
     exc_type = args[0];
-    if (nargs < 2) {
-        goto skip_optional;
-    }
     exc_value = args[1];
-    if (nargs < 3) {
-        goto skip_optional;
-    }
     exc_tb = args[2];
-skip_optional:
     return_value = _thread_RLock___exit___impl((rlockobject *)self, exc_type, exc_value, exc_tb);
 
 exit:
@@ -770,4 +750,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=b53b6681f575fb70 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b47d0fb780b63ab3 input=a9049054013a1b77]*/

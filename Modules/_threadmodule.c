@@ -927,9 +927,9 @@ _thread_lock___enter___impl(lockobject *self)
 
 /*[clinic input]
 _thread.lock.__exit__
-    exc_type:  object = None
-    exc_value: object = None
-    exc_tb:    object = None
+    exc_type:  object
+    exc_value: object
+    exc_tb:    object
     /
 
 Release the lock.
@@ -938,7 +938,7 @@ Release the lock.
 static PyObject *
 _thread_lock___exit___impl(lockobject *self, PyObject *exc_type,
                            PyObject *exc_value, PyObject *exc_tb)
-/*[clinic end generated code: output=c9e8eefa69beed07 input=ff605bf967310447]*/
+/*[clinic end generated code: output=c9e8eefa69beed07 input=f1f539437b055547]*/
 {
     return _thread_lock_release_impl(self);
 }
@@ -1171,9 +1171,9 @@ _thread_RLock_release_impl(rlockobject *self)
 
 /*[clinic input]
 _thread.RLock.__exit__
-    exc_type: object = None
-    exc_value: object = None
-    exc_tb: object = None
+    exc_type: object
+    exc_value: object
+    exc_tb: object
     /
 
 Release the lock.
@@ -1183,7 +1183,7 @@ Release the lock.
 static PyObject *
 _thread_RLock___exit___impl(rlockobject *self, PyObject *exc_type,
                             PyObject *exc_value, PyObject *exc_tb)
-/*[clinic end generated code: output=79bb44d551aedeb5 input=99d5cb8c7cef3077]*/
+/*[clinic end generated code: output=79bb44d551aedeb5 input=79accf0778d91002]*/
 {
     return _thread_RLock_release_impl(self);
 }
