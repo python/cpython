@@ -19,7 +19,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
                           requires_subprocess)
 from test.support.os_helper import TESTFN, unlink
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
 from test.support import force_not_colorized, force_not_colorized_test_class
 
@@ -1740,6 +1740,49 @@ class TracebackErrorLocationCaretTestBase:
         ]
         self.assertEqual(result_lines, expected)
 
+class TestKeywordTypoSuggestions(unittest.TestCase):
+    TYPO_CASES = [
+        ("with block ad something:\n  pass", "and"),
+        ("fur a in b:\n  pass", "for"),
+        ("for a in b:\n  pass\nelso:\n  pass", "else"),
+        ("whille True:\n  pass", "while"),
+        ("iff x > 5:\n  pass", "if"),
+        ("if x:\n  pass\nelseif y:\n  pass", "elif"),
+        ("tyo:\n  pass\nexcept y:\n  pass", "try"),
+        ("classe MyClass:\n  pass", "class"),
+        ("impor math", "import"),
+        ("form x import y", "from"),
+        ("defn calculate_sum(a, b):\n  return a + b", "def"),
+        ("def foo():\n  returm result", "return"),
+        ("lamda x: x ** 2", "lambda"),
+        ("def foo():\n  yeld i", "yield"),
+        ("def foo():\n  globel counter", "global"),
+        ("frum math import sqrt", "from"),
+        ("asynch def fetch_data():\n  pass", "async"),
+        ("async def foo():\n  awaid fetch_data()", "await"),
+        ('raisee ValueError("Error")', "raise"),
+        ("[x for x\nin range(3)\nof x]", "if"),
+        ("[123 fur x\nin range(3)\nif x]", "for"),
+        ("for x im n:\n  pass", "in"),
+    ]
+
+    def test_keyword_suggestions_from_file(self):
+        with tempfile.TemporaryDirectory() as script_dir:
+            for i, (code, expected_kw) in enumerate(self.TYPO_CASES):
+                with self.subTest(typo=expected_kw):
+                    source = textwrap.dedent(code).strip()
+                    script_name = make_script(script_dir, f"script_{i}", source)
+                    rc, stdout, stderr = assert_python_failure(script_name)
+                    stderr_text = stderr.decode('utf-8')
+                    self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
+
+    def test_keyword_suggestions_from_command_string(self):
+        for code, expected_kw in self.TYPO_CASES:
+            with self.subTest(typo=expected_kw):
+                source = textwrap.dedent(code).strip()
+                rc, stdout, stderr = assert_python_failure('-c', source)
+                stderr_text = stderr.decode('utf-8')
+                self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
 
 @requires_debug_ranges()
 @force_not_colorized_test_class
