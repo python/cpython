@@ -73,6 +73,7 @@ struct trampoline_api_st {
     int (*free_state)(void* state);
     void *state;
     Py_ssize_t code_padding;
+    Py_ssize_t code_alignment;
 };
 #endif
 
@@ -87,6 +88,7 @@ struct _ceval_runtime_state {
         struct trampoline_api_st trampoline_api;
         FILE *map_file;
         Py_ssize_t persist_after_fork;
+       _PyFrameEvalFunction prev_eval_frame;
 #else
         int _not_used;
 #endif
@@ -97,7 +99,6 @@ struct _ceval_runtime_state {
     // For example, we use a preallocated array
     // for the list of pending calls.
     struct _pending_calls pending_mainthread;
-    PyMutex sys_trace_profile_mutex;
 };
 
 
@@ -128,8 +129,6 @@ struct _atexit_runtime_state {
 
 //###################
 // interpreter atexit
-
-typedef void (*atexit_datacallbackfunc)(void *);
 
 typedef struct atexit_callback {
     atexit_datacallbackfunc func;
@@ -944,14 +943,15 @@ struct _is {
     bool jit;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
+    struct _PyExecutorObject *cold_executor;
     int executor_deletion_list_remaining_capacity;
     size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 
     _Py_GlobalMonitors monitors;
-    bool sys_profile_initialized;
-    bool sys_trace_initialized;
+    _PyOnceFlag sys_profile_once_flag;
+    _PyOnceFlag sys_trace_once_flag;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
     PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];

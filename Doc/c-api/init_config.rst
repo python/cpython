@@ -975,9 +975,7 @@ PyPreConfig
       Set to ``0`` or ``1`` by the :option:`-X utf8 <-X>` command line option
       and the :envvar:`PYTHONUTF8` environment variable.
 
-      Also set to ``1`` if the ``LC_CTYPE`` locale is ``C`` or ``POSIX``.
-
-      Default: ``-1`` in Python config and ``0`` in isolated config.
+      Default: ``1``.
 
 
 .. _c-preinit:

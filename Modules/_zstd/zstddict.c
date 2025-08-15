@@ -1,4 +1,4 @@
-/* Low level interface to the Zstandard algorthm & the zstd library. */
+/* Low level interface to the Zstandard algorithm & the zstd library. */
 
 /* ZstdDict class definitions */
 
@@ -119,10 +119,10 @@ ZstdDict_dealloc(PyObject *ob)
 }
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,
-"the Zstandard dictionary, an int between 0 and 2**32.\n\n"
-"A non-zero value represents an ordinary Zstandard dictionary, "
+"The Zstandard dictionary, an int between 0 and 2**32.\n\n"
+"A non-zero value represents an ordinary Zstandard dictionary,\n"
 "conforming to the standardised format.\n\n"
-"The special value '0' means a 'raw content' dictionary,"
+"A value of zero indicates a 'raw content' dictionary,\n"
 "without any restrictions on format or content.");
 
 static PyObject *
@@ -210,12 +210,12 @@ compress(dat, zstd_dict=zd.as_prefix)
 1. Prefix is compatible with long distance matching, while dictionary is not.
 2. It only works for the first frame, then the compressor/decompressor will
    return to no prefix state.
-3. When decompressing, must use the same prefix as when compressing."
+3. When decompressing, must use the same prefix as when compressing.
 [clinic start generated code]*/
 
 static PyObject *
 _zstd_ZstdDict_as_prefix_get_impl(ZstdDict *self)
-/*[clinic end generated code: output=6f7130c356595a16 input=d59757b0b5a9551a]*/
+/*[clinic end generated code: output=6f7130c356595a16 input=45b3b6110f36d127]*/
 {
     return Py_BuildValue("Oi", self, DICT_TYPE_PREFIX);
 }

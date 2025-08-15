@@ -9,7 +9,7 @@ import unittest
 from test.support import import_helper, skip_if_sanitizer
 
 _channels = import_helper.import_module('_interpchannels')
-from test.support.interpreters import _crossinterp
+from concurrent.interpreters import _crossinterp
 from test.test__interpreters import (
     _interpreters,
     _run_output,

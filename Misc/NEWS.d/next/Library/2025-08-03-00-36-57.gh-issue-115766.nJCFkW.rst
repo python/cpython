@@ -1,0 +1,1 @@
+Fix :attr:`!ipaddress.IPv4Interface.is_unspecified`.

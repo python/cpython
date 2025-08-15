@@ -1183,9 +1183,10 @@ sys__settraceallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-
-    PyEval_SetTraceAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetTraceAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1263,8 +1264,10 @@ sys__setprofileallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-    PyEval_SetProfileAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetProfileAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2488,6 +2491,11 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     if (PyUnicode_FSConverter(script, &path) == 0) {
         return NULL;
     }
+
+    if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
+        return NULL;
+    }
+
     debugger_script_path = PyBytes_AS_STRING(path);
 #ifdef MS_WINDOWS
     PyObject *unicode_path;
@@ -2635,6 +2643,47 @@ sys__baserepl_impl(PyObject *module)
     PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
     Py_RETURN_NONE;
 }
+
+/*[clinic input]
+sys._clear_type_descriptors
+
+    type: object(subclass_of='&PyType_Type')
+    /
+
+Private function for clearing certain descriptors from a type's dictionary.
+
+See gh-135228 for context.
+[clinic start generated code]*/
+
+static PyObject *
+sys__clear_type_descriptors_impl(PyObject *module, PyObject *type)
+/*[clinic end generated code: output=5ad17851b762b6d9 input=dc536c97fde07251]*/
+{
+    PyTypeObject *typeobj = (PyTypeObject *)type;
+    if (_PyType_HasFeature(typeobj, Py_TPFLAGS_IMMUTABLETYPE)) {
+        PyErr_SetString(PyExc_TypeError, "argument is immutable");
+        return NULL;
+    }
+    PyObject *dict = _PyType_GetDict(typeobj);
+    PyObject *dunder_dict = NULL;
+    if (PyDict_Pop(dict, &_Py_ID(__dict__), &dunder_dict) < 0) {
+        return NULL;
+    }
+    PyObject *dunder_weakref = NULL;
+    if (PyDict_Pop(dict, &_Py_ID(__weakref__), &dunder_weakref) < 0) {
+        PyType_Modified(typeobj);
+        Py_XDECREF(dunder_dict);
+        return NULL;
+    }
+    PyType_Modified(typeobj);
+    // We try to hold onto a reference to these until after we call
+    // PyType_Modified(), in case their deallocation triggers somer user code
+    // that tries to do something to the type.
+    Py_XDECREF(dunder_dict);
+    Py_XDECREF(dunder_weakref);
+    Py_RETURN_NONE;
+}
+
 
 /*[clinic input]
 sys._is_gil_enabled -> bool
@@ -2832,6 +2881,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_DUMP_METHODDEF
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
+    SYS__CLEAR_TYPE_DESCRIPTORS_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
     SYS__DUMP_TRACELETS_METHODDEF
     {NULL, NULL}  // sentinel
@@ -3601,6 +3651,18 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 #endif
+
+    // PEP-734
+#if defined(__wasi__) || defined(__EMSCRIPTEN__)
+    // It is not enabled on WASM builds just yet
+    value = Py_False;
+#else
+    value = Py_True;
+#endif
+    res = PyDict_SetItemString(impl_info, "supports_isolated_interpreters", value);
+    if (res < 0) {
+        goto error;
+    }
 
     /* dict ready */
 

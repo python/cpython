@@ -1365,6 +1365,11 @@ class TestAnnotationsToString(unittest.TestCase):
 class A:
     pass
 
+TypeParamsAlias1 = int
+
+class TypeParamsSample[TypeParamsAlias1, TypeParamsAlias2]:
+    TypeParamsAlias2 = str
+
 
 class TestForwardRefClass(unittest.TestCase):
     def test_forwardref_instance_type_error(self):
@@ -1597,6 +1602,21 @@ class TestForwardRefClass(unittest.TestCase):
             ForwardRef("alias").evaluate(owner=Gen, locals={"alias": str}), str
         )
 
+    def test_evaluate_with_type_params_and_scope_conflict(self):
+        for is_class in (False, True):
+            with self.subTest(is_class=is_class):
+                fwdref1 = ForwardRef("TypeParamsAlias1", owner=TypeParamsSample, is_class=is_class)
+                fwdref2 = ForwardRef("TypeParamsAlias2", owner=TypeParamsSample, is_class=is_class)
+
+                self.assertIs(
+                    fwdref1.evaluate(),
+                    TypeParamsSample.__type_params__[0],
+                )
+                self.assertIs(
+                    fwdref2.evaluate(),
+                    TypeParamsSample.TypeParamsAlias2,
+                )
+
     def test_fwdref_with_module(self):
         self.assertIs(ForwardRef("Format", module="annotationlib").evaluate(), Format)
         self.assertIs(
@@ -1650,8 +1670,10 @@ class TestForwardRefClass(unittest.TestCase):
         with support.swap_attr(builtins, "int", dict):
             self.assertIs(ForwardRef("int").evaluate(), dict)
 
-        with self.assertRaises(NameError):
+        with self.assertRaises(NameError, msg="name 'doesntexist' is not defined") as exc:
             ForwardRef("doesntexist").evaluate()
+
+        self.assertEqual(exc.exception.name, "doesntexist")
 
     def test_fwdref_invalid_syntax(self):
         fr = ForwardRef("if")
