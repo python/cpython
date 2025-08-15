@@ -1,0 +1,1 @@
+Fixed `http.cookies.BaseCookie` to preserve the first instance of a duplicated cookie, aligning Python's cookie handling more closely with RFC 6265 standards. Previously, the last instance of a duplicate cookie was preserved. This change enhances predictability and standards compliance when working with HTTP cookies.
