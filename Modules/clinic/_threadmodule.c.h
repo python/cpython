@@ -7,7 +7,6 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
-#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 PyDoc_STRVAR(_thread_lock_acquire__doc__,
 "acquire($self, /, blocking=True, timeout=-1)\n"
@@ -519,32 +518,23 @@ _thread_RLock_locked(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(_thread_RLock__acquire_restore__doc__,
-"_acquire_restore($self, /, *args)\n"
+"_acquire_restore($self, state, /)\n"
 "--\n"
 "\n"
 "For internal use by `threading.Condition`.");
 
 #define _THREAD_RLOCK__ACQUIRE_RESTORE_METHODDEF    \
-    {"_acquire_restore", _PyCFunction_CAST(_thread_RLock__acquire_restore), METH_FASTCALL, _thread_RLock__acquire_restore__doc__},
+    {"_acquire_restore", (PyCFunction)_thread_RLock__acquire_restore, METH_O, _thread_RLock__acquire_restore__doc__},
 
 static PyObject *
-_thread_RLock__acquire_restore_impl(rlockobject *self, PyObject *args);
+_thread_RLock__acquire_restore_impl(rlockobject *self, PyObject *state);
 
 static PyObject *
-_thread_RLock__acquire_restore(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+_thread_RLock__acquire_restore(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
-    PyObject *__clinic_args = NULL;
 
-    __clinic_args = _PyTuple_FromArray(args, nargs);
-    if (__clinic_args == NULL) {
-        goto exit;
-    }
-    return_value = _thread_RLock__acquire_restore_impl((rlockobject *)self, __clinic_args);
-
-exit:
-    /* Cleanup for args */
-    Py_XDECREF(__clinic_args);
+    return_value = _thread_RLock__acquire_restore_impl((rlockobject *)self, state);
 
     return return_value;
 }
@@ -750,4 +740,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=b47d0fb780b63ab3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1255a1520f43f97a input=a9049054013a1b77]*/

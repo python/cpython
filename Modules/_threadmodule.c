@@ -938,7 +938,7 @@ Release the lock.
 static PyObject *
 _thread_lock___exit___impl(lockobject *self, PyObject *exc_type,
                            PyObject *exc_value, PyObject *exc_tb)
-/*[clinic end generated code: output=c9e8eefa69beed07 input=f1f539437b055547]*/
+/*[clinic end generated code: output=c9e8eefa69beed07 input=c74d4abe15a6c037]*/
 {
     return _thread_lock_release_impl(self);
 }
@@ -1204,19 +1204,20 @@ _thread_RLock_locked_impl(rlockobject *self)
 
 /*[clinic input]
 _thread.RLock._acquire_restore
-    *args: tuple
+    state: object
+    /
 
 For internal use by `threading.Condition`.
 [clinic start generated code]*/
 
 static PyObject *
-_thread_RLock__acquire_restore_impl(rlockobject *self, PyObject *args)
-/*[clinic end generated code: output=108d1310afbb9ac3 input=005c769fe28f8a23]*/
+_thread_RLock__acquire_restore_impl(rlockobject *self, PyObject *state)
+/*[clinic end generated code: output=beb8f2713a35e775 input=c8f2094fde059447]*/
 {
     PyThread_ident_t owner;
     Py_ssize_t count;
 
-    if (!PyArg_ParseTuple(args, "(n" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
+    if (!PyArg_Parse(state, "(n" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
             &count, &owner))
         return NULL;
 
