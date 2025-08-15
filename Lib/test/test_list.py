@@ -381,22 +381,22 @@ class ListTest(list_tests.CommonTest):
 
         self.assertEqual(foo(list(range(10))), 45)
 
-    @unittest.skipUnless(support.Py_GIL_DISABLED and
-                         support.check_sanitizer(thread=True),
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
                          'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_free_threading(self):
         def mutate(b, l):
-            d = [None] * 100
+            d = [None] * 500
             b.wait()
+            l.extend(d)
 
-            for _ in range(100):
-                l.extend(d)
-                del l[:]
+            for _ in range(1000):
+                del l[:360]
+                l[1:-1] = d
 
-        NUM_THREADS = 10
-        barrier = threading.Barrier(len(NUM_THREADS))
+        NUM_THREADS = 20
+        barrier = threading.Barrier(NUM_THREADS)
         threads = []
         l = []
 
