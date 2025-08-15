@@ -52,7 +52,7 @@ PyDoc_STRVAR(_abc__abc_register__doc__,
 "_abc_register($module, self, subclass, /)\n"
 "--\n"
 "\n"
-"Internal ABC helper for subclasss registration. Should be never used outside abc module.");
+"Internal ABC helper for subclass registration. Should be never used outside abc module.");
 
 #define _ABC__ABC_REGISTER_METHODDEF    \
     {"_abc_register", _PyCFunction_CAST(_abc__abc_register), METH_FASTCALL, _abc__abc_register__doc__},
@@ -161,4 +161,4 @@ _abc_get_cache_token(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _abc_get_cache_token_impl(module);
 }
-/*[clinic end generated code: output=1989b6716c950e17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dde8efe9ff1ac4cc input=a9049054013a1b77]*/
