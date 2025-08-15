@@ -2532,6 +2532,17 @@ class TestInit(unittest.TestCase):
             {"d": "list[undefined]", "return": "None"}
         )
 
+        # Check that __annotate__ is not replaced on non-generated __init__ functions
+        @dataclass
+        class E:
+            x: str
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+        self.assertEqual(
+            annotationlib.get_annotations(E.__init__), {"x": int, "return": None}
+        )
+
 
 class TestRepr(unittest.TestCase):
     def test_repr(self):
