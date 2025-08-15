@@ -44,6 +44,13 @@ def parse(filename):
         # Ignore one letter locale mappings (except for 'c')
         if len(locale) == 1 and locale != 'c':
             continue
+        if '@' in locale and '@' not in alias:
+            # Do not simply remove the "@euro" modifier.
+            # Glibc generates separate locales with the "@euro" modifier, and
+            # not always generates a locale without it with the same encoding.
+            # It can also affect collation.
+            if locale.endswith('@euro') and not locale.endswith('.utf-8@euro'):
+                alias += '@euro'
         # Normalize encoding, if given
         if '.' in locale:
             lang, encoding = locale.split('.')[:2]
@@ -51,6 +58,10 @@ def parse(filename):
             encoding = encoding.replace('_', '')
             locale = lang + '.' + encoding
         data[locale] = alias
+    # Conflict with glibc.
+    data.pop('el_gr@euro', None)
+    data.pop('uz_uz@cyrillic', None)
+    data.pop('uz_uz.utf8@cyrillic', None)
     return data
 
 def parse_glibc_supported(filename):
@@ -81,7 +92,7 @@ def parse_glibc_supported(filename):
         # Add an encoding to alias
         alias, _, modifier = alias.partition('@')
         alias = _locale._replace_encoding(alias, alias_encoding)
-        if modifier and not (modifier == 'euro' and alias_encoding == 'ISO-8859-15'):
+        if modifier:
             alias += '@' + modifier
         data[locale] = alias
     return data
