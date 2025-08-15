@@ -4499,10 +4499,10 @@ copying.
 
       .. versionadded:: 3.14
 
-  .. method:: index(value, start=0, end=None, /)
+  .. method:: index(value, start=0, stop=sys.maxsize, /)
 
       Return the index of the first occurrence of *value* (at or after
-      index *start* and before index *end*).
+      index *start* and before index *stop*).
 
       Raises a :exc:`ValueError` if *value* cannot be found.
 
