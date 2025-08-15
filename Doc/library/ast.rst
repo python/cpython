@@ -2360,12 +2360,12 @@ and classes for traversing abstract syntax trees:
    during traversal.  For this a special visitor exists
    (:class:`NodeTransformer`) that allows modifications.
 
-   .. deprecated:: 3.8
+   .. deprecated-removed:: 3.8 3.14
 
       Methods :meth:`!visit_Num`, :meth:`!visit_Str`, :meth:`!visit_Bytes`,
-      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` are deprecated
-      now and will not be called in future Python versions.  Add the
-      :meth:`visit_Constant` method to handle all constant nodes.
+      :meth:`!visit_NameConstant` and :meth:`!visit_Ellipsis` will not be called
+      in Python 3.14+.  Add the :meth:`visit_Constant` method instead to handle
+      all constant nodes.
 
 
 .. class:: NodeTransformer()
