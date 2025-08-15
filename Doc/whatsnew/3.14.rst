@@ -1209,7 +1209,7 @@ Other language changes
   either :meth:`~object.__int__` or :meth:`~object.__index__`.
   (Contributed by Mark Dickinson in :gh:`119743`.)
 
-* Using :data:`NotImplemented` in a Boolean context
+* Using :data:`NotImplemented` in a boolean context
   will now raise a :exc:`TypeError`.
   This has raised a :exc:`DeprecationWarning` since Python 3.9.
   (Contributed by Jelle Zijlstra in :gh:`118767`.)
