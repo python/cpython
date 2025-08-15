@@ -6070,11 +6070,11 @@ class TestGenericDescriptors(unittest.TestCase):
                     None,
                 )
         with self.assertRaises(AttributeError):
-            print(weakref_descriptor.__get__(True, bool))
+            weakref_descriptor.__get__(True, bool)
         with self.assertRaises(AttributeError):
-            print(weakref_descriptor.__get__(SlotClass(), SlotClass))
+            weakref_descriptor.__get__(SlotClass(), SlotClass)
         with self.assertRaises(AttributeError):
-            print(weakref_descriptor.__get__(IntSubclass(), IntSubclass))
+            weakref_descriptor.__get__(IntSubclass(), IntSubclass)
 
 
 if __name__ == "__main__":
