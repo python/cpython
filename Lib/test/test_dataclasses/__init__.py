@@ -2533,7 +2533,7 @@ class TestInit(unittest.TestCase):
         )
 
         # Check that __annotate__ is not replaced on non-generated __init__ functions
-        @dataclass
+        @dataclass(slots=True)
         class E:
             x: str
             def __init__(self, x: int) -> None:
