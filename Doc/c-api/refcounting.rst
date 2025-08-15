@@ -39,10 +39,8 @@ of Python objects.
       The parameter type is no longer :c:expr:`const PyObject*`.
 
    .. versionchanged:: 3.14
-      The interpreter now uses :term:`borrowed references <borrowed reference>`
-      where possible when calling C extensions. This means that an object's
-      reference count may appear as 1, even when it is not solely referenced by
-      the caller.
+      A return value of 1 is no longer sufficient to determine that *o* is
+      solely referenced by the caller.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
