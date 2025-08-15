@@ -1,7 +1,7 @@
 .. _tkinter:
 
 *********************************
-Graphical User Interfaces with Tk
+Graphical user interfaces with Tk
 *********************************
 
 .. index::
