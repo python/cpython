@@ -3361,6 +3361,25 @@ class POSIXProcessTestCase(BaseTestCase):
 
         self.assertEqual(returncode, -3)
 
+    def test_wait_after_external_wait(self):
+        """Test behavior when process is already waited on externally; issue96863."""
+        # Create a process with non-zero exit code
+        proc = subprocess.Popen([sys.executable, '-c', 'import sys; sys.exit(1)'])
+
+        # Wait for the process externally using os.wait()
+        pid, status = os.wait()
+        self.assertEqual(pid, proc.pid)
+        self.assertEqual(os.WEXITSTATUS(status), 1)
+
+        # Now calling proc.wait() should raise ProcessLookupError
+        # instead of returning 0 (the old buggy behavior)
+        with self.assertRaises(ProcessLookupError) as cm:
+            proc.wait()
+
+        # Verify the exception contains proper information
+        exc = cm.exception
+        self.assertIn('%d is already waited on externally' % proc.pid, str(exc))
+
     def test_send_signal_race(self):
         # bpo-38630: send_signal() must poll the process exit status to reduce
         # the risk of sending the signal to the wrong process.

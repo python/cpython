@@ -1,0 +1,3 @@
+Fix :meth:`subprocess.Popen.wait` returning zero always when process already
+waited on externally. Now raises :exc:`ProcessLookupError` instead of losing
+exit status. Preserves ``SIGCHLD=SIG_IGN`` compatibility.
