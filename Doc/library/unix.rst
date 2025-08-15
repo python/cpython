@@ -20,3 +20,4 @@ of it.  Here's an overview:
    fcntl.rst
    resource.rst
    syslog.rst
+   shlex.rst

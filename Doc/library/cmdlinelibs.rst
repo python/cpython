@@ -19,3 +19,4 @@ Here's an overview:
    curses.rst
    curses.ascii.rst
    curses.panel.rst
+   cmd.rst

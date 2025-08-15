@@ -1,18 +1,15 @@
+:orphan:
+
 .. _frameworks:
 
 ******************
 Program Frameworks
 ******************
 
-The modules described in this chapter are frameworks that will largely dictate
-the structure of your program.  Currently the modules described  here are all
-oriented toward writing command-line interfaces.
-
-The full list of modules described in this chapter is:
+This chapter is no longer maintained, and the modules it contained have been moved to their respective topical documentation.
+Please see the following pages for their new locations:
 
 
-.. toctree::
-
-   turtle.rst
-   cmd.rst
-   shlex.rst
+* :mod:`turtle` — :doc:`Graphical User Interfaces with Tk <library/tk>`
+* :mod:`cmd` — :doc:`Command Line Interface Libraries <library/cmdlinelibs>`
+* :mod:`shlex` — :doc:`Unix Specific Services <library/unix>`
