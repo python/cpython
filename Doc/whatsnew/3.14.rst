@@ -982,7 +982,7 @@ A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
 flag defaults to true for the free-threaded build and false for the GIL-enabled
 build. If the flag is true then the :class:`warnings.catch_warnings` context
 manager uses a context variable for warning filters.  This makes the context
-manager behave predicably when used with multiple threads or asynchronous
+manager behave predictably when used with multiple threads or asynchronous
 tasks.
 
 A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
@@ -1648,7 +1648,7 @@ io
   :exc:`BlockingIOError` if the operation cannot immediately return bytes.
   (Contributed by Giovanni Siragusa in :gh:`109523`.)
 
-* Add protocols :class:`io.Reader` and :class:`io.Writer` as a simpler
+* Add protocols :class:`io.Reader` and :class:`io.Writer` as simpler
   alternatives to the pseudo-protocols :class:`typing.IO`,
   :class:`typing.TextIO`, and :class:`typing.BinaryIO`.
   (Contributed by Sebastian Rittau in :gh:`127648`.)
@@ -2147,6 +2147,8 @@ typing
     documented to work, and was subtly broken in many cases.
 
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
+
+* :class:`typing.TypeAliasType` now supports star unpacking.
 
 
 unicodedata
@@ -2731,7 +2733,6 @@ typing
 * Remove :class:`!typing.ByteString`. It had previously raised a
   :exc:`DeprecationWarning` since Python 3.12.
 
-* :class:`typing.TypeAliasType` now supports star unpacking.
 
 urllib
 ------

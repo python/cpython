@@ -1154,6 +1154,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(options));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(order));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(origin));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(other));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(out_fd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(outgoing));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(outpath));
@@ -1213,6 +1214,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(return));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reverse));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(reversed));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(rounding));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(salt));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sched_priority));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(scheduler));
