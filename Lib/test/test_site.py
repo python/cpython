@@ -804,6 +804,15 @@ class _pthFileTests(unittest.TestCase):
             )], env=env)
         self.assertTrue(rc, "sys.path is incorrect")
 
+    @support.requires_subprocess()
+    def test_underpth_no_user_site(self):
+        pth_lines = [test.support.STDLIB_DIR, 'import site']
+        exe_file = self._create_underpth_exe(pth_lines)
+        p = subprocess.run([exe_file, '-X', 'utf8', '-c',
+                            'import sys; '
+                            'sys.exit(not sys.flags.no_user_site)'])
+        self.assertEqual(p.returncode, 0, "sys.flags.no_user_site was 0")
+
 
 class CommandLineTests(unittest.TestCase):
     def exists(self, path):
