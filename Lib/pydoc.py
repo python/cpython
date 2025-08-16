@@ -78,8 +78,6 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
-import _sitebuiltins
-
 from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager)
 
@@ -2023,6 +2021,9 @@ class Helper:
         'TRUTHVALUE': ('truth', 'if while and or not BASICMETHODS'),
         'DEBUGGING': ('debugger', 'pdb'),
         'CONTEXTMANAGERS': ('context-managers', 'with'),
+        'DUNDERMETHODS': 'SPECIALMETHODS',
+        'MAINMODULE': '__main__',
+        '__main__': ('__main__', ''),
     }
 
     def __init__(self, input=None, output=None):
@@ -2173,7 +2174,7 @@ to. Enter any symbol to get more help.
 Here is a list of available topics.  Enter any topic name to get more help.
 
 ''')
-        self.list(self.topics.keys(), columns=3)
+        self.list([k for k in self.topics.keys() if k.isupper()], columns=3)
 
     def showtopic(self, topic, more_xrefs=''):
         try:

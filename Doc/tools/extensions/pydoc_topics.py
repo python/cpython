@@ -100,6 +100,7 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "while",
     "with",
     "yield",
+    "__main__",
 })
 
 
