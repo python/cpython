@@ -1739,10 +1739,14 @@ def resolve(thing, forceload=0):
     if isinstance(thing, str):
         object = locate(thing, forceload)
         if object is None:
+            if re.match(r'^__\w+__$', thing):
+                special = "Use help('specialnames') for a list of special names for which help is available.\n"
+            else:
+                special = ""
             raise ImportError('''\
 No Python documentation found for %r.
-Use help() to get the interactive help utility.
-Use help(str) for help on the str class.''' % thing)
+%sUse help() to get the interactive help utility.
+Use help(str) for help on the str class.''' % (thing, special))
         return object, thing
     else:
         name = getattr(thing, '__name__', None)
@@ -1845,6 +1849,87 @@ def _introdoc():
         enter "q", "quit" or "exit".
     ''')
 
+def collect_dunders(symbols):
+    dunders = {
+        '__main__': ('__main__', ''),
+        '__call__': ('callable-types', 'SPECIALMETHODS'),
+    }
+
+    basic_dunders = [
+        '__new__', '__init__', '__del__', '__repr__', '__str__', '__bytes__',
+        '__format__', '__hash__', '__bool__',
+    ]
+    for bd in basic_dunders:
+        dunders[bd] = ('customization', 'SPECIALNAMES')
+
+    attribute_dunders = [
+        '__getattr__', '__getattribute__', '__setattr__', '__delattr__',
+        '__dir__', '__get__', '__set__', '__delete__', '__objclass__',
+    ]
+    for ad in attribute_dunders:
+        dunders[ad] = ('attribute-access', 'SPECIALNAMES')
+
+    class_dunders = [
+        '__init_subclass__', '__set_names__', '__mro_entries__',
+    ]
+    for cd in class_dunders:
+        dunders[cd] = ('class-customization', 'SPECIALNAMES')
+
+    instance_dunders = [
+        '__instancecheck__', '__subclasscheck__'
+    ]
+    for d in instance_dunders:
+        dunders[d] = ('custom-instance-subclass', 'SPECIALNAMES')
+
+    sequence_dunders = [
+       '__len__', '__length_hint__', '__getitem__', '__setitem__',
+       '__delitem__', '__missing__', '__iter__', '__reversed__',
+       '__contains__',
+    ]
+    for sd in sequence_dunders:
+        dunders[sd] = ('SEQUENCEMETHODS', 'SPECIALMETHODS')
+
+    comparison_dunders = {
+        '__lt__': '<',
+        '__le__': '<=',
+        '__eq__': '==',
+        '__ne__': '!=',
+        '__gt__': '>',
+        '__ge__': '>=',
+    }
+    for dunder, symbol in comparison_dunders.items():
+        dunders[dunder] = ('customization', f'{symbol} SPECIALMETHODS')
+        if symbol in symbols:
+            symbols[symbol] += f' {dunder}'
+
+    arithmetic_dunders = {
+        '__add__': '+',
+        '__sub__': '-',
+        '__mul__': '*',
+        '__matmul__': '@',
+        '__truediv__': '/',
+        '__floordiv__': '//',
+        '__mod__': '%',
+        '__pow__': '**',
+        '__lshift__': '<<',
+        '__rshift__': '>>',
+        '__and__': '&',
+        '__or__': '|',
+        '__xor__': '^',
+    }
+    for dunder, symbol in arithmetic_dunders.items():
+        rname = "__r" + dunder[2:]
+        iname = "__i" + dunder[2:]
+        dunders[dunder] = ('numeric-types', f'{symbol} {rname} {iname} SPECIALMETHODS')
+        dunders[rname] = ('numeric-types', f'{symbol} {dunder} SPECIALMETHODS')
+        dunders[iname] = ('numeric-types', f'{symbol} {dunder} SPECIALMETHODS')
+        if symbol in symbols:
+            symbols[symbol] += f' {dunder}'
+
+    dunders['__divmod__'] = ('numeric-types', 'divmod')
+
+    return dunders
+
 class Helper:
 
     # These dictionaries map a topic name to either an alias, or a tuple
@@ -1925,7 +2010,8 @@ class Helper:
         '(': 'TUPLES FUNCTIONS CALLS',
         ')': 'TUPLES FUNCTIONS CALLS',
         '[': 'LISTS SUBSCRIPTS SLICINGS',
-        ']': 'LISTS SUBSCRIPTS SLICINGS'
+        ']': 'LISTS SUBSCRIPTS SLICINGS',
+
     }
     for topic, symbols_ in _symbols_inverse.items():
         for symbol in symbols_:
@@ -2023,8 +2109,12 @@ class Helper:
         'CONTEXTMANAGERS': ('context-managers', 'with'),
         'DUNDERMETHODS': 'SPECIALMETHODS',
         'MAINMODULE': '__main__',
-        '__main__': ('__main__', ''),
     }
+
+    # add dunder methods
+    dunders = collect_dunders(symbols)
+    topics |= dunders
+
 
     def __init__(self, input=None, output=None):
         self._input = input
@@ -2100,6 +2190,8 @@ has the same effect as typing a particular string at the help> prompt.
             elif request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
+            elif request in {'specialnames', 'dunders'}:
+                self.listdunders()
             elif request == 'modules': self.listmodules()
             elif request[:8] == 'modules ':
                 self.listmodules(request.split()[1])
@@ -2174,7 +2266,14 @@ to. Enter any symbol to get more help.
 Here is a list of available topics.  Enter any topic name to get more help.
 
 ''')
-        self.list([k for k in self.topics.keys() if k.isupper()], columns=3)
+        self.list([k for k in self.topics if k not in self.dunders], columns=3)
+
+    def listdunders(self):
+        self.output.write('''
+Here is a list of special names for which help is available.  Enter any one to get more help.
+
+''')
+        self.list(self.dunders.keys(), columns=3)
 
     def showtopic(self, topic, more_xrefs=''):
         try:
