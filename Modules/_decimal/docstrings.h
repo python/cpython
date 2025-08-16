@@ -31,21 +31,6 @@ context does not affect the conversion and is only passed to determine if\n\
 the InvalidOperation trap is active.\n\
 \n");
 
-PyDoc_STRVAR(doc_compare,
-"compare($self, /, other, context=None)\n--\n\n\
-Compare self to other.  Return a decimal value:\n\
-\n\
-    a or b is a NaN ==> Decimal('NaN')\n\
-    a < b           ==> Decimal('-1')\n\
-    a == b          ==> Decimal('0')\n\
-    a > b           ==> Decimal('1')\n\
-\n");
-
-PyDoc_STRVAR(doc_compare_signal,
-"compare_signal($self, /, other, context=None)\n--\n\n\
-Identical to compare, except that all NaNs signal.\n\
-\n");
-
 PyDoc_STRVAR(doc_compare_total,
 "compare_total($self, /, other, context=None)\n--\n\n\
 Compare two operands using their abstract representation rather than\n\
@@ -105,13 +90,6 @@ Return True if the argument is a (quiet or signaling) NaN and False\n\
 otherwise.\n\
 \n");
 
-PyDoc_STRVAR(doc_is_normal,
-"is_normal($self, /, context=None)\n--\n\n\
-Return True if the argument is a normal finite non-zero number with an\n\
-adjusted exponent greater than or equal to Emin. Return False if the\n\
-argument is zero, subnormal, infinite or a NaN.\n\
-\n");
-
 PyDoc_STRVAR(doc_is_qnan,
 "is_qnan($self, /)\n--\n\n\
 Return True if the argument is a quiet NaN, and False otherwise.\n\
@@ -128,105 +106,10 @@ PyDoc_STRVAR(doc_is_snan,
 Return True if the argument is a signaling NaN and False otherwise.\n\
 \n");
 
-PyDoc_STRVAR(doc_is_subnormal,
-"is_subnormal($self, /, context=None)\n--\n\n\
-Return True if the argument is subnormal, and False otherwise. A number is\n\
-subnormal if it is non-zero, finite, and has an adjusted exponent less\n\
-than Emin.\n\
-\n");
-
 PyDoc_STRVAR(doc_is_zero,
 "is_zero($self, /)\n--\n\n\
 Return True if the argument is a (positive or negative) zero and False\n\
 otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_logical_and,
-"logical_and($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'and' of the two (logical) operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_logical_or,
-"logical_or($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'or' of the two (logical) operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_logical_xor,
-"logical_xor($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'exclusive or' of the two (logical) operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_max,
-"max($self, /, other, context=None)\n--\n\n\
-Maximum of self and other.  If one operand is a quiet NaN and the other is\n\
-numeric, the numeric operand is returned.\n\
-\n");
-
-PyDoc_STRVAR(doc_max_mag,
-"max_mag($self, /, other, context=None)\n--\n\n\
-Similar to the max() method, but the comparison is done using the absolute\n\
-values of the operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_min,
-"min($self, /, other, context=None)\n--\n\n\
-Minimum of self and other. If one operand is a quiet NaN and the other is\n\
-numeric, the numeric operand is returned.\n\
-\n");
-
-PyDoc_STRVAR(doc_min_mag,
-"min_mag($self, /, other, context=None)\n--\n\n\
-Similar to the min() method, but the comparison is done using the absolute\n\
-values of the operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_next_toward,
-"next_toward($self, /, other, context=None)\n--\n\n\
-If the two operands are unequal, return the number closest to the first\n\
-operand in the direction of the second operand.  If both operands are\n\
-numerically equal, return a copy of the first operand with the sign set\n\
-to be the same as the sign of the second operand.\n\
-\n");
-
-PyDoc_STRVAR(doc_remainder_near,
-"remainder_near($self, /, other, context=None)\n--\n\n\
-Return the remainder from dividing self by other.  This differs from\n\
-self % other in that the sign of the remainder is chosen so as to minimize\n\
-its absolute value. More precisely, the return value is self - n * other\n\
-where n is the integer nearest to the exact value of self / other, and\n\
-if two integers are equally near then the even one is chosen.\n\
-\n\
-If the result is zero then its sign will be the sign of self.\n\
-\n");
-
-PyDoc_STRVAR(doc_rotate,
-"rotate($self, /, other, context=None)\n--\n\n\
-Return the result of rotating the digits of the first operand by an amount\n\
-specified by the second operand.  The second operand must be an integer in\n\
-the range -precision through precision. The absolute value of the second\n\
-operand gives the number of places to rotate. If the second operand is\n\
-positive then rotation is to the left; otherwise rotation is to the right.\n\
-The coefficient of the first operand is padded on the left with zeros to\n\
-length precision if necessary. The sign and exponent of the first operand are\n\
-unchanged.\n\
-\n");
-
-PyDoc_STRVAR(doc_scaleb,
-"scaleb($self, /, other, context=None)\n--\n\n\
-Return the first operand with the exponent adjusted the second.  Equivalently,\n\
-return the first operand multiplied by 10**other. The second operand must be\n\
-an integer.\n\
-\n");
-
-PyDoc_STRVAR(doc_shift,
-"shift($self, /, other, context=None)\n--\n\n\
-Return the result of shifting the digits of the first operand by an amount\n\
-specified by the second operand.  The second operand must be an integer in\n\
-the range -precision through precision. The absolute value of the second\n\
-operand gives the number of places to shift. If the second operand is\n\
-positive, then the shift is to the left; otherwise the shift is to the\n\
-right. Digits shifted into the coefficient are zeros. The sign and exponent\n\
-of the first operand are unchanged.\n\
 \n");
 
 /******************************************************************************/
