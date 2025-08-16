@@ -19,8 +19,10 @@ struct _ceval_runtime_state;
 
 // Export for '_lsprof' shared extension
 PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+extern int _PyEval_SetProfileAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObject *arg);
 
 extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+extern int _PyEval_SetTraceAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObject *arg);
 
 extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
 
