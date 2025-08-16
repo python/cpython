@@ -107,6 +107,6 @@ Pending removal in Python 3.15
 
 * :mod:`zipimport`:
 
-  * :meth:`~zipimport.zipimporter.load_module` has been deprecated since
+  * :meth:`!zipimport.zipimporter.load_module` has been deprecated since
     Python 3.10. Use :meth:`~zipimport.zipimporter.exec_module` instead.
-    (Contributed by Jiahao Li in :gh:`125746`.)
+    (:gh:`125746`.)
