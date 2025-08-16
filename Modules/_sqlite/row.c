@@ -113,9 +113,8 @@ equal_ignore_case(PyObject *left, PyObject *right)
     if (eq) { /* equal or error */
         return eq;
     }
-    if (!PyUnicode_Check(left) || !PyUnicode_Check(right)) {
-        return 0;
-    }
+    assert(PyUnicode_Check(left));
+    assert(PyUnicode_Check(right));
     if (!PyUnicode_IS_ASCII(left) || !PyUnicode_IS_ASCII(right)) {
         return 0;
     }
@@ -154,6 +153,7 @@ pysqlite_row_subscript(PyObject *op, PyObject *idx)
             PyErr_Format(PyExc_IndexError, "No item with key %R", idx);
             return NULL;
         }
+        assert(PyTuple_Check(self->description));
         Py_ssize_t nitems = PyTuple_GET_SIZE(self->description);
 
         for (Py_ssize_t i = 0; i < nitems; i++) {
@@ -166,8 +166,9 @@ pysqlite_row_subscript(PyObject *op, PyObject *idx)
             }
             if (eq) {
                 /* found item */
-                PyObject *item = PyTuple_GetItem(self->data, i);
-                return Py_XNewRef(item);
+                PyObject *item = PyTuple_GET_ITEM(self->data, i);
+                assert(item != NULL);
+                return Py_NewRef(item);
             }
         }
 
@@ -208,6 +209,7 @@ pysqlite_row_keys_impl(pysqlite_Row *self)
         return list;
     }
 
+    assert(PyTuple_Check(self->description));
     Py_ssize_t nitems = PyTuple_GET_SIZE(self->description);
     for (Py_ssize_t i = 0; i < nitems; i++) {
         PyObject *descr = PyTuple_GET_ITEM(self->description, i);
