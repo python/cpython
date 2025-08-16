@@ -770,7 +770,7 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     return False
 
 
-def _get_field(cls, a_name, a_type, default_kw_only):
+def _get_field(cls, a_name, a_type, default_kw_only, slots):
     # Return a Field object for this field name and type.  ClassVars and
     # InitVars are also returned, but marked as such (see f._field_type).
     # default_kw_only is the value of kw_only to use if there isn't a field()
@@ -864,6 +864,18 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     if f._field_type is _FIELD and f.default.__class__.__hash__ is None:
         raise ValueError(f'mutable default {type(f.default)} for field '
                          f'{f.name} is not allowed: use default_factory')
+
+    # Validate that you can't set descriptors with `__set__`
+    # when using `slots=True`. Because `__slots__` will override
+    # this descriptor and it can hide a bug from users.
+    if slots:
+        static_default = inspect.getattr_static(cls, a_name, MISSING)
+        if (
+            not inspect.ismemberdescriptor(static_default)
+            and inspect.isdatadescriptor(static_default)
+        ):
+            raise ValueError(f'data descriptor {type(static_default).__name__!r} '
+                             f'in {f.name!r} will be overriden when slots=True')
 
     return f
 
@@ -1011,7 +1023,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             kw_only = True
         else:
             # Otherwise it's a field of some type.
-            cls_fields.append(_get_field(cls, name, type, kw_only))
+            cls_fields.append(_get_field(cls, name, type, kw_only, slots))
 
     for f in cls_fields:
         fields[f.name] = f
