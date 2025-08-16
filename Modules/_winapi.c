@@ -3052,7 +3052,7 @@ static PyObject *
 _winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int event_type,
                          int event_category, int event_id, PyObject *strings,
                          Py_buffer *raw_data)
-/*[clinic end generated code: output=9066f114cdfdf5f2 input=fc37cfe1816d02d7]*/
+/*[clinic end generated code: output=9066f114cdfdf5f2 input=fade978a0b25e611]*/
 {
     BOOL success;
     LPCWSTR *string_array = NULL;

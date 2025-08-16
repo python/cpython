@@ -2285,7 +2285,7 @@ exit:
 
 PyDoc_STRVAR(_winapi_ReportEvent__doc__,
 "ReportEvent($module, /, handle, event_type, event_category, event_id,\n"
-"            strings, raw_data=None)\n"
+"            strings, raw_data)\n"
 "--\n"
 "\n"
 "\n"
@@ -2338,7 +2338,7 @@ _winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static const char * const _keywords[] = {"handle", "event_type", "event_category", "event_id", "strings", "raw_data", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" F_HANDLE "iiiO!|y*:ReportEvent",
+        .format = "" F_HANDLE "iiiO!y*:ReportEvent",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -2367,4 +2367,4 @@ exit:
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=9a69b9d704c7d138 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9e1bd2714bd8269 input=a9049054013a1b77]*/

@@ -163,32 +163,29 @@ class WinAPITests(unittest.TestCase):
         handle = _winapi.RegisterEventSource(None, source_name)
         self.assertNotEqual(handle, _winapi.INVALID_HANDLE_VALUE)
 
-        # Test ReportEvent with the registered event source
-        try:
-            # Test with strings and raw data
-            test_strings = ["Test message 1", "Test message 2"]
-            test_data = b"test raw data"
-            _winapi.ReportEvent(handle, 4, 1, 1002, test_strings, test_data)
-
-            # Test with empty strings list
-            # _winapi.ReportEvent(handle, 2, 0, 1003, [], None) # TODO
-        finally:
-            _winapi.DeregisterEventSource(handle)
-
-        with self.assertRaises(OSError):
+        with self.assertRaisesRegex(OSError, '[WinError 87]'):
             _winapi.RegisterEventSource(None, "")
 
-        with self.assertRaises(OSError):
+        with self.assertRaisesRegex(OSError, '[WinError 6]'):
             _winapi.DeregisterEventSource(_winapi.INVALID_HANDLE_VALUE)
 
-        # Test ReportEvent with invalid handle
-        with self.assertRaises(OSError):
+    def test_report_event(self):
+        source_name = "PythonTestEventSource"
+
+        handle = _winapi.RegisterEventSource(None, source_name)
+        self.assertNotEqual(handle, _winapi.INVALID_HANDLE_VALUE)
+        self.addCleanup(_winapi.DeregisterEventSource, handle)
+
+        # Test with strings and raw data
+        test_strings = ["Test message 1", "Test message 2"]
+        test_data = b"test raw data"
+        _winapi.ReportEvent(handle, 4, 1, 1002, test_strings, test_data)
+
+        # Test with empty strings list
+        _winapi.ReportEvent(handle, 2, 0, 1003, [], b'')
+
+        with self.assertRaisesRegex(OSError, '[WinError 6]'):
             _winapi.ReportEvent(_winapi.INVALID_HANDLE_VALUE, 1, 0, 1001, [], test_data)
 
-        # Test ReportEvent with invalid string types
-        handle2 = _winapi.RegisterEventSource(None, "PythonTestEventSource2")
-        try:
-            with self.assertRaises(TypeError):
-                _winapi.ReportEvent(handle2, 1, 0, 1001, ["string", 123], test_data)
-        finally:
-            _winapi.DeregisterEventSource(handle2)
+        with self.assertRaisesRegex(TypeError, 'All strings must be unicode'):
+            _winapi.ReportEvent(handle, 1, 0, 1001, ["string", 123], test_data)
