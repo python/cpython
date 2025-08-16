@@ -67,20 +67,20 @@ PyAPI_FUNC(int) PyBuffer_FromContiguous(const Py_buffer *view, const void *buf,
    error (i.e. the object does not have a buffer interface or
    it is not working).
 
-   If fort is 'F', then if the object is multi-dimensional,
+   If order is 'F', then if the object is multi-dimensional,
    then the data will be copied into the array in
    Fortran-style (first dimension varies the fastest).  If
-   fort is 'C', then the data will be copied into the array
-   in C-style (last dimension varies the fastest).  If fort
+   order is 'C', then the data will be copied into the array
+   in C-style (last dimension varies the fastest).  If order
    is 'A', then it does not matter and the copy will be made
    in whatever way is more efficient. */
 PyAPI_FUNC(int) PyObject_CopyData(PyObject *dest, PyObject *src);
 
 /* Copy the data from the src buffer to the buffer of destination. */
-PyAPI_FUNC(int) PyBuffer_IsContiguous(const Py_buffer *view, char fort);
+PyAPI_FUNC(int) PyBuffer_IsContiguous(const Py_buffer *view, char order);
 
 /*Fill the strides array with byte-strides of a contiguous
-  (Fortran-style if fort is 'F' or C-style otherwise)
+  (Fortran-style if order is 'F' or C-style otherwise)
   array of the given shape with the given number of bytes
   per element. */
 PyAPI_FUNC(void) PyBuffer_FillContiguousStrides(int ndims,
