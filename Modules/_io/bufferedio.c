@@ -2559,7 +2559,7 @@ static PyMethodDef bufferedreader_methods[] = {
 };
 
 static PyMemberDef bufferedreader_members[] = {
-    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"raw", Py_T_OBJECT_EX, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
     {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
@@ -2618,7 +2618,7 @@ static PyMethodDef bufferedwriter_methods[] = {
 };
 
 static PyMemberDef bufferedwriter_members[] = {
-    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"raw", Py_T_OBJECT_EX, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
     {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
@@ -2735,7 +2735,7 @@ static PyMethodDef bufferedrandom_methods[] = {
 };
 
 static PyMemberDef bufferedrandom_members[] = {
-    {"raw", _Py_T_OBJECT, offsetof(buffered, raw), Py_READONLY},
+    {"raw", Py_T_OBJECT_EX, offsetof(buffered, raw), Py_READONLY},
     {"_finalizing", Py_T_BOOL, offsetof(buffered, finalizing), 0},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(buffered, weakreflist), Py_READONLY},
     {"__dictoffset__", Py_T_PYSSIZET, offsetof(buffered, dict), Py_READONLY},
