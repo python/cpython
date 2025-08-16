@@ -1444,19 +1444,19 @@ class TestDescriptions(unittest.TestCase):
             self.assertIn(list.__doc__.strip().splitlines()[0], doc)
 
     def test_union_type(self):
-        self.assertEqual(pydoc.describe(typing.Union[int, str]), 'Union')
+        self.assertEqual(pydoc.describe(typing.Union[int, str]), 'UnionType')
         doc = pydoc.render_doc(typing.Union[int, str], renderer=pydoc.plaintext)
-        self.assertIn('Union in module typing', doc)
-        self.assertIn('class Union(builtins.object)', doc)
+        self.assertIn('UnionType in module types', doc)
+        self.assertIn('UnionType = typing.Union', doc)
         if typing.Union.__doc__:
             self.assertIn(typing.Union.__doc__.strip().splitlines()[0], doc)
 
-        self.assertEqual(pydoc.describe(int | str), 'Union')
+        self.assertEqual(pydoc.describe(int | str), 'UnionType')
         doc = pydoc.render_doc(int | str, renderer=pydoc.plaintext)
-        self.assertIn('Union in module typing', doc)
-        self.assertIn('class Union(builtins.object)', doc)
-        if not MISSING_C_DOCSTRINGS:
-            self.assertIn(types.UnionType.__doc__.strip().splitlines()[0], doc)
+        self.assertIn('UnionType in module types', doc)
+        self.assertIn('UnionType = typing.Union', doc)
+        if typing.Union.__doc__:
+            self.assertIn(typing.Union.__doc__.strip().splitlines()[0], doc)
 
     def test_special_form(self):
         self.assertEqual(pydoc.describe(typing.NoReturn), '_SpecialForm')
