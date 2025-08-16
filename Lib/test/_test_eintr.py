@@ -431,6 +431,8 @@ class SignalEINTRTest(EINTRBaseTest):
 
         self.assertEqual(proc.wait(), 0)
 
+    @unittest.skipIf(sys.platform.startswith("netbsd"),
+                     "NetBSD sigwaitinfo() returns ECANCELED instead of EINTR; see gh-137490")
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
                          'need signal.sigwaitinfo()')
     def test_sigwaitinfo(self):
