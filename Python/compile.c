@@ -290,9 +290,11 @@ compiler_set_qualname(compiler *c)
             }
         }
         if (u->u_ste->ste_function_name != NULL) {
+            PyObject *tmp = base;
             base = PyUnicode_FromFormat("%U.%U",
-                parent->u_metadata.u_qualname,
+                base,
                 u->u_ste->ste_function_name);
+            Py_DECREF(tmp);
             if (base == NULL) {
                 return ERROR;
             }
