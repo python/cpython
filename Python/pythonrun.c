@@ -1366,6 +1366,29 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 }
 
 static PyObject *
+get_interactive_filename(PyObject *filename, Py_ssize_t count)
+{
+    PyObject *result;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
+
+    if (len >= 2
+            && PyUnicode_ReadChar(filename, 0) == '<'
+            && PyUnicode_ReadChar(filename, len - 1) == '>') {
+        PyObject *middle = PyUnicode_Substring(filename, 1, len-1);
+        if (middle == NULL) {
+            return NULL;
+        }
+        result = PyUnicode_FromFormat("<%U-%d>", middle, count);
+        Py_DECREF(middle);
+    } else {
+        result = PyUnicode_FromFormat(
+            "%U-%d", filename, count);
+    }
+    return result;
+
+}
+
+static PyObject *
 run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena, PyObject* interactive_src,
             int generate_new_source)
@@ -1375,8 +1398,8 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
     if (interactive_src) {
         PyInterpreterState *interp = tstate->interp;
         if (generate_new_source) {
-            interactive_filename = PyUnicode_FromFormat(
-                "%U-%d", filename, interp->_interactive_src_count++);
+            interactive_filename = get_interactive_filename(
+                filename, interp->_interactive_src_count++);
         } else {
             Py_INCREF(interactive_filename);
         }
