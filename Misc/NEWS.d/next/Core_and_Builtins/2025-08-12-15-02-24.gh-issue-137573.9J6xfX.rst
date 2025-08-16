@@ -1,0 +1,1 @@
+Guard against C stack overflow when JIT compiling.

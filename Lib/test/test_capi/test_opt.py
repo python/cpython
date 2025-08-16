@@ -10,11 +10,12 @@ import _opcode
 
 from test.support import (script_helper, requires_specialization,
                           import_helper, Py_GIL_DISABLED, requires_jit_enabled,
-                          reset_code)
+                          reset_code, infinite_recursion)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 from _testinternalcapi import TIER2_THRESHOLD
+from _testcapi import pyobject_vectorcall
 
 
 @contextlib.contextmanager
@@ -2500,6 +2501,37 @@ class TestUopsOptimization(unittest.TestCase):
 
         # For now... until we constant propagate it away.
         self.assertIn("_BINARY_OP", uops)
+
+
+@requires_jit_enabled
+class TestStackUse(unittest.TestCase):
+
+    def test_jit_at_depth(self):
+
+        def run_at_depth(n, func):
+            if n:
+                pyobject_vectorcall(run_at_depth, (n-1, func), None)
+            else:
+                func()
+
+        def find_stack_limit():
+            nonlocal depth
+            depth += 1
+            pyobject_vectorcall(find_stack_limit, (), None)
+
+        with infinite_recursion():
+            depth = 0
+            try:
+                find_stack_limit()
+            except RecursionError:
+                pass
+
+            def loop_func():
+                r = 0
+                for i in range(TIER2_THRESHOLD):
+                    r += i
+                return r
+            run_at_depth(depth-1, loop_func)
 
 
 def global_identity(x):
