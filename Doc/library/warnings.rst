@@ -229,6 +229,39 @@ Some examples::
    ignore,default:::mymodule    # Only report warnings triggered by "mymodule"
    error:::mymodule             # Convert warnings to errors in "mymodule"
 
+.. _warning-filter-examples:
+
+Warning Filter Examples
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Here are some complex examples for filtering warnings.
+
+Note that :func:`filterwarnings` filters have subtle differences
+from :option:`-W` and :envvar:`PYTHONWARNINGS` regarding the *message* and *module*
+parts of the filter (as described in :ref:`warning-filter`).
+Mainly, 'message' and 'module' are regular expressions in the former,
+but literal strings in the latter two.
+
+::
+
+   filterwarnings("ignore", message=".*generic", module=r"yourmodule\.submodule")
+      # Ignore warnings in "yourmodule.submodule" which contain "generic".
+      # Note that the '.' in 'message' marks any character and in 'module' it is escaped,
+      #   in order to match a literal dot character.
+   filterwarnings("ignore", message="generic", module=r"yourmodule\.submodule")
+      # Ignore warnings in "yourmodule.submodule" which START with "generic".
+   filterwarnings("ignore", module="yourmodule.*")
+      # Ignore all warnings in "yourmodule" and its submodules.
+      # Note that the '.' in 'module' marks any character so is not escaped.
+
+   -W "ignore:generic::yourmodule.submodule:"
+      # Ignore warnings in "yourmodule.submodule" which START with "generic"
+      #   (but not those containing it).
+      # Also note that the '.' in the module part does not need to be escaped
+      #   since it is not a regular expression.
+   -W "ignore:::yourmodule:"
+      # Ignore all warnings in "yourmodule", but NOT in its submodules.
+
 
 .. _default-warning-filter:
 
