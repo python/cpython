@@ -149,6 +149,8 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | [:c:member:`~PyTypeObject.tp_watched`]         | unsigned char                     |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
+   | [:c:member:`~PyTypeObject.tp_versions_used`]   | uint16_t                          |                   |   |   |   |   |
+   +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
 
@@ -2498,6 +2500,17 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    Internal. Do not use.
 
    .. versionadded:: 3.12
+
+
+.. c:member:: uint16_t PyTypeObject.tp_versions_used
+
+   Internal. Do not use.
+
+   **Inheritance:**
+
+   This field is not inherited.
+
+   .. versionadded:: 3.13
 
 
 .. _static-types:
