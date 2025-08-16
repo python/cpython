@@ -2740,11 +2740,14 @@ _PyArg_CheckPositional(const char *name, Py_ssize_t nargs,
     assert(min <= max);
 
     if (nargs < min) {
-        if (name != NULL)
+        if (name != NULL) {
+            const char *arg_type = (strcmp(name, "dict") == 0 || strcmp(name, "update") == 0)
+                                   ? "positional argument" : "argument";
             PyErr_Format(
                 PyExc_TypeError,
-                "%.200s expected %s%zd argument%s, got %zd",
-                name, (min == max ? "" : "at least "), min, min == 1 ? "" : "s", nargs);
+                "%.200s expected %s%zd %s%s, got %zd",
+                name, (min == max ? "" : "at least "), min, arg_type, min == 1 ? "" : "s", nargs);
+        }
         else
             PyErr_Format(
                 PyExc_TypeError,
@@ -2759,11 +2762,14 @@ _PyArg_CheckPositional(const char *name, Py_ssize_t nargs,
     }
 
     if (nargs > max) {
-        if (name != NULL)
+        if (name != NULL) {
+            const char *arg_type = (strcmp(name, "dict") == 0 || strcmp(name, "update") == 0)
+                                   ? "positional argument" : "argument";
             PyErr_Format(
                 PyExc_TypeError,
-                "%.200s expected %s%zd argument%s, got %zd",
-                name, (min == max ? "" : "at most "), max, max == 1 ? "" : "s", nargs);
+                "%.200s expected %s%zd %s%s, got %zd",
+                name, (min == max ? "" : "at most "), max, arg_type, max == 1 ? "" : "s", nargs);
+        }
         else
             PyErr_Format(
                 PyExc_TypeError,
