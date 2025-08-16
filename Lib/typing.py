@@ -1033,8 +1033,10 @@ def evaluate_forward_ref(
 
 
 def _is_unpacked_typevartuple(x: Any) -> bool:
+    # Need to check 'is True' here
+    # See: https://github.com/python/cpython/issues/137706
     return ((not isinstance(x, type)) and
-            getattr(x, '__typing_is_unpacked_typevartuple__', False))
+            getattr(x, '__typing_is_unpacked_typevartuple__', False) is True)
 
 
 def _is_typevar_like(x: Any) -> bool:
