@@ -2184,7 +2184,164 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_RegisterEventSource__doc__,
+"RegisterEventSource($module, /, unc_server_name, source_name)\n"
+"--\n"
+"\n"
+"\n"
+"\n"
+"  unc_server_name\n"
+"    The UNC name of the server on which the event source should be registered.\n"
+"    If NULL, registers the event source on the local computer.\n"
+"  source_name\n"
+"    The name of the event source to register.");
+
+#define _WINAPI_REGISTEREVENTSOURCE_METHODDEF    \
+    {"RegisterEventSource", _PyCFunction_CAST(_winapi_RegisterEventSource), METH_FASTCALL|METH_KEYWORDS, _winapi_RegisterEventSource__doc__},
+
+static HANDLE
+_winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
+                                 LPCWSTR source_name);
+
+static PyObject *
+_winapi_RegisterEventSource(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(unc_server_name), &_Py_ID(source_name), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"unc_server_name", "source_name", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "RegisterEventSource",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    LPCWSTR unc_server_name = NULL;
+    LPCWSTR source_name = NULL;
+    HANDLE _return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (args[0] == Py_None) {
+        unc_server_name = NULL;
+    }
+    else if (PyUnicode_Check(args[0])) {
+        unc_server_name = PyUnicode_AsWideCharString(args[0], NULL);
+        if (unc_server_name == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("RegisterEventSource", "argument 'unc_server_name'", "str or None", args[0]);
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("RegisterEventSource", "argument 'source_name'", "str", args[1]);
+        goto exit;
+    }
+    source_name = PyUnicode_AsWideCharString(args[1], NULL);
+    if (source_name == NULL) {
+        goto exit;
+    }
+    _return_value = _winapi_RegisterEventSource_impl(module, unc_server_name, source_name);
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (_return_value == NULL) {
+        Py_RETURN_NONE;
+    }
+    return_value = HANDLE_TO_PYNUM(_return_value);
+
+exit:
+    /* Cleanup for unc_server_name */
+    PyMem_Free((void *)unc_server_name);
+    /* Cleanup for source_name */
+    PyMem_Free((void *)source_name);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_DeregisterEventSource__doc__,
+"DeregisterEventSource($module, /, handle)\n"
+"--\n"
+"\n"
+"\n"
+"\n"
+"  handle\n"
+"    The handle to the event log to be deregistered.");
+
+#define _WINAPI_DEREGISTEREVENTSOURCE_METHODDEF    \
+    {"DeregisterEventSource", _PyCFunction_CAST(_winapi_DeregisterEventSource), METH_FASTCALL|METH_KEYWORDS, _winapi_DeregisterEventSource__doc__},
+
+static PyObject *
+_winapi_DeregisterEventSource_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_DeregisterEventSource(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(handle), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"handle", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "" F_HANDLE ":DeregisterEventSource",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    HANDLE handle;
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &handle)) {
+        goto exit;
+    }
+    return_value = _winapi_DeregisterEventSource_impl(module, handle);
+
+exit:
+    return return_value;
+}
+
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=4581fd481c3c6293 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=560f833b2c156b1e input=a9049054013a1b77]*/

@@ -156,3 +156,17 @@ class WinAPITests(unittest.TestCase):
             pipe2.write(b'testdata')
             pipe2.flush()
             self.assertEqual((b'testdata', 8), _winapi.PeekNamedPipe(pipe, 8)[:2])
+
+    def test_event_source_registration(self):
+        source_name = "PythonTestEventSource"
+
+        handle = _winapi.RegisterEventSource(None, source_name)
+        self.assertNotEqual(handle, _winapi.INVALID_HANDLE_VALUE)
+
+        _winapi.DeregisterEventSource(handle)
+
+        with self.assertRaises(OSError):
+            _winapi.RegisterEventSource(None, "")
+
+        with self.assertRaises(OSError):
+            _winapi.DeregisterEventSource(_winapi.INVALID_HANDLE_VALUE)

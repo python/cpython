@@ -1249,6 +1249,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sock));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sort));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(source));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(source_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(source_traceback));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(spam));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(src));
@@ -1308,6 +1309,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tzinfo));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(tzname));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(uid));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(unc_server_name));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(unlink));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(unraisablehook));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(updates));

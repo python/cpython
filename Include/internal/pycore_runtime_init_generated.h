@@ -1247,6 +1247,7 @@ extern "C" {
     INIT_ID(sock), \
     INIT_ID(sort), \
     INIT_ID(source), \
+    INIT_ID(source_name), \
     INIT_ID(source_traceback), \
     INIT_ID(spam), \
     INIT_ID(src), \
@@ -1306,6 +1307,7 @@ extern "C" {
     INIT_ID(tzinfo), \
     INIT_ID(tzname), \
     INIT_ID(uid), \
+    INIT_ID(unc_server_name), \
     INIT_ID(unlink), \
     INIT_ID(unraisablehook), \
     INIT_ID(updates), \
