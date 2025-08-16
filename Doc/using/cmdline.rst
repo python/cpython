@@ -369,7 +369,7 @@ Miscellaneous options
 .. option:: -R
 
    Turn on hash randomization. This option only has an effect if the
-   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
+   :envvar:`PYTHONHASHSEED` environment variable is set, since hash
    randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
