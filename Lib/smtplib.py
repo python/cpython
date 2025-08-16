@@ -742,6 +742,8 @@ class SMTP:
                 if code in (235, 503):
                     return (code, resp)
             except SMTPAuthenticationError as e:
+                # get out immediately if bad password
+                if e.smtp_code == 535 and e.smtp_error[:5] == b'5.7.8': raise e
                 last_exception = e
 
         # We could not login successfully.  Return result of last attempt.
