@@ -862,6 +862,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 zlib.Decompress.decompress
 
     cls: defining_class
@@ -883,7 +884,7 @@ Call the flush() method to clear these buffers.
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=b024a93c2c922d57 input=bfb37b3864cfb606]*/
+/*[clinic end generated code: output=b024a93c2c922d57 input=205667f8c387fce4]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
@@ -1668,6 +1669,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 zlib.ZlibDecompressor.decompress
 
     data: Py_buffer
@@ -1692,7 +1694,7 @@ the unused_data attribute.
 static PyObject *
 zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
                                       Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=990d32787b775f85 input=0b29d99715250b96]*/
+/*[clinic end generated code: output=990d32787b775f85 input=fcf9f974de5d02b1]*/
 
 {
     PyObject *result = NULL;

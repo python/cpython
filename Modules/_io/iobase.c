@@ -93,6 +93,7 @@ iobase_unsupported(_PyIO_State *state, const char *message)
 /* Positioning */
 
 /*[clinic input]
+@permit_long_docstring_body
 _io._IOBase.seek
     cls: defining_class
     offset: int(unused=True)
@@ -116,7 +117,7 @@ Return the new absolute position.
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
                       int Py_UNUSED(offset), int Py_UNUSED(whence))
-/*[clinic end generated code: output=8bd74ea6538ded53 input=74211232b363363e]*/
+/*[clinic end generated code: output=8bd74ea6538ded53 input=a21b5aad416ff6a9]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");

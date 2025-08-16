@@ -1353,6 +1353,7 @@ _curses_window_bkgdset_impl(PyCursesWindowObject *self, PyObject *ch,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.border
 
     ls: object(c_default="NULL") = _curses.ACS_VLINE
@@ -1386,7 +1387,7 @@ _curses_window_border_impl(PyCursesWindowObject *self, PyObject *ls,
                            PyObject *rs, PyObject *ts, PyObject *bs,
                            PyObject *tl, PyObject *tr, PyObject *bl,
                            PyObject *br)
-/*[clinic end generated code: output=670ef38d3d7c2aa3 input=e015f735d67a240b]*/
+/*[clinic end generated code: output=670ef38d3d7c2aa3 input=adaafca87488ee35]*/
 {
     chtype ch[8];
     int i, rtn;
@@ -1589,6 +1590,7 @@ _curses_window_delch_impl(PyCursesWindowObject *self, int group_right_1,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.derwin
 
     [
@@ -1613,7 +1615,7 @@ screen.
 static PyObject *
 _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
                            int nlines, int ncols, int begin_y, int begin_x)
-/*[clinic end generated code: output=7924b112d9f70d6e input=966d9481f7f5022e]*/
+/*[clinic end generated code: output=7924b112d9f70d6e input=ebe95ded1c284c8e]*/
 {
     WINDOW *win;
 
@@ -1669,6 +1671,7 @@ _curses_window_echochar_impl(PyCursesWindowObject *self, PyObject *ch,
 
 #ifdef NCURSES_MOUSE_VERSION
 /*[clinic input]
+@permit_long_summary
 _curses.window.enclose
 
     y: int
@@ -1682,7 +1685,7 @@ Return True if the screen-relative coordinates are enclosed by the window.
 
 static PyObject *
 _curses_window_enclose_impl(PyCursesWindowObject *self, int y, int x)
-/*[clinic end generated code: output=8679beef50502648 input=4fd3355d723f7bc9]*/
+/*[clinic end generated code: output=8679beef50502648 input=9ba7c894cffe5507]*/
 {
     return PyBool_FromLong(wenclose(self->win, y, x));
 }
@@ -1722,6 +1725,7 @@ curses_check_signals_on_input_error(PyCursesWindowObject *self,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.getch
 
     [
@@ -1742,7 +1746,7 @@ is returned if there is no input, else getch() waits until a key is pressed.
 static PyObject *
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
                           int y, int x)
-/*[clinic end generated code: output=e1639e87d545e676 input=73f350336b1ee8c8]*/
+/*[clinic end generated code: output=e1639e87d545e676 input=9a053077373e2a30]*/
 {
     int rtn;
 
@@ -1769,6 +1773,7 @@ _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.getkey
 
     [
@@ -1789,7 +1794,7 @@ key name.  In no-delay mode, an exception is raised if there is no input.
 static PyObject *
 _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
                            int y, int x)
-/*[clinic end generated code: output=8490a182db46b10f input=be2dee34f5cf57f8]*/
+/*[clinic end generated code: output=8490a182db46b10f input=5177f03fb6c31ea6]*/
 {
     int rtn;
 
@@ -2012,6 +2017,7 @@ _curses_window_hline_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.insch
 
     [
@@ -2040,7 +2046,7 @@ static PyObject *
 _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
                           int y, int x, PyObject *ch, int group_right_1,
                           long attr)
-/*[clinic end generated code: output=ade8cfe3a3bf3e34 input=336342756ee19812]*/
+/*[clinic end generated code: output=ade8cfe3a3bf3e34 input=3f2a230cb09fed5a]*/
 {
     int rtn;
     chtype ch_ = 0;
@@ -2062,6 +2068,7 @@ _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.inch
 
     [
@@ -2080,7 +2087,7 @@ The bottom 8 bits are the character proper, and upper bits are the attributes.
 static PyObject *
 _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
                          int y, int x)
-/*[clinic end generated code: output=97ca8581baaafd06 input=4b4fb43d85b177c3]*/
+/*[clinic end generated code: output=97ca8581baaafd06 input=a5846f315464dc86]*/
 {
     chtype rtn;
     const char *funcname;
@@ -2250,6 +2257,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.insnstr
 
     [
@@ -2285,7 +2293,7 @@ static PyObject *
 _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
                             int y, int x, PyObject *str, int n,
                             int group_right_1, long attr)
-/*[clinic end generated code: output=971a32ea6328ec8b input=70fa0cd543901a4c]*/
+/*[clinic end generated code: output=971a32ea6328ec8b input=dcdc554102fbcd5d]*/
 {
     int rtn;
     int strtype;
@@ -2350,6 +2358,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.is_linetouched
 
     line: int
@@ -2363,7 +2372,7 @@ Raise a curses.error exception if line is not valid for the given window.
 
 static PyObject *
 _curses_window_is_linetouched_impl(PyCursesWindowObject *self, int line)
-/*[clinic end generated code: output=ad4a4edfee2db08c input=a7be0c189f243914]*/
+/*[clinic end generated code: output=ad4a4edfee2db08c input=af71c040b951c467]*/
 {
     int erg;
     erg = is_linetouched(self->win, line);
@@ -2376,6 +2385,7 @@ _curses_window_is_linetouched_impl(PyCursesWindowObject *self, int line)
 
 #ifdef py_is_pad
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.noutrefresh
 
     [
@@ -2400,9 +2410,10 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self,
                                 int group_right_1, int pminrow, int pmincol,
                                 int sminrow, int smincol, int smaxrow,
                                 int smaxcol)
-/*[clinic end generated code: output=809a1f3c6a03e23e input=3e56898388cd739e]*/
+/*[clinic end generated code: output=809a1f3c6a03e23e input=b39fe8fc79b9980b]*/
 #else
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.noutrefresh
 
 Mark for refresh but wait.
@@ -2414,7 +2425,7 @@ that, call doupdate().
 
 static PyObject *
 _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
-/*[clinic end generated code: output=6ef6dec666643fee input=876902e3fa431dbd]*/
+/*[clinic end generated code: output=6ef6dec666643fee input=6a9f59ae5e4c139e]*/
 #endif
 {
     int rtn;
@@ -2447,6 +2458,7 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.overlay
 
     destwin: object(type="PyCursesWindowObject *", subclass_of="clinic_state()->window_type")
@@ -2478,7 +2490,7 @@ _curses_window_overlay_impl(PyCursesWindowObject *self,
                             PyCursesWindowObject *destwin, int group_right_1,
                             int sminrow, int smincol, int dminrow,
                             int dmincol, int dmaxrow, int dmaxcol)
-/*[clinic end generated code: output=82bb2c4cb443ca58 input=6e4b32a7c627a356]*/
+/*[clinic end generated code: output=82bb2c4cb443ca58 input=dd6af34deb892a65]*/
 {
     int rtn;
 
@@ -2494,6 +2506,7 @@ _curses_window_overlay_impl(PyCursesWindowObject *self,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.overwrite
 
     destwin: object(type="PyCursesWindowObject *", subclass_of="clinic_state()->window_type")
@@ -2526,7 +2539,7 @@ _curses_window_overwrite_impl(PyCursesWindowObject *self,
                               int group_right_1, int sminrow, int smincol,
                               int dminrow, int dmincol, int dmaxrow,
                               int dmaxcol)
-/*[clinic end generated code: output=12ae007d1681be28 input=d83dd8b24ff2bcc9]*/
+/*[clinic end generated code: output=12ae007d1681be28 input=e84d8ebdf1c09596]*/
 {
     int rtn;
 
@@ -2610,6 +2623,7 @@ _curses_window_redrawln_impl(PyCursesWindowObject *self, int beg, int num)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.refresh
 
     [
@@ -2641,7 +2655,7 @@ static PyObject *
 _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
                             int pminrow, int pmincol, int sminrow,
                             int smincol, int smaxrow, int smaxcol)
-/*[clinic end generated code: output=42199543115e6e63 input=95e01cb5ffc635d0]*/
+/*[clinic end generated code: output=42199543115e6e63 input=65405c03290496a6]*/
 {
     int rtn;
 
@@ -2694,6 +2708,7 @@ _curses_window_setscrreg_impl(PyCursesWindowObject *self, int top,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.subwin
 
     [
@@ -2717,7 +2732,7 @@ lower right corner of the window.
 static PyObject *
 _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
                            int nlines, int ncols, int begin_y, int begin_x)
-/*[clinic end generated code: output=93e898afc348f59a input=2129fa47fd57721c]*/
+/*[clinic end generated code: output=93e898afc348f59a input=5292cf610e2f3585]*/
 {
     WINDOW *win;
     const char *funcname;
@@ -2745,6 +2760,7 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.scroll
 
     [
@@ -2761,7 +2777,7 @@ Scroll upward if the argument is positive and downward if it is negative.
 static PyObject *
 _curses_window_scroll_impl(PyCursesWindowObject *self, int group_right_1,
                            int lines)
-/*[clinic end generated code: output=4541a8a11852d360 input=c969ca0cfabbdbec]*/
+/*[clinic end generated code: output=4541a8a11852d360 input=386456524c550113]*/
 {
     int rtn;
     const char *funcname;
@@ -2777,6 +2793,7 @@ _curses_window_scroll_impl(PyCursesWindowObject *self, int group_right_1,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.window.touchline
 
     start: int
@@ -2795,7 +2812,7 @@ as having been changed (changed=True) or unchanged (changed=False).
 static PyObject *
 _curses_window_touchline_impl(PyCursesWindowObject *self, int start,
                               int count, int group_right_1, int changed)
-/*[clinic end generated code: output=65d05b3f7438c61d input=a98aa4f79b6be845]*/
+/*[clinic end generated code: output=65d05b3f7438c61d input=36e13b6f5eb591f5]*/
 {
     int rtn;
     const char *funcname;
@@ -3142,6 +3159,7 @@ _curses_beep_impl(PyObject *module)
 NoArgNoReturnFunctionBody(beep)
 
 /*[clinic input]
+@permit_long_summary
 _curses.can_change_color
 
 Return True if the programmer can change the colors displayed by the terminal.
@@ -3149,7 +3167,7 @@ Return True if the programmer can change the colors displayed by the terminal.
 
 static PyObject *
 _curses_can_change_color_impl(PyObject *module)
-/*[clinic end generated code: output=359df8c3c77d8bf1 input=d7718884de0092f2]*/
+/*[clinic end generated code: output=359df8c3c77d8bf1 input=8315c364ba1e5b4c]*/
 NoArgTrueFalseFunctionBody(can_change_color)
 
 /*[clinic input]
@@ -3174,6 +3192,7 @@ _curses_cbreak_impl(PyObject *module, int flag)
 NoArgOrFlagNoReturnFunctionBody(cbreak, flag)
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.color_content
 
     color_number: color
@@ -3188,7 +3207,7 @@ which will be between 0 (no component) and 1000 (maximum amount of component).
 
 static PyObject *
 _curses_color_content_impl(PyObject *module, int color_number)
-/*[clinic end generated code: output=17b466df7054e0de input=03b5ed0472662aea]*/
+/*[clinic end generated code: output=17b466df7054e0de input=baffe25b351eb916]*/
 {
     _CURSES_COLOR_VAL_TYPE r,g,b;
 
@@ -3367,6 +3386,7 @@ _curses_erasechar_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.flash
 
 Flash the screen.
@@ -3376,7 +3396,7 @@ That is, change it to reverse-video and then change it back in a short interval.
 
 static PyObject *
 _curses_flash_impl(PyObject *module)
-/*[clinic end generated code: output=488b8a0ebd9ea9b8 input=02fdfb06c8fc3171]*/
+/*[clinic end generated code: output=488b8a0ebd9ea9b8 input=dd33d718e6edf436]*/
 NoArgNoReturnFunctionBody(flash)
 
 /*[clinic input]
@@ -3997,6 +4017,7 @@ NoArgTrueFalseFunctionBody(isendwin)
 
 #ifdef HAVE_CURSES_IS_TERM_RESIZED
 /*[clinic input]
+@permit_long_summary
 _curses.is_term_resized
 
     nlines: int
@@ -4010,7 +4031,7 @@ Return True if resize_term() would modify the window structure, False otherwise.
 
 static PyObject *
 _curses_is_term_resized_impl(PyObject *module, int nlines, int ncols)
-/*[clinic end generated code: output=aafe04afe50f1288 input=ca9c0bd0fb8ab444]*/
+/*[clinic end generated code: output=aafe04afe50f1288 input=5792a3f40cecb010]*/
 {
     PyCursesStatefulInitialised(module);
 
@@ -4063,6 +4084,7 @@ _curses_killchar_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses.longname
 
 Return the terminfo long name field describing the current terminal.
@@ -4073,7 +4095,7 @@ only after the call to initscr().
 
 static PyObject *
 _curses_longname_impl(PyObject *module)
-/*[clinic end generated code: output=fdf30433727ef568 input=84c3f20201b1098e]*/
+/*[clinic end generated code: output=fdf30433727ef568 input=5de06852f2230ddb]*/
 NoArgReturnStringFunctionBody(longname)
 
 /*[clinic input]
@@ -4126,6 +4148,7 @@ _curses_mouseinterval_impl(PyObject *module, int interval)
 }
 
 /*[clinic input]
+@permit_long_summary
 _curses.mousemask
 
     newmask: unsigned_long(bitwise=True)
@@ -4141,7 +4164,7 @@ If this function is never called, no mouse events are ever reported.
 
 static PyObject *
 _curses_mousemask_impl(PyObject *module, unsigned long newmask)
-/*[clinic end generated code: output=9406cf1b8a36e485 input=bdf76b7568a3c541]*/
+/*[clinic end generated code: output=9406cf1b8a36e485 input=b92ff4fbe5ce61b1]*/
 {
     mmask_t oldmask, availmask;
 
@@ -4523,6 +4546,7 @@ _curses_raw_impl(PyObject *module, int flag)
 NoArgOrFlagNoReturnFunctionBody(raw, flag)
 
 /*[clinic input]
+@permit_long_summary
 _curses.reset_prog_mode
 
 Restore the terminal to "program" mode, as previously saved by def_prog_mode().
@@ -4530,10 +4554,11 @@ Restore the terminal to "program" mode, as previously saved by def_prog_mode().
 
 static PyObject *
 _curses_reset_prog_mode_impl(PyObject *module)
-/*[clinic end generated code: output=15eb765abf0b6575 input=3d82bea2b3243471]*/
+/*[clinic end generated code: output=15eb765abf0b6575 input=a8b44b5261c8cf3a]*/
 NoArgNoReturnFunctionBody(reset_prog_mode)
 
 /*[clinic input]
+@permit_long_summary
 _curses.reset_shell_mode
 
 Restore the terminal to "shell" mode, as previously saved by def_shell_mode().
@@ -4541,7 +4566,7 @@ Restore the terminal to "shell" mode, as previously saved by def_shell_mode().
 
 static PyObject *
 _curses_reset_shell_mode_impl(PyObject *module)
-/*[clinic end generated code: output=0238de2962090d33 input=1c738fa64bd1a24f]*/
+/*[clinic end generated code: output=0238de2962090d33 input=f5224034a2c95931]*/
 NoArgNoReturnFunctionBody(reset_shell_mode)
 
 /*[clinic input]
@@ -4595,6 +4620,7 @@ _curses_resizeterm_impl(PyObject *module, short nlines, short ncols)
 
 #ifdef HAVE_CURSES_RESIZE_TERM
 /*[clinic input]
+@permit_long_docstring_body
 _curses.resize_term
 
     nlines: short
@@ -4614,7 +4640,7 @@ without additional interaction with the application.
 
 static PyObject *
 _curses_resize_term_impl(PyObject *module, short nlines, short ncols)
-/*[clinic end generated code: output=46c6d749fa291dbd input=276afa43d8ea7091]*/
+/*[clinic end generated code: output=46c6d749fa291dbd input=ebfa840f6b5f03fa]*/
 {
     PyObject *result;
     int code;
@@ -4733,6 +4759,7 @@ _curses_termattrs_impl(PyObject *module)
 NoArgReturnIntFunctionBody(termattrs)
 
 /*[clinic input]
+@permit_long_summary
 _curses.termname
 
 Return the value of the environment variable TERM, truncated to 14 characters.
@@ -4740,7 +4767,7 @@ Return the value of the environment variable TERM, truncated to 14 characters.
 
 static PyObject *
 _curses_termname_impl(PyObject *module)
-/*[clinic end generated code: output=96375577ebbd67fd input=33c08d000944f33f]*/
+/*[clinic end generated code: output=96375577ebbd67fd input=c34f724d8ce8fc4e]*/
 NoArgReturnStringFunctionBody(termname)
 
 /*[clinic input]
@@ -5000,6 +5027,7 @@ _curses_unget_wch(PyObject *module, PyObject *ch)
 
 #ifdef HAVE_CURSES_USE_ENV
 /*[clinic input]
+@permit_long_docstring_body
 _curses.use_env
 
     flag: bool
@@ -5019,7 +5047,7 @@ not set).
 
 static PyObject *
 _curses_use_env_impl(PyObject *module, int flag)
-/*[clinic end generated code: output=b2c445e435c0b164 input=06ac30948f2d78e4]*/
+/*[clinic end generated code: output=b2c445e435c0b164 input=eaa9047ec73c27d3]*/
 {
     use_env(flag);
     Py_RETURN_NONE;

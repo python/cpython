@@ -1039,6 +1039,8 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
 /* reduce (used to be a builtin) ********************************************/
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _functools.reduce
 
     function as func: object
@@ -1059,7 +1061,7 @@ calculates ((((1 + 2) + 3) + 4) + 5).
 static PyObject *
 _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
                        PyObject *result)
-/*[clinic end generated code: output=30d898fe1267c79d input=1511e9a8c38581ac]*/
+/*[clinic end generated code: output=30d898fe1267c79d input=4ccfb74548ce5170]*/
 {
     PyObject *args, *it;
 

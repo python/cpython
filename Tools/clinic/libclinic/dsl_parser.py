@@ -14,7 +14,6 @@ import libclinic
 from libclinic import (
     ClinicError, VersionTuple,
     fail, warn, unspecified, unknown, NULL)
-from libclinic._overlong_docstrings import OVERLONG_SUMMARY, OVERLONG_BODY
 from libclinic.function import (
     Module, Class, Function, Parameter,
     FunctionKind,
@@ -263,6 +262,8 @@ class DSLParser:
     target_critical_section: list[str]
     disable_fastcall: bool
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
+    permit_long_summary = False
+    permit_long_docstring_body = False
 
     def __init__(self, clinic: Clinic) -> None:
         self.clinic = clinic
@@ -299,6 +300,8 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
         self.disable_fastcall = False
+        self.permit_long_summary = False
+        self.permit_long_docstring_body = False
 
     def directive_module(self, name: str) -> None:
         fields = name.split('.')[:-1]
@@ -470,6 +473,16 @@ class DSLParser:
         if self.forced_text_signature:
             fail("Called @text_signature twice!")
         self.forced_text_signature = text_signature
+
+    def at_permit_long_summary(self) -> None:
+        if self.permit_long_summary:
+            fail("Called @permit_long_summary twice!")
+        self.permit_long_summary = True
+
+    def at_permit_long_docstring_body(self) -> None:
+        if self.permit_long_docstring_body:
+            fail("Called @permit_long_docstring_body twice!")
+        self.permit_long_docstring_body = True
 
     def parse(self, block: Block) -> None:
         self.reset()
@@ -1523,20 +1536,22 @@ class DSLParser:
         summary_len = len(lines[0])
         max_body = max(map(len, lines[1:]))
         if summary_len > max_width:
-            if f.full_name not in OVERLONG_SUMMARY:
+            if not self.permit_long_summary:
                 fail(f"Summary line for {f.full_name!r} is too long!\n"
                      f"The summary line must be no longer than {max_width} characters.")
         else:
-            if f.full_name in OVERLONG_SUMMARY:
-                warn(f"Remove {f.full_name!r} from OVERLONG_SUMMARY!\n")
+            if self.permit_long_summary:
+                warn("Remove the @permit_long_summary decorator from "
+                     f"{f.full_name!r}!\n")
 
         if max_body > max_width:
-            if f.full_name not in OVERLONG_BODY:
+            if not self.permit_long_docstring_body:
                 warn(f"Docstring lines for {f.full_name!r} are too long!\n"
                      f"Lines should be no longer than {max_width} characters.")
         else:
-            if f.full_name in OVERLONG_BODY:
-                warn(f"Remove {f.full_name!r} from OVERLONG_BODY!\n")
+            if self.permit_long_docstring_body:
+                warn("Remove the @permit_long_docstring_body decorator from "
+                     f"{f.full_name!r}!\n")
 
         parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
         if parameters_marker_count > 1:

@@ -302,6 +302,7 @@ out:
 
 #ifdef HAVE_GETPWENT
 /*[clinic input]
+@permit_long_summary
 pwd.getpwall
 
 Return a list of all available password database entries, in arbitrary order.
@@ -311,7 +312,7 @@ See help(pwd) for more on password database entries.
 
 static PyObject *
 pwd_getpwall_impl(PyObject *module)
-/*[clinic end generated code: output=4853d2f5a0afac8a input=d7ecebfd90219b85]*/
+/*[clinic end generated code: output=4853d2f5a0afac8a input=f8145e0d9a79e32c]*/
 {
     PyObject *d;
     struct passwd *p;

@@ -296,6 +296,7 @@ gc_get_referents_impl(PyObject *module, PyObject *objs)
 }
 
 /*[clinic input]
+@permit_long_summary
 gc.get_objects
     generation: Py_ssize_t(accept={int, NoneType}, c_default="-1") = None
         Generation to extract the objects from.
@@ -308,7 +309,7 @@ that are in that generation.
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
-/*[clinic end generated code: output=48b35fea4ba6cb0e input=ef7da9df9806754c]*/
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=a887f1d9924be7cf]*/
 {
     if (PySys_Audit("gc.get_objects", "n", generation) < 0) {
         return NULL;
@@ -414,6 +415,7 @@ gc_is_finalized_impl(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
@@ -425,7 +427,7 @@ which can cause copy-on-write.
 
 static PyObject *
 gc_freeze_impl(PyObject *module)
-/*[clinic end generated code: output=502159d9cdc4c139 input=b602b16ac5febbe5]*/
+/*[clinic end generated code: output=502159d9cdc4c139 input=11fb59b0a75dcf3d]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyGC_Freeze(interp);

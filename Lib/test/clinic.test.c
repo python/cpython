@@ -4080,13 +4080,14 @@ test_preprocessor_guarded_if_with_continuation_impl(PyObject *module)
 #if CONDITION_E || CONDITION_F
 #warning "different type of CPP directive"
 /*[clinic input]
+@permit_long_summary
 test_preprocessor_guarded_if_e_or_f
 Makes sure cpp.Monitor handles other directives than preprocessor conditionals.
 [clinic start generated code]*/
 
 static PyObject *
 test_preprocessor_guarded_if_e_or_f_impl(PyObject *module)
-/*[clinic end generated code: output=e49d24ff64ad88bc input=57b9c37f938bc4f1]*/
+/*[clinic end generated code: output=e49d24ff64ad88bc input=3ca9ab4e883300ed]*/
 #endif
 
 /*[clinic input]

@@ -92,6 +92,7 @@ _codecs_unregister(PyObject *module, PyObject *search_function)
 }
 
 /*[clinic input]
+@permit_long_summary
 _codecs.lookup
     encoding: str
     /
@@ -101,7 +102,7 @@ Looks up a codec tuple in the Python codec registry and returns a CodecInfo obje
 
 static PyObject *
 _codecs_lookup_impl(PyObject *module, const char *encoding)
-/*[clinic end generated code: output=9f0afa572080c36d input=3c572c0db3febe9c]*/
+/*[clinic end generated code: output=9f0afa572080c36d input=02227d5429491ab3]*/
 {
     return _PyCodec_Lookup(encoding);
 }

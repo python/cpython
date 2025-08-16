@@ -4545,6 +4545,7 @@ dict_clear_impl(PyDictObject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
 dict.pop
 
     key: object
@@ -4559,7 +4560,7 @@ raise a KeyError.
 
 static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=3abb47b89f24c21c input=e221baa01044c44c]*/
+/*[clinic end generated code: output=3abb47b89f24c21c input=d409c7eb2de67e38]*/
 {
     return dict_pop_default((PyObject*)self, key, default_value);
 }

@@ -855,6 +855,7 @@ _sre_SRE_Pattern_fullmatch_impl(PatternObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.search
 
     cls: defining_class
@@ -872,7 +873,7 @@ static PyObject *
 _sre_SRE_Pattern_search_impl(PatternObject *self, PyTypeObject *cls,
                              PyObject *string, Py_ssize_t pos,
                              Py_ssize_t endpos)
-/*[clinic end generated code: output=bd7f2d9d583e1463 input=afa9afb66a74a4b3]*/
+/*[clinic end generated code: output=bd7f2d9d583e1463 input=05e9feee0334c156]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     SRE_STATE state;
@@ -997,6 +998,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.finditer
 
     cls: defining_class
@@ -1014,7 +1016,7 @@ static PyObject *
 _sre_SRE_Pattern_finditer_impl(PatternObject *self, PyTypeObject *cls,
                                PyObject *string, Py_ssize_t pos,
                                Py_ssize_t endpos)
-/*[clinic end generated code: output=1791dbf3618ade56 input=812e332a4848cbaf]*/
+/*[clinic end generated code: output=1791dbf3618ade56 input=ee28865796048023]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
     PyObject* scanner;
@@ -1416,6 +1418,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.sub
 
     cls: defining_class
@@ -1430,7 +1433,7 @@ Return the string obtained by replacing the leftmost non-overlapping occurrences
 static PyObject *
 _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
                           PyObject *repl, PyObject *string, Py_ssize_t count)
-/*[clinic end generated code: output=4be141ab04bca60d input=d8d1d4ac2311a07c]*/
+/*[clinic end generated code: output=4be141ab04bca60d input=eba511fd1c4908b7]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
@@ -1438,6 +1441,7 @@ _sre_SRE_Pattern_sub_impl(PatternObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Pattern.subn
 
     cls: defining_class
@@ -1453,7 +1457,7 @@ static PyObject *
 _sre_SRE_Pattern_subn_impl(PatternObject *self, PyTypeObject *cls,
                            PyObject *repl, PyObject *string,
                            Py_ssize_t count)
-/*[clinic end generated code: output=da02fd85258b1e1f input=8b78a65b8302e58d]*/
+/*[clinic end generated code: output=da02fd85258b1e1f input=6a5bb5b61717abf0]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(cls);
 
@@ -2372,6 +2376,7 @@ match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.expand
 
     template: object
@@ -2381,7 +2386,7 @@ Return the string obtained by doing backslash substitution on the string templat
 
 static PyObject *
 _sre_SRE_Match_expand_impl(MatchObject *self, PyObject *template)
-/*[clinic end generated code: output=931b58ccc323c3a1 input=4bfdb22c2f8b146a]*/
+/*[clinic end generated code: output=931b58ccc323c3a1 input=dc74d81265376ac3]*/
 {
     _sremodulestate *module_state = get_sre_module_state_by_class(Py_TYPE(self));
     PyObject *filter = compile_template(module_state, self->pattern, template);
@@ -2470,6 +2475,7 @@ _sre_SRE_Match_groups_impl(MatchObject *self, PyObject *default_value)
 }
 
 /*[clinic input]
+@permit_long_summary
 _sre.SRE_Match.groupdict
 
     default: object = None
@@ -2480,7 +2486,7 @@ Return a dictionary containing all the named subgroups of the match, keyed by th
 
 static PyObject *
 _sre_SRE_Match_groupdict_impl(MatchObject *self, PyObject *default_value)
-/*[clinic end generated code: output=29917c9073e41757 input=0ded7960b23780aa]*/
+/*[clinic end generated code: output=29917c9073e41757 input=a8d3a1dc80336872]*/
 {
     PyObject *result;
     PyObject *key;

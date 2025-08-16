@@ -360,6 +360,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 binascii.a2b_base64
 
     data: ascii_buffer
@@ -376,7 +377,7 @@ Decode a line of base64 data.
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
-/*[clinic end generated code: output=5409557788d4f975 input=c0c15fd0f8f9a62d]*/
+/*[clinic end generated code: output=5409557788d4f975 input=13c797187acc9c40]*/
 {
     assert(data->len >= 0);
 

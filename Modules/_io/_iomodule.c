@@ -70,6 +70,7 @@ PyDoc_STRVAR(module_doc,
 /*[clinic input]
 module _io
 
+@permit_long_docstring_body
 _io.open
     file: object
     mode: str = "r"
@@ -199,7 +200,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=28027fdaabb8d744]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=8629579a442a99e3]*/
 {
     size_t i;
 
@@ -498,6 +499,7 @@ _io_text_encoding_impl(PyObject *module, PyObject *encoding, int stacklevel)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.open_code
 
     path : unicode
@@ -511,7 +513,7 @@ with calling open(path, 'rb').
 
 static PyObject *
 _io_open_code_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=f5c18e23f4b2ed9f]*/
+/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=53d38a37d780d034]*/
 {
     return PyFile_OpenCodeObject(path);
 }
