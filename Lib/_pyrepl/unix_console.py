@@ -253,7 +253,9 @@ class UnixConsole(Console):
 
         # we make sure the cursor is on the screen, and that we're
         # using all of the screen if we can
-        if cy < offset:
+        if len(screen) < height:
+            offset = 0
+        elif cy < offset:
             offset = cy
         elif cy >= offset + height:
             offset = cy - height + 1
