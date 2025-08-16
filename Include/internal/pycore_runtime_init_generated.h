@@ -935,6 +935,9 @@ extern "C" {
     INIT_ID(env), \
     INIT_ID(errors), \
     INIT_ID(event), \
+    INIT_ID(event_category), \
+    INIT_ID(event_id), \
+    INIT_ID(event_type), \
     INIT_ID(eventmask), \
     INIT_ID(exc), \
     INIT_ID(exc_type), \
@@ -1188,6 +1191,7 @@ extern "C" {
     INIT_ID(query), \
     INIT_ID(quotetabs), \
     INIT_ID(raw), \
+    INIT_ID(raw_data), \
     INIT_ID(read), \
     INIT_ID(read1), \
     INIT_ID(readable), \
@@ -1247,7 +1251,6 @@ extern "C" {
     INIT_ID(sock), \
     INIT_ID(sort), \
     INIT_ID(source), \
-    INIT_ID(source_name), \
     INIT_ID(source_traceback), \
     INIT_ID(spam), \
     INIT_ID(src), \
@@ -1267,6 +1270,7 @@ extern "C" {
     INIT_ID(strict), \
     INIT_ID(strict_mode), \
     INIT_ID(string), \
+    INIT_ID(strings), \
     INIT_ID(sub_key), \
     INIT_ID(subcalls), \
     INIT_ID(symmetric_difference_update), \
@@ -1307,7 +1311,6 @@ extern "C" {
     INIT_ID(tzinfo), \
     INIT_ID(tzname), \
     INIT_ID(uid), \
-    INIT_ID(unc_server_name), \
     INIT_ID(unlink), \
     INIT_ID(unraisablehook), \
     INIT_ID(updates), \

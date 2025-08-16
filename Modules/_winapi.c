@@ -2985,17 +2985,18 @@ _winapi.RegisterEventSource -> HANDLE
         If NULL, registers the event source on the local computer.
     source_name: LPCWSTR
         The name of the event source to register.
+    /
 [clinic start generated code]*/
 
 static HANDLE
 _winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
                                  LPCWSTR source_name)
-/*[clinic end generated code: output=e376c8950a89ae8f input=ee83ab132b89b99c]*/
+/*[clinic end generated code: output=e376c8950a89ae8f input=16ae3c812a905cab]*/
 {
     HANDLE handle;
 
     Py_BEGIN_ALLOW_THREADS
-    handle = RegisterEventSource(unc_server_name, source_name);
+    handle = RegisterEventSourceW(unc_server_name, source_name);
     Py_END_ALLOW_THREADS
 
     if (handle == NULL) {
@@ -3011,17 +3012,104 @@ _winapi.DeregisterEventSource
 
     handle: HANDLE
         The handle to the event log to be deregistered.
+    /
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_DeregisterEventSource_impl(PyObject *module, HANDLE handle)
-/*[clinic end generated code: output=7387ff34c7358bce input=07d42083b03ba7b0]*/
+/*[clinic end generated code: output=7387ff34c7358bce input=0973c68eddcfd5a7]*/
 {
     BOOL success;
 
     Py_BEGIN_ALLOW_THREADS
     success = DeregisterEventSource(handle);
     Py_END_ALLOW_THREADS
+
+    if (!success)
+        return PyErr_SetFromWindowsErr(0);
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_winapi.ReportEvent
+
+    handle: HANDLE
+        The handle to the event log.
+    event_type: int
+        The type of event being reported.
+    event_category: int
+        The event category.
+    event_id: int
+        The event identifier.
+    strings: object(subclass_of='&PyList_Type')
+        A list of strings to be inserted into the event message.
+    raw_data: Py_buffer
+        The raw data for the event.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int event_type,
+                         int event_category, int event_id, PyObject *strings,
+                         Py_buffer *raw_data)
+/*[clinic end generated code: output=9066f114cdfdf5f2 input=fc37cfe1816d02d7]*/
+{
+    BOOL success;
+    LPCWSTR *string_array = NULL;
+    WORD num_strings = 0;
+    LPVOID data = NULL;
+    DWORD data_size = 0;
+
+    // Handle strings list
+    if (strings != Py_None && PyList_Check(strings)) {
+        Py_ssize_t size = PyList_Size(strings);
+        num_strings = (WORD)size;
+
+        if (num_strings > 0) {
+            string_array = (LPCWSTR *)PyMem_Malloc(num_strings * sizeof(LPCWSTR));
+            if (!string_array) {
+                return PyErr_NoMemory();
+            }
+
+            for (WORD i = 0; i < num_strings; i++) {
+                PyObject *item = PyList_GetItem(strings, i);
+                if (!PyUnicode_Check(item)) {
+                    PyMem_Free(string_array);
+                    PyErr_SetString(PyExc_TypeError, "All strings must be unicode");
+                    return NULL;
+                }
+                string_array[i] = PyUnicode_AsWideCharString(item, NULL);
+                if (!string_array[i]) {
+                    // Clean up already allocated strings
+                    for (WORD j = 0; j < i; j++) {
+                        PyMem_Free((void *)string_array[j]);
+                    }
+                    PyMem_Free(string_array);
+                    return NULL;
+                }
+            }
+        }
+    }
+
+    // Handle raw data
+    if (raw_data->buf != NULL) {
+        data = raw_data->buf;
+        data_size = (DWORD) raw_data->len;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    success = ReportEventW(handle, event_type, event_category, event_id,
+                          NULL, num_strings, data_size,
+                          string_array, data);
+    Py_END_ALLOW_THREADS
+
+    // Clean up allocated strings
+    if (string_array) {
+        for (WORD i = 0; i < num_strings; i++) {
+            PyMem_Free((void *)string_array[i]);
+        }
+        PyMem_Free(string_array);
+    }
 
     if (!success)
         return PyErr_SetFromWindowsErr(0);
@@ -3059,6 +3147,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_OPENPROCESS_METHODDEF
     _WINAPI_PEEKNAMEDPIPE_METHODDEF
     _WINAPI_REGISTEREVENTSOURCE_METHODDEF
+    _WINAPI_REPORTEVENT_METHODDEF
     _WINAPI_LCMAPSTRINGEX_METHODDEF
     _WINAPI_READFILE_METHODDEF
     _WINAPI_RELEASEMUTEX_METHODDEF
