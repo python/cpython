@@ -552,6 +552,10 @@ also be used to improve performance.
    GCC is used: add ``-fno-semantic-interposition`` to the compiler and linker
    flags.
 
+   Do not set ``-O0`` in :envvar:`CFLAGS` when using this option, as it doesn't
+   make sense to perform Profile Guided Optimization when no optimizations are
+   enabled.
+
    .. note::
 
       During the build, you may encounter compiler warnings about
