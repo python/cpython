@@ -1351,55 +1351,69 @@ Formally, imaginary literals are described by the following lexical definition:
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
 
 
+.. _delimiters:
 .. _operators:
 
-Operators
-=========
+Operators and delimiters
+========================
 
 .. index:: single: operators
 
-The following tokens are operators:
+The following tokens are :dfn:`operators` -- they are used to combine
+:ref:`expressions <expressions>`.
 
 .. code-block:: none
 
 
-   +       -       *       **      /       //      %      @
-   <<      >>      &       |       ^       ~       :=
+   +       -       *       **      /       //      %
+   <<      >>      &       |       ^       ~
    <       >       <=      >=      ==      !=
+   .       @       :=
 
-
-.. _delimiters:
-
-Delimiters
-==========
+Plus (``+``) and minus (``-``) signs can also occur in
+:ref:`floating-point <floating>` and :ref:`imaginary` literals.
 
 .. index:: single: delimiters
 
-The following tokens serve as delimiters in the grammar:
+The following tokens are :dfn:`delimiters` -- simple tokens that
+are not operators:
 
 .. code-block:: none
 
    (       )       [       ]       {       }
-   ,       :       !       .       ;       @       =
+   ,       :       !       ;       =       ->
+   .       @
 
-The period can also occur in floating-point and imaginary literals.
+The period (``.``) and at-sign (``@``) can serve either as operators
+or delimiters.
+
+The period can also occur in :ref:`floating-point <floating>` and
+:ref:`imaginary` literals.
+
+The symbols ``{``, ``}``, ``!`` and ``:`` have special meaning in
+:ref:`formatted string literals <f-strings>` and
+:ref:`template string literals <t-strings>`.
 
 .. _lexical-ellipsis:
 
-A sequence of three periods has a special meaning as an
-:py:data:`Ellipsis` literal:
+A sequence of three periods (without whitespace between them) has a special
+meaning as an :py:data:`Ellipsis` literal:
 
 .. code-block:: none
 
    ...
 
-The following *augmented assignment operators* serve
-lexically as delimiters, but also perform an operation:
+The following tokens are :ref:`augmented assignment <augassign>` operators:
+they serve lexically as delimiters, but also perform an operation:
 
 .. code-block:: none
 
-   ->      +=      -=      *=      /=      //=     %=
-   @=      &=      |=      ^=      >>=     <<=     **=
+   +=      -=      *=      **=     /=      //=     %=
+   <<=     >>=     &=      |=      ^=      @=
+
+See :ref:`operator and delimiter tokens <token_operators_delimiters>`
+in the :mod:`!token` module documentation for names of the operator and
+delimiter tokens.
 
 The following printing ASCII characters have special meaning as part of other
 tokens or are otherwise significant to the lexical analyzer:
@@ -1414,4 +1428,3 @@ occurrence outside string literals and comments is an unconditional error:
 .. code-block:: none
 
    $       ?       `
-
