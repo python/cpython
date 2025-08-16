@@ -468,6 +468,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> uuid.uuid8(0x12345678, 0x9abcdef0, 0x11223344)
    UUID('00001234-5678-8ef0-8000-000011223344')
 
+
 .. _uuid-cli-example:
 
 Command-Line Example
