@@ -209,6 +209,13 @@ Other language changes
   as keyword arguments at construction time.
   (Contributed by Serhiy Storchaka, Oleg Iarygin, and Yoav Nir in :gh:`74185`.)
 
+* The :attr:`~object.__dict__` and :attr:`!__weakref__` descriptors now use a
+  single descriptor instance per interpreter, shared across all types that
+  need them.
+  This speeds up class creation, and helps avoid reference cycles.
+  (Contributed by Petr Viktorin in :gh:`135228`.)
+
+
 New modules
 ===========
 
