@@ -231,18 +231,6 @@ compiler_set_qualname(compiler *c)
     struct compiler_unit *u = c->u;
     PyObject *name, *base;
 
-    PyObject *u_name, *function_name = NULL;
-    if (u->u_scope_type == COMPILE_SCOPE_ANNOTATIONS) {
-        u_name = &_Py_ID(__annotate__);
-        _Py_DECLARE_STR(empty, "");
-        if (u->u_ste->ste_name != &_Py_STR(empty)) {
-            function_name = u->u_ste->ste_name;
-        }
-    }
-    else {
-        u_name = u->u_metadata.u_name;
-    }
-
     base = NULL;
     stack_size = PyList_GET_SIZE(c->c_stack);
     assert(stack_size >= 1);
@@ -260,7 +248,7 @@ compiler_set_qualname(compiler *c)
             if (stack_size == 2) {
                 // If we're immediately within the module, we can skip
                 // the rest and just set the qualname to be the same as name.
-                u->u_metadata.u_qualname = Py_NewRef(u_name);
+                u->u_metadata.u_qualname = Py_NewRef(u->u_metadata.u_name);
                 return SUCCESS;
             }
             capsule = PyList_GET_ITEM(c->c_stack, stack_size - 2);
@@ -272,7 +260,7 @@ compiler_set_qualname(compiler *c)
             || u->u_scope_type == COMPILE_SCOPE_ASYNC_FUNCTION
             || u->u_scope_type == COMPILE_SCOPE_CLASS) {
             assert(u->u_metadata.u_name);
-            mangled = _Py_Mangle(parent->u_private, u_name);
+            mangled = _Py_Mangle(parent->u_private, u->u_metadata.u_name);
             if (!mangled) {
                 return ERROR;
             }
@@ -301,17 +289,19 @@ compiler_set_qualname(compiler *c)
                 base = Py_NewRef(parent->u_metadata.u_qualname);
             }
         }
-        if (function_name != NULL) {
+        if (u->u_ste->ste_function_name != NULL) {
             PyObject *tmp = base;
-            base = PyUnicode_FromFormat("%U.%U", base, function_name);
+            base = PyUnicode_FromFormat("%U.%U",
+                base,
+                u->u_ste->ste_function_name);
             Py_DECREF(tmp);
             if (base == NULL) {
                 return ERROR;
             }
         }
     }
-    else if (function_name != NULL) {
-        base = Py_NewRef(function_name);
+    else if (u->u_ste->ste_function_name != NULL) {
+        base = Py_NewRef(u->u_ste->ste_function_name);
     }
 
     if (base != NULL) {
@@ -320,13 +310,13 @@ compiler_set_qualname(compiler *c)
         if (name == NULL) {
             return ERROR;
         }
-        PyUnicode_Append(&name, u_name);
+        PyUnicode_Append(&name, u->u_metadata.u_name);
         if (name == NULL) {
             return ERROR;
         }
     }
     else {
-        name = Py_NewRef(u_name);
+        name = Py_NewRef(u->u_metadata.u_name);
     }
     u->u_metadata.u_qualname = name;
 
@@ -618,12 +608,7 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
         compiler_unit_free(u);
         return ERROR;
     }
-    if (u->u_ste->ste_type == AnnotationBlock) {
-        u->u_metadata.u_name = Py_NewRef(&_Py_ID(__annotate__));
-    }
-    else {
-        u->u_metadata.u_name = Py_NewRef(name);
-    }
+    u->u_metadata.u_name = Py_NewRef(name);
     u->u_metadata.u_varnames = list2dict(u->u_ste->ste_varnames);
     if (!u->u_metadata.u_varnames) {
         compiler_unit_free(u);
