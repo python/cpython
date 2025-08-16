@@ -263,7 +263,8 @@ ignore_deprecation = warnings_helper.ignore_warnings(
 
 def test_wrap_socket(sock, *,
                      cert_reqs=ssl.CERT_NONE, ca_certs=None,
-                     ciphers=None, certfile=None, keyfile=None,
+                     ciphers=None, ciphersuites=None, min_version=None,
+                     certfile=None, keyfile=None,
                      **kwargs):
     if not kwargs.get("server_side"):
         kwargs["server_hostname"] = SIGNED_CERTFILE_HOSTNAME
@@ -280,6 +281,10 @@ def test_wrap_socket(sock, *,
         context.load_cert_chain(certfile, keyfile)
     if ciphers is not None:
         context.set_ciphers(ciphers)
+    if ciphersuites is not None:
+        context.set_ciphersuites(ciphersuites)
+    if min_version is not None:
+        context.minimum_version = min_version
     return context.wrap_socket(sock, **kwargs)
 
 
@@ -2236,6 +2241,53 @@ class SimpleBackgroundTests(unittest.TestCase):
             # Simulate EOF from the transport.
             incoming.write_eof()
             self.assertRaises(ssl.SSLEOFError, sslobj.read)
+
+
+@requires_tls_version('TLSv1_3')
+class SimpleBackgroundTestsTLS_1_3(unittest.TestCase):
+    """Tests that connect to a simple server running in the background"""
+
+    def setUp(self):
+        ciphers = [cipher['name'] for cipher in ctx.get_ciphers()
+                   if cipher['protocol'] == 'TLSv1.3']
+
+        self.matching_cipher = ciphers[0]
+        self.mismatched_cipher = ciphers[-1]
+
+        self.server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.server_context.set_ciphersuites(self.matching_cipher)
+        self.server_context.load_cert_chain(SIGNED_CERTFILE)
+        server = ThreadedEchoServer(context=self.server_context)
+        self.enterContext(server)
+        self.server_addr = (HOST, server.port)
+
+    def test_ciphersuites(self):
+        # Test unrecognized TLS 1.3 cipher suite name
+        with self.assertRaisesRegex(ssl.SSLError,
+                                    "No cipher suite can be selected"):
+            with socket.socket(socket.AF_INET) as sock:
+                s = test_wrap_socket(sock, cert_reqs=ssl.CERT_NONE,
+                                     ciphersuites="XXX",
+                                     min_version=ssl.TLSVersion.TLSv1_3)
+
+        # Test successful TLS 1.3 handshake
+        with test_wrap_socket(socket.socket(socket.AF_INET),
+                              cert_reqs=ssl.CERT_NONE,
+                              ciphersuites=self.matching_cipher,
+                              min_version=ssl.TLSVersion.TLSv1_3) as s:
+            s.connect(self.server_addr)
+            self.assertEqual(s.cipher()[0], self.matching_cipher)
+
+        # Test mismatched TLS 1.3 cipher suites
+        if self.matching_client != self.mismatched_cipher:
+            with test_wrap_socket(socket.socket(socket.AF_INET),
+                                  cert_reqs=ssl.CERT_NONE,
+                                  ciphersuites=self.mismatched_cipher,
+                                  min_version=ssl.TLSVersion.TLSv1_3) as s:
+                with self.assertRaises(ssl.SSLError):
+                    s.connect(self.server_addr)
+        else:
+            self.skipTest("Multiple TLS 1.3 ciphers are not available")
 
 
 @support.requires_resource('network')
