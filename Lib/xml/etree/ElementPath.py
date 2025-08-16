@@ -61,6 +61,7 @@ import re
 xpath_tokenizer_re = re.compile(
     r"("
     r"'[^']*'|\"[^\"]*\"|"
+    r"last\(\)|"  # Pick out the only xpath function currently supported
     r"::|"
     r"//?|"
     r"\.\.|"
@@ -70,6 +71,9 @@ xpath_tokenizer_re = re.compile(
     r"((?:\{[^}]+\})?[^/\[\]\(\)@!=\s]+)|"
     r"\s+"
     )
+
+# Find integers, possibly preceded by - or +
+int_re = re.compile(r"[\+\-]?\d+$")
 
 def xpath_tokenizer(pattern, namespaces=None):
     default_namespace = namespaces.get('') if namespaces else None
@@ -85,11 +89,22 @@ def xpath_tokenizer(pattern, namespaces=None):
                     yield ttype, "{%s}%s" % (namespaces[prefix], uri)
                 except KeyError:
                     raise SyntaxError("prefix %r not found in prefix map" % prefix) from None
-            elif default_namespace and not parsing_attribute:
+            # We don't preprend the default_namespace when:
+            # - the tag is an attribute as the xml spec says default namespaces
+            #   don't apply to attributes
+            # - when the tag is a number, possibly preceded by - or +, as these
+            #   are not valid characters to start a tag with and are probably
+            #   used as positional predicates.
+            elif default_namespace and not (parsing_attribute or int_re.match(tag)):
                 yield ttype, "{%s}%s" % (default_namespace, tag)
             else:
                 yield token
             parsing_attribute = False
+        elif ttype == 'last()':
+            # Break the found 'last()' part into the separate 'tag' and 'ttype'
+            # separate returned values expected from this generator
+            yield ('', 'last')
+            yield ('()', '')
         else:
             yield token
             parsing_attribute = ttype == '@'
@@ -266,7 +281,7 @@ def prepare_predicate(next, token):
                 if (attr_value := elem.get(key)) is not None and attr_value != value:
                     yield elem
         return select_negated if '!=' in signature else select
-    if signature == "-" and not re.match(r"\-?\d+$", predicate[0]):
+    if signature == "-" and not int_re.match(predicate[0]):
         # [tag]
         tag = predicate[0]
         def select(context, result):
@@ -276,7 +291,7 @@ def prepare_predicate(next, token):
         return select
     if signature == ".='" or signature == ".!='" or (
             (signature == "-='" or signature == "-!='")
-            and not re.match(r"\-?\d+$", predicate[0])):
+            and not int_re.match(predicate[0])):
         # [.='value'] or [tag='value'] or [.!='value'] or [tag!='value']
         tag = predicate[0]
         value = predicate[-1]
