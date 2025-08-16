@@ -1352,6 +1352,18 @@ abc\0def
 ghijkl\0mno
 ghi\0jkl
 """
+    sample15 = """\
+sample,fastq_1,fastq_2
+A1-35-8,/mnt/scratch/sarek/data/A1-35-8/A1-35-8_R1.fastq.gz,/mnt/scratch/sarek/data/A1-35-8/A1-35-8_R2.fastq.gz
+A2-102-5,/mnt/scratch/sarek/data/A2-102-5/A2-102-5_R1.fastq.gz,/mnt/scratch/sarek/data/A2-102-5/A2-102-5_R2.fastq.gz
+A5-35-17,/mnt/scratch/sarek/data/A5-35-17/A5-35-17_R1.fastq.gz,/mnt/scratch/sarek/data/A5-35-17/A5-35-17_R2.fastq.gz
+AD1-7a,/mnt/scratch/sarek/data/AD1-7a/AD1-7a_R1.fastq.gz,/mnt/scratch/sarek/data/AD1-7a/AD1-7a_R2.fastq.gz
+AD1-83a,/mnt/scratch/sarek/data/AD1-83a/AD1-83a_R1.fastq.gz,/mnt/scratch/sarek/data/AD1-83a/AD1-83a_R2.fastq.gz
+AD2-60a,/mnt/scratch/sarek/data/AD2-60a/AD2-60a_R1.fastq.gz,/mnt/scratch/sarek/data/AD2-60a/AD2-60a_R2.fastq.gz
+Arg1366,/mnt/scratch/sarek/data/Arg1366/Arg1366_R1.fastq.gz,/mnt/scratch/sarek/data/Arg1366/Arg1366_R2.fastq.gz
+Br795,/mnt/scratch/sarek/data/Br795/Br795_R1.fastq.gz,/mnt/scratch/sarek/data/Br795/Br795_R2.fastq.gz
+Bt100,/mnt/scratch/sarek/data/Bt100/Bt100_R1.fastq.gz,/mnt/scratch/sarek/data/Bt100/Bt100_R2.fastq.gz
+"""
 
     def test_issue43625(self):
         sniffer = csv.Sniffer()
@@ -1363,6 +1375,7 @@ ghi\0jkl
         sniffer = csv.Sniffer()
         self.assertFalse(sniffer.has_header(self.sample10))
         self.assertFalse(sniffer.has_header(self.sample11))
+        self.assertTrue(sniffer.has_header(self.sample15))
 
     def test_has_header(self):
         sniffer = csv.Sniffer()
