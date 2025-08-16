@@ -1799,48 +1799,21 @@ typedef struct kqueue_queue_Object {
 
 #define kqueue_queue_Object_CAST(op)    ((kqueue_queue_Object *)(op))
 
-#if (SIZEOF_UINTPTR_T != SIZEOF_VOID_P)
-#   error uintptr_t does not match void *!
-#elif (SIZEOF_UINTPTR_T == SIZEOF_LONG_LONG)
-#   define T_UINTPTRT         Py_T_ULONGLONG
-#   define T_INTPTRT          Py_T_LONGLONG
-#   define UINTPTRT_FMT_UNIT  "K"
-#   define INTPTRT_FMT_UNIT   "L"
-#elif (SIZEOF_UINTPTR_T == SIZEOF_LONG)
-#   define T_UINTPTRT         Py_T_ULONG
-#   define T_INTPTRT          Py_T_LONG
-#   define UINTPTRT_FMT_UNIT  "k"
-#   define INTPTRT_FMT_UNIT   "l"
-#elif (SIZEOF_UINTPTR_T == SIZEOF_INT)
-#   define T_UINTPTRT         Py_T_UINT
-#   define T_INTPTRT          Py_T_INT
-#   define UINTPTRT_FMT_UNIT  "I"
-#   define INTPTRT_FMT_UNIT   "i"
-#else
-#   error uintptr_t does not match int, long, or long long!
-#endif
-
 #if SIZEOF_LONG_LONG == 8
-#   define T_INT64          Py_T_LONGLONG
 #   define INT64_FMT_UNIT   "L"
 #elif SIZEOF_LONG == 8
-#   define T_INT64          Py_T_LONG
 #   define INT64_FMT_UNIT   "l"
 #elif SIZEOF_INT == 8
-#   define T_INT64          Py_T_INT
 #   define INT64_FMT_UNIT   "i"
 #else
 #   define INT64_FMT_UNIT   "_"
 #endif
 
 #if SIZEOF_LONG_LONG == 4
-#   define T_UINT32         Py_T_ULONGLONG
 #   define UINT32_FMT_UNIT  "K"
 #elif SIZEOF_LONG == 4
-#   define T_UINT32         Py_T_ULONG
 #   define UINT32_FMT_UNIT  "k"
 #elif SIZEOF_INT == 4
-#   define T_UINT32         Py_T_UINT
 #   define UINT32_FMT_UNIT  "I"
 #else
 #   define UINT32_FMT_UNIT  "_"
@@ -1850,11 +1823,11 @@ typedef struct kqueue_queue_Object {
  * kevent is not standard and its members vary across BSDs.
  */
 #ifdef __NetBSD__
-#   define FILTER_TYPE      T_UINT32
+#   define FILTER_TYPE      Py_T_INTEGER(uint32_t)
 #   define FILTER_FMT_UNIT  UINT32_FMT_UNIT
-#   define FLAGS_TYPE       T_UINT32
+#   define FLAGS_TYPE       Py_T_INTEGER(uint32_t)
 #   define FLAGS_FMT_UNIT   UINT32_FMT_UNIT
-#   define FFLAGS_TYPE      T_UINT32
+#   define FFLAGS_TYPE      Py_T_INTEGER(uint32_t)
 #   define FFLAGS_FMT_UNIT  UINT32_FMT_UNIT
 #else
 #   define FILTER_TYPE      Py_T_SHORT
@@ -1866,11 +1839,11 @@ typedef struct kqueue_queue_Object {
 #endif
 
 #if defined(__NetBSD__) || defined(__OpenBSD__)
-#   define DATA_TYPE        T_INT64
+#   define DATA_TYPE        Py_T_INTEGER(int64_t)
 #   define DATA_FMT_UNIT    INT64_FMT_UNIT
 #else
-#   define DATA_TYPE        T_INTPTRT
-#   define DATA_FMT_UNIT    INTPTRT_FMT_UNIT
+#   define DATA_TYPE        Py_T_INTEGER(intptr_t)
+#   define DATA_FMT_UNIT    _Py_PARSE_INTPTR
 #endif
 
 /* Unfortunately, we can't store python objects in udata, because
@@ -1880,12 +1853,12 @@ typedef struct kqueue_queue_Object {
 
 #define KQ_OFF(x) offsetof(kqueue_event_Object, x)
 static struct PyMemberDef kqueue_event_members[] = {
-    {"ident",           T_UINTPTRT,     KQ_OFF(e.ident)},
+    {"ident",           Py_T_INTEGER(uintptr_t), KQ_OFF(e.ident)},
     {"filter",          FILTER_TYPE,    KQ_OFF(e.filter)},
     {"flags",           FLAGS_TYPE,     KQ_OFF(e.flags)},
-    {"fflags",          Py_T_UINT,         KQ_OFF(e.fflags)},
+    {"fflags",          Py_T_UINT,      KQ_OFF(e.fflags)},
     {"data",            DATA_TYPE,      KQ_OFF(e.data)},
-    {"udata",           T_UINTPTRT,     KQ_OFF(e.udata)},
+    {"udata",           Py_T_INTEGER(uintptr_t), KQ_OFF(e.udata)},
     {NULL} /* Sentinel */
 };
 #undef KQ_OFF
@@ -1909,7 +1882,7 @@ kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
                              "data", "udata", NULL};
     static const char fmt[] = "O|"
                 FILTER_FMT_UNIT FLAGS_FMT_UNIT FFLAGS_FMT_UNIT DATA_FMT_UNIT
-                UINTPTRT_FMT_UNIT ":kevent";
+                _Py_PARSE_UINTPTR ":kevent";
 
     kqueue_event_Object *self = kqueue_event_Object_CAST(op);
     EV_SET(&(self->e), 0, EVFILT_READ, EV_ADD, 0, 0, 0); /* defaults */

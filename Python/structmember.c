@@ -7,6 +7,8 @@
 #include "pycore_object.h"        // _Py_TryIncrefCompare(), FT_ATOMIC_*()
 #include "pycore_critical_section.h"
 
+#include <stddef.h>
+
 
 static inline PyObject *
 member_get_object(const char *addr, const char *obj_addr, PyMemberDef *l)
@@ -128,6 +130,21 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = Py_NewRef(Py_None);
         break;
     default:
+        if (l->type > 0xff && l->type <= 0xffff && (l->type & (0xff & ~0x03)) == 0) {
+            Py_ssize_t size = l->type >> 8;
+            if ((l->type & 0x03) == 1) {
+                v = PyLong_FromNativeBytes(addr, size, -1);
+                break;
+            }
+            else if ((l->type & 0x03) == 2) {
+                v = PyLong_FromUnsignedNativeBytes(addr, size, -1);
+                break;
+            }
+            else if ((l->type & 0x03) == 3) {
+                v = PyLong_FromNativeBytes(addr, size, -1);
+                break;
+            }
+        }
         PyErr_SetString(PyExc_SystemError, "bad memberdescr type");
         v = NULL;
     }
@@ -374,6 +391,27 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
         break;
     }
     default:
+        if (l->type > 0xff && l->type <= 0xffff && (l->type & (0xff & ~0x03)) == 0) {
+            Py_ssize_t size = l->type >> 8;
+            int flags = Py_ASNATIVEBYTES_NATIVE_ENDIAN
+                      | Py_ASNATIVEBYTES_ALLOW_INDEX;
+            if ((l->type & 0x03) == 2) {
+                flags |= Py_ASNATIVEBYTES_UNSIGNED_BUFFER
+                       | Py_ASNATIVEBYTES_REJECT_NEGATIVE;
+            }
+            else if ((l->type & 0x03) == 3) {
+                flags |= Py_ASNATIVEBYTES_UNSIGNED_BUFFER;
+            }
+            Py_ssize_t bytes = PyLong_AsNativeBytes(v, addr, size, flags);
+            if (bytes < 0) {
+                return -1;
+            }
+            if (bytes > size) {
+                PyErr_SetString(PyExc_OverflowError, "int too big to convert");
+                return -1;
+            }
+            break;
+        }
         PyErr_Format(PyExc_SystemError,
                      "bad memberdescr type for %s", l->name);
         return -1;
