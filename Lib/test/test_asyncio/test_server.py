@@ -4,7 +4,6 @@ import socket
 import time
 import threading
 import unittest
-from unittest.mock import Mock
 
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
