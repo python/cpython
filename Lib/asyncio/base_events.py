@@ -325,7 +325,7 @@ class Server(events.AbstractServer):
         if self._state == _ServerState.CLOSED:
             self._state = _ServerState.SHUTDOWN
         elif self._state == _ServerState.SHUTDOWN:
-            # gh109564: the wakeup method has two possible call-sites,
+            # gh-109564: the wakeup method has two possible call-sites,
             # through an explicit call Server.close(), or indirectly through
             # Server._detach() by the last connected client.
             return
