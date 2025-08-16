@@ -364,31 +364,35 @@ class Sniffer:
         try and evaluate the smallest portion of the data possible, evaluating
         additional chunks as necessary.
         """
+        from collections import Counter, defaultdict
 
         data = list(filter(None, data.split('\n')))
-
-        ascii = [chr(c) for c in range(127)] # 7-bit ASCII
 
         # build frequency tables
         chunkLength = min(10, len(data))
         iteration = 0
-        charFrequency = {}
+        seen = 0
+        # {char -> {count_per_line -> num_lines_with_that_count}}
+        charFrequency = defaultdict(Counter)
         modes = {}
         delims = {}
         start, end = 0, chunkLength
         while start < len(data):
             iteration += 1
             for line in data[start:end]:
-                for char in ascii:
-                    metaFrequency = charFrequency.get(char, {})
-                    # must count even if frequency is 0
-                    freq = line.count(char)
-                    # value is the mode
-                    metaFrequency[freq] = metaFrequency.get(freq, 0) + 1
-                    charFrequency[char] = metaFrequency
+                seen += 1
+                charCounts = Counter(line)
+                for char, count in charCounts.items():
+                    if ord(char) < 127:
+                        charFrequency[char][count] += 1
 
-            for char in charFrequency.keys():
-                items = list(charFrequency[char].items())
+            for char, counts in charFrequency.items():
+                presentCount = sum(counts.values())
+                zeroCount = seen - presentCount
+                if zeroCount > 0:
+                    items = list(counts.items()) + [(0, zeroCount)]
+                else:
+                    items = list(counts.items())
                 if len(items) == 1 and items[0][0] == 0:
                     continue
                 # get the mode of the frequencies
