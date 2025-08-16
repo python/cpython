@@ -179,13 +179,18 @@ class WinAPITests(unittest.TestCase):
         # Test with strings and raw data
         test_strings = ["Test message 1", "Test message 2"]
         test_data = b"test raw data"
-        _winapi.ReportEvent(handle, 4, 1, 1002, test_strings, test_data)
+        _winapi.ReportEvent(handle, _winapi.EVENTLOG_SUCCESS, 1, 1002,
+                            test_strings, test_data)
 
         # Test with empty strings list
-        _winapi.ReportEvent(handle, 2, 0, 1003, [])
+        _winapi.ReportEvent(handle, _winapi.EVENTLOG_AUDIT_FAILURE ,2, 0, 1003,
+                            [])
 
         with self.assertRaisesRegex(OSError, '[WinError 6]'):
-            _winapi.ReportEvent(_winapi.INVALID_HANDLE_VALUE, 1, 0, 1001, [], test_data)
+            _winapi.ReportEvent(_winapi.INVALID_HANDLE_VALUE,
+                                _winapi.EVENTLOG_AUDIT_SUCCESS, 0, 1001, [],
+                                test_data)
 
         with self.assertRaisesRegex(TypeError, 'All strings must be unicode'):
-            _winapi.ReportEvent(handle, 1, 0, 1001, ["string", 123])
+            _winapi.ReportEvent(handle, _winapi.EVENTLOG_ERROR_TYPE, 0, 1001,
+                                ["string", 123])

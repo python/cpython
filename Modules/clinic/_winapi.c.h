@@ -2188,7 +2188,7 @@ PyDoc_STRVAR(_winapi_RegisterEventSource__doc__,
 "RegisterEventSource($module, unc_server_name, source_name, /)\n"
 "--\n"
 "\n"
-"\n"
+"Retrieves a registered handle to the specified event log.\n"
 "\n"
 "  unc_server_name\n"
 "    The UNC name of the server on which the event source should be registered.\n"
@@ -2257,7 +2257,7 @@ PyDoc_STRVAR(_winapi_DeregisterEventSource__doc__,
 "DeregisterEventSource($module, handle, /)\n"
 "--\n"
 "\n"
-"\n"
+"Closes the specified event log.\n"
 "\n"
 "  handle\n"
 "    The handle to the event log to be deregistered.");
@@ -2284,17 +2284,17 @@ exit:
 }
 
 PyDoc_STRVAR(_winapi_ReportEvent__doc__,
-"ReportEvent($module, /, handle, event_type, event_category, event_id,\n"
-"            strings, raw_data=None)\n"
+"ReportEvent($module, /, handle, type, category, event_id, strings,\n"
+"            raw_data=None)\n"
 "--\n"
 "\n"
-"\n"
+"Writes an entry at the end of the specified event log.\n"
 "\n"
 "  handle\n"
 "    The handle to the event log.\n"
-"  event_type\n"
+"  type\n"
 "    The type of event being reported.\n"
-"  event_category\n"
+"  category\n"
 "    The event category.\n"
 "  event_id\n"
 "    The event identifier.\n"
@@ -2307,8 +2307,8 @@ PyDoc_STRVAR(_winapi_ReportEvent__doc__,
     {"ReportEvent", _PyCFunction_CAST(_winapi_ReportEvent), METH_FASTCALL|METH_KEYWORDS, _winapi_ReportEvent__doc__},
 
 static PyObject *
-_winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int event_type,
-                         int event_category, int event_id, PyObject *strings,
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int type,
+                         int category, int event_id, PyObject *strings,
                          Py_buffer *raw_data);
 
 static PyObject *
@@ -2326,7 +2326,7 @@ _winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(handle), &_Py_ID(event_type), &_Py_ID(event_category), &_Py_ID(event_id), &_Py_ID(strings), &_Py_ID(raw_data), },
+        .ob_item = { &_Py_ID(handle), &_Py_ID(type), &_Py_ID(category), &_Py_ID(event_id), &_Py_ID(strings), &_Py_ID(raw_data), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2335,7 +2335,7 @@ _winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"handle", "event_type", "event_category", "event_id", "strings", "raw_data", NULL};
+    static const char * const _keywords[] = {"handle", "type", "category", "event_id", "strings", "raw_data", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .format = "" F_HANDLE "iiiO!|y*:ReportEvent",
@@ -2343,17 +2343,17 @@ _winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     };
     #undef KWTUPLE
     HANDLE handle;
-    int event_type;
-    int event_category;
+    int type;
+    int category;
     int event_id;
     PyObject *strings;
     Py_buffer raw_data = {NULL, NULL};
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &handle, &event_type, &event_category, &event_id, &PyList_Type, &strings, &raw_data)) {
+        &handle, &type, &category, &event_id, &PyList_Type, &strings, &raw_data)) {
         goto exit;
     }
-    return_value = _winapi_ReportEvent_impl(module, handle, event_type, event_category, event_id, strings, &raw_data);
+    return_value = _winapi_ReportEvent_impl(module, handle, type, category, event_id, strings, &raw_data);
 
 exit:
     /* Cleanup for raw_data */
@@ -2367,4 +2367,4 @@ exit:
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=9a69b9d704c7d138 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9830656556b2fc9 input=a9049054013a1b77]*/

@@ -2986,12 +2986,14 @@ _winapi.RegisterEventSource -> HANDLE
     source_name: LPCWSTR
         The name of the event source to register.
     /
+
+Retrieves a registered handle to the specified event log.
 [clinic start generated code]*/
 
 static HANDLE
 _winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
                                  LPCWSTR source_name)
-/*[clinic end generated code: output=e376c8950a89ae8f input=16ae3c812a905cab]*/
+/*[clinic end generated code: output=e376c8950a89ae8f input=9642e69236d0a14e]*/
 {
     HANDLE handle;
 
@@ -3013,11 +3015,13 @@ _winapi.DeregisterEventSource
     handle: HANDLE
         The handle to the event log to be deregistered.
     /
+
+Closes the specified event log.
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_DeregisterEventSource_impl(PyObject *module, HANDLE handle)
-/*[clinic end generated code: output=7387ff34c7358bce input=0973c68eddcfd5a7]*/
+/*[clinic end generated code: output=7387ff34c7358bce input=947593cf67641f16]*/
 {
     BOOL success;
 
@@ -3036,9 +3040,9 @@ _winapi.ReportEvent
 
     handle: HANDLE
         The handle to the event log.
-    event_type: int
+    type: int
         The type of event being reported.
-    event_category: int
+    category: int
         The event category.
     event_id: int
         The event identifier.
@@ -3046,13 +3050,15 @@ _winapi.ReportEvent
         A list of strings to be inserted into the event message.
     raw_data: Py_buffer = None
         The raw data for the event.
+
+Writes an entry at the end of the specified event log.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int event_type,
-                         int event_category, int event_id, PyObject *strings,
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int type,
+                         int category, int event_id, PyObject *strings,
                          Py_buffer *raw_data)
-/*[clinic end generated code: output=9066f114cdfdf5f2 input=fade978a0b25e611]*/
+/*[clinic end generated code: output=62348d38f92d26e8 input=4ac507ddabbf91ca]*/
 {
     BOOL success;
     LPCWSTR *string_array = NULL;
@@ -3098,7 +3104,7 @@ _winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int event_type,
     }
 
     Py_BEGIN_ALLOW_THREADS
-    success = ReportEventW(handle, event_type, event_category, event_id,
+    success = ReportEventW(handle, type, category, event_id,
                           NULL, num_strings, data_size,
                           string_array, data);
     Py_END_ALLOW_THREADS
@@ -3220,6 +3226,12 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, ERROR_PIPE_CONNECTED);
     WINAPI_CONSTANT(F_DWORD, ERROR_PRIVILEGE_NOT_HELD);
     WINAPI_CONSTANT(F_DWORD, ERROR_SEM_TIMEOUT);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_SUCCESS);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_AUDIT_FAILURE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_AUDIT_SUCCESS);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_ERROR_TYPE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_INFORMATION_TYPE);
+    WINAPI_CONSTANT(F_DWORD, EVENTLOG_WARNING_TYPE);
     WINAPI_CONSTANT(F_DWORD, FILE_FLAG_FIRST_PIPE_INSTANCE);
     WINAPI_CONSTANT(F_DWORD, FILE_FLAG_OVERLAPPED);
     WINAPI_CONSTANT(F_DWORD, FILE_GENERIC_READ);

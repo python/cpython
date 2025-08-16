@@ -935,9 +935,7 @@ extern "C" {
     INIT_ID(env), \
     INIT_ID(errors), \
     INIT_ID(event), \
-    INIT_ID(event_category), \
     INIT_ID(event_id), \
-    INIT_ID(event_type), \
     INIT_ID(eventmask), \
     INIT_ID(exc), \
     INIT_ID(exc_type), \

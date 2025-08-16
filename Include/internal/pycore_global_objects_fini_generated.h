@@ -937,9 +937,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(env));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(errors));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event_category));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event_id));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event_type));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(eventmask));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(exc));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(exc_type));
