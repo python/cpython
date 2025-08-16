@@ -640,6 +640,7 @@ Retrieving source code
 .. function:: getfile(object)
 
    Return the name of the (text or binary) file in which an object was defined.
+   An :exc:`OSError` is raised if the source code cannot be retrieved.
    This will fail with a :exc:`TypeError` if the object is a built-in module,
    class, or function.
 
@@ -653,9 +654,10 @@ Retrieving source code
 .. function:: getsourcefile(object)
 
    Return the name of the Python source file in which an object was defined
-   or ``None`` if no way can be identified to get the source.  This
-   will fail with a :exc:`TypeError` if the object is a built-in module, class, or
-   function.
+   or ``None`` if no way can be identified to get the source.  An :exc:`OSError` is
+   raised if the source code cannot be retrieved.
+   This will fail with a :exc:`TypeError` if the object is a built-in module,
+   class, or function.
 
 
 .. function:: getsourcelines(object)
