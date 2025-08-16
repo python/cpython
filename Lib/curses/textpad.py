@@ -81,7 +81,7 @@ class Textbox:
                 self.win.addch(ch)
             except curses.error:
                 pass
-            if not self.insert_mode or not curses.ascii.isprint(oldch):
+            if not self.insert_mode and not curses.ascii.isprint(oldch):
                 break
             ch = oldch
             (y, x) = self.win.getyx()
