@@ -1,0 +1,1 @@
+Fixes dbm.sqlite3 for multi-threaded use-cases by using thread-local connections.

@@ -3,6 +3,8 @@ import sqlite3
 from pathlib import Path
 from contextlib import suppress, closing
 from collections.abc import MutableMapping
+from threading import current_thread
+from weakref import ref
 
 BUILD_TABLE = """
   CREATE TABLE IF NOT EXISTS Dict (
@@ -33,6 +35,37 @@ def _normalize_uri(path):
         uri = uri.replace("//", "/")
     return uri
 
+class _ThreadLocalSqliteConnection:
+    def __init__(self, uri: str):
+        self._uri = uri
+        self._conn = {}
+
+    def conn(self):
+        thread = current_thread()
+        idt = id(thread)
+        if idt in self._conn:
+            return self._conn[idt]
+        def thread_deleted(_, idt=idt):
+            # When the thread is deleted, remove the local dict.
+            # Note that this is suboptimal if the thread object gets
+            # caught in a reference loop. We would like to be called
+            # as soon as the OS-level thread ends instead.
+            if self._conn is not None:
+                conn = self._conn.pop(idt)
+                conn.close()
+        wrthread = ref(thread, thread_deleted)
+        try:
+            conn = sqlite3.connect(self._uri, autocommit=True, uri=True)
+            self._conn[id(thread)] = conn
+            return conn
+        except sqlite3.Error as exc:
+            raise error(str(exc))
+
+    def close(self):
+        for t, conn in self._conn.items():
+            conn.close()
+        self._conn = {}
+
 
 class _Database(MutableMapping):
 
@@ -60,15 +93,11 @@ class _Database(MutableMapping):
         # We use the URI format when opening the database.
         uri = _normalize_uri(path)
         uri = f"{uri}?mode={flag}"
-
-        try:
-            self._cx = sqlite3.connect(uri, autocommit=True, uri=True)
-        except sqlite3.Error as exc:
-            raise error(str(exc))
+        self._cx = _ThreadLocalSqliteConnection(uri)
 
         # This is an optimization only; it's ok if it fails.
         with suppress(sqlite3.OperationalError):
-            self._cx.execute("PRAGMA journal_mode = wal")
+            self._cx.conn().execute("PRAGMA journal_mode = wal")
 
         if flag == "rwc":
             self._execute(BUILD_TABLE)
@@ -77,7 +106,7 @@ class _Database(MutableMapping):
         if not self._cx:
             raise error(_ERR_CLOSED)
         try:
-            return closing(self._cx.execute(*args, **kwargs))
+            return closing(self._cx.conn().execute(*args, **kwargs))
         except sqlite3.Error as exc:
             raise error(str(exc))
 
