@@ -1577,7 +1577,7 @@ are always available.  They are listed here in alphabetical order.
    ``pow(base, exp) % mod``). The two-argument form ``pow(base, exp)`` is
    equivalent to using the power operator: ``base**exp``.
 
-   The arguments must have numeric types.  With mixed operand types, the
+   When arguments are builtin numeric types with mixed operand types, the
    coercion rules for binary arithmetic operators apply.  For :class:`int`
    operands, the result has the same type as the operands (after coercion)
    unless the second argument is negative; in that case, all arguments are
