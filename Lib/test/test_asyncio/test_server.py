@@ -66,7 +66,7 @@ class BaseStartServer(func_tests.FunctionalTestCaseMixin):
         self.assertIsNone(srv._waiters)
         self.assertFalse(srv.is_serving())
 
-        with self.assertRaisesRegex(RuntimeError, r'started and then closed'):
+        with self.assertRaisesRegex(RuntimeError, r'is closed'):
             self.loop.run_until_complete(srv.serve_forever())
 
 
@@ -119,7 +119,7 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
             self.assertIsNone(srv._waiters)
             self.assertFalse(srv.is_serving())
 
-            with self.assertRaisesRegex(RuntimeError, r'started and then closed'):
+            with self.assertRaisesRegex(RuntimeError, r'is closed'):
                 self.loop.run_until_complete(srv.serve_forever())
 
 
@@ -215,7 +215,7 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         self.assertTrue(task.done())
 
-        with self.assertRaisesRegex(RuntimeError, r'started and then closed'):
+        with self.assertRaisesRegex(RuntimeError, r'is closed'):
             await srv.start_serving()
 
     async def test_abort_clients(self):

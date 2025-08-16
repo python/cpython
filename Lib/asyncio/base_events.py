@@ -344,7 +344,7 @@ class Server(events.AbstractServer):
         elif self._state == _ServerState.SERVING:
             return
         else:
-            raise RuntimeError(f'server {self!r} was already started and then closed')
+            raise RuntimeError('is closed')
 
         for sock in self._sockets:
             sock.listen(self._backlog)
