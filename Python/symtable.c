@@ -108,7 +108,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_id = k; /* ste owns reference to k */
 
     ste->ste_name = Py_NewRef(name);
-    ste->ste_function_name = NULL;
 
     ste->ste_symbols = NULL;
     ste->ste_varnames = NULL;
@@ -186,7 +185,6 @@ ste_dealloc(PyObject *op)
     ste->ste_table = NULL;
     Py_XDECREF(ste->ste_id);
     Py_XDECREF(ste->ste_name);
-    Py_XDECREF(ste->ste_function_name);
     Py_XDECREF(ste->ste_symbols);
     Py_XDECREF(ste->ste_varnames);
     Py_XDECREF(ste->ste_children);
@@ -198,15 +196,31 @@ ste_dealloc(PyObject *op)
 
 #define OFF(x) offsetof(PySTEntryObject, x)
 
+static PyObject *
+ste_get_name(PySTEntryObject *ste, void *context)
+{
+    if (ste->ste_type == AnnotationBlock) {
+        return Py_NewRef(&_Py_ID(__annotate__));
+    }
+    return Py_NewRef(ste->ste_name);
+}
+
 static PyMemberDef ste_memberlist[] = {
     {"id",       _Py_T_OBJECT, OFF(ste_id), Py_READONLY},
-    {"name",     _Py_T_OBJECT, OFF(ste_name), Py_READONLY},
     {"symbols",  _Py_T_OBJECT, OFF(ste_symbols), Py_READONLY},
     {"varnames", _Py_T_OBJECT, OFF(ste_varnames), Py_READONLY},
     {"children", _Py_T_OBJECT, OFF(ste_children), Py_READONLY},
     {"nested",   Py_T_INT,    OFF(ste_nested), Py_READONLY},
     {"type",     Py_T_INT,    OFF(ste_type), Py_READONLY},
     {"lineno",   Py_T_INT,    OFF(ste_loc.lineno), Py_READONLY},
+    {NULL}
+};
+
+static PyGetSetDef ste_getsetlist[] = {
+    {"name",
+     (getter)ste_get_name, NULL,
+     NULL,
+     NULL},
     {NULL}
 };
 
@@ -240,7 +254,7 @@ PyTypeObject PySTEntry_Type = {
     0,                                          /* tp_iternext */
     0,                                          /* tp_methods */
     ste_memberlist,                             /* tp_members */
-    0,                                          /* tp_getset */
+    ste_getsetlist,                             /* tp_getset */
     0,                                          /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
@@ -2773,7 +2787,8 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
     struct _symtable_entry *parent_ste = st->st_cur;
     if (parent_ste->ste_annotation_block == NULL) {
         _Py_block_ty current_type = parent_ste->ste_type;
-        if (!symtable_enter_block(st, &_Py_ID(__annotate__), AnnotationBlock,
+        _Py_DECLARE_STR(empty, "");
+        if (!symtable_enter_block(st, &_Py_STR(empty), AnnotationBlock,
                                     key, LOCATION(annotation))) {
             return 0;
         }
@@ -2828,11 +2843,10 @@ symtable_visit_annotations(struct symtable *st, stmt_ty o, arguments_ty a, expr_
 {
     int is_in_class = st->st_cur->ste_can_see_class_scope;
     _Py_block_ty current_type = st->st_cur->ste_type;
-    if (!symtable_enter_block(st, &_Py_ID(__annotate__), AnnotationBlock,
+    if (!symtable_enter_block(st, function_ste->ste_name, AnnotationBlock,
                               (void *)a, LOCATION(o))) {
         return 0;
     }
-    Py_XSETREF(st->st_cur->ste_function_name, Py_NewRef(function_ste->ste_name));
     if (is_in_class || current_type == ClassBlock) {
         st->st_cur->ste_can_see_class_scope = 1;
         if (!symtable_add_def(st, &_Py_ID(__classdict__), USE, LOCATION(o))) {
