@@ -2547,8 +2547,8 @@ requires, and these work on all platforms with a standard C implementation.
 |           | digits.                        |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%z``    | UTC offset in the form         | (empty), +0000,        | \(6)  |
-|           | ``±HHMM[SS[.ffffff]]`` (empty  | -0400, +1030,          |       |
-|           | string if the object is        | +063415,               |       |
+|           | ``±HH[MM[SS[.ffffff]]]``       | -0400, +1030,          |       |
+|           | (empty string if the object is | +063415,               |       |
 |           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
@@ -2707,7 +2707,7 @@ Notes:
 
    ``%z``
       :meth:`~.datetime.utcoffset` is transformed into a string of the form
-      ``±HHMM[SS[.ffffff]]``, where ``HH`` is a 2-digit string giving the number
+      ``±HH[MM[SS[.ffffff]]]``, where ``HH`` is a 2-digit string giving the number
       of UTC offset hours, ``MM`` is a 2-digit string giving the number of UTC
       offset minutes, ``SS`` is a 2-digit string giving the number of UTC offset
       seconds and ``ffffff`` is a 6-digit string giving the number of UTC
