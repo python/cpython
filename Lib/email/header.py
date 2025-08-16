@@ -506,6 +506,18 @@ class _ValueFormatter:
             parts[:0] = ['']
         else:
             parts.pop(0)
+
+        # It's possible that the original line ends with a single space
+        # the space would be parsed as fws, which would be removed because
+        # it is considered as an artificial "transition".
+        # Removing the trailing space won't make the message invalid, but
+        # it could affect signing process. We should keep it if we can.
+        # If the last part is empty string and we have more than 2 parts,
+        # that means we have trailing spaces. We just squash the last 3
+        # elements together as a single part
+        if len(parts) > 2 and not parts[-1]:
+            parts[-3:] = ["".join(parts[-3:])]
+
         for fws, part in zip(*[iter(parts)]*2):
             self._append_chunk(fws, part)
 
