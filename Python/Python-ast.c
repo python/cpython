@@ -5744,7 +5744,7 @@ cleanup:
 }
 
 /* Helper for checking if a node class is abstract in the tests. */
-PyObject *
+static PyObject *
 ast_is_abstract(PyObject *cls, void *Py_UNUSED(ignored)) {
     struct ast_state *state = get_ast_state();
     if (state == NULL) {
