@@ -1922,8 +1922,6 @@ def _signature_get_user_defined_method(cls, method_name, *, follow_wrapper_chain
         return None
     if method_name != '__new__':
         meth = _descriptor_get(meth, cls)
-        if follow_wrapper_chains:
-            meth = unwrap(meth, stop=lambda m: hasattr(m, "__signature__"))
     return meth
 
 
