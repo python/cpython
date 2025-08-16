@@ -1195,6 +1195,11 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls296, 296, 298)
         self.assertSourceEqual(mod2.cls310, 310, 312)
 
+    def test_generator_frame(self):
+        frame = mod2.generator_frame()
+        assert frame is not None
+        self.assertSourceEqual(frame, 375, 379)
+
 class TestNoEOL(GetSourceBase):
     def setUp(self):
         self.tempdir = TESTFN + '_dir'
