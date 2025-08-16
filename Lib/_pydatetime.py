@@ -8,7 +8,7 @@ __name__ = "datetime"
 
 import time as _time
 import math as _math
-import sys
+import os
 from operator import index as _index
 
 def _cmp(x, y):
@@ -1037,6 +1037,9 @@ class date:
         "Construct a date from a POSIX timestamp (like time.time())."
         if t is None:
             raise TypeError("'NoneType' object cannot be interpreted as an integer")
+        if t < 0 and os.name == 'nt':
+            # Windows converters throw an OSError for negative values.
+            return cls.fromtimestamp(0) + timedelta(seconds=t)
         y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(t)
         return cls(y, m, d)
 
@@ -1854,6 +1857,10 @@ class datetime(date):
 
         A timezone info object may be passed in as well.
         """
+        if t < 0 and os.name == 'nt':
+            # Windows converters throw an OSError for negative values.
+            return cls._fromtimestamp(0, utc, tz) + timedelta(seconds=t)
+
         frac, t = _math.modf(t)
         us = round(frac * 1e6)
         if us >= 1000000:
@@ -1877,7 +1884,7 @@ class datetime(date):
             # thus we can't perform fold detection for values of time less
             # than the max time fold. See comments in _datetimemodule's
             # version of this method for more details.
-            if t < max_fold_seconds and sys.platform.startswith("win"):
+            if t < max_fold_seconds and os.name == 'nt':
                 return result
 
             y, m, d, hh, mm, ss = converter(t - max_fold_seconds)[:6]
