@@ -156,3 +156,41 @@ class WinAPITests(unittest.TestCase):
             pipe2.write(b'testdata')
             pipe2.flush()
             self.assertEqual((b'testdata', 8), _winapi.PeekNamedPipe(pipe, 8)[:2])
+
+    def test_event_source_registration(self):
+        source_name = "PythonTestEventSource"
+
+        handle = _winapi.RegisterEventSource(None, source_name)
+        self.assertNotEqual(handle, _winapi.INVALID_HANDLE_VALUE)
+
+        with self.assertRaisesRegex(OSError, '[WinError 87]'):
+            _winapi.RegisterEventSource(None, "")
+
+        with self.assertRaisesRegex(OSError, '[WinError 6]'):
+            _winapi.DeregisterEventSource(_winapi.INVALID_HANDLE_VALUE)
+
+    def test_report_event(self):
+        source_name = "PythonTestEventSource"
+
+        handle = _winapi.RegisterEventSource(None, source_name)
+        self.assertNotEqual(handle, _winapi.INVALID_HANDLE_VALUE)
+        self.addCleanup(_winapi.DeregisterEventSource, handle)
+
+        # Test with strings and raw data
+        test_strings = ["Test message 1", "Test message 2"]
+        test_data = b"test raw data"
+        _winapi.ReportEvent(handle, _winapi.EVENTLOG_SUCCESS, 1, 1002,
+                            test_strings, test_data)
+
+        # Test with empty strings list
+        _winapi.ReportEvent(handle, _winapi.EVENTLOG_AUDIT_FAILURE ,2, 0, 1003,
+                            [])
+
+        with self.assertRaisesRegex(OSError, '[WinError 6]'):
+            _winapi.ReportEvent(_winapi.INVALID_HANDLE_VALUE,
+                                _winapi.EVENTLOG_AUDIT_SUCCESS, 0, 1001, [],
+                                test_data)
+
+        with self.assertRaisesRegex(TypeError, 'All strings must be unicode'):
+            _winapi.ReportEvent(handle, _winapi.EVENTLOG_ERROR_TYPE, 0, 1001,
+                                ["string", 123])
