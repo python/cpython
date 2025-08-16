@@ -1,0 +1,8 @@
+Add a new ``./configure`` option
+:option:`--enable-static-libpython-for-interpreter` which, when used
+with :option:`--enable-shared`, continues to build the shared library
+but does not use it for the interpreter. Instead, libpython is
+statically linked into the interpreter, as if :option:`--enable-shared`
+had not been used. This allows you to do a single build and get a Python
+interpreter binary that does not use a shared library but also get a
+shared library for use by other programs.
