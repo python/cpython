@@ -114,7 +114,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_abs__doc__,
-"abs($module, x, /)\n"
+"abs($module, number, /)\n"
 "--\n"
 "\n"
 "Return the absolute value of the argument.");
@@ -159,7 +159,7 @@ PyDoc_STRVAR(builtin_ascii__doc__,
     {"ascii", (PyCFunction)builtin_ascii, METH_O, builtin_ascii__doc__},
 
 PyDoc_STRVAR(builtin_bin__doc__,
-"bin($module, number, /)\n"
+"bin($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the binary representation of an integer.\n"
@@ -729,7 +729,7 @@ PyDoc_STRVAR(builtin_hash__doc__,
     {"hash", (PyCFunction)builtin_hash, METH_O, builtin_hash__doc__},
 
 PyDoc_STRVAR(builtin_hex__doc__,
-"hex($module, number, /)\n"
+"hex($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the hexadecimal representation of an integer.\n"
@@ -750,7 +750,7 @@ PyDoc_STRVAR(builtin_aiter__doc__,
     {"aiter", (PyCFunction)builtin_aiter, METH_O, builtin_aiter__doc__},
 
 PyDoc_STRVAR(builtin_anext__doc__,
-"anext($module, aiterator, default=<unrepresentable>, /)\n"
+"anext($module, async_iterator, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return the next item from the async iterator.\n"
@@ -819,7 +819,7 @@ builtin_locals(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(builtin_oct__doc__,
-"oct($module, number, /)\n"
+"oct($module, integer, /)\n"
 "--\n"
 "\n"
 "Return the octal representation of an integer.\n"
@@ -917,7 +917,7 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_print__doc__,
-"print($module, /, *args, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
+"print($module, /, *objects, sep=\' \', end=\'\\n\', file=None, flush=False)\n"
 "--\n"
 "\n"
 "Prints the values to a stream, or to sys.stdout by default.\n"
@@ -935,8 +935,8 @@ PyDoc_STRVAR(builtin_print__doc__,
     {"print", _PyCFunction_CAST(builtin_print), METH_FASTCALL|METH_KEYWORDS, builtin_print__doc__},
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject * const *args,
-                   Py_ssize_t args_length, PyObject *sep, PyObject *end,
+builtin_print_impl(PyObject *module, PyObject * const *objects,
+                   Py_ssize_t objects_length, PyObject *sep, PyObject *end,
                    PyObject *file, int flush);
 
 static PyObject *
@@ -973,8 +973,8 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[4];
     PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject * const *__clinic_args;
-    Py_ssize_t args_length;
+    PyObject * const *objects;
+    Py_ssize_t objects_length;
     PyObject *sep = Py_None;
     PyObject *end = Py_None;
     PyObject *file = Py_None;
@@ -1011,9 +1011,9 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto exit;
     }
 skip_optional_kwonly:
-    __clinic_args = args;
-    args_length = nargs;
-    return_value = builtin_print_impl(module, __clinic_args, args_length, sep, end, file, flush);
+    objects = args;
+    objects_length = nargs;
+    return_value = builtin_print_impl(module, objects, objects_length, sep, end, file, flush);
 
 exit:
     return return_value;
@@ -1274,4 +1274,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cd5f80e3dc3082d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0b72519622c849e input=a9049054013a1b77]*/
