@@ -669,6 +669,22 @@ Macro name                       C type                        Python type
 .. c:macro:: Py_T_ULONG          :c:expr:`unsigned long`       :py:class:`int`
 .. c:macro:: Py_T_ULONGLONG      :c:expr:`unsigned long long`  :py:class:`int`
 .. c:macro:: Py_T_PYSSIZET       :c:expr:`Py_ssize_t`          :py:class:`int`
+.. c:macro:: Py_T_SSIZE          :c:expr:`Py_ssize_t`          :py:class:`int`
+.. c:macro:: Py_T_SIZE           :c:expr:`size_t`              :py:class:`int`
+.. c:macro:: Py_T_INT8           :c:expr:`int8_t`              :py:class:`int`
+.. c:macro:: Py_T_UINT8          :c:expr:`uint8_t`             :py:class:`int`
+.. c:macro:: Py_T_INT16          :c:expr:`int16_t`             :py:class:`int`
+.. c:macro:: Py_T_UINT16         :c:expr:`uint16_t`            :py:class:`int`
+.. c:macro:: Py_T_INT32          :c:expr:`int32_t`             :py:class:`int`
+.. c:macro:: Py_T_UINT32         :c:expr:`uint32_t`            :py:class:`int`
+.. c:macro:: Py_T_INT64          :c:expr:`int64_t`             :py:class:`int`
+.. c:macro:: Py_T_UINT64         :c:expr:`uint64_t`            :py:class:`int`
+.. c:macro:: Py_T_INTPTR         :c:expr:`intptr_t`            :py:class:`int`
+.. c:macro:: Py_T_UINTPTR        :c:expr:`uintptr_t`           :py:class:`int`
+.. c:macro:: Py_T_OFF            :c:expr:`off_t` or            :py:class:`int`
+                                 :c:expr:`long long`
+                                 (on Windows)
+.. c:macro:: Py_T_PID            :c:expr:`pid_t`               :py:class:`int`
 .. c:macro:: Py_T_FLOAT          :c:expr:`float`               :py:class:`float`
 .. c:macro:: Py_T_DOUBLE         :c:expr:`double`              :py:class:`float`
 .. c:macro:: Py_T_BOOL           :c:expr:`char`                :py:class:`bool`
@@ -729,6 +745,17 @@ Macro name                       C type                        Python type
    .. c:macro:: T_NONE
 
       Always ``None``. Must be used with :c:macro:`Py_READONLY`.
+
+.. versionadded:: next
+
+   Added :c:macro:`Py_T_SSIZE` (as alias of :c:macro:`Py_T_PYSSIZET`),
+   :c:macro:`Py_T_SIZE`, :c:macro:`Py_T_INT8`, :c:macro:`Py_T_UINT8`,
+   :c:macro:`Py_T_INT16`, :c:macro:`Py_T_UINT16`,
+   :c:macro:`Py_T_INT32`, :c:macro:`Py_T_UINT32`,
+   :c:macro:`Py_T_INT64`, :c:macro:`Py_T_UINT64`,
+   :c:macro:`Py_T_INTPTR`, :c:macro:`Py_T_UINTPTR`,
+   :c:macro:`Py_T_OFF`, and :c:macro:`Py_T_PID`.
+
 
 Defining Getters and Setters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
