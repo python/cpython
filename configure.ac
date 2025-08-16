@@ -1030,11 +1030,16 @@ then
 
 		if test -n "$found_gcc" -a -n "$found_clang"
 		then
-			if test -n "`"$found_gcc" --version | grep llvm-gcc`"
+			if test -n "`"$found_gcc" --version | grep apple-darwin`"
 			then
 				AC_MSG_NOTICE([Detected llvm-gcc, falling back to clang])
 				CC="$found_clang"
 				CXX="$found_clang++"
+				maybe_ar=`xcrun -find ar 2>/dev/null` 
+				if test -n $maybe_ar
+				then
+					AR=$maybe_ar
+				fi
 			fi
 
 
