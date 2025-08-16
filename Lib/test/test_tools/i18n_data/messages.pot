@@ -33,8 +33,8 @@ msgid ""
 "    multiline!\n"
 msgstr ""
 
-#: messages.py:46 messages.py:89 messages.py:90 messages.py:93 messages.py:94
-#: messages.py:99 messages.py:100 messages.py:101
+#: messages.py:46 messages.py:92 messages.py:93 messages.py:96 messages.py:97
+#: messages.py:102 messages.py:103 messages.py:104
 msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
@@ -80,18 +80,18 @@ msgstr ""
 msgid "default value"
 msgstr ""
 
-#: messages.py:91 messages.py:92 messages.py:95 messages.py:96
+#: messages.py:94 messages.py:95 messages.py:98 messages.py:99
 msgctxt "context"
 msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
 msgstr[1] ""
 
-#: messages.py:102
+#: messages.py:105
 msgid "domain foo"
 msgstr ""
 
-#: messages.py:118 messages.py:119
+#: messages.py:121 messages.py:122
 msgid "world"
 msgid_plural "worlds"
 msgstr[0] ""
