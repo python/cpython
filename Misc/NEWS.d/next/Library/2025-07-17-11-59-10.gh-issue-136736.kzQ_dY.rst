@@ -1,0 +1,2 @@
+Fix handling alphanumerical non-ASCII characters in
+:func:`encodings.normalize_encoding`.
