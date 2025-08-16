@@ -2362,8 +2362,9 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     assert(generation >= 0 && generation < NUM_GENERATIONS);
 
 #ifdef Py_STATS
-    if (_Py_stats) {
-        _Py_stats->object_stats.object_visits = 0;
+    PyStats *s = _PyStats_GET();
+    if (s) {
+        s->object_stats.object_visits = 0;
     }
 #endif
     GC_STAT_ADD(generation, collections, 1);
@@ -2426,10 +2427,13 @@ gc_collect_main(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
-    if (_Py_stats) {
-        GC_STAT_ADD(generation, object_visits,
-            _Py_stats->object_stats.object_visits);
-        _Py_stats->object_stats.object_visits = 0;
+    {
+        PyStats *s = _PyStats_GET();
+        if (s) {
+            GC_STAT_ADD(generation, object_visits,
+                s->object_stats.object_visits);
+            s->object_stats.object_visits = 0;
+        }
     }
 #endif
 
