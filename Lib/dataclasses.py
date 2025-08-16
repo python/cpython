@@ -753,21 +753,33 @@ def _is_type(annotation, cls, a_module, a_type, is_type_predicate):
     # that's defined.  It was judged not worth it.
 
     match = _MODULE_IDENTIFIER_RE.match(annotation)
-    if match:
-        ns = None
-        module_name = match.group(1)
-        if not module_name:
-            # No module name, assume the class's module did
-            # "from dataclasses import InitVar".
-            ns = sys.modules.get(cls.__module__).__dict__
-        else:
-            # Look up module_name in the class's module.
-            module = sys.modules.get(cls.__module__)
-            if module and module.__dict__.get(module_name) is a_module:
-                ns = sys.modules.get(a_type.__module__).__dict__
-        if ns and is_type_predicate(ns.get(match.group(2)), a_module):
-            return True
-    return False
+    if not match:
+        return False
+
+    ns = None
+    module_name = match.group(1)
+    type_name = match.group(2)
+
+    if not module_name:
+        # No module name, assume the class's module did
+        # "from dataclasses import InitVar".
+        ns = sys.modules.get(cls.__module__).__dict__
+    else:
+        # Look up module_name in the class's module.
+        cls_module = sys.modules.get(cls.__module__)
+        if not cls_module:
+            return False
+
+        a_type_module = cls_module.__dict__.get(module_name)
+        if (
+            isinstance(a_type_module, types.ModuleType)
+            # Handle cases when a_type is not defined in
+            # the referenced module, e.g. 'dataclasses.ClassVar[int]'
+            and a_type_module.__dict__.get(type_name) is a_type
+        ):
+            ns = sys.modules.get(a_type.__module__).__dict__
+
+    return ns and is_type_predicate(ns.get(type_name), a_module)
 
 
 def _get_field(cls, a_name, a_type, default_kw_only):
