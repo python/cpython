@@ -323,17 +323,6 @@ class Generator:
                 epilogue = msg.epilogue
             self._write_lines(epilogue)
 
-    def _handle_multipart_signed(self, msg):
-        # The contents of signed parts has to stay unmodified in order to keep
-        # the signature intact per RFC1847 2.1, so we disable header wrapping.
-        # RDM: This isn't enough to completely preserve the part, but it helps.
-        p = self.policy
-        self.policy = p.clone(max_line_length=0)
-        try:
-            self._handle_multipart(msg)
-        finally:
-            self.policy = p
-
     def _handle_message_delivery_status(self, msg):
         # We can't just write the headers directly to self's file object
         # because this will leave an extra newline between the last header
