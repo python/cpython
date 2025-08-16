@@ -846,7 +846,7 @@ class CommandLineTestsBase:
         with open(pyc, 'rb') as fp:
             data = fp.read()
         self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b11)
-        self.assertRunOK('--invalidation-mode=unchecked-hash', self.pkgdir)
+        self.assertRunOK('--invalidation-mode=unchecked-hash', '-f', self.pkgdir)
         with open(pyc, 'rb') as fp:
             data = fp.read()
         self.assertEqual(int.from_bytes(data[4:8], 'little'), 0b01)
