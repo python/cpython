@@ -3044,7 +3044,7 @@ _winapi.ReportEvent
         The event identifier.
     strings: object(subclass_of='&PyList_Type')
         A list of strings to be inserted into the event message.
-    raw_data: Py_buffer
+    raw_data: Py_buffer = None
         The raw data for the event.
 [clinic start generated code]*/
 
