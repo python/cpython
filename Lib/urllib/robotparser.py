@@ -20,6 +20,15 @@ __all__ = ["RobotFileParser"]
 RequestRate = collections.namedtuple("RequestRate", "requests seconds")
 
 
+def normalize_path(path):
+    query, fragment = '', ''
+    if '#' in path:
+        path, fragment = path.split('#', 1)
+    if '?' in path:
+        path, query = path.split('?', 1)
+    return urllib.parse.urlunsplit(('', '', path, query, fragment))
+
+
 class RobotFileParser:
     """ This class provides a set of methods to read, parse and answer
     questions about a single robots.txt file.
@@ -221,7 +230,7 @@ class RuleLine:
         if path == '' and not allowance:
             # an empty value means allow all
             allowance = True
-        path = urllib.parse.urlunparse(urllib.parse.urlparse(path))
+        path = normalize_path(path)
         self.path = urllib.parse.quote(path)
         self.allowance = allowance
 

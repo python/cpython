@@ -1,0 +1,1 @@
+Don't treat path in robots.txt as URL in :func:`urllib.robotparser`.

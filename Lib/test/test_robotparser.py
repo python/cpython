@@ -299,6 +299,17 @@ Disallow: /cyberworld/map/\
         self.assertEqual(str(self.parser), self.expected_output)
 
 
+class WeirdUnquotePathTest(BaseRobotTest, unittest.TestCase):
+    robots_txt = """\
+User-agent: *
+
+# This can be interpreted as weird unquoted path, or an URL with invalid IPv6
+# host as well.
+Disallow: //[foo]/bar
+    """
+    pass
+
+
 class RobotHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
@@ -387,6 +398,7 @@ class NetworkTestCase(unittest.TestCase):
         self.assertEqual(parser.mtime(), 0)
         self.assertIsNone(parser.crawl_delay('*'))
         self.assertIsNone(parser.request_rate('*'))
+
 
 if __name__=='__main__':
     unittest.main()
