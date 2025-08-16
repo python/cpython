@@ -2020,11 +2020,17 @@ class Popen:
             try:
                 (pid, sts) = os.waitpid(self.pid, wait_flags)
             except ChildProcessError:
-                # This happens if SIGCLD is set to be ignored or waiting
+                # This happens if SIGCHLD is set to be ignored or waiting
                 # for child processes has otherwise been disabled for our
-                # process.  This child is dead, we can't get the status.
-                pid = self.pid
-                sts = 0
+                # process. This child is dead, we can't get the status.
+                if signal.getsignal(signal.SIGCHLD) == signal.SIG_IGN:
+                    # SIGCHLD was ignored; for compatibility return a zero
+                    # status for this child.
+                    pid = self.pid
+                    sts = 0
+                    return (pid, sts)
+
+                raise ProcessLookupError(f'Process {self.pid} is already waited on externally')
             return (pid, sts)
 
 

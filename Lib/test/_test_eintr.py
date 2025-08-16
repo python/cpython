@@ -101,7 +101,11 @@ class OSEINTRTest(EINTRBaseTest):
             wait_func()
         # Call the Popen method to avoid a ResourceWarning
         for proc in processes:
-            proc.wait()
+            try:
+                proc.wait()
+            except ProcessLookupError:
+                # Process already exited, which is expected but not always raised
+                pass
 
     def test_wait(self):
         self._test_wait_multiple(os.wait)
@@ -114,7 +118,11 @@ class OSEINTRTest(EINTRBaseTest):
         proc = self.new_sleep_process()
         wait_func(proc.pid)
         # Call the Popen method to avoid a ResourceWarning
-        proc.wait()
+        try:
+            proc.wait()
+        except ProcessLookupError:
+            # Process already exited, which is expected but not always raised
+            pass
 
     def test_waitpid(self):
         self._test_wait_single(lambda pid: os.waitpid(pid, 0))
