@@ -291,6 +291,14 @@ PyThread_exit_thread(void)
     _endthreadex(0);
 }
 
+void _Py_NO_RETURN
+PyThread_hang_thread(void)
+{
+    while (1) {
+        SleepEx(INFINITE, TRUE);
+    }
+}
+
 /*
  * Lock support. It has to be implemented as semaphores.
  * I [Dag] tried to implement it with mutex but I could find a way to
