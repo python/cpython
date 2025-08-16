@@ -11,7 +11,25 @@ from .support import ScreenEqualMixin, code_to_events
 from .support import prepare_reader, prepare_console
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
+from _pyrepl.utils import DEFAULT_PS1, DEFAULT_PS2, DEFAULT_PS3, DEFAULT_PS4
 from _colorize import default_theme
+
+
+def prepare_reader_with_prompt(
+    console, ps1=DEFAULT_PS1, ps2=DEFAULT_PS2, ps3=DEFAULT_PS3, ps4=DEFAULT_PS4):
+    reader = prepare_reader(
+        console,
+        can_colorize=False,
+        paste_mode=False,
+        ps1=ps1,
+        ps2=ps2,
+        ps3=ps3,
+        ps4=ps4
+    )
+
+    # we should use original get_prompt from reader to get exceptions
+    del reader.get_prompt
+    return reader
 
 
 overrides = {"reset": "z", "soft_keyword": "K"}
@@ -299,6 +317,89 @@ class TestReader(ScreenEqualMixin, TestCase):
         prompt, l = Reader.process_prompt(ps1)
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
+
+    def test_prompt_ps1_raise_exception(self):
+        # Handles exceptions from ps1 prompt
+        class Prompt:
+            def __str__(self): 1/0
+
+        _prepare_reader = functools.partial(
+            prepare_reader_with_prompt,
+            ps1=Prompt(),
+        )
+
+        reader, _ = handle_all_events(
+            events=code_to_events("a=1"),
+            prepare_reader=_prepare_reader
+        )
+
+        prompt = reader.get_prompt(0, False)
+        self.assertEqual(prompt, DEFAULT_PS1)
+
+    def test_prompt_ps2_ps3_ps4_raise_exception(self):
+        # Handles exceptions from ps2, ps3 and ps4 prompts
+        class Prompt:
+            def __str__(self): 1/0
+
+        _prepare_reader = functools.partial(
+            prepare_reader_with_prompt,
+            ps1=Prompt(),
+            ps2=Prompt(),
+            ps3=Prompt(),
+            ps4=Prompt(),
+        )
+
+        reader, _ = handle_all_events(
+            events=code_to_events("if cond:\nfunc()\nfunc()"),
+            prepare_reader=_prepare_reader
+        )
+
+        prompt = reader.get_prompt(0, False)
+        self.assertEqual(prompt, DEFAULT_PS2)
+
+        prompt = reader.get_prompt(1, False)
+        self.assertEqual(prompt, DEFAULT_PS3)
+
+        prompt = reader.get_prompt(2, False)
+        self.assertEqual(prompt, DEFAULT_PS4)
+
+    def test_prompt_arg_raise_exception(self):
+        # Handles exceptions from arg prompt
+        class Prompt:
+            def __str__(self): 1/0
+            def __rmul__(self, b): return b
+
+        reader, _ = handle_all_events(
+            events=code_to_events("if some_condition:\nsome_function()"),
+            prepare_reader=prepare_reader_with_prompt,
+        )
+
+        reader.arg = Prompt()
+        prompt = reader.get_prompt(0, True)
+        self.assertEqual(prompt, DEFAULT_PS1)
+
+    def test_prompt_raise_exception(self):
+        # Tests unrecoverable exceptions from prompts
+        cases = [
+            (MemoryError, "No memory for prompt"),
+            (SystemError, "System error for prompt"),
+        ]
+        for cls, msg in cases:
+            with self.subTest(msg):
+
+                class Prompt:
+                    def __str__(self): raise cls(msg)
+
+                _prepare_reader = functools.partial(
+                    prepare_reader_with_prompt,
+                    ps1=Prompt(),
+                )
+
+                with self.assertRaisesRegex(cls, msg):
+                    handle_events_narrow_console(
+                        events=code_to_events("a=1"),
+                        prepare_reader=_prepare_reader,
+                    )
 
     def test_completions_updated_on_key_press(self):
         namespace = {"itertools": itertools}
