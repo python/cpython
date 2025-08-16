@@ -34,7 +34,7 @@ class TestSet(TestCase):
                 t.join()
 
             for set_repr in set_reprs:
-                self.assertIn(set_repr, ("set()", "{1, 2, 3, 4, 5, 6, 7, 8}"))
+                self.assertIn(set_repr, ("{/}", "{1, 2, 3, 4, 5, 6, 7, 8}"))
 
 
 if __name__ == "__main__":

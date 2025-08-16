@@ -772,9 +772,7 @@ class Unparser(NodeVisitor):
             with self.delimit("{", "}"):
                 self.interleave(lambda: self.write(", "), self.traverse, node.elts)
         else:
-            # `{}` would be interpreted as a dictionary literal, and
-            # `set` might be shadowed. Thus:
-            self.write('{*()}')
+            self.write('{/}')
 
     def visit_Dict(self, node):
         def write_key_value_pair(k, v):

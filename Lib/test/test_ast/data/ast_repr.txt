@@ -156,6 +156,7 @@ Module(body=[Expr(value=Lambda(args=arguments(...), body=Constant(...)))], type_
 Module(body=[Expr(value=Dict(keys=[Constant(...)], values=[Constant(...)]))], type_ignores=[])
 Module(body=[Expr(value=Dict(keys=[], values=[]))], type_ignores=[])
 Module(body=[Expr(value=Set(elts=[Constant(...)]))], type_ignores=[])
+Module(body=[Expr(value=Set(elts=[]))], type_ignores=[])
 Module(body=[Expr(value=Dict(keys=[Constant(...)], values=[Constant(...)]))], type_ignores=[])
 Module(body=[Expr(value=List(elts=[Constant(...), Constant(...)], ctx=Load(...)))], type_ignores=[])
 Module(body=[Expr(value=Tuple(elts=[Constant(...)], ctx=Load(...)))], type_ignores=[])

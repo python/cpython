@@ -162,7 +162,7 @@ class PrettyPrintTests(DebuggerTests):
         'Verify the pretty-printing of sets'
         if GDB_VERSION < (7, 3):
             self.skipTest("pretty-printing of sets needs gdb 7.3 or later")
-        self.assertGdbRepr(set(), "set()")
+        self.assertGdbRepr(set(), "{/}")
         self.assertGdbRepr(set(['a']), "{'a'}")
         # PYTHONHASHSEED is need to get the exact frozenset item order
         if not sys.flags.ignore_environment:

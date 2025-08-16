@@ -356,25 +356,25 @@ Set displays
 .. index::
    pair: set; display
    pair: set; comprehensions
+   pair: empty; set
    pair: object; set
+   single: {/}; set display
    single: {} (curly brackets); set expression
    single: , (comma); expression list
+   single: / (fowarard slash); in set displays
 
 A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
 .. productionlist:: python-grammar
-   set_display: "{" (`flexible_expression_list` | `comprehension`) "}"
+   set_display: "{" ("/" | `flexible_expression_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
-either a sequence of expressions or a comprehension.  When a comma-separated
-list of expressions is supplied, its elements are evaluated from left to right
-and added to the set object.  When a comprehension is supplied, the set is
-constructed from the elements resulting from the comprehension.
-
-An empty set cannot be constructed with ``{}``; this literal constructs an empty
-dictionary.
-
+either a slash (for the empty set), a sequence of expressions, or a comprehension.
+When a comma-separated list of expressions is supplied, its elements
+are evaluated from left to right and added to the set object.
+When a comprehension is supplied, the set is constructed from
+the elements resulting from the comprehension.
 
 .. _dict:
 
