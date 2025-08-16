@@ -212,6 +212,13 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define WITHIN_STACK_BOUNDS() \
    (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+#define WITHIN_STACK_BOUNDS_WITH_CACHE() \
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && (STACK_LEVEL() + current_cached_values) <= STACK_SIZE()))
+#else
+#define WITHIN_STACK_BOUNDS_WITH_CACHE WITHIN_STACK_BOUNDS
+#endif
+
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
 #define FRAME_CO_NAMES  (_PyFrame_GetCode(frame)->co_names)
@@ -362,7 +369,7 @@ do {                                                   \
     jit_func jitted = _executor->jit_code;             \
     /* Keep the shim frame alive via the executor: */  \
     Py_INCREF(_executor);                              \
-    next_instr = jitted(frame, stack_pointer, tstate); \
+    next_instr = jitted(frame, stack_pointer, tstate, PyStackRef_NULL, PyStackRef_NULL, PyStackRef_NULL); \
     Py_DECREF(_executor);                              \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
@@ -378,7 +385,7 @@ do { \
     OPT_STAT_INC(traces_executed); \
     _PyExecutorObject *_executor = (EXECUTOR); \
     next_uop = _executor->trace; \
-    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
+    assert(next_uop->opcode == _START_EXECUTOR_r00 || next_uop->opcode == _COLD_EXIT_r00); \
     goto enter_tier_two; \
 } while (0)
 #endif
@@ -422,6 +429,14 @@ do { \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
+#define SET_CURRENT_CACHED_VALUES(N) current_cached_values = (N)
+#define CHECK_CURRENT_CACHED_VALUES(N) assert(current_cached_values == (N))
+#else
+#define SET_CURRENT_CACHED_VALUES(N) ((void)0)
+#define CHECK_CURRENT_CACHED_VALUES(N) ((void)0)
+#endif
 
 static inline int
 check_periodics(PyThreadState *tstate) {

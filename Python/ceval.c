@@ -164,6 +164,16 @@ dump_item(_PyStackRef item)
         printf("%" PRId64, (int64_t)PyStackRef_UntagInt(item));
         return;
     }
+    if (PyStackRef_IsWrapped(item)) {
+        void *ptr = PyStackRef_Unwrap(item);
+        printf("Wrapped(pointer %p)", ptr);
+        return;
+    }
+    if (PyStackRef_IsError(item)) {
+        printf("ERROR");
+        return;
+    }
+    assert(PyStackRef_IsValid(item));
     PyObject *obj = PyStackRef_AsPyObjectBorrow(item);
     if (obj == NULL) {
         printf("<nil>");
@@ -201,10 +211,22 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
         }
         printf("]\n");
     }
-    fflush(stdout);
     PyErr_SetRaisedException(exc);
     _PyFrame_GetStackPointer(frame);
 }
+
+#if defined(_Py_TIER2) && !defined(_Py_JIT)
+static void
+dump_cache_item(_PyStackRef cache, int position, int depth)
+{
+    if (position < depth) {
+        dump_item(cache);
+    }
+    else {
+        printf("---");
+    }
+}
+#endif
 
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
@@ -1158,14 +1180,28 @@ enter_tier_two:
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
-    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
+#ifdef Py_DEBUG
+    int current_cached_values = 0;
+#endif
+    _PyStackRef _tos_cache0 = PyStackRef_NULL;
+    _PyStackRef _tos_cache1 = PyStackRef_NULL;
+    _PyStackRef _tos_cache2 = PyStackRef_NULL;
+
+    assert(next_uop->opcode == _START_EXECUTOR_r00 || next_uop->opcode == _COLD_EXIT_r00);
 tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
         if (frame->lltrace >= 3) {
             dump_stack(frame, stack_pointer);
-            if (next_uop->opcode == _START_EXECUTOR) {
+            printf("    cache=[");
+            dump_cache_item(_tos_cache0, 0, current_cached_values);
+            printf(", ");
+            dump_cache_item(_tos_cache1, 1, current_cached_values);
+            printf(", ");
+            dump_cache_item(_tos_cache2, 2, current_cached_values);
+            printf("]\n");
+            if (next_uop->opcode == _START_EXECUTOR_r00) {
                 printf("%4d uop: ", 0);
             }
             else {
@@ -1173,6 +1209,7 @@ tier2_dispatch:
             }
             _PyUOpPrint(next_uop);
             printf("\n");
+            fflush(stdout);
         }
 #endif
         next_uop++;
