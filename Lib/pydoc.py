@@ -78,6 +78,8 @@ from collections import deque
 from reprlib import Repr
 from traceback import format_exception_only
 
+import _sitebuiltins
+
 from _pyrepl.pager import (get_pager, pipe_pager,
                            plain_pager, tempfile_pager, tty_pager)
 
@@ -1832,10 +1834,10 @@ def _introdoc():
         Python, you should definitely check out the tutorial at
         https://docs.python.org/{ver}/tutorial/.
 
-        Enter the name of any module, keyword, or topic to get help on writing
-        Python programs and using Python modules.  To get a list of available
-        modules, keywords, symbols, or topics, enter "modules", "keywords",
-        "symbols", or "topics".
+        Enter the name of any module, keyword, symbol, or topic to get help on
+        writing Python programs and using Python modules.  To get a list of
+        available modules, keywords, symbols, or topics, enter "modules",
+        "keywords", "symbols", or "topics".
         {pyrepl_keys}
         Each module also comes with a one-line summary of what it does; to list
         the modules whose name or summary contain a given string such as "spam",
@@ -2092,7 +2094,9 @@ has the same effect as typing a particular string at the help> prompt.
     def help(self, request, is_cli=False):
         if isinstance(request, str):
             request = request.strip()
-            if request == 'keywords': self.listkeywords()
+            if request == 'help':
+                self.helphelp()
+            elif request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
             elif request == 'modules': self.listmodules()
@@ -2106,9 +2110,32 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.topics: self.showtopic(request)
             elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
             else: doc(str, 'Help on %s:', output=self._output, is_cli=is_cli)
-        elif isinstance(request, Helper): self()
+        elif request is builtins.help:
+            self.helphelp()
         else: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
         self.output.write('\n')
+
+    def helphelp(self):
+        pager(textwrap.dedent("""\
+            help - Interactive Help
+            =======================
+
+            The built-in help function implements an interactive help utility.  You
+            can make use of it in a few different ways:
+
+            * Calling help() with no arguments starts an interactive help session.
+
+            * Calling help(x) will have one of two behaviors depending on the type
+              of the argument:
+
+                * If x is a string, help(x) provides information about the given
+                  topic.  For example, help("class") will provide information about
+                  the "class" keyword, and help("math.sqrt") will provide
+                  information about the "math.sqrt" function.
+
+                * If x is not a string, help(x) prints information about x's type.
+                  For example, help(20) will provide information about the int type.
+            """))
 
     def intro(self):
         self.output.write(_introdoc())
