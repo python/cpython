@@ -1,0 +1,1 @@
+Support using t-strings in the :mod:`gettext` module.
