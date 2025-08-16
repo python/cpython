@@ -1,0 +1,3 @@
+Added *from_matcher* parameter to mailbox.mbox parser.
+This allows the user to override the default matcher (which looks for "From " only) with a
+more specific matcher that is less likely to match against un-quoted "From " lines in body text.
