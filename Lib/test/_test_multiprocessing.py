@@ -4808,8 +4808,8 @@ class _TestSharedMemory(BaseTestCase):
             if os.name == 'posix':
                 # Without this line it was raising warnings like:
                 #   UserWarning: resource_tracker:
-                #   There appear to be 1 leaked shared_memory
-                #   objects to clean up at shutdown
+                #   There appears to be 1 leaked shared_memory
+                #   object/s to clean up at shutdown
                 # See: https://bugs.python.org/issue45209
                 resource_tracker.unregister(f"/{name}", "shared_memory")
 
@@ -4818,8 +4818,8 @@ class _TestSharedMemory(BaseTestCase):
                 # are released automatically by the OS).
                 err = p.stderr.read().decode()
                 self.assertIn(
-                    "resource_tracker: There appear to be 1 leaked "
-                    "shared_memory objects to clean up at shutdown", err)
+                    "resource_tracker: There appears to be 1 leaked "
+                    "shared_memory object/s to clean up at shutdown", err)
 
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
     def test_shared_memory_untracking(self):
@@ -4864,8 +4864,8 @@ class _TestSharedMemory(BaseTestCase):
             rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
             self.assertEqual(rc, 0)
             self.assertIn(
-                b"resource_tracker: There appear to be 1 leaked "
-                b"shared_memory objects to clean up at shutdown", err)
+                b"resource_tracker: There appears to be 1 leaked "
+                b"shared_memory object/s to clean up at shutdown", err)
         finally:
             try:
                 mem.unlink()
@@ -6009,8 +6009,8 @@ class TestResourceTracker(unittest.TestCase):
 
                 err = p.stderr.read().decode('utf-8')
                 p.stderr.close()
-                expected = ('resource_tracker: There appear to be 2 leaked {} '
-                            'objects'.format(
+                expected = ('resource_tracker: There appears to be 2 leaked {} '
+                            'object/s'.format(
                             rtype))
                 self.assertRegex(err, expected)
                 self.assertRegex(err, r'resource_tracker: %r: \[Errno' % name1)
@@ -6704,8 +6704,8 @@ class TestNamedResource(unittest.TestCase):
                     p.join()
             '''))
         rc, out, err = script_helper.assert_python_ok(testfn)
-        # on error, err = 'UserWarning: resource_tracker: There appear to
-        # be 1 leaked semaphore objects to clean up at shutdown'
+        # on error, err = 'UserWarning: resource_tracker: There appears to
+        # be 1 leaked semaphore object/s to clean up at shutdown'
         self.assertFalse(err, msg=err.decode('utf-8'))
 
 
