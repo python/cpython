@@ -20,7 +20,7 @@ from profile.stack_collector import (
 from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
-from test.support import requires_subprocess
+from test.support import requires_subprocess, is_emscripten
 
 PROCESS_VM_READV_SUPPORTED = False
 
@@ -1792,6 +1792,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         # cwd is coordinator_cmd[4]
         self.assertEqual(coordinator_cmd[5:], expected_target_args)
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_module_argument_parsing(self):
         test_args = ["profile.sample", "-m", "mymodule"]
 
@@ -1818,6 +1819,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 realtime_stats=False,
             )
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_module_with_arguments(self):
         test_args = ["profile.sample", "-m", "mymodule", "arg1", "arg2", "--flag"]
 
@@ -1844,6 +1846,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 realtime_stats=False,
             )
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_script_argument_parsing(self):
         test_args = ["profile.sample", "myscript.py"]
 
@@ -1870,6 +1873,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 realtime_stats=False,
             )
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_script_with_arguments(self):
         test_args = ["profile.sample", "myscript.py", "arg1", "arg2", "--flag"]
 
@@ -1938,6 +1942,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         error_msg = mock_stderr.getvalue()
         self.assertIn("one of the arguments", error_msg)
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_module_with_profiler_options(self):
         test_args = [
             "profile.sample", "-i", "1000", "-d", "30", "-a",
@@ -1967,6 +1972,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 realtime_stats=False,
             )
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_script_with_profiler_options(self):
         """Test script with various profiler options."""
         test_args = [
@@ -2013,6 +2019,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
         error_msg = mock_stderr.getvalue()
         self.assertIn("argument -m/--module: expected one argument", error_msg)
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_long_module_option(self):
         test_args = ["profile.sample", "--module", "mymodule", "arg1"]
 
