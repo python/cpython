@@ -835,3 +835,17 @@ class RegressionTests(unittest.TestCase):
         genexp = annos["unique_name_2"][0]
         lamb = list(genexp)[0]
         self.assertEqual(lamb(), 42)
+
+    def test_annotate_qualname(self):
+        code = """
+        def f() -> None: pass
+        class Outer:
+            x: int
+            def method(self, x: int):
+                pass
+        """
+        ns = run_code(code)
+        method = ns["Outer"].method
+        self.assertEqual(method.__annotate__.__qualname__, "Outer.method.__annotate__")
+        self.assertEqual(ns["f"].__annotate__.__qualname__, "f.__annotate__")
+        self.assertEqual(ns["Outer"].__annotate__.__qualname__, "Outer.__annotate__")
