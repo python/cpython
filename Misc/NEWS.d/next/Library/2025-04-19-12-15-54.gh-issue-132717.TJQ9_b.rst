@@ -1,0 +1,2 @@
+:mod:`argparse` now calls the convert function for default values in variadic
+arguments. Patch by Noam Cohen.
