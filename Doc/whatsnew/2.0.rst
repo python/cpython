@@ -315,6 +315,7 @@ following Python code::
                      # Append the value of
                      # the expression to the
                      # resulting list.
+                     ...
 
 This means that when there are multiple :keyword:`!for`...\ :keyword:`!in`
 clauses, the resulting list will be equal to the product of the lengths of all

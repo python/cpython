@@ -254,7 +254,7 @@ It also means that network objects lend themselves to using the list
 membership test syntax like this::
 
    if address in network:
-       # do something
+       ...  # do something
 
 Containment testing is done efficiently based on the network prefix::
 
