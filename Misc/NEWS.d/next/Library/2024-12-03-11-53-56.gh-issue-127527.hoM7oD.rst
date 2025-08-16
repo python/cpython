@@ -1,0 +1,2 @@
+Made minor improvements to the error handling in ``time.strftime`` and
+documented the behavior when an unknown directive is seen
