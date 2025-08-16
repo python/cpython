@@ -183,7 +183,8 @@ the same library that the Python runtime is using.
    objects *globals* and *locals* with the compiler flags specified by
    *flags*.  *globals* must be a dictionary; *locals* can be any object
    that implements the mapping protocol.  The parameter *start* specifies
-   the start token that should be used to parse the source code.
+   the start symbol (e.g., :c:data:`Py_eval_input`) that should be used to
+   parse the source code.
 
    Returns the result of executing the code as a Python object, or ``NULL`` if an
    exception was raised.
@@ -231,7 +232,7 @@ the same library that the Python runtime is using.
 .. c:function:: PyObject* Py_CompileStringObject(const char *str, PyObject *filename, int start, PyCompilerFlags *flags, int optimize)
 
    Parse and compile the Python source code in *str*, returning the resulting code
-   object.  The start token is given by *start*; this can be used to constrain the
+   object.  The start symbol is given by *start*; this can be used to constrain the
    code which can be compiled and should be :c:data:`Py_eval_input`,
    :c:data:`Py_file_input`, or :c:data:`Py_single_input`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
