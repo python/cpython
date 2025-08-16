@@ -1418,8 +1418,23 @@ class ReTests(unittest.TestCase):
             pickled = pickle.dumps(oldpat, proto)
             newpat = pickle.loads(pickled)
             self.assertEqual(newpat, oldpat)
-        # current pickle expects the _compile() reconstructor in re module
+
+    def test_unpickling(self):
+        import pickle
+        pat = re.compile(".*")
         from re import _compile  # noqa: F401
+        # previous pickles may expect the _compile() reconstructor in re module.
+        # the four pickles below are examples of this at various protocol versions.
+        pickles = [
+            b'cre\n_compile\np0\n(V.*\np1\nI32\ntp2\nRp3\n.',
+            b'cre\n_compile\nq\x00(X\x02\x00\x00\x00.*q\x01K tq\x02Rq\x03.',
+            b'\x80\x03cre\n_compile\nq\x00X\x02\x00\x00\x00.*q\x01K \x86q\x02Rq\x03.',
+            b'\x80\x04\x95\x1e\x00\x00\x00\x00\x00\x00\x00\x8c\x02re\x94\x8c\x08'
+            b'_compile\x94\x93\x94\x8c\x02.*\x94K \x86\x94R\x94.',
+        ]
+        for pickled in pickles:
+            unpickled = pickle.loads(pickled)
+            self.assertEqual(unpickled, pat)
 
     def test_copying(self):
         import copy
