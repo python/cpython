@@ -326,6 +326,8 @@ class TestGzip(BaseTest):
         os_helper.unlink(self.filename)
         with gzip.GzipFile(self.filename, 'x') as f:
             self.assertEqual(f.myfileobj.mode, 'xb')
+        with gzip.GzipFile(self.filename, 'wb+') as f:
+            self.assertEqual(f.myfileobj.mode, 'wb+')
 
     def test_1647484(self):
         for mode in ('wb', 'rb'):

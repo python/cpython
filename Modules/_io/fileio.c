@@ -70,6 +70,7 @@ typedef struct {
     unsigned int writable : 1;
     unsigned int appending : 1;
     signed int seekable : 2; /* -1 means unknown */
+    unsigned int truncate : 1;
     unsigned int closefd : 1;
     char finalizing;
     /* Stat result which was grabbed at file open, useful for optimizing common
@@ -209,6 +210,7 @@ fileio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->writable = 0;
     self->appending = 0;
     self->seekable = -1;
+    self->truncate = 0;
     self->stat_atopen = NULL;
     self->closefd = 1;
     self->weakreflist = NULL;
@@ -341,6 +343,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
                 goto bad_mode;
             rwa = 1;
             self->writable = 1;
+            self->truncate = 1;
             flags |= O_CREAT | O_TRUNC;
             break;
         case 'a':
@@ -1156,10 +1159,17 @@ mode_string(fileio *self)
             return "ab";
     }
     else if (self->readable) {
-        if (self->writable)
-            return "rb+";
-        else
+        if (self->writable) {
+            if (self->truncate) {
+                return "wb+";
+            }
+            else {
+                return "rb+";
+            }
+        }
+        else {
             return "rb";
+        }
     }
     else
         return "wb";
