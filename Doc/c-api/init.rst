@@ -1086,7 +1086,7 @@ Cautions regarding runtime finalization
 In the late stage of :term:`interpreter shutdown`, after attempting to wait for
 non-daemon threads to exit (though this can be interrupted by
 :class:`KeyboardInterrupt`) and running the :mod:`atexit` functions, the runtime
-is marked as *finalizing*: :c:func:`_Py_IsFinalizing` and
+is marked as *finalizing*: :c:func:`Py_IsFinalizing` and
 :func:`sys.is_finalizing` return true.  At this point, only the *finalization
 thread* that initiated finalization (typically the main thread) is allowed to
 acquire the :term:`GIL`.
