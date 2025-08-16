@@ -1761,67 +1761,132 @@ class TestFormatAnnotation(unittest.TestCase):
 class TestIsMethodDescriptor(unittest.TestCase):
 
     def test_custom_descriptors(self):
+        # Custom method descriptors (non-data descriptors):
+
         class MethodDescriptor:
+            """with __get__ and no __set__/__delete__"""
             def __get__(self, *_): pass
+        class MethodDescriptorWithGetNone:
+            """with __get__=None and no __set__/__delete__"""
+            __get__ = None
         class MethodDescriptorSub(MethodDescriptor):
-            pass
-        class DataDescriptorWithNoGet:
+            """with __get__ (inherited) and no __set__/__delete__"""
+
+        for cls in [
+            MethodDescriptor,
+            MethodDescriptorWithGetNone,
+            MethodDescriptorSub,
+        ]:
+            with self.subTest(f"a descriptor {cls.__doc__}; "
+                              f"its class: {cls.__name__}"):
+                self.assertTrue(inspect.ismethoddescriptor(cls()))
+
+        # Custom data descriptors:
+
+        class DataDescriptorWithSetOnly:
+            """with __set__ (and no __get__)"""
             def __set__(self, *_): pass
+        class DataDescriptorWithSetNone:
+            """with __set__=None (and no __get__)"""
+            __set__ = None
+        class DataDescriptorWithDeleteOnly:
+            """with __delete__ (and no __get__)"""
+            def __delete__(self, *_): pass
+        class DataDescriptorWithDeleteNone:
+            """with __delete__=None (and no __get__)"""
+            __delete__ = None
+        class DataDescriptorWithSetDelete:
+            """with __set__ and __delete__ (and no __get__)"""
+            def __set__(self, *_): pass
+            def __delete__(self, *_): pass
         class DataDescriptorWithGetSet:
+            """with __get__ and __set__"""
             def __get__(self, *_): pass
             def __set__(self, *_): pass
         class DataDescriptorWithGetDelete:
+            """with __get__ and __delete__"""
             def __get__(self, *_): pass
             def __delete__(self, *_): pass
-        class DataDescriptorSub(DataDescriptorWithNoGet,
-                                DataDescriptorWithGetDelete):
-            pass
+        class DataDescriptorWithGetSetDelete:
+            """with __get__, __set__ and __delete__"""
+            def __get__(self, *_): pass
+            def __set__(self, *_): pass
+            def __delete__(self, *_): pass
+        class DataDescriptorSub1(DataDescriptorWithSetOnly):
+            """with __set__ (inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub2(DataDescriptorWithSetNone):
+            """with __set__=None (inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub3(DataDescriptorWithDeleteOnly):
+            """with __delete__ (inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub4(DataDescriptorWithDeleteNone):
+            """with __delete__=None (inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub5(MethodDescriptor):
+            """with __get__ (inherited) and __set__"""
+            def __set__(self, *_): pass
+        class DataDescriptorSub6(MethodDescriptor):
+            """with __get__ (inherited) and __delete__"""
+            def __delete__(self, *_): pass
+        class DataDescriptorSub7(DataDescriptorWithSetOnly,
+                                 DataDescriptorWithGetDelete):
+            """with __get__, __set__ and __delete__ (all inherited)"""
 
-        # Custom method descriptors:
-        self.assertTrue(
-            inspect.ismethoddescriptor(MethodDescriptor()),
-            '__get__ and no __set__/__delete__ => method descriptor')
-        self.assertTrue(
-            inspect.ismethoddescriptor(MethodDescriptorSub()),
-            '__get__ (inherited) and no __set__/__delete__'
-            ' => method descriptor')
+        for cls in [
+            DataDescriptorWithSetOnly,
+            DataDescriptorWithSetNone,
+            DataDescriptorWithDeleteOnly,
+            DataDescriptorWithDeleteNone,
+            DataDescriptorWithSetDelete,
+            DataDescriptorWithGetSet,
+            DataDescriptorWithGetDelete,
+            DataDescriptorWithGetSetDelete,
+            DataDescriptorSub1,
+            DataDescriptorSub2,
+            DataDescriptorSub3,
+            DataDescriptorSub4,
+            DataDescriptorSub5,
+            DataDescriptorSub6,
+            DataDescriptorSub7,
+        ]:
+            with self.subTest(f"a descriptor {cls.__doc__}; "
+                              f"its class: {cls.__name__}"):
+                self.assertFalse(inspect.ismethoddescriptor(cls()))
 
-        # Custom data descriptors:
-        self.assertFalse(
-            inspect.ismethoddescriptor(DataDescriptorWithNoGet()),
-            '__set__ (and no __get__) => not a method descriptor')
-        self.assertFalse(
-            inspect.ismethoddescriptor(DataDescriptorWithGetSet()),
-            '__get__ and __set__ => not a method descriptor')
-        self.assertFalse(
-            inspect.ismethoddescriptor(DataDescriptorWithGetDelete()),
-            '__get__ and __delete__ => not a method descriptor')
-        self.assertFalse(
-            inspect.ismethoddescriptor(DataDescriptorSub()),
-            '__get__, __set__ and __delete__ => not a method descriptor')
+        # Custom *classes* of (method/data) descriptors:
 
-        # Classes of descriptors (are *not* descriptors themselves):
-        self.assertFalse(inspect.ismethoddescriptor(MethodDescriptor))
-        self.assertFalse(inspect.ismethoddescriptor(MethodDescriptorSub))
-        self.assertFalse(inspect.ismethoddescriptor(DataDescriptorSub))
+        for cls in [
+            MethodDescriptor,
+            MethodDescriptorSub,
+            DataDescriptorWithSetOnly,
+            DataDescriptorWithGetSetDelete,
+            DataDescriptorSub1,
+            DataDescriptorSub7,
+        ]:
+            with self.subTest(f"a descriptor class (not a "
+                              f"descriptor itself): {cls.__name__}"):
+                self.assertFalse(inspect.ismethoddescriptor(cls))
 
     def test_builtin_descriptors(self):
         builtin_slot_wrapper = int.__add__  # This one is mentioned in docs.
+        def function():
+            pass
         class Owner:
             def instance_method(self): pass
             @classmethod
             def class_method(cls): pass
             @staticmethod
             def static_method(): pass
+            partial_as_method = functools.partial(function)
             @property
             def a_property(self): pass
         class Slotermeyer:
             __slots__ = 'a_slot',
-        def function():
-            pass
-        a_lambda = lambda: None
 
-        # Example builtin method descriptors:
+        # Example builtin method descriptors (non-data descriptors):
+
         self.assertTrue(
             inspect.ismethoddescriptor(builtin_slot_wrapper),
             'a builtin slot wrapper is a method descriptor')
@@ -1831,27 +1896,53 @@ class TestIsMethodDescriptor(unittest.TestCase):
         self.assertTrue(
             inspect.ismethoddescriptor(Owner.__dict__['static_method']),
             'a staticmethod object is a method descriptor')
+        self.assertTrue(
+            inspect.ismethoddescriptor(functools.partial(function)),
+            'a functools.partial object is a method descriptor')
 
-        # Example builtin data descriptors:
-        self.assertFalse(
-            inspect.ismethoddescriptor(Owner.__dict__['a_property']),
-            'a property is not a method descriptor')
-        self.assertFalse(
-            inspect.ismethoddescriptor(Slotermeyer.__dict__['a_slot']),
-            'a slot is not a method descriptor')
+        # `types.MethodType`/`types.FunctionType` instances (note that
+        # they *are* method descriptors, but `ismethoddescriptor()`
+        # explicitly excludes them):
 
-        # `types.MethodType`/`types.FunctionType` instances (they *are*
-        # method descriptors, but `ismethoddescriptor()` explicitly
-        # excludes them):
         self.assertFalse(inspect.ismethoddescriptor(Owner().instance_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner().class_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner().static_method))
+        self.assertFalse(inspect.ismethoddescriptor(Owner().partial_as_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.instance_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.class_method))
         self.assertFalse(inspect.ismethoddescriptor(Owner.static_method))
         self.assertFalse(inspect.ismethoddescriptor(function))
-        self.assertFalse(inspect.ismethoddescriptor(a_lambda))
-        self.assertTrue(inspect.ismethoddescriptor(functools.partial(function)))
+        self.assertFalse(inspect.ismethoddescriptor(lambda: None))
+
+        # Example builtin data descriptors:
+
+        self.assertFalse(
+            inspect.ismethoddescriptor(Owner.__dict__['a_property']),
+            'a property is not a method descriptor')
+
+        attribute_slot = Slotermeyer.__dict__['a_slot']
+        if hasattr(types, 'MemberDescriptorType'):
+            assert inspect.ismemberdescriptor(attribute_slot)
+            self.assertFalse(
+                inspect.ismethoddescriptor(attribute_slot),
+                'a member descriptor, such as an attribute '
+                'slot descriptor, is not a method descriptor')
+        else:
+            self.assertFalse(
+                inspect.ismethoddescriptor(attribute_slot),
+                'an attribute slot descriptor is not a method descriptor')
+
+        frame_locals = types.FrameType.f_locals
+        if hasattr(types, 'GetSetDescriptorType'):
+            assert inspect.isgetsetdescriptor(frame_locals)
+            self.assertFalse(
+                inspect.ismethoddescriptor(frame_locals),
+                "a getset descriptor, such as a frame's 'f_locals' "
+                "descriptor, is not a method descriptor")
+        else:
+            self.assertFalse(
+                inspect.ismethoddescriptor(frame_locals),
+                "a frame's 'f_locals' descriptor is not a method descriptor")
 
     def test_descriptor_being_a_class(self):
         class MethodDescriptorMeta(type):
@@ -1877,57 +1968,238 @@ class TestIsMethodDescriptor(unittest.TestCase):
 class TestIsDataDescriptor(unittest.TestCase):
 
     def test_custom_descriptors(self):
-        class NonDataDescriptor:
-            def __get__(self, value, type=None): pass
-        class DataDescriptor0:
-            def __set__(self, name, value): pass
-        class DataDescriptor1:
-            def __delete__(self, name): pass
-        class DataDescriptor2:
+        # Custom method descriptors (non-data descriptors):
+
+        class MethodDescriptor:
+            """with __get__ and no __set__/__delete__"""
+            def __get__(self, *_): pass
+        class MethodDescriptorWithGetNone:
+            """with __get__=None and no __set__/__delete__"""
+            __get__ = None
+        class MethodDescriptorSub(MethodDescriptor):
+            """with __get__ (inherited) and no __set__/__delete__"""
+
+        for cls in [
+            MethodDescriptor,
+            MethodDescriptorWithGetNone,
+            MethodDescriptorSub,
+        ]:
+            with self.subTest(f"a descriptor {cls.__doc__}; "
+                              f"its class: {cls.__name__}"):
+                self.assertFalse(inspect.isdatadescriptor(cls()))
+
+        # Custom data descriptors:
+
+        class DataDescriptorWithSetOnly:
+            """with __set__ (and no __get__)"""
+            def __set__(self, *_): pass
+        class DataDescriptorWithSetNone:
+            """with __set__=None (and no __get__)"""
             __set__ = None
-        self.assertFalse(inspect.isdatadescriptor(NonDataDescriptor()),
-                         'class with only __get__ not a data descriptor')
-        self.assertTrue(inspect.isdatadescriptor(DataDescriptor0()),
-                        'class with __set__ is a data descriptor')
-        self.assertTrue(inspect.isdatadescriptor(DataDescriptor1()),
-                        'class with __delete__ is a data descriptor')
-        self.assertTrue(inspect.isdatadescriptor(DataDescriptor2()),
-                        'class with __set__ = None is a data descriptor')
+        class DataDescriptorWithDeleteOnly:
+            """with __delete__ (and no __get__)"""
+            def __delete__(self, *_): pass
+        class DataDescriptorWithDeleteNone:
+            """with __delete__=None (and no __get__)"""
+            __delete__ = None
+        class DataDescriptorWithSetDelete:
+            """with __set__ and __delete__ (and no __get__)"""
+            def __set__(self, *_): pass
+            def __delete__(self, *_): pass
+        class DataDescriptorWithGetSet:
+            """with __get__ and __set__"""
+            def __get__(self, *_): pass
+            def __set__(self, *_): pass
+        class DataDescriptorWithGetDelete:
+            """with __get__ and __delete__"""
+            def __get__(self, *_): pass
+            def __delete__(self, *_): pass
+        class DataDescriptorWithGetSetDelete:
+            """with __get__, __set__ and __delete__"""
+            def __get__(self, *_): pass
+            def __set__(self, *_): pass
+            def __delete__(self, *_): pass
+        class DataDescriptorSub1(DataDescriptorWithSetOnly):
+            """with __set__ (inherited; and no __get__)"""
+        class DataDescriptorSub2(DataDescriptorWithDeleteOnly):
+            """with __delete__ (inherited; and no __get__)"""
+        class DataDescriptorSub3(DataDescriptorWithSetDelete):
+            """with __set__ and __delete__ (both inherited; and no __get__)"""
+        class DataDescriptorSub4(DataDescriptorWithSetOnly):
+            """with __set__ (inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub5(DataDescriptorWithSetNone):
+            """with __set__=None (inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub6(DataDescriptorWithDeleteOnly):
+            """with __delete__ (inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub7(DataDescriptorWithDeleteNone):
+            """with __delete__=None (inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub8(DataDescriptorWithSetDelete):
+            """with __set__ and __delete__ (both inherited) and __get__"""
+            def __get__(self, *_): pass
+        class DataDescriptorSub9(MethodDescriptor):
+            """with __get__ (inherited) and __set__"""
+            def __set__(self, *_): pass
+        class DataDescriptorSub10(MethodDescriptor):
+            """with __get__ (inherited) and __set__=None"""
+            __set__ = None
+        class DataDescriptorSub12(MethodDescriptor):
+            """with __get__ (inherited) and __delete__"""
+            def __delete__(self, *_): pass
+        class DataDescriptorSub11(MethodDescriptor):
+            """with __get__ (inherited) and __delete__=None"""
+            __delete__ = None
+        class DataDescriptorSub13(DataDescriptorWithGetSet):
+            """with __get__ and __set__ (both inherited)"""
+        class DataDescriptorSub14(MethodDescriptor,
+                                  DataDescriptorWithDeleteOnly):
+            """with __get__ and __delete__ (both inherited)"""
+        class DataDescriptorSub15(DataDescriptorWithDeleteOnly,
+                                  DataDescriptorWithGetSet):
+            """with __get__, __set__ and __delete__ (all inherited)"""
 
-    def test_slot(self):
-        class Slotted:
-            __slots__ = 'foo',
-        self.assertTrue(inspect.isdatadescriptor(Slotted.foo),
-                        'a slot is a data descriptor')
+        for cls in [
+            DataDescriptorWithSetOnly,
+            DataDescriptorWithSetNone,
+            DataDescriptorWithDeleteOnly,
+            DataDescriptorWithDeleteNone,
+            DataDescriptorWithSetDelete,
+            DataDescriptorWithGetSet,
+            DataDescriptorWithGetDelete,
+            DataDescriptorWithGetSetDelete,
+            DataDescriptorSub1,
+            DataDescriptorSub2,
+            DataDescriptorSub3,
+            DataDescriptorSub4,
+            DataDescriptorSub5,
+            DataDescriptorSub6,
+            DataDescriptorSub7,
+            DataDescriptorSub8,
+            DataDescriptorSub9,
+            DataDescriptorSub10,
+            DataDescriptorSub11,
+            DataDescriptorSub12,
+            DataDescriptorSub13,
+            DataDescriptorSub14,
+            DataDescriptorSub15,
+        ]:
+            with self.subTest(f"a descriptor {cls.__doc__}; "
+                              f"its class: {cls.__name__}"):
+                self.assertTrue(inspect.isdatadescriptor(cls()))
 
-    def test_property(self):
-        class Propertied:
-            @property
-            def a_property(self):
-                pass
-        self.assertTrue(inspect.isdatadescriptor(Propertied.a_property),
-                        'a property is a data descriptor')
+        # Custom *classes* of (method/data) descriptors:
 
-    def test_functions(self):
-        class Test(object):
+        for cls in [
+            MethodDescriptor,
+            MethodDescriptorSub,
+            DataDescriptorWithSetOnly,
+            DataDescriptorWithGetSetDelete,
+            DataDescriptorSub1,
+            DataDescriptorSub15,
+        ]:
+            with self.subTest(f"a descriptor class (not a "
+                              f"descriptor itself): {cls.__name__}"):
+                self.assertFalse(inspect.isdatadescriptor(cls))
+
+    def test_builtin_descriptors(self):
+        builtin_slot_wrapper = int.__add__
+        def function():
+            pass
+        class Owner:
             def instance_method(self): pass
             @classmethod
             def class_method(cls): pass
             @staticmethod
             def static_method(): pass
-        def function():
+            partial_as_method = functools.partial(function)
+            @property
+            def a_property(self): pass
+        class Slotermeyer:
+            __slots__ = 'a_slot',
+
+        # Example builtin method descriptors (non-data descriptors):
+
+        self.assertFalse(
+            inspect.isdatadescriptor(builtin_slot_wrapper),
+            'a builtin slot wrapper is not a data descriptor')
+        self.assertFalse(
+            inspect.isdatadescriptor(Owner.__dict__['class_method']),
+            'a classmethod object is not a data descriptor')
+        self.assertFalse(
+            inspect.isdatadescriptor(Owner.__dict__['static_method']),
+            'a staticmethod object is not a data descriptor')
+        self.assertFalse(
+            inspect.isdatadescriptor(functools.partial(function)),
+            'a functools.partial object is not a data descriptor')
+
+        # ...so also `types.MethodType`/`types.FunctionType` instances
+        # (not only that they are not data descriptors, but also
+        # `isdatadescriptor()` explicitly excludes them):
+
+        self.assertFalse(inspect.isdatadescriptor(Owner().instance_method))
+        self.assertFalse(inspect.isdatadescriptor(Owner().class_method))
+        self.assertFalse(inspect.isdatadescriptor(Owner().static_method))
+        self.assertFalse(inspect.isdatadescriptor(Owner().partial_as_method))
+        self.assertFalse(inspect.isdatadescriptor(Owner.instance_method))
+        self.assertFalse(inspect.isdatadescriptor(Owner.class_method))
+        self.assertFalse(inspect.isdatadescriptor(Owner.static_method))
+        self.assertFalse(inspect.isdatadescriptor(function))
+        self.assertFalse(inspect.isdatadescriptor(lambda: None))
+
+        # Example builtin data descriptors:
+
+        self.assertTrue(
+            inspect.isdatadescriptor(Owner.__dict__['a_property']),
+            'a property is a data descriptor')
+
+        attribute_slot = Slotermeyer.__dict__['a_slot']
+        if hasattr(types, 'MemberDescriptorType'):
+            assert inspect.ismemberdescriptor(attribute_slot)
+            self.assertTrue(
+                inspect.isdatadescriptor(attribute_slot),
+                'a member descriptor, such as an attribute '
+                'slot descriptor, is a data descriptor')
+        else:
+            self.assertTrue(
+                inspect.isdatadescriptor(attribute_slot),
+                'an attribute slot descriptor is a data descriptor')
+
+        frame_locals = types.FrameType.f_locals
+        if hasattr(types, 'GetSetDescriptorType'):
+            assert inspect.isgetsetdescriptor(frame_locals)
+            self.assertTrue(
+                inspect.isdatadescriptor(frame_locals),
+                "a getset descriptor, such as a frame's 'f_locals' "
+                "descriptor, is a data descriptor")
+        else:
+            self.assertTrue(
+                inspect.isdatadescriptor(frame_locals),
+                "a frame's 'f_locals' descriptor, is a data descriptor")
+
+    def test_descriptor_being_a_class(self):
+        class DataDescriptorMeta(type):
+            def __get__(self, *_): pass
+            def __set__(self, *_): pass
+            def __delete__(self, *_): pass
+        class ClassBeingDataDescriptor(metaclass=DataDescriptorMeta):
             pass
-        a_lambda = lambda: None
-        self.assertFalse(inspect.isdatadescriptor(Test().instance_method),
-                         'a instance method is not a data descriptor')
-        self.assertFalse(inspect.isdatadescriptor(Test().class_method),
-                         'a class method is not a data descriptor')
-        self.assertFalse(inspect.isdatadescriptor(Test().static_method),
-                         'a static method is not a data descriptor')
-        self.assertFalse(inspect.isdatadescriptor(function),
-                         'a function is not a data descriptor')
-        self.assertFalse(inspect.isdatadescriptor(a_lambda),
-                         'a lambda is not a data descriptor')
+        # `ClassBeingDataDescriptor` itself *is* a data descriptor, but
+        # it is *also* a class, and `isdatadescriptor()` explicitly
+        # excludes classes.
+        self.assertFalse(
+            inspect.isdatadescriptor(ClassBeingDataDescriptor),
+            'classes (instances of type) are explicitly excluded')
+
+    def test_non_descriptors(self):
+        class Test:
+            pass
+        self.assertFalse(inspect.isdatadescriptor(Test()))
+        self.assertFalse(inspect.isdatadescriptor(Test))
+        self.assertFalse(inspect.isdatadescriptor([42]))
+        self.assertFalse(inspect.isdatadescriptor(42))
 
 
 _global_ref = object()
