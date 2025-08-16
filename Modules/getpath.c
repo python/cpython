@@ -478,37 +478,6 @@ done:
     PyMem_RawFree((void *)path);
     return r;
 
-#elif defined(HAVE_REALPATH)
-    PyObject *r = NULL;
-    struct stat st;
-    const char *narrow = NULL;
-    wchar_t *path = PyUnicode_AsWideCharString(pathobj, NULL);
-    if (!path) {
-        goto done;
-    }
-    narrow = Py_EncodeLocale(path, NULL);
-    if (!narrow) {
-        PyErr_NoMemory();
-        goto done;
-    }
-    if (lstat(narrow, &st)) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        goto done;
-    }
-    if (!S_ISLNK(st.st_mode)) {
-        r = Py_NewRef(pathobj);
-        goto done;
-    }
-    wchar_t resolved[MAXPATHLEN+1];
-    if (_Py_wrealpath(path, resolved, MAXPATHLEN) == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
-    } else {
-        r = PyUnicode_FromWideChar(resolved, -1);
-    }
-done:
-    PyMem_Free((void *)path);
-    PyMem_Free((void *)narrow);
-    return r;
 #elif defined(MS_WINDOWS)
     HANDLE hFile;
     wchar_t resolved[MAXPATHLEN+1];
