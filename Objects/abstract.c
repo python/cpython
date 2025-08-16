@@ -616,7 +616,7 @@ done:
 }
 
 int
-PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char fort)
+PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char order)
 {
     int k;
     void (*addone)(int, Py_ssize_t *, const Py_ssize_t *);
@@ -628,7 +628,7 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
         len = view->len;
     }
 
-    if (PyBuffer_IsContiguous(view, fort)) {
+    if (PyBuffer_IsContiguous(view, order)) {
         /* simplest copy is all that is needed */
         memcpy(view->buf, buf, len);
         return 0;
@@ -646,7 +646,7 @@ PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, 
         indices[k] = 0;
     }
 
-    if (fort == 'F') {
+    if (order == 'F') {
         addone = _Py_add_one_to_index_F;
     }
     else {
