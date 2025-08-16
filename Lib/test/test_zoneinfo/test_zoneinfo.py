@@ -12,6 +12,7 @@ import pickle
 import re
 import shutil
 import struct
+import sys
 import tempfile
 import unittest
 from datetime import date, datetime, time, timedelta, timezone
@@ -1944,6 +1945,21 @@ class TestModule(ZoneInfoTestBase):
 
 class CTestModule(TestModule):
     module = c_zoneinfo
+
+
+class MiscTests(unittest.TestCase):
+    def test_pydatetime(self):
+        with CleanImport('zoneinfo', 'zoneinfo._tzpath', 'zoneinfo._zoneinfo',
+                         '_zoneinfo', 'datetime', '_pydatetime', '_datetime'):
+            sys.modules['_datetime'] = None
+            import datetime
+            import zoneinfo
+            zoneinfo.ZoneInfo.clear_cache()
+            tzinfo = zoneinfo.ZoneInfo('Europe/Paris')
+            datetime.datetime(2025, 10, 26, 2, 0, tzinfo=tzinfo)
+            self.assertIn('_pydatetime', sys.modules)
+            self.assertNotIn('_zoneinfo', sys.modules)
+            self.assertIn('zoneinfo._zoneinfo', sys.modules)
 
 
 class ExtensionBuiltTest(unittest.TestCase):
