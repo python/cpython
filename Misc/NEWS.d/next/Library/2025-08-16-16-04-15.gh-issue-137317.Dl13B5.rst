@@ -1,0 +1,2 @@
+Fix the behavior when using :func:`inspect.signature` to get the signature
+for a class that uses descriptor on a wrapped :meth:`!__init__` methods.
