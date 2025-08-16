@@ -318,7 +318,7 @@ class Server(events.AbstractServer):
 
     def _detach(self, transport):
         self._clients.discard(transport)
-        if self._state == _ServerState.CLOSED and len(self._clients) == 0:
+        if self._state == _ServerState.CLOSED and not self._clients:
             self._shutdown()
 
     def _shutdown(self):
