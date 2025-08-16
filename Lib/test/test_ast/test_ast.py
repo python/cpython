@@ -84,7 +84,9 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(ast_node._fields, ast_node.__match_args__)
 
     def test_AST_objects(self):
-        x = ast.AST()
+        # Directly instantiating abstract node class AST is allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            x = ast.AST()
         self.assertEqual(x._fields, ())
         x.foobar = 42
         self.assertEqual(x.foobar, 42)
@@ -93,7 +95,7 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             x.vararg
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError), self.assertWarns(DeprecationWarning):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
 
@@ -109,15 +111,15 @@ class AST_Tests(unittest.TestCase):
 
         msg = "type object 'ast.AST' has no attribute '_fields'"
         # Both examples used to crash:
-        with self.assertRaisesRegex(AttributeError, msg):
+        with self.assertRaisesRegex(AttributeError, msg), self.assertWarns(DeprecationWarning):
             ast.AST(arg1=123)
-        with self.assertRaisesRegex(AttributeError, msg):
+        with self.assertRaisesRegex(AttributeError, msg), self.assertWarns(DeprecationWarning):
             ast.AST()
 
-    def test_AST_garbage_collection(self):
+    def test_node_garbage_collection(self):
         class X:
             pass
-        a = ast.AST()
+        a = ast.Module()
         a.x = X()
         a.x.a = a
         ref = weakref.ref(a.x)
@@ -427,7 +429,12 @@ class AST_Tests(unittest.TestCase):
             elif typ is object:
                 kwargs[name] = b'capybara'
             elif isinstance(typ, type) and issubclass(typ, ast.AST):
-                kwargs[name] = self._construct_ast_class(typ)
+                if typ._is_abstract():
+                    # Use an arbitrary concrete subclass
+                    concrete = next(sub for sub in typ.__subclasses__() if not sub._is_abstract())
+                    kwargs[name] = self._construct_ast_class(concrete)
+                else:
+                    kwargs[name] = self._construct_ast_class(typ)
         return cls(**kwargs)
 
     def test_arguments(self):
@@ -573,6 +580,10 @@ class AST_Tests(unittest.TestCase):
             x = ast.BinOp(1, 2, 3, foobarbaz=42)
         self.assertEqual(x.foobarbaz, 42)
 
+        # Directly instantiating abstract node types is allowed (but deprecated)
+        with self.assertWarns(DeprecationWarning):
+            ast.stmt()
+
     def test_no_fields(self):
         # this used to fail because Sub._fields was None
         x = ast.Sub()
@@ -580,7 +591,9 @@ class AST_Tests(unittest.TestCase):
 
     def test_invalid_sum(self):
         pos = dict(lineno=2, col_offset=3)
-        m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
+        with self.assertWarns(DeprecationWarning):
+            # Creating instances of ast.expr is deprecated
+            m = ast.Module([ast.Expr(ast.expr(**pos), **pos)], [])
         with self.assertRaises(TypeError) as cm:
             compile(m, "<test>", "exec")
         self.assertIn("but got expr()", str(cm.exception))
@@ -1139,6 +1152,9 @@ class CopyTests(unittest.TestCase):
             if cls.__module__ != 'ast':
                 return
             if cls is ast.Index:
+                return
+            # Don't attempt to create instances of abstract AST nodes
+            if cls._is_abstract():
                 return
 
             yield cls

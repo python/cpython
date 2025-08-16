@@ -408,6 +408,14 @@ module_name
 Deprecated
 ==========
 
+ast
+---
+
+* Creating instances of abstract AST nodes (such as :class:`ast.AST`
+  or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
+  (Contributed by Brian Schubert in :gh:`116021`.)
+
+
 hashlib
 -------
 

@@ -178,6 +178,7 @@ void _PyAST_Fini(PyInterpreterState *interp)
     Py_CLEAR(state->__module__);
     Py_CLEAR(state->_attributes);
     Py_CLEAR(state->_fields);
+    Py_CLEAR(state->abstract_types);
     Py_CLEAR(state->alias_type);
     Py_CLEAR(state->annotation);
     Py_CLEAR(state->arg);
@@ -5165,6 +5166,21 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         return -1;
     }
 
+    int contains = PySet_Contains(state->abstract_types, (PyObject *)Py_TYPE(self));
+    if (contains == -1) {
+        return -1;
+    }
+    else if (contains == 1) {
+        if (PyErr_WarnFormat(
+            PyExc_DeprecationWarning, 1,
+            "Instantiating abstract AST node class %T is deprecated. "
+            "This will become an error in Python 3.20",
+            self
+        ) < 0) {
+            return -1;
+        }
+    }
+
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields, *attributes = NULL, *remaining_fields = NULL;
@@ -5727,6 +5743,23 @@ cleanup:
     return result;
 }
 
+/* Helper for checking if a node class is abstract in the tests. */
+PyObject *
+ast_is_abstract(PyObject *cls, void *Py_UNUSED(ignored)) {
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+    int contains = PySet_Contains(state->abstract_types, cls);
+    if (contains == -1) {
+        return NULL;
+    }
+    else if (contains == 1) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyMemberDef ast_type_members[] = {
     {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
     {NULL}  /* Sentinel */
@@ -5738,6 +5771,7 @@ static PyMethodDef ast_type_methods[] = {
      PyDoc_STR("__replace__($self, /, **fields)\n--\n\n"
                "Return a copy of the AST node with new values "
                "for the specified fields.")},
+    {"_is_abstract", _PyCFunction_CAST(ast_is_abstract), METH_CLASS | METH_NOARGS, NULL},
     {NULL}
 };
 
@@ -6170,6 +6204,13 @@ init_types(void *arg)
     if (!state->AST_type) {
         return -1;
     }
+    state->abstract_types = PySet_New(NULL);
+    if (!state->abstract_types) {
+        return -1;
+    }
+    if (PySet_Add(state->abstract_types, state->AST_type) < 0) {
+        return -1;
+    }
     if (add_ast_fields(state) < 0) {
         return -1;
     }
@@ -6180,6 +6221,7 @@ init_types(void *arg)
         "    | FunctionType(expr* argtypes, expr returns)");
     if (!state->mod_type) return -1;
     if (add_attributes(state, state->mod_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->mod_type) < 0) return -1;
     state->Module_type = make_type(state, "Module", state->mod_type,
                                    Module_fields, 2,
         "Module(stmt* body, type_ignore* type_ignores)");
@@ -6229,6 +6271,7 @@ init_types(void *arg)
     if (!state->stmt_type) return -1;
     if (add_attributes(state, state->stmt_type, stmt_attributes, 4) < 0) return
         -1;
+    if (PySet_Add(state->abstract_types, state->stmt_type) < 0) return -1;
     if (PyObject_SetAttr(state->stmt_type, state->end_lineno, Py_None) == -1)
         return -1;
     if (PyObject_SetAttr(state->stmt_type, state->end_col_offset, Py_None) ==
@@ -6414,6 +6457,7 @@ init_types(void *arg)
     if (!state->expr_type) return -1;
     if (add_attributes(state, state->expr_type, expr_attributes, 4) < 0) return
         -1;
+    if (PySet_Add(state->abstract_types, state->expr_type) < 0) return -1;
     if (PyObject_SetAttr(state->expr_type, state->end_lineno, Py_None) == -1)
         return -1;
     if (PyObject_SetAttr(state->expr_type, state->end_col_offset, Py_None) ==
@@ -6558,6 +6602,8 @@ init_types(void *arg)
         "expr_context = Load | Store | Del");
     if (!state->expr_context_type) return -1;
     if (add_attributes(state, state->expr_context_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->expr_context_type) < 0) return
+        -1;
     state->Load_type = make_type(state, "Load", state->expr_context_type, NULL,
                                  0,
         "Load");
@@ -6582,6 +6628,7 @@ init_types(void *arg)
         "boolop = And | Or");
     if (!state->boolop_type) return -1;
     if (add_attributes(state, state->boolop_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->boolop_type) < 0) return -1;
     state->And_type = make_type(state, "And", state->boolop_type, NULL, 0,
         "And");
     if (!state->And_type) return -1;
@@ -6599,6 +6646,7 @@ init_types(void *arg)
         "operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift | RShift | BitOr | BitXor | BitAnd | FloorDiv");
     if (!state->operator_type) return -1;
     if (add_attributes(state, state->operator_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->operator_type) < 0) return -1;
     state->Add_type = make_type(state, "Add", state->operator_type, NULL, 0,
         "Add");
     if (!state->Add_type) return -1;
@@ -6693,6 +6741,7 @@ init_types(void *arg)
         "unaryop = Invert | Not | UAdd | USub");
     if (!state->unaryop_type) return -1;
     if (add_attributes(state, state->unaryop_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->unaryop_type) < 0) return -1;
     state->Invert_type = make_type(state, "Invert", state->unaryop_type, NULL,
                                    0,
         "Invert");
@@ -6723,6 +6772,7 @@ init_types(void *arg)
         "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn");
     if (!state->cmpop_type) return -1;
     if (add_attributes(state, state->cmpop_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->cmpop_type) < 0) return -1;
     state->Eq_type = make_type(state, "Eq", state->cmpop_type, NULL, 0,
         "Eq");
     if (!state->Eq_type) return -1;
@@ -6796,6 +6846,8 @@ init_types(void *arg)
     if (!state->excepthandler_type) return -1;
     if (add_attributes(state, state->excepthandler_type,
         excepthandler_attributes, 4) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->excepthandler_type) < 0) return
+        -1;
     if (PyObject_SetAttr(state->excepthandler_type, state->end_lineno, Py_None)
         == -1)
         return -1;
@@ -6886,6 +6938,7 @@ init_types(void *arg)
     if (!state->pattern_type) return -1;
     if (add_attributes(state, state->pattern_type, pattern_attributes, 4) < 0)
         return -1;
+    if (PySet_Add(state->abstract_types, state->pattern_type) < 0) return -1;
     state->MatchValue_type = make_type(state, "MatchValue",
                                        state->pattern_type, MatchValue_fields,
                                        1,
@@ -6936,6 +6989,8 @@ init_types(void *arg)
         "type_ignore = TypeIgnore(int lineno, string tag)");
     if (!state->type_ignore_type) return -1;
     if (add_attributes(state, state->type_ignore_type, NULL, 0) < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->type_ignore_type) < 0) return
+        -1;
     state->TypeIgnore_type = make_type(state, "TypeIgnore",
                                        state->type_ignore_type,
                                        TypeIgnore_fields, 2,
@@ -6949,6 +7004,7 @@ init_types(void *arg)
     if (!state->type_param_type) return -1;
     if (add_attributes(state, state->type_param_type, type_param_attributes, 4)
         < 0) return -1;
+    if (PySet_Add(state->abstract_types, state->type_param_type) < 0) return -1;
     state->TypeVar_type = make_type(state, "TypeVar", state->type_param_type,
                                     TypeVar_fields, 3,
         "TypeVar(identifier name, expr? bound, expr? default_value)");
