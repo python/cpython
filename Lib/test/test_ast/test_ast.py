@@ -458,14 +458,13 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x._fields, 666)
 
     def test_classattrs(self):
-        with self.assertWarns(DeprecationWarning):
+        msg = "ast.Constant.__init__ missing 1 required positional argument: 'value'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             x = ast.Constant()
-        self.assertEqual(x._fields, ('value', 'kind'))
-
-        with self.assertRaises(AttributeError):
-            x.value
 
         x = ast.Constant(42)
+        self.assertEqual(x._fields, ('value', 'kind'))
+
         self.assertEqual(x.value, 42)
 
         with self.assertRaises(AttributeError):
@@ -485,11 +484,13 @@ class AST_Tests(unittest.TestCase):
         self.assertRaises(TypeError, ast.Constant, 1, None, 2)
         self.assertRaises(TypeError, ast.Constant, 1, None, 2, lineno=0)
 
-        # Arbitrary keyword arguments are supported (but deprecated)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(ast.Constant(1, foo='bar').foo, 'bar')
+        # Arbitrary keyword arguments are not supported
+        msg = "ast.Constant.__init__ got an unexpected keyword argument 'foo'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+            ast.Constant(1, foo='bar')
 
-        with self.assertRaisesRegex(TypeError, "Constant got multiple values for argument 'value'"):
+        msg = "ast.Constant got multiple values for argument 'value'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             ast.Constant(1, value=2)
 
         self.assertEqual(ast.Constant(42).value, 42)
@@ -528,22 +529,24 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.body, body)
 
     def test_nodeclasses(self):
-        # Zero arguments constructor explicitly allowed (but deprecated)
-        with self.assertWarns(DeprecationWarning):
+        # Zero arguments constructor is not allowed
+        msg = "ast.BinOp.__init__ missing 3 required positional arguments: 'left', 'op', and 'right'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             x = ast.BinOp()
-        self.assertEqual(x._fields, ('left', 'op', 'right'))
-
-        # Random attribute allowed too
-        x.foobarbaz = 5
-        self.assertEqual(x.foobarbaz, 5)
 
         n1 = ast.Constant(1)
         n3 = ast.Constant(3)
         addop = ast.Add()
         x = ast.BinOp(n1, addop, n3)
+        self.assertEqual(x._fields, ('left', 'op', 'right'))
         self.assertEqual(x.left, n1)
         self.assertEqual(x.op, addop)
         self.assertEqual(x.right, n3)
+
+        # Random attribute allowed too
+        x.foobarbaz = 5
+        self.assertEqual(x.foobarbaz, 5)
+        self.assertEqual(x._fields, ('left', 'op', 'right'))
 
         x = ast.BinOp(1, 2, 3)
         self.assertEqual(x.left, 1)
@@ -568,10 +571,10 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(x.right, 3)
         self.assertEqual(x.lineno, 0)
 
-        # Random kwargs also allowed (but deprecated)
-        with self.assertWarns(DeprecationWarning):
+        # Random kwargs are not allowed
+        msg = "ast.BinOp.__init__ got an unexpected keyword argument 'foobarbaz'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             x = ast.BinOp(1, 2, 3, foobarbaz=42)
-        self.assertEqual(x.foobarbaz, 42)
 
     def test_no_fields(self):
         # this used to fail because Sub._fields was None
@@ -1412,7 +1415,7 @@ class CopyTests(unittest.TestCase):
 
         self.assertRaises(AttributeError, getattr, node, 'id')
         self.assertIs(node.ctx, context)
-        msg = "Name.__replace__ missing 1 keyword argument: 'id'."
+        msg = "ast.Name.__init__ missing 1 required positional argument: 'id'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node)
         # assert that there is no side-effect
@@ -1449,7 +1452,7 @@ class CopyTests(unittest.TestCase):
 
         # explicit rejection of known instance fields
         self.assertHasAttr(node, 'extra')
-        msg = "Name.__replace__ got an unexpected keyword argument 'extra'."
+        msg = "ast.Name.__init__ got an unexpected keyword argument 'extra'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node, extra=1)
         # assert that there is no side-effect
@@ -1463,7 +1466,7 @@ class CopyTests(unittest.TestCase):
 
         # explicit rejection of unknown extra fields
         self.assertRaises(AttributeError, getattr, node, 'unknown')
-        msg = "Name.__replace__ got an unexpected keyword argument 'unknown'."
+        msg = "ast.Name.__init__ got an unexpected keyword argument 'unknown'"
         with self.assertRaisesRegex(TypeError, re.escape(msg)):
             copy.replace(node, unknown=1)
         # assert that there is no side-effect
@@ -3209,11 +3212,10 @@ class ASTConstructorTests(unittest.TestCase):
         args = ast.arguments()
         self.assertEqual(args.args, [])
         self.assertEqual(args.posonlyargs, [])
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"FunctionDef\.__init__ missing 1 required positional argument: 'name'"):
+        msg = "ast.FunctionDef.__init__ missing 1 required positional argument: 'name'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             node = ast.FunctionDef(args=args)
-        self.assertNotHasAttr(node, "name")
-        self.assertEqual(node.decorator_list, [])
+
         node = ast.FunctionDef(name='foo', args=args)
         self.assertEqual(node.name, 'foo')
         self.assertEqual(node.decorator_list, [])
@@ -3231,8 +3233,8 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertEqual(name3.id, "x")
         self.assertIsInstance(name3.ctx, ast.Del)
 
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"Name\.__init__ missing 1 required positional argument: 'id'"):
+        msg = "ast.Name.__init__ missing 1 required positional argument: 'id'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             name3 = ast.Name()
 
     def test_custom_subclass_with_no_fields(self):
@@ -3272,8 +3274,8 @@ class ASTConstructorTests(unittest.TestCase):
         self.assertEqual(obj.a, 1)
         self.assertEqual(obj.b, 2)
 
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"MyAttrs.__init__ got an unexpected keyword argument 'c'."):
+        msg = "MyAttrs.__init__ got an unexpected keyword argument 'c'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             obj = MyAttrs(c=3)
 
     def test_fields_and_types_no_default(self):
@@ -3281,11 +3283,10 @@ class ASTConstructorTests(unittest.TestCase):
             _fields = ('a',)
             _field_types = {'a': int}
 
-        with self.assertWarnsRegex(DeprecationWarning,
-                                   r"FieldsAndTypesNoDefault\.__init__ missing 1 required positional argument: 'a'\."):
+        msg = "FieldsAndTypesNoDefault.__init__ missing 1 required positional argument: 'a'"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             obj = FieldsAndTypesNoDefault()
-        with self.assertRaises(AttributeError):
-            obj.a
+
         obj = FieldsAndTypesNoDefault(a=1)
         self.assertEqual(obj.a, 1)
 
@@ -3296,13 +3297,9 @@ class ASTConstructorTests(unittest.TestCase):
             a: int | None = None
             b: int | None = None
 
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            r"Field 'b' is missing from MoreFieldsThanTypes\._field_types"
-        ):
+        msg = "Field 'b' is missing from test.test_ast.test_ast.ASTConstructorTests.test_incomplete_field_types.<locals>.MoreFieldsThanTypes._field_types"
+        with self.assertRaisesRegex(TypeError, re.escape(msg)):
             obj = MoreFieldsThanTypes()
-        self.assertIs(obj.a, None)
-        self.assertIs(obj.b, None)
 
         obj = MoreFieldsThanTypes(a=1, b=2)
         self.assertEqual(obj.a, 1)
