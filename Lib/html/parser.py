@@ -127,17 +127,23 @@ class HTMLParser(_markupbase.ParserBase):
     argument.
     """
 
-    CDATA_CONTENT_ELEMENTS = ("script", "style")
+    # See the HTML5 specs section "13.4 Parsing HTML fragments".
+    # https://html.spec.whatwg.org/multipage/parsing.html#parsing-html-fragments
+    CDATA_CONTENT_ELEMENTS = ("script", "style", "xmp", "iframe", "noembed", "noframes")
     RCDATA_CONTENT_ELEMENTS = ("textarea", "title")
 
-    def __init__(self, *, convert_charrefs=True):
+    def __init__(self, *, convert_charrefs=True, scripting=False):
         """Initialize and reset this instance.
 
-        If convert_charrefs is True (the default), all character references
+        If convert_charrefs is true (the default), all character references
         are automatically converted to the corresponding Unicode characters.
+
+        If scripting is true, the noscript element is parsed in the
+        RAWTEXT mode.
         """
         super().__init__()
         self.convert_charrefs = convert_charrefs
+        self.scripting = scripting
         self.reset()
 
     def reset(self):
@@ -454,6 +460,11 @@ class HTMLParser(_markupbase.ParserBase):
                 self.set_cdata_mode(tag)
             elif tag in self.RCDATA_CONTENT_ELEMENTS:
                 self.set_cdata_mode(tag, escapable=True)
+            elif self.scripting and tag == "noscript":
+                self.set_cdata_mode(tag)
+            elif tag == "plaintext":
+                self.set_cdata_mode(tag)
+                self.interesting = re.compile(r'\z')
         return endpos
 
     # Internal -- check to see if we have a complete starttag; return end
