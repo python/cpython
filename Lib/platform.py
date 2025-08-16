@@ -223,7 +223,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             decoded_groups = [s.decode('latin1') if s is not None else s
                               for s in m.groups()]
             (libcinit, glibc, glibcversion, so, threads, soversion,
-             musl, muslversion, musl_so, musl_sover) = decoded_groups 
+             musl, muslversion, musl_so, musl_sover) = decoded_groups
             if libcinit and not lib:
                 lib = 'libc'
             elif glibc:
