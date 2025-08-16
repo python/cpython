@@ -47,6 +47,7 @@ typedef struct {
     int allow_daemon_threads;
     int check_multi_interp_extensions;
     int gil;
+    int can_handle_signals;
 } PyInterpreterConfig;
 
 #define _PyInterpreterConfig_INIT \
@@ -58,6 +59,7 @@ typedef struct {
         .allow_daemon_threads = 0, \
         .check_multi_interp_extensions = 1, \
         .gil = PyInterpreterConfig_OWN_GIL, \
+        .can_handle_signals = 1, \
     }
 
 // gh-117649: The free-threaded build does not currently support single-phase
@@ -78,6 +80,7 @@ typedef struct {
         .allow_daemon_threads = 1, \
         .check_multi_interp_extensions = _PyInterpreterConfig_LEGACY_CHECK_MULTI_INTERP_EXTENSIONS, \
         .gil = PyInterpreterConfig_SHARED_GIL, \
+        .can_handle_signals = 0, \
     }
 
 PyAPI_FUNC(PyStatus) Py_NewInterpreterFromConfig(
