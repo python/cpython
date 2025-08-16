@@ -204,9 +204,13 @@ Directory and files operations
    *src* symbolic link to the newly created *dst* symbolic link.
    However, this functionality is not available on all platforms.
    On platforms where some or all of this functionality is
-   unavailable, :func:`copy2` will preserve all the metadata
-   it can; :func:`copy2` never raises an exception because it
-   cannot preserve file metadata.
+   unavailable, :func:`copy2` will preserve as much metadata as it
+   can.  However, individual metadata-copy operations (for example
+   changing ownership or setting certain flags) may fail on some
+   platforms or when the current process lacks privileges; such
+   failures can raise exceptions. If you need to avoid metadata-related
+   errors, use :func:`~shutil.copy`, which copies file data and the
+   permission bits but does not attempt to preserve other metadata.
 
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
    Please see :func:`copystat` for more information
