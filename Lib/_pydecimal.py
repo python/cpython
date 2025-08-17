@@ -4134,7 +4134,7 @@ class Context(object):
         else:
             return r
 
-    def _apply(self, a, /):
+    def _apply(self, a):
         return str(a._fix(self))
 
     def canonical(self, a, /):
