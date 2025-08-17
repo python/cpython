@@ -1954,7 +1954,6 @@ _decimal_setcontext(PyObject *module, PyObject *context)
  * to the local (inner) context. */
 
 /*[clinic input]
-@text_signature "($module, /, ctx=None, **kwargs)"
 _decimal.localcontext
 
     self as m: self
@@ -1982,7 +1981,7 @@ _decimal_localcontext_impl(PyObject *m, PyObject *local, PyObject *prec,
                            PyObject *rounding, PyObject *Emin,
                            PyObject *Emax, PyObject *capitals,
                            PyObject *clamp, PyObject *flags, PyObject *traps)
-/*[clinic end generated code: output=f97568232f55f5c2 input=af5c0c34dcf94cfc]*/
+/*[clinic end generated code: output=f97568232f55f5c2 input=553ccd63795122a2]*/
 {
     PyObject *global;
 

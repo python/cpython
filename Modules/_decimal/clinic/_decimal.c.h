@@ -76,7 +76,9 @@ PyDoc_STRVAR(_decimal_setcontext__doc__,
     {"setcontext", (PyCFunction)_decimal_setcontext, METH_O, _decimal_setcontext__doc__},
 
 PyDoc_STRVAR(_decimal_localcontext__doc__,
-"localcontext($module, /, ctx=None, **kwargs)\n"
+"localcontext($module, /, ctx=None, *, prec=None, rounding=None,\n"
+"             Emin=None, Emax=None, capitals=None, clamp=None,\n"
+"             flags=None, traps=None)\n"
 "--\n"
 "\n"
 "Return a context manager for a copy of the supplied context.\n"
@@ -1165,4 +1167,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=16a3dc16d65139a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee6d30bf73aae1e5 input=a9049054013a1b77]*/
