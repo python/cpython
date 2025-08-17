@@ -44,6 +44,10 @@
 #ifndef Expat_External_INCLUDED
 #define Expat_External_INCLUDED 1
 
+/* Namespace external symbols to allow multiple libexpat version to
+   co-exist. */
+#include "pyexpatns.h"
+
 /* External API definitions */
 
 /* Expat tries very hard to make the API boundary very specifically

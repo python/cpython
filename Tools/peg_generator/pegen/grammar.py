@@ -35,7 +35,13 @@ class GrammarVisitor:
 
 class Grammar:
     def __init__(self, rules: Iterable[Rule], metas: Iterable[Tuple[str, Optional[str]]]):
-        self.rules = {rule.name: rule for rule in rules}
+        # Check if there are repeated rules in "rules"
+        all_rules = {}
+        for rule in rules:
+            if rule.name in all_rules:
+                raise GrammarError(f"Repeated rule {rule.name!r}")
+            all_rules[rule.name] = rule
+        self.rules = all_rules
         self.metas = dict(metas)
 
     def __str__(self) -> str:
@@ -112,8 +118,7 @@ class Leaf:
         return self.value
 
     def __iter__(self) -> Iterable[str]:
-        if False:
-            yield
+        yield from ()
 
 
 class NameLeaf(Leaf):
@@ -335,8 +340,7 @@ class Cut:
         return f"~"
 
     def __iter__(self) -> Iterator[Tuple[str, str]]:
-        if False:
-            yield
+        yield from ()
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Cut):
@@ -349,7 +353,7 @@ class Cut:
 
 Plain = Union[Leaf, Group]
 Item = Union[Plain, Opt, Repeat, Forced, Lookahead, Rhs, Cut]
-RuleName = Tuple[str, str]
+RuleName = Tuple[str, Optional[str]]
 MetaTuple = Tuple[str, Optional[str]]
 MetaList = List[MetaTuple]
 RuleList = List[Rule]

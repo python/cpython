@@ -1,1 +1,0 @@
-:func:`~math.log` and :func:`~cmath.log` support default base=None values.

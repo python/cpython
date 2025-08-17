@@ -1,6 +1,7 @@
 /* Finding the optimal width of unicode characters in a buffer */
 
-#if !STRINGLIB_IS_UNICODE
+/* find_max_char for one-byte will work for bytes objects as well. */
+#if !STRINGLIB_IS_UNICODE && STRINGLIB_SIZEOF_CHAR > 1
 # error "find_max_char.h is specific to Unicode"
 #endif
 
@@ -20,19 +21,20 @@ Py_LOCAL_INLINE(Py_UCS4)
 STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 {
     const unsigned char *p = (const unsigned char *) begin;
+    const unsigned char *_end = (const unsigned char *)end;
 
-    while (p < end) {
+    while (p < _end) {
         if (_Py_IS_ALIGNED(p, ALIGNOF_SIZE_T)) {
             /* Help register allocation */
             const unsigned char *_p = p;
-            while (_p + SIZEOF_SIZE_T <= end) {
+            while (_p + SIZEOF_SIZE_T <= _end) {
                 size_t value = *(const size_t *) _p;
                 if (value & UCS1_ASCII_CHAR_MASK)
                     return 255;
                 _p += SIZEOF_SIZE_T;
             }
             p = _p;
-            if (p == end)
+            if (p == _end)
                 break;
         }
         if (*p++ & 0x80)

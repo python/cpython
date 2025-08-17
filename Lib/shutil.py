@@ -32,6 +32,13 @@ try:
 except ImportError:
     _LZMA_SUPPORTED = False
 
+try:
+    from compression import zstd
+    del zstd
+    _ZSTD_SUPPORTED = True
+except ImportError:
+    _ZSTD_SUPPORTED = False
+
 _WINDOWS = os.name == 'nt'
 posix = nt = None
 if os.name == 'posix':
@@ -39,10 +46,17 @@ if os.name == 'posix':
 elif _WINDOWS:
     import nt
 
-COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 64 * 1024
+if sys.platform == 'win32':
+    import _winapi
+else:
+    _winapi = None
+
+COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 256 * 1024
 # This should never be removed, see rationale in:
 # https://bugs.python.org/issue43743#msg393429
-_USE_CP_SENDFILE = hasattr(os, "sendfile") and sys.platform.startswith("linux")
+_USE_CP_SENDFILE = (hasattr(os, "sendfile")
+                    and sys.platform.startswith(("linux", "android", "sunos")))
+_USE_CP_COPY_FILE_RANGE = hasattr(os, "copy_file_range")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10
@@ -50,7 +64,7 @@ _WIN_DEFAULT_PATHEXT = ".COM;.EXE;.BAT;.CMD;.VBS;.JS;.WS;.MSC"
 
 __all__ = ["copyfileobj", "copyfile", "copymode", "copystat", "copy", "copy2",
            "copytree", "move", "rmtree", "Error", "SpecialFileError",
-           "ExecError", "make_archive", "get_archive_formats",
+           "make_archive", "get_archive_formats",
            "register_archive_format", "unregister_archive_format",
            "get_unpack_formats", "register_unpack_format",
            "unregister_unpack_format", "unpack_archive",
@@ -68,8 +82,6 @@ class SpecialFileError(OSError):
     """Raised when trying to do a kind of operation (e.g. copying) which is
     not supported on a special file (e.g. a named pipe)"""
 
-class ExecError(OSError):
-    """Raised when a command could not be executed"""
 
 class ReadError(OSError):
     """Raised when an archive cannot be read"""
@@ -103,10 +115,70 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
         else:
             raise err from None
 
+def _determine_linux_fastcopy_blocksize(infd):
+    """Determine blocksize for fastcopying on Linux.
+
+    Hopefully the whole file will be copied in a single call.
+    The copying itself should be performed in a loop 'till EOF is
+    reached (0 return) so a blocksize smaller or bigger than the actual
+    file size should not make any difference, also in case the file
+    content changes while being copied.
+    """
+    try:
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8 MiB
+    except OSError:
+        blocksize = 2 ** 27  # 128 MiB
+    # On 32-bit architectures truncate to 1 GiB to avoid OverflowError,
+    # see gh-82500.
+    if sys.maxsize < 2 ** 32:
+        blocksize = min(blocksize, 2 ** 30)
+    return blocksize
+
+def _fastcopy_copy_file_range(fsrc, fdst):
+    """Copy data from one regular mmap-like fd to another by using
+    a high-performance copy_file_range(2) syscall that gives filesystems
+    an opportunity to implement the use of reflinks or server-side copy.
+
+    This should work on Linux >= 4.5 only.
+    """
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnFastCopy(err)  # not a regular file
+
+    blocksize = _determine_linux_fastcopy_blocksize(infd)
+    offset = 0
+    while True:
+        try:
+            n_copied = os.copy_file_range(infd, outfd, blocksize, offset_dst=offset)
+        except OSError as err:
+            # ...in oder to have a more informative exception.
+            err.filename = fsrc.name
+            err.filename2 = fdst.name
+
+            if err.errno == errno.ENOSPC:  # filesystem is full
+                raise err from None
+
+            # Give up on first call and if no data was copied.
+            if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
+                raise _GiveupOnFastCopy(err)
+
+            raise err
+        else:
+            if n_copied == 0:
+                # If no bytes have been copied yet, copy_file_range
+                # might silently fail.
+                # https://lore.kernel.org/linux-fsdevel/20210126233840.GG4626@dread.disaster.area/T/#m05753578c7f7882f6e9ffe01f981bc223edef2b0
+                if offset == 0:
+                    raise _GiveupOnFastCopy()
+                break
+            offset += n_copied
+
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile(2) syscall.
-    This should work on Linux >= 2.6.33 only.
+    This should work on Linux >= 2.6.33, Android and Solaris.
     """
     # Note: copyfileobj() is left alone in order to not introduce any
     # unexpected breakage. Possible risks by using zero-copy calls
@@ -124,26 +196,13 @@ def _fastcopy_sendfile(fsrc, fdst):
     except Exception as err:
         raise _GiveupOnFastCopy(err)  # not a regular file
 
-    # Hopefully the whole file will be copied in a single call.
-    # sendfile() is called in a loop 'till EOF is reached (0 return)
-    # so a bufsize smaller or bigger than the actual file size
-    # should not make any difference, also in case the file content
-    # changes while being copied.
-    try:
-        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MiB
-    except OSError:
-        blocksize = 2 ** 27  # 128MiB
-    # On 32-bit architectures truncate to 1GiB to avoid OverflowError,
-    # see bpo-38319.
-    if sys.maxsize < 2 ** 32:
-        blocksize = min(blocksize, 2 ** 30)
-
+    blocksize = _determine_linux_fastcopy_blocksize(infd)
     offset = 0
     while True:
         try:
             sent = os.sendfile(outfd, infd, offset, blocksize)
         except OSError as err:
-            # ...in oder to have a more informative exception.
+            # ...in order to have a more informative exception.
             err.filename = fsrc.name
             err.filename2 = fdst.name
 
@@ -261,13 +320,21 @@ def copyfile(src, dst, *, follow_symlinks=True):
                             return dst
                         except _GiveupOnFastCopy:
                             pass
-                    # Linux
-                    elif _USE_CP_SENDFILE:
-                        try:
-                            _fastcopy_sendfile(fsrc, fdst)
-                            return dst
-                        except _GiveupOnFastCopy:
-                            pass
+                    # Linux / Android / Solaris
+                    elif _USE_CP_SENDFILE or _USE_CP_COPY_FILE_RANGE:
+                        # reflink may be implicit in copy_file_range.
+                        if _USE_CP_COPY_FILE_RANGE:
+                            try:
+                                _fastcopy_copy_file_range(fsrc, fdst)
+                                return dst
+                            except _GiveupOnFastCopy:
+                                pass
+                        if _USE_CP_SENDFILE:
+                            try:
+                                _fastcopy_sendfile(fsrc, fdst)
+                                return dst
+                            except _GiveupOnFastCopy:
+                                pass
                     # Windows, see:
                     # https://github.com/python/cpython/pull/7160#discussion_r195405230
                     elif _WINDOWS and file_size > 0:
@@ -301,7 +368,12 @@ def copymode(src, dst, *, follow_symlinks=True):
         else:
             return
     else:
-        stat_func, chmod_func = _stat, os.chmod
+        stat_func = _stat
+        if os.name == 'nt' and os.path.islink(dst):
+            def chmod_func(*args):
+                os.chmod(*args, follow_symlinks=True)
+        else:
+            chmod_func = os.chmod
 
     st = stat_func(src)
     chmod_func(dst, stat.S_IMODE(st.st_mode))
@@ -328,7 +400,7 @@ if hasattr(os, 'listxattr'):
                 os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
             except OSError as e:
                 if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
-                                   errno.EINVAL):
+                                   errno.EINVAL, errno.EACCES):
                     raise
 else:
     def _copyxattr(*args, **kwargs):
@@ -431,6 +503,29 @@ def copy2(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
+
+    if hasattr(_winapi, "CopyFile2"):
+        src_ = os.fsdecode(src)
+        dst_ = os.fsdecode(dst)
+        flags = _winapi.COPY_FILE_ALLOW_DECRYPTED_DESTINATION # for compat
+        if not follow_symlinks:
+            flags |= _winapi.COPY_FILE_COPY_SYMLINK
+        try:
+            _winapi.CopyFile2(src_, dst_, flags)
+            return dst
+        except OSError as exc:
+            if (exc.winerror == _winapi.ERROR_PRIVILEGE_NOT_HELD
+                and not follow_symlinks):
+                # Likely encountered a symlink we aren't allowed to create.
+                # Fall back on the old code
+                pass
+            elif exc.winerror == _winapi.ERROR_ACCESS_DENIED:
+                # Possibly encountered a hidden or readonly file we can't
+                # overwrite. Fall back on old code
+                pass
+            else:
+                raise
+
     copyfile(src, dst, follow_symlinks=follow_symlinks)
     copystat(src, dst, follow_symlinks=follow_symlinks)
     return dst
@@ -452,7 +547,7 @@ def _copytree(entries, src, dst, symlinks, ignore, copy_function,
     if ignore is not None:
         ignored_names = ignore(os.fspath(src), [x.name for x in entries])
     else:
-        ignored_names = set()
+        ignored_names = ()
 
     os.makedirs(dst, exist_ok=dirs_exist_ok)
     errors = []
@@ -522,7 +617,7 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     If the optional symlinks flag is true, symbolic links in the
     source tree result in symbolic links in the destination tree; if
     it is false, the contents of the files pointed to by symbolic
-    links are copied. If the file pointed by the symlink doesn't
+    links are copied. If the file pointed to by the symlink doesn't
     exist, an exception will be added in the list of errors raised in
     an Error exception at the end of the copy process.
 
@@ -562,117 +657,157 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
                      dirs_exist_ok=dirs_exist_ok)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
-    def _rmtree_islink(path):
-        try:
-            st = os.lstat(path)
-            return (stat.S_ISLNK(st.st_mode) or
-                (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
-                 and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
-        except OSError:
-            return False
+    def _rmtree_islink(st):
+        return (stat.S_ISLNK(st.st_mode) or
+            (st.st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT
+                and st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT))
 else:
-    def _rmtree_islink(path):
-        return os.path.islink(path)
+    def _rmtree_islink(st):
+        return stat.S_ISLNK(st.st_mode)
 
 # version vulnerable to race conditions
-def _rmtree_unsafe(path, onerror):
+def _rmtree_unsafe(path, dir_fd, onexc):
+    if dir_fd is not None:
+        raise NotImplementedError("dir_fd unavailable on this platform")
     try:
-        with os.scandir(path) as scandir_it:
-            entries = list(scandir_it)
-    except OSError:
-        onerror(os.scandir, path, sys.exc_info())
-        entries = []
-    for entry in entries:
-        fullname = entry.path
-        try:
-            is_dir = entry.is_dir(follow_symlinks=False)
-        except OSError:
-            is_dir = False
-
-        if is_dir and not entry.is_junction():
+        st = os.lstat(path)
+    except OSError as err:
+        onexc(os.lstat, path, err)
+        return
+    try:
+        if _rmtree_islink(st):
+            # symlinks to directories are forbidden, see bug #1669
+            raise OSError("Cannot call rmtree on a symbolic link")
+    except OSError as err:
+        onexc(os.path.islink, path, err)
+        # can't continue even if onexc hook returns
+        return
+    def onerror(err):
+        if not isinstance(err, FileNotFoundError):
+            onexc(os.scandir, err.filename, err)
+    results = os.walk(path, topdown=False, onerror=onerror, followlinks=os._walk_symlinks_as_files)
+    for dirpath, dirnames, filenames in results:
+        for name in dirnames:
+            fullname = os.path.join(dirpath, name)
             try:
-                if entry.is_symlink():
-                    # This can only happen if someone replaces
-                    # a directory with a symlink after the call to
-                    # os.scandir or entry.is_dir above.
-                    raise OSError("Cannot call rmtree on a symbolic link")
-            except OSError:
-                onerror(os.path.islink, fullname, sys.exc_info())
+                os.rmdir(fullname)
+            except FileNotFoundError:
                 continue
-            _rmtree_unsafe(fullname, onerror)
-        else:
+            except OSError as err:
+                onexc(os.rmdir, fullname, err)
+        for name in filenames:
+            fullname = os.path.join(dirpath, name)
             try:
                 os.unlink(fullname)
-            except OSError:
-                onerror(os.unlink, fullname, sys.exc_info())
+            except FileNotFoundError:
+                continue
+            except OSError as err:
+                onexc(os.unlink, fullname, err)
     try:
         os.rmdir(path)
-    except OSError:
-        onerror(os.rmdir, path, sys.exc_info())
+    except FileNotFoundError:
+        pass
+    except OSError as err:
+        onexc(os.rmdir, path, err)
 
 # Version using fd-based APIs to protect against races
-def _rmtree_safe_fd(topfd, path, onerror):
+def _rmtree_safe_fd(path, dir_fd, onexc):
+    # While the unsafe rmtree works fine on bytes, the fd based does not.
+    if isinstance(path, bytes):
+        path = os.fsdecode(path)
+    stack = [(os.lstat, dir_fd, path, None)]
     try:
+        while stack:
+            _rmtree_safe_fd_step(stack, onexc)
+    finally:
+        # Close any file descriptors still on the stack.
+        while stack:
+            func, fd, path, entry = stack.pop()
+            if func is not os.close:
+                continue
+            try:
+                os.close(fd)
+            except OSError as err:
+                onexc(os.close, path, err)
+
+def _rmtree_safe_fd_step(stack, onexc):
+    # Each stack item has four elements:
+    # * func: The first operation to perform: os.lstat, os.close or os.rmdir.
+    #   Walking a directory starts with an os.lstat() to detect symlinks; in
+    #   this case, func is updated before subsequent operations and passed to
+    #   onexc() if an error occurs.
+    # * dirfd: Open file descriptor, or None if we're processing the top-level
+    #   directory given to rmtree() and the user didn't supply dir_fd.
+    # * path: Path of file to operate upon. This is passed to onexc() if an
+    #   error occurs.
+    # * orig_entry: os.DirEntry, or None if we're processing the top-level
+    #   directory given to rmtree(). We used the cached stat() of the entry to
+    #   save a call to os.lstat() when walking subdirectories.
+    func, dirfd, path, orig_entry = stack.pop()
+    name = path if orig_entry is None else orig_entry.name
+    try:
+        if func is os.close:
+            os.close(dirfd)
+            return
+        if func is os.rmdir:
+            os.rmdir(name, dir_fd=dirfd)
+            return
+
+        # Note: To guard against symlink races, we use the standard
+        # lstat()/open()/fstat() trick.
+        assert func is os.lstat
+        if orig_entry is None:
+            orig_st = os.lstat(name, dir_fd=dirfd)
+        else:
+            orig_st = orig_entry.stat(follow_symlinks=False)
+
+        func = os.open  # For error reporting.
+        topfd = os.open(name, os.O_RDONLY | os.O_NONBLOCK, dir_fd=dirfd)
+
+        func = os.path.islink  # For error reporting.
+        try:
+            if not os.path.samestat(orig_st, os.fstat(topfd)):
+                # Symlinks to directories are forbidden, see GH-46010.
+                raise OSError("Cannot call rmtree on a symbolic link")
+            stack.append((os.rmdir, dirfd, path, orig_entry))
+        finally:
+            stack.append((os.close, topfd, path, orig_entry))
+
+        func = os.scandir  # For error reporting.
         with os.scandir(topfd) as scandir_it:
             entries = list(scandir_it)
-    except OSError as err:
-        err.filename = path
-        onerror(os.scandir, path, sys.exc_info())
-        return
-    for entry in entries:
-        fullname = os.path.join(path, entry.name)
-        try:
-            is_dir = entry.is_dir(follow_symlinks=False)
-        except OSError:
-            is_dir = False
-        else:
-            if is_dir:
-                try:
-                    orig_st = entry.stat(follow_symlinks=False)
-                    is_dir = stat.S_ISDIR(orig_st.st_mode)
-                except OSError:
-                    onerror(os.lstat, fullname, sys.exc_info())
-                    continue
-        if is_dir:
+        for entry in entries:
+            fullname = os.path.join(path, entry.name)
             try:
-                dirfd = os.open(entry.name, os.O_RDONLY, dir_fd=topfd)
-                dirfd_closed = False
+                if entry.is_dir(follow_symlinks=False):
+                    # Traverse into sub-directory.
+                    stack.append((os.lstat, topfd, fullname, entry))
+                    continue
+            except FileNotFoundError:
+                continue
             except OSError:
-                onerror(os.open, fullname, sys.exc_info())
-            else:
-                try:
-                    if os.path.samestat(orig_st, os.fstat(dirfd)):
-                        _rmtree_safe_fd(dirfd, fullname, onerror)
-                        try:
-                            os.close(dirfd)
-                            dirfd_closed = True
-                            os.rmdir(entry.name, dir_fd=topfd)
-                        except OSError:
-                            onerror(os.rmdir, fullname, sys.exc_info())
-                    else:
-                        try:
-                            # This can only happen if someone replaces
-                            # a directory with a symlink after the call to
-                            # os.scandir or stat.S_ISDIR above.
-                            raise OSError("Cannot call rmtree on a symbolic "
-                                          "link")
-                        except OSError:
-                            onerror(os.path.islink, fullname, sys.exc_info())
-                finally:
-                    if not dirfd_closed:
-                        os.close(dirfd)
-        else:
+                pass
             try:
                 os.unlink(entry.name, dir_fd=topfd)
-            except OSError:
-                onerror(os.unlink, fullname, sys.exc_info())
+            except FileNotFoundError:
+                continue
+            except OSError as err:
+                onexc(os.unlink, fullname, err)
+    except FileNotFoundError as err:
+        if orig_entry is None or func is os.close:
+            err.filename = path
+            onexc(func, path, err)
+    except OSError as err:
+        err.filename = path
+        onexc(func, path, err)
 
 _use_fd_functions = ({os.open, os.stat, os.unlink, os.rmdir} <=
                      os.supports_dir_fd and
                      os.scandir in os.supports_fd and
                      os.stat in os.supports_follow_symlinks)
+_rmtree_impl = _rmtree_safe_fd if _use_fd_functions else _rmtree_unsafe
 
-def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
+def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     """Recursively delete a directory tree.
 
     If dir_fd is not None, it should be a file descriptor open to a directory;
@@ -680,68 +815,41 @@ def rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None):
     dir_fd may not be implemented on your platform.
     If it is unavailable, using it will raise a NotImplementedError.
 
-    If ignore_errors is set, errors are ignored; otherwise, if onerror
-    is set, it is called to handle the error with arguments (func,
+    If ignore_errors is set, errors are ignored; otherwise, if onexc or
+    onerror is set, it is called to handle the error with arguments (func,
     path, exc_info) where func is platform and implementation dependent;
     path is the argument to that function that caused it to fail; and
-    exc_info is a tuple returned by sys.exc_info().  If ignore_errors
-    is false and onerror is None, an exception is raised.
+    the value of exc_info describes the exception. For onexc it is the
+    exception instance, and for onerror it is a tuple as returned by
+    sys.exc_info().  If ignore_errors is false and both onexc and
+    onerror are None, the exception is reraised.
 
+    onerror is deprecated and only remains for backwards compatibility.
+    If both onerror and onexc are set, onerror is ignored and onexc is used.
     """
+
     sys.audit("shutil.rmtree", path, dir_fd)
     if ignore_errors:
-        def onerror(*args):
+        def onexc(*args):
             pass
-    elif onerror is None:
-        def onerror(*args):
+    elif onerror is None and onexc is None:
+        def onexc(*args):
             raise
-    if _use_fd_functions:
-        # While the unsafe rmtree works fine on bytes, the fd based does not.
-        if isinstance(path, bytes):
-            path = os.fsdecode(path)
-        # Note: To guard against symlink races, we use the standard
-        # lstat()/open()/fstat() trick.
-        try:
-            orig_st = os.lstat(path, dir_fd=dir_fd)
-        except Exception:
-            onerror(os.lstat, path, sys.exc_info())
-            return
-        try:
-            fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
-            fd_closed = False
-        except Exception:
-            onerror(os.open, path, sys.exc_info())
-            return
-        try:
-            if os.path.samestat(orig_st, os.fstat(fd)):
-                _rmtree_safe_fd(fd, path, onerror)
-                try:
-                    os.close(fd)
-                    fd_closed = True
-                    os.rmdir(path, dir_fd=dir_fd)
-                except OSError:
-                    onerror(os.rmdir, path, sys.exc_info())
-            else:
-                try:
-                    # symlinks to directories are forbidden, see bug #1669
-                    raise OSError("Cannot call rmtree on a symbolic link")
-                except OSError:
-                    onerror(os.path.islink, path, sys.exc_info())
-        finally:
-            if not fd_closed:
-                os.close(fd)
-    else:
-        if dir_fd is not None:
-            raise NotImplementedError("dir_fd unavailable on this platform")
-        try:
-            if _rmtree_islink(path):
-                # symlinks to directories are forbidden, see bug #1669
-                raise OSError("Cannot call rmtree on a symbolic link")
-        except OSError:
-            onerror(os.path.islink, path, sys.exc_info())
-            # can't continue even if onerror hook returns
-            return
-        return _rmtree_unsafe(path, onerror)
+    elif onexc is None:
+        if onerror is None:
+            def onexc(*args):
+                raise
+        else:
+            # delegate to onerror
+            def onexc(*args):
+                func, path, exc = args
+                if exc is None:
+                    exc_info = None, None, None
+                else:
+                    exc_info = type(exc), exc, exc.__traceback__
+                return onerror(func, path, exc_info)
+
+    _rmtree_impl(path, dir_fd, onexc)
 
 # Allow introspection of whether or not the hardening against symlink
 # attacks is supported on the current platform
@@ -770,12 +878,12 @@ def move(src, dst, copy_function=copy2):
     similar to the Unix "mv" command. Return the file or directory's
     destination.
 
-    If the destination is a directory or a symlink to a directory, the source
-    is moved inside the directory. The destination path must not already
-    exist.
+    If dst is an existing directory or a symlink to a directory, then src is
+    moved inside that directory. The destination path in that directory must
+    not already exist.
 
-    If the destination already exists but is not a directory, it may be
-    overwritten depending on os.rename() semantics.
+    If dst already exists but is not a directory, it may be overwritten
+    depending on os.rename() semantics.
 
     If the destination is on our current filesystem, then rename() is used.
     Otherwise, src is copied to the destination and then removed. Symlinks are
@@ -794,7 +902,7 @@ def move(src, dst, copy_function=copy2):
     sys.audit("shutil.move", src, dst)
     real_dst = dst
     if os.path.isdir(dst):
-        if _samefile(src, dst):
+        if _samefile(src, dst) and not os.path.islink(src):
             # We might be on a case insensitive filesystem,
             # perform the rename anyway.
             os.rename(src, dst)
@@ -886,14 +994,14 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
     """Create a (possibly compressed) tar file from all the files under
     'base_dir'.
 
-    'compress' must be "gzip" (the default), "bzip2", "xz", or None.
+    'compress' must be "gzip" (the default), "bzip2", "xz", "zst", or None.
 
     'owner' and 'group' can be used to define an owner and a group for the
     archive that is being built. If not provided, the current owner and group
     will be used.
 
     The output tar file will be named 'base_name' +  ".tar", possibly plus
-    the appropriate compression extension (".gz", ".bz2", or ".xz").
+    the appropriate compression extension (".gz", ".bz2", ".xz", or ".zst").
 
     Returns the output filename.
     """
@@ -905,6 +1013,8 @@ def _make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
         tar_compression = 'bz2'
     elif _LZMA_SUPPORTED and compress == 'xz':
         tar_compression = 'xz'
+    elif _ZSTD_SUPPORTED and compress == 'zst':
+        tar_compression = 'zst'
     else:
         raise ValueError("bad value for 'compress', or compression format not "
                          "supported : {0}".format(compress))
@@ -1033,6 +1143,10 @@ if _LZMA_SUPPORTED:
     _ARCHIVE_FORMATS['xztar'] = (_make_tarball, [('compress', 'xz')],
                                 "xz'ed tar-file")
 
+if _ZSTD_SUPPORTED:
+    _ARCHIVE_FORMATS['zstdtar'] = (_make_tarball, [('compress', 'zst')],
+                                  "zstd'ed tar-file")
+
 def get_archive_formats():
     """Returns a list of supported formats for archiving and unarchiving.
 
@@ -1073,7 +1187,7 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
 
     'base_name' is the name of the file to create, minus any format-specific
     extension; 'format' is the archive format: one of "zip", "tar", "gztar",
-    "bztar", or "xztar".  Or any other registered format.
+    "bztar", "xztar", or "zstdtar".  Or any other registered format.
 
     'root_dir' is a directory that will be the root directory of the
     archive; ie. we typically chdir into 'root_dir' before creating the
@@ -1104,6 +1218,10 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     supports_root_dir = getattr(func, 'supports_root_dir', False)
     save_cwd = None
     if root_dir is not None:
+        stmd = os.stat(root_dir).st_mode
+        if not stat.S_ISDIR(stmd):
+            raise NotADirectoryError(errno.ENOTDIR, 'Not a directory', root_dir)
+
         if supports_root_dir:
             # Support path-like base_name here for backwards-compatibility.
             base_name = os.fspath(base_name)
@@ -1218,8 +1336,8 @@ def _unpack_zipfile(filename, extract_dir):
     finally:
         zip.close()
 
-def _unpack_tarfile(filename, extract_dir):
-    """Unpack tar/tar.gz/tar.bz2/tar.xz `filename` to `extract_dir`
+def _unpack_tarfile(filename, extract_dir, *, filter=None):
+    """Unpack tar/tar.gz/tar.bz2/tar.xz/tar.zst `filename` to `extract_dir`
     """
     import tarfile  # late import for breaking circular dependency
     try:
@@ -1228,7 +1346,7 @@ def _unpack_tarfile(filename, extract_dir):
         raise ReadError(
             "%s is not a compressed or uncompressed tar file" % filename)
     try:
-        tarobj.extractall(extract_dir)
+        tarobj.extractall(extract_dir, filter=filter)
     finally:
         tarobj.close()
 
@@ -1254,6 +1372,10 @@ if _LZMA_SUPPORTED:
     _UNPACK_FORMATS['xztar'] = (['.tar.xz', '.txz'], _unpack_tarfile, [],
                                 "xz'ed tar-file")
 
+if _ZSTD_SUPPORTED:
+    _UNPACK_FORMATS['zstdtar'] = (['.tar.zst', '.tzst'], _unpack_tarfile, [],
+                                  "zstd'ed tar-file")
+
 def _find_unpack_format(filename):
     for name, info in _UNPACK_FORMATS.items():
         for extension in info[0]:
@@ -1261,7 +1383,7 @@ def _find_unpack_format(filename):
                 return name
     return None
 
-def unpack_archive(filename, extract_dir=None, format=None):
+def unpack_archive(filename, extract_dir=None, format=None, *, filter=None):
     """Unpack an archive.
 
     `filename` is the name of the archive.
@@ -1270,11 +1392,14 @@ def unpack_archive(filename, extract_dir=None, format=None):
     is unpacked. If not provided, the current working directory is used.
 
     `format` is the archive format: one of "zip", "tar", "gztar", "bztar",
-    or "xztar".  Or any other registered format.  If not provided,
+    "xztar", or "zstdtar".  Or any other registered format.  If not provided,
     unpack_archive will use the filename extension and see if an unpacker
     was registered for that extension.
 
     In case none is found, a ValueError is raised.
+
+    If `filter` is given, it is passed to the underlying
+    extraction function.
     """
     sys.audit("shutil.unpack_archive", filename, extract_dir, format)
 
@@ -1284,6 +1409,10 @@ def unpack_archive(filename, extract_dir=None, format=None):
     extract_dir = os.fspath(extract_dir)
     filename = os.fspath(filename)
 
+    if filter is None:
+        filter_kwargs = {}
+    else:
+        filter_kwargs = {'filter': filter}
     if format is not None:
         try:
             format_info = _UNPACK_FORMATS[format]
@@ -1291,7 +1420,7 @@ def unpack_archive(filename, extract_dir=None, format=None):
             raise ValueError("Unknown unpack format '{0}'".format(format)) from None
 
         func = format_info[1]
-        func(filename, extract_dir, **dict(format_info[2]))
+        func(filename, extract_dir, **dict(format_info[2]), **filter_kwargs)
     else:
         # we need to look at the registered unpackers supported extensions
         format = _find_unpack_format(filename)
@@ -1299,7 +1428,7 @@ def unpack_archive(filename, extract_dir=None, format=None):
             raise ReadError("Unknown archive format '{0}'".format(filename))
 
         func = _UNPACK_FORMATS[format][1]
-        kwargs = dict(_UNPACK_FORMATS[format][2])
+        kwargs = dict(_UNPACK_FORMATS[format][2]) | filter_kwargs
         func(filename, extract_dir, **kwargs)
 
 
@@ -1339,11 +1468,18 @@ elif _WINDOWS:
         return _ntuple_diskusage(total, used, free)
 
 
-def chown(path, user=None, group=None):
+def chown(path, user=None, group=None, *, dir_fd=None, follow_symlinks=True):
     """Change owner user and group of the given path.
 
     user and group can be the uid/gid or the user/group names, and in that case,
     they are converted to their respective uid/gid.
+
+    If dir_fd is set, it should be an open file descriptor to the directory to
+    be used as the root of *path* if it is relative.
+
+    If follow_symlinks is set to False and the last element of the path is a
+    symbolic link, chown will modify the link itself and not the file being
+    referenced by the link.
     """
     sys.audit('shutil.chown', path, user, group)
 
@@ -1369,7 +1505,8 @@ def chown(path, user=None, group=None):
         if _group is None:
             raise LookupError("no such group: {!r}".format(group))
 
-    os.chown(path, _user, _group)
+    os.chown(path, _user, _group, dir_fd=dir_fd,
+             follow_symlinks=follow_symlinks)
 
 def get_terminal_size(fallback=(80, 24)):
     """Get the size of the terminal window.
@@ -1425,6 +1562,16 @@ def _access_check(fn, mode):
             and not os.path.isdir(fn))
 
 
+def _win_path_needs_curdir(cmd, mode):
+    """
+    On Windows, we can use NeedCurrentDirectoryForExePath to figure out
+    if we should add the cwd to PATH when searching for executables if
+    the mode is executable.
+    """
+    return (not (mode & os.X_OK)) or _winapi.NeedCurrentDirectoryForExePath(
+                os.fsdecode(cmd))
+
+
 def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     """Given a command, mode, and a PATH string, return the path which
     conforms to the given mode on the PATH, or None if there is no such
@@ -1435,60 +1582,62 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     path.
 
     """
-    # If we're given a path with a directory part, look it up directly rather
-    # than referring to PATH directories. This includes checking relative to the
-    # current directory, e.g. ./script
-    if os.path.dirname(cmd):
-        if _access_check(cmd, mode):
-            return cmd
-        return None
-
     use_bytes = isinstance(cmd, bytes)
 
-    if path is None:
-        path = os.environ.get("PATH", None)
-        if path is None:
-            try:
-                path = os.confstr("CS_PATH")
-            except (AttributeError, ValueError):
-                # os.confstr() or CS_PATH is not available
-                path = os.defpath
-        # bpo-35755: Don't use os.defpath if the PATH environment variable is
-        # set to an empty string
-
-    # PATH='' doesn't match, whereas PATH=':' looks in the current directory
-    if not path:
-        return None
-
-    if use_bytes:
-        path = os.fsencode(path)
-        path = path.split(os.fsencode(os.pathsep))
+    # If we're given a path with a directory part, look it up directly rather
+    # than referring to PATH directories. This includes checking relative to
+    # the current directory, e.g. ./script
+    dirname, cmd = os.path.split(cmd)
+    if dirname:
+        path = [dirname]
     else:
-        path = os.fsdecode(path)
-        path = path.split(os.pathsep)
+        if path is None:
+            path = os.environ.get("PATH", None)
+            if path is None:
+                try:
+                    path = os.confstr("CS_PATH")
+                except (AttributeError, ValueError):
+                    # os.confstr() or CS_PATH is not available
+                    path = os.defpath
+            # bpo-35755: Don't use os.defpath if the PATH environment variable
+            # is set to an empty string
 
-    if sys.platform == "win32":
-        # The current directory takes precedence on Windows.
-        curdir = os.curdir
+        # PATH='' doesn't match, whereas PATH=':' looks in the current
+        # directory
+        if not path:
+            return None
+
         if use_bytes:
-            curdir = os.fsencode(curdir)
-        if curdir not in path:
+            path = os.fsencode(path)
+            path = path.split(os.fsencode(os.pathsep))
+        else:
+            path = os.fsdecode(path)
+            path = path.split(os.pathsep)
+
+        if sys.platform == "win32" and _win_path_needs_curdir(cmd, mode):
+            curdir = os.curdir
+            if use_bytes:
+                curdir = os.fsencode(curdir)
             path.insert(0, curdir)
 
+    if sys.platform == "win32":
         # PATHEXT is necessary to check on Windows.
         pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
-        pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
+        pathext = pathext_source.split(os.pathsep)
+        pathext = [ext.rstrip('.') for ext in pathext if ext]
 
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
-        # See if the given file matches any of the expected path extensions.
-        # This will allow us to short circuit when given "python.exe".
-        # If it does match, only test that one, otherwise we have to try
-        # others.
-        if any(cmd.lower().endswith(ext.lower()) for ext in pathext):
-            files = [cmd]
-        else:
-            files = [cmd + ext for ext in pathext]
+
+        files = [cmd + ext for ext in pathext]
+
+        # If X_OK in mode, simulate the cmd.exe behavior: look at direct
+        # match if and only if the extension is in PATHEXT.
+        # If X_OK not in mode, simulate the first result of where.exe:
+        # always look at direct match before a PATHEXT match.
+        normcmd = cmd.upper()
+        if not (mode & os.X_OK) or any(normcmd.endswith(ext.upper()) for ext in pathext):
+            files.insert(0, cmd)
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.
@@ -1497,10 +1646,22 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     seen = set()
     for dir in path:
         normdir = os.path.normcase(dir)
-        if not normdir in seen:
+        if normdir not in seen:
             seen.add(normdir)
             for thefile in files:
                 name = os.path.join(dir, thefile)
                 if _access_check(name, mode):
                     return name
     return None
+
+def __getattr__(name):
+    if name == "ExecError":
+        import warnings
+        warnings._deprecated(
+            "shutil.ExecError",
+            f"{warnings._DEPRECATED_MSG}; it "
+            "isn't raised by any shutil function.",
+            remove=(3, 16)
+        )
+        return RuntimeError
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

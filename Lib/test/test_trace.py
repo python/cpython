@@ -1,11 +1,12 @@
 import os
 from pickle import dump
 import sys
-from test.support import captured_stdout
+from test.support import captured_stdout, requires_resource
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
 import unittest
+from types import FunctionType
 
 import trace
 from trace import Trace
@@ -187,9 +188,7 @@ class TestLineCounts(unittest.TestCase):
         firstlineno_called = get_firstlineno(traced_doubler)
         expected = {
             (self.my_py_filename, firstlineno_calling + 1): 1,
-            # List comprehensions work differently in 3.x, so the count
-            # below changed compared to 2.x.
-            (self.my_py_filename, firstlineno_calling + 2): 12,
+            (self.my_py_filename, firstlineno_calling + 2): 11,
             (self.my_py_filename, firstlineno_calling + 3): 1,
             (self.my_py_filename, firstlineno_called + 1): 10,
         }
@@ -362,13 +361,19 @@ class TestCoverage(unittest.TestCase):
         rmtree(TESTFN)
         unlink(TESTFN)
 
-    def _coverage(self, tracer,
-                  cmd='import test.support, test.test_pprint;'
-                      'test.support.run_unittest(test.test_pprint.QueryTestCase)'):
+    DEFAULT_SCRIPT = '''if True:
+        import unittest
+        from test.test_pprint import QueryTestCase
+        loader = unittest.TestLoader()
+        tests = loader.loadTestsFromTestCase(QueryTestCase)
+        tests(unittest.TestResult())
+        '''
+    def _coverage(self, tracer, cmd=DEFAULT_SCRIPT):
         tracer.run(cmd)
         r = tracer.results()
         r.write_results(show_missing=True, summary=True, coverdir=TESTFN)
 
+    @requires_resource('cpu')
     def test_coverage(self):
         tracer = trace.Trace(trace=0, count=1)
         with captured_stdout() as stdout:
@@ -385,7 +390,7 @@ class TestCoverage(unittest.TestCase):
         libpath = os.path.normpath(os.path.dirname(os.path.dirname(__file__)))
         # sys.prefix does not work when running from a checkout
         tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
-                             libpath], trace=0, count=1)
+                             libpath] + sys.path, trace=0, count=1)
         with captured_stdout() as stdout:
             self._coverage(tracer)
         if os.path.exists(TESTFN):
@@ -407,7 +412,7 @@ class TestCoverage(unittest.TestCase):
         coverage = {}
         for line in stdout:
             lines, cov, module = line.split()[:3]
-            coverage[module] = (int(lines), int(cov[:-1]))
+            coverage[module] = (float(lines), float(cov[:-1]))
         # XXX This is needed to run regrtest.py as a script
         modname = trace._fullmodname(sys.modules[modname].__file__)
         self.assertIn(modname, coverage)
@@ -548,11 +553,35 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.decode()
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
-        self.assertIn(f'6   100%   {modulename}   ({filename})', stdout)
+        self.assertIn(f'6   100.0%   {modulename}   ({filename})', stdout)
 
     def test_run_as_module(self):
         assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')
         assert_python_failure('-m', 'trace', '-l', '--module', 'not_a_module_zzz')
+
+
+class TestTrace(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(sys.settrace, sys.gettrace())
+        self.tracer = Trace(count=0, trace=1)
+        self.filemod = my_file_and_modname()
+
+    def test_no_source_file(self):
+        filename = "<unknown>"
+        co = traced_func_linear.__code__
+        co = co.replace(co_filename=filename)
+        f = FunctionType(co, globals())
+
+        with captured_stdout() as out:
+            self.tracer.runfunc(f, 2, 3)
+
+        out = out.getvalue().splitlines()
+        firstlineno = get_firstlineno(f)
+        self.assertIn(f" --- modulename: {self.filemod[1]}, funcname: {f.__code__.co_name}", out[0])
+        self.assertIn(f"{filename}({firstlineno + 1})", out[1])
+        self.assertIn(f"{filename}({firstlineno + 2})", out[2])
+        self.assertIn(f"{filename}({firstlineno + 3})", out[3])
+        self.assertIn(f"{filename}({firstlineno + 4})", out[4])
 
 
 if __name__ == '__main__':

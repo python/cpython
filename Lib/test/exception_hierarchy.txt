@@ -40,6 +40,7 @@ BaseException
       ├── ReferenceError
       ├── RuntimeError
       │    ├── NotImplementedError
+      │    ├── PythonFinalizationError
       │    └── RecursionError
       ├── StopAsyncIteration
       ├── StopIteration

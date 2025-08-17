@@ -136,3 +136,19 @@ class ResultWithNoStartTestRunStopTestRun(object):
 
     def wasSuccessful(self):
         return True
+
+
+class BufferedWriter:
+    def __init__(self):
+        self.result = ''
+        self.buffer = ''
+
+    def write(self, arg):
+        self.buffer += arg
+
+    def flush(self):
+        self.result += self.buffer
+        self.buffer = ''
+
+    def getvalue(self):
+        return self.result
