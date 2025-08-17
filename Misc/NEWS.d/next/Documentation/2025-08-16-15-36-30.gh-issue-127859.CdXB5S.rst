@@ -1,2 +1,0 @@
-:meth:`asyncio.loop.call_at` and :meth:`asyncio.loop.call_later` now
-correctly state that they may wake up early. Patch by Bar Harel.
