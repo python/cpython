@@ -156,7 +156,7 @@ static void
 noextraitems_dealloc(PyObject *obj)
 {
     /* This should never get called, but we also don't want to SEGV if
-     * we accidentally decref NoDefault out of existence. Instead,
+     * we accidentally decref NoExtraItems out of existence. Instead,
      * since NoDefault is an immortal object, re-set the reference count.
      */
     _Py_SetImmortal(obj);
