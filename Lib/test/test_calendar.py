@@ -113,13 +113,6 @@ Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
 
 default_format = dict(year="year", month="month", encoding="ascii")
 
-result_2004_css = """<style>
-@media (prefers-color-scheme: dark) {
-  body { background-color: #121212; color: #e0e0e0; }
-  table.year, table.month, td, th { border-color: #444; }
-}
-</style>"""
-
 result_2004_html = """\
 <!DOCTYPE html>
 <html lang="en">
@@ -127,7 +120,6 @@ result_2004_html = """\
 <meta charset="{encoding}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Calendar for 2004</title>
-{css_styles}
 <link rel="stylesheet" href="calendar.css">
 </head>
 <body>
@@ -393,12 +385,10 @@ class OutputTestCase(unittest.TestCase):
         cal = calendar.HTMLCalendar()
         format_ = default_format.copy()
         format_["encoding"] = req or 'utf-8'
-        format_with_css = {**format_, "css_styles": result_2004_css}
-        formatted_html = result_2004_html.format(**format_with_css)
         output = cal.formatyearpage(2004, encoding=req)
         self.assertEqual(
             output,
-            formatted_html.encode(res)
+            result_2004_html.format(**format_).encode(res)
         )
 
     def test_output(self):
@@ -1155,9 +1145,7 @@ class CommandLineTestCase(unittest.TestCase):
     def test_html_output_year_encoding(self):
         for run in self.runners:
             output = run('-t', 'html', '--encoding', 'ascii', '2004')
-            format_with_css = default_format.copy()
-            format_with_css["css_styles"] = result_2004_css
-            self.assertEqual(output, result_2004_html.format(**format_with_css).encode('ascii'))
+            self.assertEqual(output, result_2004_html.format(**default_format).encode('ascii'))
 
     def test_html_output_year_css(self):
         self.assertFailure('-t', 'html', '-c')

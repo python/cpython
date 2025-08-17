@@ -580,12 +580,6 @@ class HTMLCalendar(Calendar):
         a(f'<meta charset="{encoding}">\n')
         a('<meta name="viewport" content="width=device-width, initial-scale=1">\n')
         a(f'<title>Calendar for {theyear}</title>\n')
-        a('<style>\n')
-        a('@media (prefers-color-scheme: dark) {\n')
-        a('  body { background-color: #121212; color: #e0e0e0; }\n')
-        a('  table.year, table.month, td, th { border-color: #444; }\n')
-        a('}\n')
-        a('</style>\n')
         if css is not None:
             a(f'<link rel="stylesheet" href="{css}">\n')
         a('</head>\n')
