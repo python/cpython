@@ -4358,8 +4358,6 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
 
 /* Unary function with an optional context arg. */
 #define Dec_UnaryFuncVA(MPDFUNC) \
-static PyObject *                                              \
-dec_##MPDFUNC(PyObject *self, PyObject *context)               \
 {                                                              \
     PyObject *result;                                          \
     uint32_t status = 0;                                       \
@@ -4455,8 +4453,6 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)   \
 
 /* Ternary function with an optional context arg. */
 #define Dec_TernaryFuncVA(MPDFUNC) \
-static PyObject *                                                        \
-dec_##MPDFUNC(PyObject *self, PyObject *other, PyObject *third, PyObject *context)            \
 {                                                                        \
     PyObject *a, *b, *c;                                                 \
     PyObject *result;                                                    \
@@ -4610,13 +4606,6 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
 /******************************************************************************/
 
 /* Unary arithmetic functions, optional context arg */
-Dec_UnaryFuncVA(mpd_qexp)
-Dec_UnaryFuncVA(mpd_qln)
-Dec_UnaryFuncVA(mpd_qlog10)
-Dec_UnaryFuncVA(mpd_qnext_minus)
-Dec_UnaryFuncVA(mpd_qnext_plus)
-Dec_UnaryFuncVA(mpd_qreduce)
-Dec_UnaryFuncVA(mpd_qsqrt)
 
 /*[clinic input]
 _decimal.Decimal.exp
@@ -4632,9 +4621,7 @@ correctly rounded.
 static PyObject *
 _decimal_Decimal_exp_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=c0833b6e9b8c836f input=274784af925e60c9]*/
-{
-    return dec_mpd_qexp(self, context);
-}
+Dec_UnaryFuncVA(mpd_qexp)
 
 /*[clinic input]
 _decimal.Decimal.ln
@@ -4650,9 +4637,7 @@ correctly rounded.
 static PyObject *
 _decimal_Decimal_ln_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=5191f4ef739b04b0 input=f267b224238c56e2]*/
-{
-    return dec_mpd_qln(self, context);
-}
+Dec_UnaryFuncVA(mpd_qln)
 
 /*[clinic input]
 _decimal.Decimal.log10
@@ -4668,9 +4653,7 @@ correctly rounded.
 static PyObject *
 _decimal_Decimal_log10_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=d5da63df75900275 input=d941f9335dc693cb]*/
-{
-    return dec_mpd_qlog10(self, context);
-}
+Dec_UnaryFuncVA(mpd_qlog10)
 
 /*[clinic input]
 _decimal.Decimal.next_minus
@@ -4683,9 +4666,7 @@ Returns the largest representable number smaller than itself.
 static PyObject *
 _decimal_Decimal_next_minus_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=aacbd758399f883f input=75666c6dc3cc8da9]*/
-{
-    return dec_mpd_qnext_minus(self, context);
-}
+Dec_UnaryFuncVA(mpd_qnext_minus)
 
 /*[clinic input]
 _decimal.Decimal.next_plus
@@ -4698,9 +4679,7 @@ Returns the smallest representable number larger than itself.
 static PyObject *
 _decimal_Decimal_next_plus_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=f3a7029a213c553c input=adcccf3f94e8da3f]*/
-{
-    return dec_mpd_qnext_plus(self, context);
-}
+Dec_UnaryFuncVA(mpd_qnext_plus)
 
 /*[clinic input]
 _decimal.Decimal.normalize
@@ -4718,9 +4697,7 @@ the equivalent value Decimal('32.1').
 static PyObject *
 _decimal_Decimal_normalize_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=db2c8b3c8eccff36 input=8f0504baa4e8c7de]*/
-{
-    return dec_mpd_qreduce(self, context);
-}
+Dec_UnaryFuncVA(mpd_qreduce)
 
 /*[clinic input]
 _decimal.Decimal.sqrt
@@ -4735,9 +4712,7 @@ The result is correctly rounded using the ROUND_HALF_EVEN rounding mode.
 static PyObject *
 _decimal_Decimal_sqrt_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=420722a199dd9c2b input=16df570867daf0d6]*/
-{
-    return dec_mpd_qsqrt(self, context);
-}
+Dec_UnaryFuncVA(mpd_qsqrt)
 
 /* Binary arithmetic functions, optional context arg */
 Dec_BinaryFuncVA(mpd_qcompare)
@@ -4750,7 +4725,6 @@ Dec_BinaryFuncVA(mpd_qnext_toward)
 Dec_BinaryFuncVA(mpd_qrem_near)
 
 /* Ternary arithmetic functions, optional context arg */
-Dec_TernaryFuncVA(mpd_qfma)
 
 /*[clinic input]
 _decimal.Decimal.fma
@@ -4772,9 +4746,7 @@ static PyObject *
 _decimal_Decimal_fma_impl(PyObject *self, PyObject *other, PyObject *third,
                           PyObject *context)
 /*[clinic end generated code: output=74a82b984e227b69 input=48f9aec6f389227a]*/
-{
-    return dec_mpd_qfma(self, other, third, context);
-}
+Dec_TernaryFuncVA(mpd_qfma)
 
 /* Boolean functions, no context arg */
 Dec_BoolFunc(mpd_iscanonical)
@@ -4937,8 +4909,6 @@ _decimal_Decimal_copy_negate_impl(PyObject *self)
 }
 
 /* Unary functions, optional context arg */
-Dec_UnaryFuncVA(mpd_qinvert)
-Dec_UnaryFuncVA(mpd_qlogb)
 
 /*[clinic input]
 _decimal.Decimal.logical_invert
@@ -4951,9 +4921,7 @@ Return the digit-wise inversion of the (logical) operand.
 static PyObject *
 _decimal_Decimal_logical_invert_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=59beb9b1b51b9f34 input=063cc759635d249b]*/
-{
-    return dec_mpd_qinvert(self, context);
-}
+Dec_UnaryFuncVA(mpd_qinvert)
 
 /*[clinic input]
 _decimal.Decimal.logb
@@ -4970,9 +4938,7 @@ Decimal('Infinity') is returned.
 static PyObject *
 _decimal_Decimal_logb_impl(PyObject *self, PyObject *context)
 /*[clinic end generated code: output=f278db20b47f301c input=1a0de8e49b101734]*/
-{
-    return dec_mpd_qlogb(self, context);
-}
+Dec_UnaryFuncVA(mpd_qlogb)
 
 /*[clinic input]
 _decimal.Decimal.number_class
