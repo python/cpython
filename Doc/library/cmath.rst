@@ -322,7 +322,7 @@ Constants
 
 .. data:: inf
 
-   Floating-point positive infinity. Equivalent to ``float('inf')``.
+   Floating-point positive infinity. Equivalent to :data:`math.inf`.
 
    .. versionadded:: 3.6
 
@@ -338,7 +338,7 @@ Constants
 .. data:: nan
 
    A floating-point "not a number" (NaN) value.  Equivalent to
-   ``float('nan')``.
+   :data:`math.nan`.
 
    .. versionadded:: 3.6
 
