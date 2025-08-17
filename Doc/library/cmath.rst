@@ -322,7 +322,7 @@ Constants
 
 .. data:: inf
 
-   Floating-point positive infinity. Equivalent to :data:`math.inf`.
+   Floating-point positive infinity. Equivalent to ``float('inf')``.
 
    .. versionadded:: 3.6
 
