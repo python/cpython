@@ -302,12 +302,130 @@ class WhichDBTestCase(unittest.TestCase):
             cx.close()
         self.assertEqual(self.dbm.whichdb(_fname), "dbm.sqlite3")
 
-
     def setUp(self):
         self.addCleanup(cleaunup_test_dir)
         setup_test_dir()
         self.dbm = import_helper.import_fresh_module('dbm')
 
+
+class DBMBackendTestCase(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(cleaunup_test_dir)
+        setup_test_dir()
+        self.dbm = import_helper.import_fresh_module('dbm')
+
+    @staticmethod
+    def get_available_backends():
+        available_backends = []
+        for backend_name in ['dbm.dumb', 'dbm.gnu', 'dbm.ndbm', 'dbm.sqlite3']:
+            try:
+                __import__(backend_name, fromlist=['open'])
+                available_backends.append(backend_name)
+            except ImportError:
+                pass
+        return available_backends
+
+    def test_backend_parameter_validation(self):
+        invalid_types = [123, [], {}, object(), dbm]
+        for invalid_backend in invalid_types:
+            with self.subTest(invalid_backend=invalid_backend):
+                with self.assertRaises(TypeError) as cm:
+                    dbm.open(_fname, backend=invalid_backend)
+                self.assertIn("backend must be a string", str(cm.exception))
+
+        invalid_names = ['invalid', 'postgres', 'gnu', 'dumb', 'sqlite3']
+        for invalid_name in invalid_names:
+            with self.subTest(invalid_name=invalid_name):
+                with self.assertRaises(ValueError) as cm:
+                    dbm.open(_fname, backend=invalid_name)
+                self.assertIn("Unknown backend", str(cm.exception))
+
+    def test_backend_parameter_functionality(self):
+        valid_backends = self.get_available_backends()
+        if len(valid_backends) < 1:
+            self.skipTest("Need at least 1 backends for this test")
+
+        for backend in valid_backends:
+            with self.subTest(backend=backend):
+                unique_fn = f"{_fname}_{backend}"
+                with dbm.open(unique_fn, 'c', backend=backend) as db:
+                    db[b'test_key'] = b'test_value'
+                    db[b'backend'] = backend.encode('ascii')
+
+                self.assertEqual(dbm.whichdb(unique_fn), backend)
+
+                with dbm.open(unique_fn, 'r', backend=backend) as db:
+                    self.assertEqual(db[b'test_key'], b'test_value')
+                    self.assertEqual(db[b'backend'], backend.encode('ascii'))
+
+    def test_backend_none_preserves_auto_selection(self):
+        with dbm.open(_fname, 'c') as db1:
+            db1[b'test'] = b'auto_selection'
+        backend1 = dbm.whichdb(_fname)
+
+        with dbm.open(_fname, 'c', backend=None) as db2:
+            db2[b'test'] = b'explicit_none'
+        backend2 = dbm.whichdb(_fname)
+
+        self.assertEqual(backend1, backend2)
+
+    def test_backend_with_different_flags(self):
+        valid_backends = self.get_available_backends()
+        if len(valid_backends) < 1:
+            self.skipTest("Need at least 1 backends for this test")
+
+        for backend in valid_backends:
+            with self.subTest(backend=backend):
+                unique_fn = f"{_fname}_{backend}"
+                with dbm.open(unique_fn, 'c', backend=backend) as db:
+                    db[b'flag_test'] = b'create'
+                self.assertEqual(dbm.whichdb(unique_fn), backend)
+
+                # Test 'w' flag (write existing)
+                with dbm.open(unique_fn, 'w', backend=backend) as db:
+                    self.assertEqual(db[b'flag_test'], b'create')
+                    db[b'flag_test'] = b'write'
+
+                # Test 'r' flag (read-only)
+                with dbm.open(unique_fn, 'r', backend=backend) as db:
+                    self.assertEqual(db[b'flag_test'], b'write')
+                    with self.assertRaises(dbm.error):
+                        db[b'readonly_test'] = b'should_fail'
+
+                # Test 'n' flag (new database)
+                new_file = f"{unique_fn}_new"
+                with dbm.open(new_file, 'n', backend=backend) as db:
+                    db[b'new_test'] = b'new_data'
+
+                self.assertEqual(dbm.whichdb(new_file), backend)
+
+    def test_backend_parameter_positioning(self):
+        valid_backends = self.get_available_backends()
+        if len(valid_backends) < 1:
+            self.skipTest("Need at least 1 backends for this test")
+
+        for backend in valid_backends:
+            with self.subTest(backend=backend):
+                unique_fn = f"{_fname}_{backend}"
+
+                # Test as keyword argument
+                file_1 = f"{unique_fn}_keyword"
+                with dbm.open(file_1, 'c', backend=backend) as db:
+                    db[b'test'] = b'keyword'
+
+                # Test as positional argument
+                file_2 = f"{unique_fn}_positional"
+                with dbm.open(file_2, 'c', 0o666, backend) as db:
+                    db[b'test'] = b'positional'
+
+                self.assertEqual(dbm.whichdb(file_1), backend)
+                self.assertEqual(dbm.whichdb(file_2), backend)
+
+    def test_backend_import_error_handling(self):
+        fake_backend = 'dbm.nonexistent'
+        with self.assertRaises(ValueError) as cm:
+            dbm.open(_fname, backend=fake_backend)
+        self.assertIn('Unknown backend', str(cm.exception))
 
 for mod in dbm_iterator():
     assert mod.__name__.startswith('dbm.')

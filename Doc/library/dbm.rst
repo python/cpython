@@ -66,7 +66,7 @@ the Oracle Berkeley DB.
    The Unix file access mode of the file (default: octal ``0o666``),
    used only when the database has to be created.
 
-.. function:: open(file, flag='r', mode=0o666)
+.. function:: open(file, flag='r', mode=0o666, *, backend=None)
 
    Open a database and return the corresponding database object.
 
@@ -87,8 +87,34 @@ the Oracle Berkeley DB.
    :param int mode:
       |mode_param_doc|
 
+   :param backend:
+      The DBM backend implementation to use. If not specified, automatic
+      backend selection is used as described above. When specified, the
+      exact backend is used regardless of file existence or automatic detection.
+
+      Valid backends:
+
+      * ``'dbm.sqlite3'`` -- SQLite-based backend (if available)
+      * ``'dbm.gnu'`` -- GNU DBM backend (if available)
+      * ``'dbm.ndbm'`` -- NDBM backend (if available)
+      * ``'dbm.dumb'`` -- Pure Python backend (always available)
+
+      Specifying a backend improves compatibility when working with custom
+      serializers and ensures consistent behavior across different systems.
+
+      :raises TypeError: if not a string
+      :raises ValueError: if not a supported backend name
+      :raises ImportError: if the specified backend is not available
+   :type backend: str or None
+
    .. versionchanged:: 3.11
       *file* accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Added *backend* parameter for explicit DBM backend selection.
+      When specified, this overrides the automatic backend selection logic
+      and uses the exact backend requested, improving compatibility and
+      predictability across different systems.
 
 The object returned by :func:`~dbm.open` supports the same basic functionality as a
 :class:`dict`; keys and their corresponding values can be stored, retrieved, and

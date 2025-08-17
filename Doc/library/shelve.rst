@@ -17,8 +17,8 @@ This includes most class instances, recursive data types, and objects containing
 lots of shared  sub-objects.  The keys are ordinary strings.
 
 
-.. function:: open(filename, flag='c', protocol=None, writeback=False, *, \
-                   serializer=None, deserializer=None)
+.. function:: open(filename, flag='c', protocol=None, writeback=False, \
+                   backend=None, *, serializer=None, deserializer=None)
 
    Open a persistent dictionary.  The filename specified is the base filename for
    the underlying database.  As a side-effect, an extension may be added to the
@@ -41,6 +41,13 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    very slow since all accessed entries are written back (there is no way to
    determine which accessed entries are mutable, nor which ones were actually
    mutated).
+
+   The optional *backend* parameter allows explicit selection of the underlying
+   DBM backend implementation. By default, :mod:`shelve` uses :func:`dbm.open`
+   with automatic backend selection. When *backend* is specified, that exact
+   backend will be used, which can improve compatibility when working with custom
+   serializers and ensure consistent behavior across different systems.
+   See :func:`dbm.open` for valid backend values.
 
    By default, :mod:`shelve` uses :func:`pickle.dumps` and :func:`pickle.loads`
    for serializing and deserializing. This can be changed by supplying
@@ -67,6 +74,10 @@ lots of shared  sub-objects.  The keys are ordinary strings.
    .. versionchanged:: next
       Accepts custom *serializer* and *deserializer* functions in place of
       :func:`pickle.dumps` and :func:`pickle.loads`.
+
+   .. versionchanged:: next
+      Added *backend* parameter to specify which DBM backend implementation
+      to use, improving compatibility and consistency across different systems.
 
    .. note::
 
