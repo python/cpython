@@ -359,7 +359,6 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
     _PyExecutorObject *_executor = (EXECUTOR);         \
-    tstate->current_executor = (PyObject *)_executor;  \
     jit_func jitted = _executor->jit_code;             \
     /* Keep the shim frame alive via the executor: */  \
     Py_INCREF(_executor);                              \
@@ -378,9 +377,8 @@ do {                                                   \
 do { \
     OPT_STAT_INC(traces_executed); \
     _PyExecutorObject *_executor = (EXECUTOR); \
-    tstate->current_executor = (PyObject *)_executor; \
     next_uop = _executor->trace; \
-    assert(next_uop->opcode == _START_EXECUTOR); \
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
     goto enter_tier_two; \
 } while (0)
 #endif
@@ -390,7 +388,6 @@ do { \
     {                                                                 \
         tstate->current_executor = NULL;                              \
         next_instr = (TARGET);                                        \
-        assert(tstate->current_executor == NULL);                     \
         OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
         _PyFrame_SetStackPointer(frame, stack_pointer);               \
         stack_pointer = _PyFrame_GetStackPointer(frame);              \
@@ -425,3 +422,14 @@ do { \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+
+static inline int
+check_periodics(PyThreadState *tstate) {
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+    QSBR_QUIESCENT_STATE(tstate);
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+        return _Py_HandlePending(tstate);
+    }
+    return 0;
+}
+

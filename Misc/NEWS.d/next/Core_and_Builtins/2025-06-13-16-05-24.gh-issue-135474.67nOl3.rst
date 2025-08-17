@@ -1,0 +1,1 @@
+Specialize integer operations only on compact integers. This is a CPython internal change.

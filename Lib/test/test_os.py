@@ -13,7 +13,6 @@ import itertools
 import locale
 import os
 import pickle
-import platform
 import select
 import selectors
 import shutil
@@ -105,7 +104,7 @@ requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -1920,6 +1919,8 @@ class MakedirTests(unittest.TestCase):
         "WASI's umask is a stub."
     )
     def test_mode(self):
+        # Note: in some cases, the umask might already be 2 in which case this
+        # will pass even if os.umask is actually broken.
         with os_helper.temp_umask(0o002):
             base = os_helper.TESTFN
             parent = os.path.join(base, 'dir1')
@@ -4291,13 +4292,8 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
-    # 1 ms accuracy is reliably achievable on every platform except Android
-    # emulators, where we allow 10 ms (gh-108277).
-    if sys.platform == "android" and platform.android_ver().is_emulator:
-        CLOCK_RES_PLACES = 2
-    else:
-        CLOCK_RES_PLACES = 3
-
+    # gh-126112: Use 10 ms to tolerate slow buildbots
+    CLOCK_RES_PLACES = 2  # 10 ms
     CLOCK_RES = 10 ** -CLOCK_RES_PLACES
     CLOCK_RES_NS = 10 ** (9 - CLOCK_RES_PLACES)
 

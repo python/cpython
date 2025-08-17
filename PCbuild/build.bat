@@ -33,7 +33,7 @@ echo.  -k  Attempt to kill any running Pythons before building (usually done
 echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
-echo.  --disable-gil  Enable experimental support for running without the GIL.
+echo.  --disable-gil  Enable support for running without the GIL.
 echo.  --test-marker  Enable the test marker within the build.
 echo.  --regen        Regenerate all opcodes, grammar and tokens.
 echo.  --experimental-jit          Enable the experimental just-in-time compiler.

@@ -656,18 +656,20 @@ def _windll_getnode():
 
 def _random_getnode():
     """Get a random node ID."""
-    # RFC 4122, $4.1.6 says "For systems with no IEEE address, a randomly or
-    # pseudo-randomly generated value may be used; see Section 4.5.  The
-    # multicast bit must be set in such addresses, in order that they will
-    # never conflict with addresses obtained from network cards."
+    # RFC 9562, §6.10-3 says that
+    #
+    #   Implementations MAY elect to obtain a 48-bit cryptographic-quality
+    #   random number as per Section 6.9 to use as the Node ID. [...] [and]
+    #   implementations MUST set the least significant bit of the first octet
+    #   of the Node ID to 1. This bit is the unicast or multicast bit, which
+    #   will never be set in IEEE 802 addresses obtained from network cards.
     #
     # The "multicast bit" of a MAC address is defined to be "the least
     # significant bit of the first octet".  This works out to be the 41st bit
     # counting from 1 being the least significant bit, or 1<<40.
     #
     # See https://en.wikipedia.org/w/index.php?title=MAC_address&oldid=1128764812#Universal_vs._local_(U/L_bit)
-    import random
-    return random.getrandbits(48) | (1 << 40)
+    return int.from_bytes(os.urandom(6)) | (1 << 40)
 
 
 # _OS_GETTERS, when known, are targeted for a specific OS or platform.
