@@ -1887,7 +1887,7 @@ def collect_dunders(symbols):
        '__contains__',
     ]
     for sd in sequence_dunders:
-        dunders[sd] = ('SEQUENCEMETHODS', 'SPECIALMETHODS')
+        dunders[sd] = ('sequence-types', 'SPECIALMETHODS')
 
     comparison_dunders = {
         '__lt__': '<',
@@ -2061,8 +2061,7 @@ class Helper:
         'BASICMETHODS': ('customization', 'hash repr str SPECIALMETHODS'),
         'ATTRIBUTEMETHODS': ('attribute-access', 'ATTRIBUTES SPECIALMETHODS'),
         'CALLABLEMETHODS': ('callable-types', 'CALLS SPECIALMETHODS'),
-        'SEQUENCEMETHODS': ('sequence-types', 'SEQUENCES SEQUENCEMETHODS '
-                             'SPECIALMETHODS'),
+        'SEQUENCEMETHODS': ('sequence-types', 'SEQUENCES SPECIALMETHODS'),
         'MAPPINGMETHODS': ('sequence-types', 'MAPPINGS SPECIALMETHODS'),
         'NUMBERMETHODS': ('numeric-types', 'NUMBERS AUGMENTEDASSIGNMENT '
                           'SPECIALMETHODS'),
