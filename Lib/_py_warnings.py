@@ -449,9 +449,12 @@ def warn(message, category=None, stacklevel=1, source=None,
     # Check category argument
     if category is None:
         category = UserWarning
-    if not (isinstance(category, type) and issubclass(category, Warning)):
-        raise TypeError("category must be a Warning subclass, "
-                        "not '{:s}'".format(type(category).__name__))
+    elif not isinstance(category, type):
+        raise TypeError(f"category must be a Warning subclass, not "
+                        f"'{type(category).__name__}'")
+    elif not issubclass(category, Warning):
+        raise TypeError(f"category must be a Warning subclass, not "
+                        f"class '{category.__name__}'")
     if not isinstance(skip_file_prefixes, tuple):
         # The C version demands a tuple for implementation performance.
         raise TypeError('skip_file_prefixes must be a tuple of strs.')
