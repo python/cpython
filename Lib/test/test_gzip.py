@@ -326,8 +326,6 @@ class TestGzip(BaseTest):
         os_helper.unlink(self.filename)
         with gzip.GzipFile(self.filename, 'x') as f:
             self.assertEqual(f.myfileobj.mode, 'xb')
-        with gzip.GzipFile(self.filename, 'wb+') as f:
-            self.assertEqual(f.myfileobj.mode, 'wb+')
 
     def test_1647484(self):
         for mode in ('wb', 'rb'):
@@ -580,6 +578,24 @@ class TestGzip(BaseTest):
             self.assertEqual(f.mode, gzip.READ)
             self.assertIs(f.readable(), True)
             self.assertIs(f.writable(), False)
+            self.assertIs(f.seekable(), True)
+
+        with open(self.filename, "wb+") as raw:
+            with gzip.GzipFile(fileobj=raw) as f:
+                f.write(b'something')
+                self.assertEqual(f.name, raw.name)
+                self.assertEqual(f.fileno(), raw.fileno())
+                self.assertEqual(f.mode, gzip.WRITE)
+                self.assertIs(f.readable(), False)
+                self.assertIs(f.writable(), True)
+                self.assertIs(f.seekable(), True)
+                self.assertIs(f.closed, False)
+            self.assertIs(f.closed, True)
+            self.assertEqual(f.name, raw.name)
+            self.assertRaises(AttributeError, f.fileno)
+            self.assertEqual(f.mode, gzip.WRITE)
+            self.assertIs(f.readable(), False)
+            self.assertIs(f.writable(), True)
             self.assertIs(f.seekable(), True)
 
     def test_fileobj_from_fdopen(self):
