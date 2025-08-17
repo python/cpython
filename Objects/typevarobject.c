@@ -123,7 +123,7 @@ PyTypeObject _PyNoDefault_Type = {
 
 PyObject _Py_NoDefaultStruct = _PyObject_HEAD_INIT(&_PyNoDefault_Type);
 
-/* NoExtraItems: a marker object for TypeDict extra-items when it's unset. */
+/* NoExtraItems: a marker object for TypeDict extra_items when it's unset. */
 
 static PyObject *
 NoExtraItems_repr(PyObject *op)
@@ -155,7 +155,10 @@ noextraitems_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static void
 noextraitems_dealloc(PyObject *obj)
 {
-    /* Immortal singleton: never actually deallocates. */
+    /* This should never get called, but we also don't want to SEGV if
+     * we accidentally decref NoDefault out of existence. Instead,
+     * since NoDefault is an immortal object, re-set the reference count.
+     */
     _Py_SetImmortal(obj);
 }
 
