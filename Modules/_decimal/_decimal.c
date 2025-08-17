@@ -4358,9 +4358,18 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)             \
 
 /* Unary function with an optional context arg. */
 #define Dec_UnaryFuncVA(MPDFUNC) \
+static PyObject *                                              \
+dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)  \
 {                                                              \
+    static char *kwlist[] = {"context", NULL};                 \
     PyObject *result;                                          \
+    PyObject *context = Py_None;                               \
     uint32_t status = 0;                                       \
+                                                               \
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, \
+                                     &context)) {              \
+        return NULL;                                           \
+    }                                                          \
     decimal_state *state =                                     \
         get_module_state_by_def(Py_TYPE(self));                \
     CONTEXT_CHECK_VA(state, context);                          \
@@ -4453,10 +4462,20 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)   \
 
 /* Ternary function with an optional context arg. */
 #define Dec_TernaryFuncVA(MPDFUNC) \
+static PyObject *                                                        \
+dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)            \
 {                                                                        \
+    static char *kwlist[] = {"other", "third", "context", NULL};         \
+    PyObject *other, *third;                                             \
     PyObject *a, *b, *c;                                                 \
     PyObject *result;                                                    \
+    PyObject *context = Py_None;                                         \
     uint32_t status = 0;                                                 \
+                                                                         \
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|O", kwlist,         \
+                                     &other, &third, &context)) {        \
+        return NULL;                                                     \
+    }                                                                    \
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));       \
     CONTEXT_CHECK_VA(state, context);                                    \
     CONVERT_TERNOP_RAISE(&a, &b, &c, self, other, third, context);       \
@@ -4606,112 +4625,12 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
 /******************************************************************************/
 
 /* Unary arithmetic functions, optional context arg */
-
-/*[clinic input]
-_decimal.Decimal.exp
-
-    context: object = None
-
-Return the value of the (natural) exponential function e**x.
-
-The function always uses the ROUND_HALF_EVEN mode and the result is
-correctly rounded.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_exp_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=c0833b6e9b8c836f input=274784af925e60c9]*/
 Dec_UnaryFuncVA(mpd_qexp)
-
-/*[clinic input]
-_decimal.Decimal.ln
-
-    context: object = None
-
-Return the natural (base e) logarithm of the operand.
-
-The function always uses the ROUND_HALF_EVEN mode and the result is
-correctly rounded.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_ln_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=5191f4ef739b04b0 input=f267b224238c56e2]*/
 Dec_UnaryFuncVA(mpd_qln)
-
-/*[clinic input]
-_decimal.Decimal.log10
-
-    context: object = None
-
-Return the base ten logarithm of the operand.
-
-The function always uses the ROUND_HALF_EVEN mode and the result is
-correctly rounded.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_log10_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=d5da63df75900275 input=d941f9335dc693cb]*/
 Dec_UnaryFuncVA(mpd_qlog10)
-
-/*[clinic input]
-_decimal.Decimal.next_minus
-
-    context: object = None
-
-Returns the largest representable number smaller than itself.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_next_minus_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=aacbd758399f883f input=75666c6dc3cc8da9]*/
 Dec_UnaryFuncVA(mpd_qnext_minus)
-
-/*[clinic input]
-_decimal.Decimal.next_plus
-
-    context: object = None
-
-Returns the smallest representable number larger than itself.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_next_plus_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=f3a7029a213c553c input=adcccf3f94e8da3f]*/
 Dec_UnaryFuncVA(mpd_qnext_plus)
-
-/*[clinic input]
-_decimal.Decimal.normalize
-
-    context: object = None
-
-Normalize the number by stripping trailing 0s
-
-This also change anything equal to 0 to 0e0.  Used for producing
-canonical values for members of an equivalence class.  For example,
-Decimal('32.100') and Decimal('0.321000e+2') both normalize to
-the equivalent value Decimal('32.1').
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_normalize_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=db2c8b3c8eccff36 input=8f0504baa4e8c7de]*/
 Dec_UnaryFuncVA(mpd_qreduce)
-
-/*[clinic input]
-_decimal.Decimal.sqrt
-
-    context: object = None
-
-Return the square root of the argument to full precision.
-
-The result is correctly rounded using the ROUND_HALF_EVEN rounding mode.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_sqrt_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=420722a199dd9c2b input=16df570867daf0d6]*/
 Dec_UnaryFuncVA(mpd_qsqrt)
 
 /* Binary arithmetic functions, optional context arg */
@@ -4725,27 +4644,6 @@ Dec_BinaryFuncVA(mpd_qnext_toward)
 Dec_BinaryFuncVA(mpd_qrem_near)
 
 /* Ternary arithmetic functions, optional context arg */
-
-/*[clinic input]
-_decimal.Decimal.fma
-
-    other: object
-    third: object
-    context: object = None
-
-Fused multiply-add.
-
-Return self*other+third with no rounding of the intermediate product
-self*other.
-
-    >>> Decimal(2).fma(3, 5)
-    Decimal('11')
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_fma_impl(PyObject *self, PyObject *other, PyObject *third,
-                          PyObject *context)
-/*[clinic end generated code: output=74a82b984e227b69 input=48f9aec6f389227a]*/
 Dec_TernaryFuncVA(mpd_qfma)
 
 /* Boolean functions, no context arg */
@@ -4909,35 +4807,7 @@ _decimal_Decimal_copy_negate_impl(PyObject *self)
 }
 
 /* Unary functions, optional context arg */
-
-/*[clinic input]
-_decimal.Decimal.logical_invert
-
-    context: object = None
-
-Return the digit-wise inversion of the (logical) operand.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_logical_invert_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=59beb9b1b51b9f34 input=063cc759635d249b]*/
 Dec_UnaryFuncVA(mpd_qinvert)
-
-/*[clinic input]
-_decimal.Decimal.logb
-
-    context: object = None
-
-Return the adjusted exponent of the operand as a Decimal instance.
-
-If the operand is a zero, then Decimal('-Infinity') is returned and the
-DivisionByZero condition is raised. If the operand is an infinity then
-Decimal('Infinity') is returned.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_logb_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=f278db20b47f301c input=1a0de8e49b101734]*/
 Dec_UnaryFuncVA(mpd_qlogb)
 
 /*[clinic input]
@@ -5497,16 +5367,16 @@ static PyGetSetDef dec_getsets [] =
 static PyMethodDef dec_methods [] =
 {
   /* Unary arithmetic functions, optional context arg */
-  _DECIMAL_DECIMAL_EXP_METHODDEF
-  _DECIMAL_DECIMAL_LN_METHODDEF
-  _DECIMAL_DECIMAL_LOG10_METHODDEF
-  _DECIMAL_DECIMAL_NEXT_MINUS_METHODDEF
-  _DECIMAL_DECIMAL_NEXT_PLUS_METHODDEF
-  _DECIMAL_DECIMAL_NORMALIZE_METHODDEF
+  { "exp", _PyCFunction_CAST(dec_mpd_qexp), METH_VARARGS|METH_KEYWORDS, doc_exp },
+  { "ln", _PyCFunction_CAST(dec_mpd_qln), METH_VARARGS|METH_KEYWORDS, doc_ln },
+  { "log10", _PyCFunction_CAST(dec_mpd_qlog10), METH_VARARGS|METH_KEYWORDS, doc_log10 },
+  { "next_minus", _PyCFunction_CAST(dec_mpd_qnext_minus), METH_VARARGS|METH_KEYWORDS, doc_next_minus },
+  { "next_plus", _PyCFunction_CAST(dec_mpd_qnext_plus), METH_VARARGS|METH_KEYWORDS, doc_next_plus },
+  { "normalize", _PyCFunction_CAST(dec_mpd_qreduce), METH_VARARGS|METH_KEYWORDS, doc_normalize },
   _DECIMAL_DECIMAL_TO_INTEGRAL_METHODDEF
   _DECIMAL_DECIMAL_TO_INTEGRAL_EXACT_METHODDEF
   _DECIMAL_DECIMAL_TO_INTEGRAL_VALUE_METHODDEF
-  _DECIMAL_DECIMAL_SQRT_METHODDEF
+  { "sqrt", _PyCFunction_CAST(dec_mpd_qsqrt), METH_VARARGS|METH_KEYWORDS, doc_sqrt },
 
   /* Binary arithmetic functions, optional context arg */
   { "compare", _PyCFunction_CAST(dec_mpd_qcompare), METH_VARARGS|METH_KEYWORDS, doc_compare },
@@ -5520,7 +5390,7 @@ static PyMethodDef dec_methods [] =
   { "remainder_near", _PyCFunction_CAST(dec_mpd_qrem_near), METH_VARARGS|METH_KEYWORDS, doc_remainder_near },
 
   /* Ternary arithmetic functions, optional context arg */
-  _DECIMAL_DECIMAL_FMA_METHODDEF
+  { "fma", _PyCFunction_CAST(dec_mpd_qfma), METH_VARARGS|METH_KEYWORDS, doc_fma },
 
   /* Boolean functions, no context arg */
   { "is_canonical", dec_mpd_iscanonical, METH_NOARGS, doc_is_canonical },
@@ -5547,8 +5417,8 @@ static PyMethodDef dec_methods [] =
   _DECIMAL_DECIMAL_COPY_NEGATE_METHODDEF
 
   /* Unary functions, optional context arg */
-  _DECIMAL_DECIMAL_LOGB_METHODDEF
-  _DECIMAL_DECIMAL_LOGICAL_INVERT_METHODDEF
+  { "logb", _PyCFunction_CAST(dec_mpd_qlogb), METH_VARARGS|METH_KEYWORDS, doc_logb },
+  { "logical_invert", _PyCFunction_CAST(dec_mpd_qinvert), METH_VARARGS|METH_KEYWORDS, doc_logical_invert },
   _DECIMAL_DECIMAL_NUMBER_CLASS_METHODDEF
   _DECIMAL_DECIMAL_TO_ENG_STRING_METHODDEF
 

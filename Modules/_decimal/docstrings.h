@@ -80,6 +80,23 @@ and no rounding is performed. As an exception, the C version may raise\n\
 InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
+PyDoc_STRVAR(doc_exp,
+"exp($self, /, context=None)\n--\n\n\
+Return the value of the (natural) exponential function e**x at the given\n\
+number.  The function always uses the ROUND_HALF_EVEN mode and the result\n\
+is correctly rounded.\n\
+\n");
+
+PyDoc_STRVAR(doc_fma,
+"fma($self, /, other, third, context=None)\n--\n\n\
+Fused multiply-add.  Return self*other+third with no rounding of the\n\
+intermediate product self*other.\n\
+\n\
+    >>> Decimal(2).fma(3, 5)\n\
+    Decimal('11')\n\
+\n\
+\n");
+
 PyDoc_STRVAR(doc_is_canonical,
 "is_canonical($self, /)\n--\n\n\
 Return True if the argument is canonical and False otherwise.  Currently,\n\
@@ -141,9 +158,34 @@ Return True if the argument is a (positive or negative) zero and False\n\
 otherwise.\n\
 \n");
 
+PyDoc_STRVAR(doc_ln,
+"ln($self, /, context=None)\n--\n\n\
+Return the natural (base e) logarithm of the operand. The function always\n\
+uses the ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
+\n");
+
+PyDoc_STRVAR(doc_log10,
+"log10($self, /, context=None)\n--\n\n\
+Return the base ten logarithm of the operand. The function always uses the\n\
+ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
+\n");
+
+PyDoc_STRVAR(doc_logb,
+"logb($self, /, context=None)\n--\n\n\
+For a non-zero number, return the adjusted exponent of the operand as a\n\
+Decimal instance.  If the operand is a zero, then Decimal('-Infinity') is\n\
+returned and the DivisionByZero condition is raised. If the operand is\n\
+an infinity then Decimal('Infinity') is returned.\n\
+\n");
+
 PyDoc_STRVAR(doc_logical_and,
 "logical_and($self, /, other, context=None)\n--\n\n\
 Return the digit-wise 'and' of the two (logical) operands.\n\
+\n");
+
+PyDoc_STRVAR(doc_logical_invert,
+"logical_invert($self, /, context=None)\n--\n\n\
+Return the digit-wise inversion of the (logical) operand.\n\
 \n");
 
 PyDoc_STRVAR(doc_logical_or,
@@ -180,12 +222,35 @@ Similar to the min() method, but the comparison is done using the absolute\n\
 values of the operands.\n\
 \n");
 
+PyDoc_STRVAR(doc_next_minus,
+"next_minus($self, /, context=None)\n--\n\n\
+Return the largest number representable in the given context (or in the\n\
+current default context if no context is given) that is smaller than the\n\
+given operand.\n\
+\n");
+
+PyDoc_STRVAR(doc_next_plus,
+"next_plus($self, /, context=None)\n--\n\n\
+Return the smallest number representable in the given context (or in the\n\
+current default context if no context is given) that is larger than the\n\
+given operand.\n\
+\n");
+
 PyDoc_STRVAR(doc_next_toward,
 "next_toward($self, /, other, context=None)\n--\n\n\
 If the two operands are unequal, return the number closest to the first\n\
 operand in the direction of the second operand.  If both operands are\n\
 numerically equal, return a copy of the first operand with the sign set\n\
 to be the same as the sign of the second operand.\n\
+\n");
+
+PyDoc_STRVAR(doc_normalize,
+"normalize($self, /, context=None)\n--\n\n\
+Normalize the number by stripping the rightmost trailing zeros and\n\
+converting any result equal to Decimal('0') to Decimal('0e0').  Used\n\
+for producing canonical values for members of an equivalence class.\n\
+For example, Decimal('32.100') and Decimal('0.321000e+2') both normalize\n\
+to the equivalent value Decimal('32.1').\n\
 \n");
 
 PyDoc_STRVAR(doc_remainder_near,
@@ -228,6 +293,13 @@ positive, then the shift is to the left; otherwise the shift is to the\n\
 right. Digits shifted into the coefficient are zeros. The sign and exponent\n\
 of the first operand are unchanged.\n\
 \n");
+
+PyDoc_STRVAR(doc_sqrt,
+"sqrt($self, /, context=None)\n--\n\n\
+Return the square root of the argument to full precision. The result is\n\
+correctly rounded using the ROUND_HALF_EVEN rounding mode.\n\
+\n");
+
 
 /******************************************************************************/
 /*                       Context Object and Methods                           */

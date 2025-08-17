@@ -1296,7 +1296,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(template));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(term));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(text));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(third));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(threading));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(throw));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(time));
