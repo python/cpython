@@ -338,7 +338,9 @@ Constants
 .. data:: nan
 
    A floating-point "not a number" (NaN) value.  Equivalent to
-   :data:`math.nan`.
+   ``float('nan')``.
+
+   See also :data:`math.nan`.
 
    .. versionadded:: 3.6
 
