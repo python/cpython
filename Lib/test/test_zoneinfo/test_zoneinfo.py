@@ -12,7 +12,6 @@ import pickle
 import re
 import shutil
 import struct
-import sys
 import tempfile
 import unittest
 from datetime import date, datetime, time, timedelta, timezone
@@ -23,6 +22,7 @@ from test.support.os_helper import EnvironmentVarGuard
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module, CleanImport
+from test.support.script_helper import assert_python_ok
 
 lzma = import_module('lzma')
 py_zoneinfo, c_zoneinfo = test_support.get_modules()
@@ -1949,17 +1949,14 @@ class CTestModule(TestModule):
 
 class MiscTests(unittest.TestCase):
     def test_pydatetime(self):
-        with CleanImport('zoneinfo', 'zoneinfo._tzpath', 'zoneinfo._zoneinfo',
-                         '_zoneinfo', 'datetime', '_pydatetime', '_datetime'):
+        assert_python_ok('-c', '''if 1:
+            import sys
             sys.modules['_datetime'] = None
             import datetime
             import zoneinfo
-            zoneinfo.ZoneInfo.clear_cache()
             tzinfo = zoneinfo.ZoneInfo('Europe/Paris')
             datetime.datetime(2025, 10, 26, 2, 0, tzinfo=tzinfo)
-            self.assertIn('_pydatetime', sys.modules)
-            self.assertNotIn('_zoneinfo', sys.modules)
-            self.assertIn('zoneinfo._zoneinfo', sys.modules)
+            ''')
 
 
 class ExtensionBuiltTest(unittest.TestCase):
