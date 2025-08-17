@@ -1569,7 +1569,7 @@ init_extended_context(PyObject *v)
 /* Factory function for creating IEEE interchange format contexts */
 
 /*[clinic input]
-_decimal.Decimal.IEEEContext
+_decimal.IEEEContext
 
     self as module: self
     bits: Py_ssize_t
@@ -1922,7 +1922,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
 #endif
 
 /*[clinic input]
-_decimal.Decimal.getcontext
+_decimal.getcontext
 
 Get the current default context.
 [clinic start generated code]*/
@@ -1935,7 +1935,7 @@ _decimal_Decimal_getcontext_impl(PyObject *self)
 }
 
 /*[clinic input]
-_decimal.Decimal.setcontext
+_decimal.setcontext
 
     context: object
     /
@@ -1956,7 +1956,7 @@ _decimal_Decimal_setcontext(PyObject *self, PyObject *context)
 
 /*[clinic input]
 @text_signature "($module, /, ctx=None, **kwargs)"
-_decimal.Decimal.localcontext
+_decimal.localcontext
 
     self as m: self
     ctx as local: object = None
@@ -3624,7 +3624,7 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
 _decimal.Decimal.__format__
 
     self as dec: self
-    fmtarg: object
+    format_spec as fmtarg: object
     override: object = NULL
     /
 
