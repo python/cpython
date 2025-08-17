@@ -1838,8 +1838,8 @@ def _introdoc():
 
         Enter the name of any module, keyword, symbol, or topic to get help on
         writing Python programs and using Python modules.  To get a list of
-        available modules, keywords, symbols, or topics, enter "modules",
-        "keywords", "symbols", or "topics".
+        available modules, keywords, symbols, special names, or topics, enter
+        "modules", "keywords", "symbols", "specialnames", or "topics".
         {pyrepl_keys}
         Each module also comes with a one-line summary of what it does; to list
         the modules whose name or summary contain a given string such as "spam",
@@ -2189,7 +2189,7 @@ has the same effect as typing a particular string at the help> prompt.
             elif request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
-            elif request in {'specialnames', 'dunders'}:
+            elif request == 'specialnames':
                 self.listdunders()
             elif request == 'modules': self.listmodules()
             elif request[:8] == 'modules ':
@@ -2976,7 +2976,8 @@ def cli():
     reference to a class or function within a module or module in a
     package.  If <name> contains a '{sep}', it is used as the path to a
     Python source file to document. If name is 'keywords', 'topics',
-    or 'modules', a listing of these things is displayed.
+    'symbols', 'specialnames', or 'modules', a listing of these things is
+    displayed.
 
 {cmd} -k <keyword>
     Search for a keyword in the synopsis lines of all available modules.
