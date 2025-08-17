@@ -1706,11 +1706,6 @@ def describe(thing):
 
 def locate(path, forceload=0):
     """Locate an object by name or dotted path, importing as necessary."""
-    if re.match(r"^__\w+__$", path):
-        # if we're looking up a special variable, don't grab the result from
-        # the builtins module, because it's probably not what the user wanted
-        # (if it is, they can look up builtins.whatever)
-        return None
     parts = [part for part in path.split('.') if part]
     module, n = None, 0
     while n < len(parts):
@@ -1726,6 +1721,11 @@ def locate(path, forceload=0):
             object = getattr(object, part)
         except AttributeError:
             return None
+    if re.match(r"^__\w+__$", path) and not isinstance(object, (type, type(__import__))):
+        # if we're looking up a special variable, don't grab the result from
+        # the builtins module, because it's probably not what the user wanted
+        # (if it is, they can look up builtins.whatever)
+        return None
     return object
 
 # --------------------------------------- interactive interpreter interface
