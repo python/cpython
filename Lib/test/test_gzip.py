@@ -639,7 +639,7 @@ class TestGzip(BaseTest):
             with open(self.filename, mode) as f:
                 with gzip.GzipFile(fileobj=f) as g:
                     self.assertEqual(g.mode, gzip.READ)
-        for mode in "wb", "ab", "xb", "wb+", "ab+":
+        for mode in "wb", "ab", "xb", "wb+", "ab+", "xb+":
             if "x" in mode:
                 os_helper.unlink(self.filename)
             with open(self.filename, mode) as f:
