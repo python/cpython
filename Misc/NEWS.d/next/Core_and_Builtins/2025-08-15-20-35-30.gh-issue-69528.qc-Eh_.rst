@@ -1,1 +1,0 @@
-:mod:`io`: Fix a bug where the ``'wb+'`` mode was treated as ``'rb+'``.
