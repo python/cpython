@@ -357,7 +357,7 @@ their contained methods and nested classes.
 
    Classes or functions defined inside functions cannot be discovered,
    because their definitions depend on the runtime state of the enclosing
-   function. To make their doctests discoverable, define them outside of
+   function. To make them discoverable, define them outside of
    the enclosing function.
 
 .. _doctest-finding-examples:
