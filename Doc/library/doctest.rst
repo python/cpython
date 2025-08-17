@@ -350,7 +350,7 @@ searches them recursively for docstrings, which are then scanned for tests.
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
 
-.. warning::
+.. note::
 
    Only classes and functions defined at the module level (or inside other
    classes) are automatically discovered by ``doctest``.
