@@ -310,7 +310,7 @@ def collapse_addresses(addresses):
                            [IPv4Network('192.0.2.0/24')]
 
     Args:
-        addresses: An iterator of IPv4Network or IPv6Network objects.
+        addresses: An iterable of IPv4Network or IPv6Network objects.
 
     Returns:
         An iterator of the collapsed IPv(4|6)Network objects.
@@ -734,7 +734,7 @@ class _BaseNetwork(_IPAddressBase):
             return NotImplemented
 
     def __hash__(self):
-        return hash(int(self.network_address) ^ int(self.netmask))
+        return hash((int(self.network_address), int(self.netmask)))
 
     def __contains__(self, other):
         # always false if one is v4 and the other is v6.
@@ -1664,8 +1664,18 @@ class _BaseV6:
         """
         if not ip_str:
             raise AddressValueError('Address cannot be empty')
+        if len(ip_str) > 45:
+            shorten = ip_str
+            if len(shorten) > 100:
+                shorten = f'{ip_str[:45]}({len(ip_str)-90} chars elided){ip_str[-45:]}'
+            raise AddressValueError(f"At most 45 characters expected in "
+                                    f"{shorten!r}")
 
-        parts = ip_str.split(':')
+        # We want to allow more parts than the max to be 'split'
+        # to preserve the correct error message when there are
+        # too many parts combined with '::'
+        _max_parts = cls._HEXTET_COUNT + 1
+        parts = ip_str.split(':', maxsplit=_max_parts)
 
         # An IPv6 address needs at least 2 colons (3 parts).
         _min_parts = 3
@@ -1685,7 +1695,6 @@ class _BaseV6:
         # An IPv6 address can't have more than 8 colons (9 parts).
         # The extra colon comes from using the "::" notation for a single
         # leading or trailing zero part.
-        _max_parts = cls._HEXTET_COUNT + 1
         if len(parts) > _max_parts:
             msg = "At most %d colons permitted in %r" % (_max_parts-1, ip_str)
             raise AddressValueError(msg)
@@ -1855,9 +1864,6 @@ class _BaseV6:
     def _explode_shorthand_ip_string(self):
         """Expand a shortened IPv6 address.
 
-        Args:
-            ip_str: A string, the IPv6 address.
-
         Returns:
             A string, the expanded IPv6 address.
 
@@ -1960,8 +1966,49 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         self._ip = self._ip_int_from_string(addr_str)
 
+    def _explode_shorthand_ip_string(self):
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            return super()._explode_shorthand_ip_string()
+        prefix_len = 30
+        raw_exploded_str = super()._explode_shorthand_ip_string()
+        return f"{raw_exploded_str[:prefix_len]}{ipv4_mapped!s}"
+
+    def _reverse_pointer(self):
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            return super()._reverse_pointer()
+        prefix_len = 30
+        raw_exploded_str = super()._explode_shorthand_ip_string()[:prefix_len]
+        # ipv4 encoded using hexadecimal nibbles instead of decimals
+        ipv4_int = ipv4_mapped._ip
+        reverse_chars = f"{raw_exploded_str}{ipv4_int:008x}"[::-1].replace(':', '')
+        return '.'.join(reverse_chars) + '.ip6.arpa'
+
+    def _ipv4_mapped_ipv6_to_str(self):
+        """Return convenient text representation of IPv4-mapped IPv6 address
+
+        See RFC 4291 2.5.5.2, 2.2 p.3 for details.
+
+        Returns:
+            A string, 'x:x:x:x:x:x:d.d.d.d', where the 'x's are the hexadecimal values of
+            the six high-order 16-bit pieces of the address, and the 'd's are
+            the decimal values of the four low-order 8-bit pieces of the
+            address (standard IPv4 representation) as defined in RFC 4291 2.2 p.3.
+
+        """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            raise AddressValueError("Can not apply to non-IPv4-mapped IPv6 address %s" % str(self))
+        high_order_bits = self._ip >> 32
+        return "%s:%s" % (self._string_from_ip_int(high_order_bits), str(ipv4_mapped))
+
     def __str__(self):
-        ip_str = super().__str__()
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is None:
+            ip_str = super().__str__()
+        else:
+            ip_str = self._ipv4_mapped_ipv6_to_str()
         return ip_str + '%' + self._scope_id if self._scope_id else ip_str
 
     def __hash__(self):
@@ -2004,6 +2051,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             See RFC 2373 2.7 for details.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_multicast
         return self in self._constants._multicast_network
 
     @property
@@ -2015,6 +2065,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             reserved IPv6 Network ranges.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_reserved
         return any(self in x for x in self._constants._reserved_networks)
 
     @property
@@ -2025,6 +2078,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             A boolean, True if the address is reserved per RFC 4291.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_link_local
         return self in self._constants._linklocal_network
 
     @property
@@ -2081,6 +2137,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
         ``is_global`` has value opposite to :attr:`is_private`, except for the ``100.64.0.0/10``
         IPv4 range where they are both ``False``.
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_global
         return not self.is_private
 
     @property
@@ -2092,6 +2151,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             RFC 2373 2.5.2.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_unspecified
         return self._ip == 0
 
     @property
@@ -2103,6 +2165,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             RFC 2373 2.5.3.
 
         """
+        ipv4_mapped = self.ipv4_mapped
+        if ipv4_mapped is not None:
+            return ipv4_mapped.is_loopback
         return self._ip == 1
 
     @property
@@ -2219,7 +2284,7 @@ class IPv6Interface(IPv6Address):
 
     @property
     def is_loopback(self):
-        return self._ip == 1 and self.network.is_loopback
+        return super().is_loopback and self.network.is_loopback
 
 
 class IPv6Network(_BaseV6, _BaseNetwork):
@@ -2332,6 +2397,8 @@ class _IPv6Constants:
         IPv6Network('2001:db8::/32'),
         # IANA says N/A, let's consider it not globally reachable to be safe
         IPv6Network('2002::/16'),
+        # RFC 9637: https://www.rfc-editor.org/rfc/rfc9637.html#section-6-2.2
+        IPv6Network('3fff::/20'),
         IPv6Network('fc00::/7'),
         IPv6Network('fe80::/10'),
         ]

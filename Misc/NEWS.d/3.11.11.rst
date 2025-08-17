@@ -1,0 +1,49 @@
+.. date: 2024-09-04-10-07-51
+.. gh-issue: 123418
+.. nonce: 1eIFZb
+.. release date: 2024-12-03
+.. section: Tools/Demos
+
+Update GitHub CI workflows to use OpenSSL 3.0.15 and multissltests to use
+3.0.15, 3.1.7, and 3.2.3.
+
+..
+
+.. date: 2024-10-07-14-13-38
+.. gh-issue: 125041
+.. nonce: PKLWDf
+.. section: Tests
+
+Re-enable skipped tests for :mod:`zlib` on the s390x architecture: only skip
+checks of the compressed bytes, which can be different between zlib's
+software implementation and the hardware-accelerated implementation.
+
+..
+
+.. date: 2024-11-13-11-09-12
+.. gh-issue: 126623
+.. nonce: TO7NnR
+.. section: Security
+
+Upgrade libexpat to 2.6.4
+
+..
+
+.. date: 2024-08-07-10-42-13
+.. gh-issue: 122792
+.. nonce: oiTMo9
+.. section: Security
+
+Changed IPv4-mapped ``ipaddress.IPv6Address`` to consistently use the mapped
+IPv4 address value for deciding properties. Properties which have their
+behavior fixed are ``is_multicast``, ``is_reserved``, ``is_link_local``,
+``is_global``, and ``is_unspecified``.
+
+..
+
+.. date: 2024-09-28-02-03-04
+.. gh-issue: 124651
+.. nonce: bLBGtH
+.. section: Library
+
+Properly quote template strings in :mod:`venv` activation scripts.

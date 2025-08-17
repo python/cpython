@@ -22,6 +22,7 @@ from docutils.utils import new_document
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.domains.python import PyFunction, PyMethod
+from sphinx.domains.changeset import VersionChange
 from sphinx.errors import NoUri
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util import logging
@@ -414,7 +415,22 @@ class PyAbstractMethod(PyMethod):
         return PyMethod.run(self)
 
 
-# Support for documenting version of removal in deprecations
+# Support for documenting version of changes, additions, deprecations
+
+def expand_version_arg(argument, release):
+    """Expand "next" to the current version"""
+    if argument == 'next':
+        return sphinx_gettext('{} (unreleased)').format(release)
+    return argument
+
+
+class PyVersionChange(VersionChange):
+    def run(self):
+        # Replace the 'next' special token with the current development version
+        self.arguments[0] = expand_version_arg(self.arguments[0],
+                                               self.config.release)
+        return super().run()
+
 
 class DeprecatedRemoved(Directive):
     has_content = True
@@ -430,17 +446,23 @@ class DeprecatedRemoved(Directive):
         node = addnodes.versionmodified()
         node.document = self.state.document
         node['type'] = 'deprecated-removed'
-        version = (self.arguments[0], self.arguments[1])
-        node['version'] = version
         env = self.state.document.settings.env
+        version = (
+            expand_version_arg(self.arguments[0], env.config.release),
+            self.arguments[1],
+        )
+        if version[1] == 'next':
+            raise ValueError(
+                'deprecated-removed:: second argument cannot be `next`')
+        node['version'] = version
         current_version = tuple(int(e) for e in env.config.version.split('.'))
-        removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
+        removed_version = tuple(int(e) for e in version[1].split('.'))
         if current_version < removed_version:
             label = self._deprecated_label
         else:
             label = self._removed_label
 
-        text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
+        text = label.format(deprecated=version[0], removed=version[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
                                                       self.lineno+1)
@@ -713,6 +735,10 @@ def setup(app):
     app.add_directive('availability', Availability)
     app.add_directive('audit-event', AuditEvent)
     app.add_directive('audit-event-table', AuditEventListDirective)
+    app.add_directive('versionadded', PyVersionChange, override=True)
+    app.add_directive('versionchanged', PyVersionChange, override=True)
+    app.add_directive('versionremoved', PyVersionChange, override=True)
+    app.add_directive('deprecated', PyVersionChange, override=True)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
     app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)

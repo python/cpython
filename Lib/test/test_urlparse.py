@@ -103,7 +103,9 @@ parse_qs_test_cases = [
 
 class UrlParseTestCase(unittest.TestCase):
 
-    def checkRoundtrips(self, url, parsed, split):
+    def checkRoundtrips(self, url, parsed, split, url2=None):
+        if url2 is None:
+            url2 = url
         result = urllib.parse.urlparse(url)
         self.assertEqual(result, parsed)
         t = (result.scheme, result.netloc, result.path,
@@ -111,7 +113,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(t, parsed)
         # put it back together and it should be the same
         result2 = urllib.parse.urlunparse(result)
-        self.assertEqual(result2, url)
+        self.assertEqual(result2, url2)
         self.assertEqual(result2, result.geturl())
 
         # the result of geturl() is a fixpoint; we can always parse it
@@ -137,7 +139,7 @@ class UrlParseTestCase(unittest.TestCase):
              result.query, result.fragment)
         self.assertEqual(t, split)
         result2 = urllib.parse.urlunsplit(result)
-        self.assertEqual(result2, url)
+        self.assertEqual(result2, url2)
         self.assertEqual(result2, result.geturl())
 
         # check the fixpoint property of re-parsing the result of geturl()
@@ -175,9 +177,39 @@ class UrlParseTestCase(unittest.TestCase):
 
     def test_roundtrips(self):
         str_cases = [
+            ('path/to/file',
+             ('', '', 'path/to/file', '', '', ''),
+             ('', '', 'path/to/file', '', '')),
+            ('/path/to/file',
+             ('', '', '/path/to/file', '', '', ''),
+             ('', '', '/path/to/file', '', '')),
+            ('//path/to/file',
+             ('', 'path', '/to/file', '', '', ''),
+             ('', 'path', '/to/file', '', '')),
+            ('////path/to/file',
+             ('', '', '//path/to/file', '', '', ''),
+             ('', '', '//path/to/file', '', '')),
+            ('scheme:path/to/file',
+             ('scheme', '', 'path/to/file', '', '', ''),
+             ('scheme', '', 'path/to/file', '', '')),
+            ('scheme:/path/to/file',
+             ('scheme', '', '/path/to/file', '', '', ''),
+             ('scheme', '', '/path/to/file', '', '')),
+            ('scheme://path/to/file',
+             ('scheme', 'path', '/to/file', '', '', ''),
+             ('scheme', 'path', '/to/file', '', '')),
+            ('scheme:////path/to/file',
+             ('scheme', '', '//path/to/file', '', '', ''),
+             ('scheme', '', '//path/to/file', '', '')),
             ('file:///tmp/junk.txt',
              ('file', '', '/tmp/junk.txt', '', '', ''),
              ('file', '', '/tmp/junk.txt', '', '')),
+            ('file:////tmp/junk.txt',
+             ('file', '', '//tmp/junk.txt', '', '', ''),
+             ('file', '', '//tmp/junk.txt', '', '')),
+            ('file://///tmp/junk.txt',
+             ('file', '', '///tmp/junk.txt', '', '', ''),
+             ('file', '', '///tmp/junk.txt', '', '')),
             ('imap://mail.python.org/mbox1',
              ('imap', 'mail.python.org', '/mbox1', '', '', ''),
              ('imap', 'mail.python.org', '/mbox1', '', '')),
@@ -207,6 +239,38 @@ class UrlParseTestCase(unittest.TestCase):
         bytes_cases = [_encode(x) for x in str_cases]
         for url, parsed, split in str_cases + bytes_cases:
             self.checkRoundtrips(url, parsed, split)
+
+    def test_roundtrips_normalization(self):
+        str_cases = [
+            ('///path/to/file',
+             '/path/to/file',
+             ('', '', '/path/to/file', '', '', ''),
+             ('', '', '/path/to/file', '', '')),
+            ('scheme:///path/to/file',
+             'scheme:/path/to/file',
+             ('scheme', '', '/path/to/file', '', '', ''),
+             ('scheme', '', '/path/to/file', '', '')),
+            ('file:/tmp/junk.txt',
+             'file:///tmp/junk.txt',
+             ('file', '', '/tmp/junk.txt', '', '', ''),
+             ('file', '', '/tmp/junk.txt', '', '')),
+            ('http:/tmp/junk.txt',
+             'http:///tmp/junk.txt',
+             ('http', '', '/tmp/junk.txt', '', '', ''),
+             ('http', '', '/tmp/junk.txt', '', '')),
+            ('https:/tmp/junk.txt',
+             'https:///tmp/junk.txt',
+             ('https', '', '/tmp/junk.txt', '', '', ''),
+             ('https', '', '/tmp/junk.txt', '', '')),
+        ]
+        def _encode(t):
+            return (t[0].encode('ascii'),
+                    t[1].encode('ascii'),
+                    tuple(x.encode('ascii') for x in t[2]),
+                    tuple(x.encode('ascii') for x in t[3]))
+        bytes_cases = [_encode(x) for x in str_cases]
+        for url, url2, parsed, split in str_cases + bytes_cases:
+            self.checkRoundtrips(url, parsed, split, url2)
 
     def test_http_roundtrips(self):
         # urllib.parse.urlsplit treats 'http:' as an optimized special case,
@@ -1160,16 +1224,51 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af::2309::fae7:1234]/Path?Query')
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@[0439:23af:2309::fae7:1234:2342:438e:192.0.2.146]/Path?Query')
         self.assertRaises(ValueError, urllib.parse.urlsplit, 'Scheme://user@]v6a.ip[/Path')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[v6a.ip]')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[v6a.ip].suffix')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[v6a.ip]/')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[v6a.ip].suffix/')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[v6a.ip]?')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[v6a.ip].suffix?')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[::1]')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[::1].suffix')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[::1]/')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[::1].suffix/')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[::1]?')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[::1].suffix?')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[::1]:a')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[::1].suffix:a')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[::1]:a1')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[::1].suffix:a1')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[::1]:1a')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[::1].suffix:1a')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[::1]:')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[::1].suffix:/')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[::1]:?')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://user@prefix.[v6a.ip]')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://user@[v6a.ip].suffix')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://[v6a.ip')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip]')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://]v6a.ip[')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://]v6a.ip')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip[')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix.[v6a.ip')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip].suffix')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix]v6a.ip[suffix')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://prefix]v6a.ip')
+        self.assertRaises(ValueError, urllib.parse.urlsplit, 'scheme://v6a.ip[suffix')
 
     def test_splitting_bracketed_hosts(self):
-        p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]/path?query')
+        p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]:1234/path?query')
         self.assertEqual(p1.hostname, 'v6a.ip')
         self.assertEqual(p1.username, 'user')
         self.assertEqual(p1.path, '/path')
+        self.assertEqual(p1.port, 1234)
         p2 = urllib.parse.urlsplit('scheme://user@[0439:23af:2309::fae7%test]/path?query')
         self.assertEqual(p2.hostname, '0439:23af:2309::fae7%test')
         self.assertEqual(p2.username, 'user')
         self.assertEqual(p2.path, '/path')
+        self.assertIs(p2.port, None)
         p3 = urllib.parse.urlsplit('scheme://user@[0439:23af:2309::fae7:1234:192.0.2.146%test]/path?query')
         self.assertEqual(p3.hostname, '0439:23af:2309::fae7:1234:192.0.2.146%test')
         self.assertEqual(p3.username, 'user')

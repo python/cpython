@@ -1398,6 +1398,9 @@ _PyThread_CurrentFrames(void)
         return NULL;
     }
 
+    // gh-106883: Disable the GC as this can cause the interpreter to deadlock
+    int gc_was_enabled = PyGC_Disable();
+
     /* for i in all interpreters:
      *     for t in all of i's thread states:
      *          if t's frame isn't NULL, map t's id to its frame
@@ -1440,6 +1443,12 @@ fail:
 
 done:
     HEAD_UNLOCK(runtime);
+
+    // Once the runtime is released, the GC can be reenabled.
+    if (gc_was_enabled) {
+        PyGC_Enable();
+    }
+
     return result;
 }
 
@@ -1458,6 +1467,9 @@ _PyThread_CurrentExceptions(void)
     if (result == NULL) {
         return NULL;
     }
+
+    // gh-106883: Disable the GC as this can cause the interpreter to deadlock
+    int gc_was_enabled = PyGC_Disable();
 
     /* for i in all interpreters:
      *     for t in all of i's thread states:
@@ -1499,6 +1511,12 @@ fail:
 
 done:
     HEAD_UNLOCK(runtime);
+
+    // Once the runtime is released, the GC can be reenabled.
+    if (gc_was_enabled) {
+        PyGC_Enable();
+    }
+
     return result;
 }
 

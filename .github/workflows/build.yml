@@ -1,24 +1,15 @@
 name: Tests
 
-# gh-84728: "paths-ignore" is not used to skip documentation-only PRs, because
-# it prevents to mark a job as mandatory. A PR cannot be merged if a job is
-# mandatory but not scheduled because of "paths-ignore".
 on:
   workflow_dispatch:
   push:
     branches:
     - 'main'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
   pull_request:
     branches:
     - 'main'
-    - '3.11'
-    - '3.10'
-    - '3.9'
-    - '3.8'
+    - '3.*'
 
 permissions:
   contents: read
@@ -26,6 +17,9 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-reusable
   cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 1
 
 jobs:
   check_source:
@@ -93,11 +87,13 @@ jobs:
 
   check_abi:
     name: 'Check if the ABI has changed'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04  # 24.04 causes spurious errors
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
@@ -136,26 +132,31 @@ jobs:
 
   check_generated_files:
     name: 'Check if generated files are up to date'
-    runs-on: ubuntu-latest
+    # Don't use ubuntu-latest but a specific version to make the job
+    # reproducible: to get the same tools versions (autoconf, aclocal, ...)
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       - name: Runner image version
-        run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+        run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
       - name: Restore config.cache
         uses: actions/cache@v4
         with:
           path: config.cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
-      - name: Install Dependencies
+          # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python
+          key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
+      - name: Install dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
-        run: echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
       - name: Configure ccache action
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -227,14 +228,15 @@ jobs:
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_ssl_tests == 'true'
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1w, 3.0.13, 3.1.5, 3.2.1]
+        os: [ubuntu-24.04]
+        openssl_ver: [1.1.1w, 3.0.15, 3.1.7, 3.2.3]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -242,34 +244,36 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.check_source.outputs.config_hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install Dependencies
+    - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
     - name: Add ccache to PATH
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
       with:
@@ -285,26 +289,28 @@ jobs:
 
   build_asan:
     name: 'Address sanitizer'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 3.0.13
+      OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> $GITHUB_ENV
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ needs.check_source.outputs.config_hash }}
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.check_source.outputs.config_hash }}
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install Dependencies
+    - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Set up GCC-10 for ASAN
       uses: egor-tensin/setup-gcc@v1
@@ -312,21 +318,21 @@ jobs:
         version: 10
     - name: Configure OpenSSL env vars
       run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v4
       with:
         path: ./multissl/openssl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+        key: ${{ matrix.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
-      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory "$MULTISSL_DIR" --openssl "$OPENSSL_VER" --system Linux
     - name: Add ccache to PATH
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
       with:

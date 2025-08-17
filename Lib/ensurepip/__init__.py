@@ -10,7 +10,7 @@ from importlib import resources
 
 __all__ = ["version", "bootstrap"]
 _PACKAGE_NAMES = ('setuptools', 'pip')
-_SETUPTOOLS_VERSION = "65.5.0"
+_SETUPTOOLS_VERSION = "79.0.1"
 _PIP_VERSION = "24.0"
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION, "py3"),

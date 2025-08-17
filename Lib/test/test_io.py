@@ -3960,6 +3960,28 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         t.write("x"*chunk_size)
         self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
 
+    def test_issue119506(self):
+        chunk_size = 8192
+
+        class MockIO(self.MockRawIO):
+            written = False
+            def write(self, data):
+                if not self.written:
+                    self.written = True
+                    t.write("middle")
+                return super().write(data)
+
+        buf = MockIO()
+        t = self.TextIOWrapper(buf)
+        t.write("abc")
+        t.write("def")
+        # writing data which size >= chunk_size cause flushing buffer before write.
+        t.write("g" * chunk_size)
+        t.flush()
+
+        self.assertEqual([b"abcdef", b"middle", b"g"*chunk_size],
+                         buf._write_stack)
+
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
@@ -4482,6 +4504,7 @@ class CMiscIOTest(MiscIOTest):
     io = io
     name_of_module = "io", "_io"
     extra_exported = "BlockingIOError",
+    not_exported = "OpenWrapper",  # deprecated, added on demand
 
     def test_readinto_buffer_overflow(self):
         # Issue #18025
@@ -4548,7 +4571,10 @@ class PyMiscIOTest(MiscIOTest):
     io = pyio
     name_of_module = "_pyio", "io"
     extra_exported = "BlockingIOError", "open_code",
-    not_exported = "valid_seek_flags",
+    not_exported = (
+        "valid_seek_flags",
+        "OpenWrapper",   # deprecated, added on demand
+    )
 
 
 @unittest.skipIf(os.name == 'nt', 'POSIX signals required for this test.')

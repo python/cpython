@@ -14,6 +14,7 @@ from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
+from test.support import skip_if_sanitizer
 import textwrap
 import unittest
 import warnings
@@ -470,6 +471,75 @@ class SysModuleTest(unittest.TestCase):
         # Reap the spawned thread.
         leave_g.set()
         t.join()
+
+    @skip_if_sanitizer(memory=True, address=True, reason= "Test too slow "
+                       "when the address sanitizer is enabled.")
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    @support.requires_fork()
+    @support.requires_resource('cpu')
+    def test_current_frames_exceptions_deadlock(self):
+        """
+        Reproduce the bug raised in GH-106883 and GH-116969.
+        """
+        import threading
+        import time
+        import signal
+
+        class MockObject:
+            def __init__(self):
+                # Create some garbage
+                self._list = list(range(10000))
+                # Call the functions under test
+                self._trace = sys._current_frames()
+                self._exceptions = sys._current_exceptions()
+
+            def __del__(self):
+                # The presence of the __del__ method causes the deadlock when
+                # there is one thread executing the _current_frames or
+                # _current_exceptions functions and the other thread is
+                # running the GC:
+                # thread 1 has the interpreter lock and it is trying to
+                # acquire the GIL; thread 2 holds the GIL but is trying to
+                # acquire the interpreter lock.
+                # When the GC is running and it finds that an
+                # object has the __del__ method, it needs to execute the
+                # Python code in it and it requires the GIL to execute it
+                # (which will never happen because it is held by another thread
+                # blocked on the acquisition of the interpreter lock)
+                pass
+
+        def thread_function(num_objects):
+            obj = None
+            for _ in range(num_objects):
+                obj = MockObject()
+
+        # The number of objects should be big enough to increase the
+        # chances to call the GC.
+        NUM_OBJECTS = 100
+        NUM_THREADS = 2
+
+        # Test the sys._current_frames and sys._current_exceptions calls
+        pid = os.fork()
+        if pid:  # parent process
+            try:
+                support.wait_process(pid, exitcode=0, timeout=support.SHORT_TIMEOUT)
+            except KeyboardInterrupt:
+                # When pressing CTRL-C kill the deadlocked process
+                os.kill(pid, signal.SIGTERM)
+                raise
+        else:  # child process
+            # Run the actual test in the forked process.
+            threads = []
+            for i in range(NUM_THREADS):
+                thread = threading.Thread(
+                    target=thread_function, args=(NUM_OBJECTS,)
+                )
+                threads.append(thread)
+                thread.start()
+            for t in threads:
+                t.join()
+            os._exit(0)
 
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
