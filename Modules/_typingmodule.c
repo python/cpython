@@ -70,6 +70,9 @@ _typing_exec(PyObject *m)
     if (PyModule_AddObjectRef(m, "NoDefault", (PyObject *)&_Py_NoDefaultStruct) < 0) {
         return -1;
     }
+    if (PyModule_AddObjectRef(m, "NoExtraItems", (PyObject *)&_Py_NoExtraItemsStruct) < 0) {
+        return -1;
+    }
     return 0;
 }
 
