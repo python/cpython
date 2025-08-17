@@ -274,6 +274,13 @@ http.client
   (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
 
 
+http.cookies
+------------
+
+* Allow '``"``' double quotes in cookie values.
+  (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
+
+
 math
 ----
 
