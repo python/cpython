@@ -173,6 +173,8 @@ class TestCase(unittest.TestCase):
         def serializer(obj, protocol):
             if isinstance(obj, (bytes, bytearray, str)):
                 if protocol == 5:
+                    if isinstance(obj, bytearray):
+                        return bytes(obj)
                     return obj
                 return type(obj).__name__
             elif isinstance(obj, array.array):
@@ -223,11 +225,10 @@ class TestCase(unittest.TestCase):
                     )
 
     def test_custom_incomplete_serializer_and_deserializer(self):
-        dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
 
-        with self.assertRaises(dbm_sqlite3.error):
+        with self.assertRaises((TypeError, dbm.error)):
             def serializer(obj, protocol=None):
                 pass
 
