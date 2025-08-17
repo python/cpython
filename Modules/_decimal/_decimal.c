@@ -1571,7 +1571,6 @@ init_extended_context(PyObject *v)
 /*[clinic input]
 _decimal.IEEEContext
 
-    self as module: self
     bits: Py_ssize_t
     /
 
@@ -1582,8 +1581,8 @@ IEEE_CONTEXT_MAX_BITS.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_IEEEContext_impl(PyObject *module, Py_ssize_t bits)
-/*[clinic end generated code: output=042b8664fd2830f7 input=32882ba8f6a2d230]*/
+_decimal_IEEEContext_impl(PyObject *module, Py_ssize_t bits)
+/*[clinic end generated code: output=19a35f320fe19789 input=5cff864d899eb2d7]*/
 {
     PyObject *context;
     mpd_context_t ctx;
@@ -1928,10 +1927,10 @@ Get the current default context.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_getcontext_impl(PyObject *self)
-/*[clinic end generated code: output=7efa232c0136dbba input=2d641118d62b25d4]*/
+_decimal_getcontext_impl(PyObject *module)
+/*[clinic end generated code: output=5982062c4d39e3dd input=7ac316fe42a1b6f5]*/
 {
-    return PyDec_GetCurrentContext(self);
+    return PyDec_GetCurrentContext(module);
 }
 
 /*[clinic input]
@@ -1944,10 +1943,10 @@ Set a new default context.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_setcontext(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=20e7a377da25e02f input=4a5f0e2f660ee0e5]*/
+_decimal_setcontext(PyObject *module, PyObject *context)
+/*[clinic end generated code: output=8065f870be2852ce input=b57d7ee786b022a6]*/
 {
-    return PyDec_SetCurrentContext(self, context);
+    return PyDec_SetCurrentContext(module, context);
 }
 
 /* Context manager object for the 'with' statement. The manager
@@ -1979,12 +1978,11 @@ default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_localcontext_impl(PyObject *m, PyObject *local,
-                                   PyObject *prec, PyObject *rounding,
-                                   PyObject *Emin, PyObject *Emax,
-                                   PyObject *capitals, PyObject *clamp,
-                                   PyObject *flags, PyObject *traps)
-/*[clinic end generated code: output=21cc25fbed642f2f input=77906e599937a9b5]*/
+_decimal_localcontext_impl(PyObject *m, PyObject *local, PyObject *prec,
+                           PyObject *rounding, PyObject *Emin,
+                           PyObject *Emax, PyObject *capitals,
+                           PyObject *clamp, PyObject *flags, PyObject *traps)
+/*[clinic end generated code: output=f97568232f55f5c2 input=af5c0c34dcf94cfc]*/
 {
     PyObject *global;
 
@@ -3624,7 +3622,7 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
 _decimal.Decimal.__format__
 
     self as dec: self
-    format_spec as fmtarg: object
+    format_spec as fmtarg: unicode
     override: object = NULL
     /
 
@@ -3634,7 +3632,7 @@ Formats the Decimal according to fmtarg.
 static PyObject *
 _decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
                                  PyObject *override)
-/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=399a574acc9f0d08]*/
+/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=41a600cc5135e705]*/
 {
     PyObject *result = NULL;
     PyObject *dot = NULL;
@@ -3649,34 +3647,27 @@ _decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
     Py_ssize_t size;
     decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
     CURRENT_CONTEXT(state, context);
-    if (PyUnicode_Check(fmtarg)) {
-        fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
+    fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
+    if (fmt == NULL) {
+        return NULL;
+    }
+
+    if (size > 0 && fmt[size-1] == 'N') {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Format specifier 'N' is deprecated", 1) < 0) {
+            return NULL;
+        }
+    }
+
+    if (size > 0 && fmt[0] == '\0') {
+        /* NUL fill character: must be replaced with a valid UTF-8 char
+           before calling mpd_parse_fmt_str(). */
+        replace_fillchar = 1;
+        fmt = dec_strdup(fmt, size);
         if (fmt == NULL) {
             return NULL;
         }
-
-        if (size > 0 && fmt[size-1] == 'N') {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                             "Format specifier 'N' is deprecated", 1) < 0) {
-                return NULL;
-            }
-        }
-
-        if (size > 0 && fmt[0] == '\0') {
-            /* NUL fill character: must be replaced with a valid UTF-8 char
-               before calling mpd_parse_fmt_str(). */
-            replace_fillchar = 1;
-            fmt = dec_strdup(fmt, size);
-            if (fmt == NULL) {
-                return NULL;
-            }
-            fmt[0] = '_';
-        }
-    }
-    else {
-        PyErr_SetString(PyExc_TypeError,
-            "format arg must be str");
-        return NULL;
+        fmt[0] = '_';
     }
 
     if (!mpd_parse_fmt_str(&spec, fmt, CtxCaps(context))) {
@@ -6194,10 +6185,10 @@ static PyType_Spec context_spec = {
 
 static PyMethodDef _decimal_methods [] =
 {
-  _DECIMAL_DECIMAL_GETCONTEXT_METHODDEF
-  _DECIMAL_DECIMAL_SETCONTEXT_METHODDEF
-  _DECIMAL_DECIMAL_LOCALCONTEXT_METHODDEF
-  _DECIMAL_DECIMAL_IEEECONTEXT_METHODDEF
+  _DECIMAL_GETCONTEXT_METHODDEF
+  _DECIMAL_SETCONTEXT_METHODDEF
+  _DECIMAL_LOCALCONTEXT_METHODDEF
+  _DECIMAL_IEEECONTEXT_METHODDEF
   { NULL, NULL, 1, NULL }
 };
 

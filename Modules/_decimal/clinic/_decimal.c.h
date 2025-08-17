@@ -9,8 +9,8 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-PyDoc_STRVAR(_decimal_Decimal_IEEEContext__doc__,
-"IEEEContext($self, bits, /)\n"
+PyDoc_STRVAR(_decimal_IEEEContext__doc__,
+"IEEEContext($module, bits, /)\n"
 "--\n"
 "\n"
 "Return a context, initialized as one of the IEEE interchange formats.\n"
@@ -18,14 +18,14 @@ PyDoc_STRVAR(_decimal_Decimal_IEEEContext__doc__,
 "The argument must be a multiple of 32 and less than\n"
 "IEEE_CONTEXT_MAX_BITS.");
 
-#define _DECIMAL_DECIMAL_IEEECONTEXT_METHODDEF    \
-    {"IEEEContext", (PyCFunction)_decimal_Decimal_IEEEContext, METH_O, _decimal_Decimal_IEEEContext__doc__},
+#define _DECIMAL_IEEECONTEXT_METHODDEF    \
+    {"IEEEContext", (PyCFunction)_decimal_IEEEContext, METH_O, _decimal_IEEEContext__doc__},
 
 static PyObject *
-_decimal_Decimal_IEEEContext_impl(PyObject *module, Py_ssize_t bits);
+_decimal_IEEEContext_impl(PyObject *module, Py_ssize_t bits);
 
 static PyObject *
-_decimal_Decimal_IEEEContext(PyObject *module, PyObject *arg)
+_decimal_IEEEContext(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_ssize_t bits;
@@ -42,40 +42,40 @@ _decimal_Decimal_IEEEContext(PyObject *module, PyObject *arg)
         }
         bits = ival;
     }
-    return_value = _decimal_Decimal_IEEEContext_impl(module, bits);
+    return_value = _decimal_IEEEContext_impl(module, bits);
 
 exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_decimal_Decimal_getcontext__doc__,
-"getcontext($self, /)\n"
+PyDoc_STRVAR(_decimal_getcontext__doc__,
+"getcontext($module, /)\n"
 "--\n"
 "\n"
 "Get the current default context.");
 
-#define _DECIMAL_DECIMAL_GETCONTEXT_METHODDEF    \
-    {"getcontext", (PyCFunction)_decimal_Decimal_getcontext, METH_NOARGS, _decimal_Decimal_getcontext__doc__},
+#define _DECIMAL_GETCONTEXT_METHODDEF    \
+    {"getcontext", (PyCFunction)_decimal_getcontext, METH_NOARGS, _decimal_getcontext__doc__},
 
 static PyObject *
-_decimal_Decimal_getcontext_impl(PyObject *self);
+_decimal_getcontext_impl(PyObject *module);
 
 static PyObject *
-_decimal_Decimal_getcontext(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_getcontext(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return _decimal_Decimal_getcontext_impl(self);
+    return _decimal_getcontext_impl(module);
 }
 
-PyDoc_STRVAR(_decimal_Decimal_setcontext__doc__,
-"setcontext($self, context, /)\n"
+PyDoc_STRVAR(_decimal_setcontext__doc__,
+"setcontext($module, context, /)\n"
 "--\n"
 "\n"
 "Set a new default context.");
 
-#define _DECIMAL_DECIMAL_SETCONTEXT_METHODDEF    \
-    {"setcontext", (PyCFunction)_decimal_Decimal_setcontext, METH_O, _decimal_Decimal_setcontext__doc__},
+#define _DECIMAL_SETCONTEXT_METHODDEF    \
+    {"setcontext", (PyCFunction)_decimal_setcontext, METH_O, _decimal_setcontext__doc__},
 
-PyDoc_STRVAR(_decimal_Decimal_localcontext__doc__,
+PyDoc_STRVAR(_decimal_localcontext__doc__,
 "localcontext($module, /, ctx=None, **kwargs)\n"
 "--\n"
 "\n"
@@ -86,18 +86,17 @@ PyDoc_STRVAR(_decimal_Decimal_localcontext__doc__,
 "the with-statement. If no context is specified, a copy of the current\n"
 "default context is used.");
 
-#define _DECIMAL_DECIMAL_LOCALCONTEXT_METHODDEF    \
-    {"localcontext", _PyCFunction_CAST(_decimal_Decimal_localcontext), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_localcontext__doc__},
+#define _DECIMAL_LOCALCONTEXT_METHODDEF    \
+    {"localcontext", _PyCFunction_CAST(_decimal_localcontext), METH_FASTCALL|METH_KEYWORDS, _decimal_localcontext__doc__},
 
 static PyObject *
-_decimal_Decimal_localcontext_impl(PyObject *m, PyObject *local,
-                                   PyObject *prec, PyObject *rounding,
-                                   PyObject *Emin, PyObject *Emax,
-                                   PyObject *capitals, PyObject *clamp,
-                                   PyObject *flags, PyObject *traps);
+_decimal_localcontext_impl(PyObject *m, PyObject *local, PyObject *prec,
+                           PyObject *rounding, PyObject *Emin,
+                           PyObject *Emax, PyObject *capitals,
+                           PyObject *clamp, PyObject *flags, PyObject *traps);
 
 static PyObject *
-_decimal_Decimal_localcontext(PyObject *m, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_localcontext(PyObject *m, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -201,7 +200,7 @@ skip_optional_pos:
     }
     traps = args[8];
 skip_optional_kwonly:
-    return_value = _decimal_Decimal_localcontext_impl(m, local, prec, rounding, Emin, Emax, capitals, clamp, flags, traps);
+    return_value = _decimal_localcontext_impl(m, local, prec, rounding, Emin, Emax, capitals, clamp, flags, traps);
 
 exit:
     return return_value;
@@ -271,7 +270,7 @@ _decimal_Decimal_from_number(PyObject *type, PyObject *number)
 }
 
 PyDoc_STRVAR(_decimal_Decimal___format____doc__,
-"__format__($self, fmtarg, override=<unrepresentable>, /)\n"
+"__format__($self, format_spec, override=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Formats the Decimal according to fmtarg.");
@@ -291,6 +290,10 @@ _decimal_Decimal___format__(PyObject *dec, PyObject *const *args, Py_ssize_t nar
     PyObject *override = NULL;
 
     if (!_PyArg_CheckPositional("__format__", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("__format__", "argument 1", "str", args[0]);
         goto exit;
     }
     fmtarg = args[0];
@@ -1162,4 +1165,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f0f078fb49cb1d44 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16a3dc16d65139a7 input=a9049054013a1b77]*/
