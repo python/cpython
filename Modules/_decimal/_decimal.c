@@ -1957,7 +1957,6 @@ _decimal_setcontext(PyObject *module, PyObject *context)
 @text_signature "($module, /, ctx=None, **kwargs)"
 _decimal.localcontext
 
-    self as m: self
     ctx as local: object = None
     *
     prec: object = None
@@ -1978,15 +1977,15 @@ default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_localcontext_impl(PyObject *m, PyObject *local, PyObject *prec,
+_decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
                            PyObject *rounding, PyObject *Emin,
                            PyObject *Emax, PyObject *capitals,
                            PyObject *clamp, PyObject *flags, PyObject *traps)
-/*[clinic end generated code: output=f97568232f55f5c2 input=af5c0c34dcf94cfc]*/
+/*[clinic end generated code: output=9bf4e47742a809b0 input=490307b9689c3856]*/
 {
     PyObject *global;
 
-    decimal_state *state = get_module_state(m);
+    decimal_state *state = get_module_state(module);
     CURRENT_CONTEXT(state, global);
     if (local == Py_None) {
         local = global;

@@ -90,13 +90,13 @@ PyDoc_STRVAR(_decimal_localcontext__doc__,
     {"localcontext", _PyCFunction_CAST(_decimal_localcontext), METH_FASTCALL|METH_KEYWORDS, _decimal_localcontext__doc__},
 
 static PyObject *
-_decimal_localcontext_impl(PyObject *m, PyObject *local, PyObject *prec,
+_decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
                            PyObject *rounding, PyObject *Emin,
                            PyObject *Emax, PyObject *capitals,
                            PyObject *clamp, PyObject *flags, PyObject *traps);
 
 static PyObject *
-_decimal_localcontext(PyObject *m, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_localcontext(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -200,7 +200,7 @@ skip_optional_pos:
     }
     traps = args[8];
 skip_optional_kwonly:
-    return_value = _decimal_localcontext_impl(m, local, prec, rounding, Emin, Emax, capitals, clamp, flags, traps);
+    return_value = _decimal_localcontext_impl(module, local, prec, rounding, Emin, Emax, capitals, clamp, flags, traps);
 
 exit:
     return return_value;
@@ -1165,4 +1165,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=16a3dc16d65139a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b6351795552dc17 input=a9049054013a1b77]*/
