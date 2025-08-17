@@ -982,7 +982,7 @@ A new flag has been added, :data:`~sys.flags.context_aware_warnings`.  This
 flag defaults to true for the free-threaded build and false for the GIL-enabled
 build. If the flag is true then the :class:`warnings.catch_warnings` context
 manager uses a context variable for warning filters.  This makes the context
-manager behave predicably when used with multiple threads or asynchronous
+manager behave predictably when used with multiple threads or asynchronous
 tasks.
 
 A new flag has been added, :data:`~sys.flags.thread_inherit_context`. This flag
@@ -1204,6 +1204,17 @@ Other language changes
 
   .. _Jython: https://www.jython.org/
 
+* The :func:`int` built-in no longer delegates to :meth:`~object.__trunc__`.
+  Classes that want to support conversion to :func:`!int` must implement
+  either :meth:`~object.__int__` or :meth:`~object.__index__`.
+  (Contributed by Mark Dickinson in :gh:`119743`.)
+
+* Using :data:`NotImplemented` in a boolean context
+  will now raise a :exc:`TypeError`.
+  This has raised a :exc:`DeprecationWarning` since Python 3.9.
+  (Contributed by Jelle Zijlstra in :gh:`118767`.)
+
+
 .. _whatsnew314-pep765:
 
 PEP 765: Disallow ``return``/``break``/``continue`` that exit a ``finally`` block
@@ -1288,12 +1299,11 @@ asyncio
   :meth:`asyncio.TaskGroup.create_task`.
   (Contributed by Thomas Grainger in :gh:`128307`.)
 
-
-bdb
----
-
-* The :mod:`bdb` module now supports the :mod:`sys.monitoring` backend.
-  (Contributed by Tian Gao in :gh:`124533`.)
+* There are two new utility functions for
+  introspecting and printing a program's call graph:
+  :func:`~asyncio.capture_call_graph` and :func:`~asyncio.print_call_graph`.
+  (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
+  in :gh:`91048`.)
 
 
   .. _whatsnew314-color-calendar:
@@ -1521,36 +1531,6 @@ functools
   (Contributed by Sayandip Dutta in :gh:`125916`.)
 
 
-gc
---
-
-The cyclic garbage collector is now incremental,
-which changes the meaning of the results of
-:meth:`~gc.get_threshold` and :meth:`~gc.set_threshold`
-as well as :meth:`~gc.get_count` and :meth:`~gc.get_stats`.
-
-* For backwards compatibility, :meth:`~gc.get_threshold` continues to return
-  a three-item tuple.
-  The first value is the threshold for young collections, as before;
-  the second value determines the rate at which the old collection is scanned
-  (the default is 10, and higher values mean that the old collection
-  is scanned more slowly).
-  The third value is meaningless and is always zero.
-
-* :meth:`~gc.set_threshold` ignores any items after the second.
-
-* :meth:`~gc.get_count` and :meth:`~gc.get_stats` continue to return
-  the same format of results.
-  The only difference is that instead of the results referring to
-  the young, aging and old generations,
-  the results refer to the young generation
-  and the aging and collecting spaces of the old generation.
-
-In summary, code that attempted to manipulate the behavior of the cycle GC
-may not work exactly as intended, but it is very unlikely to be harmful.
-All other code will work just fine.
-
-
 getopt
 ------
 
@@ -1648,7 +1628,7 @@ io
   :exc:`BlockingIOError` if the operation cannot immediately return bytes.
   (Contributed by Giovanni Siragusa in :gh:`109523`.)
 
-* Add protocols :class:`io.Reader` and :class:`io.Writer` as a simpler
+* Add protocols :class:`io.Reader` and :class:`io.Writer` as simpler
   alternatives to the pseudo-protocols :class:`typing.IO`,
   :class:`typing.TextIO`, and :class:`typing.BinaryIO`.
   (Contributed by Sebastian Rittau in :gh:`127648`.)
@@ -1919,13 +1899,6 @@ pdb
 * ``$_asynctask`` is added to access the current asyncio task if applicable.
   (Contributed by Tian Gao in :gh:`124367`.)
 
-* :mod:`pdb` now supports two backends: :func:`sys.settrace` and
-  :mod:`sys.monitoring`. Using :mod:`pdb` CLI or :func:`breakpoint` will
-  always use the :mod:`sys.monitoring` backend. Explicitly instantiating
-  :class:`pdb.Pdb` and its derived classes will use the :func:`sys.settrace`
-  backend by default, which is configurable.
-  (Contributed by Tian Gao in :gh:`124533`.)
-
 * :func:`pdb.set_trace_async` is added to support debugging asyncio
   coroutines. :keyword:`await` statements are supported with this
   function.
@@ -2148,6 +2121,8 @@ typing
 
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
 
+* :class:`typing.TypeAliasType` now supports star unpacking.
+
 
 unicodedata
 -----------
@@ -2264,14 +2239,16 @@ zipinfo
 
 .. Add improved modules above alphabetically, not here at the end.
 
+
 Optimizations
 =============
 
 * The import time for several standard library modules has been improved,
-  including :mod:`ast`, :mod:`asyncio`, :mod:`base64`, :mod:`cmd`, :mod:`csv`,
-  :mod:`gettext`, :mod:`importlib.util`, :mod:`locale`, :mod:`mimetypes`,
-  :mod:`optparse`, :mod:`pickle`, :mod:`pprint`, :mod:`pstats`, :mod:`socket`,
-  :mod:`subprocess`, :mod:`threading`, :mod:`tomllib`, and :mod:`zipfile`.
+  including :mod:`annotationlib`, :mod:`ast`, :mod:`asyncio`, :mod:`base64`,
+  :mod:`cmd`, :mod:`csv`, :mod:`gettext`, :mod:`importlib.util`, :mod:`locale`,
+  :mod:`mimetypes`, :mod:`optparse`, :mod:`pickle`, :mod:`pprint`,
+  :mod:`pstats`, :mod:`shlex`, :mod:`socket`, :mod:`string`, :mod:`subprocess`,
+  :mod:`threading`, :mod:`tomllib`, :mod:`types`, and :mod:`zipfile`.
 
   (Contributed by Adam Turner, Bénédikt Tran, Chris Markiewicz, Eli Schwartz,
   Hugo van Kemenade, Jelle Zijlstra, and others in :gh:`118761`.)
@@ -2280,32 +2257,44 @@ Optimizations
 asyncio
 -------
 
-* :mod:`asyncio` has a new per-thread double linked list implementation internally for
-  :class:`native tasks <asyncio.Task>` which speeds up execution by 10-20% on standard
-  pyperformance benchmarks and reduces memory usage.
+* Standard benchmark results have improved by 10-20%, following the
+  implementation of a new per-thread double linked list
+  for :class:`native tasks <asyncio.Task>`,
+  also reducing memory usage.
   This enables external introspection tools such as
   :ref:`python -m asyncio pstree <whatsnew314-asyncio-introspection>`
   to introspect the call graph of asyncio tasks running in all threads.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
-* :mod:`asyncio` has first class support for :term:`free-threading builds <free threading>`.
-  This enables parallel execution of multiple event loops across different threads and scales
-  linearly with the number of threads.
+* The module now has first class support for
+  :term:`free-threading builds <free threading>`.
+  This enables parallel execution of multiple event loops across
+  different threads, scaling linearly with the number of threads.
   (Contributed by Kumar Aditya in :gh:`128002`.)
-
-* :mod:`asyncio` has new utility functions for introspecting and printing
-  the program's call graph: :func:`asyncio.capture_call_graph` and
-  :func:`asyncio.print_call_graph`.
-  (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
-  in :gh:`91048`.)
 
 
 base64
 ------
 
-* Improve the performance of :func:`base64.b16decode` by up to ten times,
-  and reduce the import time of :mod:`base64` by up to six times.
-  (Contributed by Bénédikt Tran, Chris Markiewicz, and Adam Turner in :gh:`118761`.)
+* :func:`~base64.b16decode` is now up to six times faster.
+  (Contributed by Bénédikt Tran, Chris Markiewicz, and Adam Turner
+  in :gh:`118761`.)
+
+
+bdb
+---
+
+* The basic debugger now has a :mod:`sys.monitoring`-based backend,
+  which can be selected via the passing ``'monitoring'``
+  to the :class:`~bdb.Bdb` class's new *backend* parameter.
+  (Contributed by Tian Gao in :gh:`124533`.)
+
+
+difflib
+-------
+
+* The :func:`~difflib.IS_LINE_JUNK` function is now up to twice as fast.
+  (Contributed by Adam Turner and Semyon Moroz in :gh:`130167`.)
 
 
 gc
@@ -2314,43 +2303,374 @@ gc
 * The new :ref:`incremental garbage collector <whatsnew314-incremental-gc>`
   means that maximum pause times are reduced
   by an order of magnitude or more for larger heaps.
+
+  Because of this optimization, the meaning of the results of
+  :meth:`~gc.get_threshold` and :meth:`~gc.set_threshold` have changed,
+  along with :meth:`~gc.get_count` and :meth:`~gc.get_stats`.
+
+  - For backwards compatibility, :meth:`~gc.get_threshold` continues to return
+    a three-item tuple.
+    The first value is the threshold for young collections, as before;
+    the second value determines the rate at which the old collection is scanned
+    (the default is 10, and higher values mean that the old collection
+    is scanned more slowly).
+    The third value is now meaningless and is always zero.
+
+  - :meth:`~gc.set_threshold` now ignores any items after the second.
+
+  - :meth:`~gc.get_count` and :meth:`~gc.get_stats` continue to return
+    the same format of results.
+    The only difference is that instead of the results referring to
+    the young, aging and old generations,
+    the results refer to the young generation
+    and the aging and collecting spaces of the old generation.
+
+  In summary, code that attempted to manipulate the behavior of the cycle GC
+  may not work exactly as intended, but it is very unlikely to be harmful.
+  All other code will work just fine.
+
   (Contributed by Mark Shannon in :gh:`108362`.)
 
 
 io
 ---
-* :mod:`io` which provides the built-in :func:`open` makes less system calls
-  when opening regular files as well as reading whole files. Reading a small
-  operating system cached file in full is up to 15% faster.
-  :func:`pathlib.Path.read_bytes` has the most optimizations for reading a
-  file's bytes in full. (Contributed by Cody Maloney and Victor Stinner in
-  :gh:`120754` and :gh:`90102`.)
+
+* Opening and reading files now executes fewer system calls.
+  Reading a small operating system cached file in full is up to 15% faster.
+  (Contributed by Cody Maloney and Victor Stinner
+  in :gh:`120754` and :gh:`90102`.)
+
+
+pathlib
+-------
+
+* :func:`Path.read_bytes <pathlib.Path.read_bytes>` now uses unbuffered mode
+  to open files, which is between 9% and 17% faster to read in full.
+  (Contributed by Cody Maloney in :gh:`120754`.)
+
+
+pdb
+---
+
+* :mod:`pdb` now supports two backends, based on either
+  :func:`sys.settrace` or :mod:`sys.monitoring`.
+  Using the :ref:`pdb CLI <pdb-cli>` or :func:`breakpoint`
+  will always use the :mod:`sys.monitoring` backend.
+  Explicitly instantiating :class:`pdb.Pdb` and its derived classes
+  will use the :func:`sys.settrace` backend by default, which is configurable.
+  (Contributed by Tian Gao in :gh:`124533`.)
 
 
 uuid
 ----
 
-* Improve generation of :class:`~uuid.UUID` objects via their dedicated
-  functions:
+* :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are now both roughly 40% faster
+  for 16-byte names and 20% faster for 1024-byte names.
+  Performance for longer names remains unchanged.
+  (Contributed by Bénédikt Tran in :gh:`128150`.)
 
-  * :func:`~uuid.uuid3` and :func:`~uuid.uuid5` are both roughly 40% faster
-    for 16-byte names and 20% faster for 1024-byte names. Performance for
-    longer names remains unchanged.
-  * :func:`~uuid.uuid4` is 30% faster.
-
+* :func:`~uuid.uuid4` is now c. 30% faster.
   (Contributed by Bénédikt Tran in :gh:`128150`.)
 
 
 zlib
 ----
 
-* On Windows, ``zlib-ng`` is now used as the implementation of the
-  :mod:`zlib` module. This should produce compatible and comparable
-  results with better performance, though it is worth noting that
-  ``zlib.Z_BEST_SPEED`` (1) may result in significantly less
-  compression than the previous implementation (while also significantly
-  reducing the time taken to compress).
+* On Windows, `zlib-ng <https://github.com/zlib-ng/zlib-ng>`__
+  is now used as the implementation of the :mod:`zlib` module
+  in the default binaries.
+  There are no known incompatabilities between ``zlib-ng``
+  and the previously-used ``zlib`` implementation.
+  This should result in better performance at all compression levels.
+
+  It is worth noting that ``zlib.Z_BEST_SPEED`` (``1``) may result in
+  significantly less compression than the previous implementation,
+  whilst also significantly reducing the time taken to compress.
+
   (Contributed by Steve Dower in :gh:`91349`.)
+
+
+Removed
+=======
+
+argparse
+--------
+
+* Remove the *type*, *choices*, and *metavar* parameters
+  of :class:`!BooleanOptionalAction`.
+  These have been deprecated since Python 3.12.
+  (Contributed by Nikita Sobolev in :gh:`118805`.)
+
+* Calling :meth:`~argparse.ArgumentParser.add_argument_group`
+  on an argument group now raises a :exc:`ValueError`.
+  Similarly, :meth:`~argparse.ArgumentParser.add_argument_group`
+  or :meth:`~argparse.ArgumentParser.add_mutually_exclusive_group`
+  on a mutually exclusive group now both raise :exc:`ValueError`\ s.
+  This 'nesting' was never supported, often failed to work correctly,
+  and was unintentionally exposed through inheritance.
+  This functionality has been deprecated since Python 3.11.
+  (Contributed by Savannah Ostrowski in :gh:`127186`.)
+
+
+ast
+---
+
+* Remove the following classes, which have been deprecated aliases of
+  :class:`~ast.Constant` since Python 3.8 and have emitted
+  deprecation warnings since Python 3.12:
+
+  * :class:`!Bytes`
+  * :class:`!Ellipsis`
+  * :class:`!NameConstant`
+  * :class:`!Num`
+  * :class:`!Str`
+
+  As a consequence of these removals, user-defined ``visit_Num``, ``visit_Str``,
+  ``visit_Bytes``, ``visit_NameConstant`` and ``visit_Ellipsis`` methods
+  on custom :class:`~ast.NodeVisitor` subclasses will no longer be called
+  when the :class:`!NodeVisitor` subclass is visiting an AST.
+  Define a ``visit_Constant`` method instead.
+
+  (Contributed by Alex Waygood in :gh:`119562`.)
+
+* Remove the following deprecated properties on :class:`ast.Constant`,
+  which were present for compatibility with the now-removed AST classes:
+
+  * :attr:`!Constant.n`
+  * :attr:`!Constant.s`
+
+  Use :attr:`!Constant.value` instead.
+  (Contributed by Alex Waygood in :gh:`119562`.)
+
+
+asyncio
+-------
+
+* Remove the following classes, methods, and functions,
+  which have been deprecated since Python 3.12:
+
+  * :class:`!AbstractChildWatcher`
+  * :class:`!FastChildWatcher`
+  * :class:`!MultiLoopChildWatcher`
+  * :class:`!PidfdChildWatcher`
+  * :class:`!SafeChildWatcher`
+  * :class:`!ThreadedChildWatcher`
+  * :meth:`!AbstractEventLoopPolicy.get_child_watcher`
+  * :meth:`!AbstractEventLoopPolicy.set_child_watcher`
+  * :func:`!get_child_watcher`
+  * :func:`!set_child_watcher`
+
+  (Contributed by Kumar Aditya in :gh:`120804`.)
+
+* :func:`asyncio.get_event_loop` now raises a :exc:`RuntimeError`
+  if there is no current event loop,
+  and no longer implicitly creates an event loop.
+
+  (Contributed by Kumar Aditya in :gh:`126353`.)
+
+  .. TODO: move these patterns to the asyncio docs?
+           quite long for What's New
+
+  There's a few patterns that use :func:`asyncio.get_event_loop`, most
+  of them can be replaced with :func:`asyncio.run`.
+
+  If you're running an async function, simply use :func:`asyncio.run`.
+
+  Before:
+
+  .. code:: python
+
+     async def main():
+         ...
+
+
+     loop = asyncio.get_event_loop()
+     try:
+         loop.run_until_complete(main())
+     finally:
+         loop.close()
+
+  After:
+
+  .. code:: python
+
+    async def main():
+        ...
+
+    asyncio.run(main())
+
+  If you need to start something, for example, a server listening on a socket
+  and then run forever, use :func:`asyncio.run` and an
+  :class:`asyncio.Event`.
+
+  Before:
+
+  .. code:: python
+
+     def start_server(loop): ...
+
+     loop = asyncio.get_event_loop()
+     try:
+         start_server(loop)
+         loop.run_forever()
+     finally:
+         loop.close()
+
+  After:
+
+  .. code:: python
+
+     def start_server(loop): ...
+
+     async def main():
+         start_server(asyncio.get_running_loop())
+         await asyncio.Event().wait()
+
+     asyncio.run(main())
+
+  If you need to run something in an event loop, then run some blocking
+  code around it, use :class:`asyncio.Runner`.
+
+  Before:
+
+  .. code:: python
+
+     async def operation_one(): ...
+     def blocking_code(): ...
+     async def operation_two(): ...
+
+     loop = asyncio.get_event_loop()
+     try:
+         loop.run_until_complete(operation_one())
+         blocking_code()
+         loop.run_until_complete(operation_two())
+     finally:
+         loop.close()
+
+  After:
+
+  .. code:: python
+
+     async def operation_one(): ...
+     def blocking_code(): ...
+     async def operation_two(): ...
+
+     with asyncio.Runner() as runner:
+         runner.run(operation_one())
+         blocking_code()
+         runner.run(operation_two())
+
+
+collections.abc
+---------------
+
+* Remove :class:`!ByteString`, which has been deprecated since Python 3.12.
+  (Contributed by Nikita Sobolev in :gh:`118803`.)
+
+
+
+email
+-----
+
+* Remove :func:`email.utils.localtime`'s *isdst* parameter,
+  which was deprecated in and has been ignored since Python 3.12.
+  (Contributed by Hugo van Kemenade in :gh:`118798`.)
+
+
+importlib.abc
+-------------
+
+* Remove deprecated :mod:`importlib.abc` classes:
+
+  * :class:`!ResourceReader`
+    (use :class:`~importlib.resources.abc.TraversableResources`)
+  * :class:`!Traversable`
+    (use :class:`~importlib.resources.abc.Traversable`)
+  * :class:`!TraversableResources`
+    (use :class:`~importlib.resources.abc.TraversableResources`)
+
+  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
+
+
+itertools
+---------
+
+* Remove support for copy, deepcopy, and pickle operations
+  from :mod:`itertools` iterators.
+  These have emitted a :exc:`DeprecationWarning` since Python 3.12.
+  (Contributed by Raymond Hettinger in :gh:`101588`.)
+
+
+pathlib
+-------
+
+* Remove support for passing additional keyword arguments
+  to :class:`~pathlib.Path`.
+  In previous versions, any such arguments are ignored.
+  (Contributed by Barney Gale in :gh:`74033`.)
+
+* Remove support for passing additional positional arguments to
+  :meth:`.PurePath.relative_to` and :meth:`~pathlib.PurePath.is_relative_to`.
+  In previous versions, any such arguments are joined onto *other*.
+  (Contributed by Barney Gale in :gh:`78707`.)
+
+
+pkgutil
+-------
+
+* Remove the :func:`!get_loader` and :func:`!find_loader` functions,
+  which have been deprecated since Python 3.12.
+  (Contributed by Bénédikt Tran in :gh:`97850`.)
+
+
+pty
+---
+
+* Remove the :func:`!master_open` and :func:`!slave_open` functions,
+  which have been deprecated since Python 3.12.
+  Use :func:`pty.openpty` instead.
+  (Contributed by Nikita Sobolev in :gh:`118824`.)
+
+
+sqlite3
+-------
+
+* Remove :data:`!version` and :data:`!version_info` from
+  the :mod:`sqlite3` module;
+  use :data:`~sqlite3.sqlite_version` and :data:`~sqlite3.sqlite_version_info`
+  for the actual version number of the runtime SQLite library.
+  (Contributed by Hugo van Kemenade in :gh:`118924`.)
+
+* Using a sequence of parameters with named placeholders now
+  raises a :exc:`~sqlite3.ProgrammingError`,
+  having been deprecated since Python 3.12.
+  (Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
+
+
+typing
+------
+
+* Remove :class:`!ByteString`, which has been deprecated since Python 3.12.
+  (Contributed by Nikita Sobolev in :gh:`118803`.)
+
+
+urllib
+------
+
+* Remove the :class:`!Quoter` class from :mod:`urllib.parse`,
+  which has been deprecated since Python 3.11.
+  (Contributed by Nikita Sobolev in :gh:`118827`.)
+
+* Remove the :class:`!URLopener` and :class:`!FancyURLopener` classes
+  from :mod:`urllib.request`,
+  which have been deprecated since Python 3.3.
+
+  ``myopener.open()`` can be replaced with :func:`~urllib.request.urlopen`.
+  ``myopener.retrieve()`` can be replaced with
+  :func:`~urllib.request.urlretrieve`.
+  Customisations to the opener classes can be replaced by passing
+  customized handlers to :func:`~urllib.request.build_opener`.
+  (Contributed by Barney Gale in :gh:`84850`.)
 
 
 Deprecated
@@ -2491,276 +2811,6 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
-
-Removed
-=======
-
-argparse
---------
-
-* Remove the *type*, *choices*, and *metavar* parameters
-  of :class:`!argparse.BooleanOptionalAction`.
-  They were deprecated since 3.12.
-
-* Calling :meth:`~argparse.ArgumentParser.add_argument_group` on an argument
-  group, and calling :meth:`~argparse.ArgumentParser.add_argument_group` or
-  :meth:`~argparse.ArgumentParser.add_mutually_exclusive_group` on a mutually
-  exclusive group now raise exceptions. This nesting was never supported,
-  often failed to work correctly, and was unintentionally exposed through
-  inheritance. This functionality has been deprecated since Python 3.11.
-  (Contributed by Savannah Ostrowski in :gh:`127186`.)
-
-ast
----
-
-* Remove the following classes. They were all deprecated since Python 3.8,
-  and have emitted deprecation warnings since Python 3.12:
-
-  * :class:`!ast.Bytes`
-  * :class:`!ast.Ellipsis`
-  * :class:`!ast.NameConstant`
-  * :class:`!ast.Num`
-  * :class:`!ast.Str`
-
-  Use :class:`ast.Constant` instead. As a consequence of these removals,
-  user-defined ``visit_Num``, ``visit_Str``, ``visit_Bytes``,
-  ``visit_NameConstant`` and ``visit_Ellipsis`` methods on custom
-  :class:`ast.NodeVisitor` subclasses will no longer be called when the
-  :class:`!NodeVisitor` subclass is visiting an AST. Define a ``visit_Constant``
-  method instead.
-
-  Also, remove the following deprecated properties on :class:`ast.Constant`,
-  which were present for compatibility with the now-removed AST classes:
-
-  * :attr:`!ast.Constant.n`
-  * :attr:`!ast.Constant.s`
-
-  Use :attr:`!ast.Constant.value` instead.
-  (Contributed by Alex Waygood in :gh:`119562`.)
-
-asyncio
--------
-
-* Remove the following classes and functions. They were all deprecated and
-  emitted deprecation warnings since Python 3.12:
-
-  * :func:`!asyncio.get_child_watcher`
-  * :func:`!asyncio.set_child_watcher`
-  * :meth:`!asyncio.AbstractEventLoopPolicy.get_child_watcher`
-  * :meth:`!asyncio.AbstractEventLoopPolicy.set_child_watcher`
-  * :class:`!asyncio.AbstractChildWatcher`
-  * :class:`!asyncio.FastChildWatcher`
-  * :class:`!asyncio.MultiLoopChildWatcher`
-  * :class:`!asyncio.PidfdChildWatcher`
-  * :class:`!asyncio.SafeChildWatcher`
-  * :class:`!asyncio.ThreadedChildWatcher`
-
-  (Contributed by Kumar Aditya in :gh:`120804`.)
-
-* Removed implicit creation of event loop by :func:`asyncio.get_event_loop`.
-  It now raises a :exc:`RuntimeError` if there is no current event loop.
-  (Contributed by Kumar Aditya in :gh:`126353`.)
-
-  There's a few patterns that use :func:`asyncio.get_event_loop`, most
-  of them can be replaced with :func:`asyncio.run`.
-
-  If you're running an async function, simply use :func:`asyncio.run`.
-
-  Before::
-
-    async def main():
-        ...
-
-
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(main())
-    finally:
-        loop.close()
-
-  After::
-
-    async def main():
-        ...
-
-    asyncio.run(main())
-
-  If you need to start something, for example, a server listening on a socket
-  and then run forever, use :func:`asyncio.run` and an
-  :class:`asyncio.Event`.
-
-  Before::
-
-    def start_server(loop):
-        ...
-
-    loop = asyncio.get_event_loop()
-    try:
-        start_server(loop)
-        loop.run_forever()
-    finally:
-        loop.close()
-
-  After::
-
-    def start_server(loop):
-        ...
-
-    async def main():
-        start_server(asyncio.get_running_loop())
-        await asyncio.Event().wait()
-
-    asyncio.run(main())
-
-  If you need to run something in an event loop, then run some blocking
-  code around it, use :class:`asyncio.Runner`.
-
-  Before::
-
-    async def operation_one():
-        ...
-
-    def blocking_code():
-        ...
-
-    async def operation_two():
-        ...
-
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(operation_one())
-        blocking_code()
-        loop.run_until_complete(operation_two())
-    finally:
-        loop.close()
-
-  After::
-
-    async def operation_one():
-        ...
-
-    def blocking_code():
-        ...
-
-    async def operation_two():
-        ...
-
-    with asyncio.Runner() as runner:
-        runner.run(operation_one())
-        blocking_code()
-        runner.run(operation_two())
-
-
-
-collections.abc
----------------
-
-* Remove :class:`!collections.abc.ByteString`. It had previously raised a
-  :exc:`DeprecationWarning` since Python 3.12.
-
-email
------
-
-* Remove the *isdst* parameter from :func:`email.utils.localtime`.
-  (Contributed by Hugo van Kemenade in :gh:`118798`.)
-
-importlib
----------
-
-* Remove deprecated :mod:`importlib.abc` classes:
-
-  * :class:`!importlib.abc.ResourceReader`
-  * :class:`!importlib.abc.Traversable`
-  * :class:`!importlib.abc.TraversableResources`
-
-  Use :mod:`importlib.resources.abc` classes instead:
-
-  * :class:`importlib.resources.abc.Traversable`
-  * :class:`importlib.resources.abc.TraversableResources`
-
-  (Contributed by Jason R. Coombs and Hugo van Kemenade in :gh:`93963`.)
-
-itertools
----------
-
-* Remove :mod:`itertools` support for copy, deepcopy, and pickle operations.
-  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
-  (Contributed by Raymond Hettinger in :gh:`101588`.)
-
-pathlib
--------
-
-* Remove support for passing additional keyword arguments to
-  :class:`pathlib.Path`. In previous versions, any such arguments are ignored.
-* Remove support for passing additional positional arguments to
-  :meth:`pathlib.PurePath.relative_to` and
-  :meth:`~pathlib.PurePath.is_relative_to`. In previous versions, any such
-  arguments are joined onto *other*.
-
-pkgutil
--------
-
-* Remove deprecated :func:`!pkgutil.get_loader` and :func:`!pkgutil.find_loader`.
-  These had previously raised a :exc:`DeprecationWarning` since Python 3.12.
-  (Contributed by Bénédikt Tran in :gh:`97850`.)
-
-pty
----
-
-* Remove deprecated :func:`!pty.master_open` and :func:`!pty.slave_open`.
-  They had previously raised a :exc:`DeprecationWarning` since Python 3.12.
-  Use :func:`pty.openpty` instead.
-  (Contributed by Nikita Sobolev in :gh:`118824`.)
-
-sqlite3
--------
-
-* Remove :data:`!version` and :data:`!version_info` from :mod:`sqlite3`;
-  use :data:`~sqlite3.sqlite_version` and :data:`~sqlite3.sqlite_version_info`
-  for the actual version number of the runtime SQLite library.
-  (Contributed by Hugo van Kemenade in :gh:`118924`.)
-
-* Disallow using a sequence of parameters with named placeholders.
-  This had previously raised a :exc:`DeprecationWarning` since Python 3.12;
-  it will now raise a :exc:`sqlite3.ProgrammingError`.
-  (Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
-
-typing
-------
-
-* Remove :class:`!typing.ByteString`. It had previously raised a
-  :exc:`DeprecationWarning` since Python 3.12.
-
-* :class:`typing.TypeAliasType` now supports star unpacking.
-
-urllib
-------
-
-* Remove deprecated :class:`!Quoter` class from :mod:`urllib.parse`.
-  It had previously raised a :exc:`DeprecationWarning` since Python 3.11.
-  (Contributed by Nikita Sobolev in :gh:`118827`.)
-* Remove deprecated :class:`!URLopener` and :class:`!FancyURLopener` classes
-  from :mod:`urllib.request`. They had previously raised a
-  :exc:`DeprecationWarning` since Python 3.3.
-
-  ``myopener.open()`` can be replaced with :func:`~urllib.request.urlopen`,
-  and ``myopener.retrieve()`` can be replaced with
-  :func:`~urllib.request.urlretrieve`. Customizations to the opener
-  classes can be replaced by passing customized handlers to
-  :func:`~urllib.request.build_opener`.
-  (Contributed by Barney Gale in :gh:`84850`.)
-
-Others
-------
-
-* Using :data:`NotImplemented` in a boolean context will now raise a :exc:`TypeError`.
-  It had previously raised a :exc:`DeprecationWarning` since Python 3.9. (Contributed
-  by Jelle Zijlstra in :gh:`118767`.)
-
-* The :func:`int` built-in no longer delegates to
-  :meth:`~object.__trunc__`. Classes that want to support conversion to
-  integer must implement either :meth:`~object.__int__` or
-  :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
 
 CPython bytecode changes

@@ -204,6 +204,10 @@ Other language changes
   controlled by :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Peter Bierma in :gh:`134170`.)
 
+* The :meth:`~object.__repr__` of :class:`ImportError` and :class:`ModuleNotFoundError`
+  now shows "name" and "path" as ``name=<name>`` and ``path=<path>`` if they were given
+  as keyword arguments at construction time.
+  (Contributed by Serhiy Storchaka, Oleg Iarygin, and Yoav Nir in :gh:`74185`.)
 
 New modules
 ===========
@@ -261,6 +265,13 @@ http.client
   constructors. This parameter overrides the default maximum number of allowed
   response headers.
   (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
+
+
+http.cookies
+------------
+
+* Allow '``"``' double quotes in cookie values.
+  (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
 math

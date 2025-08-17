@@ -44,14 +44,15 @@ log = logging.getLogger("multissl")
 
 OPENSSL_OLD_VERSIONS = [
     "1.1.1w",
+    "3.1.8",
 ]
 
 OPENSSL_RECENT_VERSIONS = [
     "3.0.16",
-    "3.1.8",
-    "3.2.4",
-    "3.3.3",
-    "3.4.1",
+    "3.2.5",
+    "3.3.4",
+    "3.4.2",
+    "3.5.2",
     # See make_ssl_data.py for notes on adding a new version.
 ]
 
@@ -74,8 +75,7 @@ MULTISSL_DIR = os.path.abspath(os.path.join(PYTHONROOT, '..', 'multissl'))
 parser = argparse.ArgumentParser(
     prog='multissl',
     description=(
-        "Run CPython tests with multiple cryptography libraries"
-        "versions."
+        "Run CPython tests with multiple cryptography libraries/versions."
     ),
 )
 parser.add_argument(
