@@ -356,7 +356,7 @@ their contained methods and nested classes.
    classes) are automatically discovered by ``doctest``.
 
    Classes or functions defined inside functions cannot be discovered,
-   because their definitions depend on the runtime state of the enclosing
+   because their definitions depend on the state of the enclosing
    function. To make them discoverable, define them outside of
    the enclosing function.
 
