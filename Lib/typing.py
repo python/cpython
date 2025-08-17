@@ -3080,7 +3080,8 @@ def _get_typeddict_qualifiers(annotation_type):
 
 
 class _TypedDictMeta(type):
-    def __new__(cls, name, bases, ns, total=True):
+    def __new__(cls, name, bases, ns, total=True, closed=None,
+                extra_items=NoExtraItems):
         """Create a new typed dict class object.
 
         This method is called when TypedDict is subclassed,
@@ -3092,6 +3093,8 @@ class _TypedDictMeta(type):
             if type(base) is not _TypedDictMeta and base is not Generic:
                 raise TypeError('cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
+        if closed is not None and extra_items is not NoExtraItems:
+            raise TypeError(f"Cannot combine closed={closed!r} and extra_items")
 
         if any(issubclass(b, Generic) for b in bases):
             generic_base = (Generic,)
@@ -3203,6 +3206,8 @@ class _TypedDictMeta(type):
         tp_dict.__readonly_keys__ = frozenset(readonly_keys)
         tp_dict.__mutable_keys__ = frozenset(mutable_keys)
         tp_dict.__total__ = total
+        tp_dict.__closed__ = closed
+        tp_dict.__extra_items__ = extra_items
         return tp_dict
 
     __call__ = dict  # static method
@@ -3214,7 +3219,8 @@ class _TypedDictMeta(type):
     __instancecheck__ = __subclasscheck__
 
 
-def TypedDict(typename, fields, /, *, total=True):
+def TypedDict(typename, fields, /, *, total=True, closed=None,
+              extra_items=NoExtraItems):
     """A simple typed namespace. At runtime it is equivalent to a plain dict.
 
     TypedDict creates a dictionary type such that a type checker will expect all
@@ -3275,7 +3281,8 @@ def TypedDict(typename, fields, /, *, total=True):
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = module
 
-    td = _TypedDictMeta(typename, (), ns, total=total)
+    td = _TypedDictMeta(typename, (), ns, total=total, closed=closed,
+                        extra_items=extra_items)
     td.__orig_bases__ = (TypedDict,)
     return td
 
