@@ -350,6 +350,15 @@ searches them recursively for docstrings, which are then scanned for tests.
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
 
+.. warning::
+
+   Only classes and functions defined at the module level (or inside other
+   classes) are automatically discovered by ``doctest``.
+
+   Classes or functions defined inside functions cannot be discovered,
+   because their definitions depend on the runtime state of the enclosing
+   function. To make their doctests discoverable, define them outside of
+   the enclosing function.
 
 .. _doctest-finding-examples:
 
