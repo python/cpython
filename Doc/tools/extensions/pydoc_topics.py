@@ -47,7 +47,7 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
     "continue",
     "conversions",
     "customization",
-    "custom-instance-subclass",
+    "customize-instance-subclass-checks",
     "debugger",
     "del",
     "dict",

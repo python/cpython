@@ -1880,7 +1880,7 @@ def collect_dunders(symbols):
         '__instancecheck__', '__subclasscheck__'
     ]
     for d in instance_dunders:
-        dunders[d] = ('custom-instance-subclass', 'SPECIALNAMES')
+        dunders[d] = ('customize-instance-subclass-checks', 'SPECIALNAMES')
 
     sequence_dunders = [
        '__len__', '__length_hint__', '__getitem__', '__setitem__',

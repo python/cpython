@@ -2911,7 +2911,7 @@ automatic property creation, proxies, frameworks, and automatic resource
 locking/synchronization.
 
 
-.. _custom-instance-subclass:
+.. _customize-instance-subclass-checks:
 
 Customizing instance and subclass checks
 ----------------------------------------
