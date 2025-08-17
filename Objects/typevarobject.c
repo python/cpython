@@ -123,6 +123,60 @@ PyTypeObject _PyNoDefault_Type = {
 
 PyObject _Py_NoDefaultStruct = _PyObject_HEAD_INIT(&_PyNoDefault_Type);
 
+/* NoExtraItems: a marker object for TypeDict extra-items when it's unset. */
+
+static PyObject *
+NoExtraItems_repr(PyObject *op)
+{
+    return PyUnicode_FromString("typing.NoExtraItems");
+}
+
+static PyObject *
+NoExtraItems_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    return PyUnicode_FromString("NoExtraItems");
+}
+
+static PyMethodDef noextraitems_methods[] = {
+    {"__reduce__", NoExtraItems_reduce, METH_NOARGS, NULL},
+    {NULL, NULL}
+};
+
+static PyObject *
+noextraitems_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_GET_SIZE(kwargs))) {
+        PyErr_SetString(PyExc_TypeError, "NoExtraItemsType takes no arguments");
+        return NULL;
+    }
+    return (PyObject *)&_Py_NoExtraItemsStruct;
+}
+
+static void
+noextraitems_dealloc(PyObject *obj)
+{
+    /* Immortal singleton: never actually deallocates. */
+    _Py_SetImmortal(obj);
+}
+
+PyDoc_STRVAR(noextraitems_doc,
+"NoExtraItemsType()\n"
+"--\n\n"
+"The type of the NoExtraItems singleton.");
+
+PyTypeObject _PyNoExtraItems_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "NoExtraItemsType",
+    .tp_dealloc = noextraitems_dealloc,
+    .tp_repr = NoExtraItems_repr,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_doc = noextraitems_doc,
+    .tp_methods = noextraitems_methods,
+    .tp_new = noextraitems_new,
+};
+
+PyObject _Py_NoExtraItemsStruct = _PyObject_HEAD_INIT(&_PyNoExtraItems_Type);
+
 typedef struct {
     PyObject_HEAD
     PyObject *value;
