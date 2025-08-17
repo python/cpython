@@ -979,7 +979,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fix_imports));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flags));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(flush));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fmtarg));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fold));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(follow_symlinks));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format));
@@ -1170,7 +1169,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(outgoing));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(outpath));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(overlapped));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(override));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(owner));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pages));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(parameter));

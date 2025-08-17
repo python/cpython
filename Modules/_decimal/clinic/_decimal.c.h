@@ -271,65 +271,34 @@ _decimal_Decimal_from_number(PyObject *type, PyObject *number)
 }
 
 PyDoc_STRVAR(_decimal_Decimal___format____doc__,
-"__format__($self, /, fmtarg, override=None)\n"
+"__format__($self, fmtarg, override=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Formats the Decimal according to fmtarg.");
 
 #define _DECIMAL_DECIMAL___FORMAT___METHODDEF    \
-    {"__format__", _PyCFunction_CAST(_decimal_Decimal___format__), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___format____doc__},
+    {"__format__", _PyCFunction_CAST(_decimal_Decimal___format__), METH_FASTCALL, _decimal_Decimal___format____doc__},
 
 static PyObject *
 _decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
                                  PyObject *override);
 
 static PyObject *
-_decimal_Decimal___format__(PyObject *dec, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal___format__(PyObject *dec, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 2
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(fmtarg), &_Py_ID(override), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"fmtarg", "override", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__format__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[2];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *fmtarg;
     PyObject *override = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("__format__", nargs, 1, 2)) {
         goto exit;
     }
     fmtarg = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
+    if (nargs < 2) {
+        goto skip_optional;
     }
     override = args[1];
-skip_optional_pos:
+skip_optional:
     return_value = _decimal_Decimal___format___impl(dec, fmtarg, override);
 
 exit:
@@ -1854,4 +1823,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f6842a3ef7af9757 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c626d3b8a62ae6ed input=a9049054013a1b77]*/

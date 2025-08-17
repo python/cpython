@@ -3625,7 +3625,8 @@ _decimal.Decimal.__format__
 
     self as dec: self
     fmtarg: object
-    override: object(c_default="NULL") = None
+    override: object = NULL
+    /
 
 Formats the Decimal according to fmtarg.
 [clinic start generated code]*/
@@ -3633,7 +3634,7 @@ Formats the Decimal according to fmtarg.
 static PyObject *
 _decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
                                  PyObject *override)
-/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=b4aa4aad37438070]*/
+/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=399a574acc9f0d08]*/
 {
     PyObject *result = NULL;
     PyObject *dot = NULL;

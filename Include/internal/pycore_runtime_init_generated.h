@@ -977,7 +977,6 @@ extern "C" {
     INIT_ID(fix_imports), \
     INIT_ID(flags), \
     INIT_ID(flush), \
-    INIT_ID(fmtarg), \
     INIT_ID(fold), \
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
@@ -1168,7 +1167,6 @@ extern "C" {
     INIT_ID(outgoing), \
     INIT_ID(outpath), \
     INIT_ID(overlapped), \
-    INIT_ID(override), \
     INIT_ID(owner), \
     INIT_ID(pages), \
     INIT_ID(parameter), \
