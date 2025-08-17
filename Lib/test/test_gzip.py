@@ -580,24 +580,6 @@ class TestGzip(BaseTest):
             self.assertIs(f.writable(), False)
             self.assertIs(f.seekable(), True)
 
-        with open(self.filename, "wb+") as raw:
-            with gzip.GzipFile(fileobj=raw) as f:
-                f.write(b'something')
-                self.assertEqual(f.name, raw.name)
-                self.assertEqual(f.fileno(), raw.fileno())
-                self.assertEqual(f.mode, gzip.WRITE)
-                self.assertIs(f.readable(), False)
-                self.assertIs(f.writable(), True)
-                self.assertIs(f.seekable(), True)
-                self.assertIs(f.closed, False)
-            self.assertIs(f.closed, True)
-            self.assertEqual(f.name, raw.name)
-            self.assertRaises(AttributeError, f.fileno)
-            self.assertEqual(f.mode, gzip.WRITE)
-            self.assertIs(f.readable(), False)
-            self.assertIs(f.writable(), True)
-            self.assertIs(f.seekable(), True)
-
     def test_fileobj_from_fdopen(self):
         # Issue #13781: Opening a GzipFile for writing fails when using a
         # fileobj created with os.fdopen().
@@ -657,7 +639,7 @@ class TestGzip(BaseTest):
             with open(self.filename, mode) as f:
                 with gzip.GzipFile(fileobj=f) as g:
                     self.assertEqual(g.mode, gzip.READ)
-        for mode in "wb", "ab", "xb":
+        for mode in "wb", "ab", "xb", "wb+", "ab+":
             if "x" in mode:
                 os_helper.unlink(self.filename)
             with open(self.filename, mode) as f:
