@@ -58,6 +58,15 @@
   #define _PY_DEC_ROUND_GUARD (MPD_ROUND_GUARD-1)
 #endif
 
+#include "clinic/_decimal.c.h"
+
+/*[clinic input]
+module _decimal
+class _decimal.Decimal "PyObject *" "&dec_spec"
+class _decimal.Context "PyObject *" "&ctx_spec"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8c3aa7cfde934d7b]*/
+
 struct PyDecContextObject;
 struct DecCondMap;
 
@@ -1558,17 +1567,26 @@ init_extended_context(PyObject *v)
 }
 
 /* Factory function for creating IEEE interchange format contexts */
+
+/*[clinic input]
+_decimal.IEEEContext
+
+    bits: Py_ssize_t
+    /
+
+Return a context, initialized as one of the IEEE interchange formats.
+
+The argument must be a multiple of 32 and less than
+IEEE_CONTEXT_MAX_BITS.
+[clinic start generated code]*/
+
 static PyObject *
-ieee_context(PyObject *module, PyObject *v)
+_decimal_IEEEContext_impl(PyObject *module, Py_ssize_t bits)
+/*[clinic end generated code: output=19a35f320fe19789 input=5cff864d899eb2d7]*/
 {
     PyObject *context;
-    mpd_ssize_t bits;
     mpd_context_t ctx;
 
-    bits = PyLong_AsSsize_t(v);
-    if (bits == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     if (bits <= 0 || bits > INT_MAX) {
         goto error;
     }
@@ -1767,7 +1785,7 @@ current_context(decimal_state *modstate)
 
 /* Return a new reference to the current context */
 static PyObject *
-PyDec_GetCurrentContext(PyObject *self, PyObject *Py_UNUSED(dummy))
+PyDec_GetCurrentContext(PyObject *self)
 {
     PyObject *context;
     decimal_state *state = get_module_state(self);
@@ -1863,7 +1881,7 @@ current_context(decimal_state *state)
 
 /* Return a new reference to the current context */
 static PyObject *
-PyDec_GetCurrentContext(PyObject *self, PyObject *Py_UNUSED(dummy))
+PyDec_GetCurrentContext(PyObject *self)
 {
     decimal_state *state = get_module_state(self);
     return current_context(state);
@@ -1902,36 +1920,73 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
 }
 #endif
 
+/*[clinic input]
+_decimal.getcontext
+
+Get the current default context.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_getcontext_impl(PyObject *module)
+/*[clinic end generated code: output=5982062c4d39e3dd input=7ac316fe42a1b6f5]*/
+{
+    return PyDec_GetCurrentContext(module);
+}
+
+/*[clinic input]
+_decimal.setcontext
+
+    context: object
+    /
+
+Set a new default context.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_setcontext(PyObject *module, PyObject *context)
+/*[clinic end generated code: output=8065f870be2852ce input=b57d7ee786b022a6]*/
+{
+    return PyDec_SetCurrentContext(module, context);
+}
+
 /* Context manager object for the 'with' statement. The manager
  * owns one reference to the global (outer) context and one
  * to the local (inner) context. */
+
+/*[clinic input]
+@text_signature "($module, /, ctx=None, **kwargs)"
+_decimal.localcontext
+
+    ctx as local: object = None
+    *
+    prec: object = None
+    rounding: object = None
+    Emin: object = None
+    Emax: object = None
+    capitals: object = None
+    clamp: object = None
+    flags: object = None
+    traps: object = None
+
+Return a context manager for a copy of the supplied context.
+
+That will set the default context to a copy of ctx on entry to the
+with-statement and restore the previous default context when exiting
+the with-statement. If no context is specified, a copy of the current
+default context is used.
+[clinic start generated code]*/
+
 static PyObject *
-ctxmanager_new(PyObject *m, PyObject *args, PyObject *kwds)
+_decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
+                           PyObject *rounding, PyObject *Emin,
+                           PyObject *Emax, PyObject *capitals,
+                           PyObject *clamp, PyObject *flags, PyObject *traps)
+/*[clinic end generated code: output=9bf4e47742a809b0 input=490307b9689c3856]*/
 {
-    static char *kwlist[] = {
-      "ctx", "prec", "rounding",
-      "Emin", "Emax", "capitals",
-      "clamp", "flags", "traps",
-      NULL
-    };
-    PyObject *local = Py_None;
     PyObject *global;
 
-    PyObject *prec = Py_None;
-    PyObject *rounding = Py_None;
-    PyObject *Emin = Py_None;
-    PyObject *Emax = Py_None;
-    PyObject *capitals = Py_None;
-    PyObject *clamp = Py_None;
-    PyObject *flags = Py_None;
-    PyObject *traps = Py_None;
-
-    decimal_state *state = get_module_state(m);
+    decimal_state *state = get_module_state(module);
     CURRENT_CONTEXT(state, global);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOOOOO", kwlist, &local,
-          &prec, &rounding, &Emin, &Emax, &capitals, &clamp, &flags, &traps)) {
-        return NULL;
-    }
     if (local == Py_None) {
         local = global;
     }
@@ -2869,18 +2924,41 @@ PyDecType_FromSequenceExact(PyTypeObject *type, PyObject *v,
 #define PyDec_FromSequenceExact(st, sequence, context) \
         PyDecType_FromSequenceExact((st)->PyDec_Type, sequence, context)
 
-/* class method */
+/*[clinic input]
+@classmethod
+_decimal.Decimal.from_float
+
+    f as pyfloat: object
+    /
+
+Class method that converts a float to a decimal number, exactly.
+
+Since 0.1 is not exactly representable in binary floating point,
+Decimal.from_float(0.1) is not the same as Decimal('0.1').
+
+    >>> Decimal.from_float(0.1)
+    Decimal('0.1000000000000000055511151231257827021181583404541015625')
+    >>> Decimal.from_float(float('nan'))
+    Decimal('NaN')
+    >>> Decimal.from_float(float('inf'))
+    Decimal('Infinity')
+    >>> Decimal.from_float(float('-inf'))
+    Decimal('-Infinity')
+[clinic start generated code]*/
+
 static PyObject *
-dec_from_float(PyObject *type, PyObject *pyfloat)
+_decimal_Decimal_from_float_impl(PyTypeObject *type, PyObject *pyfloat)
+/*[clinic end generated code: output=e62775271ac469e6 input=052036648342f8c8]*/
 {
     PyObject *context;
     PyObject *result;
 
-    decimal_state *state = get_module_state_by_def((PyTypeObject *)type);
+    decimal_state *state = get_module_state_by_def(type);
     CURRENT_CONTEXT(state, context);
     result = PyDecType_FromFloatExact(state->PyDec_Type, pyfloat, context);
-    if (type != (PyObject *)state->PyDec_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
+    if (type != state->PyDec_Type && result != NULL) {
+        Py_SETREF(result,
+            PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
     }
 
     return result;
@@ -2914,18 +2992,36 @@ PyDecType_FromNumberExact(PyTypeObject *type, PyObject *v, PyObject *context)
     }
 }
 
-/* class method */
+/*[clinic input]
+@classmethod
+_decimal.Decimal.from_number
+
+    number: object
+    /
+
+Class method that converts a real number to a decimal number, exactly.
+
+    >>> Decimal.from_number(314)              # int
+    Decimal('314')
+    >>> Decimal.from_number(0.1)              # float
+    Decimal('0.1000000000000000055511151231257827021181583404541015625')
+    >>> Decimal.from_number(Decimal('3.14'))  # another decimal instance
+    Decimal('3.14')
+[clinic start generated code]*/
+
 static PyObject *
-dec_from_number(PyObject *type, PyObject *number)
+_decimal_Decimal_from_number_impl(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=41885304e5beea0a input=c58b678e8916f66b]*/
 {
     PyObject *context;
     PyObject *result;
 
-    decimal_state *state = get_module_state_by_def((PyTypeObject *)type);
+    decimal_state *state = get_module_state_by_def(type);
     CURRENT_CONTEXT(state, context);
     result = PyDecType_FromNumberExact(state->PyDec_Type, number, context);
-    if (type != (PyObject *)state->PyDec_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
+    if (type != state->PyDec_Type && result != NULL) {
+        Py_SETREF(result,
+            PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
     }
 
     return result;
@@ -3520,15 +3616,27 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
 }
 
 /* Formatted representation of a PyDecObject. */
+
+/*[clinic input]
+_decimal.Decimal.__format__
+
+    self as dec: self
+    format_spec as fmtarg: unicode
+    override: object = NULL
+    /
+
+Formats the Decimal according to format_spec.
+[clinic start generated code]*/
+
 static PyObject *
-dec_format(PyObject *dec, PyObject *args)
+_decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
+                                 PyObject *override)
+/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=e53488e49a0fff00]*/
 {
     PyObject *result = NULL;
-    PyObject *override = NULL;
     PyObject *dot = NULL;
     PyObject *sep = NULL;
     PyObject *grouping = NULL;
-    PyObject *fmtarg;
     PyObject *context;
     mpd_spec_t spec;
     char *fmt;
@@ -3536,42 +3644,29 @@ dec_format(PyObject *dec, PyObject *args)
     uint32_t status = 0;
     int replace_fillchar = 0;
     Py_ssize_t size;
-
-
     decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
     CURRENT_CONTEXT(state, context);
-    if (!PyArg_ParseTuple(args, "O|O", &fmtarg, &override)) {
+    fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
+    if (fmt == NULL) {
         return NULL;
     }
 
-    if (PyUnicode_Check(fmtarg)) {
-        fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
+    if (size > 0 && fmt[size-1] == 'N') {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Format specifier 'N' is deprecated", 1) < 0) {
+            return NULL;
+        }
+    }
+
+    if (size > 0 && fmt[0] == '\0') {
+        /* NUL fill character: must be replaced with a valid UTF-8 char
+           before calling mpd_parse_fmt_str(). */
+        replace_fillchar = 1;
+        fmt = dec_strdup(fmt, size);
         if (fmt == NULL) {
             return NULL;
         }
-
-        if (size > 0 && fmt[size-1] == 'N') {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                             "Format specifier 'N' is deprecated", 1) < 0) {
-                return NULL;
-            }
-        }
-
-        if (size > 0 && fmt[0] == '\0') {
-            /* NUL fill character: must be replaced with a valid UTF-8 char
-               before calling mpd_parse_fmt_str(). */
-            replace_fillchar = 1;
-            fmt = dec_strdup(fmt, size);
-            if (fmt == NULL) {
-                return NULL;
-            }
-            fmt[0] = '_';
-        }
-    }
-    else {
-        PyErr_SetString(PyExc_TypeError,
-            "format arg must be str");
-        return NULL;
+        fmt[0] = '_';
     }
 
     if (!mpd_parse_fmt_str(&spec, fmt, CtxCaps(context))) {
@@ -3750,9 +3845,18 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
     return PyLongWriter_Finish(writer);
 }
 
-/* Convert a Decimal to its exact integer ratio representation. */
+/*[clinic input]
+_decimal.Decimal.as_integer_ratio
+
+Return a pair of integers whose ratio is exactly equal to the original.
+
+The ratio is in lowest terms and with a positive denominator.
+Raise OverflowError on infinities and a ValueError on NaNs.
+[clinic start generated code]*/
+
 static PyObject *
-dec_as_integer_ratio(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_as_integer_ratio_impl(PyObject *self)
+/*[clinic end generated code: output=c5d88e900080c264 input=7861cb643f01525a]*/
 {
     PyObject *numerator = NULL;
     PyObject *denominator = NULL;
@@ -3854,21 +3958,29 @@ error:
     return result;
 }
 
+/*[clinic input]
+_decimal.Decimal.to_integral_value
+
+    rounding: object = None
+    context: object = None
+
+Round to the nearest integer without signaling Inexact or Rounded.
+
+The rounding mode is determined by the rounding parameter if given,
+else by the given context. If neither parameter is given, then the
+rounding mode of the current default context is used.
+[clinic start generated code]*/
+
 static PyObject *
-PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
+_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+                                        PyObject *context)
+/*[clinic end generated code: output=7301465765f48b6b input=04e2312d5ed19f77]*/
 {
-    static char *kwlist[] = {"rounding", "context", NULL};
     PyObject *result;
-    PyObject *rounding = Py_None;
-    PyObject *context = Py_None;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO", kwlist,
-                                     &rounding, &context)) {
-        return NULL;
-    }
-    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -3887,7 +3999,7 @@ PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    mpd_qround_to_int(MPD(result), MPD(dec), &workctx, &status);
+    mpd_qround_to_int(MPD(result), MPD(self), &workctx, &status);
     if (dec_addstatus(context, status)) {
         Py_DECREF(result);
         return NULL;
@@ -3896,21 +4008,50 @@ PyDec_ToIntegralValue(PyObject *dec, PyObject *args, PyObject *kwds)
     return result;
 }
 
+/*[clinic input]
+_decimal.Decimal.to_integral
+
+    rounding: object = None
+    context: object = None
+
+Identical to the to_integral_value() method.
+
+The to_integral() name has been kept for compatibility with older
+versions.
+[clinic start generated code]*/
+
 static PyObject *
-PyDec_ToIntegralExact(PyObject *dec, PyObject *args, PyObject *kwds)
+_decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
+                                  PyObject *context)
+/*[clinic end generated code: output=a0c7188686ee7f5c input=8eac6def038d13b9]*/
 {
-    static char *kwlist[] = {"rounding", "context", NULL};
+    return _decimal_Decimal_to_integral_value_impl(self, rounding, context);
+}
+
+/*[clinic input]
+_decimal.Decimal.to_integral_exact
+
+    rounding: object = None
+    context: object = None
+
+Round to the nearest integer.
+
+Decimal.to_integral_exact() signals Inexact or Rounded as appropriate
+if rounding occurs.  The rounding mode is determined by the rounding
+parameter if given, else by the given context. If neither parameter is
+given, then the rounding mode of the current default context is used.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
+                                        PyObject *context)
+/*[clinic end generated code: output=8b004f9b45ac7746 input=c290166f59c1d6ab]*/
+{
     PyObject *result;
-    PyObject *rounding = Py_None;
-    PyObject *context = Py_None;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO", kwlist,
-                                     &rounding, &context)) {
-        return NULL;
-    }
-    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -3929,7 +4070,7 @@ PyDec_ToIntegralExact(PyObject *dec, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    mpd_qround_to_intx(MPD(result), MPD(dec), &workctx, &status);
+    mpd_qround_to_intx(MPD(result), MPD(self), &workctx, &status);
     if (dec_addstatus(context, status)) {
         Py_DECREF(result);
         return NULL;
@@ -4018,9 +4159,15 @@ PyDec_Round(PyObject *dec, PyObject *args)
     }
 }
 
-/* Return the DecimalTuple representation of a PyDecObject. */
+/*[clinic input]
+_decimal.Decimal.as_tuple
+
+Return a tuple representation of the number.
+[clinic start generated code]*/
+
 static PyObject *
-PyDec_AsTuple(PyObject *dec, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_as_tuple_impl(PyObject *self)
+/*[clinic end generated code: output=c6e8e2420c515eca input=e26f2151d78ff59d]*/
 {
     PyObject *result = NULL;
     PyObject *sign = NULL;
@@ -4032,13 +4179,13 @@ PyDec_AsTuple(PyObject *dec, PyObject *Py_UNUSED(dummy))
     Py_ssize_t intlen, i;
 
 
-    x = mpd_qncopy(MPD(dec));
+    x = mpd_qncopy(MPD(self));
     if (x == NULL) {
         PyErr_NoMemory();
         goto out;
     }
 
-    sign = PyLong_FromUnsignedLong(mpd_sign(MPD(dec)));
+    sign = PyLong_FromUnsignedLong(mpd_sign(MPD(self)));
     if (sign == NULL) {
         goto out;
     }
@@ -4059,7 +4206,7 @@ PyDec_AsTuple(PyObject *dec, PyObject *Py_UNUSED(dummy))
             expt = PyUnicode_FromString(mpd_isqnan(x)?"n":"N");
         }
         else {
-            expt = PyLong_FromSsize_t(MPD(dec)->exp);
+            expt = PyLong_FromSsize_t(MPD(self)->exp);
         }
         if (expt == NULL) {
             goto out;
@@ -4100,7 +4247,7 @@ PyDec_AsTuple(PyObject *dec, PyObject *Py_UNUSED(dummy))
         }
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     result = PyObject_CallFunctionObjArgs((PyObject *)state->DecimalTuple,
                                           sign, coeff, expt, NULL);
 
@@ -4504,8 +4651,16 @@ Dec_BoolFuncVA(mpd_isnormal)
 Dec_BoolFuncVA(mpd_issubnormal)
 
 /* Unary functions, no context arg */
+
+/*[clinic input]
+_decimal.Decimal.adjusted
+
+Return the adjusted exponent (exp + digits - 1) of the number.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_adjexp(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_adjusted_impl(PyObject *self)
+/*[clinic end generated code: output=21ea2c9f23994c52 input=8ba2029d8d906b18]*/
 {
     mpd_ssize_t retval;
 
@@ -4519,14 +4674,31 @@ dec_mpd_adjexp(PyObject *self, PyObject *Py_UNUSED(dummy))
     return PyLong_FromSsize_t(retval);
 }
 
+/*[clinic input]
+_decimal.Decimal.canonical
+
+Return the canonical encoding of the argument.
+
+Currently, the encoding of a Decimal instance is always canonical,
+so this operation returns its argument unchanged.
+[clinic start generated code]*/
+
 static PyObject *
-dec_canonical(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_canonical_impl(PyObject *self)
+/*[clinic end generated code: output=3cbeb47d91e6da2d input=8a4719d14c52d521]*/
 {
     return Py_NewRef(self);
 }
 
+/*[clinic input]
+_decimal.Decimal.conjugate
+
+Return self.
+[clinic start generated code]*/
+
 static PyObject *
-dec_conjugate(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_conjugate_impl(PyObject *self)
+/*[clinic end generated code: output=9a37bf633f25a291 input=c7179975ef74fd84]*/
 {
     return Py_NewRef(self);
 }
@@ -4545,15 +4717,35 @@ _dec_mpd_radix(decimal_state *state)
     return result;
 }
 
+/*[clinic input]
+_decimal.Decimal.radix
+
+Return Decimal(10).
+
+This is the radix (base) in which the Decimal class does
+all its arithmetic. Included for compatibility with the specification.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_radix(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_radix_impl(PyObject *self)
+/*[clinic end generated code: output=6b1db4c3fcdb5ee1 input=18b72393549ca8fd]*/
 {
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     return _dec_mpd_radix(state);
 }
 
+/*[clinic input]
+_decimal.Decimal.copy_abs
+
+Return the absolute value of the argument.
+
+This operation is unaffected by context and is quiet: no flags are
+changed and no rounding is performed.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_qcopy_abs(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_copy_abs_impl(PyObject *self)
+/*[clinic end generated code: output=fff53742cca94d70 input=a263c2e71d421f1b]*/
 {
     PyObject *result;
     uint32_t status = 0;
@@ -4573,8 +4765,18 @@ dec_mpd_qcopy_abs(PyObject *self, PyObject *Py_UNUSED(dummy))
     return result;
 }
 
+/*[clinic input]
+_decimal.Decimal.copy_negate
+
+Return the negation of the argument.
+
+This operation is unaffected by context and is quiet: no flags are
+changed and no rounding is performed.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_qcopy_negate(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal_copy_negate_impl(PyObject *self)
+/*[clinic end generated code: output=8551bc26dbc5d01d input=13d47ed3a5d228b1]*/
 {
     PyObject *result;
     uint32_t status = 0;
@@ -4598,17 +4800,37 @@ dec_mpd_qcopy_negate(PyObject *self, PyObject *Py_UNUSED(dummy))
 Dec_UnaryFuncVA(mpd_qinvert)
 Dec_UnaryFuncVA(mpd_qlogb)
 
+/*[clinic input]
+_decimal.Decimal.number_class
+
+    context: object = None
+
+Return a string describing the class of the operand.
+
+The returned value is one of the following ten strings:
+
+    * '-Infinity', indicating that the operand is negative infinity.
+    * '-Normal', indicating that the operand is a negative normal
+      number.
+    * '-Subnormal', indicating that the operand is negative and
+      subnormal.
+    * '-Zero', indicating that the operand is a negative zero.
+    * '+Zero', indicating that the operand is a positive zero.
+    * '+Subnormal', indicating that the operand is positive and
+      subnormal.
+    * '+Normal', indicating that the operand is a positive normal
+      number.
+    * '+Infinity', indicating that the operand is positive infinity.
+    * 'NaN', indicating that the operand is a quiet NaN (Not a Number).
+    * 'sNaN', indicating that the operand is a signaling NaN.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_class(PyObject *self, PyObject *args, PyObject *kwds)
+_decimal_Decimal_number_class_impl(PyObject *self, PyObject *context)
+/*[clinic end generated code: output=3044cd45966b4949 input=f3d6cdda603e8b89]*/
 {
-    static char *kwlist[] = {"context", NULL};
-    PyObject *context = Py_None;
     const char *cp;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,
-                                     &context)) {
-        return NULL;
-    }
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
 
@@ -4616,19 +4838,30 @@ dec_mpd_class(PyObject *self, PyObject *args, PyObject *kwds)
     return PyUnicode_FromString(cp);
 }
 
+/*[clinic input]
+_decimal.Decimal.to_eng_string
+
+    context: object = None
+
+Convert to an engineering-type string.
+
+Engineering notation has an exponent which is a multiple of 3, so there
+are up to 3 digits left of the decimal place. For example,
+Decimal('123E+1') is converted to Decimal('1.23E+3').
+
+The value of context.capitals determines whether the exponent sign is
+lower or upper case. Otherwise, the context does not affect the
+operation.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_to_eng(PyObject *self, PyObject *args, PyObject *kwds)
+_decimal_Decimal_to_eng_string_impl(PyObject *self, PyObject *context)
+/*[clinic end generated code: output=d386194c25ffffa7 input=2e13e7c7c1bad2ad]*/
 {
-    static char *kwlist[] = {"context", NULL};
     PyObject *result;
-    PyObject *context = Py_None;
     mpd_ssize_t size;
     char *s;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist,
-                                     &context)) {
-        return NULL;
-    }
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
 
@@ -4648,20 +4881,34 @@ dec_mpd_to_eng(PyObject *self, PyObject *args, PyObject *kwds)
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total)
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total_mag)
 
+/*[clinic input]
+_decimal.Decimal.copy_sign
+
+    other: object
+    context: object = None
+
+Return a copy of *self* with the sign of *other*.
+
+For example:
+
+    >>> Decimal('2.3').copy_sign(Decimal('-1.5'))
+    Decimal('-2.3')
+
+This operation is unaffected by context and is quiet: no flags are
+changed and no rounding is performed. As an exception, the C version
+may raise InvalidOperation if the second operand cannot be converted
+exactly.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_qcopy_sign(PyObject *self, PyObject *args, PyObject *kwds)
+_decimal_Decimal_copy_sign_impl(PyObject *self, PyObject *other,
+                                PyObject *context)
+/*[clinic end generated code: output=72c62177763e012e input=8410238d533a06eb]*/
 {
-    static char *kwlist[] = {"other", "context", NULL};
-    PyObject *other;
     PyObject *a, *b;
     PyObject *result;
-    PyObject *context = Py_None;
     uint32_t status = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist,
-                                     &other, &context)) {
-        return NULL;
-    }
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);
@@ -4684,19 +4931,28 @@ dec_mpd_qcopy_sign(PyObject *self, PyObject *args, PyObject *kwds)
     return result;
 }
 
+/*[clinic input]
+_decimal.Decimal.same_quantum
+
+    other: object
+    context: object = None
+
+Test whether self and other have the same exponent or both are NaN.
+
+This operation is unaffected by context and is quiet: no flags are
+changed and no rounding is performed. As an exception, the C version
+may raise InvalidOperation if the second operand cannot be converted
+exactly.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_same_quantum(PyObject *self, PyObject *args, PyObject *kwds)
+_decimal_Decimal_same_quantum_impl(PyObject *self, PyObject *other,
+                                   PyObject *context)
+/*[clinic end generated code: output=c0a3a046c662a7e2 input=3ae45df81d6edb73]*/
 {
-    static char *kwlist[] = {"other", "context", NULL};
-    PyObject *other;
     PyObject *a, *b;
     PyObject *result;
-    PyObject *context = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist,
-                                     &other, &context)) {
-        return NULL;
-    }
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);
@@ -4717,22 +4973,48 @@ Dec_BinaryFuncVA(mpd_qrotate)
 Dec_BinaryFuncVA(mpd_qscaleb)
 Dec_BinaryFuncVA(mpd_qshift)
 
+/*[clinic input]
+_decimal.Decimal.quantize
+
+    exp as w: object
+    rounding: object = None
+    context: object = None
+
+Quantize *self* so its exponent is the same as that of *exp*.
+
+Return a value equal to *self* after rounding, with the exponent
+of *exp*.
+
+    >>> Decimal('1.41421356').quantize(Decimal('1.000'))
+    Decimal('1.414')
+
+Unlike other operations, if the length of the coefficient after the
+quantize operation would be greater than precision, then an
+InvalidOperation is signaled.  This guarantees that, unless there
+is an error condition, the quantized exponent is always equal to
+that of the right-hand operand.
+
+Also unlike other operations, quantize never signals Underflow, even
+if the result is subnormal and inexact.
+
+If the exponent of the second operand is larger than that of the first,
+then rounding may be necessary. In this case, the rounding mode is
+determined by the rounding argument if given, else by the given context
+argument; if neither argument is given, the rounding mode of the
+current thread's context is used.
+[clinic start generated code]*/
+
 static PyObject *
-dec_mpd_qquantize(PyObject *v, PyObject *args, PyObject *kwds)
+_decimal_Decimal_quantize_impl(PyObject *self, PyObject *w,
+                               PyObject *rounding, PyObject *context)
+/*[clinic end generated code: output=5e84581f96dc685c input=4c7d28d36948e9aa]*/
 {
-    static char *kwlist[] = {"exp", "rounding", "context", NULL};
-    PyObject *rounding = Py_None;
-    PyObject *context = Py_None;
-    PyObject *w, *a, *b;
+    PyObject *a, *b;
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OO", kwlist,
-                                     &w, &rounding, &context)) {
-        return NULL;
-    }
-    decimal_state *state = get_module_state_by_def(Py_TYPE(v));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -4746,7 +5028,7 @@ dec_mpd_qquantize(PyObject *v, PyObject *args, PyObject *kwds)
         }
     }
 
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
+    CONVERT_BINOP_RAISE(&a, &b, self, w, context);
 
     result = dec_alloc(state);
     if (result == NULL) {
@@ -5081,9 +5363,9 @@ static PyMethodDef dec_methods [] =
   { "next_minus", _PyCFunction_CAST(dec_mpd_qnext_minus), METH_VARARGS|METH_KEYWORDS, doc_next_minus },
   { "next_plus", _PyCFunction_CAST(dec_mpd_qnext_plus), METH_VARARGS|METH_KEYWORDS, doc_next_plus },
   { "normalize", _PyCFunction_CAST(dec_mpd_qreduce), METH_VARARGS|METH_KEYWORDS, doc_normalize },
-  { "to_integral", _PyCFunction_CAST(PyDec_ToIntegralValue), METH_VARARGS|METH_KEYWORDS, doc_to_integral },
-  { "to_integral_exact", _PyCFunction_CAST(PyDec_ToIntegralExact), METH_VARARGS|METH_KEYWORDS, doc_to_integral_exact },
-  { "to_integral_value", _PyCFunction_CAST(PyDec_ToIntegralValue), METH_VARARGS|METH_KEYWORDS, doc_to_integral_value },
+  _DECIMAL_DECIMAL_TO_INTEGRAL_METHODDEF
+  _DECIMAL_DECIMAL_TO_INTEGRAL_EXACT_METHODDEF
+  _DECIMAL_DECIMAL_TO_INTEGRAL_VALUE_METHODDEF
   { "sqrt", _PyCFunction_CAST(dec_mpd_qsqrt), METH_VARARGS|METH_KEYWORDS, doc_sqrt },
 
   /* Binary arithmetic functions, optional context arg */
@@ -5094,7 +5376,7 @@ static PyMethodDef dec_methods [] =
   { "min", _PyCFunction_CAST(dec_mpd_qmin), METH_VARARGS|METH_KEYWORDS, doc_min },
   { "min_mag", _PyCFunction_CAST(dec_mpd_qmin_mag), METH_VARARGS|METH_KEYWORDS, doc_min_mag },
   { "next_toward", _PyCFunction_CAST(dec_mpd_qnext_toward), METH_VARARGS|METH_KEYWORDS, doc_next_toward },
-  { "quantize", _PyCFunction_CAST(dec_mpd_qquantize), METH_VARARGS|METH_KEYWORDS, doc_quantize },
+  _DECIMAL_DECIMAL_QUANTIZE_METHODDEF
   { "remainder_near", _PyCFunction_CAST(dec_mpd_qrem_near), METH_VARARGS|METH_KEYWORDS, doc_remainder_near },
 
   /* Ternary arithmetic functions, optional context arg */
@@ -5115,26 +5397,26 @@ static PyMethodDef dec_methods [] =
   { "is_subnormal", _PyCFunction_CAST(dec_mpd_issubnormal), METH_VARARGS|METH_KEYWORDS, doc_is_subnormal },
 
   /* Unary functions, no context arg */
-  { "adjusted", dec_mpd_adjexp, METH_NOARGS, doc_adjusted },
-  { "canonical", dec_canonical, METH_NOARGS, doc_canonical },
-  { "conjugate", dec_conjugate, METH_NOARGS, doc_conjugate },
-  { "radix", dec_mpd_radix, METH_NOARGS, doc_radix },
+  _DECIMAL_DECIMAL_ADJUSTED_METHODDEF
+  _DECIMAL_DECIMAL_CANONICAL_METHODDEF
+  _DECIMAL_DECIMAL_CONJUGATE_METHODDEF
+  _DECIMAL_DECIMAL_RADIX_METHODDEF
 
   /* Unary functions, optional context arg for conversion errors */
-  { "copy_abs", dec_mpd_qcopy_abs, METH_NOARGS, doc_copy_abs },
-  { "copy_negate", dec_mpd_qcopy_negate, METH_NOARGS, doc_copy_negate },
+  _DECIMAL_DECIMAL_COPY_ABS_METHODDEF
+  _DECIMAL_DECIMAL_COPY_NEGATE_METHODDEF
 
   /* Unary functions, optional context arg */
   { "logb", _PyCFunction_CAST(dec_mpd_qlogb), METH_VARARGS|METH_KEYWORDS, doc_logb },
   { "logical_invert", _PyCFunction_CAST(dec_mpd_qinvert), METH_VARARGS|METH_KEYWORDS, doc_logical_invert },
-  { "number_class", _PyCFunction_CAST(dec_mpd_class), METH_VARARGS|METH_KEYWORDS, doc_number_class },
-  { "to_eng_string", _PyCFunction_CAST(dec_mpd_to_eng), METH_VARARGS|METH_KEYWORDS, doc_to_eng_string },
+  _DECIMAL_DECIMAL_NUMBER_CLASS_METHODDEF
+  _DECIMAL_DECIMAL_TO_ENG_STRING_METHODDEF
 
   /* Binary functions, optional context arg for conversion errors */
   { "compare_total", _PyCFunction_CAST(dec_mpd_compare_total), METH_VARARGS|METH_KEYWORDS, doc_compare_total },
   { "compare_total_mag", _PyCFunction_CAST(dec_mpd_compare_total_mag), METH_VARARGS|METH_KEYWORDS, doc_compare_total_mag },
-  { "copy_sign", _PyCFunction_CAST(dec_mpd_qcopy_sign), METH_VARARGS|METH_KEYWORDS, doc_copy_sign },
-  { "same_quantum", _PyCFunction_CAST(dec_mpd_same_quantum), METH_VARARGS|METH_KEYWORDS, doc_same_quantum },
+  _DECIMAL_DECIMAL_COPY_SIGN_METHODDEF
+  _DECIMAL_DECIMAL_SAME_QUANTUM_METHODDEF
 
   /* Binary functions, optional context arg */
   { "logical_and", _PyCFunction_CAST(dec_mpd_qand), METH_VARARGS|METH_KEYWORDS, doc_logical_and },
@@ -5145,15 +5427,15 @@ static PyMethodDef dec_methods [] =
   { "shift", _PyCFunction_CAST(dec_mpd_qshift), METH_VARARGS|METH_KEYWORDS, doc_shift },
 
   /* Miscellaneous */
-  { "from_float", dec_from_float, METH_O|METH_CLASS, doc_from_float },
-  { "from_number", dec_from_number, METH_O|METH_CLASS, doc_from_number },
-  { "as_tuple", PyDec_AsTuple, METH_NOARGS, doc_as_tuple },
-  { "as_integer_ratio", dec_as_integer_ratio, METH_NOARGS, doc_as_integer_ratio },
+  _DECIMAL_DECIMAL_FROM_FLOAT_METHODDEF
+  _DECIMAL_DECIMAL_FROM_NUMBER_METHODDEF
+  _DECIMAL_DECIMAL_AS_TUPLE_METHODDEF
+  _DECIMAL_DECIMAL_AS_INTEGER_RATIO_METHODDEF
 
   /* Special methods */
   { "__copy__", dec_copy, METH_NOARGS, NULL },
   { "__deepcopy__", dec_copy, METH_O, NULL },
-  { "__format__", dec_format, METH_VARARGS, NULL },
+  _DECIMAL_DECIMAL___FORMAT___METHODDEF
   { "__reduce__", dec_reduce, METH_NOARGS, NULL },
   { "__round__", PyDec_Round, METH_VARARGS, NULL },
   { "__ceil__", dec_ceil, METH_NOARGS, NULL },
@@ -5450,19 +5732,40 @@ ctx_mpd_qdivmod(PyObject *context, PyObject *args)
 }
 
 /* Binary or ternary arithmetic functions */
+
+/*[clinic input]
+_decimal.Context.power
+
+    self as context: self
+    a as base: object
+    b as exp: object
+    modulo as mod: object = None
+
+Compute a**b.
+
+If 'a' is negative, then 'b' must be integral. The result will be
+inexact unless 'a' is integral and the result is finite and can be
+expressed exactly in 'precision' digits.  In the Python version the
+result is always correctly rounded, in the C version the result is
+almost always correctly rounded.
+
+If modulo is given, compute (a**b) % modulo. The following
+restrictions hold:
+
+    * all three arguments must be integral
+    * 'b' must be nonnegative
+    * at least one of 'a' or 'b' must be nonzero
+    * modulo must be nonzero and less than 10**prec in absolute value
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_qpow(PyObject *context, PyObject *args, PyObject *kwds)
+_decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
+                            PyObject *mod)
+/*[clinic end generated code: output=d2e68694ec545245 input=e9aef844813de243]*/
 {
-    static char *kwlist[] = {"a", "b", "modulo", NULL};
-    PyObject *base, *exp, *mod = Py_None;
     PyObject *a, *b, *c = NULL;
     PyObject *result;
     uint32_t status = 0;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|O", kwlist,
-                                     &base, &exp, &mod)) {
-        return NULL;
-    }
 
     CONVERT_BINOP_RAISE(&a, &b, base, exp, context);
 
@@ -5784,7 +6087,7 @@ static PyMethodDef context_methods [] =
   { "subtract", ctx_mpd_qsub, METH_VARARGS, doc_ctx_subtract },
 
   /* Binary or ternary arithmetic functions */
-  { "power", _PyCFunction_CAST(ctx_mpd_qpow), METH_VARARGS|METH_KEYWORDS, doc_ctx_power },
+  _DECIMAL_CONTEXT_POWER_METHODDEF
 
   /* Ternary arithmetic functions */
   { "fma", ctx_mpd_qfma, METH_VARARGS, doc_ctx_fma },
@@ -5881,10 +6184,10 @@ static PyType_Spec context_spec = {
 
 static PyMethodDef _decimal_methods [] =
 {
-  { "getcontext", PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
-  { "setcontext", PyDec_SetCurrentContext, METH_O, doc_setcontext},
-  { "localcontext", _PyCFunction_CAST(ctxmanager_new), METH_VARARGS|METH_KEYWORDS, doc_localcontext},
-  { "IEEEContext", ieee_context, METH_O, doc_ieee_context},
+  _DECIMAL_GETCONTEXT_METHODDEF
+  _DECIMAL_SETCONTEXT_METHODDEF
+  _DECIMAL_LOCALCONTEXT_METHODDEF
+  _DECIMAL_IEEECONTEXT_METHODDEF
   { NULL, NULL, 1, NULL }
 };
 

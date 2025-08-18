@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import hashlib
 import tempfile
 from urllib.request import urlopen
 from pathlib import Path
@@ -164,20 +165,60 @@ def make_build_python(context, working_dir):
     print(f"🎉 {binary} {version}")
 
 
-@subdir(HOST_BUILD_DIR, clean_ok=True)
-def make_emscripten_libffi(context, working_dir):
-    shutil.rmtree(working_dir / "libffi-3.4.6", ignore_errors=True)
+def check_shasum(file: str, expected_shasum: str):
+    with open(file, "rb") as f:
+        digest = hashlib.file_digest(f, "sha256")
+    if digest.hexdigest() != expected_shasum:
+        raise RuntimeError(f"Unexpected shasum for {file}")
+
+
+def download_and_unpack(working_dir: Path, url: str, expected_shasum: str):
     with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete_on_close=False) as tmp_file:
-        with urlopen(
-            "https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz"
-        ) as response:
+        with urlopen(url) as response:
             shutil.copyfileobj(response, tmp_file)
         tmp_file.close()
+        check_shasum(tmp_file.name, expected_shasum)
         shutil.unpack_archive(tmp_file.name, working_dir)
+
+
+@subdir(HOST_BUILD_DIR, clean_ok=True)
+def make_emscripten_libffi(context, working_dir):
+    ver = "3.4.6"
+    libffi_dir = working_dir / f"libffi-{ver}"
+    shutil.rmtree(libffi_dir, ignore_errors=True)
+    download_and_unpack(working_dir, f"https://github.com/libffi/libffi/releases/download/v{ver}/libffi-{ver}.tar.gz", "b0dea9df23c863a7a50e825440f3ebffabd65df1497108e5d437747843895a4e")
     call(
         [EMSCRIPTEN_DIR / "make_libffi.sh"],
         env=updated_env({"PREFIX": PREFIX_DIR}),
-        cwd=working_dir / "libffi-3.4.6",
+        cwd=libffi_dir,
+        quiet=context.quiet,
+    )
+
+
+@subdir(HOST_BUILD_DIR, clean_ok=True)
+def make_mpdec(context, working_dir):
+    ver = "4.0.1"
+    mpdec_dir = working_dir / f"mpdecimal-{ver}"
+    shutil.rmtree(mpdec_dir, ignore_errors=True)
+    download_and_unpack(working_dir, f"https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-{ver}.tar.gz", "96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8")
+    call(
+        [
+            "emconfigure",
+            mpdec_dir / "configure",
+            "CFLAGS=-fPIC",
+            "--prefix",
+            PREFIX_DIR,
+            "--disable-shared",
+        ],
+        cwd=mpdec_dir,
+        quiet=context.quiet,
+    )
+    call(
+        [
+            "make",
+            "install"
+        ],
+        cwd=mpdec_dir,
         quiet=context.quiet,
     )
 
@@ -186,7 +227,7 @@ def make_emscripten_libffi(context, working_dir):
 def configure_emscripten_python(context, working_dir):
     """Configure the emscripten/host build."""
     config_site = os.fsdecode(
-        CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-emscripten"
+        EMSCRIPTEN_DIR / "config.site-wasm32-emscripten"
     )
 
     emscripten_build_dir = working_dir.relative_to(CHECKOUT)
@@ -315,6 +356,7 @@ def build_all(context):
         configure_build_python,
         make_build_python,
         make_emscripten_libffi,
+        make_mpdec,
         configure_emscripten_python,
         make_emscripten_python,
     ]
@@ -343,6 +385,9 @@ def main():
     configure_build = subcommands.add_parser(
         "configure-build-python", help="Run `configure` for the " "build Python"
     )
+    make_mpdec_cmd = subcommands.add_parser(
+        "make-mpdec", help="Clone mpdec repo, configure and build it for emscripten"
+    )
     make_libffi_cmd = subcommands.add_parser(
         "make-libffi", help="Clone libffi repo, configure and build it for emscripten"
     )
@@ -363,6 +408,7 @@ def main():
         build,
         configure_build,
         make_libffi_cmd,
+        make_mpdec_cmd,
         make_build,
         configure_host,
         make_host,
@@ -400,6 +446,7 @@ def main():
 
     dispatch = {
         "make-libffi": make_emscripten_libffi,
+        "make-mpdec": make_mpdec,
         "configure-build-python": configure_build_python,
         "make-build-python": make_build_python,
         "configure-host": configure_emscripten_python,

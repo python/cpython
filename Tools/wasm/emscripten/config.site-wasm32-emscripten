@@ -1,6 +1,6 @@
 # config.site override for cross compiling to wasm32-emscripten platform
 #
-# CONFIG_SITE=Tools/wasm/config.site-wasm32-emscripten \
+# CONFIG_SITE=Tools/wasm/emscripten/config.site-wasm32-emscripten \
 #     emconfigure ./configure --host=wasm32-unknown-emscripten --build=...
 #
 # Written by Christian Heimes <christian@python.org>
@@ -69,7 +69,6 @@ ac_cv_func_posix_fallocate=no
 
 # Syscalls that resulted in a segfault
 ac_cv_func_utimensat=no
-ac_cv_header_sys_ioctl_h=no
 
 # sockets are supported, but only AF_INET / AF_INET6 in non-blocking mode.
 # Disable AF_UNIX and AF_PACKET support, see socketmodule.h.
