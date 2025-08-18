@@ -1,5 +1,4 @@
 import collections
-import typing
 
 
 # from jaraco.collections 3.3
@@ -25,10 +24,7 @@ class FreezableDefaultDict(collections.defaultdict):
         self._frozen = lambda key: self.default_factory()
 
 
-class Pair(typing.NamedTuple):
-    name: str
-    value: str
-
+class Pair(collections.namedtuple('Pair', 'name value')):
     @classmethod
     def parse(cls, text):
         return cls(*map(str.strip, text.split("=", 1)))

@@ -1,14 +1,9 @@
-# from jaraco.path 3.7.2
-
-from __future__ import annotations
+# from jaraco.path 3.7
 
 import functools
 import pathlib
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Protocol, Union, runtime_checkable
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
+from typing import Dict, Protocol, Union
+from typing import runtime_checkable
 
 
 class Symlink(str):
@@ -17,25 +12,29 @@ class Symlink(str):
     """
 
 
-FilesSpec = Mapping[str, Union[str, bytes, Symlink, 'FilesSpec']]
+FilesSpec = Dict[str, Union[str, bytes, Symlink, 'FilesSpec']]  # type: ignore
 
 
 @runtime_checkable
 class TreeMaker(Protocol):
-    def __truediv__(self, other, /) -> Self: ...
-    def mkdir(self, *, exist_ok) -> object: ...
-    def write_text(self, content, /, *, encoding) -> object: ...
-    def write_bytes(self, content, /) -> object: ...
-    def symlink_to(self, target, /) -> object: ...
+    def __truediv__(self, *args, **kwargs): ...  # pragma: no cover
+
+    def mkdir(self, **kwargs): ...  # pragma: no cover
+
+    def write_text(self, content, **kwargs): ...  # pragma: no cover
+
+    def write_bytes(self, content): ...  # pragma: no cover
+
+    def symlink_to(self, target): ...  # pragma: no cover
 
 
-def _ensure_tree_maker(obj: str | TreeMaker) -> TreeMaker:
-    return obj if isinstance(obj, TreeMaker) else pathlib.Path(obj)
+def _ensure_tree_maker(obj: Union[str, TreeMaker]) -> TreeMaker:
+    return obj if isinstance(obj, TreeMaker) else pathlib.Path(obj)  # type: ignore
 
 
 def build(
     spec: FilesSpec,
-    prefix: str | TreeMaker = pathlib.Path(),
+    prefix: Union[str, TreeMaker] = pathlib.Path(),  # type: ignore
 ):
     """
     Build a set of files/directories, as described by the spec.
@@ -67,24 +66,23 @@ def build(
 
 
 @functools.singledispatch
-def create(content: str | bytes | FilesSpec, path: TreeMaker) -> None:
+def create(content: Union[str, bytes, FilesSpec], path):
     path.mkdir(exist_ok=True)
-    # Mypy only looks at the signature of the main singledispatch method. So it must contain the complete Union
-    build(content, prefix=path)  # type: ignore[arg-type] # python/mypy#11727
+    build(content, prefix=path)  # type: ignore
 
 
 @create.register
-def _(content: bytes, path: TreeMaker) -> None:
+def _(content: bytes, path):
     path.write_bytes(content)
 
 
 @create.register
-def _(content: str, path: TreeMaker) -> None:
+def _(content: str, path):
     path.write_text(content, encoding='utf-8')
 
 
 @create.register
-def _(content: Symlink, path: TreeMaker) -> None:
+def _(content: Symlink, path):
     path.symlink_to(content)
 
 
