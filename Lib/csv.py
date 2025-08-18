@@ -386,12 +386,14 @@ class Sniffer:
                         charFrequency[char][count] += 1
 
             for char, counts in charFrequency.items():
-                presentCount = sum(counts.values())
-                zeroCount = num_lines - presentCount
-                if zeroCount > 0:
-                    items = list(counts.items()) + [(0, zeroCount)]
-                else:
-                    items = list(counts.items())
+                items = list(counts.items())
+                missed_lines = num_lines - sum(counts.values())
+                if missed_lines:
+                    # charFrequency[char][0] can only be deduced now
+                    # as it cannot be obtained when parsing the lines.
+                    assert 0 not in counts.keys()
+                    # Store the number of lines 'char' was missing from.
+                    items.append((0, missed_lines))
                 if len(items) == 1 and items[0][0] == 0:
                     continue
                 # get the mode of the frequencies
