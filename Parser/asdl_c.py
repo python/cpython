@@ -887,11 +887,10 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     }
     else if (contains == 1) {
         if (PyErr_WarnFormat(
-            PyExc_DeprecationWarning, 1,
-            "Instantiating abstract AST node class %T is deprecated. "
-            "This will become an error in Python 3.20",
-            self
-        ) < 0) {
+                PyExc_DeprecationWarning, 1,
+                "Instantiating abstract AST node class %T is deprecated. "
+                "This will become an error in Python 3.20", self) < 0)
+        {
             return -1;
         }
     }
@@ -1458,23 +1457,6 @@ cleanup:
     return result;
 }
 
-/* Helper for checking if a node class is abstract in the tests. */
-static PyObject *
-ast_is_abstract(PyObject *cls, void *Py_UNUSED(ignored)) {
-    struct ast_state *state = get_ast_state();
-    if (state == NULL) {
-        return NULL;
-    }
-    int contains = PySet_Contains(state->abstract_types, cls);
-    if (contains == -1) {
-        return NULL;
-    }
-    else if (contains == 1) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
-}
-
 static PyMemberDef ast_type_members[] = {
     {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
     {NULL}  /* Sentinel */
@@ -1486,7 +1468,6 @@ static PyMethodDef ast_type_methods[] = {
      PyDoc_STR("__replace__($self, /, **fields)\\n--\\n\\n"
                "Return a copy of the AST node with new values "
                "for the specified fields.")},
-    {"_is_abstract", _PyCFunction_CAST(ast_is_abstract), METH_CLASS | METH_NOARGS, NULL},
     {NULL}
 };
 
@@ -2001,6 +1982,30 @@ static int add_ast_fields(struct ast_state *state)
 class ASTModuleVisitor(PickleVisitor):
 
     def visitModule(self, mod):
+        self.emit("""
+/* Helper for checking if a node class is abstract in the tests. */
+static PyObject *
+ast_is_abstract(PyObject *Py_UNUSED(module), PyObject *cls) {
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return NULL;
+    }
+    int contains = PySet_Contains(state->abstract_types, cls);
+    if (contains == -1) {
+        return NULL;
+    }
+    else if (contains == 1) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+static struct PyMethodDef astmodule_methods[] = {
+    {"_is_abstract", ast_is_abstract, METH_O, NULL},
+    {NULL}  /* Sentinel */
+};
+""".strip(), 0, reflow=False)
+        self.emit("", 0)
         self.emit("static int", 0)
         self.emit("astmodule_exec(PyObject *m)", 0)
         self.emit("{", 0)
@@ -2041,7 +2046,8 @@ static struct PyModuleDef _astmodule = {
     .m_name = "_ast",
     // The _ast module uses a per-interpreter state (PyInterpreterState.ast)
     .m_size = 0,
-    .m_slots = astmodule_slots,
+    .m_methods = astmodule_methods,
+    .m_slots = astmodule_slots
 };
 
 PyMODINIT_FUNC
