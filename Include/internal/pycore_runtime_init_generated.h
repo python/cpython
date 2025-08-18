@@ -834,6 +834,7 @@ extern "C" {
     INIT_ID(c_exception), \
     INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
+    INIT_ID(c_stack), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
@@ -848,6 +849,7 @@ extern "C" {
     INIT_ID(category), \
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
+    INIT_ID(chain), \
     INIT_ID(check_same_thread), \
     INIT_ID(clear), \
     INIT_ID(close), \
@@ -942,6 +944,7 @@ extern "C" {
     INIT_ID(excepthook), \
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
+    INIT_ID(exit), \
     INIT_ID(exp), \
     INIT_ID(expression), \
     INIT_ID(extend), \
@@ -1202,6 +1205,7 @@ extern "C" {
     INIT_ID(rel_tol), \
     INIT_ID(release), \
     INIT_ID(reload), \
+    INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
     INIT_ID(reqrefs), \
@@ -1240,6 +1244,7 @@ extern "C" {
     INIT_ID(shared), \
     INIT_ID(show_cmd), \
     INIT_ID(signed), \
+    INIT_ID(signum), \
     INIT_ID(size), \
     INIT_ID(sizehint), \
     INIT_ID(skip_file_prefixes), \
