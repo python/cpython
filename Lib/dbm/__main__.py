@@ -22,10 +22,8 @@ def _whichdb_command(filenames):
 def _dump_command(filename):
     try:
         with dbm_open(filename, "r") as db:
-            for key in db.keys():
-                key_str = key.decode("utf-8", errors="replace")
-                value_str = db[key].decode("utf-8", errors="replace")
-                print(f"{key_str}: {value_str}")
+            for key in db:
+                print(f"{key!r}: {db[key]!r}")
         return 0
     except error:
         print(f"Error: Database '{filename}' not found", file=sys.stderr)

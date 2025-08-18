@@ -364,8 +364,8 @@ class DBMCommandLineTestCase(unittest.TestCase):
 
     def test_dump_command(self):
         output = self.run_cmd_ok('--dump', self.test_db)
-        self.assertIn(b'key1: value1', output)
-        self.assertIn(b'key2: value2', output)
+        self.assertIn(b"b'key1': b'value1'", output)
+        self.assertIn(b"b'key2': b'value2'", output)
 
     def test_dump_empty_database(self):
         output = self.run_cmd_ok('--dump', self.empty_db)
