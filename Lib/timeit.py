@@ -150,7 +150,7 @@ class Timer:
         else:
             raise ValueError("stmt is neither a string nor callable")
         src = template.format(stmt=stmt, setup=setup, init=init,
-                              global_setup=global_setup)
+                              global_setup=global_setup).strip()
         self.src = src  # Save for traceback display
         code = compile(src, dummy_src_name, "exec", **compile_options)
         exec(code, global_ns | local_setup_ns, local_ns)
