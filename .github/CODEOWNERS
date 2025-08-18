@@ -29,6 +29,9 @@
 # Where possible, keep related files together. For example, documentation,
 # code, and tests for a given item should all be listed in the same place.
 #
+# GitHub usernames  should be aligned to column 31, or the next multiple
+# of three if the relevant paths are too long to fit.
+#
 # Top-level sections are:
 #
 # * Buildbots, Continuous Integration, and Testing
@@ -38,7 +41,7 @@
 #     the Makefile, autoconf, and other autotools files.
 # * Documentation
 #     broader sections of documentation, documentation tools
-# * Other / Misc (Tools, Programs, Integration, etc.)
+# * Internal Tools & Data
 #     internal tools, integration with external systems,
 #     entries that don't fit elsewhere
 # * Platform Support
@@ -107,7 +110,7 @@ Doc/whatsnew/                 @AA-Turner
 
 
 # ----------------------------------------------------------------------------
-# Other / Misc (Tools, Programs, Integration, etc.)
+# Internal Tools and Data
 # ----------------------------------------------------------------------------
 
 # Argument Clinic
@@ -121,7 +124,7 @@ Tools/c-analyzer/             @ericsnowcurrently
 # Fuzzing
 Modules/_xxtestfuzz/          @ammaraskar
 
-# Limited C API & stable ABI
+# Limited C API & Stable ABI
 Doc/c-api/stable.rst          @encukou
 Doc/data/*.abi                @encukou
 Misc/stable_abi.toml          @encukou
