@@ -2222,15 +2222,18 @@ has the same effect as typing a particular string at the help> prompt.
 
             * Calling help() with no arguments starts an interactive help session.
 
-            * Calling help(x) will have one of two behaviors depending on the type
-              of the argument:
+            * The behavior of help(x) depends on x's type:
 
                 * If x is a string, help(x) provides information about the given
                   topic.  For example, help("class") will provide information about
                   the "class" keyword, and help("math.sqrt") will provide
                   information about the "math.sqrt" function.
 
-                * If x is not a string, help(x) prints information about x's type.
+                * If x is a class or a built-in type, help(x) provides information
+                  about that type.  For example, help(str) will provide information
+                  about the str type.
+
+                * For all other objects, help(x) prints information about x's type.
                   For example, help(20) will provide information about the int type.
             """))
 
