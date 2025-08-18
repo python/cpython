@@ -274,6 +274,15 @@ http.cookies
   (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
 
 
+locale
+------
+
+* :func:`~locale.setlocale` now supports language codes with ``@``-modifiers.
+  ``@``-modifier are no longer silently removed in :func:`~locale.getlocale`,
+  but included in the language code.
+  (Contributed by Serhiy Storchaka in :gh:`137729`.)
+
+
 math
 ----
 
