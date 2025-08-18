@@ -371,7 +371,7 @@ class Sniffer:
         # build frequency tables
         chunkLength = min(10, len(data))
         iteration = 0
-        seen = 0
+        num_lines = 0
         # {char -> {count_per_line -> num_lines_with_that_count}}
         charFrequency = defaultdict(Counter)
         modes = {}
@@ -380,14 +380,14 @@ class Sniffer:
         while start < len(data):
             iteration += 1
             for line in data[start:end]:
-                seen += 1
+                num_lines += 1
                 for char, count in Counter(line).items():
                     if ord(char) < 127:
                         charFrequency[char][count] += 1
 
             for char, counts in charFrequency.items():
                 presentCount = sum(counts.values())
-                zeroCount = seen - presentCount
+                zeroCount = num_lines - presentCount
                 if zeroCount > 0:
                     items = list(counts.items()) + [(0, zeroCount)]
                 else:
