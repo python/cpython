@@ -1865,26 +1865,26 @@ def collect_dunders(symbols):
         '__format__', '__hash__', '__bool__',
     ]
     for bd in basic_dunders:
-        dunders[bd] = ('customization', 'SPECIALNAMES')
+        dunders[bd] = ('customization', 'SPECIALMETHODS')
 
     attribute_dunders = [
         '__getattr__', '__getattribute__', '__setattr__', '__delattr__',
         '__dir__', '__get__', '__set__', '__delete__', '__objclass__',
     ]
     for ad in attribute_dunders:
-        dunders[ad] = ('attribute-access', 'SPECIALNAMES')
+        dunders[ad] = ('attribute-access', 'SPECIALMETHODS')
 
     class_dunders = [
         '__init_subclass__', '__set_names__', '__mro_entries__',
     ]
     for cd in class_dunders:
-        dunders[cd] = ('class-customization', 'SPECIALNAMES')
+        dunders[cd] = ('class-customization', 'SPECIALMETHODS')
 
     instance_dunders = [
         '__instancecheck__', '__subclasscheck__'
     ]
     for d in instance_dunders:
-        dunders[d] = ('customize-instance-subclass-checks', 'SPECIALNAMES')
+        dunders[d] = ('customize-instance-subclass-checks', 'SPECIALMETHODS')
 
     sequence_dunders = [
        '__len__', '__length_hint__', '__getitem__', '__setitem__',
