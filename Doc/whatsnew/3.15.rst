@@ -417,6 +417,16 @@ module_name
 Deprecated
 ==========
 
+CLI
+___
+
+* The :option:`-R` option. This option is does not have an effect
+  in most cases as hash randomization is enabled by default since Python 3.3.
+  See :meth:`~object.__hash__` for more information about hash randomization.
+
+  (Contributed by Stan Ulbrych in :gh:`137897`)
+
+
 hashlib
 -------
 
