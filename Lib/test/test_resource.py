@@ -216,7 +216,7 @@ class ResourceTest(unittest.TestCase):
                 self.assertIsInstance(getattr(resource, 'RLIMIT_' + attr), int)
 
     def test_freebsd_contants(self):
-        for attr in ['SWAP', 'SBSIZE', 'NPTS', 'UMTXP', 'VMEM']:
+        for attr in ['SWAP', 'SBSIZE', 'NPTS', 'UMTXP', 'VMEM', 'PIPEBUF']:
             with contextlib.suppress(AttributeError):
                 self.assertIsInstance(getattr(resource, 'RLIMIT_' + attr), int)
 

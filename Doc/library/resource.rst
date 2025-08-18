@@ -62,9 +62,7 @@ this module for those platforms.
 
    Constants used to represent the soft and hard limit values if they
    cannot be represented in the ``rlim_t`` value in C.
-   On FreeBSD they are aliases of :data:`RLIM_INFINITY`.
-
-   .. availability:: Solaris, AIX, FreeBSD
+   Can be equal to :data:`RLIM_INFINITY`.
 
    .. versionadded:: next
 
@@ -193,8 +191,9 @@ platform.
 .. data:: RLIMIT_VMEM
 
    The largest area of mapped memory which the process may occupy.
+   Usually an alias of :const:`RLIMIT_AS`.
 
-   .. availability:: Solaris, FreeBSD.
+   .. availability:: Solaris, FreeBSD, NetBSD.
 
 
 .. data:: RLIMIT_AS
@@ -254,7 +253,7 @@ platform.
    This limits the amount of network memory, and hence the amount of mbufs,
    that this user may hold at any time.
 
-   .. availability:: FreeBSD.
+   .. availability:: FreeBSD, NetBSD.
 
    .. versionadded:: 3.4
 
@@ -297,6 +296,16 @@ platform.
    and kernel threads.
 
    .. availability:: NetBSD >= 7.0.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_PIPEBUF
+
+   The maximum total size of in-kernel buffers for bi-directional pipes/fifos
+   that this user id is allowed to consume.
+
+   .. availability:: FreeBSD >= 14.2.
 
    .. versionadded:: next
 
