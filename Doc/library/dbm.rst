@@ -95,6 +95,10 @@ The object returned by :func:`~dbm.open` supports the same basic functionality a
 deleted, and the :keyword:`in` operator and the :meth:`!keys` method are
 available, as well as :meth:`!get` and :meth:`!setdefault` methods.
 
+.. note::
+   Unlike the standard :class:`dict` type, the :meth:`dict.setdefault` method
+   for DBM objects requires both the *key* and *default* parameters.
+
 Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
 being stored.
@@ -203,6 +207,14 @@ or any other SQLite browser, including the SQLite CLI.
          in free disk space. However, be aware that this factor changes for each :mod:`dbm` submodule.
 
       .. versionadded:: next
+
+   .. method:: sqlite3.setdefault(key, default)
+
+      If *key* is in the database, return its value. If not, insert *key* with
+      a value of *default* and return *default*. Unlike :meth:`dict.setdefault`,
+      both parameters are required. Calling ``setdefault(key)`` with only a key
+      will raise :exc:`dbm.sqlite3.error`.
+
 
 :mod:`dbm.gnu` --- GNU database manager
 ---------------------------------------
@@ -323,6 +335,13 @@ functionality like crash tolerance.
 
       .. versionadded:: 3.13
 
+   .. method:: gdbm.setdefault(key, default)
+
+      If *key* is in the database, return its value. If not, insert *key* with
+      a value of *default* and return *default*. Unlike :meth:`dict.setdefault`,
+      both parameters are required. Calling ``setdefault(key)`` with only a key
+      will raise :exc:`TypeError`.
+
 
 :mod:`dbm.ndbm` --- New Database Manager
 ----------------------------------------
@@ -399,6 +418,13 @@ This module can be used with the "classic" NDBM interface or the
       Remove all items from the NDBM database.
 
       .. versionadded:: 3.13
+
+   .. method:: ndbm.setdefault(key, default)
+
+      If *key* is in the database, return its value. If not, insert *key* with
+      a value of *default* and return *default*. Unlike :meth:`dict.setdefault`,
+      both parameters are required. Calling ``setdefault(key)`` with only a key
+      will raise :exc:`_dbm.error`.
 
 
 :mod:`dbm.dumb` --- Portable DBM implementation
@@ -501,3 +527,10 @@ The :mod:`!dbm.dumb` module defines the following:
          that this factor changes for each :mod:`dbm` submodule.
 
       .. versionadded:: next
+
+   .. method:: dumbdbm.setdefault(key, default)
+
+      If *key* is in the database, return its value. If not, insert *key* with
+      a value of *default* and return *default*. Unlike :meth:`dict.setdefault`,
+      both parameters are required. Calling ``setdefault(key)`` with only a key
+      will raise :exc:`TypeError`.
