@@ -411,7 +411,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> import uuid
 
    >>> # make a UUID based on the host ID and current time
-   >>> uuid.uuid1()
+   >>> uuid.uuid1()  # doctest: +SKIP
    UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
 
    >>> # make a UUID using an MD5 hash of a namespace UUID and a name
