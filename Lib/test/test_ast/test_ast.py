@@ -3293,7 +3293,7 @@ class ASTConstructorTests(unittest.TestCase):
             a: int | None = None
             b: int | None = None
 
-        msg = "Field 'b' is missing from .*\.MoreFieldsThanTypes\._field_types"
+        msg = r"Field 'b' is missing from .*\.MoreFieldsThanTypes\._field_types"
         self.assertRaisesRegex(TypeError, msg, MoreFieldsThanTypes)
 
         obj = MoreFieldsThanTypes(a=1, b=2)
