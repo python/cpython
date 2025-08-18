@@ -450,7 +450,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
    >>> # same as UUIDv1 but with fields reordered to improve DB locality
-   >>> uuid.uuid6()
+   >>> uuid.uuid6()  # doctest: +SKIP
    UUID('1f0799c0-98b9-62db-92c6-a0d365b91053')
 
    >>> # get UUIDv7 creation (local) time as a timestamp in milliseconds
