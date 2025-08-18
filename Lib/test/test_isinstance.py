@@ -263,12 +263,14 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(int, (int, (float, int))))
         self.assertEqual(True, issubclass(str, (str, (Child, str))))
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_subclass_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
         self.assertRaises(RecursionError, blowstack, issubclass, str, str)
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_isinstance_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
@@ -316,6 +318,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             self.assertRaises(RecursionError, isinstance, 1, X())
 
     @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_infinite_recursion_via_bases_tuple(self):
         """Regression test for bpo-30570."""
         class Failure(object):
@@ -325,6 +328,8 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             with self.assertRaises(RecursionError):
                 issubclass(Failure(), int)
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_infinite_cycle_in_bases(self):
         """Regression test for bpo-30570."""
         class X:

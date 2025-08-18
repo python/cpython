@@ -5,6 +5,7 @@ import threading
 import time
 import unittest
 import _testinternalcapi
+import warnings
 
 from test.support import threading_helper
 
@@ -284,6 +285,38 @@ class TestRaces(TestBase):
                 sys.setrecursionlimit(limit)
 
         do_race(something_recursive, set_recursion_limit)
+
+
+@threading_helper.requires_working_threading()
+class TestWarningsRaces(TestBase):
+    def setUp(self):
+        self.saved_filters = warnings.filters[:]
+        warnings.resetwarnings()
+        # Add multiple filters to the list to increase odds of race.
+        for lineno in range(20):
+            warnings.filterwarnings('ignore', message='not matched', category=Warning, lineno=lineno)
+        # Override showwarning() so that we don't actually show warnings.
+        def showwarning(*args):
+            pass
+        warnings.showwarning = showwarning
+
+    def tearDown(self):
+        warnings.filters[:] = self.saved_filters
+        warnings.showwarning = warnings._showwarning_orig
+
+    def test_racing_warnings_filter(self):
+        # Modifying the warnings.filters list while another thread is using
+        # warn() should not crash or race.
+        def modify_filters():
+            time.sleep(0)
+            warnings.filters[:] = [('ignore', None, UserWarning, None, 0)]
+            time.sleep(0)
+            warnings.filters[:] = self.saved_filters
+
+        def emit_warning():
+            warnings.warn('dummy message', category=UserWarning)
+
+        do_race(modify_filters, emit_warning)
 
 
 if __name__ == "__main__":

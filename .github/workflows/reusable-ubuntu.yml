@@ -25,10 +25,10 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_ubuntu_reusable:
+  build-ubuntu-reusable:
     name: build and test (${{ inputs.os }})
-    timeout-minutes: 60
     runs-on: ${{ inputs.os }}
+    timeout-minutes: 60
     env:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1

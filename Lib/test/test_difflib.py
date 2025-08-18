@@ -1,5 +1,5 @@
 import difflib
-from test.support import findfile
+from test.support import findfile, force_colorized
 import unittest
 import doctest
 import sys
@@ -255,21 +255,21 @@ class TestSFpatches(unittest.TestCase):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_from1.splitlines(),
                                      patch914575_to1.splitlines())
-        self.assertIn('content="text/html; charset=utf-8"', output)
+        self.assertIn('charset="utf-8"', output)
 
     def test_make_file_iso88591_charset(self):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_from1.splitlines(),
                                      patch914575_to1.splitlines(),
                                      charset='iso-8859-1')
-        self.assertIn('content="text/html; charset=iso-8859-1"', output)
+        self.assertIn('charset="iso-8859-1"', output)
 
     def test_make_file_usascii_charset_with_nonascii_input(self):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_nonascii_from1.splitlines(),
                                      patch914575_nonascii_to1.splitlines(),
                                      charset='us-ascii')
-        self.assertIn('content="text/html; charset=us-ascii"', output)
+        self.assertIn('charset="us-ascii"', output)
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
 class TestDiffer(unittest.TestCase):
@@ -354,6 +354,22 @@ class TestOutputFormat(unittest.TestCase):
         self.assertEqual(fmt(3,5), '4,5')
         self.assertEqual(fmt(3,6), '4,6')
         self.assertEqual(fmt(0,0), '0')
+
+    @force_colorized
+    def test_unified_diff_colored_output(self):
+        args = [['one', 'three'], ['two', 'three'], 'Original', 'Current',
+            '2005-01-26 23:30:50', '2010-04-02 10:20:52']
+        actual = list(difflib.unified_diff(*args, lineterm='', color=True))
+
+        expect = [
+            "\033[1m--- Original\t2005-01-26 23:30:50\033[0m",
+            "\033[1m+++ Current\t2010-04-02 10:20:52\033[0m",
+             "\033[36m@@ -1,2 +1,2 @@\033[0m",
+             "\033[31m-one\033[0m",
+             "\033[32m+two\033[0m",
+             "\033[0m three\033[0m",
+        ]
+        self.assertEqual(expect, actual)
 
 
 class TestBytes(unittest.TestCase):

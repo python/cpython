@@ -1,0 +1,3 @@
+Remove deprecated functions :c:func:`!PyUnicode_AsDecodedObject`,
+:c:func:`!PyUnicode_AsDecodedUnicode`, :c:func:`!PyUnicode_AsEncodedObject`,
+and :c:func:`!PyUnicode_AsEncodedUnicode`.

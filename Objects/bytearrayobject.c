@@ -709,7 +709,9 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     Py_ssize_t start, stop, step, slicelen;
-    char *buf = PyByteArray_AS_STRING(self);
+    // Do not store a reference to the internal buffer since
+    // index.__index__() or _getbytevalue() may alter 'self'.
+    // See https://github.com/python/cpython/issues/91153.
 
     if (_PyIndex_Check(index)) {
         Py_ssize_t i = PyNumber_AsSsize_t(index, PyExc_IndexError);
@@ -744,7 +746,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
         }
         else {
             assert(0 <= ival && ival < 256);
-            buf[i] = (char)ival;
+            PyByteArray_AS_STRING(self)[i] = (char)ival;
             return 0;
         }
     }
@@ -805,6 +807,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
             /* Delete slice */
             size_t cur;
             Py_ssize_t i;
+            char *buf = PyByteArray_AS_STRING(self);
 
             if (!_canresize(self))
                 return -1;
@@ -845,6 +848,7 @@ bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *value
             /* Assign slice */
             Py_ssize_t i;
             size_t cur;
+            char *buf = PyByteArray_AS_STRING(self);
 
             if (needed != slicelen) {
                 PyErr_Format(PyExc_ValueError,
@@ -864,9 +868,16 @@ static int
 bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
 {
     int ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_ass_subscript_lock_held(op, index, values);
-    Py_END_CRITICAL_SECTION();
+    if (values != NULL && PyByteArray_Check(values)) {
+        Py_BEGIN_CRITICAL_SECTION2(op, values);
+        ret = bytearray_ass_subscript_lock_held(op, index, values);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(op);
+        ret = bytearray_ass_subscript_lock_held(op, index, values);
+        Py_END_CRITICAL_SECTION();
+    }
     return ret;
 }
 
@@ -2526,7 +2537,7 @@ bytearray_splitlines_impl(PyByteArrayObject *self, int keepends)
 @classmethod
 bytearray.fromhex
 
-    string: unicode
+    string: object
     /
 
 Create a bytearray object from a string of hexadecimal numbers.
@@ -2537,7 +2548,7 @@ Example: bytearray.fromhex('B9 01EF') -> bytearray(b'\\xb9\\x01\\xef')
 
 static PyObject *
 bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=8f0f0b6d30fb3ba0 input=f033a16d1fb21f48]*/
+/*[clinic end generated code: output=8f0f0b6d30fb3ba0 input=7e314e5b2d7ab484]*/
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {
@@ -2751,9 +2762,16 @@ static PyObject *
 bytearray_mod(PyObject *v, PyObject *w)
 {
     PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(v);
-    ret = bytearray_mod_lock_held(v, w);
-    Py_END_CRITICAL_SECTION();
+    if (PyByteArray_Check(w)) {
+        Py_BEGIN_CRITICAL_SECTION2(v, w);
+        ret = bytearray_mod_lock_held(v, w);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(v);
+        ret = bytearray_mod_lock_held(v, w);
+        Py_END_CRITICAL_SECTION();
+    }
     return ret;
 }
 
@@ -2818,7 +2836,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)bytearray___init__,       /* tp_init */
+    bytearray___init__,                 /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
     PyObject_Free,                      /* tp_free */

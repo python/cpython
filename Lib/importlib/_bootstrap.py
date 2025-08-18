@@ -382,6 +382,9 @@ class _ModuleLock:
                     self.waiters.pop()
                     self.wakeup.release()
 
+    def locked(self):
+        return bool(self.count)
+
     def __repr__(self):
         return f'_ModuleLock({self.name!r}) at {id(self)}'
 

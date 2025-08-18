@@ -13,7 +13,6 @@ also includes default encodings for all supported locale names.
 import sys
 import encodings
 import encodings.aliases
-import re
 import _collections_abc
 from builtins import str as _builtin_str
 import functools
@@ -177,8 +176,7 @@ def _strip_padding(s, amount):
         amount -= 1
     return s[lpos:rpos+1]
 
-_percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?'
-                         r'(?P<modifiers>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
+_percent_re = None
 
 def _format(percent, value, grouping=False, monetary=False, *additional):
     if additional:
@@ -217,6 +215,13 @@ def format_string(f, val, grouping=False, monetary=False):
     Grouping is applied if the third parameter is true.
     Conversion uses monetary thousands separator and grouping strings if
     forth parameter monetary is true."""
+    global _percent_re
+    if _percent_re is None:
+        import re
+
+        _percent_re = re.compile(r'%(?:\((?P<key>.*?)\))?(?P<modifiers'
+                                 r'>[-#0-9 +*.hlL]*?)[eEfFgGdiouxXcrs%]')
+
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 
@@ -646,7 +651,8 @@ else:
         if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn(
-                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                "UTF-8 Mode affects locale.getpreferredencoding(). "
+                "Consider locale.getencoding() instead.",
                 EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
@@ -878,6 +884,10 @@ del k, v
 #    updated 'sr@latn' -> 'sr_CS.UTF-8@latin' to 'sr_RS.UTF-8@latin'
 #    removed 'univ'
 #    removed 'universal'
+#
+# SS 2025-06-10:
+# Remove 'c.utf8' -> 'en_US.UTF-8' because 'en_US.UTF-8' does not exist
+# on all platforms.
 
 locale_alias = {
     'a3':                                   'az_AZ.KOI8-C',
@@ -957,7 +967,6 @@ locale_alias = {
     'c.ascii':                              'C',
     'c.en':                                 'C',
     'c.iso88591':                           'en_US.ISO8859-1',
-    'c.utf8':                               'en_US.UTF-8',
     'c_c':                                  'C',
     'c_c.c':                                'C',
     'ca':                                   'ca_ES.ISO8859-1',

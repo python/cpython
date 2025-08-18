@@ -3,6 +3,8 @@
 
 #include <sys/types.h>
 
+#ifndef HACL_INTRINSICS_SHIMMED
+
 /* We include config.h here to ensure that the various feature-flags are
  * properly brought into scope. Users can either run the configure script, or
  * write a config.h themselves and put it under version control. */
@@ -932,5 +934,7 @@ typedef vector128_8 vector128;
 #include "libintvector_debug.h"
 #endif
 #endif
+
+#endif // HACL_INTRINSICS_SHIMMED
 
 #endif // __Vec_Intrin_H

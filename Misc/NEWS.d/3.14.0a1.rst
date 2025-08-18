@@ -1033,7 +1033,7 @@ retrieve the spec information.
 .. nonce: s3vKql
 .. section: Library
 
-:mod:`argparse` vim supports abbreviated single-dash long options separated
+:mod:`argparse` supports abbreviated single-dash long options separated
 by ``=`` from its value.
 
 ..
@@ -3586,7 +3586,7 @@ atomic types.
 
 Add *doc* parameter to :func:`dataclasses.field`, so it can be stored and
 shown as a documentation / metadata. If ``@dataclass(slots=True)`` is used,
-then the supplied string is availabl in the :attr:`~object.__slots__` dict.
+then the supplied string is available in the :attr:`~object.__slots__` dict.
 Otherwise, the supplied string is only available in the corresponding
 :class:`dataclasses.Field` object.
 
@@ -4184,7 +4184,7 @@ display REPL ``help()``.
 .. nonce: aFqNAB
 .. section: Core and Builtins
 
-Fix reading and decoding a line from the source file witn non-UTF-8 encoding
+Fix reading and decoding a line from the source file with non-UTF-8 encoding
 for syntax errors raised in the compiler.
 
 ..

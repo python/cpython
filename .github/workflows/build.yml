@@ -15,7 +15,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-reusable
+  # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#concurrency
+  # 'group' must be a key uniquely representing a PR or push event.
+  # github.workflow is the workflow name
+  # github.actor is the user invoking the workflow
+  # github.head_ref is the source branch of the PR or otherwise blank
+  # github.run_id is a unique number for the current run
+  group: ${{ github.workflow }}-${{ github.actor }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 env:
@@ -43,7 +49,7 @@ jobs:
     if: fromJSON(needs.build-context.outputs.run-docs)
     uses: ./.github/workflows/reusable-docs.yml
 
-  check_autoconf_regen:
+  check-autoconf-regen:
     name: 'Check if Autoconf files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
@@ -86,7 +92,7 @@ jobs:
             exit 1
           fi
 
-  check_generated_files:
+  check-generated-files:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
@@ -147,7 +153,7 @@ jobs:
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
 
-  build_windows:
+  build-windows:
     name: >-
       Windows
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
@@ -156,35 +162,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
         arch:
           - x64
+          - Win32
+          - arm64
         free-threading:
           - false
           - true
-        include:
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
-            arch: arm64
-            free-threading: false
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
-            arch: arm64
-            free-threading: true
-          - os: windows-latest
-            arch: Win32
-            free-threading: false
+        exclude:
+          # Skip Win32 on free-threaded builds
+          - { arch: Win32, free-threading: true }
     uses: ./.github/workflows/reusable-windows.yml
     with:
-      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
-  build_windows_msi:
-    name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
-      Windows MSI${{ '' }}
+  build-windows-msi:
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: Windows MSI${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
     if: fromJSON(needs.build-context.outputs.run-windows-msi)
     strategy:
+      fail-fast: false
       matrix:
         arch:
         - x86
@@ -194,7 +193,7 @@ jobs:
     with:
       arch: ${{ matrix.arch }}
 
-  build_macos:
+  build-macos:
     name: >-
       macOS
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
@@ -228,7 +227,7 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
-  build_ubuntu:
+  build-ubuntu:
     name: >-
       Ubuntu
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
@@ -236,6 +235,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
+      fail-fast: false
       matrix:
         bolt:
         - false
@@ -260,7 +260,7 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
-  build_ubuntu_ssltests:
+  build-ubuntu-ssltests-openssl:
     name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -270,7 +270,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        openssl_ver: [3.0.15, 3.1.7, 3.2.3, 3.3.2, 3.4.0]
+        openssl_ver: [3.0.17, 3.2.5, 3.3.4, 3.4.2, 3.5.2]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
@@ -322,7 +322,105 @@ jobs:
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
 
-  build_wasi:
+  build-ubuntu-ssltests-awslc:
+    name: 'Ubuntu SSL tests with AWS-LC'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+        awslc_ver: [1.55.0]
+    env:
+      AWSLC_VER: ${{ matrix.awslc_ver}}
+      MULTISSL_DIR: ${{ github.workspace }}/multissl
+      OPENSSL_DIR: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}
+      LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/aws-lc/${{ matrix.awslc_ver }}/lib
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Runner image version
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
+    - name: Restore config.cache
+      uses: actions/cache@v4
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ needs.build-context.outputs.config-hash }}
+    - name: Register gcc problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/gcc.json"
+    - name: Install dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure SSL lib env vars
+      run: |
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/aws-lc/${AWSLC_VER}/lib" >> "$GITHUB_ENV"
+    - name: 'Restore AWS-LC build'
+      id: cache-aws-lc
+      uses: actions/cache@v4
+      with:
+        path: ./multissl/aws-lc/${{ matrix.awslc_ver }}
+        key: ${{ matrix.os }}-multissl-aws-lc-${{ matrix.awslc_ver }}
+    - name: Install AWS-LC
+      if: steps.cache-aws-lc.outputs.cache-hit != 'true'
+      run: |
+        python3 Tools/ssl/multissltests.py \
+          --steps=library \
+          --base-directory "$MULTISSL_DIR" \
+          --awslc ${{ matrix.awslc_ver }} \
+          --system Linux
+    - name: Add ccache to PATH
+      run: |
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
+    - name: Configure ccache action
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        save: false
+    - name: Configure CPython
+      run: |
+        ./configure CFLAGS="-fdiagnostics-format=json" \
+          --config-cache \
+          --enable-slower-safety \
+          --with-pydebug \
+          --with-openssl="$OPENSSL_DIR" \
+          --with-builtin-hashlib-hashes=blake2 \
+          --with-ssl-default-suites=openssl
+    - name: Build CPython
+      run: make -j
+    - name: Display build info
+      run: make pythoninfo
+    - name: Verify python is linked to AWS-LC
+      run: ./python -c 'import ssl; print(ssl.OPENSSL_VERSION)' | grep AWS-LC
+    - name: SSL tests
+      run: ./python Lib/test/ssltests.py
+
+  build-android:
+    name: Android (${{ matrix.arch }})
+    needs: build-context
+    if: needs.build-context.outputs.run-tests == 'true'
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Use the same runs-on configuration as build-macos and build-ubuntu.
+          - arch: aarch64
+            runs-on: ${{ github.repository_owner == 'python' && 'ghcr.io/cirruslabs/macos-runner:sonoma' || 'macos-14' }}
+          - arch: x86_64
+            runs-on: ubuntu-24.04
+
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build and test
+        run: ./Android/android.py ci ${{ matrix.arch }}-linux-android
+
+  build-wasi:
     name: 'WASI'
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
@@ -330,14 +428,14 @@ jobs:
     with:
       config_hash: ${{ needs.build-context.outputs.config-hash }}
 
-  test_hypothesis:
+  test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     env:
-      OPENSSL_VER: 3.0.15
+      OPENSSL_VER: 3.0.16
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -428,8 +526,9 @@ jobs:
         # failing when executed from inside a virtual environment.
         "${VENV_PYTHON}" -m test \
           -W \
-          -o \
+          --slowest \
           -j4 \
+          --timeout 900 \
           -x test_asyncio \
           -x test_multiprocessing_fork \
           -x test_multiprocessing_forkserver \
@@ -445,18 +544,18 @@ jobs:
         name: hypothesis-example-db
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/examples/
 
-
-  build_asan:
+  build-asan:
     name: 'Address sanitizer'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-24.04]
     env:
-      OPENSSL_VER: 3.0.15
+      OPENSSL_VER: 3.0.16
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
@@ -509,25 +608,35 @@ jobs:
     - name: Tests
       run: xvfb-run make ci
 
-  build_tsan:
-    name: >-
-      Thread sanitizer
-      ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
+  build-san:
+    # ${{ '' } is a hack to nest jobs under the same sidebar category.
+    name: Sanitizers${{ '' }}  # zizmor: ignore[obfuscation]
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
+      fail-fast: false
       matrix:
+        check-name:
+        - Thread
         free-threading:
         - false
         - true
-    uses: ./.github/workflows/reusable-tsan.yml
+        sanitizer:
+        - TSan
+        include:
+        - check-name: Undefined behavior
+          sanitizer: UBSan
+          free-threading: false
+    uses: ./.github/workflows/reusable-san.yml
     with:
+      sanitizer: ${{ matrix.sanitizer }}
       config_hash: ${{ needs.build-context.outputs.config-hash }}
       free-threading: ${{ matrix.free-threading }}
 
   cross-build-linux:
     name: Cross build Linux
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
@@ -592,8 +701,8 @@ jobs:
           output-sarif: true
           sanitizer: ${{ matrix.sanitizer }}
       - name: Upload crash
-        uses: actions/upload-artifact@v4
         if: failure() && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.sanitizer }}-artifacts
           path: ./out/artifacts
@@ -606,36 +715,38 @@ jobs:
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
-    if: always()
-
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
     - build-context  # Transitive dependency, needed to access `run-tests` value
     - check-docs
-    - check_autoconf_regen
-    - check_generated_files
-    - build_macos
-    - build_ubuntu
-    - build_ubuntu_ssltests
-    - build_wasi
-    - build_windows
-    - build_windows_msi
+    - check-autoconf-regen
+    - check-generated-files
+    - build-windows
+    - build-windows-msi
+    - build-macos
+    - build-ubuntu
+    - build-ubuntu-ssltests-awslc
+    - build-ubuntu-ssltests-openssl
+    - build-android
+    - build-wasi
+    - test-hypothesis
+    - build-asan
+    - build-san
     - cross-build-linux
-    - test_hypothesis
-    - build_asan
-    - build_tsan
     - cifuzz
-
-    runs-on: ubuntu-latest
+    if: always()
 
     steps:
     - name: Check whether the needed jobs succeeded or failed
       uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
       with:
         allowed-failures: >-
-          build_ubuntu_ssltests,
-          build_windows_msi,
+          build-windows-msi,
+          build-ubuntu-ssltests-awslc,
+          build-ubuntu-ssltests-openssl,
+          test-hypothesis,
           cifuzz,
-          test_hypothesis,
         allowed-skips: >-
           ${{
             !fromJSON(needs.build-context.outputs.run-docs)
@@ -647,15 +758,17 @@ jobs:
           ${{
             needs.build-context.outputs.run-tests != 'true'
             && '
-            check_autoconf_regen,
-            check_generated_files,
-            build_macos,
-            build_ubuntu,
-            build_ubuntu_ssltests,
-            build_wasi,
-            build_asan,
-            build_tsan,
-            test_hypothesis,
+            check-autoconf-regen,
+            check-generated-files,
+            build-macos,
+            build-ubuntu,
+            build-ubuntu-ssltests-awslc,
+            build-ubuntu-ssltests-openssl,
+            build-android,
+            build-wasi,
+            test-hypothesis,
+            build-asan,
+            build-san,
             cross-build-linux,
             '
             || ''
@@ -663,7 +776,7 @@ jobs:
           ${{
             !fromJSON(needs.build-context.outputs.run-windows-tests)
             && '
-            build_windows,
+            build-windows,
             '
             || ''
           }}
