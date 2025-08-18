@@ -580,8 +580,9 @@ filter_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static int
-filter_clear(filterobject *lz)
+filter_clear(PyObject *self)
 {
+    filterobject *lz = _filterobject_CAST(self);
     Py_CLEAR(lz->it);
     Py_CLEAR(lz->func);
     return 0;
@@ -668,7 +669,7 @@ PyTypeObject PyFilter_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     filter_doc,                         /* tp_doc */
-    (traverseproc)filter_traverse,      /* tp_traverse */
+    filter_traverse,                    /* tp_traverse */
     (inquiry)filter_clear,              /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */

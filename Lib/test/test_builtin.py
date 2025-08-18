@@ -1132,8 +1132,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         del i
         gc.collect()
 
-    @support.skip_wasi_stack_overflow()
-    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_filter_deep_nesting_recursion_error(self):
         # gh-137894: Test that deeply nested filter() iterator chains

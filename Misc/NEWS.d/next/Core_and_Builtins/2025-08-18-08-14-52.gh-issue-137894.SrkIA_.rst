@@ -1,6 +1,3 @@
-Fix segmentation fault in deeply nested :func:`filter` iterator chains by
-adding a ``tp_clear`` method to the filter object. Previously, creating
-thousands of nested filter iterators and then consuming them would cause
-a stack overflow during garbage collection, leading to interpreter crashes.
-Now such cases properly raise :exc:`RecursionError` instead of crashing
-the interpreter.
+Fix segmentation fault in deeply nested :func:`filter` iterator chains.
+Deeply nested filter iterators now properly raise :exc:`RecursionError`
+instead of crashing the interpreter.
