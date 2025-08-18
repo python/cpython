@@ -418,7 +418,7 @@ Deprecated
 ==========
 
 CLI
-___
+---
 
 * The :option:`-R` option. This option is does not have an effect
   in most cases as hash randomization is enabled by default since Python 3.3.
