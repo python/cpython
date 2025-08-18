@@ -35,21 +35,17 @@ def _dump_command(filename):
 def _reorganize_command(filename):
     try:
         with dbm_open(filename, "c") as db:
-            if whichdb(filename) in ["dbm.sqlite3", "dbm.gnu", "dbm.dumb"]:
+            if db.hasattr("reorganize"):
                 db.reorganize()
-                print(f"Reorganized database '{filename}'")
+                print(f"Reorganized database: '{filename}'", file=sys.stderr)
             else:
-                print(
-                    f"Database type doesn't support reorganize method",
-                    file=sys.stderr,
-                )
+                print("Database type doesn't support reorganize method",
+                      file=sys.stderr)
                 return 1
         return 0
     except error:
-        print(
-            f"Error: Database '{filename}' not found or cannot be opened",
-            file=sys.stderr,
-        )
+        print(f"Error: Database '{filename}' not found or cannot be opened",
+              file=sys.stderr)
         return 1
 
 
