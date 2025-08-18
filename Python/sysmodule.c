@@ -1183,9 +1183,10 @@ sys__settraceallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-
-    PyEval_SetTraceAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetTraceAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1263,8 +1264,10 @@ sys__setprofileallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-    PyEval_SetProfileAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetProfileAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2488,6 +2491,11 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     if (PyUnicode_FSConverter(script, &path) == 0) {
         return NULL;
     }
+
+    if (PySys_Audit("sys.remote_exec", "iO", pid, script) < 0) {
+        return NULL;
+    }
+
     debugger_script_path = PyBytes_AS_STRING(path);
 #ifdef MS_WINDOWS
     PyObject *unicode_path;
@@ -2635,6 +2643,7 @@ sys__baserepl_impl(PyObject *module)
     PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
     Py_RETURN_NONE;
 }
+
 
 /*[clinic input]
 sys._is_gil_enabled -> bool
@@ -3601,6 +3610,18 @@ make_impl_info(PyObject *version_info)
     if (res < 0)
         goto error;
 #endif
+
+    // PEP-734
+#if defined(__wasi__) || defined(__EMSCRIPTEN__)
+    // It is not enabled on WASM builds just yet
+    value = Py_False;
+#else
+    value = Py_True;
+#endif
+    res = PyDict_SetItemString(impl_info, "supports_isolated_interpreters", value);
+    if (res < 0) {
+        goto error;
+    }
 
     /* dict ready */
 

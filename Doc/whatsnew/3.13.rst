@@ -1917,7 +1917,7 @@ New Deprecations
 
 * :mod:`pathlib`:
 
-  * Deprecate :meth:`.PurePath.is_reserved`,
+  * Deprecate :meth:`!.PurePath.is_reserved`,
     to be removed in Python 3.15.
     Use :func:`os.path.isreserved` to detect reserved paths on Windows.
     (Contributed by Barney Gale in :gh:`88569`.)
@@ -1996,7 +1996,7 @@ New Deprecations
     (Contributed by Alex Waygood in :gh:`105566` and :gh:`105570`.)
 
   * Deprecate the :func:`typing.no_type_check_decorator` decorator function,
-    to be removed in in Python 3.15.
+    to be removed in Python 3.15.
     After eight years in the :mod:`typing` module,
     it has yet to be supported by any major type checker.
     (Contributed by Alex Waygood in :gh:`106309`.)
@@ -2546,6 +2546,8 @@ Deprecated C APIs
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
+
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
@@ -2592,7 +2594,7 @@ Build Changes
 
 * The :file:`configure` option :option:`--with-system-libmpdec`
   now defaults to ``yes``.
-  The bundled copy of ``libmpdecimal`` will be removed in Python 3.15.
+  The bundled copy of ``libmpdec`` will be removed in Python 3.16.
 
 * Python built with :file:`configure` :option:`--with-trace-refs`
   (tracing references) is now ABI compatible with the Python release build

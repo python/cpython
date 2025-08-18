@@ -75,7 +75,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     PY3LIBRARY = sysconfig.get_config_var('PY3LIBRARY')
     LIBPYTHON = sysconfig.get_config_var('LIBPYTHON')
     LIBPC = sysconfig.get_config_var('LIBPC')
-    INCLUDEDIR = sysconfig.get_config_var('INCLUDEDIR')
+    INCLUDEPY = sysconfig.get_config_var('INCLUDEPY')
 
     if os.name == 'posix':
         # On POSIX, LIBRARY is always the static library, while LDLIBRARY is the
@@ -123,7 +123,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     if has_static_library:
         data['libpython']['static'] = os.path.join(LIBDIR, LIBRARY)
 
-    data['c_api']['headers'] = INCLUDEDIR
+    data['c_api']['headers'] = INCLUDEPY
     if LIBPC:
         data['c_api']['pkgconfig_path'] = LIBPC
 
