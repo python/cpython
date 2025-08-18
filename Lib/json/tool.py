@@ -5,13 +5,46 @@ See `json.__main__` for a usage example (invocation as
 """
 import argparse
 import json
+import re
 import sys
+from _colorize import get_theme, can_colorize
+
+
+# The string we are colorizing is valid JSON,
+# so we can use a looser but simpler regex to match
+# the various parts, most notably strings and numbers,
+# where the regex given by the spec is much more complex.
+_color_pattern = re.compile(r'''
+    (?P<key>"(\\.|[^"\\])*")(?=:)           |
+    (?P<string>"(\\.|[^"\\])*")             |
+    (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |
+    (?P<boolean>true|false)                 |
+    (?P<null>null)
+''', re.VERBOSE)
+
+_group_to_theme_color = {
+    "key": "definition",
+    "string": "string",
+    "number": "number",
+    "boolean": "keyword",
+    "null": "keyword",
+}
+
+
+def _colorize_json(json_str, theme):
+    def _replace_match_callback(match):
+        for group, color in _group_to_theme_color.items():
+            if m := match.group(group):
+                return f"{theme[color]}{m}{theme.reset}"
+        return match.group()
+
+    return re.sub(_color_pattern, _replace_match_callback, json_str)
 
 
 def main():
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, color=True)
     parser.add_argument('infile', nargs='?',
                         help='a JSON file to be validated or pretty-printed',
                         default='-')
@@ -67,9 +100,16 @@ def main():
         else:
             outfile = open(options.outfile, 'w', encoding='utf-8')
         with outfile:
-            for obj in objs:
-                json.dump(obj, outfile, **dump_args)
-                outfile.write('\n')
+            if can_colorize(file=outfile):
+                t = get_theme(tty_file=outfile).syntax
+                for obj in objs:
+                    json_str = json.dumps(obj, **dump_args)
+                    outfile.write(_colorize_json(json_str, t))
+                    outfile.write('\n')
+            else:
+                for obj in objs:
+                    json.dump(obj, outfile, **dump_args)
+                    outfile.write('\n')
     except ValueError as e:
         raise SystemExit(e)
 

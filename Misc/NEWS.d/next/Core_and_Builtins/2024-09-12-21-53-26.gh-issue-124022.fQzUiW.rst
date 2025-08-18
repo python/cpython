@@ -1,1 +1,0 @@
-Fix bug where docstring is removed from classes in interactive mode.

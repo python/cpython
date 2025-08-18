@@ -5,7 +5,7 @@ import weakref
 
 from ast import Or
 from functools import partial
-from threading import Thread
+from threading import Barrier, Thread
 from unittest import TestCase
 
 try:
@@ -74,6 +74,7 @@ class TestDict(TestCase):
             last = -1
             while True:
                 if CUR == last:
+                    time.sleep(0.001)
                     continue
                 elif CUR == OBJECT_COUNT:
                     break
@@ -142,6 +143,107 @@ class TestDict(TestCase):
             for ref in thread_list:
                 self.assertIsNone(ref())
 
+    def test_racing_get_set_dict(self):
+        """Races getting and setting a dict should be thread safe"""
+        THREAD_COUNT = 10
+        barrier = Barrier(THREAD_COUNT)
+        def work(d):
+            barrier.wait()
+            for _ in range(1000):
+                d[10] = 0
+                d.get(10, None)
+                _ = d[10]
+
+        d = {}
+        worker_threads = []
+        for ii in range(THREAD_COUNT):
+            worker_threads.append(Thread(target=work, args=[d]))
+        for t in worker_threads:
+            t.start()
+        for t in worker_threads:
+            t.join()
+
+
+    def test_racing_set_object_dict(self):
+        """Races assigning to __dict__ should be thread safe"""
+        class C: pass
+        class MyDict(dict): pass
+        for cyclic in (False, True):
+            f = C()
+            f.__dict__ = {"foo": 42}
+            THREAD_COUNT = 10
+
+            def writer_func(l):
+                for i in range(1000):
+                    if cyclic:
+                        other_d = {}
+                    d = MyDict({"foo": 100})
+                    if cyclic:
+                        d["x"] = other_d
+                        other_d["bar"] = d
+                    l.append(weakref.ref(d))
+                    f.__dict__ = d
+
+            def reader_func():
+                for i in range(1000):
+                    f.foo
+
+            lists = []
+            readers = []
+            writers = []
+            for x in range(THREAD_COUNT):
+                thread_list = []
+                lists.append(thread_list)
+                writer = Thread(target=partial(writer_func, thread_list))
+                writers.append(writer)
+
+            for x in range(THREAD_COUNT):
+                reader = Thread(target=partial(reader_func))
+                readers.append(reader)
+
+            for writer in writers:
+                writer.start()
+            for reader in readers:
+                reader.start()
+
+            for writer in writers:
+                writer.join()
+
+            for reader in readers:
+                reader.join()
+
+            f.__dict__ = {}
+            gc.collect()
+            gc.collect()
+
+            count = 0
+            ids = set()
+            for thread_list in lists:
+                for i, ref in enumerate(thread_list):
+                    if ref() is None:
+                        continue
+                    count += 1
+                    ids.add(id(ref()))
+                    count += 1
+
+            self.assertEqual(count, 0)
+
+    def test_racing_object_get_set_dict(self):
+        e = Exception()
+
+        def writer():
+            for i in range(10000):
+                e.__dict__ = {1:2}
+
+        def reader():
+            for i in range(10000):
+                e.__dict__
+
+        t1 = Thread(target=writer)
+        t2 = Thread(target=reader)
+
+        with threading_helper.start_threads([t1, t2]):
+            pass
 
 if __name__ == "__main__":
     unittest.main()

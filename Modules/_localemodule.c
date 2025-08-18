@@ -87,6 +87,41 @@ copy_grouping(const char* s)
     return result;
 }
 
+#if defined(MS_WINDOWS)
+
+// 16 is the number of elements in the szCodePage field
+// of the __crt_locale_strings structure.
+#define MAX_CP_LEN 15
+
+static int
+check_locale_name(const char *locale, const char *end)
+{
+    size_t len = end ? (size_t)(end - locale) : strlen(locale);
+    const char *dot = memchr(locale, '.', len);
+    if (dot && locale + len - dot - 1 > MAX_CP_LEN) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
+check_locale_name_all(const char *locale)
+{
+    const char *start = locale;
+    while (1) {
+        const char *end = strchr(start, ';');
+        if (check_locale_name(start, end) < 0) {
+            return -1;
+        }
+        if (end == NULL) {
+            break;
+        }
+        start = end + 1;
+    }
+    return 0;
+}
+#endif
+
 /*[clinic input]
 _locale.setlocale
 
@@ -110,6 +145,18 @@ _locale_setlocale_impl(PyObject *module, int category, const char *locale)
         PyErr_SetString(get_locale_state(module)->Error,
                         "invalid locale category");
         return NULL;
+    }
+    if (locale) {
+        if ((category == LC_ALL
+             ? check_locale_name_all(locale)
+             : check_locale_name(locale, NULL)) < 0)
+        {
+            /* Debug assertion failure on Windows.
+             * _Py_BEGIN_SUPPRESS_IPH/_Py_END_SUPPRESS_IPH do not help. */
+            PyErr_SetString(get_locale_state(module)->Error,
+                "unsupported locale setting");
+            return NULL;
+        }
     }
 #endif
 
@@ -605,7 +652,7 @@ change_locale(int category, char **oldloc)
     /* Keep a copy of the LC_CTYPE locale */
     *oldloc = setlocale(LC_CTYPE, NULL);
     if (!*oldloc) {
-        PyErr_SetString(PyExc_RuntimeError, "faild to get LC_CTYPE locale");
+        PyErr_SetString(PyExc_RuntimeError, "failed to get LC_CTYPE locale");
         return -1;
     }
     *oldloc = _PyMem_Strdup(*oldloc);
@@ -636,6 +683,37 @@ restore_locale(char *oldloc)
     }
 }
 
+#ifdef __GLIBC__
+#if defined(ALT_DIGITS) || defined(ERA)
+static PyObject *
+decode_strings(const char *result, size_t max_count)
+{
+    /* Convert a sequence of NUL-separated C strings to a Python string
+     * containing semicolon separated items. */
+    size_t i = 0;
+    size_t count = 0;
+    for (; count < max_count && result[i]; count++) {
+        i += strlen(result + i) + 1;
+    }
+    char *buf = PyMem_Malloc(i);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    memcpy(buf, result, i);
+    /* Replace all NULs with semicolons. */
+    i = 0;
+    while (--count) {
+        i += strlen(buf + i);
+        buf[i++] = ';';
+    }
+    PyObject *pyresult = PyUnicode_DecodeLocale(buf, NULL);
+    PyMem_Free(buf);
+    return pyresult;
+}
+#endif
+#endif
+
 /*[clinic input]
 _locale.nl_langinfo
 
@@ -661,34 +739,38 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
             result = result != NULL ? result : "";
             char *oldloc = NULL;
             if (langinfo_constants[i].category != LC_CTYPE
-                && !is_all_ascii(result)
+                && *result && (
+#ifdef __GLIBC__
+                    // gh-133740: Always change the locale for ALT_DIGITS and ERA
+#  ifdef ALT_DIGITS
+                    item == ALT_DIGITS ||
+#  endif
+#  ifdef ERA
+                    item == ERA ||
+#  endif
+#endif
+                    !is_all_ascii(result))
                 && change_locale(langinfo_constants[i].category, &oldloc) < 0)
             {
                 return NULL;
             }
             PyObject *pyresult;
+#ifdef __GLIBC__
+            /* According to the POSIX specification the result must be
+             * a sequence of semicolon-separated strings.
+             * But in Glibc they are NUL-separated. */
 #ifdef ALT_DIGITS
-            if (item == ALT_DIGITS) {
-                /* The result is a sequence of up to 100 NUL-separated strings. */
-                const char *s = result;
-                int count = 0;
-                for (; count < 100 && *s; count++) {
-                    s += strlen(s) + 1;
-                }
-                pyresult = PyTuple_New(count);
-                if (pyresult != NULL) {
-                    for (int i = 0; i < count; i++) {
-                        PyObject *unicode = PyUnicode_DecodeLocale(result, NULL);
-                        if (unicode == NULL) {
-                            Py_CLEAR(pyresult);
-                            break;
-                        }
-                        PyTuple_SET_ITEM(pyresult, i, unicode);
-                        result += strlen(result) + 1;
-                    }
-                }
+            if (item == ALT_DIGITS && *result) {
+                pyresult = decode_strings(result, 100);
             }
             else
+#endif
+#ifdef ERA
+            if (item == ERA && *result) {
+                pyresult = decode_strings(result, SIZE_MAX);
+            }
+            else
+#endif
 #endif
             {
                 pyresult = PyUnicode_DecodeLocale(result, NULL);

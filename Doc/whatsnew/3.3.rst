@@ -829,7 +829,7 @@ Previous versions of CPython have always relied on a global import lock.
 This led to unexpected annoyances, such as deadlocks when importing a module
 would trigger code execution in a different thread as a side-effect.
 Clumsy workarounds were sometimes employed, such as the
-:c:func:`PyImport_ImportModuleNoBlock` C API function.
+:c:func:`!PyImport_ImportModuleNoBlock` C API function.
 
 In Python 3.3, importing a module takes a per-module lock.  This correctly
 serializes importation of a given module from multiple threads (preventing
@@ -1147,8 +1147,8 @@ API changes
    | :const:`MIN_EMIN` | ``-425000000`` | ``-999999999999999999`` |
    +-------------------+----------------+-------------------------+
 
-* In the context templates (:class:`~decimal.DefaultContext`,
-  :class:`~decimal.BasicContext` and :class:`~decimal.ExtendedContext`)
+* In the context templates (:const:`~decimal.DefaultContext`,
+  :const:`~decimal.BasicContext` and :const:`~decimal.ExtendedContext`)
   the magnitude of :attr:`~decimal.Context.Emax` and
   :attr:`~decimal.Context.Emin` has changed to ``999999``.
 

@@ -35,7 +35,7 @@ from functools import partial
 from textwrap import dedent
 from typing import Iterator, List, Optional, Set, Tuple
 
-SCRIPT = sys.argv[0]
+SCRIPT = os.path.normpath(sys.argv[0])
 VERSION = "3.3"
 
 # The Unicode Database
@@ -43,7 +43,7 @@ VERSION = "3.3"
 # When changing UCD version please update
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
-#   * Doc/reference/lexical_analysis.rst (two occurrences)
+#   * Doc/reference/lexical_analysis.rst (three occurrences)
 UNIDATA_VERSION = "16.0.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"

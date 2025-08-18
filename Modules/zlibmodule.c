@@ -17,6 +17,16 @@
 #error "At least zlib version 1.2.2.1 is required"
 #endif
 
+#if (SIZEOF_OFF_T == SIZEOF_SIZE_T)
+#  define convert_to_z_off_t  PyLong_AsSsize_t
+#elif (SIZEOF_OFF_T == SIZEOF_LONG_LONG)
+#  define convert_to_z_off_t  PyLong_AsLongLong
+#elif (SIZEOF_OFF_T == SIZEOF_LONG)
+#  define convert_to_z_off_t  PyLong_AsLong
+#else
+#  error off_t does not match either size_t, long, or long long!
+#endif
+
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
 
@@ -220,6 +230,8 @@ typedef struct
     PyObject *zdict;
     PyThread_type_lock lock;
 } compobject;
+
+#define _compobject_CAST(op)    ((compobject *)op)
 
 static void
 zlib_error(zlibstate *state, z_stream zst, int err, const char *msg)
@@ -706,7 +718,7 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 static void
 Dealloc(compobject *self)
 {
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    PyTypeObject *type = Py_TYPE(self);
     PyThread_free_lock(self->lock);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
@@ -716,18 +728,20 @@ Dealloc(compobject *self)
 }
 
 static void
-Comp_dealloc(compobject *self)
+Comp_dealloc(PyObject *op)
 {
+    compobject *self = _compobject_CAST(op);
     if (self->is_initialised)
-        deflateEnd(&self->zst);
+        (void)deflateEnd(&self->zst);
     Dealloc(self);
 }
 
 static void
-Decomp_dealloc(compobject *self)
+Decomp_dealloc(PyObject *op)
 {
+    compobject *self = _compobject_CAST(op);
     if (self->is_initialised)
-        inflateEnd(&self->zst);
+        (void)inflateEnd(&self->zst);
     Dealloc(self);
 }
 
@@ -848,6 +862,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 zlib.Decompress.decompress
 
     cls: defining_class
@@ -869,7 +884,7 @@ Call the flush() method to clear these buffers.
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=b024a93c2c922d57 input=bfb37b3864cfb606]*/
+/*[clinic end generated code: output=b024a93c2c922d57 input=205667f8c387fce4]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
@@ -1359,8 +1374,9 @@ class zlib.ZlibDecompressor "ZlibDecompressor *" "&ZlibDecompressorType"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=0658178ab94645df]*/
 
 static void
-ZlibDecompressor_dealloc(ZlibDecompressor *self)
+ZlibDecompressor_dealloc(PyObject *op)
 {
+    ZlibDecompressor *self = (ZlibDecompressor*)op;
     PyObject *type = (PyObject *)Py_TYPE(self);
     PyThread_free_lock(self->lock);
     if (self->is_initialised) {
@@ -1653,6 +1669,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 zlib.ZlibDecompressor.decompress
 
     data: Py_buffer
@@ -1677,7 +1694,7 @@ the unused_data attribute.
 static PyObject *
 zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
                                       Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=990d32787b775f85 input=0b29d99715250b96]*/
+/*[clinic end generated code: output=990d32787b775f85 input=fcf9f974de5d02b1]*/
 
 {
     PyObject *result = NULL;
@@ -1872,6 +1889,44 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
+zlib.adler32_combine -> unsigned_int
+
+    adler1: unsigned_int(bitwise=True)
+        Adler-32 checksum for sequence A
+
+    adler2: unsigned_int(bitwise=True)
+        Adler-32 checksum for sequence B
+
+    len2: object(subclass_of='&PyLong_Type')
+        Length of sequence B
+    /
+
+Combine two Adler-32 checksums into one.
+
+Given the Adler-32 checksum 'adler1' of a sequence A and the
+Adler-32 checksum 'adler2' of a sequence B of length 'len2',
+return the Adler-32 checksum of A and B concatenated.
+[clinic start generated code]*/
+
+static unsigned int
+zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
+                          unsigned int adler2, PyObject *len2)
+/*[clinic end generated code: output=61842cefb16afb1b input=51bb045c95130c6f]*/
+{
+#if defined(Z_WANT64)
+    z_off64_t len = convert_to_z_off_t(len2);
+#else
+    z_off_t len = convert_to_z_off_t(len2);
+#endif
+    if (PyErr_Occurred()) {
+        return (unsigned int)-1;
+    }
+    return adler32_combine(adler1, adler2, len);
+}
+
+
+
+/*[clinic input]
 zlib.crc32 -> unsigned_int
 
     data: Py_buffer
@@ -1918,13 +1973,50 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
     return value;
 }
 
+/*[clinic input]
+zlib.crc32_combine -> unsigned_int
+
+    crc1: unsigned_int(bitwise=True)
+        CRC-32 checksum for sequence A
+
+    crc2: unsigned_int(bitwise=True)
+        CRC-32 checksum for sequence B
+
+    len2: object(subclass_of='&PyLong_Type')
+        Length of sequence B
+    /
+
+Combine two CRC-32 checksums into one.
+
+Given the CRC-32 checksum 'crc1' of a sequence A and the
+CRC-32 checksum 'crc2' of a sequence B of length 'len2',
+return the CRC-32 checksum of A and B concatenated.
+[clinic start generated code]*/
+
+static unsigned int
+zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
+                        unsigned int crc2, PyObject *len2)
+/*[clinic end generated code: output=c4def907c602e6eb input=9c8a065d9040dc66]*/
+{
+#if defined(Z_WANT64)
+    z_off64_t len = convert_to_z_off_t(len2);
+#else
+    z_off_t len = convert_to_z_off_t(len2);
+#endif
+    if (PyErr_Occurred()) {
+        return (unsigned int)-1;
+    }
+    return crc32_combine(crc1, crc2, len);
+}
 
 static PyMethodDef zlib_methods[] =
 {
     ZLIB_ADLER32_METHODDEF
+    ZLIB_ADLER32_COMBINE_METHODDEF
     ZLIB_COMPRESS_METHODDEF
     ZLIB_COMPRESSOBJ_METHODDEF
     ZLIB_CRC32_METHODDEF
+    ZLIB_CRC32_COMBINE_METHODDEF
     ZLIB_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESSOBJ_METHODDEF
     {NULL, NULL}
@@ -1976,14 +2068,17 @@ static PyType_Spec ZlibDecompressor_type_spec = {
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = ZlibDecompressor_type_slots,
 };
+
 PyDoc_STRVAR(zlib_module_documentation,
 "The functions in this module allow compression and decompression using the\n"
 "zlib library, which is based on GNU zip.\n"
 "\n"
 "adler32(string[, start]) -- Compute an Adler-32 checksum.\n"
+"adler32_combine(adler1, adler2, len2, /) -- Combine two Adler-32 checksums.\n"
 "compress(data[, level]) -- Compress data, with compression level 0-9 or -1.\n"
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
+"crc32_combine(crc1, crc2, len2, /) -- Combine two CRC-32 checksums.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
 "decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"
@@ -2097,6 +2192,12 @@ zlib_exec(PyObject *mod)
                      PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
+#ifdef ZLIBNG_VERSION
+    if (PyModule_Add(mod, "ZLIBNG_VERSION",
+                     PyUnicode_FromString(ZLIBNG_VERSION)) < 0) {
+        return -1;
+    }
+#endif
     if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
         return -1;
     }

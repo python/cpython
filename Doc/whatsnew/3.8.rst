@@ -936,7 +936,7 @@ Add option ``--json-lines`` to parse every input line as a separate JSON object.
 logging
 -------
 
-Added a *force* keyword argument to :func:`logging.basicConfig`
+Added a *force* keyword argument to :func:`logging.basicConfig`.
 When set to true, any existing handlers attached
 to the root logger are removed and closed before carrying out the
 configuration specified by the other arguments.
@@ -1629,8 +1629,8 @@ Build and C API Changes
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
 * :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
-  path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
-  (:c:func:`Py_GetProgramName`).
+  path (:c:func:`!Py_GetProgramFullPath`) rather than to the program name
+  (:c:func:`!Py_GetProgramName`).
   (Contributed by Victor Stinner in :issue:`38234`.)
 
 
@@ -2152,11 +2152,11 @@ CPython bytecode changes
   cleaning-up code for :keyword:`break`, :keyword:`continue` and
   :keyword:`return`.
 
-  Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
-  :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes
-  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY`, :opcode:`CALL_FINALLY` and
-  :opcode:`POP_FINALLY`.  Changed the behavior of :opcode:`END_FINALLY`
-  and :opcode:`WITH_CLEANUP_START`.
+  Removed opcodes :opcode:`!BREAK_LOOP`, :opcode:`!CONTINUE_LOOP`,
+  :opcode:`!SETUP_LOOP` and :opcode:`!SETUP_EXCEPT`.  Added new opcodes
+  :opcode:`!ROT_FOUR`, :opcode:`!BEGIN_FINALLY`, :opcode:`!CALL_FINALLY` and
+  :opcode:`!POP_FINALLY`.  Changed the behavior of :opcode:`!END_FINALLY`
+  and :opcode:`!WITH_CLEANUP_START`.
 
   (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
   :issue:`17611`.)

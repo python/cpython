@@ -111,9 +111,8 @@ class ExecutorDeadlockTest:
         print(f"\nTraceback:\n {tb}", file=sys.__stderr__)
         self.fail(f"Executor deadlock:\n\n{tb}")
 
-
-    def _check_crash(self, error, func, *args, ignore_stderr=False):
-        # test for deadlock caused by crashes in a pool
+    def _check_error(self, error, func, *args, ignore_stderr=False):
+        # test for deadlock caused by crashes or exiting in a pool
         self.executor.shutdown(wait=True)
 
         executor = self.executor_type(
@@ -138,49 +137,52 @@ class ExecutorDeadlockTest:
     def test_error_at_task_pickle(self):
         # Check problem occurring while pickling a task in
         # the task_handler thread
-        self._check_crash(PicklingError, id, ErrorAtPickle())
+        self._check_error(PicklingError, id, ErrorAtPickle())
 
     def test_exit_at_task_unpickle(self):
         # Check problem occurring while unpickling a task on workers
-        self._check_crash(BrokenProcessPool, id, ExitAtUnpickle())
+        self._check_error(BrokenProcessPool, id, ExitAtUnpickle())
 
     def test_error_at_task_unpickle(self):
         # gh-109832: Restore stderr overridden by _raise_error_ignore_stderr()
         self.addCleanup(setattr, sys, 'stderr', sys.stderr)
 
         # Check problem occurring while unpickling a task on workers
-        self._check_crash(BrokenProcessPool, id, ErrorAtUnpickle())
+        self._check_error(BrokenProcessPool, id, ErrorAtUnpickle())
 
+    @support.skip_if_sanitizer("UBSan: explicit SIGSEV not allowed", ub=True)
     def test_crash_at_task_unpickle(self):
         # Check problem occurring while unpickling a task on workers
-        self._check_crash(BrokenProcessPool, id, CrashAtUnpickle())
+        self._check_error(BrokenProcessPool, id, CrashAtUnpickle())
 
+    @support.skip_if_sanitizer("UBSan: explicit SIGSEV not allowed", ub=True)
     def test_crash_during_func_exec_on_worker(self):
         # Check problem occurring during func execution on workers
-        self._check_crash(BrokenProcessPool, _crash)
+        self._check_error(BrokenProcessPool, _crash)
 
     def test_exit_during_func_exec_on_worker(self):
         # Check problem occurring during func execution on workers
-        self._check_crash(SystemExit, _exit)
+        self._check_error(SystemExit, _exit)
 
     def test_error_during_func_exec_on_worker(self):
         # Check problem occurring during func execution on workers
-        self._check_crash(RuntimeError, _raise_error, RuntimeError)
+        self._check_error(RuntimeError, _raise_error, RuntimeError)
 
+    @support.skip_if_sanitizer("UBSan: explicit SIGSEV not allowed", ub=True)
     def test_crash_during_result_pickle_on_worker(self):
         # Check problem occurring while pickling a task result
         # on workers
-        self._check_crash(BrokenProcessPool, _return_instance, CrashAtPickle)
+        self._check_error(BrokenProcessPool, _return_instance, CrashAtPickle)
 
     def test_exit_during_result_pickle_on_worker(self):
         # Check problem occurring while pickling a task result
         # on workers
-        self._check_crash(SystemExit, _return_instance, ExitAtPickle)
+        self._check_error(SystemExit, _return_instance, ExitAtPickle)
 
     def test_error_during_result_pickle_on_worker(self):
         # Check problem occurring while pickling a task result
         # on workers
-        self._check_crash(PicklingError, _return_instance, ErrorAtPickle)
+        self._check_error(PicklingError, _return_instance, ErrorAtPickle)
 
     def test_error_during_result_unpickle_in_result_handler(self):
         # gh-109832: Restore stderr overridden by _raise_error_ignore_stderr()
@@ -188,15 +190,16 @@ class ExecutorDeadlockTest:
 
         # Check problem occurring while unpickling a task in
         # the result_handler thread
-        self._check_crash(BrokenProcessPool,
+        self._check_error(BrokenProcessPool,
                           _return_instance, ErrorAtUnpickle,
                           ignore_stderr=True)
 
     def test_exit_during_result_unpickle_in_result_handler(self):
         # Check problem occurring while unpickling a task in
         # the result_handler thread
-        self._check_crash(BrokenProcessPool, _return_instance, ExitAtUnpickle)
+        self._check_error(BrokenProcessPool, _return_instance, ExitAtUnpickle)
 
+    @support.skip_if_sanitizer("UBSan: explicit SIGSEV not allowed", ub=True)
     def test_shutdown_deadlock(self):
         # Test that the pool calling shutdown do not cause deadlock
         # if a worker fails after the shutdown call.
@@ -235,6 +238,7 @@ class ExecutorDeadlockTest:
         # dangling threads
         executor_manager.join()
 
+    @support.skip_if_sanitizer("UBSan: explicit SIGSEV not allowed", ub=True)
     def test_crash_big_data(self):
         # Test that there is a clean exception instead of a deadlock when a
         # child process crashes while some data is being written into the
