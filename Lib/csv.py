@@ -381,8 +381,7 @@ class Sniffer:
             iteration += 1
             for line in data[start:end]:
                 seen += 1
-                charCounts = Counter(line)
-                for char, count in charCounts.items():
+                for char, count in Counter(line).items():
                     if ord(char) < 127:
                         charFrequency[char][count] += 1
 
