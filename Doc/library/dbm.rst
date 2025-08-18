@@ -94,8 +94,8 @@ The object returned by :func:`~dbm.open` supports the basic
 functionality of mutable :term:`mappings <mapping>`;
 keys and their corresponding values can be stored, retrieved, and
 deleted, and iteration, the :keyword:`in` operator and methods :meth:`!keys`,
-:meth:`!get` and :meth:`!setdefault` are available.
-The :meth:`!keys` method usually returns a list instead of a view object.
+:meth:`!get`, :meth:`!setdefault` and :meth:`!clear` are available.
+The :meth:`!keys` method returns a list instead of a view object.
 The :meth:`!setdefault` method requires two arguments.
 
 Key and values are always stored as :class:`bytes`. This means that when
@@ -298,13 +298,13 @@ functionality like crash tolerance.
    the :meth:`!setdefault` method requires two arguments.
    It also supports a "closing" context manager via the :keyword:`with` keyword.
 
+   .. versionchanged:: 3.2
+      Added the :meth:`!get` and :meth:`!setdefault` methods.
+
+   .. versionchanged:: 3.13
+      Added the :meth:`!clear` method.
+
    The following methods are also provided:
-
-   .. method:: gdbm.clear()
-
-      Remove all items from the GDBM database.
-
-      .. versionadded:: 3.13
 
    .. method:: gdbm.close()
 
@@ -415,13 +415,13 @@ This module can be used with the "classic" NDBM interface or the
    the :meth:`!setdefault` method requires two arguments.
    It also supports a "closing" context manager via the :keyword:`with` keyword.
 
-   The following methods are also provided:
+   .. versionchanged:: 3.2
+      Added the :meth:`!get` and :meth:`!setdefault` methods.
 
-   .. method:: ndbm.clear()
+   .. versionchanged:: 3.13
+      Added the :meth:`!clear` method.
 
-      Remove all items from the NDBM database.
-
-      .. versionadded:: 3.13
+   The following method is also provided:
 
    .. method:: ndbm.close()
 
