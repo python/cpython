@@ -508,7 +508,11 @@ Buffer-related functions
 .. c:function:: int PyBuffer_FromContiguous(const Py_buffer *view, const void *buf, Py_ssize_t len, char order)
 
    Copy contiguous *len* bytes from *buf* to *view*.
-   *order* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+
+   If *order* is ``'C'``, the data is copied in C-style order.
+   If *order* is ``'F'``, the data is copied in Fortran-style order.
+   If *order* is ``'A'``, either style may be used, whichever is more efficient.
+
    ``0`` is returned on success, ``-1`` on error.
 
 
