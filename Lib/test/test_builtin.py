@@ -1132,7 +1132,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         del i
         gc.collect()
 
-    @support.requires_resource('cpu')
+    
     def test_filter_deep_nesting_recursion_error(self):
         # gh-137894: Test that deeply nested filter() iterator chains
         # raise RecursionError instead of causing segmentation fault.
@@ -1142,9 +1142,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         for _ in range(100000):
             i = filter(bool, i)
 
-        # Should raise RecursionError, not segmentation fault
-        with self.assertRaises(RecursionError):
-            list(i)
+        self.assertRaises(RecursionError, list, i)
 
     def test_getattr(self):
         self.assertTrue(getattr(sys, 'stdout') is sys.stdout)
