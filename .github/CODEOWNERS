@@ -38,7 +38,7 @@
 #     the Makefile, autoconf, and other autotools files.
 # * Documentation
 #     broader sections of documentation, documentation tools
-# * Other / Misc (Tools, Programs, Integration, etc)
+# * Other / Misc (Tools, Programs, Integration, etc.)
 #     internal tools, integration with external systems,
 #     entries that don't fit elsewhere
 # * Platform Support
@@ -48,6 +48,9 @@
 # * Standard Library
 #     standard library modules (from both Lib and Modules)
 #     and related files (such as their tests and docs)
+# * Exclusions
+#     exclusions from .github/CODEOWNERS should go at the very end
+#     because the final matching pattern will take precedence.
 
 # ----------------------------------------------------------------------------
 # Buildbots, Continuous Integration, and Testing
@@ -104,7 +107,7 @@ Doc/whatsnew/                 @AA-Turner
 
 
 # ----------------------------------------------------------------------------
-# Other / Misc (Tools, Programs, Integration, etc)
+# Other / Misc (Tools, Programs, Integration, etc.)
 # ----------------------------------------------------------------------------
 
 # Argument Clinic
