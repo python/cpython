@@ -1,11 +1,15 @@
-"""Test script for the dbm.open function based on testdumbdbm.py"""
-
 import unittest
 import dbm
 import os
+import contextlib
+import io
+import sys
+
 from test.support import import_helper
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
+from dbm.__main__ import main as dbm_main
 
 try:
     from dbm import sqlite3 as dbm_sqlite3
@@ -308,6 +312,99 @@ class WhichDBTestCase(unittest.TestCase):
         setup_test_dir()
         self.dbm = import_helper.import_fresh_module('dbm')
 
+
+class DBMCommandLineTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(cleaunup_test_dir)
+        setup_test_dir()
+        self.test_db = os.path.join(dirname, 'test.db')
+        with dbm.open(self.test_db, 'c') as db:
+            db[b'key1'] = b'value1'
+            db[b'key2'] = b'value2'
+        self.empty_db = os.path.join(dirname, 'empty.db')
+        with dbm.open(self.empty_db, 'c'):
+            pass
+        self.dbm = import_helper.import_fresh_module('dbm')
+
+    def run_cmd_ok(self, *args):
+        return assert_python_ok('-m', 'dbm', *args).out
+
+    def run_cmd_error(self, *args):
+        return assert_python_failure('-m', 'dbm', *args)
+
+    def test_help(self):
+        output = self.run_cmd_ok('-h')
+        self.assertIn(b'usage:', output)
+        self.assertIn(b'python -m dbm', output)
+        self.assertIn(b'--help', output)
+        self.assertIn(b'whichdb', output)
+        self.assertIn(b'dump', output)
+        self.assertIn(b'reorganize', output)
+
+    def test_whichdb_command(self):
+        output = self.run_cmd_ok('--whichdb', self.test_db)
+        self.assertIn(self.test_db.encode(), output)
+        output = self.run_cmd_ok('--whichdb', self.test_db, self.empty_db)
+        self.assertIn(self.test_db.encode(), output)
+        self.assertIn(self.empty_db.encode(), output)
+
+    def test_whichdb_nonexistent_file(self):
+        rc, _, stderr = self.run_cmd_error('--whichdb', "nonexistent_db")
+        self.assertEqual(rc, 1)
+        self.assertIn(b'not found', stderr)
+
+    def test_whichdb_unknown_format(self):
+        text_file = os.path.join(dirname, 'text.txt')
+        with open(text_file, 'w') as f:
+            f.write('This is not a database file')
+        output = self.run_cmd_ok('--whichdb', text_file)
+        self.assertIn(b'UNKNOWN', output)
+        self.assertIn(text_file.encode(), output)
+
+    def test_whichdb_output_format(self):
+        output = self.run_cmd_ok('--whichdb', self.test_db)
+        output_str = output.decode('utf-8', errors='replace').strip()
+        # Should be "TYPE - FILENAME" format
+        self.assertIn(' - ', output_str)
+        parts = output_str.split(' - ', 1)
+        self.assertEqual(len(parts), 2)
+        self.assertEqual(parts[1], self.test_db)
+
+    def test_dump_command(self):
+        output = self.run_cmd_ok('--dump', self.test_db)
+        self.assertIn(b'key1: value1', output)
+        self.assertIn(b'key2: value2', output)
+
+    def test_dump_empty_database(self):
+        output = self.run_cmd_ok('--dump', self.empty_db)
+        self.assertEqual(output.strip(), b'')
+
+    def test_dump_nonexistent_database(self):
+        rc, _, stderr = self.run_cmd_error('--dump', "nonexistent_db")
+        self.assertEqual(rc, 1)
+        self.assertIn(b'not found', stderr)
+
+    def test_reorganize_command(self):
+        self.addCleanup(setattr, dbm, '_defaultmod', dbm._defaultmod)
+        for module in dbm_iterator():
+            setup_test_dir()
+            dbm._defaultmod = module
+            with module.open(_fname, 'c') as f:
+                f[b"1"] = b"1"
+            if hasattr(module, 'reorganize'):
+                with module.open(_fname, 'c') as db:
+                    output = self.run_cmd_ok('--reorganize', db)
+                    self.assertIn(b'Reorganized', output)
+
+    def test_output_format_consistency(self):
+        output = self.run_cmd_ok('--dump', self.test_db)
+        lines = output.decode('utf-8', errors='replace').strip().split('\n')
+        for line in lines:
+            if line.strip():  # Skip empty lines
+                self.assertIn(':', line)
+                parts = line.split(':', 1)
+                self.assertEqual(len(parts), 2)
 
 for mod in dbm_iterator():
     assert mod.__name__.startswith('dbm.')
