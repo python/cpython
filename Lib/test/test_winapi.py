@@ -183,8 +183,7 @@ class WinAPITests(unittest.TestCase):
                             test_strings, test_data)
 
         # Test with empty strings list
-        _winapi.ReportEvent(handle, _winapi.EVENTLOG_AUDIT_FAILURE ,2, 0, 1003,
-                            [])
+        _winapi.ReportEvent(handle, _winapi.EVENTLOG_AUDIT_FAILURE, 2, 1003, [])
 
         with self.assertRaisesRegex(OSError, '[WinError 6]'):
             _winapi.ReportEvent(_winapi.INVALID_HANDLE_VALUE,
