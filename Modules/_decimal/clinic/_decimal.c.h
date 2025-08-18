@@ -6,7 +6,205 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
+PyDoc_STRVAR(_decimal_IEEEContext__doc__,
+"IEEEContext($module, bits, /)\n"
+"--\n"
+"\n"
+"Return a context, initialized as one of the IEEE interchange formats.\n"
+"\n"
+"The argument must be a multiple of 32 and less than\n"
+"IEEE_CONTEXT_MAX_BITS.");
+
+#define _DECIMAL_IEEECONTEXT_METHODDEF    \
+    {"IEEEContext", (PyCFunction)_decimal_IEEEContext, METH_O, _decimal_IEEEContext__doc__},
+
+static PyObject *
+_decimal_IEEEContext_impl(PyObject *module, Py_ssize_t bits);
+
+static PyObject *
+_decimal_IEEEContext(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t bits;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        bits = ival;
+    }
+    return_value = _decimal_IEEEContext_impl(module, bits);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_getcontext__doc__,
+"getcontext($module, /)\n"
+"--\n"
+"\n"
+"Get the current default context.");
+
+#define _DECIMAL_GETCONTEXT_METHODDEF    \
+    {"getcontext", (PyCFunction)_decimal_getcontext, METH_NOARGS, _decimal_getcontext__doc__},
+
+static PyObject *
+_decimal_getcontext_impl(PyObject *module);
+
+static PyObject *
+_decimal_getcontext(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_getcontext_impl(module);
+}
+
+PyDoc_STRVAR(_decimal_setcontext__doc__,
+"setcontext($module, context, /)\n"
+"--\n"
+"\n"
+"Set a new default context.");
+
+#define _DECIMAL_SETCONTEXT_METHODDEF    \
+    {"setcontext", (PyCFunction)_decimal_setcontext, METH_O, _decimal_setcontext__doc__},
+
+PyDoc_STRVAR(_decimal_localcontext__doc__,
+"localcontext($module, /, ctx=None, **kwargs)\n"
+"--\n"
+"\n"
+"Return a context manager for a copy of the supplied context.\n"
+"\n"
+"That will set the default context to a copy of ctx on entry to the\n"
+"with-statement and restore the previous default context when exiting\n"
+"the with-statement. If no context is specified, a copy of the current\n"
+"default context is used.");
+
+#define _DECIMAL_LOCALCONTEXT_METHODDEF    \
+    {"localcontext", _PyCFunction_CAST(_decimal_localcontext), METH_FASTCALL|METH_KEYWORDS, _decimal_localcontext__doc__},
+
+static PyObject *
+_decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
+                           PyObject *rounding, PyObject *Emin,
+                           PyObject *Emax, PyObject *capitals,
+                           PyObject *clamp, PyObject *flags, PyObject *traps);
+
+static PyObject *
+_decimal_localcontext(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 9
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(ctx), &_Py_ID(prec), &_Py_ID(rounding), &_Py_ID(Emin), &_Py_ID(Emax), &_Py_ID(capitals), &_Py_ID(clamp), &_Py_ID(flags), &_Py_ID(traps), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"ctx", "prec", "rounding", "Emin", "Emax", "capitals", "clamp", "flags", "traps", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "localcontext",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[9];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *local = Py_None;
+    PyObject *prec = Py_None;
+    PyObject *rounding = Py_None;
+    PyObject *Emin = Py_None;
+    PyObject *Emax = Py_None;
+    PyObject *capitals = Py_None;
+    PyObject *clamp = Py_None;
+    PyObject *flags = Py_None;
+    PyObject *traps = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        local = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        prec = args[1];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        rounding = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        Emin = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        Emax = args[4];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[5]) {
+        capitals = args[5];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[6]) {
+        clamp = args[6];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[7]) {
+        flags = args[7];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    traps = args[8];
+skip_optional_kwonly:
+    return_value = _decimal_localcontext_impl(module, local, prec, rounding, Emin, Emax, capitals, clamp, flags, traps);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(_decimal_Decimal_from_float__doc__,
 "from_float($type, f, /)\n"
@@ -68,6 +266,45 @@ _decimal_Decimal_from_number(PyObject *type, PyObject *number)
 
     return_value = _decimal_Decimal_from_number_impl((PyTypeObject *)type, number);
 
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Decimal___format____doc__,
+"__format__($self, format_spec, override=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Formats the Decimal according to format_spec.");
+
+#define _DECIMAL_DECIMAL___FORMAT___METHODDEF    \
+    {"__format__", _PyCFunction_CAST(_decimal_Decimal___format__), METH_FASTCALL, _decimal_Decimal___format____doc__},
+
+static PyObject *
+_decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
+                                 PyObject *override);
+
+static PyObject *
+_decimal_Decimal___format__(PyObject *dec, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *fmtarg;
+    PyObject *override = NULL;
+
+    if (!_PyArg_CheckPositional("__format__", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("__format__", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    fmtarg = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    override = args[1];
+skip_optional:
+    return_value = _decimal_Decimal___format___impl(dec, fmtarg, override);
+
+exit:
     return return_value;
 }
 
@@ -846,4 +1083,86 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f33166d1bf53e613 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_decimal_Context_power__doc__,
+"power($self, /, a, b, modulo=None)\n"
+"--\n"
+"\n"
+"Compute a**b.\n"
+"\n"
+"If \'a\' is negative, then \'b\' must be integral. The result will be\n"
+"inexact unless \'a\' is integral and the result is finite and can be\n"
+"expressed exactly in \'precision\' digits.  In the Python version the\n"
+"result is always correctly rounded, in the C version the result is\n"
+"almost always correctly rounded.\n"
+"\n"
+"If modulo is given, compute (a**b) % modulo. The following\n"
+"restrictions hold:\n"
+"\n"
+"    * all three arguments must be integral\n"
+"    * \'b\' must be nonnegative\n"
+"    * at least one of \'a\' or \'b\' must be nonzero\n"
+"    * modulo must be nonzero and less than 10**prec in absolute value");
+
+#define _DECIMAL_CONTEXT_POWER_METHODDEF    \
+    {"power", _PyCFunction_CAST(_decimal_Context_power), METH_FASTCALL|METH_KEYWORDS, _decimal_Context_power__doc__},
+
+static PyObject *
+_decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
+                            PyObject *mod);
+
+static PyObject *
+_decimal_Context_power(PyObject *context, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 3
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(modulo), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"a", "b", "modulo", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "power",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    PyObject *base;
+    PyObject *exp;
+    PyObject *mod = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    base = args[0];
+    exp = args[1];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    mod = args[2];
+skip_optional_pos:
+    return_value = _decimal_Context_power_impl(context, base, exp, mod);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=6bb5c926552c2760 input=a9049054013a1b77]*/
