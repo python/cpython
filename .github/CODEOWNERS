@@ -121,11 +121,6 @@ Tools/c-analyzer/             @ericsnowcurrently
 # Fuzzing
 Modules/_xxtestfuzz/          @ammaraskar
 
-# IDLE
-Doc/library/idle.rst          @terryjreedy
-Lib/idlelib/                  @terryjreedy
-Lib/turtledemo/               @terryjreedy
-
 # Limited C API & stable ABI
 Doc/c-api/stable.rst          @encukou
 Doc/data/*.abi                @encukou
@@ -473,6 +468,11 @@ Lib/html/                           @ezio-melotti
 Lib/_markupbase.py                  @ezio-melotti
 Lib/test/test_html*.py              @ezio-melotti
 Tools/build/parse_html5_entities.py @ezio-melotti
+
+# IDLE
+Doc/library/idle.rst          @terryjreedy
+Lib/idlelib/                  @terryjreedy
+Lib/turtledemo/               @terryjreedy
 
 # importlib.metadata
 Doc/library/importlib.metadata.rst  @jaraco @warsaw
