@@ -164,7 +164,14 @@ py2rlim(PyObject *obj, rlim_t *out)
     if (bytes < 0) {
         return -1;
     }
-    else if (neg && (*out != RLIM_INFINITY || bytes > (Py_ssize_t)sizeof(*out))) {
+    else if (neg && *out == RLIM_INFINITY && bytes <= (Py_ssize_t)sizeof(*out)) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "Use RLIM_INFINITY instead of negative limit value.", 1))
+        {
+            return -1;
+        }
+    }
+    else if (neg) {
         PyErr_SetString(PyExc_ValueError,
             "Cannot convert negative int");
         return -1;
@@ -210,9 +217,6 @@ error:
 static PyObject*
 rlim2py(rlim_t value)
 {
-    if (value == RLIM_INFINITY) {
-        return PyLong_FromNativeBytes(&value, sizeof(value), -1);
-    }
     return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1);
 }
 
