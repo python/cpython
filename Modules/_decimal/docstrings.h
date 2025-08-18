@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2012 Python Software Foundation. All Rights Reserved.
+ * Copyright (c) 2001 Python Software Foundation. All Rights Reserved.
  * Modified and extended by Stefan Krah.
  */
 
@@ -19,35 +19,6 @@
 PyDoc_STRVAR(doc__decimal,
 "C decimal arithmetic module");
 
-PyDoc_STRVAR(doc_getcontext,
-"getcontext($module, /)\n--\n\n\
-Get the current default context.\n\
-\n");
-
-PyDoc_STRVAR(doc_setcontext,
-"setcontext($module, context, /)\n--\n\n\
-Set a new default context.\n\
-\n");
-
-PyDoc_STRVAR(doc_localcontext,
-"localcontext($module, /, ctx=None, **kwargs)\n--\n\n\
-Return a context manager that will set the default context to a copy of ctx\n\
-on entry to the with-statement and restore the previous default context when\n\
-exiting the with-statement. If no context is specified, a copy of the current\n\
-default context is used.\n\
-\n");
-
-#ifdef EXTRA_FUNCTIONALITY
-PyDoc_STRVAR(doc_ieee_context,
-"IEEEContext($module, bits, /)\n--\n\n\
-Return a context object initialized to the proper values for one of the\n\
-IEEE interchange formats.  The argument must be a multiple of 32 and less\n\
-than IEEE_CONTEXT_MAX_BITS.  For the most common values, the constants\n\
-DECIMAL32, DECIMAL64 and DECIMAL128 are provided.\n\
-\n");
-#endif
-
-
 /******************************************************************************/
 /*                       Decimal Object and Methods                           */
 /******************************************************************************/
@@ -58,32 +29,6 @@ Construct a new Decimal object. 'value' can be an integer, string, tuple,\n\
 or another Decimal object. If no value is given, return Decimal('0'). The\n\
 context does not affect the conversion and is only passed to determine if\n\
 the InvalidOperation trap is active.\n\
-\n");
-
-PyDoc_STRVAR(doc_adjusted,
-"adjusted($self, /)\n--\n\n\
-Return the adjusted exponent of the number.  Defined as exp + digits - 1.\n\
-\n");
-
-PyDoc_STRVAR(doc_as_tuple,
-"as_tuple($self, /)\n--\n\n\
-Return a tuple representation of the number.\n\
-\n");
-
-PyDoc_STRVAR(doc_as_integer_ratio,
-"as_integer_ratio($self, /)\n--\n\n\
-Decimal.as_integer_ratio() -> (int, int)\n\
-\n\
-Return a pair of integers, whose ratio is exactly equal to the original\n\
-Decimal and with a positive denominator. The ratio is in lowest terms.\n\
-Raise OverflowError on infinities and a ValueError on NaNs.\n\
-\n");
-
-PyDoc_STRVAR(doc_canonical,
-"canonical($self, /)\n--\n\n\
-Return the canonical encoding of the argument.  Currently, the encoding\n\
-of a Decimal instance is always canonical, so this operation returns its\n\
-argument unchanged.\n\
 \n");
 
 PyDoc_STRVAR(doc_compare,
@@ -135,58 +80,11 @@ and no rounding is performed. As an exception, the C version may raise\n\
 InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
-PyDoc_STRVAR(doc_conjugate,
-"conjugate($self, /)\n--\n\n\
-Return self.\n\
-\n");
-
-PyDoc_STRVAR(doc_copy_abs,
-"copy_abs($self, /)\n--\n\n\
-Return the absolute value of the argument.  This operation is unaffected by\n\
-context and is quiet: no flags are changed and no rounding is performed.\n\
-\n");
-
-PyDoc_STRVAR(doc_copy_negate,
-"copy_negate($self, /)\n--\n\n\
-Return the negation of the argument.  This operation is unaffected by context\n\
-and is quiet: no flags are changed and no rounding is performed.\n\
-\n");
-
-PyDoc_STRVAR(doc_copy_sign,
-"copy_sign($self, /, other, context=None)\n--\n\n\
-Return a copy of the first operand with the sign set to be the same as the\n\
-sign of the second operand. For example:\n\
-\n\
-    >>> Decimal('2.3').copy_sign(Decimal('-1.5'))\n\
-    Decimal('-2.3')\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
-\n");
-
 PyDoc_STRVAR(doc_exp,
 "exp($self, /, context=None)\n--\n\n\
 Return the value of the (natural) exponential function e**x at the given\n\
 number.  The function always uses the ROUND_HALF_EVEN mode and the result\n\
 is correctly rounded.\n\
-\n");
-
-PyDoc_STRVAR(doc_from_float,
-"from_float($type, f, /)\n--\n\n\
-Class method that converts a float to a decimal number, exactly.\n\
-Since 0.1 is not exactly representable in binary floating point,\n\
-Decimal.from_float(0.1) is not the same as Decimal('0.1').\n\
-\n\
-    >>> Decimal.from_float(0.1)\n\
-    Decimal('0.1000000000000000055511151231257827021181583404541015625')\n\
-    >>> Decimal.from_float(float('nan'))\n\
-    Decimal('NaN')\n\
-    >>> Decimal.from_float(float('inf'))\n\
-    Decimal('Infinity')\n\
-    >>> Decimal.from_float(float('-inf'))\n\
-    Decimal('-Infinity')\n\
-\n\
 \n");
 
 PyDoc_STRVAR(doc_fma,
@@ -355,52 +253,6 @@ For example, Decimal('32.100') and Decimal('0.321000e+2') both normalize\n\
 to the equivalent value Decimal('32.1').\n\
 \n");
 
-PyDoc_STRVAR(doc_number_class,
-"number_class($self, /, context=None)\n--\n\n\
-Return a string describing the class of the operand.  The returned value\n\
-is one of the following ten strings:\n\
-\n\
-    * '-Infinity', indicating that the operand is negative infinity.\n\
-    * '-Normal', indicating that the operand is a negative normal number.\n\
-    * '-Subnormal', indicating that the operand is negative and subnormal.\n\
-    * '-Zero', indicating that the operand is a negative zero.\n\
-    * '+Zero', indicating that the operand is a positive zero.\n\
-    * '+Subnormal', indicating that the operand is positive and subnormal.\n\
-    * '+Normal', indicating that the operand is a positive normal number.\n\
-    * '+Infinity', indicating that the operand is positive infinity.\n\
-    * 'NaN', indicating that the operand is a quiet NaN (Not a Number).\n\
-    * 'sNaN', indicating that the operand is a signaling NaN.\n\
-\n\
-\n");
-
-PyDoc_STRVAR(doc_quantize,
-"quantize($self, /, exp, rounding=None, context=None)\n--\n\n\
-Return a value equal to the first operand after rounding and having the\n\
-exponent of the second operand.\n\
-\n\
-    >>> Decimal('1.41421356').quantize(Decimal('1.000'))\n\
-    Decimal('1.414')\n\
-\n\
-Unlike other operations, if the length of the coefficient after the quantize\n\
-operation would be greater than precision, then an InvalidOperation is signaled.\n\
-This guarantees that, unless there is an error condition, the quantized exponent\n\
-is always equal to that of the right-hand operand.\n\
-\n\
-Also unlike other operations, quantize never signals Underflow, even if the\n\
-result is subnormal and inexact.\n\
-\n\
-If the exponent of the second operand is larger than that of the first, then\n\
-rounding may be necessary. In this case, the rounding mode is determined by the\n\
-rounding argument if given, else by the given context argument; if neither\n\
-argument is given, the rounding mode of the current thread's context is used.\n\
-\n");
-
-PyDoc_STRVAR(doc_radix,
-"radix($self, /)\n--\n\n\
-Return Decimal(10), the radix (base) in which the Decimal class does\n\
-all its arithmetic. Included for compatibility with the specification.\n\
-\n");
-
 PyDoc_STRVAR(doc_remainder_near,
 "remainder_near($self, /, other, context=None)\n--\n\n\
 Return the remainder from dividing self by other.  This differs from\n\
@@ -422,15 +274,6 @@ positive then rotation is to the left; otherwise rotation is to the right.\n\
 The coefficient of the first operand is padded on the left with zeros to\n\
 length precision if necessary. The sign and exponent of the first operand are\n\
 unchanged.\n\
-\n");
-
-PyDoc_STRVAR(doc_same_quantum,
-"same_quantum($self, /, other, context=None)\n--\n\n\
-Test whether self and other have the same exponent or whether both are NaN.\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
 PyDoc_STRVAR(doc_scaleb,
@@ -455,38 +298,6 @@ PyDoc_STRVAR(doc_sqrt,
 "sqrt($self, /, context=None)\n--\n\n\
 Return the square root of the argument to full precision. The result is\n\
 correctly rounded using the ROUND_HALF_EVEN rounding mode.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_eng_string,
-"to_eng_string($self, /, context=None)\n--\n\n\
-Convert to an engineering-type string.  Engineering notation has an exponent\n\
-which is a multiple of 3, so there are up to 3 digits left of the decimal\n\
-place. For example, Decimal('123E+1') is converted to Decimal('1.23E+3').\n\
-\n\
-The value of context.capitals determines whether the exponent sign is lower\n\
-or upper case. Otherwise, the context does not affect the operation.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral,
-"to_integral($self, /, rounding=None, context=None)\n--\n\n\
-Identical to the to_integral_value() method.  The to_integral() name has been\n\
-kept for compatibility with older versions.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral_exact,
-"to_integral_exact($self, /, rounding=None, context=None)\n--\n\n\
-Round to the nearest integer, signaling Inexact or Rounded as appropriate if\n\
-rounding occurs.  The rounding mode is determined by the rounding parameter\n\
-if given, else by the given context. If neither parameter is given, then the\n\
-rounding mode of the current default context is used.\n\
-\n");
-
-PyDoc_STRVAR(doc_to_integral_value,
-"to_integral_value($self, /, rounding=None, context=None)\n--\n\n\
-Round to the nearest integer without signaling Inexact or Rounded.  The\n\
-rounding mode is determined by the rounding parameter if given, else by\n\
-the given context. If neither parameter is given, then the rounding mode\n\
-of the current default context is used.\n\
 \n");
 
 
@@ -780,24 +591,6 @@ PyDoc_STRVAR(doc_ctx_plus,
 "plus($self, x, /)\n--\n\n\
 Plus corresponds to the unary prefix plus operator in Python, but applies\n\
 the context to the result.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_power,
-"power($self, /, a, b, modulo=None)\n--\n\n\
-Compute a**b. If 'a' is negative, then 'b' must be integral. The result\n\
-will be inexact unless 'a' is integral and the result is finite and can\n\
-be expressed exactly in 'precision' digits.  In the Python version the\n\
-result is always correctly rounded, in the C version the result is almost\n\
-always correctly rounded.\n\
-\n\
-If modulo is given, compute (a**b) % modulo. The following restrictions\n\
-hold:\n\
-\n\
-    * all three arguments must be integral\n\
-    * 'b' must be nonnegative\n\
-    * at least one of 'a' or 'b' must be nonzero\n\
-    * modulo must be nonzero and less than 10**prec in absolute value\n\
-\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_quantize,

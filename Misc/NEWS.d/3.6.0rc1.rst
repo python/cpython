@@ -69,8 +69,8 @@ supported.
 .. nonce: ilNIWN
 .. section: Library
 
-Add new :data:`socket.TCP_CONGESTION` (Linux 2.6.13) and
-:data:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
+Add new :const:`socket.TCP_CONGESTION` (Linux 2.6.13) and
+:const:`socket.TCP_USER_TIMEOUT` (Linux 2.6.37) constants. Patch written by
 Omar Sandoval.
 
 ..

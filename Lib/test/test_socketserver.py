@@ -32,11 +32,6 @@ requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
 HAVE_FORKING = test.support.has_fork_support
 requires_forking = unittest.skipUnless(HAVE_FORKING, 'requires forking')
 
-def signal_alarm(n):
-    """Call signal.alarm when it exists (i.e. not on Windows)."""
-    if hasattr(signal, 'alarm'):
-        signal.alarm(n)
-
 # Remember real select() to avoid interferences with mocking
 _real_select = select.select
 
@@ -47,16 +42,8 @@ def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
     else:
         raise RuntimeError("timed out on %r" % (sock,))
 
-if HAVE_UNIX_SOCKETS and HAVE_FORKING:
-    class ForkingUnixStreamServer(socketserver.ForkingMixIn,
-                                  socketserver.UnixStreamServer):
-        pass
 
-    class ForkingUnixDatagramServer(socketserver.ForkingMixIn,
-                                    socketserver.UnixDatagramServer):
-        pass
-
-
+@test.support.requires_fork()
 @contextlib.contextmanager
 def simple_subprocess(testcase):
     """Tests that a custom child process is not waited on (Issue 1540386)"""
@@ -76,12 +63,10 @@ class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
-        signal_alarm(60)  # Kill deadlocks after 60 seconds.
         self.port_seed = 0
         self.test_files = []
 
     def tearDown(self):
-        signal_alarm(0)  # Didn't deadlock.
         reap_children()
 
         for fn in self.test_files:
@@ -211,7 +196,7 @@ class SocketServerTest(unittest.TestCase):
     @requires_forking
     def test_ForkingUnixStreamServer(self):
         with simple_subprocess(self):
-            self.run_server(ForkingUnixStreamServer,
+            self.run_server(socketserver.ForkingUnixStreamServer,
                             socketserver.StreamRequestHandler,
                             self.stream_examine)
 
@@ -247,7 +232,7 @@ class SocketServerTest(unittest.TestCase):
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
-        self.run_server(ForkingUnixDatagramServer,
+        self.run_server(socketserver.ForkingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 

@@ -39,6 +39,21 @@ class Message(email.message.Message):
     def __iter__(self):
         return super().__iter__()
 
+    def __getitem__(self, item):
+        """
+        Override parent behavior to typical dict behavior.
+
+        ``email.message.Message`` will emit None values for missing
+        keys. Typical mappings, including this ``Message``, will raise
+        a key error for missing keys.
+
+        Ref python/importlib_metadata#371.
+        """
+        res = super().__getitem__(item)
+        if res is None:
+            raise KeyError(item)
+        return res
+
     def _repair_headers(self):
         def redent(value):
             "Correct for RFC822 indentation"

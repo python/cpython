@@ -1,5 +1,5 @@
-:mod:`ipaddress` --- IPv4/IPv6 manipulation library
-===================================================
+:mod:`!ipaddress` --- IPv4/IPv6 manipulation library
+====================================================
 
 .. module:: ipaddress
    :synopsis: IPv4/IPv6 manipulation library.
@@ -121,25 +121,19 @@ write code that handles both IP versions correctly.  Address objects are
       Leading zeros are tolerated, even in ambiguous cases that look like
       octal notation.
 
-   .. versionchanged:: 3.10
+   .. versionchanged:: 3.9.5
 
       Leading zeros are no longer tolerated and are treated as an error.
       IPv4 address strings are now parsed as strict as glibc
       :func:`~socket.inet_pton`.
 
-   .. versionchanged:: 3.9.5
-
-      The above change was also included in Python 3.9 starting with
-      version 3.9.5.
-
-   .. versionchanged:: 3.8.12
-
-      The above change was also included in Python 3.8 starting with
-      version 3.8.12.
-
    .. attribute:: version
 
       The appropriate version number: ``4`` for IPv4, ``6`` for IPv6.
+
+      .. versionchanged:: 3.14
+
+         Made available on the class.
 
    .. attribute:: max_prefixlen
 
@@ -149,6 +143,10 @@ write code that handles both IP versions correctly.  Address objects are
       The prefix defines the number of leading bits in an  address that
       are compared to determine whether or not an address is part of a
       network.
+
+      .. versionchanged:: 3.14
+
+         Made available on the class.
 
    .. attribute:: compressed
    .. attribute:: exploded
@@ -188,17 +186,52 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_private
 
-      ``True`` if the address is allocated for private networks.  See
+      ``True`` if the address is defined as not globally reachable by
       iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-      (for IPv6).
+      (for IPv6) with the following exceptions:
+
+      * ``is_private`` is ``False`` for the shared address space (``100.64.0.0/10``)
+      * For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
+        semantics of the underlying IPv4 addresses and the following condition holds
+        (see :attr:`IPv6Address.ipv4_mapped`)::
+
+            address.is_private == address.ipv4_mapped.is_private
+
+      ``is_private`` has value opposite to :attr:`is_global`, except for the shared address space
+      (``100.64.0.0/10`` range) where they are both ``False``.
+
+      .. versionchanged:: 3.13
+
+         Fixed some false positives and false negatives.
+
+         * ``192.0.0.0/24`` is considered private with the exception of ``192.0.0.9/32`` and
+           ``192.0.0.10/32`` (previously: only the ``192.0.0.0/29`` sub-range was considered private).
+         * ``64:ff9b:1::/48`` is considered private.
+         * ``2002::/16`` is considered private.
+         * There are exceptions within ``2001::/23`` (otherwise considered private): ``2001:1::1/128``,
+           ``2001:1::2/128``, ``2001:3::/32``, ``2001:4:112::/48``, ``2001:20::/28``, ``2001:30::/28``.
+           The exceptions are not considered private.
 
    .. attribute:: is_global
 
-      ``True`` if the address is allocated for public networks.  See
+      ``True`` if the address is defined as globally reachable by
       iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-      (for IPv6).
+      (for IPv6) with the following exception:
+
+      For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
+      semantics of the underlying IPv4 addresses and the following condition holds
+      (see :attr:`IPv6Address.ipv4_mapped`)::
+
+         address.is_global == address.ipv4_mapped.is_global
+
+      ``is_global`` has value opposite to :attr:`is_private`, except for the shared address space
+      (``100.64.0.0/10`` range) where they are both ``False``.
 
       .. versionadded:: 3.4
+
+      .. versionchanged:: 3.13
+
+         Fixed some false positives and false negatives, see :attr:`is_private` for details.
 
    .. attribute:: is_unspecified
 
@@ -207,7 +240,16 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_reserved
 
-      ``True`` if the address is otherwise IETF reserved.
+      ``True`` if the address is noted as reserved by the IETF.
+      For IPv4, this is only ``240.0.0.0/4``, the ``Reserved`` address block.
+      For IPv6, this is all addresses `allocated <iana-ipv6-address-space_>`__ as
+      ``Reserved by IETF`` for future use.
+
+      .. note:: For IPv4, ``is_reserved`` is not related to the address block value of the
+        ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
+
+      .. caution:: For IPv6, ``fec0::/10`` a former Site-Local scoped address prefix is
+         currently excluded from that list (see :attr:`~IPv6Address.is_site_local` & :rfc:`3879`).
 
    .. attribute:: is_loopback
 
@@ -219,8 +261,16 @@ write code that handles both IP versions correctly.  Address objects are
       ``True`` if the address is reserved for link-local usage.  See
       :RFC:`3927`.
 
+   .. attribute:: ipv6_mapped
+
+      :class:`IPv4Address` object representing the IPv4-mapped IPv6 address. See :RFC:`4291`.
+
+      .. versionadded:: 3.13
+
+
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+.. _iana-ipv6-address-space: https://www.iana.org/assignments/ipv6-address-space/ipv6-address-space.xhtml
 
 .. method:: IPv4Address.__format__(fmt)
 
@@ -302,13 +352,13 @@ write code that handles both IP versions correctly.  Address objects are
    .. attribute:: is_multicast
    .. attribute:: is_private
    .. attribute:: is_global
+
+      .. versionadded:: 3.4
+
    .. attribute:: is_unspecified
    .. attribute:: is_reserved
    .. attribute:: is_loopback
    .. attribute:: is_link_local
-
-      .. versionadded:: 3.4
-         is_global
 
    .. attribute:: is_site_local
 
@@ -472,7 +522,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 32-bits integer, a 4-bytes packed
-      integer, or an existing IPv4Address object; and the netmask is either
+      integer, or an existing :class:`IPv4Address` object; and the netmask is either
       an integer representing the prefix length (e.g. ``24``) or a string
       representing the prefix mask (e.g. ``255.255.255.0``).
 
@@ -693,7 +743,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 128-bits integer, a 16-bytes packed
-      integer, or an existing IPv6Address object; and the netmask is an
+      integer, or an existing :class:`IPv6Address` object; and the netmask is an
       integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
@@ -749,7 +799,7 @@ dictionaries.
 
    .. attribute:: is_site_local
 
-      These attribute is true for the network as a whole if it is true
+      This attribute is true for the network as a whole if it is true
       for both the network address and the broadcast address.
 
 
@@ -958,7 +1008,7 @@ The module also provides the following module level functions:
 .. function:: collapse_addresses(addresses)
 
    Return an iterator of the collapsed :class:`IPv4Network` or
-   :class:`IPv6Network` objects.  *addresses* is an iterator of
+   :class:`IPv6Network` objects.  *addresses* is an :term:`iterable` of
    :class:`IPv4Network` or :class:`IPv6Network` objects.  A :exc:`TypeError` is
    raised if *addresses* contains mixed version objects.
 
@@ -978,7 +1028,7 @@ The module also provides the following module level functions:
 
    doesn't make sense.  There are some times however, where you may wish to
    have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
-   this function as the *key* argument to :func:`sorted()`.
+   this function as the *key* argument to :func:`sorted`.
 
    *obj* is either a network or address object.
 

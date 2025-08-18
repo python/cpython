@@ -13,7 +13,7 @@ the "typical" Unix-style command-line C compiler:
   * link shared library handled by 'cc -shared'
 """
 
-import os, sys, re
+import os, sys
 
 from distutils.dep_util import newer
 from distutils.ccompiler import CCompiler, gen_preprocess_options

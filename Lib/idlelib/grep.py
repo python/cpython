@@ -190,7 +190,7 @@ class GrepDialog(SearchDialogBase):
 
 
 def _grep_dialog(parent):  # htest #
-    from tkinter import Toplevel, Text, SEL, END
+    from tkinter import Toplevel, Text, SEL
     from tkinter.ttk import Frame, Button
     from idlelib.pyshell import PyShellFileList
 
@@ -204,14 +204,16 @@ def _grep_dialog(parent):  # htest #
     frame.pack()
     text = Text(frame, height=5)
     text.pack()
+    text.insert('1.0', 'import grep')
 
     def show_grep_dialog():
-        text.tag_add(SEL, "1.0", END)
+        text.tag_add(SEL, "1.0", '1.end')
         grep(text, flist=flist)
-        text.tag_remove(SEL, "1.0", END)
+        text.tag_remove(SEL, "1.0", '1.end')
 
     button = Button(frame, text="Show GrepDialog", command=show_grep_dialog)
     button.pack()
+
 
 if __name__ == "__main__":
     from unittest import main

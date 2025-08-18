@@ -1,12 +1,14 @@
 /* _bz2 - Low-level Python interface to libbzip2. */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #include <bzlib.h>
 #include <stdio.h>
+#include <stddef.h>               // offsetof()
 
 // Blocks output buffer wrappers
 #include "pycore_blocks_output_buffer.h"
@@ -114,7 +116,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     bz_stream bzs;
-    char eof;           /* T_BOOL expects a char */
+    char eof;           /* Py_T_BOOL expects a char */
     PyObject *unused_data;
     char needs_input;
     char *input_buffer;
@@ -126,6 +128,9 @@ typedef struct {
     size_t bzs_avail_in_real;
     PyThread_type_lock lock;
 } BZ2Decompressor;
+
+#define _BZ2Compressor_CAST(op)     ((BZ2Compressor *)(op))
+#define _BZ2Decompressor_CAST(op)   ((BZ2Decompressor *)(op))
 
 /* Helper functions. */
 
@@ -374,8 +379,9 @@ error:
 }
 
 static void
-BZ2Compressor_dealloc(BZ2Compressor *self)
+BZ2Compressor_dealloc(PyObject *op)
 {
+    BZ2Compressor *self = _BZ2Compressor_CAST(op);
     BZ2_bzCompressEnd(&self->bzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
@@ -386,7 +392,7 @@ BZ2Compressor_dealloc(BZ2Compressor *self)
 }
 
 static int
-BZ2Compressor_traverse(BZ2Compressor *self, visitproc visit, void *arg)
+BZ2Compressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -592,6 +598,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _bz2.BZ2Decompressor.decompress
 
     data: Py_buffer
@@ -616,7 +623,7 @@ the unused_data attribute.
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
                                      Py_ssize_t max_length)
-/*[clinic end generated code: output=23e41045deb240a3 input=52e1ffc66a8ea624]*/
+/*[clinic end generated code: output=23e41045deb240a3 input=3703e78f91757655]*/
 {
     PyObject *result = NULL;
 
@@ -678,8 +685,10 @@ error:
 }
 
 static void
-BZ2Decompressor_dealloc(BZ2Decompressor *self)
+BZ2Decompressor_dealloc(PyObject *op)
 {
+    BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
+
     if(self->input_buffer != NULL) {
         PyMem_Free(self->input_buffer);
     }
@@ -695,7 +704,7 @@ BZ2Decompressor_dealloc(BZ2Decompressor *self)
 }
 
 static int
-BZ2Decompressor_traverse(BZ2Decompressor *self, visitproc visit, void *arg)
+BZ2Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -716,11 +725,11 @@ PyDoc_STRVAR(BZ2Decompressor_needs_input_doc,
 "True if more input is needed before more decompressed data can be produced.");
 
 static PyMemberDef BZ2Decompressor_members[] = {
-    {"eof", T_BOOL, offsetof(BZ2Decompressor, eof),
-     READONLY, BZ2Decompressor_eof__doc__},
-    {"unused_data", T_OBJECT_EX, offsetof(BZ2Decompressor, unused_data),
-     READONLY, BZ2Decompressor_unused_data__doc__},
-    {"needs_input", T_BOOL, offsetof(BZ2Decompressor, needs_input), READONLY,
+    {"eof", Py_T_BOOL, offsetof(BZ2Decompressor, eof),
+     Py_READONLY, BZ2Decompressor_eof__doc__},
+    {"unused_data", Py_T_OBJECT_EX, offsetof(BZ2Decompressor, unused_data),
+     Py_READONLY, BZ2Decompressor_unused_data__doc__},
+    {"needs_input", Py_T_BOOL, offsetof(BZ2Decompressor, needs_input), Py_READONLY,
      BZ2Decompressor_needs_input_doc},
     {NULL}
 };
@@ -799,6 +808,8 @@ _bz2_free(void *module)
 
 static struct PyModuleDef_Slot _bz2_slots[] = {
     {Py_mod_exec, _bz2_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

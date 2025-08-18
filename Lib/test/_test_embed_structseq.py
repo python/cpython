@@ -11,7 +11,7 @@ class TestStructSeq(unittest.TestCase):
         # ob_refcnt
         self.assertGreaterEqual(sys.getrefcount(obj_type), 1)
         # tp_base
-        self.assertTrue(issubclass(obj_type, tuple))
+        self.assertIsSubclass(obj_type, tuple)
         # tp_bases
         self.assertEqual(obj_type.__bases__, (tuple,))
         # tp_dict
@@ -48,7 +48,14 @@ class TestStructSeq(unittest.TestCase):
 
 
 try:
-    unittest.main()
+    unittest.main(
+        module=(
+            '__main__'
+            if __name__ == '__main__'
+            # Avoiding a circular import:
+            else sys.modules['test._test_embed_structseq']
+        )
+    )
 except SystemExit as exc:
     if exc.args[0] != 0:
         raise

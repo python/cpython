@@ -9,7 +9,7 @@ Sequence Protocol
 .. c:function:: int PySequence_Check(PyObject *o)
 
    Return ``1`` if the object provides the sequence protocol, and ``0`` otherwise.
-   Note that it returns ``1`` for Python classes with a :meth:`__getitem__`
+   Note that it returns ``1`` for Python classes with a :meth:`~object.__getitem__`
    method, unless they are :class:`dict` subclasses, since in general it
    is impossible to determine what type of keys the class supports.  This
    function always succeeds.
@@ -18,7 +18,7 @@ Sequence Protocol
 .. c:function:: Py_ssize_t PySequence_Size(PyObject *o)
                Py_ssize_t PySequence_Length(PyObject *o)
 
-   .. index:: builtin: len
+   .. index:: pair: built-in function; len
 
    Returns the number of objects in sequence *o* on success, and ``-1`` on
    failure.  This is equivalent to the Python expression ``len(o)``.
@@ -105,6 +105,15 @@ Sequence Protocol
    equivalent to the Python expression ``value in o``.
 
 
+.. c:function:: int PySequence_In(PyObject *o, PyObject *value)
+
+   Alias for :c:func:`PySequence_Contains`.
+
+   .. deprecated:: 3.14
+      The function is :term:`soft deprecated` and should no longer be used to
+      write new code.
+
+
 .. c:function:: Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)
 
    Return the first index *i* for which ``o[i] == value``.  On error, return
@@ -120,7 +129,7 @@ Sequence Protocol
 
 .. c:function:: PyObject* PySequence_Tuple(PyObject *o)
 
-   .. index:: builtin: tuple
+   .. index:: pair: built-in function; tuple
 
    Return a tuple object with the same contents as the sequence or iterable *o*,
    or ``NULL`` on failure.  If *o* is a tuple, a new reference will be returned,

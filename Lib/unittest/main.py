@@ -3,12 +3,12 @@
 import sys
 import argparse
 import os
-import warnings
 
 from . import loader, runner
 from .signals import installHandler
 
 __unittest = True
+_NO_TESTS_EXITCODE = 5
 
 MAIN_EXAMPLES = """\
 Examples:
@@ -102,16 +102,6 @@ class TestProgram(object):
         self.progName = os.path.basename(argv[0])
         self.parseArgs(argv)
         self.runTests()
-
-    def usageExit(self, msg=None):
-        warnings.warn("TestProgram.usageExit() is deprecated and will be"
-                      " removed in Python 3.13", DeprecationWarning)
-        if msg:
-            print(msg)
-        if self._discovery_parser is None:
-            self._initArgParsers()
-        self._print_help()
-        sys.exit(2)
 
     def _print_help(self, *args, **kwargs):
         if self.module is None:
@@ -207,7 +197,7 @@ class TestProgram(object):
         return parser
 
     def _getMainArgParser(self, parent):
-        parser = argparse.ArgumentParser(parents=[parent])
+        parser = argparse.ArgumentParser(parents=[parent], color=True)
         parser.prog = self.progName
         parser.print_help = self._print_help
 
@@ -218,7 +208,7 @@ class TestProgram(object):
         return parser
 
     def _getDiscoveryArgParser(self, parent):
-        parser = argparse.ArgumentParser(parents=[parent])
+        parser = argparse.ArgumentParser(parents=[parent], color=True)
         parser.prog = '%s discover' % self.progName
         parser.epilog = ('For test discovery all test modules must be '
                          'importable from the top level directory of the '
@@ -279,6 +269,12 @@ class TestProgram(object):
             testRunner = self.testRunner
         self.result = testRunner.run(self.test)
         if self.exit:
-            sys.exit(not self.result.wasSuccessful())
+            if self.result.testsRun == 0 and len(self.result.skipped) == 0:
+                sys.exit(_NO_TESTS_EXITCODE)
+            elif self.result.wasSuccessful():
+                sys.exit(0)
+            else:
+                sys.exit(1)
+
 
 main = TestProgram

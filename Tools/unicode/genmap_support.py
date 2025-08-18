@@ -2,7 +2,7 @@
 # genmap_support.py: Multibyte Codec Map Generator
 #
 # Original Author:  Hye-Shik Chang <perky@FreeBSD.org>
-# Modified Author:  Dong-hee Na <donghee.na92@gmail.com>
+# Modified Author:  Donghee Na <donghee.na92@gmail.com>
 #
 
 
