@@ -232,6 +232,19 @@ class OptimizerEmitter(Emitter):
                 emitter.emit(f"{outp.name} = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal({outp.name}_stackref));\n")
             else:
                 emitter.emit(f"{outp.name} = sym_new_const(ctx, PyStackRef_AsPyObjectBorrow({outp.name}_stackref));\n")
+
+        if len(used_stack_inputs) == 2 and len(self.original_uop.stack.outputs) == 1:
+                outp = self.original_uop.stack.outputs[0]
+                if not outp.peek:
+                    emitter.emit(f"""
+                if (sym_is_const(ctx, {outp.name})) {{
+                    PyObject *result = sym_get_const(ctx, {outp.name});
+                    if (_Py_IsImmortal(result)) {{
+                        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+                        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+                    }}
+                }}""")
+
         storage.flush(self.out)
         emitter.emit("break;\n")
         emitter.emit("}\n")
@@ -398,9 +411,9 @@ def generate_abstract_interpreter(
     out.emit("\n")
     base_uop_names = set([uop.name for uop in base.uops.values()])
     for abstract_uop_name in abstract.uops:
-        assert (
-            abstract_uop_name in base_uop_names
-        ), f"All abstract uops should override base uops, but {abstract_uop_name} is not."
+        if abstract_uop_name not in base_uop_names:
+            raise ValueError(f"All abstract uops should override base uops, "
+                                 "but {abstract_uop_name} is not.")
 
     for uop in base.uops.values():
         override: Uop | None = None

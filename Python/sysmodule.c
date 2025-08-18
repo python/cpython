@@ -1183,9 +1183,10 @@ sys__settraceallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-
-    PyEval_SetTraceAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetTraceAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1263,8 +1264,10 @@ sys__setprofileallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-    PyEval_SetProfileAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetProfileAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2640,6 +2643,7 @@ sys__baserepl_impl(PyObject *module)
     PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
     Py_RETURN_NONE;
 }
+
 
 /*[clinic input]
 sys._is_gil_enabled -> bool

@@ -137,8 +137,9 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 BUILTIN_EXCEPTION_LIMIT = object()
 
 
-def _print_exception_bltin(exc, /):
-    file = sys.stderr if sys.stderr is not None else sys.__stderr__
+def _print_exception_bltin(exc, file=None, /):
+    if file is None:
+        file = sys.stderr if sys.stderr is not None else sys.__stderr__
     colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
@@ -287,6 +288,12 @@ class FrameSummary:
       of code that was running when the frame was captured.
     - :attr:`locals` Either None if locals were not supplied, or a dict
       mapping the name to the repr() of the variable.
+    - :attr:`end_lineno` The last line number of the source code for this frame.
+      By default, it is set to lineno and indexation starts from 1.
+    - :attr:`colno` The column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
+    - :attr:`end_colno` The last column number of the source code for this frame.
+      By default, it is None and indexation starts from 0.
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
@@ -534,7 +541,7 @@ class StackSummary(list):
         colorize = kwargs.get("colorize", False)
         row = []
         filename = frame_summary.filename
-        if frame_summary.filename.startswith("<stdin>-"):
+        if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
             theme = _colorize.get_theme(force_color=True).traceback
@@ -1100,6 +1107,11 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
+                sys.flags.no_site and \
+                getattr(exc_value, "name", None) not in sys.stdlib_module_names:
+            self._str += (". Site initialization is disabled, did you forget to "
+                + "add the site-packages directory to sys.path?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1310,7 +1322,6 @@ class TracebackException:
             lines = source.splitlines()
 
         error_code = lines[line -1 if line > 0 else 0:end_line]
-        error_code[0] = error_code[0][offset:]
         error_code = textwrap.dedent('\n'.join(error_code))
 
         # Do not continue if the source is too large
@@ -1326,7 +1337,8 @@ class TracebackException:
             if token.type != tokenize.NAME:
                 continue
             # Only consider NAME tokens on the same line as the error
-            if from_filename and token.start[0]+line != end_line+1:
+            the_end = end_line if line == 0 else end_line + 1
+            if from_filename and token.start[0]+line != the_end:
                 continue
             wrong_name = token.string
             if wrong_name in keyword.kwlist:

@@ -75,7 +75,7 @@
 #endif
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 
-
+#define MAX_TLBC_SIZE 2048
 
 // Copied from Modules/_asynciomodule.c because it's not exported
 
@@ -811,7 +811,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     }
 #elif defined(__linux__)
     // On Linux, search for asyncio debug in executable or DLL
-    address = search_linux_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+    address = search_linux_map_for_section(handle, "AsyncioDebug", "python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
         PyObject *exc = PyErr_GetRaisedException();
@@ -820,10 +820,10 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+    address = search_map_for_section(handle, "AsyncioDebug", "libpython");
     if (address == 0) {
         PyErr_Clear();
-        address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+        address = search_map_for_section(handle, "AsyncioDebug", "python");
     }
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
@@ -1568,15 +1568,34 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     TLBCCacheEntry *entry = NULL;
 
     // Read the TLBC array pointer
-    if (read_ptr(unwinder, tlbc_array_addr, &tlbc_array_ptr) != 0 || tlbc_array_ptr == 0) {
+    if (read_ptr(unwinder, tlbc_array_addr, &tlbc_array_ptr) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array pointer");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array pointer");
+        return 0; // Read error
+    }
+
+    // Validate TLBC array pointer
+    if (tlbc_array_ptr == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "TLBC array pointer is NULL");
         return 0; // No TLBC array
     }
 
     // Read the TLBC array size
     Py_ssize_t tlbc_size;
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, tlbc_array_ptr, sizeof(tlbc_size), &tlbc_size) != 0 || tlbc_size <= 0) {
+    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, tlbc_array_ptr, sizeof(tlbc_size), &tlbc_size) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array size");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array size");
+        return 0; // Read error
+    }
+
+    // Validate TLBC array size
+    if (tlbc_size <= 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid TLBC array size");
+        return 0; // Invalid size
+    }
+
+    if (tlbc_size > MAX_TLBC_SIZE) {
+        PyErr_SetString(PyExc_RuntimeError, "TLBC array size exceeds maximum limit");
         return 0; // Invalid size
     }
 
@@ -1584,6 +1603,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     size_t array_data_size = tlbc_size * sizeof(void*);
     tlbc_array = PyMem_RawMalloc(sizeof(Py_ssize_t) + array_data_size);
     if (!tlbc_array) {
+        PyErr_NoMemory();
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate TLBC array");
         return 0; // Memory error
     }
@@ -1597,6 +1617,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     // Create cache entry
     entry = PyMem_RawMalloc(sizeof(TLBCCacheEntry));
     if (!entry) {
+        PyErr_NoMemory();
         PyMem_RawFree(tlbc_array);
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate TLBC cache entry");
         return 0; // Memory error
@@ -1777,6 +1798,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 
         meta = PyMem_RawMalloc(sizeof(CachedCodeMetadata));
         if (!meta) {
+            PyErr_NoMemory();
             set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate cached code metadata");
             goto error;
         }
