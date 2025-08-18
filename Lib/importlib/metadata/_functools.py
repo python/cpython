@@ -1,5 +1,5 @@
-import functools
 import types
+import functools
 
 
 # from jaraco.functools 3.3
