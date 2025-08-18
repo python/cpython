@@ -409,6 +409,28 @@ class TestCase(unittest.TestCase):
         self.assertRaises(shelve.ShelveError, shelve.Shelf, {}, **kwargs)
         self.assertRaises(shelve.ShelveError, shelve.BsdDbShelf, {}, **kwargs)
 
+    def test_custom_serializer_returns_wrong_type_for_key(self):
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        def serializer(obj, protocol):
+            # Return None instead of bytes, which is wrong for dbm keys
+            return None
+
+        def deserializer(data):
+            return data.decode("utf-8") if data else ""
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto), shelve.open(
+                self.fn,
+                protocol=proto,
+                serializer=serializer,
+                deserializer=deserializer
+            ) as s:
+                # Serializer returns None for the value, but dbm expects bytes
+                with self.assertRaises((TypeError, dbm.error)):
+                    s["foo"] = "bar"
+
 
 class TestShelveBase:
     type2test = shelve.Shelf
