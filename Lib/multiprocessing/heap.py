@@ -155,6 +155,15 @@ class Heap(object):
         mask = alignment - 1
         return (n + mask) & ~mask
 
+    @staticmethod
+    # Bind sys.maxsize once at function definition time to avoid global lookups.
+    def _validate_size(size, _maxsize=sys.maxsize):
+        """Validate requested size; raise ValueError if < 0, OverflowError if >= _maxsize."""
+        if size < 0:
+            raise ValueError("Size {0:n} out of range".format(size))
+        if _maxsize <= size:
+            raise OverflowError("Size {0:n} too large".format(size))
+
     def _new_arena(self, size):
         # Create a new arena with at least the given *size*
         length = self._roundup(max(self._size, size), mmap.PAGESIZE)
@@ -295,10 +304,7 @@ class Heap(object):
 
     def malloc(self, size):
         # return a block of right size (possibly rounded up)
-        if size < 0:
-            raise ValueError("Size {0:n} out of range".format(size))
-        if sys.maxsize <= size:
-            raise OverflowError("Size {0:n} too large".format(size))
+        Heap._validate_size(size)
         if os.getpid() != self._lastpid:
             self.__init__()                     # reinitialize after fork
         with self._lock:
@@ -324,10 +330,7 @@ class BufferWrapper(object):
     _heap = Heap()
 
     def __init__(self, size):
-        if size < 0:
-            raise ValueError("Size {0:n} out of range".format(size))
-        if sys.maxsize <= size:
-            raise OverflowError("Size {0:n} too large".format(size))
+        Heap._validate_size(size)
         block = BufferWrapper._heap.malloc(size)
         self._state = (block, size)
         util.Finalize(self, BufferWrapper._heap.free, args=(block,))
