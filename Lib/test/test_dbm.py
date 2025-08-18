@@ -1,15 +1,11 @@
 import unittest
 import dbm
 import os
-import contextlib
-import io
-import sys
 
 from test.support import import_helper
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
-from dbm.__main__ import main as dbm_main
 
 try:
     from dbm import sqlite3 as dbm_sqlite3
