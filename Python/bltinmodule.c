@@ -570,6 +570,14 @@ filter_traverse(filterobject *lz, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+filter_clear(filterobject *lz)
+{
+    Py_CLEAR(lz->it);
+    Py_CLEAR(lz->func);
+    return 0;
+}
+
 static PyObject *
 filter_next(filterobject *lz)
 {
@@ -650,7 +658,7 @@ PyTypeObject PyFilter_Type = {
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     filter_doc,                         /* tp_doc */
     (traverseproc)filter_traverse,      /* tp_traverse */
-    0,                                  /* tp_clear */
+    (inquiry)filter_clear,              /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
