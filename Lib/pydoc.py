@@ -1746,7 +1746,8 @@ def resolve(thing, forceload=0):
             raise ImportError('''\
 No Python documentation found for %r.
 %sUse help() to get the interactive help utility.
-Use help(str) for help on the str class.''' % (thing, special))
+Use help(str) for help on the str class.
+Additional documentation is available online at https://docs.python.org/%s.%s/''' % (thing, special, *sys.version_info[:2]))
         return object, thing
     else:
         name = getattr(thing, '__name__', None)
