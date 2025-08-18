@@ -158,10 +158,11 @@ def run_multiline_interactive_console(
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
-            r.cmpltn_menu_visible = False
-            r.cmpltn_message_visible = False
-            r.cmpltn_menu = []
-            r.cmpltn_menu_end = 0
+            # r.cmpltn_menu_visible = False
+            # r.cmpltn_message_visible = False
+            # r.cmpltn_menu = []
+            # r.cmpltn_menu_end = 0
+            r.cmpltn_reset()
             if r.input_trans is r.isearch_trans:
                 r.do_cmd(("isearch-end", [""]))
             r.pos = len(r.get_unicode())
