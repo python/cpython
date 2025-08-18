@@ -935,6 +935,7 @@ static PyNumberMethods odict_as_number = {
 /* fromkeys() */
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 OrderedDict.fromkeys
 
@@ -946,7 +947,7 @@ Create a new ordered dictionary with keys from iterable and values set to value.
 
 static PyObject *
 OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value)
-/*[clinic end generated code: output=c10390d452d78d6d input=1a0476c229c597b3]*/
+/*[clinic end generated code: output=c10390d452d78d6d input=1277ae0769083848]*/
 {
     return _PyDict_FromKeys((PyObject *)type, seq, value);
 }
@@ -1101,6 +1102,7 @@ done:
 
 /* Skips __missing__() calls. */
 /*[clinic input]
+@permit_long_summary
 OrderedDict.pop
 
     key: object
@@ -1115,7 +1117,7 @@ raise a KeyError.
 static PyObject *
 OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
                      PyObject *default_value)
-/*[clinic end generated code: output=7a6447d104e7494b input=7efe36601007dff7]*/
+/*[clinic end generated code: output=7a6447d104e7494b input=eebd40ac51666d33]*/
 {
     Py_hash_t hash = PyObject_Hash(key);
     if (hash == -1)
