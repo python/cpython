@@ -1851,6 +1851,7 @@ def _introdoc():
 
 def collect_dunders(symbols):
     dunders = {
+        '__name__': ('name_equals_main', ''),
         '__main__': ('__main__', ''),
         '__call__': ('callable-types', 'SPECIALMETHODS'),
     }
