@@ -352,13 +352,11 @@ their contained methods and nested classes.
 
 .. note::
 
-   Only classes and functions defined at the module level (or inside other
-   classes) are automatically discovered by ``doctest``.
+   ``doctest`` can only automatically discover classes and functions that are
+   defined at the module level or inside other classes.
 
-   Classes or functions defined inside functions cannot be discovered,
-   because their definitions depend on the state of the enclosing
-   function. To make them discoverable, define them outside of
-   the enclosing function.
+   Since nested classes and functions only exist when an outer function
+   is called, they cannot be discovered. Define them outside to make them visible.
 
 .. _doctest-finding-examples:
 
