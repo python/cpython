@@ -1470,7 +1470,6 @@ class LongTest(unittest.TestCase):
             b'\x00': 0,
             b'\x00\x00': 0,
             b'\x01': 1,
-            b'\x00\x01': 256,
             b'\xff': -1,
             b'\xff\xff': -1,
             b'\x81': -127,

@@ -67,6 +67,16 @@ _sysconfig_config_vars_impl(PyObject *module)
         return NULL;
     }
 
+#ifdef Py_DEBUG
+    PyObject *py_debug = _PyLong_GetOne();
+#else
+    PyObject *py_debug = _PyLong_GetZero();
+#endif
+    if (PyDict_SetItemString(config, "Py_DEBUG", py_debug) < 0) {
+        Py_DECREF(config);
+        return NULL;
+    }
+
     return config;
 }
 

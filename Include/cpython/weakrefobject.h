@@ -45,6 +45,9 @@ PyAPI_FUNC(void) _PyWeakref_ClearRef(PyWeakReference *self);
 #define _PyWeakref_CAST(op) \
     (assert(PyWeakref_Check(op)), _Py_CAST(PyWeakReference*, (op)))
 
+// Test if a weak reference is dead.
+PyAPI_FUNC(int) PyWeakref_IsDead(PyObject *ref);
+
 Py_DEPRECATED(3.13) static inline PyObject* PyWeakref_GET_OBJECT(PyObject *ref_obj)
 {
     PyWeakReference *ref = _PyWeakref_CAST(ref_obj);

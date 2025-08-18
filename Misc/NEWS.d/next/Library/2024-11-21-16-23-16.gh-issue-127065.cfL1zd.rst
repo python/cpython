@@ -1,2 +1,0 @@
-Fix crash when calling a :func:`operator.methodcaller` instance from
-multiple threads in the free threading build.

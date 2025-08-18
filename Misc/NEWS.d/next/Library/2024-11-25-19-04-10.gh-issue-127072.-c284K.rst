@@ -1,1 +1,0 @@
-Remove outdated ``socket.NETLINK_*`` constants not present in Linux kernels beyond 2.6.17.

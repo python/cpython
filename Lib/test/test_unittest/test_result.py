@@ -1,13 +1,11 @@
 import io
 import sys
 import textwrap
-
-from test.support import warnings_helper, captured_stdout
-
 import traceback
 import unittest
 from unittest.util import strclass
-from test.support import force_not_colorized
+from test.support import warnings_helper
+from test.support import captured_stdout, force_not_colorized_test_class
 from test.test_unittest.support import BufferedWriter
 
 
@@ -35,6 +33,7 @@ def bad_cleanup2():
     raise ValueError('bad cleanup2')
 
 
+@force_not_colorized_test_class
 class Test_TestResult(unittest.TestCase):
     # Note: there are not separate tests for TestResult.wasSuccessful(),
     # TestResult.errors, TestResult.failures, TestResult.testsRun or
@@ -206,7 +205,6 @@ class Test_TestResult(unittest.TestCase):
         self.assertIs(test_case, test)
         self.assertIsInstance(formatted_exc, str)
 
-    @force_not_colorized
     def test_addFailure_filter_traceback_frames(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -233,7 +231,6 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(len(dropped), 1)
         self.assertIn("raise self.failureException(msg)", dropped[0])
 
-    @force_not_colorized
     def test_addFailure_filter_traceback_frames_context(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -263,7 +260,6 @@ class Test_TestResult(unittest.TestCase):
         self.assertEqual(len(dropped), 1)
         self.assertIn("raise self.failureException(msg)", dropped[0])
 
-    @force_not_colorized
     def test_addFailure_filter_traceback_frames_chained_exception_self_loop(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -289,7 +285,6 @@ class Test_TestResult(unittest.TestCase):
         formatted_exc = result.failures[0][1]
         self.assertEqual(formatted_exc.count("Exception: Loop\n"), 1)
 
-    @force_not_colorized
     def test_addFailure_filter_traceback_frames_chained_exception_cycle(self):
         class Foo(unittest.TestCase):
             def test_1(self):
@@ -451,7 +446,6 @@ class Test_TestResult(unittest.TestCase):
         result.addUnexpectedSuccess(None)
         self.assertTrue(result.shouldStop)
 
-    @force_not_colorized
     def testFailFastSetByRunner(self):
         stream = BufferedWriter()
         runner = unittest.TextTestRunner(stream=stream, failfast=True)
@@ -460,9 +454,10 @@ class Test_TestResult(unittest.TestCase):
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()
-        self.assertTrue(stream.getvalue().endswith('\n\nOK\n'))
+        self.assertEndsWith(stream.getvalue(), '\n\nOK\n')
 
 
+@force_not_colorized_test_class
 class Test_TextTestResult(unittest.TestCase):
     maxDiff = None
 
@@ -625,7 +620,6 @@ class Test_TextTestResult(unittest.TestCase):
         test.run(result)
         return stream.getvalue()
 
-    @force_not_colorized
     def testDotsOutput(self):
         self.assertEqual(self._run_test('testSuccess', 1), '.')
         self.assertEqual(self._run_test('testSkip', 1), 's')
@@ -634,7 +628,6 @@ class Test_TextTestResult(unittest.TestCase):
         self.assertEqual(self._run_test('testExpectedFailure', 1), 'x')
         self.assertEqual(self._run_test('testUnexpectedSuccess', 1), 'u')
 
-    @force_not_colorized
     def testLongOutput(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
         self.assertEqual(self._run_test('testSuccess', 2),
@@ -650,21 +643,17 @@ class Test_TextTestResult(unittest.TestCase):
         self.assertEqual(self._run_test('testUnexpectedSuccess', 2),
                          f'testUnexpectedSuccess ({classname}.testUnexpectedSuccess) ... unexpected success\n')
 
-    @force_not_colorized
     def testDotsOutputSubTestSuccess(self):
         self.assertEqual(self._run_test('testSubTestSuccess', 1), '.')
 
-    @force_not_colorized
     def testLongOutputSubTestSuccess(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
         self.assertEqual(self._run_test('testSubTestSuccess', 2),
                          f'testSubTestSuccess ({classname}.testSubTestSuccess) ... ok\n')
 
-    @force_not_colorized
     def testDotsOutputSubTestMixed(self):
         self.assertEqual(self._run_test('testSubTestMixed', 1), 'sFE')
 
-    @force_not_colorized
     def testLongOutputSubTestMixed(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
         self.assertEqual(self._run_test('testSubTestMixed', 2),
@@ -673,7 +662,6 @@ class Test_TextTestResult(unittest.TestCase):
                 f'  testSubTestMixed ({classname}.testSubTestMixed) [fail] (c=3) ... FAIL\n'
                 f'  testSubTestMixed ({classname}.testSubTestMixed) [error] (d=4) ... ERROR\n')
 
-    @force_not_colorized
     def testDotsOutputTearDownFail(self):
         out = self._run_test('testSuccess', 1, AssertionError('fail'))
         self.assertEqual(out, 'F')
@@ -684,7 +672,6 @@ class Test_TextTestResult(unittest.TestCase):
         out = self._run_test('testSkip', 1, AssertionError('fail'))
         self.assertEqual(out, 'sF')
 
-    @force_not_colorized
     def testLongOutputTearDownFail(self):
         classname = f'{__name__}.{self.Test.__qualname__}'
         out = self._run_test('testSuccess', 2, AssertionError('fail'))
@@ -772,6 +759,7 @@ class Test_OldTestResult(unittest.TestCase):
         runner.run(Test('testFoo'))
 
 
+@force_not_colorized_test_class
 class TestOutputBuffering(unittest.TestCase):
 
     def setUp(self):
@@ -1294,12 +1282,20 @@ class TestOutputBuffering(unittest.TestCase):
         suite(result)
         expected_out = '\nStdout:\ndo cleanup2\ndo cleanup1\n'
         self.assertEqual(stdout.getvalue(), expected_out)
-        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(len(result.errors), 2)
         description = 'tearDownModule (Module)'
         test_case, formatted_exc = result.errors[0]
         self.assertEqual(test_case.description, description)
         self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+        test_case, formatted_exc = result.errors[1]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
         self.assertIn(expected_out, formatted_exc)
 
     def testBufferSetUpModule_DoModuleCleanups(self):
@@ -1325,20 +1321,32 @@ class TestOutputBuffering(unittest.TestCase):
         suite(result)
         expected_out = '\nStdout:\nset up module\ndo cleanup2\ndo cleanup1\n'
         self.assertEqual(stdout.getvalue(), expected_out)
-        self.assertEqual(len(result.errors), 2)
+        self.assertEqual(len(result.errors), 3)
         description = 'setUpModule (Module)'
         test_case, formatted_exc = result.errors[0]
         self.assertEqual(test_case.description, description)
         self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('ValueError', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
         self.assertIn('\nStdout:\nset up module\n', formatted_exc)
+
         test_case, formatted_exc = result.errors[1]
         self.assertIn(expected_out, formatted_exc)
         self.assertEqual(test_case.description, description)
         self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('ZeroDivisionError', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+        test_case, formatted_exc = result.errors[2]
+        self.assertIn(expected_out, formatted_exc)
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
         self.assertIn(expected_out, formatted_exc)
 
     def testBufferTearDownModule_DoModuleCleanups(self):
@@ -1367,19 +1375,30 @@ class TestOutputBuffering(unittest.TestCase):
         suite(result)
         expected_out = '\nStdout:\ntear down module\ndo cleanup2\ndo cleanup1\n'
         self.assertEqual(stdout.getvalue(), expected_out)
-        self.assertEqual(len(result.errors), 2)
+        self.assertEqual(len(result.errors), 3)
         description = 'tearDownModule (Module)'
         test_case, formatted_exc = result.errors[0]
         self.assertEqual(test_case.description, description)
         self.assertIn('ZeroDivisionError: division by zero', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('ValueError', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
         self.assertIn('\nStdout:\ntear down module\n', formatted_exc)
+
         test_case, formatted_exc = result.errors[1]
         self.assertEqual(test_case.description, description)
         self.assertIn('ValueError: bad cleanup2', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
         self.assertNotIn('ZeroDivisionError', formatted_exc)
         self.assertNotIn('TypeError', formatted_exc)
+        self.assertIn(expected_out, formatted_exc)
+
+        test_case, formatted_exc = result.errors[2]
+        self.assertEqual(test_case.description, description)
+        self.assertIn('TypeError: bad cleanup1', formatted_exc)
+        self.assertNotIn('ExceptionGroup', formatted_exc)
+        self.assertNotIn('ZeroDivisionError', formatted_exc)
+        self.assertNotIn('ValueError', formatted_exc)
         self.assertIn(expected_out, formatted_exc)
 
 

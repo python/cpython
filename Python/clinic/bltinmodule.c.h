@@ -46,9 +46,11 @@ builtin___import__(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), &_Py_ID(globals), &_Py_ID(locals), &_Py_ID(fromlist), &_Py_ID(level), },
     };
     #undef NUM_KEYWORDS
@@ -270,9 +272,11 @@ builtin_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(source), &_Py_ID(filename), &_Py_ID(mode), &_Py_ID(flags), &_Py_ID(dont_inherit), &_Py_ID(optimize), &_Py_ID(_feature_version), },
     };
     #undef NUM_KEYWORDS
@@ -425,9 +429,11 @@ builtin_eval(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(globals), &_Py_ID(locals), },
     };
     #undef NUM_KEYWORDS
@@ -504,9 +510,11 @@ builtin_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(globals), &_Py_ID(locals), &_Py_ID(closure), },
     };
     #undef NUM_KEYWORDS
@@ -627,6 +635,19 @@ PyDoc_STRVAR(builtin_id__doc__,
 
 #define BUILTIN_ID_METHODDEF    \
     {"id", (PyCFunction)builtin_id, METH_O, builtin_id__doc__},
+
+static PyObject *
+builtin_id_impl(PyModuleDef *self, PyObject *v);
+
+static PyObject *
+builtin_id(PyObject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    return_value = builtin_id_impl((PyModuleDef *)self, v);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(builtin_setattr__doc__,
 "setattr($module, obj, name, value, /)\n"
@@ -810,10 +831,16 @@ PyDoc_STRVAR(builtin_oct__doc__,
     {"oct", (PyCFunction)builtin_oct, METH_O, builtin_oct__doc__},
 
 PyDoc_STRVAR(builtin_ord__doc__,
-"ord($module, c, /)\n"
+"ord($module, character, /)\n"
 "--\n"
 "\n"
-"Return the Unicode code point for a one-character string.");
+"Return the ordinal value of a character.\n"
+"\n"
+"If the argument is a one-character string, return the Unicode code\n"
+"point of that character.\n"
+"\n"
+"If the argument is a bytes or bytearray object of length 1, return its\n"
+"single byte value.");
 
 #define BUILTIN_ORD_METHODDEF    \
     {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
@@ -844,9 +871,11 @@ builtin_pow(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(base), &_Py_ID(exp), &_Py_ID(mod), },
     };
     #undef NUM_KEYWORDS
@@ -920,9 +949,11 @@ builtin_print(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sep), &_Py_ID(end), &_Py_ID(file), &_Py_ID(flush), },
     };
     #undef NUM_KEYWORDS
@@ -1062,9 +1093,11 @@ builtin_round(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(number), &_Py_ID(ndigits), },
     };
     #undef NUM_KEYWORDS
@@ -1129,9 +1162,11 @@ builtin_sum(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(start), },
     };
     #undef NUM_KEYWORDS
@@ -1239,4 +1274,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b0178189d13e8bf8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd5f80e3dc3082d5 input=a9049054013a1b77]*/
