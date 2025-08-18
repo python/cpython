@@ -120,7 +120,7 @@ This module defines the following constants and functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD, Illumos/Solaris.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD, Solaris.
 
    .. versionadded:: 3.8
 
@@ -128,7 +128,7 @@ This module defines the following constants and functions:
       Added support for GNU/kFreeBSD.
 
    .. versionchanged:: 3.15
-      Added support for Illumos/Solaris.
+      Added support for Solaris.
 
 .. function:: stack_size([size])
 
