@@ -463,7 +463,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> dt.datetime.fromtimestamp(u.time / 1000)  # doctest: +SKIP
    datetime.datetime(...)
 
-   >>> # make a UUID using three customizable fields
+   >>> # make a UUID with custom blocks
    >>> uuid.uuid8(0x12345678, 0x9abcdef0, 0x11223344)
    UUID('00001234-5678-8ef0-8000-000011223344')
 
