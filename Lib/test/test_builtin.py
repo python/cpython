@@ -1143,7 +1143,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         i = filter(bool, range(1000000))
         for _ in range(100000):
             i = filter(bool, i)
-        
+
         # Should raise RecursionError, not segmentation fault
         with self.assertRaises(RecursionError):
             list(i)
