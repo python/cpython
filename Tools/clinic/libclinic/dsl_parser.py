@@ -14,6 +14,7 @@ import libclinic
 from libclinic import (
     ClinicError, VersionTuple,
     fail, warn, unspecified, unknown, NULL)
+from libclinic._overlong_docstrings import OVERLONG_SUMMARY, OVERLONG_BODY
 from libclinic.function import (
     Module, Class, Function, Parameter,
     FunctionKind,
@@ -877,43 +878,16 @@ class DSLParser:
 
         # handle "as" for  parameters too
         c_name = None
-        name, have_as_token, trailing = line.partition(' as ')
-        if have_as_token:
-            name = name.strip()
-            if ' ' not in name:
-                fields = trailing.strip().split(' ')
-                if not fields:
-                    fail("Invalid 'as' clause!")
-                c_name = fields[0]
-                if c_name.endswith(':'):
-                    name += ':'
-                    c_name = c_name[:-1]
-                fields[0] = name
-                line = ' '.join(fields)
+        m = re.match(r'(?:\* *)?\w+( +as +(\w+))', line)
+        if m:
+            c_name = m[2]
+            line = line[:m.start(1)] + line[m.end(1):]
 
-        default: str | None
-        base, equals, default = line.rpartition('=')
-        if not equals:
-            base = default
-            default = None
-
-        module = None
         try:
-            ast_input = f"def x({base}): pass"
+            ast_input = f"def x({line}\n): pass"
             module = ast.parse(ast_input)
         except SyntaxError:
-            try:
-                # the last = was probably inside a function call, like
-                #   c: int(accept={str})
-                # so assume there was no actual default value.
-                default = None
-                ast_input = f"def x({line}): pass"
-                module = ast.parse(ast_input)
-            except SyntaxError:
-                pass
-        if not module:
-            fail(f"Function {self.function.name!r} has an invalid parameter declaration:\n\t",
-                 repr(line))
+            fail(f"Function {self.function.name!r} has an invalid parameter declaration: {line!r}")
 
         function = module.body[0]
         assert isinstance(function, ast.FunctionDef)
@@ -922,9 +896,6 @@ class DSLParser:
         if len(function_args.args) > 1:
             fail(f"Function {self.function.name!r} has an "
                  f"invalid parameter declaration (comma?): {line!r}")
-        if function_args.defaults or function_args.kw_defaults:
-            fail(f"Function {self.function.name!r} has an "
-                 f"invalid parameter declaration (default value?): {line!r}")
         if function_args.kwarg:
             fail(f"Function {self.function.name!r} has an "
                  f"invalid parameter declaration (**kwargs?): {line!r}")
@@ -944,7 +915,7 @@ class DSLParser:
             name = 'varpos_' + name
 
         value: object
-        if not default:
+        if not function_args.defaults:
             if is_vararg:
                 value = NULL
             else:
@@ -955,17 +926,13 @@ class DSLParser:
             if 'py_default' in kwargs:
                 fail("You can't specify py_default without specifying a default value!")
         else:
-            if is_vararg:
-                fail("Vararg can't take a default value!")
+            expr = function_args.defaults[0]
+            default = ast_input[expr.col_offset: expr.end_col_offset].strip()
 
             if self.parameter_state is ParamState.REQUIRED:
                 self.parameter_state = ParamState.OPTIONAL
-            default = default.strip()
             bad = False
-            ast_input = f"x = {default}"
             try:
-                module = ast.parse(ast_input)
-
                 if 'c_default' not in kwargs:
                     # we can only represent very simple data values in C.
                     # detect whether default is okay, via a denylist
@@ -992,13 +959,14 @@ class DSLParser:
                         visit_Starred = bad_node
 
                     denylist = DetectBadNodes()
-                    denylist.visit(module)
+                    denylist.visit(expr)
                     bad = denylist.bad
                 else:
                     # if they specify a c_default, we can be more lenient about the default value.
                     # but at least make an attempt at ensuring it's a valid expression.
+                    code = compile(ast.Expression(expr), '<expr>', 'eval')
                     try:
-                        value = eval(default)
+                        value = eval(code)
                     except NameError:
                         pass # probably a named constant
                     except Exception as e:
@@ -1010,9 +978,6 @@ class DSLParser:
                 if bad:
                     fail(f"Unsupported expression as default value: {default!r}")
 
-                assignment = module.body[0]
-                assert isinstance(assignment, ast.Assign)
-                expr = assignment.value
                 # mild hack: explicitly support NULL as a default value
                 c_default: str | None
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
@@ -1064,8 +1029,6 @@ class DSLParser:
                     else:
                         c_default = py_default
 
-            except SyntaxError as e:
-                fail(f"Syntax error: {e.text!r}")
             except (ValueError, AttributeError):
                 value = unknown
                 c_default = kwargs.get("c_default")
@@ -1552,6 +1515,28 @@ class DSLParser:
             # add an empty line after the summary line so we have space
             # between it and the {parameters} we're about to add.
             lines.append('')
+
+        # Fail if the summary line is too long.
+        # Warn if any of the body lines are too long.
+        # Existing violations are recorded in OVERLONG_{SUMMARY,BODY}.
+        max_width = f.docstring_line_width
+        summary_len = len(lines[0])
+        max_body = max(map(len, lines[1:]))
+        if summary_len > max_width:
+            if f.full_name not in OVERLONG_SUMMARY:
+                fail(f"Summary line for {f.full_name!r} is too long!\n"
+                     f"The summary line must be no longer than {max_width} characters.")
+        else:
+            if f.full_name in OVERLONG_SUMMARY:
+                warn(f"Remove {f.full_name!r} from OVERLONG_SUMMARY!\n")
+
+        if max_body > max_width:
+            if f.full_name not in OVERLONG_BODY:
+                warn(f"Docstring lines for {f.full_name!r} are too long!\n"
+                     f"Lines should be no longer than {max_width} characters.")
+        else:
+            if f.full_name in OVERLONG_BODY:
+                warn(f"Remove {f.full_name!r} from OVERLONG_BODY!\n")
 
         parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
         if parameters_marker_count > 1:

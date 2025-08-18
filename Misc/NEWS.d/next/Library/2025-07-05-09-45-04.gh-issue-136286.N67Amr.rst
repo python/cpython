@@ -1,2 +1,2 @@
-Fix pickling failures for protocols 0 and 1 for many objects realted to
+Fix pickling failures for protocols 0 and 1 for many objects related to
 subinterpreters.

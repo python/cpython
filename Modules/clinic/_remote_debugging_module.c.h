@@ -235,26 +235,41 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__,
 "get_async_stack_trace($self, /)\n"
 "--\n"
 "\n"
-"Returns information about the currently running async task and its stack trace.\n"
+"Get the currently running async tasks and their dependency graphs from the remote process.\n"
 "\n"
-"Returns a tuple of (task_info, stack_frames) where:\n"
-"- task_info is a tuple of (task_id, task_name) identifying the task\n"
-"- stack_frames is a list of tuples (function_name, filename, line_number) representing\n"
-"  the Python stack frames for the task, ordered from most recent to oldest\n"
+"This returns information about running tasks and all tasks that are waiting for them,\n"
+"forming a complete dependency graph for each thread\'s active task.\n"
 "\n"
-"Example:\n"
-"    ((4345585712, \'Task-1\'), [\n"
-"        (\'run_echo_server\', \'server.py\', 127),\n"
-"        (\'serve_forever\', \'server.py\', 45),\n"
-"        (\'main\', \'app.py\', 23)\n"
-"    ])\n"
+"For each thread with a running task, returns the running task plus all tasks that\n"
+"transitively depend on it (tasks waiting for the running task, tasks waiting for\n"
+"those tasks, etc.).\n"
+"\n"
+"Returns a list of per-thread results, where each thread result contains:\n"
+"- Thread ID\n"
+"- List of task information for the running task and all its waiters\n"
+"\n"
+"Each task info contains:\n"
+"- Task ID (memory address)\n"
+"- Task name\n"
+"- Call stack frames: List of (func_name, filename, lineno)\n"
+"- List of tasks waiting for this task (recursive structure)\n"
 "\n"
 "Raises:\n"
 "    RuntimeError: If AsyncioDebug section is not available in the target process\n"
-"    RuntimeError: If there is an error copying memory from the target process\n"
-"    OSError: If there is an error accessing the target process\n"
-"    PermissionError: If access to the target process is denied\n"
-"    UnicodeDecodeError: If there is an error decoding strings from the target process");
+"    MemoryError: If memory allocation fails\n"
+"    OSError: If reading from the remote process fails\n"
+"\n"
+"Example output (similar structure to get_all_awaited_by but only for running tasks):\n"
+"[\n"
+"    (140234, [\n"
+"        (4345585712, \'main_task\',\n"
+"         [(\"run_server\", \"server.py\", 127), (\"main\", \"app.py\", 23)],\n"
+"         [\n"
+"             (4345585800, \'worker_1\', [...], [...]),\n"
+"             (4345585900, \'worker_2\', [...], [...])\n"
+"         ])\n"
+"    ])\n"
+"]");
 
 #define _REMOTE_DEBUGGING_REMOTEUNWINDER_GET_ASYNC_STACK_TRACE_METHODDEF    \
     {"get_async_stack_trace", (PyCFunction)_remote_debugging_RemoteUnwinder_get_async_stack_trace, METH_NOARGS, _remote_debugging_RemoteUnwinder_get_async_stack_trace__doc__},
@@ -273,4 +288,4 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace(PyObject *self, PyObject 
 
     return return_value;
 }
-/*[clinic end generated code: output=a37ab223d5081b16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0dd1e6e8bab2a8b1 input=a9049054013a1b77]*/

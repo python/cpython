@@ -558,14 +558,6 @@ The following data attributes are also available:
    it should be no longer than 65535 bytes.  Comments longer than this will be
    truncated.
 
-.. attribute:: ZipFile.data_offset
-
-   The offset to the start of ZIP data from the beginning of the file. When the
-   :class:`ZipFile` is opened in either mode ``'w'`` or ``'x'`` and the
-   underlying file does not support ``tell()``, the value will be ``None``
-   instead.
-
-   .. versionadded:: 3.14
 
 .. _path-objects:
 
