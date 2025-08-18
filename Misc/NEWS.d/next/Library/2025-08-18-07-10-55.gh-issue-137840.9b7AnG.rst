@@ -1,0 +1,3 @@
+:class:`typing.TypedDict` now supports the ``closed`` and ``extra_items``
+keyword arguments (as described in :pep:`728`) to control whether additional
+non-required keys are allowed and to specify their value type.
