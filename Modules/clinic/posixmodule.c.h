@@ -215,8 +215,8 @@ PyDoc_STRVAR(os_access__doc__,
 "  NotImplementedError.\n"
 "\n"
 "Note that most operations will use the effective uid/gid, therefore this\n"
-"  routine can be used in a suid/sgid environment to test if the invoking user\n"
-"  has the specified access to the path.");
+"  routine can be used in a suid/sgid environment to test if the invoking\n"
+"  user has the specified access to the path.");
 
 #define OS_ACCESS_METHODDEF    \
     {"access", _PyCFunction_CAST(os_access), METH_FASTCALL|METH_KEYWORDS, os_access__doc__},
@@ -13419,4 +13419,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=b1e2615384347102 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=23de5d098e2dd73f input=a9049054013a1b77]*/

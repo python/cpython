@@ -5084,14 +5084,18 @@ Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
 Test.__init__
     *args: tuple
 
-Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.
+Varargs init method.
+
+For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(Test___init____doc__,
 "Test(*args)\n"
 "--\n"
 "\n"
-"Varargs init method. For example, nargs is translated to PyTuple_GET_SIZE.");
+"Varargs init method.\n"
+"\n"
+"For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static int
 Test___init___impl(TestObj *self, PyObject *args);
@@ -5120,21 +5124,25 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *args)
-/*[clinic end generated code: output=f172425cec373cd6 input=4b8388c4e6baab6f]*/
+/*[clinic end generated code: output=0e5836c40dbc2397 input=a615a4485c0fc3e2]*/
 
 /*[clinic input]
 @classmethod
 Test.__new__
     *args: tuple
 
-Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.
+Varargs new method.
+
+For example, nargs is translated to PyTuple_GET_SIZE.
 [clinic start generated code]*/
 
 PyDoc_STRVAR(Test__doc__,
 "Test(*args)\n"
 "--\n"
 "\n"
-"Varargs new method. For example, nargs is translated to PyTuple_GET_SIZE.");
+"Varargs new method.\n"
+"\n"
+"For example, nargs is translated to PyTuple_GET_SIZE.");
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args);
@@ -5162,7 +5170,7 @@ exit:
 
 static PyObject *
 Test_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=ee1e8892a67abd4a input=a8259521129cad20]*/
+/*[clinic end generated code: output=e6fba0c8951882fd input=8ce30adb836aeacb]*/
 
 
 /*[clinic input]
