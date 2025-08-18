@@ -449,8 +449,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> uuid.MAX
    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
-   >>> # make a UUID based on the host ID and current time
-   >>> # reordered for improved DB locality
+   >>> # same as UUIDv1 but with fields reordered to improve DB locality
    >>> uuid.uuid6()
    UUID('1f0799c0-98b9-62db-92c6-a0d365b91053')
 
