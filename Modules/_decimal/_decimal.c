@@ -3625,13 +3625,13 @@ _decimal.Decimal.__format__
     override: object = NULL
     /
 
-Formats the Decimal according to fmtarg.
+Formats the Decimal according to format_spec.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
                                  PyObject *override)
-/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=41a600cc5135e705]*/
+/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=e53488e49a0fff00]*/
 {
     PyObject *result = NULL;
     PyObject *dot = NULL;

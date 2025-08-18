@@ -273,7 +273,7 @@ PyDoc_STRVAR(_decimal_Decimal___format____doc__,
 "__format__($self, format_spec, override=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"Formats the Decimal according to fmtarg.");
+"Formats the Decimal according to format_spec.");
 
 #define _DECIMAL_DECIMAL___FORMAT___METHODDEF    \
     {"__format__", _PyCFunction_CAST(_decimal_Decimal___format__), METH_FASTCALL, _decimal_Decimal___format____doc__},
@@ -1165,4 +1165,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1b6351795552dc17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6bb5c926552c2760 input=a9049054013a1b77]*/
