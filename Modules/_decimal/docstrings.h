@@ -19,32 +19,6 @@
 PyDoc_STRVAR(doc__decimal,
 "C decimal arithmetic module");
 
-PyDoc_STRVAR(doc_getcontext,
-"getcontext($module, /)\n--\n\n\
-Get the current default context.\n\
-\n");
-
-PyDoc_STRVAR(doc_setcontext,
-"setcontext($module, context, /)\n--\n\n\
-Set a new default context.\n\
-\n");
-
-PyDoc_STRVAR(doc_localcontext,
-"localcontext($module, /, ctx=None, **kwargs)\n--\n\n\
-Return a context manager that will set the default context to a copy of ctx\n\
-on entry to the with-statement and restore the previous default context when\n\
-exiting the with-statement. If no context is specified, a copy of the current\n\
-default context is used.\n\
-\n");
-
-PyDoc_STRVAR(doc_ieee_context,
-"IEEEContext($module, bits, /)\n--\n\n\
-Return a context object initialized to the proper values for one of the\n\
-IEEE interchange formats.  The argument must be a multiple of 32 and less\n\
-than IEEE_CONTEXT_MAX_BITS.\n\
-\n");
-
-
 /******************************************************************************/
 /*                       Decimal Object and Methods                           */
 /******************************************************************************/
@@ -617,24 +591,6 @@ PyDoc_STRVAR(doc_ctx_plus,
 "plus($self, x, /)\n--\n\n\
 Plus corresponds to the unary prefix plus operator in Python, but applies\n\
 the context to the result.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_power,
-"power($self, /, a, b, modulo=None)\n--\n\n\
-Compute a**b. If 'a' is negative, then 'b' must be integral. The result\n\
-will be inexact unless 'a' is integral and the result is finite and can\n\
-be expressed exactly in 'precision' digits.  In the Python version the\n\
-result is always correctly rounded, in the C version the result is almost\n\
-always correctly rounded.\n\
-\n\
-If modulo is given, compute (a**b) % modulo. The following restrictions\n\
-hold:\n\
-\n\
-    * all three arguments must be integral\n\
-    * 'b' must be nonnegative\n\
-    * at least one of 'a' or 'b' must be nonzero\n\
-    * modulo must be nonzero and less than 10**prec in absolute value\n\
-\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_quantize,

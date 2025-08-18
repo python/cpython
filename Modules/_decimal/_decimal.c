@@ -63,8 +63,9 @@
 /*[clinic input]
 module _decimal
 class _decimal.Decimal "PyObject *" "&dec_spec"
+class _decimal.Context "PyObject *" "&ctx_spec"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e0e1f68f1f413f5f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8c3aa7cfde934d7b]*/
 
 struct PyDecContextObject;
 struct DecCondMap;
@@ -1566,17 +1567,26 @@ init_extended_context(PyObject *v)
 }
 
 /* Factory function for creating IEEE interchange format contexts */
+
+/*[clinic input]
+_decimal.IEEEContext
+
+    bits: Py_ssize_t
+    /
+
+Return a context, initialized as one of the IEEE interchange formats.
+
+The argument must be a multiple of 32 and less than
+IEEE_CONTEXT_MAX_BITS.
+[clinic start generated code]*/
+
 static PyObject *
-ieee_context(PyObject *module, PyObject *v)
+_decimal_IEEEContext_impl(PyObject *module, Py_ssize_t bits)
+/*[clinic end generated code: output=19a35f320fe19789 input=5cff864d899eb2d7]*/
 {
     PyObject *context;
-    mpd_ssize_t bits;
     mpd_context_t ctx;
 
-    bits = PyLong_AsSsize_t(v);
-    if (bits == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
     if (bits <= 0 || bits > INT_MAX) {
         goto error;
     }
@@ -1775,7 +1785,7 @@ current_context(decimal_state *modstate)
 
 /* Return a new reference to the current context */
 static PyObject *
-PyDec_GetCurrentContext(PyObject *self, PyObject *Py_UNUSED(dummy))
+PyDec_GetCurrentContext(PyObject *self)
 {
     PyObject *context;
     decimal_state *state = get_module_state(self);
@@ -1871,7 +1881,7 @@ current_context(decimal_state *state)
 
 /* Return a new reference to the current context */
 static PyObject *
-PyDec_GetCurrentContext(PyObject *self, PyObject *Py_UNUSED(dummy))
+PyDec_GetCurrentContext(PyObject *self)
 {
     decimal_state *state = get_module_state(self);
     return current_context(state);
@@ -1910,36 +1920,73 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
 }
 #endif
 
+/*[clinic input]
+_decimal.getcontext
+
+Get the current default context.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_getcontext_impl(PyObject *module)
+/*[clinic end generated code: output=5982062c4d39e3dd input=7ac316fe42a1b6f5]*/
+{
+    return PyDec_GetCurrentContext(module);
+}
+
+/*[clinic input]
+_decimal.setcontext
+
+    context: object
+    /
+
+Set a new default context.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_setcontext(PyObject *module, PyObject *context)
+/*[clinic end generated code: output=8065f870be2852ce input=b57d7ee786b022a6]*/
+{
+    return PyDec_SetCurrentContext(module, context);
+}
+
 /* Context manager object for the 'with' statement. The manager
  * owns one reference to the global (outer) context and one
  * to the local (inner) context. */
+
+/*[clinic input]
+@text_signature "($module, /, ctx=None, **kwargs)"
+_decimal.localcontext
+
+    ctx as local: object = None
+    *
+    prec: object = None
+    rounding: object = None
+    Emin: object = None
+    Emax: object = None
+    capitals: object = None
+    clamp: object = None
+    flags: object = None
+    traps: object = None
+
+Return a context manager for a copy of the supplied context.
+
+That will set the default context to a copy of ctx on entry to the
+with-statement and restore the previous default context when exiting
+the with-statement. If no context is specified, a copy of the current
+default context is used.
+[clinic start generated code]*/
+
 static PyObject *
-ctxmanager_new(PyObject *m, PyObject *args, PyObject *kwds)
+_decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
+                           PyObject *rounding, PyObject *Emin,
+                           PyObject *Emax, PyObject *capitals,
+                           PyObject *clamp, PyObject *flags, PyObject *traps)
+/*[clinic end generated code: output=9bf4e47742a809b0 input=490307b9689c3856]*/
 {
-    static char *kwlist[] = {
-      "ctx", "prec", "rounding",
-      "Emin", "Emax", "capitals",
-      "clamp", "flags", "traps",
-      NULL
-    };
-    PyObject *local = Py_None;
     PyObject *global;
 
-    PyObject *prec = Py_None;
-    PyObject *rounding = Py_None;
-    PyObject *Emin = Py_None;
-    PyObject *Emax = Py_None;
-    PyObject *capitals = Py_None;
-    PyObject *clamp = Py_None;
-    PyObject *flags = Py_None;
-    PyObject *traps = Py_None;
-
-    decimal_state *state = get_module_state(m);
+    decimal_state *state = get_module_state(module);
     CURRENT_CONTEXT(state, global);
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOOOOO", kwlist, &local,
-          &prec, &rounding, &Emin, &Emax, &capitals, &clamp, &flags, &traps)) {
-        return NULL;
-    }
     if (local == Py_None) {
         local = global;
     }
@@ -3569,15 +3616,27 @@ pydec_format(PyObject *dec, PyObject *context, PyObject *fmt, decimal_state *sta
 }
 
 /* Formatted representation of a PyDecObject. */
+
+/*[clinic input]
+_decimal.Decimal.__format__
+
+    self as dec: self
+    format_spec as fmtarg: unicode
+    override: object = NULL
+    /
+
+Formats the Decimal according to format_spec.
+[clinic start generated code]*/
+
 static PyObject *
-dec_format(PyObject *dec, PyObject *args)
+_decimal_Decimal___format___impl(PyObject *dec, PyObject *fmtarg,
+                                 PyObject *override)
+/*[clinic end generated code: output=4b3640b7f0c8b6a5 input=e53488e49a0fff00]*/
 {
     PyObject *result = NULL;
-    PyObject *override = NULL;
     PyObject *dot = NULL;
     PyObject *sep = NULL;
     PyObject *grouping = NULL;
-    PyObject *fmtarg;
     PyObject *context;
     mpd_spec_t spec;
     char *fmt;
@@ -3585,42 +3644,29 @@ dec_format(PyObject *dec, PyObject *args)
     uint32_t status = 0;
     int replace_fillchar = 0;
     Py_ssize_t size;
-
-
     decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
     CURRENT_CONTEXT(state, context);
-    if (!PyArg_ParseTuple(args, "O|O", &fmtarg, &override)) {
+    fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
+    if (fmt == NULL) {
         return NULL;
     }
 
-    if (PyUnicode_Check(fmtarg)) {
-        fmt = (char *)PyUnicode_AsUTF8AndSize(fmtarg, &size);
+    if (size > 0 && fmt[size-1] == 'N') {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Format specifier 'N' is deprecated", 1) < 0) {
+            return NULL;
+        }
+    }
+
+    if (size > 0 && fmt[0] == '\0') {
+        /* NUL fill character: must be replaced with a valid UTF-8 char
+           before calling mpd_parse_fmt_str(). */
+        replace_fillchar = 1;
+        fmt = dec_strdup(fmt, size);
         if (fmt == NULL) {
             return NULL;
         }
-
-        if (size > 0 && fmt[size-1] == 'N') {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                             "Format specifier 'N' is deprecated", 1) < 0) {
-                return NULL;
-            }
-        }
-
-        if (size > 0 && fmt[0] == '\0') {
-            /* NUL fill character: must be replaced with a valid UTF-8 char
-               before calling mpd_parse_fmt_str(). */
-            replace_fillchar = 1;
-            fmt = dec_strdup(fmt, size);
-            if (fmt == NULL) {
-                return NULL;
-            }
-            fmt[0] = '_';
-        }
-    }
-    else {
-        PyErr_SetString(PyExc_TypeError,
-            "format arg must be str");
-        return NULL;
+        fmt[0] = '_';
     }
 
     if (!mpd_parse_fmt_str(&spec, fmt, CtxCaps(context))) {
@@ -5389,7 +5435,7 @@ static PyMethodDef dec_methods [] =
   /* Special methods */
   { "__copy__", dec_copy, METH_NOARGS, NULL },
   { "__deepcopy__", dec_copy, METH_O, NULL },
-  { "__format__", dec_format, METH_VARARGS, NULL },
+  _DECIMAL_DECIMAL___FORMAT___METHODDEF
   { "__reduce__", dec_reduce, METH_NOARGS, NULL },
   { "__round__", PyDec_Round, METH_VARARGS, NULL },
   { "__ceil__", dec_ceil, METH_NOARGS, NULL },
@@ -5686,19 +5732,40 @@ ctx_mpd_qdivmod(PyObject *context, PyObject *args)
 }
 
 /* Binary or ternary arithmetic functions */
+
+/*[clinic input]
+_decimal.Context.power
+
+    self as context: self
+    a as base: object
+    b as exp: object
+    modulo as mod: object = None
+
+Compute a**b.
+
+If 'a' is negative, then 'b' must be integral. The result will be
+inexact unless 'a' is integral and the result is finite and can be
+expressed exactly in 'precision' digits.  In the Python version the
+result is always correctly rounded, in the C version the result is
+almost always correctly rounded.
+
+If modulo is given, compute (a**b) % modulo. The following
+restrictions hold:
+
+    * all three arguments must be integral
+    * 'b' must be nonnegative
+    * at least one of 'a' or 'b' must be nonzero
+    * modulo must be nonzero and less than 10**prec in absolute value
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_qpow(PyObject *context, PyObject *args, PyObject *kwds)
+_decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
+                            PyObject *mod)
+/*[clinic end generated code: output=d2e68694ec545245 input=e9aef844813de243]*/
 {
-    static char *kwlist[] = {"a", "b", "modulo", NULL};
-    PyObject *base, *exp, *mod = Py_None;
     PyObject *a, *b, *c = NULL;
     PyObject *result;
     uint32_t status = 0;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OO|O", kwlist,
-                                     &base, &exp, &mod)) {
-        return NULL;
-    }
 
     CONVERT_BINOP_RAISE(&a, &b, base, exp, context);
 
@@ -6020,7 +6087,7 @@ static PyMethodDef context_methods [] =
   { "subtract", ctx_mpd_qsub, METH_VARARGS, doc_ctx_subtract },
 
   /* Binary or ternary arithmetic functions */
-  { "power", _PyCFunction_CAST(ctx_mpd_qpow), METH_VARARGS|METH_KEYWORDS, doc_ctx_power },
+  _DECIMAL_CONTEXT_POWER_METHODDEF
 
   /* Ternary arithmetic functions */
   { "fma", ctx_mpd_qfma, METH_VARARGS, doc_ctx_fma },
@@ -6117,10 +6184,10 @@ static PyType_Spec context_spec = {
 
 static PyMethodDef _decimal_methods [] =
 {
-  { "getcontext", PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
-  { "setcontext", PyDec_SetCurrentContext, METH_O, doc_setcontext},
-  { "localcontext", _PyCFunction_CAST(ctxmanager_new), METH_VARARGS|METH_KEYWORDS, doc_localcontext},
-  { "IEEEContext", ieee_context, METH_O, doc_ieee_context},
+  _DECIMAL_GETCONTEXT_METHODDEF
+  _DECIMAL_SETCONTEXT_METHODDEF
+  _DECIMAL_LOCALCONTEXT_METHODDEF
+  _DECIMAL_IEEECONTEXT_METHODDEF
   { NULL, NULL, 1, NULL }
 };
 

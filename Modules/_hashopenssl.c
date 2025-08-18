@@ -1501,6 +1501,7 @@ _hashlib_openssl_sha3_512_impl(PyObject *module, PyObject *data,
 
 #ifdef PY_OPENSSL_HAS_SHAKE
 /*[clinic input]
+@permit_long_summary
 _hashlib.openssl_shake_128
 
     data: object(c_default="NULL") = b''
@@ -1515,12 +1516,13 @@ Returns a shake-128 variable hash object; optionally initialized with a string
 static PyObject *
 _hashlib_openssl_shake_128_impl(PyObject *module, PyObject *data,
                                 int usedforsecurity, PyObject *string)
-/*[clinic end generated code: output=4e6afed8d18980ad input=373c3f1c93d87b37]*/
+/*[clinic end generated code: output=4e6afed8d18980ad input=0d2803af1158b23c]*/
 {
     CALL_HASHLIB_NEW(module, Py_hash_shake_128, data, string, usedforsecurity);
 }
 
 /*[clinic input]
+@permit_long_summary
 _hashlib.openssl_shake_256
 
     data: object(c_default="NULL") = b''
@@ -1535,7 +1537,7 @@ Returns a shake-256 variable hash object; optionally initialized with a string
 static PyObject *
 _hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data,
                                 int usedforsecurity, PyObject *string)
-/*[clinic end generated code: output=62481bce4a77d16c input=101c139ea2ddfcbf]*/
+/*[clinic end generated code: output=62481bce4a77d16c input=f27b98d9c749f55d]*/
 {
     CALL_HASHLIB_NEW(module, Py_hash_shake_256, data, string, usedforsecurity);
 }
@@ -1544,6 +1546,7 @@ _hashlib_openssl_shake_256_impl(PyObject *module, PyObject *data,
 #undef CALL_HASHLIB_NEW
 
 /*[clinic input]
+@permit_long_summary
 _hashlib.pbkdf2_hmac as pbkdf2_hmac
 
     hash_name: str
@@ -1559,7 +1562,7 @@ static PyObject *
 pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
                  Py_buffer *password, Py_buffer *salt, long iterations,
                  PyObject *dklen_obj)
-/*[clinic end generated code: output=144b76005416599b input=ed3ab0d2d28b5d5c]*/
+/*[clinic end generated code: output=144b76005416599b input=83417fbd9ec2b8a3]*/
 {
     _hashlibstate *state = get_hashlib_state(module);
     PyObject *key_obj = NULL;
@@ -2092,6 +2095,8 @@ _hashlib_HMAC_digest_impl(HMACobject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _hashlib.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
@@ -2102,7 +2107,7 @@ environments.
 
 static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self)
-/*[clinic end generated code: output=80d825be1eaae6a7 input=5abc42702874ddcf]*/
+/*[clinic end generated code: output=80d825be1eaae6a7 input=5e48db83ab1a4d19]*/
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     unsigned int digest_size = _hashlib_hmac_digest_size(self);
