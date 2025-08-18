@@ -229,10 +229,11 @@ expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
                                       for s in expected_data_docstrings)
 
 # output pattern for missing module
-missing_pattern = '''\
-No Python documentation found for %r.
+missing_pattern = ('''\
+No help entry found for %%r.
 Use help() to get the interactive help utility.
-Use help(str) for help on the str class.'''.replace('\n', os.linesep)
+Use help(str) for help on the str class.
+Additional documentation is available online at https://docs.python.org/%s.%s/''' % sys.version_info[:2]).replace('\n', os.linesep)
 
 # output pattern for module with bad imports
 badimport_pattern = "problem in %s - ModuleNotFoundError: No module named %r"
@@ -667,7 +668,7 @@ class PydocDocTest(unittest.TestCase):
         elines = (missing_pattern % 'abd').splitlines()
         with spawn_python("-c" "help()") as proc:
             out, _ = proc.communicate(b"abd")
-            olines = out.decode().splitlines()[-9:-6]
+            olines = out.decode().splitlines()[-10:-6]
             olines[0] = olines[0].removeprefix('help> ')
             self.assertEqual(elines, olines)
 

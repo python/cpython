@@ -1744,7 +1744,7 @@ def resolve(thing, forceload=0):
             else:
                 special = ""
             raise ImportError('''\
-No interactive help entry found for %r.
+No help entry found for %r.
 %sUse help() to get the interactive help utility.
 Use help(str) for help on the str class.
 Additional documentation is available online at https://docs.python.org/%s.%s/''' % (thing, special, *sys.version_info[:2]))
