@@ -382,7 +382,7 @@ class Sniffer:
             for line in data[start:end]:
                 num_lines += 1
                 for char, count in Counter(line).items():
-                    if ord(char) < 127:
+                    if char.isascii():
                         charFrequency[char][count] += 1
 
             for char, counts in charFrequency.items():
