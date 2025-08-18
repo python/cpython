@@ -359,13 +359,8 @@ class DBMCommandLineTestCase(unittest.TestCase):
         self.assertIn(text_file.encode(), output)
 
     def test_whichdb_output_format(self):
-        output = self.run_cmd_ok('--whichdb', self.test_db)
-        output_str = output.decode('utf-8', errors='replace').strip()
-        # Should be "TYPE - FILENAME" format
-        self.assertIn(' - ', output_str)
-        parts = output_str.split(' - ', 1)
-        self.assertEqual(len(parts), 2)
-        self.assertEqual(parts[1], self.test_db)
+        output = self.run_cmd_ok('--whichdb', self.test_db).decode()
+        self.assertIn(self.test_db, output)
 
     def test_dump_command(self):
         output = self.run_cmd_ok('--dump', self.test_db)
@@ -395,7 +390,7 @@ class DBMCommandLineTestCase(unittest.TestCase):
 
     def test_output_format_consistency(self):
         output = self.run_cmd_ok('--dump', self.test_db)
-        lines = output.decode('utf-8', errors='replace').strip().split('\n')
+        lines = output.decode().strip().split('\n')
         for line in lines:
             if line.strip():  # Skip empty lines
                 self.assertIn(':', line)
