@@ -1721,10 +1721,10 @@ def locate(path, forceload=0):
             object = getattr(object, part)
         except AttributeError:
             return None
-    if re.match(r"^__\w+__$", path) and not isinstance(object, (type, type(__import__))):
-        # if we're looking up a special variable, don't grab the result from
-        # the builtins module, because it's probably not what the user wanted
-        # (if it is, they can look up builtins.whatever)
+    if _is_dunder_name(path) and not isinstance(object, (type, type(__import__))):
+        # if we're looking up a special variable and we don't find a class or a
+        # function, it's probably not what the user wanted (if it is, they can
+        # look up builtins.whatever)
         return None
     return object
 
@@ -1739,7 +1739,7 @@ def resolve(thing, forceload=0):
     if isinstance(thing, str):
         object = locate(thing, forceload)
         if object is None:
-            if re.match(r'^__\w+__$', thing):
+            if _is_dunder_name(thing):
                 special = "Use help('specialnames') for a list of special names for which help is available.\n"
             else:
                 special = ""
@@ -1848,6 +1848,9 @@ def _introdoc():
         To quit this help utility and return to the interpreter,
         enter "q", "quit" or "exit".
     ''')
+
+def _is_dunder_name(x):
+    return isinstance(x, str) and len(x) > 4 and x[:2] == x[-2:] == '__'
 
 def collect_dunders(symbols):
     dunders = {
