@@ -1714,8 +1714,6 @@ zlib__ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
 /*[clinic input]
 @classmethod
 zlib._ZlibDecompressor.__new__
-
-    type as cls: self
     wbits: int(c_default='MAX_WBITS') = MAX_WBITS
     zdict: object(c_default='NULL') = b''
         The predefined compression dictionary. This is a sequence of bytes
@@ -1729,11 +1727,11 @@ Create a decompressor object for decompressing data incrementally.
 [clinic start generated code]*/
 
 static PyObject *
-zlib__ZlibDecompressor_impl(PyTypeObject *cls, int wbits, PyObject *zdict)
-/*[clinic end generated code: output=9f1bf6d28029c5de input=8bffe63eef8a6d63]*/
+zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
+/*[clinic end generated code: output=1065607df0d33baa input=710ad488cf0950a5]*/
 {
-    zlibstate *state = PyType_GetModuleState(cls);
-    ZlibDecompressor *self = PyObject_New(ZlibDecompressor, cls);
+    zlibstate *state = PyType_GetModuleState(type);
+    ZlibDecompressor *self = PyObject_New(ZlibDecompressor, type);
     if (self == NULL) {
         return NULL;
     }

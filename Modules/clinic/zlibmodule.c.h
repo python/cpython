@@ -1011,10 +1011,10 @@ PyDoc_STRVAR(zlib__ZlibDecompressor__doc__,
 "    compressor that produced the input data.");
 
 static PyObject *
-zlib__ZlibDecompressor_impl(PyTypeObject *cls, int wbits, PyObject *zdict);
+zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict);
 
 static PyObject *
-zlib__ZlibDecompressor(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+zlib__ZlibDecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1070,7 +1070,7 @@ zlib__ZlibDecompressor(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
     }
     zdict = fastargs[1];
 skip_optional_pos:
-    return_value = zlib__ZlibDecompressor_impl(cls, wbits, zdict);
+    return_value = zlib__ZlibDecompressor_impl(type, wbits, zdict);
 
 exit:
     return return_value;
@@ -1392,4 +1392,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=07521ab218a23171 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59184b81fea41d3d input=a9049054013a1b77]*/
