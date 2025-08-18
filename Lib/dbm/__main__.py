@@ -11,7 +11,7 @@ def _whichdb_command(filenames):
     for filename in filenames:
         if os.path.exists(filename):
             db_type = whichdb(filename)
-            print(f"{db_type or 'UNKNOWN'} - {filename}")
+            print(f"{db_type or 'UNKNOWN'} {filename}")
         else:
             print(f"Error: File '{filename}' not found", file=sys.stderr)
             exit_code = 1
