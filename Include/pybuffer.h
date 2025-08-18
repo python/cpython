@@ -87,7 +87,7 @@ PyAPI_FUNC(void) PyBuffer_FillContiguousStrides(int ndims,
                                                Py_ssize_t *shape,
                                                Py_ssize_t *strides,
                                                int itemsize,
-                                               char fort);
+                                               char order);
 
 /* Fills in a buffer-info structure correctly for an exporter
    that can only share a contiguous chunk of memory of

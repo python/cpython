@@ -749,13 +749,13 @@ int PyObject_CopyData(PyObject *dest, PyObject *src)
 void
 PyBuffer_FillContiguousStrides(int nd, Py_ssize_t *shape,
                                Py_ssize_t *strides, int itemsize,
-                               char fort)
+                               char order)
 {
     int k;
     Py_ssize_t sd;
 
     sd = itemsize;
-    if (fort == 'F') {
+    if (order == 'F') {
         for (k=0; k<nd; k++) {
             strides[k] = sd;
             sd *= shape[k];
