@@ -1408,7 +1408,7 @@ class CopyTests(unittest.TestCase):
         self.assertRaises(AttributeError, getattr, repl, 'extra')
 
     def test_replace_reject_missing_field(self):
-        # case: warn if deleted field is not replaced
+        # case: raise if deleted field is not replaced
         node = ast.parse('x').body[0].value
         context = node.ctx
         del node.id
@@ -3297,8 +3297,8 @@ class ASTConstructorTests(unittest.TestCase):
             a: int | None = None
             b: int | None = None
 
-        msg = "Field 'b' is missing from test.test_ast.test_ast.ASTConstructorTests.test_incomplete_field_types.<locals>.MoreFieldsThanTypes._field_types"
-        with self.assertRaisesRegex(TypeError, re.escape(msg)):
+        msg = "Field 'b' is missing from .*\.MoreFieldsThanTypes\._field_types"
+        with self.assertRaisesRegex(TypeError, msg):
             obj = MoreFieldsThanTypes()
 
         obj = MoreFieldsThanTypes(a=1, b=2)
