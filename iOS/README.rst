@@ -359,7 +359,7 @@ automatic breakpoints can be inconvenient. However, they can be disabled by
 creating a symbolic breakpoint that is triggered at the start of the test run.
 
 Select "Debug > Breakpoints > Create Symbolic Breakpoint" from the Xcode menu, and
-populate the new brewpoint with the following details:
+populate the new breakpoint with the following details:
 
 * **Name**: IgnoreSignals
 * **Symbol**: UIApplicationMain
