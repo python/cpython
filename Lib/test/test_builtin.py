@@ -1121,7 +1121,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
-    @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
         # thrashcan mechanism. See gh-102356 for more details.
@@ -1131,8 +1130,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             i = filter(bool, i)
         del i
         gc.collect()
-
-
+    6
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
+    @support.requires_resource('cpu')
     def test_filter_deep_nesting_recursion_error(self):
         # gh-137894: Test that deeply nested filter() iterator chains
         # raise RecursionError instead of causing segmentation fault.

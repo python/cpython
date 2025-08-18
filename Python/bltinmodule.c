@@ -670,7 +670,7 @@ PyTypeObject PyFilter_Type = {
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     filter_doc,                         /* tp_doc */
     filter_traverse,                    /* tp_traverse */
-    filter_clear,              /* tp_clear */
+    filter_clear,                       /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
