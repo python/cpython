@@ -3173,7 +3173,7 @@ PyDec_FromObject(PyObject *v, PyObject *context)
 @classmethod
 _decimal.Decimal.__new__ as dec_new
 
-    value as v: object(c_default="NULL") = "0"
+    value: object(c_default="NULL") = "0"
     context: object = None
 
 Construct a new Decimal object.
@@ -3185,13 +3185,13 @@ trap is active.
 [clinic start generated code]*/
 
 static PyObject *
-dec_new_impl(PyTypeObject *type, PyObject *v, PyObject *context)
-/*[clinic end generated code: output=5371cbce41508fe7 input=6353a3563bea247b]*/
+dec_new_impl(PyTypeObject *type, PyObject *value, PyObject *context)
+/*[clinic end generated code: output=35f48a40c65625ba input=5f8a0892d3fcef80]*/
 {
     decimal_state *state = get_module_state_by_def(type);
     CONTEXT_CHECK_VA(state, context);
 
-    return PyDecType_FromObjectExact(type, v, context);
+    return PyDecType_FromObjectExact(type, value, context);
 }
 
 static PyObject *
@@ -4136,33 +4136,32 @@ PyDec_AsFloat(PyObject *dec)
 /*[clinic input]
 _decimal.Decimal.__round__
 
-    self as dec: self
-    ndigits as x: object(c_default="NULL") = None
+    ndigits: object(c_default="NULL") = None
 
 Return the Integral closest to self, rounding half toward even.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal___round___impl(PyObject *dec, PyObject *x)
-/*[clinic end generated code: output=5089b98ed18bb5e3 input=a3986615e1ad5b2a]*/
+_decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits)
+/*[clinic end generated code: output=ca6b3570a8df0c91 input=9327698ac2d9cc48]*/
 {
     PyObject *result;
     uint32_t status = 0;
     PyObject *context;
-    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CURRENT_CONTEXT(state, context);
-    if (x) {
+    if (ndigits) {
         mpd_uint_t dq[1] = {1};
         mpd_t q = {MPD_STATIC|MPD_CONST_DATA,0,1,1,1,dq};
         mpd_ssize_t y;
 
-        if (!PyLong_Check(x)) {
+        if (!PyLong_Check(ndigits)) {
             PyErr_SetString(PyExc_TypeError,
                 "optional arg must be an integer");
             return NULL;
         }
 
-        y = PyLong_AsSsize_t(x);
+        y = PyLong_AsSsize_t(ndigits);
         if (y == -1 && PyErr_Occurred()) {
             return NULL;
         }
@@ -4172,7 +4171,7 @@ _decimal_Decimal___round___impl(PyObject *dec, PyObject *x)
         }
 
         q.exp = (y == MPD_SSIZE_MIN) ? MPD_SSIZE_MAX : -y;
-        mpd_qquantize(MPD(result), MPD(dec), &q, CTX(context), &status);
+        mpd_qquantize(MPD(result), MPD(self), &q, CTX(context), &status);
         if (dec_addstatus(context, status)) {
             Py_DECREF(result);
             return NULL;
@@ -4181,7 +4180,7 @@ _decimal_Decimal___round___impl(PyObject *dec, PyObject *x)
         return result;
     }
     else {
-        return dec_as_long(dec, context, MPD_ROUND_HALF_EVEN);
+        return dec_as_long(self, context, MPD_ROUND_HALF_EVEN);
     }
 }
 
@@ -6150,7 +6149,7 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args) \
     PyObject *result;                                                    \
     uint32_t status = 0;                                                 \
                                                                          \
-    CONVERT_TERNOP_RAISE(&a, &b, &c, v, w, x, context);                  \
+    CONVERT_TERNOP_RAISE(&a, &b, &c, x, y, z, context);                  \
     decimal_state *state = get_module_state_from_ctx(context);           \
     if ((result = dec_alloc(state)) == NULL) {                           \
         Py_DECREF(a);                                                    \
@@ -6327,18 +6326,18 @@ _decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
 _decimal.Context.fma
 
     self as context: self
-    x as v: object
-    y as w: object
-    z as x: object
+    x: object
+    y: object
+    z: object
     /
 
 Return x multiplied by y, plus z.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Context_fma_impl(PyObject *context, PyObject *v, PyObject *w,
-                          PyObject *x)
-/*[clinic end generated code: output=0664d24f7e4b4aac input=9f3abeaa9a47ea61]*/
+_decimal_Context_fma_impl(PyObject *context, PyObject *x, PyObject *y,
+                          PyObject *z)
+/*[clinic end generated code: output=2d6174716faaf4e1 input=80479612da3333d1]*/
 DecCtx_TernaryFunc(mpd_qfma)
 
 /* No argument */

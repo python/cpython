@@ -323,7 +323,7 @@ PyDoc_STRVAR(dec_new__doc__,
 "trap is active.");
 
 static PyObject *
-dec_new_impl(PyTypeObject *type, PyObject *v, PyObject *context);
+dec_new_impl(PyTypeObject *type, PyObject *value, PyObject *context);
 
 static PyObject *
 dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -360,7 +360,7 @@ dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *v = NULL;
+    PyObject *value = NULL;
     PyObject *context = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
@@ -372,14 +372,14 @@ dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         goto skip_optional_pos;
     }
     if (fastargs[0]) {
-        v = fastargs[0];
+        value = fastargs[0];
         if (!--noptargs) {
             goto skip_optional_pos;
         }
     }
     context = fastargs[1];
 skip_optional_pos:
-    return_value = dec_new_impl(type, v, context);
+    return_value = dec_new_impl(type, value, context);
 
 exit:
     return return_value;
@@ -680,10 +680,10 @@ PyDoc_STRVAR(_decimal_Decimal___round____doc__,
     {"__round__", _PyCFunction_CAST(_decimal_Decimal___round__), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___round____doc__},
 
 static PyObject *
-_decimal_Decimal___round___impl(PyObject *dec, PyObject *x);
+_decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits);
 
 static PyObject *
-_decimal_Decimal___round__(PyObject *dec, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -715,7 +715,7 @@ _decimal_Decimal___round__(PyObject *dec, PyObject *const *args, Py_ssize_t narg
     #undef KWTUPLE
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *x = NULL;
+    PyObject *ndigits = NULL;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -725,9 +725,9 @@ _decimal_Decimal___round__(PyObject *dec, PyObject *const *args, Py_ssize_t narg
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    x = args[0];
+    ndigits = args[0];
 skip_optional_pos:
-    return_value = _decimal_Decimal___round___impl(dec, x);
+    return_value = _decimal_Decimal___round___impl(self, ndigits);
 
 exit:
     return return_value;
@@ -3554,24 +3554,24 @@ PyDoc_STRVAR(_decimal_Context_fma__doc__,
     {"fma", _PyCFunction_CAST(_decimal_Context_fma), METH_FASTCALL, _decimal_Context_fma__doc__},
 
 static PyObject *
-_decimal_Context_fma_impl(PyObject *context, PyObject *v, PyObject *w,
-                          PyObject *x);
+_decimal_Context_fma_impl(PyObject *context, PyObject *x, PyObject *y,
+                          PyObject *z);
 
 static PyObject *
 _decimal_Context_fma(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *v;
-    PyObject *w;
     PyObject *x;
+    PyObject *y;
+    PyObject *z;
 
     if (!_PyArg_CheckPositional("fma", nargs, 3, 3)) {
         goto exit;
     }
-    v = args[0];
-    w = args[1];
-    x = args[2];
-    return_value = _decimal_Context_fma_impl(context, v, w, x);
+    x = args[0];
+    y = args[1];
+    z = args[2];
+    return_value = _decimal_Context_fma_impl(context, x, y, z);
 
 exit:
     return return_value;
@@ -3594,4 +3594,4 @@ _decimal_Context_radix(PyObject *context, PyObject *Py_UNUSED(ignored))
 {
     return _decimal_Context_radix_impl(context);
 }
-/*[clinic end generated code: output=63e062762bcfe6e6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d6ae05a07c26d90 input=a9049054013a1b77]*/
