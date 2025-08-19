@@ -271,8 +271,9 @@ measured by invoking the program without arguments.""",
         help="separate options from statement; "
              "use when statement starts with -",
     )
+    # use argparse.REMAINDER to ignore option-like argument found at the end
     group.add_argument(
-        "statement", nargs="*",
+        "statement", nargs=argparse.REMAINDER,
         help="statement to be timed (default: 'pass')",
     )
     return parser

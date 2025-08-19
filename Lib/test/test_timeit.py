@@ -353,6 +353,14 @@ class TestTimeit(unittest.TestCase):
             s = self.run_main(switches=['-n1', '1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
+    def test_main_with_option_like_at_the_end(self):
+        with captured_stderr() as s:
+            self.run_main(switches=['-n1', '1 + 1', '-n1'])
+        self.assert_exc_string(s.getvalue(), "NameError: name 'n1' is not defined")
+
+        out = self.run_main(switches=['-n2', '-r2', 'n2=1', '-n2'])
+        self.assertEqual(out, "2 loops, best of 2: 1 sec per loop\n")
+
     def autorange(self, seconds_per_increment=1/1024, callback=None):
         timer = FakeTimer(seconds_per_increment=seconds_per_increment)
         t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
