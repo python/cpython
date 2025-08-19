@@ -1807,7 +1807,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertTrue(self.theclass.min)
         self.assertTrue(self.theclass.max)
 
-    def test_strftime_y2k(self):
+    def check_strftime_y2k(self, specifier):
         # Test that years less than 1000 are 0-padded; note that the beginning
         # of an ISO 8601 year may fall in an ISO week of the year before, and
         # therefore needs an offset of -1 when formatting with '%G'.
@@ -1821,22 +1821,28 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (1000, 0),
             (1970, 0),
         )
-        specifiers = 'YG'
-        if _time.strftime('%F', (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == '1900-01-01':
-            specifiers += 'FC'
         for year, g_offset in dataset:
-            for specifier in specifiers:
-                with self.subTest(year=year, specifier=specifier):
-                    d = self.theclass(year, 1, 1)
-                    if specifier == 'G':
-                        year += g_offset
-                    if specifier == 'C':
-                        expected = f"{year // 100:02d}"
-                    else:
-                        expected = f"{year:04d}"
-                        if specifier == 'F':
-                            expected += f"-01-01"
-                    self.assertEqual(d.strftime(f"%{specifier}"), expected)
+            with self.subTest(year=year, specifier=specifier):
+                d = self.theclass(year, 1, 1)
+                if specifier == 'G':
+                    year += g_offset
+                if specifier == 'C':
+                    expected = f"{year // 100:02d}"
+                else:
+                    expected = f"{year:04d}"
+                    if specifier == 'F':
+                        expected += f"-01-01"
+                self.assertEqual(d.strftime(f"%{specifier}"), expected)
+
+    def test_strftime_y2k(self):
+        self.check_strftime_y2k('Y')
+        self.check_strftime_y2k('G')
+
+    def test_strftime_y2k_c99(self):
+        # CPython requires C11; specifiers new in C99 must work.
+        # (Other implementations may want to disable this test.)
+        self.check_strftime_y2k('F')
+        self.check_strftime_y2k('C')
 
     def test_replace(self):
         cls = self.theclass
