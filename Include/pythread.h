@@ -43,7 +43,7 @@ PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
      || defined(__FreeBSD__) || defined(__FreeBSD_kernel__) \
      || defined(__OpenBSD__) || defined(__NetBSD__) \
      || defined(__DragonFly__) || defined(_AIX)) \
-     || defined(__sun__)
+     || defined(__sun__) && SIZEOF_LONG >= 8
 #define PY_HAVE_THREAD_NATIVE_ID
 PyAPI_FUNC(unsigned long) PyThread_get_thread_native_id(void);
 #endif
