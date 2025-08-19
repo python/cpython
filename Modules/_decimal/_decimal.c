@@ -4136,14 +4136,15 @@ PyDec_AsFloat(PyObject *dec)
 /*[clinic input]
 _decimal.Decimal.__round__
 
-    ndigits: object(c_default="NULL") = None
+    ndigits: object = NULL
+    /
 
 Return the Integral closest to self, rounding half toward even.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits)
-/*[clinic end generated code: output=ca6b3570a8df0c91 input=9327698ac2d9cc48]*/
+/*[clinic end generated code: output=ca6b3570a8df0c91 input=dc72084114f59380]*/
 {
     PyObject *result;
     uint32_t status = 0;

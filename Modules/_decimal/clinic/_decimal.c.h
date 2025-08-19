@@ -671,62 +671,31 @@ exit:
 }
 
 PyDoc_STRVAR(_decimal_Decimal___round____doc__,
-"__round__($self, /, ndigits=None)\n"
+"__round__($self, ndigits=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return the Integral closest to self, rounding half toward even.");
 
 #define _DECIMAL_DECIMAL___ROUND___METHODDEF    \
-    {"__round__", _PyCFunction_CAST(_decimal_Decimal___round__), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___round____doc__},
+    {"__round__", _PyCFunction_CAST(_decimal_Decimal___round__), METH_FASTCALL, _decimal_Decimal___round____doc__},
 
 static PyObject *
 _decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits);
 
 static PyObject *
-_decimal_Decimal___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 1
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(ndigits), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"ndigits", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "__round__",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *ndigits = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
+    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
     }
-    if (!noptargs) {
-        goto skip_optional_pos;
+    if (nargs < 1) {
+        goto skip_optional;
     }
     ndigits = args[0];
-skip_optional_pos:
+skip_optional:
     return_value = _decimal_Decimal___round___impl(self, ndigits);
 
 exit:
@@ -3594,4 +3563,4 @@ _decimal_Context_radix(PyObject *context, PyObject *Py_UNUSED(ignored))
 {
     return _decimal_Context_radix_impl(context);
 }
-/*[clinic end generated code: output=4d6ae05a07c26d90 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9bc7d4c6f86a2a54 input=a9049054013a1b77]*/
