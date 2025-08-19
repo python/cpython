@@ -522,9 +522,38 @@ resource_exec(PyObject *module)
     ADD_INT(module, RLIMIT_KQUEUES);
 #endif
 
+#ifdef RLIMIT_NTHR
+    ADD_INT(module, RLIMIT_NTHR);
+#endif
+
+#ifdef RLIMIT_THREADS
+    ADD_INT(module, RLIMIT_THREADS);
+#endif
+
+#ifdef RLIMIT_UMTXP
+    ADD_INT(module, RLIMIT_UMTXP);
+#endif
+
+#ifdef RLIMIT_PIPEBUF
+    ADD_INT(module, RLIMIT_PIPEBUF);
+#endif
+
     if (PyModule_Add(module, "RLIM_INFINITY", rlim2py(RLIM_INFINITY)) < 0) {
         return -1;
     }
+
+#ifdef RLIM_SAVED_CUR
+    if (PyModule_Add(module, "RLIM_SAVED_CUR", rlim2py(RLIM_SAVED_CUR)) < 0) {
+        return -1;
+    }
+#endif
+
+#ifdef RLIM_SAVED_MAX
+    if (PyModule_Add(module, "RLIM_SAVED_MAX", rlim2py(RLIM_SAVED_MAX)) < 0) {
+        return -1;
+    }
+#endif
+
     return 0;
 
 #undef ADD_INT
