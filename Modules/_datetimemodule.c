@@ -3293,6 +3293,7 @@ datetime_date_today_impl(PyTypeObject *type)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 datetime.date.fromtimestamp
 
@@ -3307,7 +3308,7 @@ as local time.
 
 static PyObject *
 datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=59def4e32c028fb6 input=eabb3fe7f40491fe]*/
+/*[clinic end generated code: output=59def4e32c028fb6 input=55ff6940f0a8339f]*/
 {
     return date_fromtimestamp(type, timestamp);
 }
@@ -4866,6 +4867,7 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 datetime.time.strftime
 
     format: unicode
@@ -4877,7 +4879,7 @@ The date part of the timestamp passed to underlying strftime should not be used.
 
 static PyObject *
 datetime_time_strftime_impl(PyDateTime_Time *self, PyObject *format)
-/*[clinic end generated code: output=10f65af20e2a78c7 input=7dd9df1acbf37b50]*/
+/*[clinic end generated code: output=10f65af20e2a78c7 input=541934a2860f7db5]*/
 {
     PyObject *result;
     PyObject *tuple;
@@ -5682,6 +5684,7 @@ datetime_datetime_utcnow_impl(PyTypeObject *type)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 datetime.datetime.fromtimestamp
 
@@ -5697,7 +5700,7 @@ as local time.
 static PyObject *
 datetime_datetime_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp,
                                      PyObject *tzinfo)
-/*[clinic end generated code: output=9c47ea2b2ebdaded input=34721a5facc94215]*/
+/*[clinic end generated code: output=9c47ea2b2ebdaded input=d6b5b2095c5a34b2]*/
 {
     PyObject *self;
     if (check_tzinfo_subclass(tzinfo) < 0)
@@ -5759,6 +5762,7 @@ datetime_datetime_utcfromtimestamp_impl(PyTypeObject *type,
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 datetime.datetime.strptime
 
@@ -5772,7 +5776,7 @@ Parse string according to the given date and time format (like time.strptime()).
 static PyObject *
 datetime_datetime_strptime_impl(PyTypeObject *type, PyObject *string,
                                 PyObject *format)
-/*[clinic end generated code: output=af2c2d024f3203f5 input=b3918835524a1f22]*/
+/*[clinic end generated code: output=af2c2d024f3203f5 input=d7597c7f5327117b]*/
 {
     PyObject *result;
 
