@@ -1901,8 +1901,6 @@ to speed up repeated connections from the same clients.
    :class:`SSLSocket`. The attribute can be assigned to on instances of
    :class:`SSLContext` in order to return a custom subclass of
    :class:`SSLSocket`.
-   :class:`SSLContext` or overridden on subclasses of :class:`SSLContext`
-   in order to return a custom subclass of :class:`SSLSocket`.
 
    .. versionadded:: 3.7
 
