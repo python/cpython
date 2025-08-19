@@ -670,6 +670,7 @@ class RawConfigParser(MutableMapping):
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
         self._comments = _CommentSpec(comment_prefixes or (), inline_comment_prefixes or ())
+        self._loaded_sources = []
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
@@ -757,6 +758,7 @@ class RawConfigParser(MutableMapping):
             if isinstance(filename, os.PathLike):
                 filename = os.fspath(filename)
             read_ok.append(filename)
+            self._loaded_sources.append(read_ok)
         return read_ok
 
     def read_file(self, f, source=None):
@@ -773,6 +775,7 @@ class RawConfigParser(MutableMapping):
             except AttributeError:
                 source = '<???>'
         self._read(f, source)
+        self._loaded_sources.append(source)
 
     def read_string(self, string, source='<string>'):
         """Read configuration from a given string."""
@@ -809,6 +812,7 @@ class RawConfigParser(MutableMapping):
                     raise DuplicateOptionError(section, key, source)
                 elements_added.add((section, key))
                 self.set(section, key, value)
+        self._loaded_sources.append(source)
 
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
         """Get an option value for a given section.
@@ -1048,6 +1052,38 @@ class RawConfigParser(MutableMapping):
         # XXX does it break when underlying container state changed?
         return itertools.chain((self.default_section,), self._sections.keys())
 
+    def __str__(self):
+        config_dict = {
+            section: dict(self.items(section, raw=True))
+            for section in self.sections()
+        }
+        return f"<ConfigParser: {config_dict}>"
+
+    def __repr__(self):
+        params = {
+            "defaults": self._defaults if self._defaults else None,
+            "dict_type": type(self._dict).__name__,
+            "allow_no_value": self._allow_no_value,
+            "delimiters": self._delimiters,
+            "strict": self._strict,
+            "default_section": self.default_section,
+            "interpolation": type(self._interpolation).__name__,
+        }
+        params = {k: v for k, v in params.items() if v is not None}
+        sections_count = len(self._sections)
+        state = {
+            "loaded_sources": self._loaded_sources,
+            "sections_count": sections_count,
+            "sections": list(self._sections)[:5],  # limit to 5 section names for readability
+        }
+
+        if sections_count > 5:
+            state["sections_truncated"] = f"...and {sections_count - 5} more"
+
+        return (f"<{self.__class__.__name__}("
+                f"params={params}, "
+                f"state={state})>")
+
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
 
@@ -1068,6 +1104,7 @@ class RawConfigParser(MutableMapping):
         try:
             ParsingError._raise_all(self._read_inner(fp, fpname))
         finally:
+            self._loaded_sources.append(fpname)
             self._join_multiline_values()
 
     def _read_inner(self, fp, fpname):
@@ -1218,11 +1255,14 @@ class RawConfigParser(MutableMapping):
 
     def _validate_key_contents(self, key):
         """Raises an InvalidWriteError for any keys containing
-        delimiters or that match the section header pattern"""
+        delimiters or that begins with the section header pattern"""
         if re.match(self.SECTCRE, key):
-            raise InvalidWriteError("Cannot write keys matching section pattern")
-        if any(delim in key for delim in self._delimiters):
-            raise InvalidWriteError("Cannot write key that contains delimiters")
+            raise InvalidWriteError(
+                f"Cannot write key {key}; begins with section pattern")
+        for delim in self._delimiters:
+            if delim in key:
+                raise InvalidWriteError(
+                    f"Cannot write key {key}; contains delimiter {delim}")
 
     def _validate_value_types(self, *, section="", option="", value=""):
         """Raises a TypeError for illegal non-string values.
