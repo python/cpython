@@ -798,7 +798,7 @@ when used with ``happy_eyeballs_delay``
 
 Fixed :exc:`AssertionError` when using
 :func:`!asyncio.staggered.staggered_race` with
-:attr:`asyncio.eager_task_factory`.
+:data:`asyncio.eager_task_factory`.
 
 ..
 
@@ -1033,7 +1033,7 @@ retrieve the spec information.
 .. nonce: s3vKql
 .. section: Library
 
-:mod:`argparse` vim supports abbreviated single-dash long options separated
+:mod:`argparse` supports abbreviated single-dash long options separated
 by ``=`` from its value.
 
 ..
@@ -1755,8 +1755,8 @@ Adjust ``cmath.tanh(nanj)`` and ``cmath.tanh(infj)`` for recent C standards.
 Remove internal frames from tracebacks shown in
 :class:`code.InteractiveInterpreter` with non-default
 :func:`sys.excepthook`. Save correct tracebacks in
-:attr:`sys.last_traceback` and update ``__traceback__`` attribute of
-:attr:`sys.last_value` and :attr:`sys.last_exc`.
+:data:`sys.last_traceback` and update ``__traceback__`` attribute of
+:data:`sys.last_value` and :data:`sys.last_exc`.
 
 ..
 
@@ -3586,7 +3586,7 @@ atomic types.
 
 Add *doc* parameter to :func:`dataclasses.field`, so it can be stored and
 shown as a documentation / metadata. If ``@dataclass(slots=True)`` is used,
-then the supplied string is availabl in the :attr:`~object.__slots__` dict.
+then the supplied string is available in the :attr:`~object.__slots__` dict.
 Otherwise, the supplied string is only available in the corresponding
 :class:`dataclasses.Field` object.
 
@@ -4184,7 +4184,7 @@ display REPL ``help()``.
 .. nonce: aFqNAB
 .. section: Core and Builtins
 
-Fix reading and decoding a line from the source file witn non-UTF-8 encoding
+Fix reading and decoding a line from the source file with non-UTF-8 encoding
 for syntax errors raised in the compiler.
 
 ..

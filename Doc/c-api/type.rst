@@ -82,6 +82,9 @@ Type Objects
    error (e.g. no more watcher IDs available), return ``-1`` and set an
    exception.
 
+   In free-threaded builds, :c:func:`PyType_AddWatcher` is not thread-safe,
+   so it must be called at start up (before spawning the first thread).
+
    .. versionadded:: 3.12
 
 
@@ -148,14 +151,29 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GenericAlloc(PyTypeObject *type, Py_ssize_t nitems)
 
-   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type object.  Use
-   Python's default memory allocation mechanism to allocate a new instance and
-   initialize all its contents to ``NULL``.
+   Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type
+   object.  Uses Python's default memory allocation mechanism to allocate memory
+   for a new instance, zeros the memory, then initializes the memory as if by
+   calling :c:func:`PyObject_Init` or :c:func:`PyObject_InitVar`.
+
+   Do not call this directly to allocate memory for an object; call the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot instead.
+
+   For types that support garbage collection (i.e., the
+   :c:macro:`Py_TPFLAGS_HAVE_GC` flag is set), this function behaves like
+   :c:macro:`PyObject_GC_New` or :c:macro:`PyObject_GC_NewVar` (except the
+   memory is guaranteed to be zeroed before initialization), and should be
+   paired with :c:func:`PyObject_GC_Del` in :c:member:`~PyTypeObject.tp_free`.
+   Otherwise, it behaves like :c:macro:`PyObject_New` or
+   :c:macro:`PyObject_NewVar` (except the memory is guaranteed to be zeroed
+   before initialization) and should be paired with :c:func:`PyObject_Free` in
+   :c:member:`~PyTypeObject.tp_free`.
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
-   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type object.  Create a
-   new instance using the type's :c:member:`~PyTypeObject.tp_alloc` slot.
+   Generic handler for the :c:member:`~PyTypeObject.tp_new` slot of a type
+   object.  Creates a new instance using the type's
+   :c:member:`~PyTypeObject.tp_alloc` slot and returns the resulting object.
 
 .. c:function:: int PyType_Ready(PyTypeObject *type)
 
@@ -264,6 +282,10 @@ Type Objects
    and other places where a method's defining class cannot be passed using the
    :c:type:`PyCMethod` calling convention.
 
+   The returned reference is :term:`borrowed <borrowed reference>` from *type*,
+   and will be valid as long as you hold a reference to *type*.
+   Do not release it with :c:func:`Py_DECREF` or similar.
+
    .. versionadded:: 3.11
 
 .. c:function:: int PyType_GetBaseByToken(PyTypeObject *type, void *token, PyTypeObject **result)
@@ -311,10 +333,6 @@ The following functions and structs are used to create
 
    Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
    supported, except if ``tp_new`` is ``NULL``.
-   (For backwards compatibility, other ``PyType_From*`` functions allow
-   such metaclasses. They ignore ``tp_new``, which may result in incomplete
-   initialization. This is deprecated and in Python 3.14+ such metaclasses will
-   not be supported.)
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
@@ -456,6 +474,9 @@ The following functions and structs are used to create
       class need *in addition* to the superclass.
       Use :c:func:`PyObject_GetTypeData` to get a pointer to subclass-specific
       memory reserved this way.
+      For negative :c:member:`!basicsize`, Python will insert padding when
+      needed to meet :c:member:`~PyTypeObject.tp_basicsize`'s alignment
+      requirements.
 
       .. versionchanged:: 3.12
 

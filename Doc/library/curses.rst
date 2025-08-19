@@ -68,6 +68,21 @@ The module :mod:`curses` defines the following exception:
 The module :mod:`curses` defines the following functions:
 
 
+.. function:: assume_default_colors(fg, bg, /)
+
+   Allow use of default values for colors on terminals supporting this feature.
+   Use this to support transparency in your application.
+
+   * Assign terminal default foreground/background colors to color number ``-1``.
+     So ``init_pair(x, COLOR_RED, -1)`` will initialize pair *x* as red
+     on default background and ``init_pair(x, -1, COLOR_BLUE)`` will
+     initialize pair *x* as default foreground on blue.
+
+   * Change the definition of the color-pair ``0`` to ``(fg, bg)``.
+
+   .. versionadded:: 3.14
+
+
 .. function:: baudrate()
 
    Return the output speed of the terminal in bits per second.  On software
@@ -290,9 +305,11 @@ The module :mod:`curses` defines the following functions:
    Change the definition of a color-pair.  It takes three arguments: the number of
    the color-pair to be changed, the foreground color number, and the background
    color number.  The value of *pair_number* must be between ``1`` and
-   ``COLOR_PAIRS - 1`` (the ``0`` color pair is wired to white on black and cannot
-   be changed).  The value of *fg* and *bg* arguments must be between ``0`` and
-   ``COLORS - 1``, or, after calling :func:`use_default_colors`, ``-1``.
+   ``COLOR_PAIRS - 1`` (the ``0`` color pair can only be changed by
+   :func:`use_default_colors` and :func:`assume_default_colors`).
+   The value of *fg* and *bg* arguments must be between ``0`` and
+   ``COLORS - 1``, or, after calling :func:`!use_default_colors` or
+   :func:`!assume_default_colors`, ``-1``.
    If the color-pair was previously initialized, the screen is
    refreshed and all occurrences of that color-pair are changed to the new
    definition.
@@ -678,11 +695,7 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: use_default_colors()
 
-   Allow use of default values for colors on terminals supporting this feature. Use
-   this to support transparency in your application.  The default color is assigned
-   to the color number ``-1``. After calling this function,  ``init_pair(x,
-   curses.COLOR_RED, -1)`` initializes, for instance, color pair *x* to a red
-   foreground color on the default background.
+   Equivalent to ``assume_default_colors(-1, -1)``.
 
 
 .. function:: wrapper(func, /, *args, **kwargs)
@@ -975,6 +988,10 @@ the following methods and attributes:
             window.getstr(y, x, n)
 
    Read a bytes object from the user, with primitive line editing capacity.
+   The maximum value for *n* is 2047.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.getyx()
@@ -1066,6 +1083,10 @@ the following methods and attributes:
    current cursor position, or at *y*, *x* if specified. Attributes are stripped
    from the characters.  If *n* is specified, :meth:`instr` returns a string
    at most *n* characters long (exclusive of the trailing NUL).
+   The maximum value for *n* is 2047.
+
+   .. versionchanged:: 3.14
+      The maximum value for *n* was increased from 1023 to 2047.
 
 
 .. method:: window.is_linetouched(line)

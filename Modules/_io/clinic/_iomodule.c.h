@@ -64,9 +64,9 @@ PyDoc_STRVAR(_io_open__doc__,
 "given, the default buffering policy works as follows:\n"
 "\n"
 "* Binary files are buffered in fixed-size chunks; the size of the buffer\n"
-"  is chosen using a heuristic trying to determine the underlying device\'s\n"
-"  \"block size\" and falling back on `io.DEFAULT_BUFFER_SIZE`.\n"
-"  On many systems, the buffer will typically be 4096 or 8192 bytes long.\n"
+" is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)\n"
+" when the device block size is available.\n"
+" On most systems, the buffer will typically be 128 kilobytes long.\n"
 "\n"
 "* \"Interactive\" text files (files for which isatty() returns True)\n"
 "  use line buffering.  Other text files use the policy described above\n"
@@ -145,9 +145,11 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(file), &_Py_ID(mode), &_Py_ID(buffering), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(newline), &_Py_ID(closefd), &_Py_ID(opener), },
     };
     #undef NUM_KEYWORDS
@@ -369,9 +371,11 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(path), },
     };
     #undef NUM_KEYWORDS
@@ -406,4 +410,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec1df2ff5265ab16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a8e032c0424bce2 input=a9049054013a1b77]*/

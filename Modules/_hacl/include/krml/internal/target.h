@@ -19,6 +19,20 @@
 #  define inline __inline__
 #endif
 
+/* There is no support for aligned_alloc() in macOS before Catalina, so
+ * let's make a macro to use _mm_malloc() and _mm_free() functions
+ * from mm_malloc.h. */
+#if defined(__APPLE__) && defined(__MACH__)
+#  include <AvailabilityMacros.h>
+#  if defined(MAC_OS_X_VERSION_MIN_REQUIRED) &&                                \
+   (MAC_OS_X_VERSION_MIN_REQUIRED < 101500)
+#    include <mm_malloc.h>
+#    define LEGACY_MACOS
+#  else
+#    undef LEGACY_MACOS
+#endif
+#endif
+
 /******************************************************************************/
 /* Macros that KaRaMeL will generate.                                         */
 /******************************************************************************/
@@ -62,7 +76,7 @@
 #endif
 
 #ifndef KRML_MAYBE_UNUSED
-#  if defined(__GNUC__)
+#  if defined(__GNUC__) || defined(__clang__)
 #    define KRML_MAYBE_UNUSED __attribute__((unused))
 #  else
 #    define KRML_MAYBE_UNUSED
@@ -70,7 +84,7 @@
 #endif
 
 #ifndef KRML_ATTRIBUTE_TARGET
-#  if defined(__GNUC__)
+#  if defined(__GNUC__) || defined(__clang__)
 #    define KRML_ATTRIBUTE_TARGET(x) __attribute__((target(x)))
 #  else
 #    define KRML_ATTRIBUTE_TARGET(x)
@@ -78,10 +92,10 @@
 #endif
 
 #ifndef KRML_NOINLINE
-#  if defined(_MSC_VER)
-#    define KRML_NOINLINE __declspec(noinline)
-#  elif defined (__GNUC__)
+#  if defined (__GNUC__) || defined (__clang__)
 #    define KRML_NOINLINE __attribute__((noinline,unused))
+#  elif defined(_MSC_VER)
+#    define KRML_NOINLINE __declspec(noinline)
 #  elif defined (__SUNPRO_C)
 #    define KRML_NOINLINE __attribute__((noinline))
 #  else
@@ -133,6 +147,8 @@
       defined(_MSC_VER) ||                                                     \
       (defined(__MINGW32__) && defined(__MINGW64_VERSION_MAJOR)))
 #    define KRML_ALIGNED_MALLOC(X, Y) _aligned_malloc(Y, X)
+#  elif defined(LEGACY_MACOS)
+#    define KRML_ALIGNED_MALLOC(X, Y) _mm_malloc(Y, X)
 #  else
 #    define KRML_ALIGNED_MALLOC(X, Y) aligned_alloc(X, Y)
 #  endif
@@ -150,10 +166,38 @@
       defined(_MSC_VER) ||                                                     \
       (defined(__MINGW32__) && defined(__MINGW64_VERSION_MAJOR)))
 #    define KRML_ALIGNED_FREE(X) _aligned_free(X)
+#  elif defined(LEGACY_MACOS)
+#    define KRML_ALIGNED_FREE(X) _mm_free(X)
 #  else
 #    define KRML_ALIGNED_FREE(X) free(X)
 #  endif
 #endif
+
+#ifndef KRML_HOST_TIME
+
+#  include <time.h>
+
+/* Prims_nat not yet in scope */
+inline static int32_t krml_time(void) {
+  return (int32_t)time(NULL);
+}
+
+#  define KRML_HOST_TIME krml_time
+#endif
+
+/* In statement position, exiting is easy. */
+#define KRML_EXIT                                                              \
+  do {                                                                         \
+    KRML_HOST_PRINTF("Unimplemented function at %s:%d\n", __FILE__, __LINE__); \
+    KRML_HOST_EXIT(254);                                                       \
+  } while (0)
+
+/* In expression position, use the comma-operator and a malloc to return an
+ * expression of the right size. KaRaMeL passes t as the parameter to the macro.
+ */
+#define KRML_EABORT(t, msg)                                                    \
+  (KRML_HOST_PRINTF("KaRaMeL abort at %s:%d\n%s\n", __FILE__, __LINE__, msg),  \
+   KRML_HOST_EXIT(255), *((t *)KRML_HOST_MALLOC(sizeof(t))))
 
 /* In FStar.Buffer.fst, the size of arrays is uint32_t, but it's a number of
  * *elements*. Do an ugly, run-time check (some of which KaRaMeL can eliminate).
@@ -176,6 +220,24 @@
       KRML_HOST_EXIT(253);                                                     \
     }                                                                          \
   } while (0)
+
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#  define KRML_HOST_SNPRINTF(buf, sz, fmt, arg)                                \
+    _snprintf_s(buf, sz, _TRUNCATE, fmt, arg)
+#else
+#  define KRML_HOST_SNPRINTF(buf, sz, fmt, arg) snprintf(buf, sz, fmt, arg)
+#endif
+
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4))
+#  define KRML_DEPRECATED(x) __attribute__((deprecated(x)))
+#elif defined(__GNUC__)
+/* deprecated attribute is not defined in GCC < 4.5. */
+#  define KRML_DEPRECATED(x)
+#elif defined(__SUNPRO_C)
+#  define KRML_DEPRECATED(x) __attribute__((deprecated(x)))
+#elif defined(_MSC_VER)
+#  define KRML_DEPRECATED(x) __declspec(deprecated(x))
+#endif
 
 /* Macros for prettier unrolling of loops */
 #define KRML_LOOP1(i, n, x) { \

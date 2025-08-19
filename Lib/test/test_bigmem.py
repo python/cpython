@@ -9,7 +9,8 @@ high memory limit to regrtest, with the -M option.
 """
 
 from test import support
-from test.support import bigmemtest, _1G, _2G, _4G
+from test.support import bigmemtest, _1G, _2G, _4G, import_helper
+_testcapi = import_helper.import_module('_testcapi')
 
 import unittest
 import operator
@@ -1255,6 +1256,27 @@ class DictTest(unittest.TestCase):
         # https://github.com/python/cpython/issues/102701
         d = dict.fromkeys(range(size))
         d[size] = 1
+
+
+class ImmortalityTest(unittest.TestCase):
+
+    @bigmemtest(size=_2G, memuse=pointer_size * 9/8)
+    def test_stickiness(self, size):
+        """Check that immortality is "sticky", so that
+           once an object is immortal it remains so."""
+        if size < _2G:
+            # Not enough memory to cause immortality on overflow
+            return
+        o1 = o2 = o3 = o4 = o5 = o6 = o7 = o8 = object()
+        l = [o1] * (size-20)
+        self.assertFalse(_testcapi.is_immortal(o1))
+        for _ in range(30):
+            l.append(l[0])
+        self.assertTrue(_testcapi.is_immortal(o1))
+        del o2, o3, o4, o5, o6, o7, o8
+        self.assertTrue(_testcapi.is_immortal(o1))
+        del l
+        self.assertTrue(_testcapi.is_immortal(o1))
 
 
 if __name__ == '__main__':

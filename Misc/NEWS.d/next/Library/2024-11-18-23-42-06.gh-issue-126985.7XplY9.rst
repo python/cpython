@@ -1,3 +1,0 @@
-When running under a virtual environment with the :mod:`site` disabled (see
-:option:`-S`), :data:`sys.prefix` and :data:`sys.base_prefix` will now point
-to the virtual environment, instead of the base installation.

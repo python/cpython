@@ -297,7 +297,8 @@ def cache_from_source(path, debug_override=None, *, optimization=None):
         # Strip initial drive from a Windows path. We know we have an absolute
         # path here, so the second part of the check rules out a POSIX path that
         # happens to contain a colon at the second character.
-        if head[1] == ':' and head[0] not in path_separators:
+        # Slicing avoids issues with an empty (or short) `head`.
+        if head[1:2] == ':' and head[0:1] not in path_separators:
             head = head[2:]
 
         # Strip initial path separator from `head` to complete the conversion
@@ -716,6 +717,12 @@ class WindowsRegistryFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
+        _warnings.warn('importlib.machinery.WindowsRegistryFinder is '
+                       'deprecated; use site configuration instead. '
+                       'Future versions of Python may not enable this '
+                       'finder by default.',
+                       DeprecationWarning, stacklevel=2)
+
         filepath = cls._search_registry(fullname)
         if filepath is None:
             return None
@@ -1238,7 +1245,7 @@ class PathFinder:
         if path == '':
             try:
                 path = _os.getcwd()
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError):
                 # Don't cache the failure as the cwd can easily change to
                 # a valid directory later on.
                 return None

@@ -207,7 +207,7 @@ class Parser:
 
     @memoize
     def fstring_start(self) -> Optional[tokenize.TokenInfo]:
-        FSTRING_START = getattr(token, "FSTRING_START")
+        FSTRING_START = getattr(token, "FSTRING_START", None)
         if not FSTRING_START:
             return None
         tok = self._tokenizer.peek()
@@ -217,7 +217,7 @@ class Parser:
 
     @memoize
     def fstring_middle(self) -> Optional[tokenize.TokenInfo]:
-        FSTRING_MIDDLE = getattr(token, "FSTRING_MIDDLE")
+        FSTRING_MIDDLE = getattr(token, "FSTRING_MIDDLE", None)
         if not FSTRING_MIDDLE:
             return None
         tok = self._tokenizer.peek()
@@ -227,7 +227,7 @@ class Parser:
 
     @memoize
     def fstring_end(self) -> Optional[tokenize.TokenInfo]:
-        FSTRING_END = getattr(token, "FSTRING_END")
+        FSTRING_END = getattr(token, "FSTRING_END", None)
         if not FSTRING_END:
             return None
         tok = self._tokenizer.peek()

@@ -18,6 +18,11 @@ Code objects are typically produced by the bytecode [compiler](compiler.md),
 although they are often written to disk by one process and read back in by another.
 The disk version of a code object is serialized using the
 [marshal](https://docs.python.org/dev/library/marshal.html) protocol.
+When a `CodeObject` is created, the function `_PyCode_Quicken()` from
+[`Python/specialize.c`](../Python/specialize.c) is called to initialize
+the caches of all adaptive instructions. This is required because the
+on-disk format is a sequence of bytes, and some of the caches need to be
+initialized with 16-bit values.
 
 Code objects are nominally immutable.
 Some fields (including `co_code_adaptive` and fields for runtime

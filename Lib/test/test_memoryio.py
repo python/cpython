@@ -265,8 +265,8 @@ class MemoryTestMixin:
         memio = self.ioclass(buf * 10)
 
         self.assertEqual(iter(memio), memio)
-        self.assertTrue(hasattr(memio, '__iter__'))
-        self.assertTrue(hasattr(memio, '__next__'))
+        self.assertHasAttr(memio, '__iter__')
+        self.assertHasAttr(memio, '__next__')
         i = 0
         for line in memio:
             self.assertEqual(line, buf)
