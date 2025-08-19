@@ -1444,6 +1444,24 @@ ghi\0jkl
         self.assertEqual(sniffer.sniff(sample).delimiter, "|")
         self.assertNotEqual(sniffer.sniff(sample).delimiter, "\r")
 
+    def test_zero_mode_tie_order_independence(self):
+        # ":" appears in half the rows (1, 0, 1, 0) - a tie between
+        #     0 and 1 per line.
+        # "," appears once every row (true delimiter).
+        #
+        # Even if the zero-frequency bucket is appended v. inserted, the tie
+        # yields an adjusted score of 0, so ":" should not be promoted and
+        # "," must be selected.
+        sample = (
+            "a,b:c\n"
+            "d,e\n"
+            "f,g:c\n"
+            "h,i\n"
+        )
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(sample)
+        self.assertEqual(dialect.delimiter, ",")
+
 class NUL:
     def write(s, *args):
         pass
