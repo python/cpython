@@ -523,11 +523,9 @@ class PydocDocTest(unittest.TestCase):
                          '''"__name__ == '__main__'"'''.encode('utf-8'))
 
     def test_dunder_not_here(self):
-        missing_module = "__dict__"
-        result = str(run_pydoc_fail(missing_module), 'ascii')
-        expected = missing_pattern(missing_module, dunder=True)
-        self.assertEqual(expected, result,
-            "documentation for missing module found")
+        result = str(run_pydoc_fail("__dict__"), 'ascii')
+        expected = missing_pattern("__dict__", dunder=True)
+        self.assertEqual(expected, result)
 
     @requires_docstrings
     def test_not_ascii(self):
