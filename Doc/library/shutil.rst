@@ -394,9 +394,8 @@ Directory and files operations
    *src* and the destination, and will be used to copy *src* to the destination
    if :func:`os.rename` cannot be used.  If the source is a directory,
    :func:`copytree` is called, passing it the *copy_function*. The
-   default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
-   *copy_function* allows the move to succeed when it is not possible to also
-   copy the metadata, at the expense of not copying any of the metadata.
+   default *copy_function* is :func:`copy2`. Any copy function with a signature
+   compatible with copy2() can be used (for instance, :func:`~shutil.copy`).
 
    .. audit-event:: shutil.move src,dst shutil.move
 
