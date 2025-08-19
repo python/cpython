@@ -2,8 +2,7 @@ import unittest
 import os
 import socket
 import sys
-from test.support import os_helper
-from test.support import socket_helper
+from test.support import is_apple, os_helper, socket_helper
 from test.support.import_helper import import_fresh_module
 from test.support.os_helper import TESTFN
 
@@ -158,7 +157,7 @@ class TestFilemode:
 
             os.chmod(TESTFN, 0o700)
             st_mode, modestr = self.get_mode()
-            self.assertEqual(modestr[:3], '-rw')
+            self.assertStartsWith(modestr, '-rw')
             self.assertS_IS("REG", st_mode)
             self.assertEqual(self.statmod.S_IFMT(st_mode),
                              self.statmod.S_IFREG)
@@ -247,7 +246,7 @@ class TestFilemode:
         for flag in self.file_flags:
             if flag.startswith("UF"):
                 self.assertTrue(getattr(self.statmod, flag) & self.statmod.UF_SETTABLE, f"{flag} not in UF_SETTABLE")
-            elif sys.platform == 'darwin' and self.statmod is c_stat and flag == 'SF_DATALESS':
+            elif is_apple and self.statmod is c_stat and flag == 'SF_DATALESS':
                 self.assertTrue(self.statmod.SF_DATALESS & self.statmod.SF_SYNTHETIC, "SF_DATALESS not in SF_SYNTHETIC")
                 self.assertFalse(self.statmod.SF_DATALESS & self.statmod.SF_SETTABLE, "SF_DATALESS in SF_SETTABLE")
             else:
@@ -257,7 +256,7 @@ class TestFilemode:
                          "FILE_ATTRIBUTE_* constants are Win32 specific")
     def test_file_attribute_constants(self):
         for key, value in sorted(self.file_attributes.items()):
-            self.assertTrue(hasattr(self.statmod, key), key)
+            self.assertHasAttr(self.statmod, key)
             modvalue = getattr(self.statmod, key)
             self.assertEqual(value, modvalue, key)
 
@@ -315,7 +314,7 @@ class TestFilemode:
         self.assertEqual(self.statmod.S_ISGID, 0o002000)
         self.assertEqual(self.statmod.S_ISVTX, 0o001000)
 
-        self.assertFalse(hasattr(self.statmod, "S_ISTXT"))
+        self.assertNotHasAttr(self.statmod, "S_ISTXT")
         self.assertEqual(self.statmod.S_IREAD, self.statmod.S_IRUSR)
         self.assertEqual(self.statmod.S_IWRITE, self.statmod.S_IWUSR)
         self.assertEqual(self.statmod.S_IEXEC, self.statmod.S_IXUSR)

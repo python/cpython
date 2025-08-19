@@ -6,9 +6,13 @@
 API and ABI Versioning
 ***********************
 
+
+Build-time version constants
+----------------------------
+
 CPython exposes its version number in the following macros.
-Note that these correspond to the version code is **built** with,
-not necessarily the version used at **run time**.
+Note that these correspond to the version code is **built** with.
+See :c:var:`Py_Version` for the version used at **run time**.
 
 See :ref:`stable` for a discussion of API and ABI stability across versions.
 
@@ -37,37 +41,83 @@ See :ref:`stable` for a discussion of API and ABI stability across versions.
 .. c:macro:: PY_VERSION_HEX
 
    The Python version number encoded in a single integer.
+   See :c:func:`Py_PACK_FULL_VERSION` for the encoding details.
 
-   The underlying version information can be found by treating it as a 32 bit
-   number in the following manner:
+   Use this for numeric comparisons, for example,
+   ``#if PY_VERSION_HEX >= ...``.
 
-   +-------+-------------------------+-------------------------+--------------------------+
-   | Bytes | Bits (big endian order) | Meaning                 | Value for ``3.4.1a2``    |
-   +=======+=========================+=========================+==========================+
-   |   1   |         1-8             |  ``PY_MAJOR_VERSION``   | ``0x03``                 |
-   +-------+-------------------------+-------------------------+--------------------------+
-   |   2   |         9-16            |  ``PY_MINOR_VERSION``   | ``0x04``                 |
-   +-------+-------------------------+-------------------------+--------------------------+
-   |   3   |         17-24           |  ``PY_MICRO_VERSION``   | ``0x01``                 |
-   +-------+-------------------------+-------------------------+--------------------------+
-   |   4   |         25-28           |  ``PY_RELEASE_LEVEL``   | ``0xA``                  |
-   +       +-------------------------+-------------------------+--------------------------+
-   |       |         29-32           |  ``PY_RELEASE_SERIAL``  | ``0x2``                  |
-   +-------+-------------------------+-------------------------+--------------------------+
 
-   Thus ``3.4.1a2`` is hexversion ``0x030401a2`` and ``3.10.0`` is
-   hexversion ``0x030a00f0``.
-
-   Use this for numeric comparisons, e.g. ``#if PY_VERSION_HEX >= ...``.
-
-   This version is also available via the symbol :c:var:`Py_Version`.
+Run-time version
+----------------
 
 .. c:var:: const unsigned long Py_Version
 
-   The Python runtime version number encoded in a single constant integer, with
-   the same format as the :c:macro:`PY_VERSION_HEX` macro.
+   The Python runtime version number encoded in a single constant integer.
+   See :c:func:`Py_PACK_FULL_VERSION` for the encoding details.
    This contains the Python version used at run time.
+
+   Use this for numeric comparisons, for example, ``if (Py_Version >= ...)``.
 
    .. versionadded:: 3.11
 
-All the given macros are defined in :source:`Include/patchlevel.h`.
+
+Bit-packing macros
+------------------
+
+.. c:function:: uint32_t Py_PACK_FULL_VERSION(int major, int minor, int micro, int release_level, int release_serial)
+
+   Return the given version, encoded as a single 32-bit integer with
+   the following structure:
+
+   +------------------+-------+----------------+-----------+--------------------------+
+   |                  | No.   |                |           | Example values           |
+   |                  | of    |                |           +-------------+------------+
+   | Argument         | bits  | Bit mask       | Bit shift | ``3.4.1a2`` | ``3.10.0`` |
+   +==================+=======+================+===========+=============+============+
+   | *major*          |   8   | ``0xFF000000`` | 24        | ``0x03``    | ``0x03``   |
+   +------------------+-------+----------------+-----------+-------------+------------+
+   | *minor*          |   8   | ``0x00FF0000`` | 16        | ``0x04``    | ``0x0A``   |
+   +------------------+-------+----------------+-----------+-------------+------------+
+   | *micro*          |   8   | ``0x0000FF00`` | 8         | ``0x01``    | ``0x00``   |
+   +------------------+-------+----------------+-----------+-------------+------------+
+   | *release_level*  |   4   | ``0x000000F0`` | 4         | ``0xA``     | ``0xF``    |
+   +------------------+-------+----------------+-----------+-------------+------------+
+   | *release_serial* |   4   | ``0x0000000F`` | 0         | ``0x2``     | ``0x0``    |
+   +------------------+-------+----------------+-----------+-------------+------------+
+
+   For example:
+
+   +-------------+------------------------------------+-----------------+
+   | Version     | ``Py_PACK_FULL_VERSION`` arguments | Encoded version |
+   +=============+====================================+=================+
+   | ``3.4.1a2`` | ``(3, 4, 1, 0xA, 2)``              | ``0x030401a2``  |
+   +-------------+------------------------------------+-----------------+
+   | ``3.10.0``  | ``(3, 10, 0, 0xF, 0)``             | ``0x030a00f0``  |
+   +-------------+------------------------------------+-----------------+
+
+   Out-of range bits in the arguments are ignored.
+   That is, the macro can be defined as:
+
+   .. code-block:: c
+
+      #ifndef Py_PACK_FULL_VERSION
+      #define Py_PACK_FULL_VERSION(X, Y, Z, LEVEL, SERIAL) ( \
+         (((X) & 0xff) << 24) |                              \
+         (((Y) & 0xff) << 16) |                              \
+         (((Z) & 0xff) << 8) |                               \
+         (((LEVEL) & 0xf) << 4) |                            \
+         (((SERIAL) & 0xf) << 0))
+      #endif
+
+   ``Py_PACK_FULL_VERSION`` is primarily a macro, intended for use in
+   ``#if`` directives, but it is also available as an exported function.
+
+   .. versionadded:: 3.14
+
+.. c:function:: uint32_t Py_PACK_VERSION(int major, int minor)
+
+   Equivalent to ``Py_PACK_FULL_VERSION(major, minor, 0, 0, 0)``.
+   The result does not correspond to any Python release, but is useful
+   in numeric comparisons.
+
+   .. versionadded:: 3.14

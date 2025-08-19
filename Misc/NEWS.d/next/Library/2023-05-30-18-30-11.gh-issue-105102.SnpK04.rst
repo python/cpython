@@ -1,2 +1,0 @@
-Allow :class:`ctypes.Union` to be nested in :class:`ctypes.Structure` when
-the system endianness is the opposite of the classes.

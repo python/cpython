@@ -1,5 +1,5 @@
-:mod:`ftplib` --- FTP protocol client
-=====================================
+:mod:`!ftplib` --- FTP protocol client
+======================================
 
 .. module:: ftplib
    :synopsis: FTP protocol client (requires sockets).
@@ -55,43 +55,63 @@ Reference
 FTP objects
 ^^^^^^^^^^^
 
+.. Use substitutions for some param docs so we don't need to repeat them
+   in multiple places.
+
+.. |param_doc_user| replace::
+   The username to log in with (default: ``'anonymous'``).
+
+.. |param_doc_passwd| replace::
+   The password to use when logging in.
+   If not given, and if *passwd* is the empty string or ``"-"``,
+   a password will be automatically generated.
+
+.. Ideally, we'd like to use the :rfc: directive, but Sphinx will not allow it.
+
+.. |param_doc_acct| replace::
+   Account information to be used for the ``ACCT`` FTP command.
+   Few systems implement this.
+   See `RFC-959 <https://datatracker.ietf.org/doc/html/rfc959.html>`__
+   for more details.
+
+.. |param_doc_source_address| replace::
+   A 2-tuple ``(host, port)`` for the socket to bind to as its
+   source address before connecting.
+
+.. |param_doc_encoding| replace::
+   The encoding for directories and filenames (default: ``'utf-8'``).
+
 .. class:: FTP(host='', user='', passwd='', acct='', timeout=None, \
                source_address=None, *, encoding='utf-8')
 
    Return a new instance of the :class:`FTP` class.
-   When *host* is given, the method call :meth:`connect(host) <connect>`
-   is made by the constructor.
-   When *user* is given, additionally the method call
-   :meth:`login(user, passwd, acct) <connect>` is made.
 
    :param str host:
       The hostname to connect to.
+      If given, :code:`connect(host)` is implicitly called by the constructor.
 
    :param str user:
-      The username to log in with.
-      If empty string, ``"anonymous"`` is used.
+      |param_doc_user|
+      If given, :code:`login(host, passwd, acct)` is implicitly called
+      by the constructor.
 
    :param str passwd:
-      The password to use when logging in.
-      If not given, and if *passwd* is the empty string or ``"-"``,
-      a password will be automatically generated.
+      |param_doc_passwd|
 
    :param str acct:
-      Account information; see the ACCT FTP command.
+      |param_doc_acct|
 
    :param timeout:
-      A timeout in seconds for blocking operations like :meth:`connect`.
-      If not specified, the global default timeout setting will be used.
-   :type timeout: int | None
+      A timeout in seconds for blocking operations like :meth:`connect`
+      (default: the global default timeout setting).
+   :type timeout: float | None
 
    :param source_address:
-      *source_address* is a 2-tuple ``(host, port)`` for the socket
-      to bind to as its source address before connecting.
+      |param_doc_source_address|
    :type source_address: tuple | None
 
    :param str encoding:
-      The *encoding* parameter specifies the encoding
-      for directories and filenames.
+      |param_doc_encoding|
 
    The :class:`FTP` class supports the :keyword:`with` statement, e.g.:
 
@@ -140,17 +160,29 @@ FTP objects
 
    .. method:: FTP.connect(host='', port=0, timeout=None, source_address=None)
 
-      Connect to the given host and port.  The default port number is ``21``, as
-      specified by the FTP protocol specification.  It is rarely needed to specify a
-      different port number.  This function should be called only once for each
-      instance; it should not be called at all if a host was given when the instance
-      was created.  All other methods can only be used after a connection has been
-      made.
-      The optional *timeout* parameter specifies a timeout in seconds for the
-      connection attempt. If no *timeout* is passed, the global default timeout
-      setting will be used.
-      *source_address* is a 2-tuple ``(host, port)`` for the socket to bind to as
-      its source address before connecting.
+      Connect to the given host and port.
+      This function should be called only once for each instance;
+      it should not be called if a *host* argument was given
+      when the :class:`FTP` instance was created.
+      All other :class:`!FTP` methods can only be called
+      after a connection has successfully been made.
+
+      :param str host:
+         The host to connect to.
+
+      :param int port:
+         The TCP port to connect to (default: ``21``,
+         as specified by the FTP protocol specification).
+         It is rarely needed to specify a different port number.
+
+      :param timeout:
+         A timeout in seconds for the connection attempt
+         (default: the global default timeout setting).
+      :type timeout: float | None
+
+      :param source_address:
+         |param_doc_source_address|
+      :type source_address: tuple | None
 
       .. audit-event:: ftplib.connect self,host,port ftplib.FTP.connect
 
@@ -167,14 +199,21 @@ FTP objects
 
    .. method:: FTP.login(user='anonymous', passwd='', acct='')
 
-      Log in as the given *user*.  The *passwd* and *acct* parameters are optional and
-      default to the empty string.  If no *user* is specified, it defaults to
-      ``'anonymous'``.  If *user* is ``'anonymous'``, the default *passwd* is
-      ``'anonymous@'``.  This function should be called only once for each instance,
-      after a connection has been established; it should not be called at all if a
-      host and user were given when the instance was created.  Most FTP commands are
-      only allowed after the client has logged in.  The *acct* parameter supplies
-      "accounting information"; few systems implement this.
+      Log on to the connected FTP server.
+      This function should be called only once for each instance,
+      after a connection has been established;
+      it should not be called if the *host* and *user* arguments were given
+      when the :class:`FTP` instance was created.
+      Most FTP commands are only allowed after the client has logged in.
+
+      :param str user:
+         |param_doc_user|
+
+      :param str passwd:
+         |param_doc_passwd|
+
+      :param str acct:
+         |param_doc_acct|
 
 
    .. method:: FTP.abort()
@@ -193,22 +232,35 @@ FTP objects
    .. method:: FTP.voidcmd(cmd)
 
       Send a simple command string to the server and handle the response.  Return
-      nothing if a response code corresponding to success (codes in the range
-      200--299) is received.  Raise :exc:`error_reply` otherwise.
+      the response string if the response code corresponds to success (codes in
+      the range 200--299).  Raise :exc:`error_reply` otherwise.
 
       .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.voidcmd
 
 
    .. method:: FTP.retrbinary(cmd, callback, blocksize=8192, rest=None)
 
-      Retrieve a file in binary transfer mode.  *cmd* should be an appropriate
-      ``RETR`` command: ``'RETR filename'``. The *callback* function is called for
-      each block of data received, with a single bytes argument giving the data
-      block. The optional *blocksize* argument specifies the maximum chunk size to
-      read on the low-level socket object created to do the actual transfer (which
-      will also be the largest size of the data blocks passed to *callback*).  A
-      reasonable default is chosen. *rest* means the same thing as in the
-      :meth:`transfercmd` method.
+      Retrieve a file in binary transfer mode.
+
+      :param str cmd:
+        An appropriate ``RETR`` command: :samp:`"RETR {filename}"`.
+
+      :param callback:
+         A single parameter callable that is called
+         for each block of data received,
+         with its single argument being the data as :class:`bytes`.
+      :type callback: :term:`callable`
+
+      :param int blocksize:
+         The maximum chunk size to read on the low-level
+         :class:`~socket.socket` object created to do the actual transfer.
+         This also corresponds to the largest size of data
+         that will be passed to *callback*.
+         Defaults to ``8192``.
+
+      :param int rest:
+         A ``REST`` command to be sent to the server.
+         See the documentation for the *rest* parameter of the :meth:`transfercmd` method.
 
 
    .. method:: FTP.retrlines(cmd, callback=None)
@@ -232,16 +284,33 @@ FTP objects
 
    .. method:: FTP.storbinary(cmd, fp, blocksize=8192, callback=None, rest=None)
 
-      Store a file in binary transfer mode.  *cmd* should be an appropriate
-      ``STOR`` command: ``"STOR filename"``. *fp* is a :term:`file object`
-      (opened in binary mode) which is read until EOF using its :meth:`~io.IOBase.read`
-      method in blocks of size *blocksize* to provide the data to be stored.
-      The *blocksize* argument defaults to 8192.  *callback* is an optional single
-      parameter callable that is called on each block of data after it is sent.
-      *rest* means the same thing as in the :meth:`transfercmd` method.
+      Store a file in binary transfer mode.
+
+      :param str cmd:
+        An appropriate ``STOR`` command: :samp:`"STOR {filename}"`.
+
+      :param fp:
+         A file object (opened in binary mode) which is read until EOF,
+         using its :meth:`~io.RawIOBase.read` method in blocks of size *blocksize*
+         to provide the data to be stored.
+      :type fp: :term:`file object`
+
+      :param int blocksize:
+         The read block size.
+         Defaults to ``8192``.
+
+      :param callback:
+         A single parameter callable that is called
+         for each block of data sent,
+         with its single argument being the data as :class:`bytes`.
+      :type callback: :term:`callable`
+
+      :param int rest:
+         A ``REST`` command to be sent to the server.
+         See the documentation for the *rest* parameter of the :meth:`transfercmd` method.
 
       .. versionchanged:: 3.2
-         *rest* parameter added.
+         The *rest* parameter was added.
 
 
    .. method:: FTP.storlines(cmd, fp, callback=None)
@@ -380,19 +449,53 @@ FTP_TLS objects
 .. class:: FTP_TLS(host='', user='', passwd='', acct='', *, context=None, \
                    timeout=None, source_address=None, encoding='utf-8')
 
-   A :class:`FTP` subclass which adds TLS support to FTP as described in
+   An :class:`FTP` subclass which adds TLS support to FTP as described in
    :rfc:`4217`.
-   Connect as usual to port 21 implicitly securing the FTP control connection
-   before authenticating. Securing the data connection requires the user to
-   explicitly ask for it by calling the :meth:`prot_p` method.  *context*
-   is a :class:`ssl.SSLContext` object which allows bundling SSL configuration
-   options, certificates and private keys into a single (potentially
-   long-lived) structure.  Please read :ref:`ssl-security` for best practices.
+   Connect to port 21 implicitly securing the FTP control connection
+   before authenticating.
+
+   .. note::
+      The user must explicitly secure the data connection
+      by calling the :meth:`prot_p` method.
+
+   :param str host:
+      The hostname to connect to.
+      If given, :code:`connect(host)` is implicitly called by the constructor.
+
+   :param str user:
+      |param_doc_user|
+      If given, :code:`login(host, passwd, acct)` is implicitly called
+      by the constructor.
+
+   :param str passwd:
+      |param_doc_passwd|
+
+   :param str acct:
+      |param_doc_acct|
+
+   :param context:
+      An SSL context object which allows bundling SSL configuration options,
+      certificates and private keys into a single, potentially long-lived,
+      structure.
+      Please read :ref:`ssl-security` for best practices.
+   :type context: :class:`ssl.SSLContext`
+
+   :param timeout:
+      A timeout in seconds for blocking operations like :meth:`~FTP.connect`
+      (default: the global default timeout setting).
+   :type timeout: float | None
+
+   :param source_address:
+      |param_doc_source_address|
+   :type source_address: tuple | None
+
+   :param str encoding:
+      |param_doc_encoding|
 
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.3
-      *source_address* parameter was added.
+      Added the *source_address* parameter.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with

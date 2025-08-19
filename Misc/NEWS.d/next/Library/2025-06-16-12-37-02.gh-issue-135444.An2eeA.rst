@@ -1,0 +1,2 @@
+Fix :meth:`asyncio.DatagramTransport.sendto` to account for datagram header size when
+data cannot be sent.

@@ -1,5 +1,5 @@
-:mod:`gettext` --- Multilingual internationalization services
-=============================================================
+:mod:`!gettext` --- Multilingual internationalization services
+==============================================================
 
 .. module:: gettext
    :synopsis: Multilingual internationalization services.

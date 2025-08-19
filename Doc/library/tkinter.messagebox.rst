@@ -1,5 +1,5 @@
-:mod:`tkinter.messagebox` --- Tkinter message prompts
-=====================================================
+:mod:`!tkinter.messagebox` --- Tkinter message prompts
+======================================================
 
 .. module:: tkinter.messagebox
    :platform: Tk

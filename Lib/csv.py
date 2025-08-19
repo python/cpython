@@ -47,7 +47,7 @@ SETTINGS:
             field contains either the quotechar or the delimiter
         csv.QUOTE_ALL means that quotes are always placed around fields.
         csv.QUOTE_NONNUMERIC means that quotes are always placed around
-            fields which do not parse as integers or floating point
+            fields which do not parse as integers or floating-point
             numbers.
         csv.QUOTE_STRINGS means that quotes are always placed around
             fields which are strings.  Note that the Python value None
@@ -63,7 +63,6 @@ SETTINGS:
         written as two quotes
 """
 
-import re
 import types
 from _csv import Error, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
@@ -113,8 +112,8 @@ class Dialect:
         try:
             _Dialect(self)
         except TypeError as e:
-            # We do this for compatibility with py2.3
-            raise Error(str(e))
+            # Re-raise to get a traceback showing more user code.
+            raise Error(str(e)) from None
 
 class excel(Dialect):
     """Describe the usual properties of Excel-generated CSV files."""
@@ -281,6 +280,7 @@ class Sniffer:
         If there is no quotechar the delimiter can't be determined
         this way.
         """
+        import re
 
         matches = []
         for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",

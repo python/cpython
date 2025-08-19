@@ -67,3 +67,41 @@ class MethodWrapper:
 
 # https://github.com/python/cpython/issues/99433
 str_wrapper = object().__str__
+
+
+# https://github.com/python/cpython/issues/115392
+from test.test_doctest.decorator_mod import decorator
+
+@decorator
+@decorator
+def func_with_docstring_wrapped():
+    """Some unrelated info."""
+
+
+# https://github.com/python/cpython/issues/136914
+import functools
+
+
+@functools.cache
+def cached_func_with_doctest(value):
+    """
+    >>> cached_func_with_doctest(1)
+    -1
+    """
+    return -value
+
+
+@functools.cache
+def cached_func_without_docstring(value):
+    return value + 1
+
+
+class ClassWithACachedProperty:
+
+    @functools.cached_property
+    def cached(self):
+        """
+        >>> X().cached
+        -1
+        """
+        return 0

@@ -99,11 +99,11 @@
       <StackReserveSize Condition="$(Configuration) == 'Debug'">12000000</StackReserveSize>
       <StackReserveSize Condition="$(Configuration) == 'PGInstrument'">12000000</StackReserveSize>
       <!-- HACK: Need additional memory to avoid crashing until gh-113655 is fixed -->
-      <StackReserveSize Condition="$(Configuration) == 'PGUpdate'">3000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'PGUpdate' and $(UseExtraStackReserve) == 'true'">3000000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="..\PC\pycon.ico" />
+    <None Include="..\PC\icons\python.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_exe.rc" />
