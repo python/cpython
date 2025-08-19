@@ -31,7 +31,7 @@
 #elif defined(__DragonFly__)
 #   include <sys/lwp.h>         /* lwp_gettid() */
 #elif defined(__sun__)
- #   include <thread.h>
+#   include <thread.h>
 #endif
 
 /* The POSIX spec requires that use of pthread_attr_setstacksize
