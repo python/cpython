@@ -229,11 +229,12 @@ expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
                                       for s in expected_data_docstrings)
 
 # output pattern for missing module
-missing_pattern = ('''\
+def missing_pattern(name, dunder=False):
+    return ('''\
 No help entry found for %%r.
-Use help() to get the interactive help utility.
+%%sUse help() to get the interactive help utility.
 Use help(str) for help on the str class.
-Additional documentation is available online at https://docs.python.org/%s.%s/''' % sys.version_info[:2]).replace('\n', os.linesep)
+Additional documentation is available online at https://docs.python.org/%s.%s/''' % sys.version_info[:2]).replace('\n', os.linesep) % (name, "Use help('specialnames') for a list of special names for which help is available.\n" if dunder else "")
 
 # output pattern for module with bad imports
 badimport_pattern = "problem in %s - ModuleNotFoundError: No module named %r"
@@ -498,7 +499,33 @@ class PydocDocTest(unittest.TestCase):
     def test_not_here(self):
         missing_module = "test.i_am_not_here"
         result = str(run_pydoc_fail(missing_module), 'ascii')
-        expected = missing_pattern % missing_module
+        expected = missing_pattern(missing_module)
+        self.assertEqual(expected, result,
+            "documentation for missing module found")
+
+    def test_dunder_help(self):
+        def get_main_output(topic):
+            return run_pydoc(topic).split(b'Related help topics:')[0].strip()
+
+        # check that each dunder method maps to a help topic that includes its
+        # name
+        for name in pydoc.Helper.dunders:
+            self.assertIn(name.encode('ascii'), get_main_output(name))
+
+        # check that right-hand and in-place versions match
+        self.assertEqual(get_main_output('__add__'), get_main_output('__radd__'))
+        self.assertEqual(get_main_output('__add__'), get_main_output('__iadd__'))
+
+    def test_dunder_main(self):
+        self.assertEqual(run_pydoc('__main__').splitlines(False)[0],
+                         '"__main__" — Top-level code environment'.encode('utf-8'))
+        self.assertEqual(run_pydoc('__name__').splitlines(False)[0],
+                         '''"__name__ == '__main__'"'''.encode('utf-8'))
+
+    def test_dunder_not_here(self):
+        missing_module = "__dict__"
+        result = str(run_pydoc_fail(missing_module), 'ascii')
+        expected = missing_pattern(missing_module, dunder=True)
         self.assertEqual(expected, result,
             "documentation for missing module found")
 
@@ -511,7 +538,7 @@ class PydocDocTest(unittest.TestCase):
     def test_input_strip(self):
         missing_module = " test.i_am_not_here "
         result = str(run_pydoc_fail(missing_module), 'ascii')
-        expected = missing_pattern % missing_module.strip()
+        expected = missing_pattern(missing_module.strip())
         self.assertEqual(expected, result)
 
     def test_stripid(self):
@@ -653,6 +680,8 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
+
+
     def test_builtin_on_metaclasses(self):
         """Tests help on metaclasses.
 
@@ -665,7 +694,7 @@ class PydocDocTest(unittest.TestCase):
         self.assertNotIn('Built-in subclasses', text)
 
     def test_fail_help_cli(self):
-        elines = (missing_pattern % 'abd').splitlines()
+        elines = (missing_pattern("abd")).splitlines()
         with spawn_python("-c" "help()") as proc:
             out, _ = proc.communicate(b"abd")
             olines = out.decode().splitlines()[-10:-6]
@@ -676,7 +705,7 @@ class PydocDocTest(unittest.TestCase):
         with StringIO() as buf:
             helper = pydoc.Helper(output=buf)
             helper.help("abd")
-            expected = missing_pattern % "abd"
+            expected = missing_pattern("abd")
             self.assertEqual(expected, buf.getvalue().strip().replace('\n', os.linesep))
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
@@ -738,6 +767,8 @@ class PydocDocTest(unittest.TestCase):
         run_pydoc_for_request('keywords', 'Here is a list of the Python keywords.')
         # test for "symbols"
         run_pydoc_for_request('symbols', 'Here is a list of the punctuation symbols')
+        # test for "specialnames"
+        run_pydoc_for_request('specialnames', 'Here is a list of special names')
         # test for "topics"
         run_pydoc_for_request('topics', 'Here is a list of available topics.')
         # test for "modules" skipped, see test_modules()
