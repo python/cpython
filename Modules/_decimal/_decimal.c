@@ -4009,10 +4009,7 @@ _decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
 }
 
 /*[clinic input]
-_decimal.Decimal.to_integral
-
-    rounding: object = None
-    context: object = None
+_decimal.Decimal.to_integral = _decimal.Decimal.to_integral_value
 
 Identical to the to_integral_value() method.
 
@@ -4023,16 +4020,13 @@ versions.
 static PyObject *
 _decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
                                   PyObject *context)
-/*[clinic end generated code: output=a0c7188686ee7f5c input=8eac6def038d13b9]*/
+/*[clinic end generated code: output=a0c7188686ee7f5c input=709b54618ecd0d8b]*/
 {
     return _decimal_Decimal_to_integral_value_impl(self, rounding, context);
 }
 
 /*[clinic input]
-_decimal.Decimal.to_integral_exact
-
-    rounding: object = None
-    context: object = None
+_decimal.Decimal.to_integral_exact = _decimal.Decimal.to_integral_value
 
 Round to the nearest integer.
 
@@ -4045,7 +4039,7 @@ given, then the rounding mode of the current default context is used.
 static PyObject *
 _decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
                                         PyObject *context)
-/*[clinic end generated code: output=8b004f9b45ac7746 input=c290166f59c1d6ab]*/
+/*[clinic end generated code: output=8b004f9b45ac7746 input=fabce7a744b8087c]*/
 {
     PyObject *result;
     uint32_t status = 0;
@@ -4604,9 +4598,7 @@ _decimal_Decimal_exp_impl(PyObject *self, PyObject *context)
 Dec_UnaryFuncVA(mpd_qexp)
 
 /*[clinic input]
-_decimal.Decimal.ln
-
-    context: object = None
+_decimal.Decimal.ln = _decimal.Decimal.exp
 
 Return the natural (base e) logarithm of the operand.
 
@@ -4616,13 +4608,11 @@ correctly rounded.
 
 static PyObject *
 _decimal_Decimal_ln_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=5191f4ef739b04b0 input=f267b224238c56e2]*/
+/*[clinic end generated code: output=5191f4ef739b04b0 input=d353c51ec00d1cff]*/
 Dec_UnaryFuncVA(mpd_qln)
 
 /*[clinic input]
-_decimal.Decimal.log10
-
-    context: object = None
+_decimal.Decimal.log10 = _decimal.Decimal.exp
 
 Return the base ten logarithm of the operand.
 
@@ -4632,39 +4622,33 @@ correctly rounded.
 
 static PyObject *
 _decimal_Decimal_log10_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=d5da63df75900275 input=d941f9335dc693cb]*/
+/*[clinic end generated code: output=d5da63df75900275 input=48a6be60154c0b46]*/
 Dec_UnaryFuncVA(mpd_qlog10)
 
 /*[clinic input]
-_decimal.Decimal.next_minus
-
-    context: object = None
+_decimal.Decimal.next_minus = _decimal.Decimal.exp
 
 Returns the largest representable number smaller than itself.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_next_minus_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=aacbd758399f883f input=75666c6dc3cc8da9]*/
+/*[clinic end generated code: output=aacbd758399f883f input=666b348f71e6c090]*/
 Dec_UnaryFuncVA(mpd_qnext_minus)
 
 /*[clinic input]
-_decimal.Decimal.next_plus
-
-    context: object = None
+_decimal.Decimal.next_plus = _decimal.Decimal.exp
 
 Returns the smallest representable number larger than itself.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_next_plus_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=f3a7029a213c553c input=adcccf3f94e8da3f]*/
+/*[clinic end generated code: output=f3a7029a213c553c input=04e105060ad1fa15]*/
 Dec_UnaryFuncVA(mpd_qnext_plus)
 
 /*[clinic input]
-_decimal.Decimal.normalize
-
-    context: object = None
+_decimal.Decimal.normalize = _decimal.Decimal.exp
 
 Normalize the number by stripping trailing 0s
 
@@ -4676,13 +4660,11 @@ the equivalent value Decimal('32.1').
 
 static PyObject *
 _decimal_Decimal_normalize_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=db2c8b3c8eccff36 input=8f0504baa4e8c7de]*/
+/*[clinic end generated code: output=db2c8b3c8eccff36 input=d5ee63acd904d4de]*/
 Dec_UnaryFuncVA(mpd_qreduce)
 
 /*[clinic input]
-_decimal.Decimal.sqrt
-
-    context: object = None
+_decimal.Decimal.sqrt = _decimal.Decimal.exp
 
 Return the square root of the argument to full precision.
 
@@ -4691,7 +4673,7 @@ The result is correctly rounded using the ROUND_HALF_EVEN rounding mode.
 
 static PyObject *
 _decimal_Decimal_sqrt_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=420722a199dd9c2b input=16df570867daf0d6]*/
+/*[clinic end generated code: output=420722a199dd9c2b input=3a76afbd39dc20b9]*/
 Dec_UnaryFuncVA(mpd_qsqrt)
 
 /* Binary arithmetic functions, optional context arg */
@@ -4719,10 +4701,7 @@ _decimal_Decimal_compare_impl(PyObject *self, PyObject *other,
 Dec_BinaryFuncVA(mpd_qcompare)
 
 /*[clinic input]
-_decimal.Decimal.compare_signal
-
-    other: object
-    context: object = None
+_decimal.Decimal.compare_signal = _decimal.Decimal.compare
 
 Identical to compare, except that all NaNs signal.
 [clinic start generated code]*/
@@ -4730,14 +4709,11 @@ Identical to compare, except that all NaNs signal.
 static PyObject *
 _decimal_Decimal_compare_signal_impl(PyObject *self, PyObject *other,
                                      PyObject *context)
-/*[clinic end generated code: output=0b8d0ff43f6c8a95 input=daf40eeaec81606f]*/
+/*[clinic end generated code: output=0b8d0ff43f6c8a95 input=a52a39d1c6fc369d]*/
 Dec_BinaryFuncVA(mpd_qcompare_signal)
 
 /*[clinic input]
-_decimal.Decimal.max
-
-    other: object
-    context: object = None
+_decimal.Decimal.max = _decimal.Decimal.compare
 
 Maximum of self and other.
 
@@ -4747,14 +4723,11 @@ operand is returned.
 
 static PyObject *
 _decimal_Decimal_max_impl(PyObject *self, PyObject *other, PyObject *context)
-/*[clinic end generated code: output=f3a5c5d76761c9ff input=3a04c62c08c1189a]*/
+/*[clinic end generated code: output=f3a5c5d76761c9ff input=2ae2582f551296d8]*/
 Dec_BinaryFuncVA(mpd_qmax)
 
 /*[clinic input]
-_decimal.Decimal.max_mag
-
-    other: object
-    context: object = None
+_decimal.Decimal.max_mag = _decimal.Decimal.compare
 
 As the max() method, but compares the absolute values of the operands.
 [clinic start generated code]*/
@@ -4762,14 +4735,11 @@ As the max() method, but compares the absolute values of the operands.
 static PyObject *
 _decimal_Decimal_max_mag_impl(PyObject *self, PyObject *other,
                               PyObject *context)
-/*[clinic end generated code: output=52b0451987bac65f input=2eebf864d8659574]*/
+/*[clinic end generated code: output=52b0451987bac65f input=88b105e66cf138c5]*/
 Dec_BinaryFuncVA(mpd_qmax_mag)
 
 /*[clinic input]
-_decimal.Decimal.min
-
-    other: object
-    context: object = None
+_decimal.Decimal.min = _decimal.Decimal.compare
 
 Minimum of self and other.
 
@@ -4779,14 +4749,11 @@ operand is returned.
 
 static PyObject *
 _decimal_Decimal_min_impl(PyObject *self, PyObject *other, PyObject *context)
-/*[clinic end generated code: output=d2f38ecb9d6f0493 input=01f01cd974c5441d]*/
+/*[clinic end generated code: output=d2f38ecb9d6f0493 input=2a70f2c087c418c9]*/
 Dec_BinaryFuncVA(mpd_qmin)
 
 /*[clinic input]
-_decimal.Decimal.min_mag
-
-    other: object
-    context: object = None
+_decimal.Decimal.min_mag = _decimal.Decimal.compare
 
 As the min() method, but compares the absolute values of the operands.
 [clinic start generated code]*/
@@ -4794,14 +4761,11 @@ As the min() method, but compares the absolute values of the operands.
 static PyObject *
 _decimal_Decimal_min_mag_impl(PyObject *self, PyObject *other,
                               PyObject *context)
-/*[clinic end generated code: output=aa3391935f6c8fc9 input=38f70dd313c8db83]*/
+/*[clinic end generated code: output=aa3391935f6c8fc9 input=351fa3c0e592746a]*/
 Dec_BinaryFuncVA(mpd_qmin_mag)
 
 /*[clinic input]
-_decimal.Decimal.next_toward
-
-    other: object
-    context: object = None
+_decimal.Decimal.next_toward = _decimal.Decimal.compare
 
 Returns the number closest to self, in the direction towards other.
 
@@ -4814,14 +4778,11 @@ to be the same as the sign of the second operand.
 static PyObject *
 _decimal_Decimal_next_toward_impl(PyObject *self, PyObject *other,
                                   PyObject *context)
-/*[clinic end generated code: output=edb933755644af69 input=b03dc5ae977012a5]*/
+/*[clinic end generated code: output=edb933755644af69 input=fdf0091ea6e9e416]*/
 Dec_BinaryFuncVA(mpd_qnext_toward)
 
 /*[clinic input]
-_decimal.Decimal.remainder_near
-
-    other: object
-    context: object = None
+_decimal.Decimal.remainder_near = _decimal.Decimal.compare
 
 Return the remainder from dividing self by other.
 
@@ -4837,7 +4798,7 @@ If the result is zero then its sign will be the sign of self.
 static PyObject *
 _decimal_Decimal_remainder_near_impl(PyObject *self, PyObject *other,
                                      PyObject *context)
-/*[clinic end generated code: output=6ce0fb3b0faff2f9 input=6f603d9f21378661]*/
+/*[clinic end generated code: output=6ce0fb3b0faff2f9 input=eb5a8dfe3470b794]*/
 Dec_BinaryFuncVA(mpd_qrem_near)
 
 /* Ternary arithmetic functions, optional context arg */
@@ -4877,9 +4838,7 @@ Dec_BoolFunc(mpd_iszero)
 /* Boolean functions, optional context arg */
 
 /*[clinic input]
-_decimal.Decimal.is_normal
-
-    context: object = None
+_decimal.Decimal.is_normal = _decimal.Decimal.exp
 
 Return True if the argument is a normal number and False otherwise.
 
@@ -4888,13 +4847,11 @@ Normal number is a finite nonzero number, which is not subnormal.
 
 static PyObject *
 _decimal_Decimal_is_normal_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=40cc429d388eb464 input=9def7316be59ce4e]*/
+/*[clinic end generated code: output=40cc429d388eb464 input=9afe43b9db9f4818]*/
 Dec_BoolFuncVA(mpd_isnormal)
 
 /*[clinic input]
-_decimal.Decimal.is_subnormal
-
-    context: object = None
+_decimal.Decimal.is_subnormal = _decimal.Decimal.exp
 
 Return True if the argument is subnormal, and False otherwise.
 
@@ -4904,7 +4861,7 @@ exponent less than Emin.
 
 static PyObject *
 _decimal_Decimal_is_subnormal_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=6f7d422b1f387d7f input=08e90e1d9fb87300]*/
+/*[clinic end generated code: output=6f7d422b1f387d7f input=11839c122c185b8b]*/
 Dec_BoolFuncVA(mpd_issubnormal)
 
 /* Unary functions, no context arg */
@@ -5056,22 +5013,18 @@ _decimal_Decimal_copy_negate_impl(PyObject *self)
 /* Unary functions, optional context arg */
 
 /*[clinic input]
-_decimal.Decimal.logical_invert
-
-    context: object = None
+_decimal.Decimal.logical_invert = _decimal.Decimal.exp
 
 Return the digit-wise inversion of the (logical) operand.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_invert_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=59beb9b1b51b9f34 input=063cc759635d249b]*/
+/*[clinic end generated code: output=59beb9b1b51b9f34 input=3531dac8b9548dad]*/
 Dec_UnaryFuncVA(mpd_qinvert)
 
 /*[clinic input]
-_decimal.Decimal.logb
-
-    context: object = None
+_decimal.Decimal.logb = _decimal.Decimal.exp
 
 Return the adjusted exponent of the operand as a Decimal instance.
 
@@ -5082,13 +5035,11 @@ Decimal('Infinity') is returned.
 
 static PyObject *
 _decimal_Decimal_logb_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=f278db20b47f301c input=1a0de8e49b101734]*/
+/*[clinic end generated code: output=f278db20b47f301c input=a8df027d1b8a2b17]*/
 Dec_UnaryFuncVA(mpd_qlogb)
 
 /*[clinic input]
-_decimal.Decimal.number_class
-
-    context: object = None
+_decimal.Decimal.number_class = _decimal.Decimal.exp
 
 Return a string describing the class of the operand.
 
@@ -5112,7 +5063,7 @@ The returned value is one of the following ten strings:
 
 static PyObject *
 _decimal_Decimal_number_class_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=3044cd45966b4949 input=f3d6cdda603e8b89]*/
+/*[clinic end generated code: output=3044cd45966b4949 input=447095d2677fa0ca]*/
 {
     const char *cp;
 
@@ -5124,9 +5075,7 @@ _decimal_Decimal_number_class_impl(PyObject *self, PyObject *context)
 }
 
 /*[clinic input]
-_decimal.Decimal.to_eng_string
-
-    context: object = None
+_decimal.Decimal.to_eng_string = _decimal.Decimal.exp
 
 Convert to an engineering-type string.
 
@@ -5141,7 +5090,7 @@ operation.
 
 static PyObject *
 _decimal_Decimal_to_eng_string_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=d386194c25ffffa7 input=2e13e7c7c1bad2ad]*/
+/*[clinic end generated code: output=d386194c25ffffa7 input=b2cb7e01e268e45d]*/
 {
     PyObject *result;
     mpd_ssize_t size;
@@ -5167,10 +5116,7 @@ Dec_BinaryFuncVA_NO_CTX(mpd_compare_total)
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total_mag)
 
 /*[clinic input]
-_decimal.Decimal.copy_sign
-
-    other: object
-    context: object = None
+_decimal.Decimal.copy_sign = _decimal.Decimal.compare
 
 Return a copy of *self* with the sign of *other*.
 
@@ -5188,7 +5134,7 @@ exactly.
 static PyObject *
 _decimal_Decimal_copy_sign_impl(PyObject *self, PyObject *other,
                                 PyObject *context)
-/*[clinic end generated code: output=72c62177763e012e input=8410238d533a06eb]*/
+/*[clinic end generated code: output=72c62177763e012e input=51ed9e4691e2249e]*/
 {
     PyObject *a, *b;
     PyObject *result;
@@ -5217,10 +5163,7 @@ _decimal_Decimal_copy_sign_impl(PyObject *self, PyObject *other,
 }
 
 /*[clinic input]
-_decimal.Decimal.same_quantum
-
-    other: object
-    context: object = None
+_decimal.Decimal.same_quantum = _decimal.Decimal.compare
 
 Test whether self and other have the same exponent or both are NaN.
 
@@ -5233,7 +5176,7 @@ exactly.
 static PyObject *
 _decimal_Decimal_same_quantum_impl(PyObject *self, PyObject *other,
                                    PyObject *context)
-/*[clinic end generated code: output=c0a3a046c662a7e2 input=3ae45df81d6edb73]*/
+/*[clinic end generated code: output=c0a3a046c662a7e2 input=8339415fa359e7df]*/
 {
     PyObject *a, *b;
     PyObject *result;
@@ -5252,10 +5195,7 @@ _decimal_Decimal_same_quantum_impl(PyObject *self, PyObject *other,
 /* Binary functions, optional context arg */
 
 /*[clinic input]
-_decimal.Decimal.logical_and
-
-    other: object
-    context: object = None
+_decimal.Decimal.logical_and = _decimal.Decimal.compare
 
 Return the digit-wise 'and' of the two (logical) operands.
 [clinic start generated code]*/
@@ -5263,14 +5203,11 @@ Return the digit-wise 'and' of the two (logical) operands.
 static PyObject *
 _decimal_Decimal_logical_and_impl(PyObject *self, PyObject *other,
                                   PyObject *context)
-/*[clinic end generated code: output=1526a357f97eaf71 input=84d2729d67fca057]*/
+/*[clinic end generated code: output=1526a357f97eaf71 input=2b319baee8970929]*/
 Dec_BinaryFuncVA(mpd_qand)
 
 /*[clinic input]
-_decimal.Decimal.logical_or
-
-    other: object
-    context: object = None
+_decimal.Decimal.logical_or = _decimal.Decimal.compare
 
 Return the digit-wise 'or' of the two (logical) operands.
 [clinic start generated code]*/
@@ -5278,14 +5215,11 @@ Return the digit-wise 'or' of the two (logical) operands.
 static PyObject *
 _decimal_Decimal_logical_or_impl(PyObject *self, PyObject *other,
                                  PyObject *context)
-/*[clinic end generated code: output=e57a72acf0982f56 input=03c8141eb7ff8020]*/
+/*[clinic end generated code: output=e57a72acf0982f56 input=75e0e1d4dd373b90]*/
 Dec_BinaryFuncVA(mpd_qor)
 
 /*[clinic input]
-_decimal.Decimal.logical_xor
-
-    other: object
-    context: object = None
+_decimal.Decimal.logical_xor = _decimal.Decimal.compare
 
 Return the digit-wise 'xor' of the two (logical) operands.
 [clinic start generated code]*/
@@ -5293,14 +5227,11 @@ Return the digit-wise 'xor' of the two (logical) operands.
 static PyObject *
 _decimal_Decimal_logical_xor_impl(PyObject *self, PyObject *other,
                                   PyObject *context)
-/*[clinic end generated code: output=ae3a7aeddde5a1a8 input=d154ad76a12595a7]*/
+/*[clinic end generated code: output=ae3a7aeddde5a1a8 input=a1ed8d6ac38c1c9e]*/
 Dec_BinaryFuncVA(mpd_qxor)
 
 /*[clinic input]
-_decimal.Decimal.rotate
-
-    other: object
-    context: object = None
+_decimal.Decimal.rotate = _decimal.Decimal.compare
 
 Returns a rotated copy of self's digits, value-of-other times.
 
@@ -5315,14 +5246,11 @@ necessary. The sign and exponent of the first operand are unchanged.
 static PyObject *
 _decimal_Decimal_rotate_impl(PyObject *self, PyObject *other,
                              PyObject *context)
-/*[clinic end generated code: output=e59e757e70a8416a input=36574269f4b31d0c]*/
+/*[clinic end generated code: output=e59e757e70a8416a input=cde7b032eac43f0b]*/
 Dec_BinaryFuncVA(mpd_qrotate)
 
 /*[clinic input]
-_decimal.Decimal.scaleb
-
-    other: object
-    context: object = None
+_decimal.Decimal.scaleb = _decimal.Decimal.compare
 
 Return the first operand with the exponent adjusted the second.
 
@@ -5333,14 +5261,11 @@ second operand must be an integer.
 static PyObject *
 _decimal_Decimal_scaleb_impl(PyObject *self, PyObject *other,
                              PyObject *context)
-/*[clinic end generated code: output=f01e99600eda34d7 input=de4ac7eb39f95991]*/
+/*[clinic end generated code: output=f01e99600eda34d7 input=7f29f83278d05f83]*/
 Dec_BinaryFuncVA(mpd_qscaleb)
 
 /*[clinic input]
-_decimal.Decimal.shift
-
-    other: object
-    context: object = None
+_decimal.Decimal.shift = _decimal.Decimal.compare
 
 Returns a shifted copy of self's digits, value-of-other times.
 
@@ -5355,7 +5280,7 @@ operand are unchanged.
 static PyObject *
 _decimal_Decimal_shift_impl(PyObject *self, PyObject *other,
                             PyObject *context)
-/*[clinic end generated code: output=f79ff9ce6d5b05ed input=899b4d64fd3f76b8]*/
+/*[clinic end generated code: output=f79ff9ce6d5b05ed input=501759c2522cb78e]*/
 Dec_BinaryFuncVA(mpd_qshift)
 
 /*[clinic input]
