@@ -312,6 +312,15 @@ os.path
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
+resource
+--------
+
+* Add new constants: :data:`~resource.RLIMIT_NTHR`,
+  :data:`~resource.RLIMIT_UMTXP`, :data:`~resource.RLIMIT_THREADS`,
+  :data:`~resource.RLIM_SAVED_CUR`, and :data:`~resource.RLIM_SAVED_MAX`.
+  (Contributed by Serhiy Storchaka in :gh:`137512`.)
+
+
 shelve
 ------
 

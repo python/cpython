@@ -1129,6 +1129,7 @@ typedef struct {
 #define cycleobject_CAST(op)    ((cycleobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.cycle.__new__
     iterable: object
@@ -1138,7 +1139,7 @@ Return elements from the iterable until it is exhausted. Then repeat the sequenc
 
 static PyObject *
 itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=f60e5ec17a45b35c input=9d1d84bcf66e908b]*/
+/*[clinic end generated code: output=f60e5ec17a45b35c input=ead392f4aac7afd8]*/
 {
     PyObject *it;
     PyObject *saved;
@@ -1386,6 +1387,7 @@ typedef struct {
 #define takewhileobject_CAST(op)    ((takewhileobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.takewhile.__new__
     predicate as func: object
@@ -1396,7 +1398,7 @@ Return successive entries from an iterable as long as the predicate evaluates to
 
 static PyObject *
 itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=bb179ea7864e2ef6 input=ba5255f7519aa119]*/
+/*[clinic end generated code: output=bb179ea7864e2ef6 input=61e42255dd0a7657]*/
 {
     PyObject *it;
     takewhileobject *lz;
@@ -1695,6 +1697,7 @@ typedef struct {
 #define starmapobject_CAST(op)  ((starmapobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.starmap.__new__
     function as func: object
@@ -1705,7 +1708,7 @@ Return an iterator whose values are returned from the function evaluated with an
 
 static PyObject *
 itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=79eeb81d452c6e8d input=844766df6a0d4dad]*/
+/*[clinic end generated code: output=79eeb81d452c6e8d input=8c9068da0692d6d2]*/
 {
     PyObject *it;
     starmapobject *lz;
@@ -1838,6 +1841,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.chain.from_iterable
     iterable as arg: object
@@ -1847,7 +1851,7 @@ Alternative chain() constructor taking a single iterable argument that evaluates
 
 static PyObject *
 itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg)
-/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=72c39e3a2ca3be85]*/
+/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=a9bf8227221c75b3]*/
 {
     PyObject *source;
 
@@ -2501,6 +2505,8 @@ typedef struct {
 #define cwrobject_CAST(op)  ((cwrobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 @classmethod
 itertools.combinations_with_replacement.__new__
     iterable: object
@@ -2514,7 +2520,7 @@ static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              PyObject *iterable,
                                              Py_ssize_t r)
-/*[clinic end generated code: output=48b26856d4e659ca input=1dc58e82a0878fdc]*/
+/*[clinic end generated code: output=48b26856d4e659ca input=26ebe0e42149e9fb]*/
 {
     cwrobject *co;
     Py_ssize_t n;

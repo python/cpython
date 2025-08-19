@@ -57,6 +57,16 @@ this module for those platforms.
       Previously, it could be negative, such as -1 or -3.
 
 
+.. data:: RLIM_SAVED_CUR
+.. data:: RLIM_SAVED_MAX
+
+   Constants used to represent the soft and hard limit values if they
+   cannot be represented in the ``rlim_t`` value in C.
+   Can be equal to :data:`RLIM_INFINITY`.
+
+   .. versionadded:: next
+
+
 .. function:: getrlimit(resource)
 
    Returns a tuple ``(soft, hard)`` with the current soft and hard limits of
@@ -278,6 +288,45 @@ platform.
    .. availability:: FreeBSD >= 11.
 
    .. versionadded:: 3.10
+
+
+.. data:: RLIMIT_NTHR
+
+   The maximum number of threads for this user id, not counting the main
+   and kernel threads.
+
+   .. availability:: NetBSD >= 7.0.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_PIPEBUF
+
+   The maximum total size of in-kernel buffers for bi-directional pipes/fifos
+   that this user id is allowed to consume.
+
+   .. availability:: FreeBSD >= 14.2.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_THREADS
+
+   The maximum number of threads each process can create.
+
+   .. availability:: AIX.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_UMTXP
+
+   The limit of the number of process-shared Posix thread library objects
+   allocated by user id.
+
+   .. availability:: FreeBSD >= 11.
+
+   .. versionadded:: next
 
 
 Resource Usage
