@@ -4136,6 +4136,13 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(A(), 'bluch')
         self.assertNotIn("blech", actual)
 
+    def test_suggestions_for_same_name(self):
+        class A:
+            def __dir__(self):
+                return ['blech']
+        actual = self.get_suggestion(A(), 'blech')
+        self.assertNotIn("Did you mean", actual)
+
 
 class GetattrSuggestionTests(BaseSuggestionTests):
     def test_suggestions_no_args(self):
@@ -4178,13 +4185,6 @@ class GetattrSuggestionTests(BaseSuggestionTests):
         for cls in [A, B, C]:
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn("blech", actual)
-
-    def test_suggestions_for_same_name(self):
-        class A:
-            def __dir__(self):
-                return ['blech']
-        actual = self.get_suggestion(A(), 'blech')
-        self.assertNotIn("Did you mean", actual)
 
 
 class DelattrSuggestionTests(BaseSuggestionTests):
