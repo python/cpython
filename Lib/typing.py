@@ -3094,7 +3094,7 @@ class _TypedDictMeta(type):
                 raise TypeError('Cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
         if closed is not None and extra_items is not NoExtraItems:
-            raise TypeError(f"Closed cannot be specified with extra_items")
+            raise TypeError(f"Cannot combine closed={closed!r} and extra_items")
 
         if any(issubclass(b, Generic) for b in bases):
             generic_base = (Generic,)
