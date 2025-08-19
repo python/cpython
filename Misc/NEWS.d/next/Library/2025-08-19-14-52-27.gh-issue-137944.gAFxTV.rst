@@ -1,0 +1,2 @@
+Improve command-line interface for :mod:`timeit`. The ``--help`` option now
+shows a colored help by default. Patch by Bénédikt Tran.
