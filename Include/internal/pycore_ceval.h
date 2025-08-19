@@ -123,11 +123,18 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
     return tstate->interp->eval_frame(tstate, frame, throwflag);
 }
 
-#if defined(_Py_TIER2) && !defined(_Py_JIT)
+#ifdef _Py_TIER2
+#ifdef _Py_JIT
+_Py_CODEUNIT *_Py_LazyJitTrampoline(
+    struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
+    _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+#else
 _Py_CODEUNIT *_PyTier2Interpreter(
     struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
     _PyStackRef *stack_pointer, PyThreadState *tstate
 );
+#endif
 #endif
 
 extern _PyJitEntryFuncPtr _Py_jit_entry;

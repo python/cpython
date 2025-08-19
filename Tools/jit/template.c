@@ -47,11 +47,11 @@
 #define CURRENT_TARGET() (_target)
 
 #undef TIER2_TO_TIER2
-#define TIER2_TO_TIER2(EXECUTOR)                                            \
+#define TIER2_TO_TIER2(EXECUTOR)                                           \
 do {                                                                       \
     OPT_STAT_INC(traces_executed);                                         \
     _PyExecutorObject *_executor = (EXECUTOR);                             \
-    jit_func_preserve_none jitted = _executor->jit_side_entry;             \
+    jit_func_preserve_none jitted = _executor->jit_code;                   \
     __attribute__((musttail)) return jitted(frame, stack_pointer, tstate); \
 } while (0)
 
