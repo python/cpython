@@ -401,7 +401,7 @@ PyThread_get_thread_native_id(void)
 #elif defined(__DragonFly__)
     lwpid_t native_id;
     native_id = lwp_gettid();
-#elif defined(__sun__)
+#elif defined(__sun__) && SIZEOF_LONG == 8
     unsigned long native_id = (unsigned long)getpid() << 32 | thr_self();
 #endif
     return (unsigned long) native_id;
