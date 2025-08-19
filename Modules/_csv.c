@@ -1735,7 +1735,7 @@ PyDoc_STRVAR(csv_writer_doc,
 
 PyDoc_STRVAR(csv_register_dialect_doc,
 "Create a mapping from a string name to a dialect class.\n"
-"    dialect = csv.register_dialect(name[, dialect[, **fmtparams]])");
+"    csv.register_dialect(name[, dialect[, **fmtparams]])");
 
 static struct PyMethodDef csv_methods[] = {
     { "reader", _PyCFunction_CAST(csv_reader),
