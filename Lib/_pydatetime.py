@@ -1072,7 +1072,7 @@ class date:
 
     @classmethod
     def strptime(cls, date_string, format):
-        """Parse a date string according to the given format (like time.strptime())."""
+        """Parse string according to the given date format (like time.strptime())."""
         import _strptime
         return _strptime._strptime_datetime_date(cls, date_string, format)
 
@@ -1299,7 +1299,7 @@ date.resolution = timedelta(days=1)
 
 
 class tzinfo:
-    """Abstract base class for time zone info classes.
+    """Abstract base class for time zone info objects.
 
     Subclasses must override the tzname(), utcoffset() and dst() methods.
     """
@@ -1457,7 +1457,7 @@ class time:
 
     @classmethod
     def strptime(cls, date_string, format):
-        """string, format -> new time parsed from a string (like time.strptime())."""
+        """Parse string according to the given time format (like time.strptime())."""
         import _strptime
         return _strptime._strptime_datetime_time(cls, date_string, format)
 
@@ -1765,7 +1765,7 @@ time.resolution = timedelta(microseconds=1)
 
 
 class datetime(date):
-    """datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])
+    """A combination of a date and a time.
 
     The year, month and day arguments are required. tzinfo may be None, or an
     instance of a tzinfo subclass. The remaining arguments may be ints.
@@ -2198,7 +2198,7 @@ class datetime(date):
 
     @classmethod
     def strptime(cls, date_string, format):
-        'string, format -> new datetime parsed from a string (like time.strptime()).'
+        """Parse string according to the given date and time format (like time.strptime())."""
         import _strptime
         return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
@@ -2424,6 +2424,8 @@ def _isoweek1monday(year):
 
 
 class timezone(tzinfo):
+    """Fixed offset from UTC implementation of tzinfo."""
+
     __slots__ = '_offset', '_name'
 
     # Sentinel value to disallow None

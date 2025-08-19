@@ -167,7 +167,7 @@ class HelpFormatter(object):
         indent_increment=2,
         max_help_position=24,
         width=None,
-        color=False,
+        color=True,
     ):
         # default setting for width
         if width is None:
@@ -1231,7 +1231,7 @@ class _SubParsersAction(Action):
         self._name_parser_map = {}
         self._choices_actions = []
         self._deprecated = set()
-        self._color = False
+        self._color = True
 
         super(_SubParsersAction, self).__init__(
             option_strings=option_strings,
@@ -1878,7 +1878,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  exit_on_error=True,
                  *,
                  suggest_on_error=False,
-                 color=False,
+                 color=True,
                  ):
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
