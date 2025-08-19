@@ -4022,10 +4022,12 @@ global_for_suggestions = None
 
 
 class SuggestionFormattingTestMixin:
+    attr_function = getattr
+
     def get_suggestion(self, obj, attr_name=None):
         if attr_name is not None:
             def callable():
-                getattr(obj, attr_name)
+                self.attr_function(obj, attr_name)
         else:
             callable = obj
 
@@ -4087,14 +4089,20 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         self.assertIn("'bluch'", self.get_suggestion(A(), '_luch'))
         self.assertIn("'bluch'", self.get_suggestion(A(), '_bluch'))
 
+        attr_function = self.attr_function
         class B:
             _bluch = None
             def method(self, name):
-                getattr(self, name)
+                attr_function(self, name)
 
         self.assertIn("'_bluch'", self.get_suggestion(B(), '_blach'))
         self.assertIn("'_bluch'", self.get_suggestion(B(), '_luch'))
         self.assertNotIn("'_bluch'", self.get_suggestion(B(), 'bluch'))
+
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, '_luch')))
+        self.assertIn("'_bluch'", self.get_suggestion(partial(B().method, 'bluch')))
+
 
     def test_do_not_trigger_for_long_attributes(self):
         class A:
@@ -4128,20 +4136,15 @@ class BaseSuggestionTests(SuggestionFormattingTestMixin):
         actual = self.get_suggestion(A(), 'bluch')
         self.assertNotIn("blech", actual)
 
+    def test_suggestions_for_same_name(self):
+        class A:
+            def __dir__(self):
+                return ['blech']
+        actual = self.get_suggestion(A(), 'blech')
+        self.assertNotIn("Did you mean", actual)
+
 
 class GetattrSuggestionTests(BaseSuggestionTests):
-    def get_suggestion(self, obj, attr_name=None):
-        if attr_name is not None:
-            def callable():
-                getattr(obj, attr_name)
-        else:
-            callable = obj
-
-        result_lines = self.get_exception(
-            callable, slice_start=-1, slice_end=None
-        )
-        return result_lines[0]
-
     def test_suggestions_no_args(self):
         class A:
             blech = None
@@ -4183,34 +4186,9 @@ class GetattrSuggestionTests(BaseSuggestionTests):
             actual = self.get_suggestion(cls(), 'bluch')
             self.assertIn("blech", actual)
 
-    def test_suggestions_for_same_name(self):
-        class A:
-            def __dir__(self):
-                return ['blech']
-        actual = self.get_suggestion(A(), 'blech')
-        self.assertNotIn("Did you mean", actual)
-
-    def test_suggestions_with_method_call(self):
-        class B:
-            _bluch = None
-            def method(self, name):
-                getattr(self, name)
-
-        obj = B()
-        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_blach')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, '_luch')))
-        self.assertIn("'_bluch'", self.get_suggestion(partial(obj.method, 'bluch')))
-
 
 class DelattrSuggestionTests(BaseSuggestionTests):
-    def get_suggestion(self, obj, attr_name):
-        def callable():
-            delattr(obj, attr_name)
-
-        result_lines = self.get_exception(
-            callable, slice_start=-1, slice_end=None
-        )
-        return result_lines[0]
+    attr_function = delattr
 
 
 class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
