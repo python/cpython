@@ -80,9 +80,6 @@ class Queue:
         have been processed (meaning that a task_done() call was received
         for every item that had been put() into the queue).
 
-        shutdown(immediate=True) calls task_done() for each remaining item in
-        the queue.
-
         Raises a ValueError if called more times than there were items
         placed in the queue.
         '''
@@ -240,8 +237,8 @@ class Queue:
         'immediate' to True to make gets raise immediately instead.
 
         All blocked callers of put() and get() will be unblocked. If
-        'immediate', a task is marked as done for each item remaining in
-        the queue, which may unblock callers of join().
+        'immediate', callers of join() are unblocked regardless of
+        the number of unfinished tasks.
         '''
         with self.mutex:
             self.is_shutdown = True
