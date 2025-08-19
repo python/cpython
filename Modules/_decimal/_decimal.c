@@ -4328,7 +4328,9 @@ dec_##MPDFUNC(PyObject *self, PyObject *Py_UNUSED(dummy))   \
     return MPDFUNC(MPD(self)) ? incr_true() : incr_false(); \
 }
 
-/* Boolean function with an optional context arg. */
+/* Boolean function with an optional context arg.
+   Argument Clinic provides PyObject *self, PyObject *context
+*/
 #define Dec_BoolFuncVA(MPDFUNC) \
 {                                                                         \
     decimal_state *state = get_module_state_by_def(Py_TYPE(self));        \
@@ -4337,7 +4339,9 @@ dec_##MPDFUNC(PyObject *self, PyObject *Py_UNUSED(dummy))   \
     return MPDFUNC(MPD(self), CTX(context)) ? incr_true() : incr_false(); \
 }
 
-/* Unary function with an optional context arg. */
+/* Unary function with an optional context arg.
+   Argument Clinic provides PyObject *self, PyObject *context
+*/
 #define Dec_UnaryFuncVA(MPDFUNC) \
 {                                                              \
     PyObject *result;                                          \
@@ -4359,7 +4363,9 @@ dec_##MPDFUNC(PyObject *self, PyObject *Py_UNUSED(dummy))   \
     return result;                                             \
 }
 
-/* Binary function with an optional context arg. */
+/* Binary function with an optional context arg.
+   Argument Clinic provides PyObject *self, PyObject *other, PyObject *context
+*/
 #define Dec_BinaryFuncVA(MPDFUNC) \
 {                                                                \
     PyObject *a, *b;                                             \
@@ -4422,7 +4428,10 @@ dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)   \
     return result;                                              \
 }
 
-/* Ternary function with an optional context arg. */
+/* Ternary function with an optional context arg.
+   Argument Clinic provides PyObject *self, PyObject *other, PyObject *third,
+                            PyObject *context
+*/
 #define Dec_TernaryFuncVA(MPDFUNC) \
 {                                                                        \
     PyObject *a, *b, *c;                                                 \
