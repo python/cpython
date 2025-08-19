@@ -3094,7 +3094,7 @@ class _TypedDictMeta(type):
                 raise TypeError('Cannot inherit from both a TypedDict type '
                                 'and a non-TypedDict base class')
         if closed is not None and extra_items is not NoExtraItems:
-            raise TypeError(f"Cannot use both closed and extra_items")
+            raise TypeError(f"Closed cannot be specified with extra_items")
 
         if any(issubclass(b, Generic) for b in bases):
             generic_base = (Generic,)
@@ -3274,7 +3274,7 @@ def TypedDict(typename, fields, /, *, total=True, closed=None,
             id: ReadOnly[int]  # the "id" key must not be modified
             username: str      # the "username" key can be changed
 
-    The *closed* argument controls whether the TypedDict allows additional
+    The closed argument controls whether the TypedDict allows additional
     non-required items during inheritance and assignability checks.
     If closed=True, the TypedDict is closed to additional items::
 
@@ -3284,14 +3284,20 @@ def TypedDict(typename, fields, /, *, total=True, closed=None,
 
     Passing closed=False explicitly requests TypedDict's default open behavior.
     If closed is not provided, the behavior is inherited from the superclass.
+    A type checker is only expected to support a literal False or True as the
+    value of the closed argument.
 
-    The *extra_items* argument can instead be used to specify the type of
-    additional non-required keys::
+    The extra_items argument can instead be used to specify the assignable type
+    of unknown non-required keys::
 
         Point2D = TypedDict('Point2D', {'x': int, 'y': int}, extra_items=int)
         class Point3D(Point2D):
             z: int      # OK
             label: str  # Type checker error
+
+    The extra_items argument is also inherited through subclassing. It is unset
+    by default, and it may not be used with the closed argument at the same
+    time.
 
     See PEP 728 for more information about closed and extra_items.
     """
