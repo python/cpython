@@ -458,7 +458,7 @@ Available Functions
           lower.one_way(**kw)
 
    This makes the warning refer to both the ``example.lower.one_way()`` and
-   ``package.higher.another_way()`` call sites only from calling code living
+   ``example.higher.another_way()`` call sites only from calling code living
    outside of ``example`` package.
 
    *source*, if supplied, is the destroyed object which emitted a
