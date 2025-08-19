@@ -230,11 +230,12 @@ expected_html_data_docstrings = tuple(s.replace(' ', '&nbsp;')
 
 # output pattern for missing module
 def missing_pattern(name, dunder=False):
+    dunderhelp = "Use help('specialnames') for a list of special names for which help is available.\n" if dunder else ""
     return ('''\
-No help entry found for %%r.
-%%sUse help() to get the interactive help utility.
+No help entry found for %r.
+%sUse help() to get the interactive help utility.
 Use help(str) for help on the str class.
-Additional documentation is available online at https://docs.python.org/%s.%s/''' % sys.version_info[:2]).replace('\n', os.linesep) % (name, "Use help('specialnames') for a list of special names for which help is available.\n" if dunder else "")
+Additional documentation is available online at https://docs.python.org/%s.%s/''' % (name, dunderhelp, *sys.version_info[:2])).replace('\n', os.linesep)
 
 # output pattern for module with bad imports
 badimport_pattern = "problem in %s - ModuleNotFoundError: No module named %r"
