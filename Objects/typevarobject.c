@@ -123,7 +123,7 @@ PyTypeObject _PyNoDefault_Type = {
 
 PyObject _Py_NoDefaultStruct = _PyObject_HEAD_INIT(&_PyNoDefault_Type);
 
-/* NoExtraItems: a marker object for TypeDict extra_items when its unset. */
+/* NoExtraItems: a marker object for TypeDict extra_items when it's unset. */
 
 static PyObject *
 NoExtraItems_repr(PyObject *op)
