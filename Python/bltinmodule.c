@@ -1354,6 +1354,7 @@ typedef struct {
     PyObject *iters;
     PyObject *func;
     int strict;
+    int finished;
 } mapobject;
 
 #define _mapobject_CAST(op)     ((mapobject *)(op))
@@ -1411,6 +1412,7 @@ map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     func = PyTuple_GET_ITEM(args, 0);
     lz->func = Py_NewRef(func);
     lz->strict = strict;
+    lz->finished = 0;
 
     return (PyObject *)lz;
 }
@@ -1456,6 +1458,7 @@ map_vectorcall(PyObject *type, PyObject * const*args,
     lz->iters = iters;
     lz->func = Py_NewRef(args[0]);
     lz->strict = 0;
+    lz->finished = 0;
 
     return (PyObject *)lz;
 }
@@ -1489,6 +1492,10 @@ map_next(PyObject *self)
     PyObject *result = NULL;
     PyThreadState *tstate = _PyThreadState_GET();
 
+    if (lz->finished) {
+        return NULL;
+    }
+
     const Py_ssize_t niters = PyTuple_GET_SIZE(lz->iters);
     if (niters <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
         stack = small_stack;
@@ -1516,6 +1523,11 @@ map_next(PyObject *self)
     }
 
     result = _PyObject_VectorcallTstate(tstate, lz->func, stack, nargs, NULL);
+    if (result == NULL && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            lz->finished = 1;
+        }
+    }
 
 exit:
     for (i=0; i < nargs; i++) {

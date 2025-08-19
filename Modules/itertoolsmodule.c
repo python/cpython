@@ -2983,6 +2983,7 @@ typedef struct {
     PyObject *it;
     PyObject *binop;
     PyObject *initial;
+    int finished;
     itertools_state *state;
 } accumulateobject;
 
@@ -3024,6 +3025,7 @@ itertools_accumulate_impl(PyTypeObject *type, PyObject *iterable,
     lz->total = NULL;
     lz->it = it;
     lz->initial = Py_XNewRef(initial);
+    lz->finished = 0;
     lz->state = find_state_by_type(type);
     return (PyObject *)lz;
 }
@@ -3060,6 +3062,10 @@ accumulate_next(PyObject *op)
     accumulateobject *lz = accumulateobject_CAST(op);
     PyObject *val, *newtotal;
 
+    if (lz->finished) {
+        return NULL;
+    }
+
     if (lz->initial != Py_None) {
         lz->total = lz->initial;
         lz->initial = Py_NewRef(Py_None);
@@ -3079,8 +3085,12 @@ accumulate_next(PyObject *op)
     else
         newtotal = PyObject_CallFunctionObjArgs(lz->binop, lz->total, val, NULL);
     Py_DECREF(val);
-    if (newtotal == NULL)
+    if (newtotal == NULL) {
+        if (lz->binop != NULL && PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_StopIteration)) {
+            lz->finished = 1;
+        }
         return NULL;
+    }
 
     Py_INCREF(newtotal);
     Py_SETREF(lz->total, newtotal);
