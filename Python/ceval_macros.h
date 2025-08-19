@@ -133,9 +133,6 @@ do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
-    if (lltrace < 0) { \
-        JUMP_TO_LABEL(exit_unwind); \
-    } \
     frame->lltrace = lltrace; \
 } while (0)
 #else
@@ -354,16 +351,10 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
-#ifdef _Py_JIT
-#define GOTO_TIER_TWO(EXECUTOR)                        \
+#define TIER1_TO_TIER2(EXECUTOR)                        \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
-    _PyExecutorObject *_executor = (EXECUTOR);         \
-    jit_func jitted = _executor->jit_code;             \
-    /* Keep the shim frame alive via the executor: */  \
-    Py_INCREF(_executor);                              \
-    next_instr = jitted(frame, stack_pointer, tstate); \
-    Py_DECREF(_executor);                              \
+    next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
@@ -372,31 +363,22 @@ do {                                                   \
     }                                                  \
     DISPATCH();                                        \
 } while (0)
-#else
-#define GOTO_TIER_TWO(EXECUTOR) \
-do { \
-    OPT_STAT_INC(traces_executed); \
-    _PyExecutorObject *_executor = (EXECUTOR); \
-    next_uop = _executor->trace; \
-    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT); \
-    goto enter_tier_two; \
+
+#define TIER2_TO_TIER2(EXECUTOR) \
+do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
+    current_executor = (EXECUTOR);                     \
+    next_uop = current_executor->trace;                \
+    goto tier2_start;                                  \
 } while (0)
-#endif
 
 #define GOTO_TIER_ONE(TARGET)                                         \
     do                                                                \
     {                                                                 \
         tstate->current_executor = NULL;                              \
-        next_instr = (TARGET);                                        \
         OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
         _PyFrame_SetStackPointer(frame, stack_pointer);               \
-        stack_pointer = _PyFrame_GetStackPointer(frame);              \
-        if (next_instr == NULL)                                       \
-        {                                                             \
-            next_instr = frame->instr_ptr;                            \
-            goto error;                                               \
-        }                                                             \
-        DISPATCH();                                                   \
+        return TARGET;                                                \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)

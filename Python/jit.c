@@ -571,6 +571,65 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     return 0;
 }
 
+// Compiles executor in-place. Don't forget to call _PyJIT_Free later!
+static _PyJitEntryFuncPtr
+compile_trampoline(void)
+{
+    _PyExecutorObject dummy;
+    const StencilGroup *group;
+    // Loop once to find the total compiled size:
+    size_t code_size = 0;
+    size_t data_size = 0;
+    jit_state state = {0};
+    group = &trampoline;
+    code_size += group->code_size;
+    data_size += group->data_size;
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+    // Round up to the nearest page:
+    size_t page_size = get_page_size();
+    assert((page_size & (page_size - 1)) == 0);
+    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
+    unsigned char *memory = jit_alloc(total_size);
+    if (memory == NULL) {
+        return NULL;
+    }
+    // Loop again to emit the code:
+    unsigned char *code = memory;
+    state.trampolines.mem = memory + code_size;
+    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
+    // Compile the shim, which handles converting between the native
+    // calling convention and the calling convention used by jitted code
+    // (which may be different for efficiency reasons).
+    group = &trampoline;
+    group->emit(code, data, &dummy, NULL, &state);
+    code += group->code_size;
+    data += group->data_size;
+    assert(code == memory + code_size);
+    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
+    if (mark_executable(memory, total_size)) {
+        jit_free(memory, total_size);
+        return NULL;
+    }
+    return (_PyJitEntryFuncPtr)memory;
+}
+
+
+_Py_CODEUNIT *
+_Py_LazyJitTrampoline(
+    _PyExecutorObject *executor, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
+) {
+    assert(_Py_jit_entry == _Py_LazyJitTrampoline);
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyJitEntryFuncPtr trampoline = compile_trampoline();
+    if (trampoline == NULL) {
+        Py_FatalError("Cannot allocate core JIT code");
+    }
+    _Py_jit_entry = trampoline;
+    return trampoline(executor, frame, stack_pointer, tstate);
+}
+
 void
 _PyJIT_Free(_PyExecutorObject *executor)
 {
