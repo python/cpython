@@ -368,7 +368,6 @@ do {                                                   \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
     current_executor = (EXECUTOR);                     \
-    next_uop = current_executor->trace;                \
     goto tier2_start;                                  \
 } while (0)
 
