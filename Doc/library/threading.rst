@@ -198,7 +198,7 @@ This module defines the following functions:
    .. versionchanged:: 3.13
       Added support for GNU/kFreeBSD.
 
-   .. versionchanged:: 3.15
+   .. versionchanged:: next
       Added support for Solaris.
 
 
