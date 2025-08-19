@@ -9,6 +9,48 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_decimal_Context_Etiny__doc__,
+"Etiny($self, /)\n"
+"--\n"
+"\n"
+"Return a value equal to Emin - prec + 1.\n"
+"\n"
+"This is the minimum exponent value for subnormal results.  When\n"
+"underflow occurs, the exponent is set to Etiny.");
+
+#define _DECIMAL_CONTEXT_ETINY_METHODDEF    \
+    {"Etiny", (PyCFunction)_decimal_Context_Etiny, METH_NOARGS, _decimal_Context_Etiny__doc__},
+
+static PyObject *
+_decimal_Context_Etiny_impl(PyObject *self);
+
+static PyObject *
+_decimal_Context_Etiny(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_Etiny_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Context_Etop__doc__,
+"Etop($self, /)\n"
+"--\n"
+"\n"
+"Return a value equal to Emax - prec + 1.\n"
+"\n"
+"This is the maximum exponent if the _clamp field of the context is set\n"
+"to 1 (IEEE clamp mode).  Etop() must not be negative.");
+
+#define _DECIMAL_CONTEXT_ETOP_METHODDEF    \
+    {"Etop", (PyCFunction)_decimal_Context_Etop, METH_NOARGS, _decimal_Context_Etop__doc__},
+
+static PyObject *
+_decimal_Context_Etop_impl(PyObject *self);
+
+static PyObject *
+_decimal_Context_Etop(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_Etop_impl(self);
+}
+
 PyDoc_STRVAR(_decimal_IEEEContext__doc__,
 "IEEEContext($module, bits, /)\n"
 "--\n"
@@ -266,6 +308,80 @@ _decimal_Decimal_from_number(PyObject *type, PyObject *number)
 
     return_value = _decimal_Decimal_from_number_impl((PyTypeObject *)type, number);
 
+    return return_value;
+}
+
+PyDoc_STRVAR(dec_new__doc__,
+"Decimal(value=\'0\', context=None)\n"
+"--\n"
+"\n"
+"Construct a new Decimal object.\n"
+"\n"
+"value can be an integer, string, tuple, or another Decimal object.  If\n"
+"no value is given, return Decimal(\'0\'). The context does not affect\n"
+"the conversion and is only passed to determine if the InvalidOperation\n"
+"trap is active.");
+
+static PyObject *
+dec_new_impl(PyTypeObject *type, PyObject *v, PyObject *context);
+
+static PyObject *
+dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(value), &_Py_ID(context), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"value", "context", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Decimal",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *v = NULL;
+    PyObject *context = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        v = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    context = fastargs[1];
+skip_optional_pos:
+    return_value = dec_new_impl(type, v, context);
+
+exit:
     return return_value;
 }
 
@@ -549,6 +665,69 @@ _decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssi
     context = args[1];
 skip_optional_pos:
     return_value = _decimal_Decimal_to_integral_exact_impl(self, rounding, context);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Decimal___round____doc__,
+"__round__($self, /, ndigits=None)\n"
+"--\n"
+"\n"
+"Return the Integral closest to self, rounding half toward even.");
+
+#define _DECIMAL_DECIMAL___ROUND___METHODDEF    \
+    {"__round__", _PyCFunction_CAST(_decimal_Decimal___round__), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal___round____doc__},
+
+static PyObject *
+_decimal_Decimal___round___impl(PyObject *dec, PyObject *x);
+
+static PyObject *
+_decimal_Decimal___round__(PyObject *dec, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(ndigits), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"ndigits", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__round__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *x = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    x = args[0];
+skip_optional_pos:
+    return_value = _decimal_Decimal___round___impl(dec, x);
 
 exit:
     return return_value;
@@ -1655,6 +1834,155 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_Decimal_is_canonical__doc__,
+"is_canonical($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is canonical and False otherwise.\n"
+"\n"
+"Currently, a Decimal instance is always canonical, so this operation\n"
+"always returns True.");
+
+#define _DECIMAL_DECIMAL_IS_CANONICAL_METHODDEF    \
+    {"is_canonical", (PyCFunction)_decimal_Decimal_is_canonical, METH_NOARGS, _decimal_Decimal_is_canonical__doc__},
+
+static PyObject *
+_decimal_Decimal_is_canonical_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_canonical(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_canonical_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_finite__doc__,
+"is_finite($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a finite number, and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_FINITE_METHODDEF    \
+    {"is_finite", (PyCFunction)_decimal_Decimal_is_finite, METH_NOARGS, _decimal_Decimal_is_finite__doc__},
+
+static PyObject *
+_decimal_Decimal_is_finite_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_finite(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_finite_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_infinite__doc__,
+"is_infinite($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is infinite, and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_INFINITE_METHODDEF    \
+    {"is_infinite", (PyCFunction)_decimal_Decimal_is_infinite, METH_NOARGS, _decimal_Decimal_is_infinite__doc__},
+
+static PyObject *
+_decimal_Decimal_is_infinite_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_infinite(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_infinite_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_nan__doc__,
+"is_nan($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a (quiet or signaling) NaN, else False.");
+
+#define _DECIMAL_DECIMAL_IS_NAN_METHODDEF    \
+    {"is_nan", (PyCFunction)_decimal_Decimal_is_nan, METH_NOARGS, _decimal_Decimal_is_nan__doc__},
+
+static PyObject *
+_decimal_Decimal_is_nan_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_nan(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_nan_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_qnan__doc__,
+"is_qnan($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a quiet NaN, and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_QNAN_METHODDEF    \
+    {"is_qnan", (PyCFunction)_decimal_Decimal_is_qnan, METH_NOARGS, _decimal_Decimal_is_qnan__doc__},
+
+static PyObject *
+_decimal_Decimal_is_qnan_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_qnan(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_qnan_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_snan__doc__,
+"is_snan($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a signaling NaN and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_SNAN_METHODDEF    \
+    {"is_snan", (PyCFunction)_decimal_Decimal_is_snan, METH_NOARGS, _decimal_Decimal_is_snan__doc__},
+
+static PyObject *
+_decimal_Decimal_is_snan_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_snan(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_snan_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_signed__doc__,
+"is_signed($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument has a negative sign and False otherwise.\n"
+"\n"
+"Note that both zeros and NaNs can carry signs.");
+
+#define _DECIMAL_DECIMAL_IS_SIGNED_METHODDEF    \
+    {"is_signed", (PyCFunction)_decimal_Decimal_is_signed, METH_NOARGS, _decimal_Decimal_is_signed__doc__},
+
+static PyObject *
+_decimal_Decimal_is_signed_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_signed(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_signed_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_zero__doc__,
+"is_zero($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a zero and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_ZERO_METHODDEF    \
+    {"is_zero", (PyCFunction)_decimal_Decimal_is_zero, METH_NOARGS, _decimal_Decimal_is_zero__doc__},
+
+static PyObject *
+_decimal_Decimal_is_zero_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_zero(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_zero_impl(self);
+}
+
 PyDoc_STRVAR(_decimal_Decimal_is_normal__doc__,
 "is_normal($self, /, context=None)\n"
 "--\n"
@@ -2182,6 +2510,166 @@ _decimal_Decimal_to_eng_string(PyObject *self, PyObject *const *args, Py_ssize_t
     context = args[0];
 skip_optional_pos:
     return_value = _decimal_Decimal_to_eng_string_impl(self, context);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Decimal_compare_total__doc__,
+"compare_total($self, /, other, context=None)\n"
+"--\n"
+"\n"
+"Compare two operands using their abstract representation.\n"
+"\n"
+"Similar to the compare() method, but the result\n"
+"gives a total ordering on Decimal instances.  Two Decimal instances with\n"
+"the same numeric value but different representations compare unequal\n"
+"in this ordering:\n"
+"\n"
+"    >>> Decimal(\'12.0\').compare_total(Decimal(\'12\'))\n"
+"    Decimal(\'-1\')\n"
+"\n"
+"Quiet and signaling NaNs are also included in the total ordering. The\n"
+"result of this function is Decimal(\'0\') if both operands have the same\n"
+"representation, Decimal(\'-1\') if the first operand is lower in the\n"
+"total order than the second, and Decimal(\'1\') if the first operand is\n"
+"higher in the total order than the second operand. See the\n"
+"specification for details of the total order.\n"
+"\n"
+"This operation is unaffected by context and is quiet: no flags are\n"
+"changed and no rounding is performed. As an exception, the C version\n"
+"may raise InvalidOperation if the second operand cannot be converted\n"
+"exactly.");
+
+#define _DECIMAL_DECIMAL_COMPARE_TOTAL_METHODDEF    \
+    {"compare_total", _PyCFunction_CAST(_decimal_Decimal_compare_total), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total__doc__},
+
+static PyObject *
+_decimal_Decimal_compare_total_impl(PyObject *self, PyObject *other,
+                                    PyObject *context);
+
+static PyObject *
+_decimal_Decimal_compare_total(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(other), &_Py_ID(context), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"other", "context", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compare_total",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *other;
+    PyObject *context = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    other = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    context = args[1];
+skip_optional_pos:
+    return_value = _decimal_Decimal_compare_total_impl(self, other, context);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Decimal_compare_total_mag__doc__,
+"compare_total_mag($self, /, other, context=None)\n"
+"--\n"
+"\n"
+"As compare_total(), but ignores the sign of each operand.\n"
+"\n"
+"x.compare_total_mag(y) is equivalent to\n"
+"x.copy_abs().compare_total(y.copy_abs()).\n"
+"\n"
+"This operation is unaffected by context and is quiet: no flags are\n"
+"changed and no rounding is performed. As an exception, the C version\n"
+"may raise InvalidOperation if the second operand cannot be converted\n"
+"exactly.");
+
+#define _DECIMAL_DECIMAL_COMPARE_TOTAL_MAG_METHODDEF    \
+    {"compare_total_mag", _PyCFunction_CAST(_decimal_Decimal_compare_total_mag), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total_mag__doc__},
+
+static PyObject *
+_decimal_Decimal_compare_total_mag_impl(PyObject *self, PyObject *other,
+                                        PyObject *context);
+
+static PyObject *
+_decimal_Decimal_compare_total_mag(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(other), &_Py_ID(context), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"other", "context", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compare_total_mag",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *other;
+    PyObject *context = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    other = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    context = args[1];
+skip_optional_pos:
+    return_value = _decimal_Decimal_compare_total_mag_impl(self, other, context);
 
 exit:
     return return_value;
@@ -2841,6 +3329,139 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_Decimal___ceil____doc__,
+"__ceil__($self, /)\n"
+"--\n"
+"\n"
+"Return the ceiling as an Integral.");
+
+#define _DECIMAL_DECIMAL___CEIL___METHODDEF    \
+    {"__ceil__", (PyCFunction)_decimal_Decimal___ceil__, METH_NOARGS, _decimal_Decimal___ceil____doc__},
+
+static PyObject *
+_decimal_Decimal___ceil___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___ceil__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___ceil___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___complex____doc__,
+"__complex__($self, /)\n"
+"--\n"
+"\n"
+"Convert this value to exact type complex.");
+
+#define _DECIMAL_DECIMAL___COMPLEX___METHODDEF    \
+    {"__complex__", (PyCFunction)_decimal_Decimal___complex__, METH_NOARGS, _decimal_Decimal___complex____doc__},
+
+static PyObject *
+_decimal_Decimal___complex___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___complex__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___complex___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___copy____doc__,
+"__copy__($self, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_DECIMAL___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)_decimal_Decimal___copy__, METH_NOARGS, _decimal_Decimal___copy____doc__},
+
+static PyObject *
+_decimal_Decimal___copy___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___copy__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___copy___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___deepcopy____doc__,
+"__deepcopy__($self, memo, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_DECIMAL___DEEPCOPY___METHODDEF    \
+    {"__deepcopy__", (PyCFunction)_decimal_Decimal___deepcopy__, METH_O, _decimal_Decimal___deepcopy____doc__},
+
+PyDoc_STRVAR(_decimal_Decimal___floor____doc__,
+"__floor__($self, /)\n"
+"--\n"
+"\n"
+"Return the floor as an Integral.");
+
+#define _DECIMAL_DECIMAL___FLOOR___METHODDEF    \
+    {"__floor__", (PyCFunction)_decimal_Decimal___floor__, METH_NOARGS, _decimal_Decimal___floor____doc__},
+
+static PyObject *
+_decimal_Decimal___floor___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___floor__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___floor___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
+"Return state information for pickling.");
+
+#define _DECIMAL_DECIMAL___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_decimal_Decimal___reduce__, METH_NOARGS, _decimal_Decimal___reduce____doc__},
+
+static PyObject *
+_decimal_Decimal___reduce___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___reduce___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Returns size in memory, in bytes");
+
+#define _DECIMAL_DECIMAL___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_decimal_Decimal___sizeof__, METH_NOARGS, _decimal_Decimal___sizeof____doc__},
+
+static PyObject *
+_decimal_Decimal___sizeof___impl(PyObject *v);
+
+static PyObject *
+_decimal_Decimal___sizeof__(PyObject *v, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___sizeof___impl(v);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___trunc____doc__,
+"__trunc__($self, /)\n"
+"--\n"
+"\n"
+"Return the Integral closest to x between 0 and x.");
+
+#define _DECIMAL_DECIMAL___TRUNC___METHODDEF    \
+    {"__trunc__", (PyCFunction)_decimal_Decimal___trunc__, METH_NOARGS, _decimal_Decimal___trunc____doc__},
+
+static PyObject *
+_decimal_Decimal___trunc___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___trunc__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___trunc___impl(self);
+}
+
 PyDoc_STRVAR(_decimal_Context_power__doc__,
 "power($self, /, a, b, modulo=None)\n"
 "--\n"
@@ -2922,4 +3543,55 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9bbde3e723166dd3 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_decimal_Context_fma__doc__,
+"fma($self, x, y, z, /)\n"
+"--\n"
+"\n"
+"Return x multiplied by y, plus z.");
+
+#define _DECIMAL_CONTEXT_FMA_METHODDEF    \
+    {"fma", _PyCFunction_CAST(_decimal_Context_fma), METH_FASTCALL, _decimal_Context_fma__doc__},
+
+static PyObject *
+_decimal_Context_fma_impl(PyObject *context, PyObject *v, PyObject *w,
+                          PyObject *x);
+
+static PyObject *
+_decimal_Context_fma(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *v;
+    PyObject *w;
+    PyObject *x;
+
+    if (!_PyArg_CheckPositional("fma", nargs, 3, 3)) {
+        goto exit;
+    }
+    v = args[0];
+    w = args[1];
+    x = args[2];
+    return_value = _decimal_Context_fma_impl(context, v, w, x);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_radix__doc__,
+"radix($self, /)\n"
+"--\n"
+"\n"
+"Return 10.");
+
+#define _DECIMAL_CONTEXT_RADIX_METHODDEF    \
+    {"radix", (PyCFunction)_decimal_Context_radix, METH_NOARGS, _decimal_Context_radix__doc__},
+
+static PyObject *
+_decimal_Context_radix_impl(PyObject *context);
+
+static PyObject *
+_decimal_Context_radix(PyObject *context, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_radix_impl(context);
+}
+/*[clinic end generated code: output=63e062762bcfe6e6 input=a9049054013a1b77]*/
