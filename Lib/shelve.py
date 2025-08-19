@@ -236,11 +236,12 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', protocol=None, writeback=False, *,
-                 serializer=None, deserializer=None):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False,
+                 backend=None, *, serializer=None, deserializer=None):
         import dbm
-        Shelf.__init__(self, dbm.open(filename, flag), protocol, writeback,
-                       serializer=serializer, deserializer=deserializer)
+        Shelf.__init__(self, dbm.open(filename, flag, 0o666, backend),
+                       protocol, writeback, serializer=serializer,
+                       deserializer=deserializer)
 
     def clear(self):
         """Remove all items from the shelf."""
@@ -249,7 +250,7 @@ class DbfilenameShelf(Shelf):
         self.cache.clear()
         self.dict.clear()
 
-def open(filename, flag='c', protocol=None, writeback=False, *,
+def open(filename, flag='c', protocol=None, writeback=False, backend=None, *,
          serializer=None, deserializer=None):
     """Open a persistent dictionary for reading and writing.
 
@@ -263,5 +264,5 @@ def open(filename, flag='c', protocol=None, writeback=False, *,
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, protocol, writeback,
+    return DbfilenameShelf(filename, flag, protocol, writeback, backend,
                            serializer=serializer, deserializer=deserializer)

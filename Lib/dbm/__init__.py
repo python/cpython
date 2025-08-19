@@ -50,7 +50,7 @@ except ImportError:
     ndbm = None
 
 
-def open(file, flag='r', mode=0o666):
+def open(file, flag='r', mode=0o666, backend=None):
     """Open or create database at path given by *file*.
 
     Optional argument *flag* can be 'r' (default) for read-only access, 'w'
@@ -60,7 +60,21 @@ def open(file, flag='r', mode=0o666):
 
     Note: 'r' and 'w' fail if the database doesn't exist; 'c' creates it
     only if it doesn't exist; and 'n' always creates a new database.
+
+    Optional argument *backend* specifies which DBM backend to use.
+    Must be one of: 'dbm.sqlite3', 'dbm.gnu', 'dbm.ndbm', 'dbm.dumb'
     """
+    if backend is not None:
+        if not isinstance(backend, str):
+            raise TypeError(f"backend must be a string")
+        if backend not in _names:
+            raise ValueError(f"Unknown backend '{backend}'")
+        try:
+            mod = __import__(backend, fromlist=['open'])
+            return mod.open(file, flag, mode)
+        except ImportError as e:
+            raise ImportError(f"Backend '{backend}' is not available: {e}")
+
     global _defaultmod
     if _defaultmod is None:
         for name in _names:

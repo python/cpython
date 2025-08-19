@@ -400,6 +400,71 @@ class TestCase(unittest.TestCase):
         self.assertRaises(shelve.ShelveError, shelve.BsdDbShelf, {}, **kwargs)
 
 
+class TestShelveBackend(unittest.TestCase):
+    dirname = os_helper.TESTFN
+    fn = os.path.join(os_helper.TESTFN, "shelftemp.db")
+
+    @staticmethod
+    def get_available_backends():
+        available_backends = []
+        for backend_name in ['dbm.dumb', 'dbm.gnu', 'dbm.ndbm', 'dbm.sqlite3']:
+            try:
+                __import__(backend_name, fromlist=['open'])
+                available_backends.append(backend_name)
+            except ImportError:
+                pass
+        return available_backends
+
+    def test_backend_parameter_validation(self):
+        valid_backends = self.get_available_backends()
+        if len(valid_backends) < 1:
+            self.skipTest("Need at least 1 backends for this test")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        for backend in valid_backends:
+            unique_fn = f"{self.fn}_{backend}"
+            with self.subTest(backend=backend):
+                with shelve.open(unique_fn, backend=backend) as shelf:
+                    shelf['test'] = 'data'
+                    self.assertEqual(shelf['test'], 'data')
+
+        invalid_types = [123, [], {}, object(), dbm]
+        for invalid_backend in invalid_types:
+            with self.subTest(invalid_backend=invalid_backend):
+                with self.assertRaises(TypeError):
+                    shelve.open(self.fn, backend=invalid_backend)
+
+        invalid_names = ['invalid', 'postgres', 'gnu', 'dumb', 'sqlite3']
+        for invalid_name in invalid_names:
+            with self.subTest(invalid_name=invalid_name):
+                with self.assertRaises(ValueError):
+                    shelve.open(self.fn, backend=invalid_name)
+
+    def test_backend_unavailable_error(self):
+        fake_backend = 'dbm.nonexistent'
+        with self.assertRaises(ValueError) as cm:
+            shelve.open(self.fn, backend=fake_backend)
+        self.assertIn('nonexistent', str(cm.exception))
+
+    def test_backend_compatibility_with_custom_serializers(self):
+        valid_backends = self.get_available_backends()
+        if len(valid_backends) < 1:
+            self.skipTest("Need at least 1 backends for this test")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        for backend in valid_backends:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(backend=backend, protocol=proto):
+                    unique_fn = f"{self.fn}_{backend}_proto_{proto}"
+                    with shelve.open(unique_fn, backend=backend,
+                                     protocol=proto) as s:
+                        s["foo"] = "bar"
+                        self.assertEqual(s["foo"], "bar")
+                    actual_backend = dbm.whichdb(unique_fn)
+                    self.assertEqual(actual_backend, backend)
+
 class TestShelveBase:
     type2test = shelve.Shelf
 
