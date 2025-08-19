@@ -52,7 +52,7 @@ _PyModule_IsExtension(PyObject *obj)
 PyObject*
 PyModuleDef_Init(PyModuleDef* def)
 {
-#if Py_GIL_DISABLED
+#ifdef Py_GIL_DISABLED
     // Check that this def does not come from a non-free-threading ABI.
     //
     // This is meant as a "sanity check"; users should never rely on it.
