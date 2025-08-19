@@ -680,8 +680,6 @@ class PydocDocTest(unittest.TestCase):
         # Testing that the subclasses section does not appear
         self.assertNotIn('Built-in subclasses', text)
 
-
-
     def test_builtin_on_metaclasses(self):
         """Tests help on metaclasses.
 
