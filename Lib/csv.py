@@ -391,7 +391,6 @@ class Sniffer:
                 if missed_lines:
                     # charFrequency[char][0] can only be deduced now
                     # as it cannot be obtained when parsing the lines.
-                    assert 0 not in counts.keys()
                     # Store the number of lines 'char' was missing from.
                     items.append((0, missed_lines))
                 if len(items) == 1 and items[0][0] == 0:
