@@ -251,8 +251,8 @@ and "surrogatepass" error handlers.
 .. nonce: FM72m-
 .. section: Core and Builtins
 
-speed up `PyObject_IsInstance` and `PyObject_IsSubclass` in the common case
-that the second argument has metaclass `type`.
+speed up ``PyObject_IsInstance`` and ``PyObject_IsSubclass`` in the common case
+that the second argument has metaclass ``type``.
 
 ..
 
@@ -261,8 +261,8 @@ that the second argument has metaclass `type`.
 .. nonce: ds5wQa
 .. section: Core and Builtins
 
-Add a new `PyErr_FormatV` function, similar to `PyErr_Format` but accepting
-a `va_list` argument.
+Add a new ``PyErr_FormatV`` function, similar to ``PyErr_Format`` but accepting
+a ``va_list`` argument.
 
 ..
 
@@ -1284,7 +1284,7 @@ Add function :func:`sys.is_finalizing` to know about interpreter shutdown.
 .. section: Library
 
 Add a default limit for the amount of data xmlrpclib.gzip_decode will
-return. This resolves CVE-2013-1753.
+return. This resolves :cve:`2013-1753`.
 
 ..
 
@@ -1345,7 +1345,7 @@ newer worked.
 .. section: Library
 
 The "ip" command is now used on Linux to determine MAC address in
-uuid.getnode().  Pach by Bruno Cauet.
+uuid.getnode().  Patch by Bruno Cauet.
 
 ..
 
@@ -1522,7 +1522,7 @@ Fixed fcntl() with integer argument on 64-bit big-endian platforms.
 .. nonce: 62MLqr
 .. section: Library
 
-Add an `--sort-keys` option to json.tool CLI.
+Add an ``--sort-keys`` option to ``json.tool`` CLI.
 
 ..
 
@@ -1745,7 +1745,7 @@ already failed.
 .. section: Library
 
 Make it possible to examine the errors from unittest discovery without
-executing the test suite. The new `errors` attribute on TestLoader exposes
+executing the test suite. The new ``errors`` attribute on ``TestLoader`` exposes
 these non-fatal errors encountered during discovery.
 
 ..
@@ -2342,9 +2342,9 @@ as normal call attributes.
 .. nonce: Nghn-Y
 .. section: Library
 
-load_tests() is now unconditionally run when it is present in a package's
-__init__.py.  TestLoader.loadTestsFromModule() still accepts use_load_tests,
-but it is deprecated and ignored.  A new keyword-only attribute `pattern` is
+``load_tests()`` is now unconditionally run when it is present in a package's
+``__init__.py``.  ``TestLoader.loadTestsFromModule()`` still accepts use_load_tests,
+but it is deprecated and ignored.  A new keyword-only attribute ``pattern`` is
 added and documented.  Patch given by Robert Collins, tweaked by Barry
 Warsaw.
 
@@ -2648,7 +2648,7 @@ module.
 .. nonce: THJSYB
 .. section: Library
 
-Changed FeedParser feed() to avoid O(N\ :sup:`2`) behavior when parsing long line.
+Changed FeedParser feed() to avoid *O*\ (*n*\ :sup:`2`) behavior when parsing long line.
 Original patch by Raymond Hettinger.
 
 ..
@@ -2736,8 +2736,8 @@ Convert posixmodule to use Argument Clinic.
 .. nonce: YccmZF
 .. section: Library
 
-Add an *exists_ok* argument to `Pathlib.mkdir()` to mimic `mkdir -p` and
-`os.makedirs()` functionality.  When true, ignore FileExistsErrors.  Patch
+Add an *exists_ok* argument to ``Pathlib.mkdir()`` to mimic ``mkdir -p`` and
+``os.makedirs()`` functionality.  When true, ignore ``FileExistsErrors``.  Patch
 by Berker Peksag.
 
 ..
@@ -3447,7 +3447,8 @@ tkinter.ttk now works when default root window is not set.
 .. nonce: FE_PII
 .. section: Library
 
-_tkinter.create() now creates tkapp object with wantobject=1 by default.
+``_tkinter.create()`` now creates ``tkapp`` object with ``wantobjects=1`` by
+default.
 
 ..
 
@@ -3930,7 +3931,7 @@ has been called.
 .. nonce: 5CDoox
 .. section: Library
 
-New keyword argument `unsafe` to Mock. It raises `AttributeError` incase of
+New keyword argument ``unsafe`` to Mock. It raises ``AttributeError`` in case of
 an attribute startswith assert or assret.
 
 ..
@@ -4030,7 +4031,7 @@ unittest.mock.MagicMock now supports division. Patch by Johannes Baiter.
 .. section: Library
 
 Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
-parameter. Bug reported by Guido Vranken. (See also: CVE-2014-4616)
+parameter. Bug reported by Guido Vranken. (See also: :cve:`2014-4616`)
 
 ..
 
@@ -4173,7 +4174,7 @@ provide better security by default.
 .. nonce: FP5FY0
 .. section: Library
 
-`assertRaisesRegex` and `assertWarnsRegex` now raise a TypeError if the
+``assertRaisesRegex`` and ``assertWarnsRegex`` now raise a ``TypeError`` if the
 second argument is not a string or compiled regex.
 
 ..
@@ -4339,7 +4340,7 @@ these modules are not used.
 .. nonce: V1-XhC
 .. section: Library
 
-Include the broadcast address in the usuable hosts for IPv6 in ipaddress.
+Include the broadcast address in the usable hosts for IPv6 in ipaddress.
 
 ..
 
@@ -5467,7 +5468,7 @@ All resources are now allowed when tests are not run by regrtest.py.
 .. section: Tests
 
 Fix pystone micro-benchmark: use floor division instead of true division to
-benchmark integers instead of floating point numbers. Set pystone version to
+benchmark integers instead of floating-point numbers. Set pystone version to
 1.2. Patch written by Lennart Regebro.
 
 ..

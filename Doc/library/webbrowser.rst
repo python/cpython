@@ -1,5 +1,5 @@
-:mod:`webbrowser` --- Convenient web-browser controller
-=======================================================
+:mod:`!webbrowser` --- Convenient web-browser controller
+========================================================
 
 .. module:: webbrowser
    :synopsis: Easy-to-use controller for web browsers.
@@ -20,12 +20,21 @@ will be used if graphical browsers are not available or an X11 display isn't
 available.  If text-mode browsers are used, the calling process will block until
 the user exits the browser.
 
-If the environment variable :envvar:`!BROWSER` exists, it is interpreted as the
+If the environment variable :envvar:`BROWSER` exists, it is interpreted as the
 :data:`os.pathsep`-separated list of browsers to try ahead of the platform
 defaults.  When the value of a list part contains the string ``%s``, then it is
 interpreted as a literal browser command line to be used with the argument URL
-substituted for ``%s``; if the part does not contain ``%s``, it is simply
-interpreted as the name of the browser to launch. [1]_
+substituted for ``%s``; if the value is a single word that refers to one of the
+already registered browsers this browser is added to the front of the search list;
+if the part does not contain ``%s``, it is simply interpreted as the name of the
+browser to launch. [1]_
+
+.. versionchanged:: 3.14
+
+   The :envvar:`BROWSER` variable can now also be used to reorder the list of
+   platform defaults. This is particularly useful on macOS where the platform
+   defaults do not refer to command-line tools on :envvar:`PATH`.
+
 
 For non-Unix platforms, or when a remote browser is available on Unix, the
 controlling process will not wait for the user to finish with the browser, but
@@ -33,15 +42,34 @@ allow the remote browser to maintain its own windows on the display.  If remote
 browsers are not available on Unix, the controlling process will launch a new
 browser and wait.
 
+On iOS, the :envvar:`BROWSER` environment variable, as well as any arguments
+controlling autoraise, browser preference, and new tab/window creation will be
+ignored. Web pages will *always* be opened in the user's preferred browser, in
+a new tab, with the browser being brought to the foreground. The use of the
+:mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
+:mod:`ctypes` isn't available, calls to :func:`.open` will fail.
+
+.. program:: webbrowser
+
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
-parameters: ``-n`` opens the URL in a new browser window, if possible;
-``-t`` opens the URL in a new browser page ("tab"). The options are,
-naturally, mutually exclusive.  Usage example::
+parameters:
+
+.. option:: -n, --new-window
+
+   Opens the URL in a new browser window, if possible.
+
+.. option:: -t, --new-tab
+
+   Opens the URL in a new browser tab.
+
+The options are, naturally, mutually exclusive.  Usage example:
+
+.. code-block:: bash
 
    python -m webbrowser -t "https://www.python.org"
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: not WASI, not Android.
 
 The following exception is defined:
 
@@ -62,6 +90,8 @@ The following functions are defined:
    (note that under many window managers this will occur regardless of the
    setting of this variable).
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
    Note that on some platforms, trying to open a filename using this function,
    may work and start the operating system's associated program.  However, this
    is neither supported nor portable.
@@ -74,10 +104,15 @@ The following functions are defined:
    Open *url* in a new window of the default browser, if possible, otherwise, open
    *url* in the only browser window.
 
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
+
+
 .. function:: open_new_tab(url)
 
    Open *url* in a new page ("tab") of the default browser, if possible, otherwise
    equivalent to :func:`open_new`.
+
+   Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
 
 
 .. function:: get(using=None)
@@ -97,7 +132,7 @@ The following functions are defined:
 
    Setting *preferred* to ``True`` makes this browser a preferred result for
    a :func:`get` call with no argument.  Otherwise, this entry point is only
-   useful if you plan to either set the :envvar:`!BROWSER` variable or call
+   useful if you plan to either set the :envvar:`BROWSER` variable or call
    :func:`get` with a nonempty argument matching the name of a handler you
    declare.
 
@@ -147,6 +182,8 @@ for the controller classes, all defined in this module.
 +------------------------+-----------------------------------------+-------+
 | ``'chromium-browser'`` | ``Chromium('chromium-browser')``        |       |
 +------------------------+-----------------------------------------+-------+
+| ``'iosbrowser'``       | ``IOSBrowser``                          | \(4)  |
++------------------------+-----------------------------------------+-------+
 
 Notes:
 
@@ -161,7 +198,10 @@ Notes:
    Only on Windows platforms.
 
 (3)
-   Only on macOS platform.
+   Only on macOS.
+
+(4)
+   Only on iOS.
 
 .. versionadded:: 3.2
    A new :class:`!MacOSXOSAScript` class has been added
@@ -175,6 +215,9 @@ Notes:
    Support for several obsolete browsers has been removed.
    Removed browsers include Grail, Mosaic, Netscape, Galeon,
    Skipstone, Iceape, and Firefox versions 35 and below.
+
+.. versionchanged:: 3.13
+   Support for iOS has been added.
 
 Here are some simple examples::
 
@@ -192,11 +235,11 @@ Here are some simple examples::
 Browser Controller Objects
 --------------------------
 
-Browser controllers provide these methods which parallel three of the
-module-level convenience functions:
+Browser controllers provide the :attr:`~controller.name` attribute,
+and the following three methods which parallel module-level convenience functions:
 
 
-.. attribute:: name
+.. attribute:: controller.name
 
    System-dependent name for the browser.
 
@@ -224,4 +267,4 @@ module-level convenience functions:
 .. rubric:: Footnotes
 
 .. [1] Executables named here without a full path will be searched in the
-       directories given in the :envvar:`!PATH` environment variable.
+       directories given in the :envvar:`PATH` environment variable.

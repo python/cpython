@@ -3,15 +3,28 @@
 
 /* Windows users:  read Python's PCbuild\readme.txt */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 #include "zlib.h"
 #include "stdbool.h"
+#include <stddef.h>               // offsetof()
 
 #if defined(ZLIB_VERNUM) && ZLIB_VERNUM < 0x1221
 #error "At least zlib version 1.2.2.1 is required"
+#endif
+
+#if (SIZEOF_OFF_T == SIZEOF_SIZE_T)
+#  define convert_to_z_off_t  PyLong_AsSsize_t
+#elif (SIZEOF_OFF_T == SIZEOF_LONG_LONG)
+#  define convert_to_z_off_t  PyLong_AsLongLong
+#elif (SIZEOF_OFF_T == SIZEOF_LONG)
+#  define convert_to_z_off_t  PyLong_AsLong
+#else
+#  error off_t does not match either size_t, long, or long long!
 #endif
 
 // Blocks output buffer wrappers
@@ -218,6 +231,8 @@ typedef struct
     PyThread_type_lock lock;
 } compobject;
 
+#define _compobject_CAST(op)    ((compobject *)op)
+
 static void
 zlib_error(zlibstate *state, z_stream zst, int err, const char *msg)
 {
@@ -264,12 +279,12 @@ newcompobject(PyTypeObject *type)
     self->eof = 0;
     self->is_initialised = 0;
     self->zdict = NULL;
-    self->unused_data = PyBytes_FromStringAndSize("", 0);
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unused_data == NULL) {
         Py_DECREF(self);
         return NULL;
     }
-    self->unconsumed_tail = PyBytes_FromStringAndSize("", 0);
+    self->unconsumed_tail = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unconsumed_tail == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -486,8 +501,8 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             case Z_MEM_ERROR:
@@ -703,7 +718,7 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 static void
 Dealloc(compobject *self)
 {
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    PyTypeObject *type = Py_TYPE(self);
     PyThread_free_lock(self->lock);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
@@ -713,18 +728,20 @@ Dealloc(compobject *self)
 }
 
 static void
-Comp_dealloc(compobject *self)
+Comp_dealloc(PyObject *op)
 {
+    compobject *self = _compobject_CAST(op);
     if (self->is_initialised)
-        deflateEnd(&self->zst);
+        (void)deflateEnd(&self->zst);
     Dealloc(self);
 }
 
 static void
-Decomp_dealloc(compobject *self)
+Decomp_dealloc(PyObject *op)
 {
+    compobject *self = _compobject_CAST(op);
     if (self->is_initialised)
-        inflateEnd(&self->zst);
+        (void)inflateEnd(&self->zst);
     Dealloc(self);
 }
 
@@ -845,6 +862,7 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 zlib.Decompress.decompress
 
     cls: defining_class
@@ -866,7 +884,7 @@ Call the flush() method to clear these buffers.
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=b024a93c2c922d57 input=bfb37b3864cfb606]*/
+/*[clinic end generated code: output=b024a93c2c922d57 input=205667f8c387fce4]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
@@ -912,8 +930,8 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:
@@ -1290,8 +1308,8 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
             Py_END_ALLOW_THREADS
 
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK: _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:
@@ -1346,18 +1364,19 @@ typedef struct {
        decompress_buf() */
     Py_ssize_t avail_in_real;
     bool is_initialised;
-    char eof;           /* T_BOOL expects a char */
+    char eof;           /* Py_T_BOOL expects a char */
     char needs_input;
 } ZlibDecompressor;
 
 /*[clinic input]
-class zlib.ZlibDecompressor "ZlibDecompressor *" "&ZlibDecompressorType"
+class zlib._ZlibDecompressor "ZlibDecompressor *" "&ZlibDecompressorType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=0658178ab94645df]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=49151d1d703e6bcc]*/
 
 static void
-ZlibDecompressor_dealloc(ZlibDecompressor *self)
+ZlibDecompressor_dealloc(PyObject *op)
 {
+    ZlibDecompressor *self = (ZlibDecompressor*)op;
     PyObject *type = (PyObject *)Py_TYPE(self);
     PyThread_free_lock(self->lock);
     if (self->is_initialised) {
@@ -1492,8 +1511,8 @@ decompress_buf(ZlibDecompressor *self, Py_ssize_t max_length)
             err = inflate(&self->zst, Z_SYNC_FLUSH);
             Py_END_ALLOW_THREADS
             switch (err) {
-            case Z_OK:            /* fall through */
-            case Z_BUF_ERROR:     /* fall through */
+            case Z_OK:  _Py_FALLTHROUGH;
+            case Z_BUF_ERROR: _Py_FALLTHROUGH;
             case Z_STREAM_END:
                 break;
             default:
@@ -1650,7 +1669,8 @@ error:
 }
 
 /*[clinic input]
-zlib.ZlibDecompressor.decompress
+@permit_long_docstring_body
+zlib._ZlibDecompressor.decompress
 
     data: Py_buffer
     max_length: Py_ssize_t=-1
@@ -1672,9 +1692,10 @@ the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
-                                      Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=990d32787b775f85 input=0b29d99715250b96]*/
+zlib__ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
+                                       Py_buffer *data,
+                                       Py_ssize_t max_length)
+/*[clinic end generated code: output=ac00dcf73e843e99 input=c9278e791be1152b]*/
 
 {
     PyObject *result = NULL;
@@ -1690,38 +1711,28 @@ zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
     return result;
 }
 
-PyDoc_STRVAR(ZlibDecompressor__new____doc__,
-"_ZlibDecompressor(wbits=15, zdict=b\'\')\n"
-"--\n"
-"\n"
-"Create a decompressor object for decompressing data incrementally.\n"
-"\n"
-"  wbits = 15\n"
-"  zdict\n"
-"     The predefined compression dictionary. This is a sequence of bytes\n"
-"     (such as a bytes object) containing subsequences that are expected\n"
-"     to occur frequently in the data that is to be compressed. Those\n"
-"     subsequences that are expected to be most common should come at the\n"
-"     end of the dictionary. This must be the same dictionary as used by the\n"
-"     compressor that produced the input data.\n"
-"\n");
+/*[clinic input]
+@classmethod
+zlib._ZlibDecompressor.__new__
+
+    wbits: int(c_default='MAX_WBITS') = MAX_WBITS
+    zdict: object(c_default='NULL') = b''
+        The predefined compression dictionary. This is a sequence of bytes
+        (such as a bytes object) containing subsequences that are expected
+        to occur frequently in the data that is to be compressed. Those
+        subsequences that are expected to be most common should come at the
+        end of the dictionary. This must be the same dictionary as used by the
+        compressor that produced the input data.
+
+Create a decompressor object for decompressing data incrementally.
+[clinic start generated code]*/
 
 static PyObject *
-ZlibDecompressor__new__(PyTypeObject *cls,
-                        PyObject *args,
-                        PyObject *kwargs)
+zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
+/*[clinic end generated code: output=1065607df0d33baa input=9ebad0be6de226e2]*/
 {
-    static char *keywords[] = {"wbits", "zdict", NULL};
-    static const char * const format = "|iO:_ZlibDecompressor";
-    int wbits = MAX_WBITS;
-    PyObject *zdict = NULL;
-    zlibstate *state = PyType_GetModuleState(cls);
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kwargs, format, keywords, &wbits, &zdict)) {
-        return NULL;
-    }
-    ZlibDecompressor *self = PyObject_New(ZlibDecompressor, cls);
+    zlibstate *state = PyType_GetModuleState(type);
+    ZlibDecompressor *self = PyObject_New(ZlibDecompressor, type);
     if (self == NULL) {
         return NULL;
     }
@@ -1797,15 +1808,15 @@ static PyMethodDef Decomp_methods[] =
 };
 
 static PyMethodDef ZlibDecompressor_methods[] = {
-    ZLIB_ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF
+    ZLIB__ZLIBDECOMPRESSOR_DECOMPRESS_METHODDEF
     {NULL}
 };
 
 #define COMP_OFF(x) offsetof(compobject, x)
 static PyMemberDef Decomp_members[] = {
-    {"unused_data",     T_OBJECT, COMP_OFF(unused_data), READONLY},
-    {"unconsumed_tail", T_OBJECT, COMP_OFF(unconsumed_tail), READONLY},
-    {"eof",             T_BOOL,   COMP_OFF(eof), READONLY},
+    {"unused_data",     _Py_T_OBJECT, COMP_OFF(unused_data), Py_READONLY},
+    {"unconsumed_tail", _Py_T_OBJECT, COMP_OFF(unconsumed_tail), Py_READONLY},
+    {"eof",             Py_T_BOOL,   COMP_OFF(eof), Py_READONLY},
     {NULL},
 };
 
@@ -1819,11 +1830,11 @@ PyDoc_STRVAR(ZlibDecompressor_needs_input_doc,
 "True if more input is needed before more decompressed data can be produced.");
 
 static PyMemberDef ZlibDecompressor_members[] = {
-    {"eof", T_BOOL, offsetof(ZlibDecompressor, eof),
-     READONLY, ZlibDecompressor_eof__doc__},
-    {"unused_data", T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
-     READONLY, ZlibDecompressor_unused_data__doc__},
-    {"needs_input", T_BOOL, offsetof(ZlibDecompressor, needs_input), READONLY,
+    {"eof", Py_T_BOOL, offsetof(ZlibDecompressor, eof),
+     Py_READONLY, ZlibDecompressor_eof__doc__},
+    {"unused_data", Py_T_OBJECT_EX, offsetof(ZlibDecompressor, unused_data),
+     Py_READONLY, ZlibDecompressor_unused_data__doc__},
+    {"needs_input", Py_T_BOOL, offsetof(ZlibDecompressor, needs_input), Py_READONLY,
      ZlibDecompressor_needs_input_doc},
     {NULL},
 };
@@ -1869,6 +1880,44 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
+zlib.adler32_combine -> unsigned_int
+
+    adler1: unsigned_int(bitwise=True)
+        Adler-32 checksum for sequence A
+
+    adler2: unsigned_int(bitwise=True)
+        Adler-32 checksum for sequence B
+
+    len2: object(subclass_of='&PyLong_Type')
+        Length of sequence B
+    /
+
+Combine two Adler-32 checksums into one.
+
+Given the Adler-32 checksum 'adler1' of a sequence A and the
+Adler-32 checksum 'adler2' of a sequence B of length 'len2',
+return the Adler-32 checksum of A and B concatenated.
+[clinic start generated code]*/
+
+static unsigned int
+zlib_adler32_combine_impl(PyObject *module, unsigned int adler1,
+                          unsigned int adler2, PyObject *len2)
+/*[clinic end generated code: output=61842cefb16afb1b input=51bb045c95130c6f]*/
+{
+#if defined(Z_WANT64)
+    z_off64_t len = convert_to_z_off_t(len2);
+#else
+    z_off_t len = convert_to_z_off_t(len2);
+#endif
+    if (PyErr_Occurred()) {
+        return (unsigned int)-1;
+    }
+    return adler32_combine(adler1, adler2, len);
+}
+
+
+
+/*[clinic input]
 zlib.crc32 -> unsigned_int
 
     data: Py_buffer
@@ -1893,12 +1942,20 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 
         Py_BEGIN_ALLOW_THREADS
         /* Avoid truncation of length for very large buffers. crc32() takes
-           length as an unsigned int, which may be narrower than Py_ssize_t. */
-        while ((size_t)len > UINT_MAX) {
-            value = crc32(value, buf, UINT_MAX);
-            buf += (size_t) UINT_MAX;
-            len -= (size_t) UINT_MAX;
+           length as an unsigned int, which may be narrower than Py_ssize_t.
+           We further limit size due to bugs in Apple's macOS zlib.
+           See https://github.com/python/cpython/issues/105967.
+         */
+#define ZLIB_CRC_CHUNK_SIZE 0x40000000
+#if ZLIB_CRC_CHUNK_SIZE > INT_MAX
+# error "unsupported less than 32-bit platform?"
+#endif
+        while ((size_t)len > ZLIB_CRC_CHUNK_SIZE) {
+            value = crc32(value, buf, ZLIB_CRC_CHUNK_SIZE);
+            buf += (size_t) ZLIB_CRC_CHUNK_SIZE;
+            len -= (size_t) ZLIB_CRC_CHUNK_SIZE;
         }
+#undef ZLIB_CRC_CHUNK_SIZE
         value = crc32(value, buf, (unsigned int)len);
         Py_END_ALLOW_THREADS
     } else {
@@ -1907,13 +1964,50 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
     return value;
 }
 
+/*[clinic input]
+zlib.crc32_combine -> unsigned_int
+
+    crc1: unsigned_int(bitwise=True)
+        CRC-32 checksum for sequence A
+
+    crc2: unsigned_int(bitwise=True)
+        CRC-32 checksum for sequence B
+
+    len2: object(subclass_of='&PyLong_Type')
+        Length of sequence B
+    /
+
+Combine two CRC-32 checksums into one.
+
+Given the CRC-32 checksum 'crc1' of a sequence A and the
+CRC-32 checksum 'crc2' of a sequence B of length 'len2',
+return the CRC-32 checksum of A and B concatenated.
+[clinic start generated code]*/
+
+static unsigned int
+zlib_crc32_combine_impl(PyObject *module, unsigned int crc1,
+                        unsigned int crc2, PyObject *len2)
+/*[clinic end generated code: output=c4def907c602e6eb input=9c8a065d9040dc66]*/
+{
+#if defined(Z_WANT64)
+    z_off64_t len = convert_to_z_off_t(len2);
+#else
+    z_off_t len = convert_to_z_off_t(len2);
+#endif
+    if (PyErr_Occurred()) {
+        return (unsigned int)-1;
+    }
+    return crc32_combine(crc1, crc2, len);
+}
 
 static PyMethodDef zlib_methods[] =
 {
     ZLIB_ADLER32_METHODDEF
+    ZLIB_ADLER32_COMBINE_METHODDEF
     ZLIB_COMPRESS_METHODDEF
     ZLIB_COMPRESSOBJ_METHODDEF
     ZLIB_CRC32_METHODDEF
+    ZLIB_CRC32_COMBINE_METHODDEF
     ZLIB_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESSOBJ_METHODDEF
     {NULL, NULL}
@@ -1949,8 +2043,8 @@ static PyType_Spec Decomptype_spec = {
 static PyType_Slot ZlibDecompressor_type_slots[] = {
     {Py_tp_dealloc, ZlibDecompressor_dealloc},
     {Py_tp_members, ZlibDecompressor_members},
-    {Py_tp_new, ZlibDecompressor__new__},
-    {Py_tp_doc, (char *)ZlibDecompressor__new____doc__},
+    {Py_tp_new, zlib__ZlibDecompressor},
+    {Py_tp_doc, (char *)zlib__ZlibDecompressor__doc__},
     {Py_tp_methods, ZlibDecompressor_methods},
     {0, 0},
 };
@@ -1965,14 +2059,17 @@ static PyType_Spec ZlibDecompressor_type_spec = {
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = ZlibDecompressor_type_slots,
 };
+
 PyDoc_STRVAR(zlib_module_documentation,
 "The functions in this module allow compression and decompression using the\n"
 "zlib library, which is based on GNU zip.\n"
 "\n"
 "adler32(string[, start]) -- Compute an Adler-32 checksum.\n"
+"adler32_combine(adler1, adler2, len2, /) -- Combine two Adler-32 checksums.\n"
 "compress(data[, level]) -- Compress data, with compression level 0-9 or -1.\n"
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
+"crc32_combine(crc1, crc2, len2, /) -- Combine two CRC-32 checksums.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
 "decompressobj([wbits[, zdict]]) -- Return a decompressor object.\n"
 "\n"
@@ -2032,17 +2129,11 @@ zlib_exec(PyObject *mod)
     }
 
     state->ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
-    if (state->ZlibError == NULL) {
+    if (PyModule_AddObjectRef(mod, "error", state->ZlibError) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(mod, "error", Py_NewRef(state->ZlibError)) < 0) {
-        Py_DECREF(state->ZlibError);
-        return -1;
-    }
-    if (PyModule_AddObject(mod, "_ZlibDecompressor",
-                           Py_NewRef(state->ZlibDecompressorType)) < 0) {
-        Py_DECREF(state->ZlibDecompressorType);
+    if (PyModule_AddObjectRef(mod, "_ZlibDecompressor",
+                              (PyObject *)state->ZlibDecompressorType) < 0) {
         return -1;
     }
 
@@ -2084,26 +2175,20 @@ zlib_exec(PyObject *mod)
 #ifdef Z_TREES // 1.2.3.4, only for inflate
     ZLIB_ADD_INT_MACRO(Z_TREES);
 #endif
-    PyObject *ver = PyUnicode_FromString(ZLIB_VERSION);
-    if (ver == NULL) {
+    if (PyModule_Add(mod, "ZLIB_VERSION",
+                     PyUnicode_FromString(ZLIB_VERSION)) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(mod, "ZLIB_VERSION", ver) < 0) {
-        Py_DECREF(ver);
+    if (PyModule_Add(mod, "ZLIB_RUNTIME_VERSION",
+                     PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
-
-    ver = PyUnicode_FromString(zlibVersion());
-    if (ver == NULL) {
+#ifdef ZLIBNG_VERSION
+    if (PyModule_Add(mod, "ZLIBNG_VERSION",
+                     PyUnicode_FromString(ZLIBNG_VERSION)) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(mod, "ZLIB_RUNTIME_VERSION", ver) < 0) {
-        Py_DECREF(ver);
-        return -1;
-    }
-
+#endif
     if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
         return -1;
     }
@@ -2113,6 +2198,7 @@ zlib_exec(PyObject *mod)
 static PyModuleDef_Slot zlib_slots[] = {
     {Py_mod_exec, zlib_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

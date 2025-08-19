@@ -2,14 +2,18 @@ import pickle
 import types
 import unittest
 from test.support import check_syntax_error, run_code
-from test import mod_generics_cache
+from test.typinganndata import mod_generics_cache
 
-from typing import Callable, TypeAliasType, TypeVar, get_args
+from typing import (
+    Callable, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, Unpack, get_args,
+)
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
-    def test_name_collision_01(self):
-        check_syntax_error(self, """type TA1[A, **A] = None""", "duplicate type parameter 'A'")
+    def test_name_collisions(self):
+        check_syntax_error(self, 'type TA1[A, **A] = None', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'type T[A, *A] = None', "duplicate type parameter 'A'")
+        check_syntax_error(self, 'type T[*A, **A] = None', "duplicate type parameter 'A'")
 
     def test_name_non_collision_02(self):
         ns = run_code("""type TA1[A] = lambda A: A""")
@@ -140,7 +144,16 @@ class TypeParamsAliasValueTest(unittest.TestCase):
 
     def test_repr(self):
         type Simple = int
+        type VeryGeneric[T, *Ts, **P] = Callable[P, tuple[T, *Ts]]
+
         self.assertEqual(repr(Simple), "Simple")
+        self.assertEqual(repr(VeryGeneric), "VeryGeneric")
+        self.assertEqual(repr(VeryGeneric[int, bytes, str, [float, object]]),
+                         "VeryGeneric[int, bytes, str, [float, object]]")
+        self.assertEqual(repr(VeryGeneric[int, []]),
+                         "VeryGeneric[int, []]")
+        self.assertEqual(repr(VeryGeneric[int, [VeryGeneric[int], list[str]]]),
+                         "VeryGeneric[int, [VeryGeneric[int], list[str]]]")
 
     def test_recursive_repr(self):
         type Recursive = Recursive
@@ -149,6 +162,31 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         type X = list[Y]
         type Y = list[X]
         self.assertEqual(repr(X), "X")
+        self.assertEqual(repr(Y), "Y")
+
+        type GenericRecursive[X] = list[X | GenericRecursive[X]]
+        self.assertEqual(repr(GenericRecursive), "GenericRecursive")
+        self.assertEqual(repr(GenericRecursive[int]), "GenericRecursive[int]")
+        self.assertEqual(repr(GenericRecursive[GenericRecursive[int]]),
+                         "GenericRecursive[GenericRecursive[int]]")
+
+    def test_raising(self):
+        type MissingName = list[_My_X]
+        with self.assertRaisesRegex(
+            NameError,
+            "cannot access free variable '_My_X' where it is not associated with a value",
+        ):
+            MissingName.__value__
+        _My_X = int
+        self.assertEqual(MissingName.__value__, list[int])
+        del _My_X
+        # Cache should still work:
+        self.assertEqual(MissingName.__value__, list[int])
+
+        # Explicit exception:
+        type ExprException = 1 / 0
+        with self.assertRaises(ZeroDivisionError):
+            ExprException.__value__
 
 
 class TypeAliasConstructorTest(unittest.TestCase):
@@ -175,6 +213,59 @@ class TypeAliasConstructorTest(unittest.TestCase):
         self.assertEqual(TA.__value__, list[T])
         self.assertEqual(TA.__type_params__, (T,))
         self.assertEqual(TA.__module__, __name__)
+        self.assertIs(type(TA[int]), types.GenericAlias)
+
+    def test_not_generic(self):
+        TA = TypeAliasType("TA", list[int], type_params=())
+        self.assertEqual(TA.__name__, "TA")
+        self.assertEqual(TA.__value__, list[int])
+        self.assertEqual(TA.__type_params__, ())
+        self.assertEqual(TA.__module__, __name__)
+        with self.assertRaisesRegex(
+            TypeError,
+            "Only generic type aliases are subscriptable",
+        ):
+            TA[int]
+
+    def test_type_params_order_with_defaults(self):
+        HasNoDefaultT = TypeVar("HasNoDefaultT")
+        WithDefaultT = TypeVar("WithDefaultT", default=int)
+
+        HasNoDefaultP = ParamSpec("HasNoDefaultP")
+        WithDefaultP = ParamSpec("WithDefaultP", default=HasNoDefaultP)
+
+        HasNoDefaultTT = TypeVarTuple("HasNoDefaultTT")
+        WithDefaultTT = TypeVarTuple("WithDefaultTT", default=HasNoDefaultTT)
+
+        for type_params in [
+            (HasNoDefaultT, WithDefaultT),
+            (HasNoDefaultP, WithDefaultP),
+            (HasNoDefaultTT, WithDefaultTT),
+        ]:
+            with self.subTest(type_params=type_params):
+                TypeAliasType("A", int, type_params=type_params)  # ok
+
+        msg = "follows default type parameter"
+        for type_params in [
+            (WithDefaultT, HasNoDefaultT),
+            (WithDefaultP, HasNoDefaultP),
+            (WithDefaultTT, HasNoDefaultTT),
+            (WithDefaultT, HasNoDefaultP),  # different types
+        ]:
+            with self.subTest(type_params=type_params):
+                with self.assertRaisesRegex(TypeError, msg):
+                    TypeAliasType("A", int, type_params=type_params)
+
+    def test_expects_type_like(self):
+        T = TypeVar("T")
+
+        msg = "Expected a type param"
+        with self.assertRaisesRegex(TypeError, msg):
+            TypeAliasType("A", int, type_params=(1,))
+        with self.assertRaisesRegex(TypeError, msg):
+            TypeAliasType("A", int, type_params=(1, 2))
+        with self.assertRaisesRegex(TypeError, msg):
+            TypeAliasType("A", int, type_params=(T, 2))
 
     def test_keywords(self):
         TA = TypeAliasType(name="TA", value=int)
@@ -226,8 +317,99 @@ class TypeAliasTypeTest(unittest.TestCase):
         self.assertEqual(mod_generics_cache.OldStyle.__module__,
                          mod_generics_cache.__name__)
 
+    def test_unpack(self):
+        type Alias = tuple[int, int]
+        unpacked = (*Alias,)[0]
+        self.assertEqual(unpacked, Unpack[Alias])
+
+        class Foo[*Ts]:
+            pass
+
+        x = Foo[str, *Alias]
+        self.assertEqual(x.__args__, (str, Unpack[Alias]))
+
+
+# All these type aliases are used for pickling tests:
+T = TypeVar('T')
+type SimpleAlias = int
+type RecursiveAlias = dict[str, RecursiveAlias]
+type GenericAlias[X] = list[X]
+type GenericAliasMultipleTypes[X, Y] = dict[X, Y]
+type RecursiveGenericAlias[X] = dict[str, RecursiveAlias[X]]
+type BoundGenericAlias[X: int] = set[X]
+type ConstrainedGenericAlias[LongName: (str, bytes)] = list[LongName]
+type AllTypesAlias[A, *B, **C] = Callable[C, A] | tuple[*B]
+
+
+class TypeAliasPickleTest(unittest.TestCase):
     def test_pickling(self):
-        pickled = pickle.dumps(mod_generics_cache.Alias)
-        self.assertIs(pickle.loads(pickled), mod_generics_cache.Alias)
-        pickled = pickle.dumps(mod_generics_cache.OldStyle)
-        self.assertIs(pickle.loads(pickled), mod_generics_cache.OldStyle)
+        things_to_test = [
+            SimpleAlias,
+            RecursiveAlias,
+
+            GenericAlias,
+            GenericAlias[T],
+            GenericAlias[int],
+
+            GenericAliasMultipleTypes,
+            GenericAliasMultipleTypes[str, T],
+            GenericAliasMultipleTypes[T, str],
+            GenericAliasMultipleTypes[int, str],
+
+            RecursiveGenericAlias,
+            RecursiveGenericAlias[T],
+            RecursiveGenericAlias[int],
+
+            BoundGenericAlias,
+            BoundGenericAlias[int],
+            BoundGenericAlias[T],
+
+            ConstrainedGenericAlias,
+            ConstrainedGenericAlias[str],
+            ConstrainedGenericAlias[T],
+
+            AllTypesAlias,
+            AllTypesAlias[int, str, T, [T, object]],
+
+            # Other modules:
+            mod_generics_cache.Alias,
+            mod_generics_cache.OldStyle,
+        ]
+        for thing in things_to_test:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    pickled = pickle.dumps(thing, protocol=proto)
+                    self.assertEqual(pickle.loads(pickled), thing)
+
+    type ClassLevel = str
+
+    def test_pickling_local(self):
+        type A = int
+        things_to_test = [
+            self.ClassLevel,
+            A,
+        ]
+        for thing in things_to_test:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(thing=thing, proto=proto):
+                    with self.assertRaises(pickle.PickleError):
+                        pickle.dumps(thing, protocol=proto)
+
+
+class TypeParamsExoticGlobalsTest(unittest.TestCase):
+    def test_exec_with_unusual_globals(self):
+        class customdict(dict):
+            def __missing__(self, key):
+                return key
+
+        code = compile("type Alias = undefined", "test", "exec")
+        ns = customdict()
+        exec(code, ns)
+        Alias = ns["Alias"]
+        self.assertEqual(Alias.__value__, "undefined")
+
+        code = compile("class A: type Alias = undefined", "test", "exec")
+        ns = customdict()
+        exec(code, ns)
+        Alias = ns["A"].Alias
+        self.assertEqual(Alias.__value__, "undefined")

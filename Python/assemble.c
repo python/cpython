@@ -1,11 +1,12 @@
-#include <stdbool.h>
-
 #include "Python.h"
-#include "pycore_code.h"          // write_location_entry_start()
+#include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
-#include "pycore_opcode.h"        // _PyOpcode_Caches[] and opcode category macros
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_instruction_sequence.h"
+#include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
+#include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
+#include "pycore_symtable.h"        // _Py_SourceLocation
 
+#include <stdbool.h>
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
@@ -17,13 +18,13 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
+    if ((X) < 0) {          \
         return ERROR;       \
     }
 
-typedef _PyCompilerSrcLocation location;
-typedef _PyCompile_Instruction instruction;
-typedef _PyCompile_InstructionSequence instr_sequence;
+typedef _Py_SourceLocation location;
+typedef _PyInstruction instruction;
+typedef _PyInstructionSequence instr_sequence;
 
 static inline bool
 same_location(location a, location b)
@@ -32,6 +33,18 @@ same_location(location a, location b)
            a.end_lineno == b.end_lineno &&
            a.col_offset == b.col_offset &&
            a.end_col_offset == b.end_col_offset;
+}
+
+static int
+instr_size(instruction *instr)
+{
+    int opcode = instr->i_opcode;
+    int oparg = instr->i_oparg;
+    assert(!IS_PSEUDO_INSTR(opcode));
+    assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
+    int extended_args = (0xFFFFFF < oparg) + (0xFFFF < oparg) + (0xFF < oparg);
+    int caches = _PyOpcode_Caches[opcode];
+    return extended_args + 1 + caches;
 }
 
 struct assembler {
@@ -113,12 +126,13 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
     write_except_byte(a, (value&0x3f) | msb);
 }
 
-/* See Objects/exception_handling_notes.txt for details of layout */
+/* See InternalDocs/exception_handling.md for details of layout */
 #define MAX_SIZE_OF_ENTRY 20
 
 static int
 assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
-                                    _PyCompile_ExceptHandlerInfo *handler)
+                                    int handler_offset,
+                                    _PyExceptHandlerInfo *handler)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
@@ -126,7 +140,7 @@ assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
     }
     int size = end-start;
     assert(end > start);
-    int target = handler->h_offset;
+    int target = handler_offset;
     int depth = handler->h_startdepth - 1;
     if (handler->h_preserve_lasti > 0) {
         depth -= 1;
@@ -144,24 +158,31 @@ static int
 assemble_exception_table(struct assembler *a, instr_sequence *instrs)
 {
     int ioffset = 0;
-    _PyCompile_ExceptHandlerInfo handler;
-    handler.h_offset = -1;
+    _PyExceptHandlerInfo handler;
+    handler.h_label = -1;
+    handler.h_startdepth = -1;
     handler.h_preserve_lasti = -1;
     int start = -1;
     for (int i = 0; i < instrs->s_used; i++) {
         instruction *instr = &instrs->s_instrs[i];
-        if (instr->i_except_handler_info.h_offset != handler.h_offset) {
-            if (handler.h_offset >= 0) {
+        if (instr->i_except_handler_info.h_label != handler.h_label) {
+            if (handler.h_label >= 0) {
+                int handler_offset = instrs->s_instrs[handler.h_label].i_offset;
                 RETURN_IF_ERROR(
-                    assemble_emit_exception_table_entry(a, start, ioffset, &handler));
+                    assemble_emit_exception_table_entry(a, start, ioffset,
+                                                        handler_offset,
+                                                        &handler));
             }
             start = ioffset;
             handler = instr->i_except_handler_info;
         }
-        ioffset += _PyCompile_InstrSize(instr->i_opcode, instr->i_oparg);
+        ioffset += instr_size(instr);
     }
-    if (handler.h_offset >= 0) {
-        RETURN_IF_ERROR(assemble_emit_exception_table_entry(a, start, ioffset, &handler));
+    if (handler.h_label >= 0) {
+        int handler_offset = instrs->s_instrs[handler.h_label].i_offset;
+        RETURN_IF_ERROR(assemble_emit_exception_table_entry(a, start, ioffset,
+                                                            handler_offset,
+                                                            &handler));
     }
     return SUCCESS;
 }
@@ -269,17 +290,15 @@ write_location_info_entry(struct assembler* a, location loc, int isize)
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
     }
-    if (loc.lineno < 0) {
+    if (loc.lineno == NO_LOCATION.lineno) {
         write_location_info_none(a, isize);
         return SUCCESS;
     }
     int line_delta = loc.lineno - a->a_lineno;
     int column = loc.col_offset;
     int end_column = loc.end_col_offset;
-    assert(column >= -1);
-    assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
-        if (loc.end_lineno == loc.lineno || loc.end_lineno == -1) {
+        if (loc.end_lineno == loc.lineno || loc.end_lineno < 0) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = loc.lineno;
             return SUCCESS;
@@ -320,6 +339,18 @@ assemble_location_info(struct assembler *a, instr_sequence *instrs,
 {
     a->a_lineno = firstlineno;
     location loc = NO_LOCATION;
+    for (int i = instrs->s_used-1; i >= 0; i--) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (same_location(instr->i_loc, NEXT_LOCATION)) {
+            if (IS_TERMINATOR_OPCODE(instr->i_opcode)) {
+                instr->i_loc = NO_LOCATION;
+            }
+            else {
+                assert(i < instrs->s_used-1);
+                instr->i_loc = instr[1].i_loc;
+            }
+        }
+    }
     int size = 0;
     for (int i = 0; i < instrs->s_used; i++) {
         instruction *instr = &instrs->s_instrs[i];
@@ -328,7 +359,7 @@ assemble_location_info(struct assembler *a, instr_sequence *instrs,
                 loc = instr->i_loc;
                 size = 0;
         }
-        size += _PyCompile_InstrSize(instr->i_opcode, instr->i_oparg);
+        size += instr_size(instr);
     }
     RETURN_IF_ERROR(assemble_emit_location(a, loc, size));
     return SUCCESS;
@@ -338,26 +369,26 @@ static void
 write_instr(_Py_CODEUNIT *codestr, instruction *instr, int ilen)
 {
     int opcode = instr->i_opcode;
-    assert(!IS_PSEUDO_OPCODE(opcode));
+    assert(!IS_PSEUDO_INSTR(opcode));
     int oparg = instr->i_oparg;
-    assert(HAS_ARG(opcode) || oparg == 0);
+    assert(OPCODE_HAS_ARG(opcode) || oparg == 0);
     int caches = _PyOpcode_Caches[opcode];
     switch (ilen - caches) {
         case 4:
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 24) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 3:
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 16) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 2:
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 8) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 1:
             codestr->op.code = opcode;
             codestr->op.arg = oparg & 0xFF;
@@ -384,7 +415,7 @@ assemble_emit_instr(struct assembler *a, instruction *instr)
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
 
-    int size = _PyCompile_InstrSize(instr->i_opcode, instr->i_oparg);
+    int size = instr_size(instr);
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
         if (len > PY_SSIZE_T_MAX / 2) {
             return ERROR;
@@ -427,13 +458,17 @@ static PyObject *
 dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 {
     PyObject *tuple, *k, *v;
-    Py_ssize_t i, pos = 0, size = PyDict_GET_SIZE(dict);
+    Py_ssize_t pos = 0, size = PyDict_GET_SIZE(dict);
 
     tuple = PyTuple_New(size);
     if (tuple == NULL)
         return NULL;
     while (PyDict_Next(dict, &pos, &k, &v)) {
-        i = PyLong_AS_LONG(v);
+        Py_ssize_t i = PyLong_AsSsize_t(v);
+        if (i == -1 && PyErr_Occurred()) {
+            Py_DECREF(tuple);
+            return NULL;
+        }
         assert((i - offset) < size);
         assert((i - offset) >= 0);
         PyTuple_SET_ITEM(tuple, i - offset, Py_NewRef(k));
@@ -445,52 +480,95 @@ dict_keys_inorder(PyObject *dict, Py_ssize_t offset)
 extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
                                    PyObject *, PyObject *);
 
-static void
+static int
 compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
-                        PyObject *names, PyObject *kinds)
+                        int flags, PyObject *names, PyObject *kinds)
 {
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
-        int offset = (int)PyLong_AS_LONG(v);
-        assert(offset >= 0);
-        assert(offset < nlocalsplus);
-        // For now we do not distinguish arg kinds.
-        _PyLocals_Kind kind = CO_FAST_LOCAL;
-        if (PyDict_Contains(umd->u_fasthidden, k)) {
-            kind |= CO_FAST_HIDDEN;
+
+    // Set the locals kinds.  Arg vars fill the first portion of the list.
+    struct {
+        int count;
+        _PyLocals_Kind kind;
+    }  argvarkinds[6] = {
+        {(int)umd->u_posonlyargcount, CO_FAST_ARG_POS},
+        {(int)umd->u_argcount, CO_FAST_ARG_POS | CO_FAST_ARG_KW},
+        {(int)umd->u_kwonlyargcount, CO_FAST_ARG_KW},
+        {!!(flags & CO_VARARGS), CO_FAST_ARG_VAR | CO_FAST_ARG_POS},
+        {!!(flags & CO_VARKEYWORDS), CO_FAST_ARG_VAR | CO_FAST_ARG_KW},
+        {-1, 0},  // the remaining local vars
+    };
+    int max = 0;
+    for (int i = 0; i < 6; i++) {
+        max = argvarkinds[i].count < 0
+            ? INT_MAX
+            : max + argvarkinds[i].count;
+        while (pos < max && PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
+            int offset = PyLong_AsInt(v);
+            if (offset == -1 && PyErr_Occurred()) {
+                return ERROR;
+            }
+            assert(offset >= 0);
+            assert(offset < nlocalsplus);
+
+            _PyLocals_Kind kind = CO_FAST_LOCAL | argvarkinds[i].kind;
+
+            int has_key = PyDict_Contains(umd->u_fasthidden, k);
+            RETURN_IF_ERROR(has_key);
+            if (has_key) {
+                kind |= CO_FAST_HIDDEN;
+            }
+
+            has_key = PyDict_Contains(umd->u_cellvars, k);
+            RETURN_IF_ERROR(has_key);
+            if (has_key) {
+                kind |= CO_FAST_CELL;
+            }
+
+            _Py_set_localsplus_info(offset, k, kind, names, kinds);
         }
-        if (PyDict_GetItem(umd->u_cellvars, k) != NULL) {
-            kind |= CO_FAST_CELL;
-        }
-        _Py_set_localsplus_info(offset, k, kind, names, kinds);
     }
     int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
 
     // This counter mirrors the fix done in fix_cell_offsets().
-    int numdropped = 0;
+    int numdropped = 0, cellvar_offset = -1;
     pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &k, &v)) {
-        if (PyDict_GetItem(umd->u_varnames, k) != NULL) {
+        int has_name = PyDict_Contains(umd->u_varnames, k);
+        RETURN_IF_ERROR(has_name);
+        if (has_name) {
             // Skip cells that are already covered by locals.
             numdropped += 1;
             continue;
         }
-        int offset = (int)PyLong_AS_LONG(v);
-        assert(offset >= 0);
-        offset += nlocals - numdropped;
-        assert(offset < nlocalsplus);
-        _Py_set_localsplus_info(offset, k, CO_FAST_CELL, names, kinds);
+
+        cellvar_offset = PyLong_AsInt(v);
+        if (cellvar_offset == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
+        assert(cellvar_offset >= 0);
+        cellvar_offset += nlocals - numdropped;
+        assert(cellvar_offset < nlocalsplus);
+        _Py_set_localsplus_info(cellvar_offset, k, CO_FAST_CELL, names, kinds);
     }
 
     pos = 0;
     while (PyDict_Next(umd->u_freevars, &pos, &k, &v)) {
-        int offset = (int)PyLong_AS_LONG(v);
+        int offset = PyLong_AsInt(v);
+        if (offset == -1 && PyErr_Occurred()) {
+            return ERROR;
+        }
         assert(offset >= 0);
         offset += nlocals - numdropped;
         assert(offset < nlocalsplus);
+        /* XXX If the assertion below fails it is most likely because a freevar
+           was added to u_freevars with the wrong index due to not taking into
+           account cellvars already present, see gh-128632. */
+        assert(offset > cellvar_offset);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
+    return SUCCESS;
 }
 
 static PyCodeObject *
@@ -535,7 +613,12 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (localspluskinds == NULL) {
         goto error;
     }
-    compute_localsplus_info(umd, nlocalsplus, localsplusnames, localspluskinds);
+    if (compute_localsplus_info(
+            umd, nlocalsplus, code_flags,
+            localsplusnames, localspluskinds) == ERROR)
+    {
+        goto error;
+    }
 
     struct _PyCodeConstructor con = {
         .filename = filename,
@@ -585,11 +668,127 @@ error:
 }
 
 
+// The offset (in code units) of the END_SEND from the SEND in the `yield from` sequence.
+#define END_SEND_OFFSET 5
+
+static int
+resolve_jump_offsets(instr_sequence *instrs)
+{
+    /* Compute the size of each instruction and fixup jump args.
+     * Replace instruction index with position in bytecode.
+     */
+
+    for (int i = 0; i < instrs->s_used; i++) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+            instr->i_target = instr->i_oparg;
+        }
+    }
+
+    int extended_arg_recompile;
+
+    do {
+        int totsize = 0;
+        for (int i = 0; i < instrs->s_used; i++) {
+            instruction *instr = &instrs->s_instrs[i];
+            instr->i_offset = totsize;
+            int isize = instr_size(instr);
+            totsize += isize;
+        }
+        extended_arg_recompile = 0;
+
+        int offset = 0;
+        for (int i = 0; i < instrs->s_used; i++) {
+            instruction *instr = &instrs->s_instrs[i];
+            int isize = instr_size(instr);
+            /* jump offsets are computed relative to
+             * the instruction pointer after fetching
+             * the jump instruction.
+             */
+            offset += isize;
+            if (OPCODE_HAS_JUMP(instr->i_opcode)) {
+                instruction *target = &instrs->s_instrs[instr->i_target];
+                instr->i_oparg = target->i_offset;
+                if (instr->i_opcode == END_ASYNC_FOR) {
+                    // sys.monitoring needs to be able to find the matching END_SEND
+                    // but the target is the SEND, so we adjust it here.
+                    instr->i_oparg = offset - instr->i_oparg - END_SEND_OFFSET;
+                }
+                else if (instr->i_oparg < offset) {
+                    assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
+                    instr->i_oparg = offset - instr->i_oparg;
+                }
+                else {
+                    assert(!IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
+                    instr->i_oparg = instr->i_oparg - offset;
+                }
+                if (instr_size(instr) != isize) {
+                    extended_arg_recompile = 1;
+                }
+            }
+        }
+    /* XXX: This is an awful hack that could hurt performance, but
+        on the bright side it should work until we come up
+        with a better solution.
+
+        The issue is that in the first loop instr_size() is
+        called, and it requires i_oparg be set appropriately.
+        There is a bootstrap problem because i_oparg is
+        calculated in the second loop above.
+
+        So we loop until we stop seeing new EXTENDED_ARGs.
+        The only EXTENDED_ARGs that could be popping up are
+        ones in jump instructions.  So this should converge
+        fairly quickly.
+    */
+    } while (extended_arg_recompile);
+    return SUCCESS;
+}
+
+static int
+resolve_unconditional_jumps(instr_sequence *instrs)
+{
+    /* Resolve directions of unconditional jumps */
+
+    for (int i = 0; i < instrs->s_used; i++) {
+        instruction *instr = &instrs->s_instrs[i];
+        bool is_forward = (instr->i_oparg > i);
+        switch(instr->i_opcode) {
+            case JUMP:
+                assert(is_pseudo_target(JUMP, JUMP_FORWARD));
+                assert(is_pseudo_target(JUMP, JUMP_BACKWARD));
+                instr->i_opcode = is_forward ? JUMP_FORWARD : JUMP_BACKWARD;
+                break;
+            case JUMP_NO_INTERRUPT:
+                assert(is_pseudo_target(JUMP_NO_INTERRUPT, JUMP_FORWARD));
+                assert(is_pseudo_target(JUMP_NO_INTERRUPT, JUMP_BACKWARD_NO_INTERRUPT));
+                instr->i_opcode = is_forward ?
+                    JUMP_FORWARD : JUMP_BACKWARD_NO_INTERRUPT;
+                break;
+            default:
+                if (OPCODE_HAS_JUMP(instr->i_opcode) &&
+                    IS_PSEUDO_INSTR(instr->i_opcode)) {
+                    Py_UNREACHABLE();
+                }
+        }
+    }
+    return SUCCESS;
+}
+
 PyCodeObject *
 _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *umd, PyObject *const_cache,
                            PyObject *consts, int maxdepth, instr_sequence *instrs,
                            int nlocalsplus, int code_flags, PyObject *filename)
 {
+    if (_PyInstructionSequence_ApplyLabelMap(instrs) < 0) {
+        return NULL;
+    }
+    if (resolve_unconditional_jumps(instrs) < 0) {
+        return NULL;
+    }
+    if (resolve_jump_offsets(instrs) < 0) {
+        return NULL;
+    }
     PyCodeObject *co = NULL;
 
     struct assembler a;

@@ -20,10 +20,6 @@ This returns an instance of a class with the following public methods:
                          compression type ('not compressed' linear samples)
       getparams()     -- returns a namedtuple consisting of all of the
                          above in the above order
-      getmarkers()    -- returns None (for compatibility with the
-                         old aifc module)
-      getmark(id)     -- raises an error since the mark does not
-                         exist (for compatibility with the old aifc module)
       readframes(n)   -- returns at most n frames of audio
       rewind()        -- rewind to the beginning of the audio stream
       setpos(pos)     -- seek to the specified position
@@ -92,6 +88,7 @@ _array_fmts = None, 'b', 'h', None, 'i'
 _wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
 
+
 def _byteswap(data, width):
     swapped_data = bytearray(len(data))
 
@@ -104,7 +101,6 @@ def _byteswap(data, width):
 
 class _Chunk:
     def __init__(self, file, align=True, bigendian=True, inclheader=False):
-        import struct
         self.closed = False
         self.align = align      # whether to align to word (2-byte) boundaries
         if bigendian:
@@ -212,7 +208,6 @@ class _Chunk:
             dummy = self.read(n)
             if not dummy:
                 raise EOFError
-
 
 
 class Wave_read:
@@ -342,12 +337,6 @@ class Wave_read:
                        self.getframerate(), self.getnframes(),
                        self.getcomptype(), self.getcompname())
 
-    def getmarkers(self):
-        return None
-
-    def getmark(self, id):
-        raise Error('no marks')
-
     def setpos(self, pos):
         if pos < 0 or pos > self._nframes:
             raise Error('position not in range')
@@ -411,6 +400,7 @@ class Wave_read:
         self._comptype = 'NONE'
         self._compname = 'not compressed'
 
+
 class Wave_write:
     """Variables used in this class:
 
@@ -436,6 +426,8 @@ class Wave_write:
     _nframeswritten -- the number of frames actually written
     _datawritten -- the size of the audio samples actually written
     """
+
+    _file = None
 
     def __init__(self, f):
         self._i_opened_the_file = None
@@ -547,15 +539,6 @@ class Wave_write:
         return _wave_params(self._nchannels, self._sampwidth, self._framerate,
               self._nframes, self._comptype, self._compname)
 
-    def setmark(self, id, pos, name):
-        raise Error('setmark() not supported')
-
-    def getmark(self, id):
-        raise Error('no marks')
-
-    def getmarkers(self):
-        return None
-
     def tell(self):
         return self._nframeswritten
 
@@ -637,6 +620,7 @@ class Wave_write:
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
         self._datalength = self._datawritten
+
 
 def open(f, mode=None):
     if mode is None:
