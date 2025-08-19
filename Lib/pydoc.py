@@ -1911,7 +1911,6 @@ def collect_dunders(symbols):
         '__add__': '+',
         '__sub__': '-',
         '__mul__': '*',
-        '__matmul__': '@',
         '__truediv__': '/',
         '__floordiv__': '//',
         '__mod__': '%',
@@ -1930,6 +1929,12 @@ def collect_dunders(symbols):
         dunders[iname] = ('numeric-types', f'{symbol} {dunder} SPECIALMETHODS')
         if symbol in symbols:
             symbols[symbol] += f' {dunder}'
+
+    # __matmul__ isn't included above because help('@') doesn't talk about
+    # matrix multiplication, so we shouldn't list it here as a related topic.
+    dunders['__matmul__'] = ('numeric-types', f'__rmatmul__ __imatmul__ SPECIALMETHODS')
+    dunders['__rmatmul__'] = ('numeric-types', f'__matmul__ SPECIALMETHODS')
+    dunders['__imatmul__'] = ('numeric-types', f'__matmul__ SPECIALMETHODS')
 
     dunders['__divmod__'] = ('numeric-types', 'divmod')
 
