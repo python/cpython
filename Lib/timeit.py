@@ -6,34 +6,7 @@ the Python Cookbook, published by O'Reilly.
 
 Library usage: see the Timer class.
 
-Command line usage:
-    python timeit.py [-n N] [-r N] [-s S] [-p] [-h] [--] [statement]
-
-Options:
-  -n/--number N: how many times to execute 'statement' (default: see below)
-  -r/--repeat N: how many times to repeat the timer (default 5)
-  -s/--setup S: statement to be executed once initially (default 'pass').
-                Execution time of this setup statement is NOT timed.
-  -p/--process: use time.process_time() (default is time.perf_counter())
-  -v/--verbose: print raw timing results; repeat for more digits precision
-  -u/--unit: set the output time unit (nsec, usec, msec, or sec)
-  -h/--help: print this usage message and exit
-  --: separate options from statement, use when statement starts with -
-  statement: statement to be timed (default 'pass')
-
-A multi-line statement may be given by specifying each line as a
-separate argument; indented lines are possible by enclosing an
-argument in quotes and using leading spaces.  Multiple -s options are
-treated similarly.
-
-If -n is not given, a suitable number of loops is calculated by trying
-increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
-total time is at least 0.2 seconds.
-
-Note: there is a certain baseline overhead associated with executing a
-pass statement.  It differs between versions.  The code here doesn't try
-to hide it, but you should be aware of it.  The baseline overhead can be
-measured by invoking the program without arguments.
+Command line usage: python -m timeit --help
 
 Classes:
 
@@ -240,6 +213,71 @@ def repeat(stmt="pass", setup="pass", timer=default_timer,
     return Timer(stmt, setup, timer, globals).repeat(repeat, number)
 
 
+def _make_parser():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="""\
+Tool avoiding a number of common traps for measuring execution times.
+See also Tim Peters' introduction to the Algorithms chapter in the
+Python Cookbook, published by O'Reilly.""",
+        epilog="""\
+A multi-line statement may be given by specifying each line as a
+separate argument; indented lines are possible by enclosing an
+argument in quotes and using leading spaces.  Multiple -s options are
+treated similarly.
+
+If -n is not given, a suitable number of loops is calculated by trying
+increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
+total time is at least 0.2 seconds.
+
+Note: there is a certain baseline overhead associated with executing a
+pass statement.  It differs between versions.  The code here doesn't try
+to hide it, but you should be aware of it.  The baseline overhead can be
+measured by invoking the program without arguments.""",
+        formatter_class=argparse.RawTextHelpFormatter,
+        allow_abbrev=False,
+    )
+    # use a group to avoid rendering a 'positional arguments' section
+    group = parser.add_argument_group()
+    group.add_argument(
+        "-n", "--number", metavar="N", default=0, type=int,
+        help="how many times to execute 'statement' (default: see below)",
+    )
+    group.add_argument(
+        "-r", "--repeat", type=int, metavar="N", default=default_repeat,
+        help="how many times to repeat the timer (default: 5)",
+    )
+    group.add_argument(
+        "-s", "--setup", action="append", metavar="S", default=[],
+        help="statement to be executed once initially (default: 'pass').\n"
+             "Execution time of this setup statement is NOT timed.",
+    )
+    group.add_argument(
+        "-u", "--unit", choices=["nsec", "usec", "msec", "sec"], metavar="U",
+        help="set the output time unit (nsec, usec, msec, or sec)",
+    )
+    group.add_argument(
+        "-p", "--process", action="store_true",
+        help="use time.process_time() (default: time.perf_counter())",
+    )
+    group.add_argument(
+        "-v", "--verbose", action="count", default=0,
+        help="print raw timing results; repeat for more digits precision",
+    )
+    # add a dummy option to document '--'
+    group.add_argument(
+        "--", dest="_", action="store_const", const=None,
+        help="separate options from statement; "
+             "use when statement starts with -",
+    )
+    group.add_argument(
+        "statement", nargs="*",
+        help="statement to be timed (default: 'pass')",
+    )
+    return parser
+
+
 def main(args=None, *, _wrap_timer=None):
     """Main program, used when run as a script.
 
@@ -257,53 +295,16 @@ def main(args=None, *, _wrap_timer=None):
     is not None, it must be a callable that accepts a timer function
     and returns another timer function (used for unit testing).
     """
-    if args is None:
-        args = sys.argv[1:]
-    import getopt
-    try:
-        opts, args = getopt.getopt(args, "n:u:s:r:pvh",
-                                   ["number=", "setup=", "repeat=",
-                                    "process", "verbose", "unit=", "help"])
-    except getopt.error as err:
-        print(err)
-        print("use -h/--help for command line help")
-        return 2
+    parser = _make_parser()
+    args = parser.parse_args(args)
 
-    timer = default_timer
-    stmt = "\n".join(args) or "pass"
-    number = 0  # auto-determine
-    setup = []
-    repeat = default_repeat
-    verbose = 0
-    time_unit = None
-    units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
-    precision = 3
-    for o, a in opts:
-        if o in ("-n", "--number"):
-            number = int(a)
-        if o in ("-s", "--setup"):
-            setup.append(a)
-        if o in ("-u", "--unit"):
-            if a in units:
-                time_unit = a
-            else:
-                print("Unrecognized unit. Please select nsec, usec, msec, or sec.",
-                      file=sys.stderr)
-                return 2
-        if o in ("-r", "--repeat"):
-            repeat = int(a)
-            if repeat <= 0:
-                repeat = 1
-        if o in ("-p", "--process"):
-            timer = time.process_time
-        if o in ("-v", "--verbose"):
-            if verbose:
-                precision += 1
-            verbose += 1
-        if o in ("-h", "--help"):
-            print(__doc__, end="")
-            return 0
-    setup = "\n".join(setup) or "pass"
+    setup = "\n".join(args.setup) or "pass"
+    stmt = "\n".join(args.statement) or "pass"
+    timer = time.process_time if args.process else default_timer
+    number = args.number  # will be deduced if 0
+    repeat = max(1, args.repeat)
+    verbose = bool(args.verbose)
+    precision = 3 + max(0, args.verbose - 1)
 
     # Include the current directory, so that local imports work (sys.path
     # contains the directory of this script, rather than the current
@@ -338,14 +339,16 @@ def main(args=None, *, _wrap_timer=None):
         t.print_exc()
         return 1
 
+    units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
+    scales = [(scale, unit_name) for unit_name, scale in units.items()]
+    scales.sort(reverse=True)
+
     def format_time(dt):
-        unit = time_unit
+        unit = args.unit
 
         if unit is not None:
             scale = units[unit]
         else:
-            scales = [(scale, unit) for unit, scale in units.items()]
-            scales.sort(reverse=True)
             for scale, unit in scales:
                 if dt >= scale:
                     break
@@ -362,7 +365,6 @@ def main(args=None, *, _wrap_timer=None):
           % (number, 's' if number != 1 else '',
              repeat, format_time(best)))
 
-    best = min(timings)
     worst = max(timings)
     if worst >= best * 4:
         import warnings
@@ -371,7 +373,7 @@ def main(args=None, *, _wrap_timer=None):
                                "slower than the best time (%s)."
                                % (format_time(worst), format_time(best)),
                                UserWarning, '', 0)
-    return None
+    return 0
 
 
 if __name__ == "__main__":

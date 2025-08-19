@@ -252,11 +252,9 @@ class TestTimeit(unittest.TestCase):
         return s.getvalue()
 
     def test_main_bad_switch(self):
-        s = self.run_main(switches=['--bad-switch'])
-        self.assertEqual(s, dedent("""\
-            option --bad-switch not recognized
-            use -h/--help for command line help
-            """))
+        with self.assertRaises(SystemExit), captured_stderr() as s:
+            self.run_main(switches=['--bad-switch'])
+        self.assertIn("unrecognized arguments: --bad-switch", s.getvalue())
 
     def test_main_seconds(self):
         s = self.run_main(seconds_per_increment=5.5)
@@ -293,11 +291,6 @@ class TestTimeit(unittest.TestCase):
     def test_main_negative_reps(self):
         s = self.run_main(seconds_per_increment=60.0, switches=['-r-5'])
         self.assertEqual(s, "1 loop, best of 1: 60 sec per loop\n")
-
-    @unittest.skipIf(sys.flags.optimize >= 2, "need __doc__")
-    def test_main_help(self):
-        s = self.run_main(switches=['-h'])
-        self.assertEqual(s, timeit.__doc__)
 
     def test_main_verbose(self):
         s = self.run_main(switches=['-v'])
@@ -345,11 +338,10 @@ class TestTimeit(unittest.TestCase):
         self.assertEqual(unit_usec,
                 "100 loops, best of 5: 3e+03 usec per loop\n")
         # Test invalid unit input
-        with captured_stderr() as error_stringio:
-            invalid = self.run_main(seconds_per_increment=0.003,
-                    switches=['-u', 'parsec'])
-        self.assertEqual(error_stringio.getvalue(),
-                    "Unrecognized unit. Please select nsec, usec, msec, or sec.\n")
+        with self.assertRaises(SystemExit), captured_stderr() as s:
+            self.run_main(seconds_per_increment=0.003,
+                          switches=['-u', 'parsec'])
+        self.assertIn("invalid choice: 'parsec'", s.getvalue())
 
     def test_main_exception(self):
         with captured_stderr() as error_stringio:
