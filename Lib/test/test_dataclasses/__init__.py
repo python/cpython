@@ -370,6 +370,16 @@ class TestCase(unittest.TestCase):
         @dataclass(order=True)
         class C:
             pass
+
+        # Check "self" comparisons.
+        ref = C()
+        self.assertEqual(ref, ref)
+        self.assertLessEqual(ref, ref)
+        self.assertGreaterEqual(ref, ref)
+        self.assertFalse(ref != ref)
+        self.assertFalse(ref < ref)
+        self.assertFalse(ref > ref)
+
         self.assertLessEqual(C(), C())
         self.assertGreaterEqual(C(), C())
 
@@ -399,6 +409,16 @@ class TestCase(unittest.TestCase):
         @dataclass(order=True)
         class C:
             x: int
+
+        # Check "self" comparisons.
+        ref = C(0)
+        self.assertEqual(ref, ref)
+        self.assertLessEqual(ref, ref)
+        self.assertGreaterEqual(ref, ref)
+        self.assertFalse(ref != ref)
+        self.assertFalse(ref < ref)
+        self.assertFalse(ref > ref)
+
         self.assertLess(C(0), C(1))
         self.assertLessEqual(C(0), C(1))
         self.assertLessEqual(C(1), C(1))
@@ -411,6 +431,15 @@ class TestCase(unittest.TestCase):
             x: float
 
         nan = float("nan")
+
+        # Check "self" comparisons.
+        ref = CFloat(nan)
+        self.assertEqual(ref, ref)
+        self.assertLessEqual(ref, ref)
+        self.assertGreaterEqual(ref, ref)
+        self.assertFalse(ref != ref)
+        self.assertFalse(ref < ref)
+        self.assertFalse(ref > ref)
 
         self.assertNotEqual(CFloat(0.0), CFloat(nan))
         self.assertNotEqual(CFloat(nan), CFloat(0.0))
