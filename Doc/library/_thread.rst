@@ -130,6 +130,7 @@ This module defines the following constants and functions:
    .. versionchanged:: next
       Added support for Solaris.
 
+
 .. function:: stack_size([size])
 
    Return the thread stack size used when creating new threads.  The optional
