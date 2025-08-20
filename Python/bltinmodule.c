@@ -251,6 +251,7 @@ PyDoc_STRVAR(build_class_doc,
 Internal helper function used by the class statement.");
 
 /*[clinic input]
+@permit_long_docstring_body
 __import__ as builtin___import__
 
     name: object
@@ -279,7 +280,7 @@ is the number of parent directories to search relative to the current module.
 static PyObject *
 builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
                         PyObject *locals, PyObject *fromlist, int level)
-/*[clinic end generated code: output=4febeda88a0cd245 input=73f4b960ea5b9dd6]*/
+/*[clinic end generated code: output=4febeda88a0cd245 input=01a3283590eae93a]*/
 {
     return PyImport_ImportModuleLevelObject(name, globals, locals,
                                             fromlist, level);
@@ -2118,15 +2119,21 @@ builtin_oct(PyObject *module, PyObject *number)
 /*[clinic input]
 ord as builtin_ord
 
-    c: object
+    character as c: object
     /
 
-Return the Unicode code point for a one-character string.
+Return the ordinal value of a character.
+
+If the argument is a one-character string, return the Unicode code
+point of that character.
+
+If the argument is a bytes or bytearray object of length 1, return its
+single byte value.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_ord(PyObject *module, PyObject *c)
-/*[clinic end generated code: output=4fa5e87a323bae71 input=3064e5d6203ad012]*/
+/*[clinic end generated code: output=4fa5e87a323bae71 input=98d38480432e1177]*/
 {
     long ord;
     Py_ssize_t size;

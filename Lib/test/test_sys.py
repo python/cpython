@@ -1340,6 +1340,7 @@ class SysModuleTest(unittest.TestCase):
 
 
 @test.support.cpython_only
+@force_not_colorized
 class UnraisableHookTest(unittest.TestCase):
     def test_original_unraisablehook(self):
         _testcapi = import_helper.import_module('_testcapi')

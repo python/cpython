@@ -132,8 +132,9 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
         return defaultvalue;
     }
     if (!PyLong_Check(result)) {
-        PyErr_Format(PyExc_TypeError, "__length_hint__ must be an integer, not %.100s",
-            Py_TYPE(result)->tp_name);
+        PyErr_Format(PyExc_TypeError,
+                     "%T.__length_hint__() must return an int, not %T",
+                     o, result);
         Py_DECREF(result);
         return -1;
     }
@@ -143,7 +144,8 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
         return -1;
     }
     if (res < 0) {
-        PyErr_Format(PyExc_ValueError, "__length_hint__() should return >= 0");
+        PyErr_Format(PyExc_ValueError,
+                     "%T.__length_hint__() must return a non-negative int", o);
         return -1;
     }
     return res;
@@ -887,8 +889,8 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
 
     if (result && !PyUnicode_Check(result)) {
         PyErr_Format(PyExc_TypeError,
-                     "__format__ must return a str, not %.200s",
-                     Py_TYPE(result)->tp_name);
+                     "%T.__format__() must return a str, not %T",
+                     obj, result);
         Py_SETREF(result, NULL);
         goto done;
     }
@@ -1421,17 +1423,17 @@ _PyNumber_Index(PyObject *item)
 
     if (!PyLong_Check(result)) {
         PyErr_Format(PyExc_TypeError,
-                     "__index__ returned non-int (type %.200s)",
-                     Py_TYPE(result)->tp_name);
+                     "%T.__index__() must return an int, not %T",
+                     item, result);
         Py_DECREF(result);
         return NULL;
     }
     /* Issue #17576: warn if 'result' not of exact type int. */
     if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "__index__ returned non-int (type %.200s).  "
+            "%T.__index__() must return an int, not %T.  "
             "The ability to return an instance of a strict subclass of int "
             "is deprecated, and may be removed in a future version of Python.",
-            Py_TYPE(result)->tp_name)) {
+            item, result)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -1531,17 +1533,17 @@ PyNumber_Long(PyObject *o)
 
         if (!PyLong_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "__int__ returned non-int (type %.200s)",
-                         Py_TYPE(result)->tp_name);
+                         "%T.__int__() must return an int, not %T",
+                         o, result);
             Py_DECREF(result);
             return NULL;
         }
         /* Issue #17576: warn if 'result' not of exact type int. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "__int__ returned non-int (type %.200s).  "
+                "%T.__int__() must return an int, not %T.  "
                 "The ability to return an instance of a strict subclass of int "
                 "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(result)->tp_name)) {
+                o, result)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1609,17 +1611,16 @@ PyNumber_Float(PyObject *o)
 
         if (!PyFloat_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.50s.__float__ returned non-float (type %.50s)",
-                         Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name);
+                         "%T.__float__() must return a float, not %T", o, res);
             Py_DECREF(res);
             return NULL;
         }
         /* Issue #26983: warn if 'res' not of exact type float. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%.50s.__float__ returned non-float (type %.50s).  "
+                "%T.__float__() must return a float, not %T.  "
                 "The ability to return an instance of a strict subclass of float "
                 "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name)) {
+                o, res)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -2435,10 +2436,8 @@ method_output_as_list(PyObject *o, PyObject *meth)
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
             _PyErr_Format(tstate, PyExc_TypeError,
-                          "%.200s.%U() returned a non-iterable (type %.200s)",
-                          Py_TYPE(o)->tp_name,
-                          meth,
-                          Py_TYPE(meth_output)->tp_name);
+                          "%T.%U() must return an iterable, not %T",
+                          o, meth, meth_output);
         }
         Py_DECREF(meth_output);
         return NULL;
@@ -2818,9 +2817,8 @@ PyObject_GetIter(PyObject *o)
         PyObject *res = (*f)(o);
         if (res != NULL && !PyIter_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                         "iter() returned non-iterator "
-                         "of type '%.100s'",
-                         Py_TYPE(res)->tp_name);
+                         "%T.__iter__() must return an iterator, not %T",
+                         o, res);
             Py_SETREF(res, NULL);
         }
         return res;
@@ -2839,8 +2837,8 @@ PyObject_GetAIter(PyObject *o) {
     PyObject *it = (*f)(o);
     if (it != NULL && !PyAIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
-                     "aiter() returned not an async iterator of type '%.100s'",
-                     Py_TYPE(it)->tp_name);
+                     "%T.__aiter__() must return an async iterator, not %T",
+                     o, it);
         Py_SETREF(it, NULL);
     }
     return it;
