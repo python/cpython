@@ -972,7 +972,7 @@ as globals. It would be impossible to assign to a global variable without
 declared global.
 
 The :keyword:`!global` statement applies to the entire current scope
-(module, function body or class class definition).
+(module, function body or class definition).
 A :exc:`SyntaxError` is raised if a variable is used or
 assigned to prior to its global declaration in the scope.
 
