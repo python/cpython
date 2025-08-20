@@ -1826,7 +1826,7 @@ if test "$Py_OPT" = 'true' ; then
   # Check for conflicting CFLAGS=-O0 and --enable-optimizations
   case "$CFLAGS" in
     *-O0*)
-      AC_MSG_ERROR([CFLAGS contains -O0 which conflicts with --enable-optimizations. Please remove -O0 from CFLAGS or do not use --enable-optimizations.])
+      AC_MSG_WARN([CFLAGS contains -O0 which may conflict with --enable-optimizations. Consider removing -O0 from CFLAGS for optimal performance.])
       ;;
   esac
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
