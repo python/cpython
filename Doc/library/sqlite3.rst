@@ -1510,6 +1510,50 @@ Cursor objects
 
       Use :meth:`executescript` to execute multiple SQL statements.
 
+   .. method:: execute_json(sql, parameters=(), /)
+
+      Execute a single SQL statement and return the result as a JSON string.
+      This method is similar to :meth:`execute` but returns the query results
+      directly as a JSON string instead of rows.
+
+      :param str sql:
+         A single SQL statement that returns rows.
+
+      :param parameters:
+         Python values to bind to placeholders in *sql*.
+         A :class:`!dict` if named placeholders are used.
+         A :term:`!sequence` if unnamed placeholders are used.
+         See :ref:`sqlite3-placeholders`.
+      :type parameters: :class:`dict` | :term:`sequence`
+
+      :raises ProgrammingError:
+         When *sql* contains more than one SQL statement.
+         When :ref:`named placeholders <sqlite3-placeholders>` are used
+         and *parameters* is a sequence instead of a :class:`dict`.
+
+      This method provides significant performance benefits when working with
+      JSON data, as it leverages SQLite's built-in JSON functions to generate
+      the JSON directly in the database engine rather than fetching rows and
+      converting them to JSON in Python.
+
+      Example:
+
+      .. testcode:: sqlite3.cursor
+
+         # Create and populate a table
+         cur.execute("CREATE TABLE users(id INTEGER, name TEXT, email TEXT)")
+         cur.executemany("INSERT INTO users VALUES(?, ?, ?)", [
+             (1, 'Alice', 'alice@example.com'),
+             (2, 'Bob', 'bob@example.com')
+         ])
+
+         # Get results as JSON
+         json_result = cur.execute_json("SELECT * FROM users")
+         print(json_result)
+         # Output: [{"id":1,"name":"Alice","email":"alice@example.com"},{"id":2,"name":"Bob","email":"bob@example.com"}]
+
+      .. versionadded:: 3.15
+
    .. method:: executemany(sql, parameters, /)
 
       For every item in *parameters*,

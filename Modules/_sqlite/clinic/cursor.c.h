@@ -38,6 +38,45 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(pysqlite_cursor_execute_json__doc__,
+"execute_json($self, sql, parameters=(), /)\n"
+"--\n"
+"\n"
+"Executes an SQL statement and returns the result as a JSON string.");
+
+#define PYSQLITE_CURSOR_EXECUTE_JSON_METHODDEF    \
+    {"execute_json", _PyCFunction_CAST(pysqlite_cursor_execute_json), METH_FASTCALL, pysqlite_cursor_execute_json__doc__},
+
+static PyObject *
+pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
+                                  PyObject *parameters);
+
+static PyObject *
+pysqlite_cursor_execute_json(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *sql;
+    PyObject *parameters = NULL;
+
+    if (!_PyArg_CheckPositional("execute_json", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("execute_json", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    sql = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    parameters = args[1];
+skip_optional:
+    return_value = pysqlite_cursor_execute_json_impl((pysqlite_Cursor *)self, sql, parameters);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(pysqlite_cursor_execute__doc__,
 "execute($self, sql, parameters=(), /)\n"
 "--\n"
@@ -329,4 +368,4 @@ pysqlite_cursor_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
 }
-/*[clinic end generated code: output=d05c7cbbc8bcab26 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2081c62bb45b8d58 input=a9049054013a1b77]*/

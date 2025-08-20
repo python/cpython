@@ -978,6 +978,146 @@ error:
 }
 
 /*[clinic input]
+_sqlite3.Cursor.execute_json as pysqlite_cursor_execute_json
+
+    sql: unicode
+    parameters: object(c_default = 'NULL') = ()
+    /
+
+Executes an SQL statement and returns the result as a JSON string.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
+                                  PyObject *parameters)
+/*[clinic end generated code: output=192c296377bf8175 input=3c6c8e94ef0b53c7]*/
+{
+    // First execute the query normally to get column information
+    PyObject *result = _pysqlite_query_execute(self, 0, sql, parameters);
+    if (!result) {
+        return NULL;
+    }
+    Py_DECREF(result);
+    
+    // Check if we have a statement with results
+    if (!self->statement || sqlite3_column_count(self->statement->st) == 0) {
+        // No results to convert to JSON, return empty JSON array
+        return PyUnicode_FromString("[]");
+    }
+    
+    // Build a JSON query that wraps the original query
+    sqlite3_stmt *stmt = self->statement->st;
+    int numcols = sqlite3_column_count(stmt);
+    
+    // Build the json_object parameters
+    PyObject *column_list = PyList_New(0);
+    if (!column_list) {
+        return NULL;
+    }
+    
+    for (int i = 0; i < numcols; i++) {
+        const char *colname = sqlite3_column_name(stmt, i);
+        if (!colname) {
+            Py_DECREF(column_list);
+            return PyErr_NoMemory();
+        }
+        
+        // Add column name as string
+        PyObject *colname_obj = PyUnicode_FromString(colname);
+        if (!colname_obj) {
+            Py_DECREF(column_list);
+            return NULL;
+        }
+        
+        if (PyList_Append(column_list, colname_obj) < 0) {
+            Py_DECREF(colname_obj);
+            Py_DECREF(column_list);
+            return NULL;
+        }
+        Py_DECREF(colname_obj);
+        
+        // Add column reference
+        PyObject *colref_obj = PyUnicode_FromFormat("row.%s", colname);
+        if (!colref_obj) {
+            Py_DECREF(column_list);
+            return NULL;
+        }
+        
+        if (PyList_Append(column_list, colref_obj) < 0) {
+            Py_DECREF(colref_obj);
+            Py_DECREF(column_list);
+            return NULL;
+        }
+        Py_DECREF(colref_obj);
+    }
+    
+    // Join the column list with commas
+    PyObject *comma = PyUnicode_FromString(",");
+    if (!comma) {
+        Py_DECREF(column_list);
+        return NULL;
+    }
+    
+    PyObject *column_str = PyUnicode_Join(comma, column_list);
+    Py_DECREF(comma);
+    if (!column_str) {
+        Py_DECREF(column_list);
+        return NULL;
+    }
+    
+    // Complete the JSON query
+    PyObject *full_query = PyUnicode_FromFormat("SELECT json_group_array(json_object(%S)) FROM (%U) AS row", column_str, sql);
+    Py_DECREF(column_str);
+    Py_DECREF(column_list);
+    if (!full_query) {
+        return NULL;
+    }
+    
+    // Execute the JSON query
+    pysqlite_Statement *json_stmt = pysqlite_statement_create(self->connection, full_query);
+    Py_DECREF(full_query);
+    if (!json_stmt) {
+        return NULL;
+    }
+    
+    // Bind parameters if needed
+    if (parameters != NULL && parameters != Py_None) {
+        bind_parameters(self->connection->state, json_stmt, parameters);
+        if (PyErr_Occurred()) {
+            Py_DECREF(json_stmt);
+            return NULL;
+        }
+    }
+    
+    // Execute the statement
+    int rc = stmt_step(json_stmt->st);
+    if (rc != SQLITE_ROW) {
+        Py_DECREF(json_stmt);
+        if (rc == SQLITE_DONE) {
+            // No rows returned, return empty JSON array
+            return PyUnicode_FromString("[]");
+        } else {
+            // Error occurred
+            set_error_from_db(self->connection->state, self->connection->db);
+            return NULL;
+        }
+    }
+    
+    // Get the JSON result
+    const char *json_result = (const char*)sqlite3_column_text(json_stmt->st, 0);
+    PyObject *result_str = NULL;
+    if (json_result) {
+        result_str = PyUnicode_FromString(json_result);
+    } else {
+        // NULL result, return empty JSON array
+        result_str = PyUnicode_FromString("[]");
+    }
+    
+    Py_DECREF(json_stmt);
+    return result_str;
+}
+
+/*[clinic input]
 _sqlite3.Cursor.execute as pysqlite_cursor_execute
 
     sql: unicode
@@ -1303,6 +1443,7 @@ pysqlite_cursor_close_impl(pysqlite_Cursor *self)
 
 static PyMethodDef cursor_methods[] = {
     PYSQLITE_CURSOR_CLOSE_METHODDEF
+    PYSQLITE_CURSOR_EXECUTE_JSON_METHODDEF
     PYSQLITE_CURSOR_EXECUTEMANY_METHODDEF
     PYSQLITE_CURSOR_EXECUTESCRIPT_METHODDEF
     PYSQLITE_CURSOR_EXECUTE_METHODDEF
