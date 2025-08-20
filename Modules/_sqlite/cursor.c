@@ -1022,8 +1022,8 @@ pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
             return PyErr_NoMemory();
         }
         
-        // Add column name as string
-        PyObject *colname_obj = PyUnicode_FromString(colname);
+        // Add column name as quoted string literal for json_object keys
+        PyObject *colname_obj = PyUnicode_FromFormat("'%s'", colname);
         if (!colname_obj) {
             Py_DECREF(column_list);
             return NULL;
