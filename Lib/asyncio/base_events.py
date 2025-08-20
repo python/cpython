@@ -1950,7 +1950,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def _add_callback(self, handle):
         """Add a Handle to _ready."""
-        if not handle._cancelled:
+        if not handle.cancelled():
             self._ready.append(handle)
 
     def _add_callback_signalsafe(self, handle):
@@ -1979,7 +1979,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             # is too high
             new_scheduled = []
             for handle in self._scheduled:
-                if handle._cancelled:
+                if handle.cancelled():
                     handle._scheduled = False
                 else:
                     new_scheduled.append(handle)
@@ -2029,7 +2029,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         ntodo = len(self._ready)
         for i in range(ntodo):
             handle = self._ready.popleft()
-            if handle._cancelled:
+            if handle.cancelled():
                 continue
             if self._debug:
                 try:
