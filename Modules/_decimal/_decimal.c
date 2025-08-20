@@ -923,14 +923,34 @@ context_getallcr(PyObject *self, void *Py_UNUSED(closure))
 }
 #endif
 
+/*[clinic input]
+_decimal.Context.Etiny
+
+Return a value equal to Emin - prec + 1.
+
+This is the minimum exponent value for subnormal results.  When
+underflow occurs, the exponent is set to Etiny.
+[clinic start generated code]*/
+
 static PyObject *
-context_getetiny(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Context_Etiny_impl(PyObject *self)
+/*[clinic end generated code: output=c9a4a1a3e3575289 input=1274040f303f2244]*/
 {
     return PyLong_FromSsize_t(mpd_etiny(CTX(self)));
 }
 
+/*[clinic input]
+_decimal.Context.Etop
+
+Return a value equal to Emax - prec + 1.
+
+This is the maximum exponent if the _clamp field of the context is set
+to 1 (IEEE clamp mode).  Etop() must not be negative.
+[clinic start generated code]*/
+
 static PyObject *
-context_getetop(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Context_Etop_impl(PyObject *self)
+/*[clinic end generated code: output=f0a3f6e1b829074e input=838a4409316ec728]*/
 {
     return PyLong_FromSsize_t(mpd_etop(CTX(self)));
 }
@@ -3149,21 +3169,29 @@ PyDec_FromObject(PyObject *v, PyObject *context)
     }
 }
 
-static PyObject *
-dec_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"value", "context", NULL};
-    PyObject *v = NULL;
-    PyObject *context = Py_None;
+/*[clinic input]
+@classmethod
+_decimal.Decimal.__new__ as dec_new
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO", kwlist,
-                                     &v, &context)) {
-        return NULL;
-    }
+    value: object(c_default="NULL") = "0"
+    context: object = None
+
+Construct a new Decimal object.
+
+value can be an integer, string, tuple, or another Decimal object.  If
+no value is given, return Decimal('0'). The context does not affect
+the conversion and is only passed to determine if the InvalidOperation
+trap is active.
+[clinic start generated code]*/
+
+static PyObject *
+dec_new_impl(PyTypeObject *type, PyObject *value, PyObject *context)
+/*[clinic end generated code: output=35f48a40c65625ba input=5f8a0892d3fcef80]*/
+{
     decimal_state *state = get_module_state_by_def(type);
     CONTEXT_CHECK_VA(state, context);
 
-    return PyDecType_FromObjectExact(type, v, context);
+    return PyDecType_FromObjectExact(type, value, context);
 }
 
 static PyObject *
@@ -4105,32 +4133,36 @@ PyDec_AsFloat(PyObject *dec)
     return f;
 }
 
+/*[clinic input]
+_decimal.Decimal.__round__
+
+    ndigits: object = NULL
+    /
+
+Return the Integral closest to self, rounding half toward even.
+[clinic start generated code]*/
+
 static PyObject *
-PyDec_Round(PyObject *dec, PyObject *args)
+_decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits)
+/*[clinic end generated code: output=ca6b3570a8df0c91 input=dc72084114f59380]*/
 {
     PyObject *result;
-    PyObject *x = NULL;
     uint32_t status = 0;
     PyObject *context;
-
-    decimal_state *state = get_module_state_by_def(Py_TYPE(dec));
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
     CURRENT_CONTEXT(state, context);
-    if (!PyArg_ParseTuple(args, "|O", &x)) {
-        return NULL;
-    }
-
-    if (x) {
+    if (ndigits) {
         mpd_uint_t dq[1] = {1};
         mpd_t q = {MPD_STATIC|MPD_CONST_DATA,0,1,1,1,dq};
         mpd_ssize_t y;
 
-        if (!PyLong_Check(x)) {
+        if (!PyLong_Check(ndigits)) {
             PyErr_SetString(PyExc_TypeError,
                 "optional arg must be an integer");
             return NULL;
         }
 
-        y = PyLong_AsSsize_t(x);
+        y = PyLong_AsSsize_t(ndigits);
         if (y == -1 && PyErr_Occurred()) {
             return NULL;
         }
@@ -4140,7 +4172,7 @@ PyDec_Round(PyObject *dec, PyObject *args)
         }
 
         q.exp = (y == MPD_SSIZE_MIN) ? MPD_SSIZE_MAX : -y;
-        mpd_qquantize(MPD(result), MPD(dec), &q, CTX(context), &status);
+        mpd_qquantize(MPD(result), MPD(self), &q, CTX(context), &status);
         if (dec_addstatus(context, status)) {
             Py_DECREF(result);
             return NULL;
@@ -4149,7 +4181,7 @@ PyDec_Round(PyObject *dec, PyObject *args)
         return result;
     }
     else {
-        return dec_as_long(dec, context, MPD_ROUND_HALF_EVEN);
+        return dec_as_long(self, context, MPD_ROUND_HALF_EVEN);
     }
 }
 
@@ -5418,9 +5450,15 @@ dec_richcompare(PyObject *v, PyObject *w, int op)
     return PyBool_FromLong(r);
 }
 
-/* __ceil__ */
+/*[clinic input]
+_decimal.Decimal.__ceil__
+
+Return the ceiling as an Integral.
+[clinic start generated code]*/
+
 static PyObject *
-dec_ceil(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal___ceil___impl(PyObject *self)
+/*[clinic end generated code: output=e755a6fb7bceac19 input=4a18ef307ac57da0]*/
 {
     PyObject *context;
 
@@ -5429,9 +5467,15 @@ dec_ceil(PyObject *self, PyObject *Py_UNUSED(dummy))
     return dec_as_long(self, context, MPD_ROUND_CEILING);
 }
 
-/* __complex__ */
+/*[clinic input]
+_decimal.Decimal.__complex__
+
+Convert this value to exact type complex.
+[clinic start generated code]*/
+
 static PyObject *
-dec_complex(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal___complex___impl(PyObject *self)
+/*[clinic end generated code: output=c9b5b4a9fdebc912 input=6b11c6f20af7061a]*/
 {
     PyObject *f;
     double x;
@@ -5450,16 +5494,42 @@ dec_complex(PyObject *self, PyObject *Py_UNUSED(dummy))
     return PyComplex_FromDoubles(x, 0);
 }
 
-/* __copy__ (METH_NOARGS) and __deepcopy__ (METH_O) */
+/*[clinic input]
+_decimal.Decimal.__copy__
+
+[clinic start generated code]*/
+
 static PyObject *
-dec_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal___copy___impl(PyObject *self)
+/*[clinic end generated code: output=8eb3656c0250762b input=3dfd30a3e1493c01]*/
 {
     return Py_NewRef(self);
 }
 
-/* __floor__ */
+/*[clinic input]
+_decimal.Decimal.__deepcopy__
+
+    memo: object
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-dec_floor(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal___deepcopy__(PyObject *self, PyObject *memo)
+/*[clinic end generated code: output=988fb34e0136b376 input=f95598c6f43233aa]*/
+{
+    return Py_NewRef(self);
+}
+
+/*[clinic input]
+_decimal.Decimal.__floor__
+
+Return the floor as an Integral.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal___floor___impl(PyObject *self)
+/*[clinic end generated code: output=56767050ac1a1d5a input=cabcc5618564548b]*/
 {
     PyObject *context;
 
@@ -5595,9 +5665,15 @@ dec_hash(PyObject *op)
     return self->hash;
 }
 
-/* __reduce__ */
+/*[clinic input]
+_decimal.Decimal.__reduce__
+
+Return state information for pickling.
+[clinic start generated code]*/
+
 static PyObject *
-dec_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal___reduce___impl(PyObject *self)
+/*[clinic end generated code: output=84fa6648a496a8d2 input=0345ea951d9b986f]*/
 {
     PyObject *result, *str;
 
@@ -5612,9 +5688,17 @@ dec_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
     return result;
 }
 
-/* __sizeof__ */
+/*[clinic input]
+_decimal.Decimal.__sizeof__
+
+    self as v: self
+
+Returns size in memory, in bytes
+[clinic start generated code]*/
+
 static PyObject *
-dec_sizeof(PyObject *v, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal___sizeof___impl(PyObject *v)
+/*[clinic end generated code: output=f16de05097c62b79 input=a557db538cfddbb7]*/
 {
     size_t res = _PyObject_SIZE(Py_TYPE(v));
     if (mpd_isdynamic_data(MPD(v))) {
@@ -5623,9 +5707,15 @@ dec_sizeof(PyObject *v, PyObject *Py_UNUSED(dummy))
     return PyLong_FromSize_t(res);
 }
 
-/* __trunc__ */
+/*[clinic input]
+_decimal.Decimal.__trunc__
+
+Return the Integral closest to x between 0 and x.
+[clinic start generated code]*/
+
 static PyObject *
-dec_trunc(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Decimal___trunc___impl(PyObject *self)
+/*[clinic end generated code: output=9ef59578960f80c0 input=a965a61096dcefeb]*/
 {
     PyObject *context;
 
@@ -5743,16 +5833,16 @@ static PyMethodDef dec_methods [] =
   _DECIMAL_DECIMAL_AS_INTEGER_RATIO_METHODDEF
 
   /* Special methods */
-  { "__copy__", dec_copy, METH_NOARGS, NULL },
-  { "__deepcopy__", dec_copy, METH_O, NULL },
+  _DECIMAL_DECIMAL___COPY___METHODDEF
+  _DECIMAL_DECIMAL___DEEPCOPY___METHODDEF
   _DECIMAL_DECIMAL___FORMAT___METHODDEF
-  { "__reduce__", dec_reduce, METH_NOARGS, NULL },
-  { "__round__", PyDec_Round, METH_VARARGS, NULL },
-  { "__ceil__", dec_ceil, METH_NOARGS, NULL },
-  { "__floor__", dec_floor, METH_NOARGS, NULL },
-  { "__trunc__", dec_trunc, METH_NOARGS, NULL },
-  { "__complex__", dec_complex, METH_NOARGS, NULL },
-  { "__sizeof__", dec_sizeof, METH_NOARGS, NULL },
+  _DECIMAL_DECIMAL___REDUCE___METHODDEF
+  _DECIMAL_DECIMAL___ROUND___METHODDEF
+  _DECIMAL_DECIMAL___CEIL___METHODDEF
+  _DECIMAL_DECIMAL___FLOOR___METHODDEF
+  _DECIMAL_DECIMAL___TRUNC___METHODDEF
+  _DECIMAL_DECIMAL___COMPLEX___METHODDEF
+  _DECIMAL_DECIMAL___SIZEOF___METHODDEF
 
   { NULL, NULL, 1 }
 };
@@ -5765,7 +5855,7 @@ static PyType_Slot dec_slots[] = {
     {Py_tp_repr, dec_repr},
     {Py_tp_hash, dec_hash},
     {Py_tp_str, dec_str},
-    {Py_tp_doc, (void *)doc_decimal},
+    {Py_tp_doc, (void *)dec_new__doc__},
     {Py_tp_richcompare, dec_richcompare},
     {Py_tp_methods, dec_methods},
     {Py_tp_getset, dec_getsets},
@@ -6119,8 +6209,18 @@ _decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
 DecCtx_TernaryFunc(mpd_qfma)
 
 /* No argument */
+
+/*[clinic input]
+_decimal.Context.radix
+
+    self as context: self
+
+Return 10.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_radix(PyObject *context, PyObject *dummy)
+_decimal_Context_radix_impl(PyObject *context)
+/*[clinic end generated code: output=9218fa309e0fcaa1 input=faeaa5b71f838c38]*/
 {
     decimal_state *state = get_module_state_from_ctx(context);
     return _dec_mpd_radix(state);
@@ -6403,9 +6503,9 @@ static PyMethodDef context_methods [] =
   { "fma", ctx_mpd_qfma, METH_VARARGS, doc_ctx_fma },
 
   /* No argument */
-  { "Etiny", context_getetiny, METH_NOARGS, doc_ctx_Etiny },
-  { "Etop", context_getetop, METH_NOARGS, doc_ctx_Etop },
-  { "radix", ctx_mpd_radix, METH_NOARGS, doc_ctx_radix },
+  _DECIMAL_CONTEXT_ETINY_METHODDEF
+  _DECIMAL_CONTEXT_ETOP_METHODDEF
+  _DECIMAL_CONTEXT_RADIX_METHODDEF
 
   /* Boolean functions */
   { "is_canonical", ctx_iscanonical, METH_O, doc_ctx_is_canonical },
@@ -6932,7 +7032,7 @@ static struct PyModuleDef_Slot _decimal_slots[] = {
 static struct PyModuleDef _decimal_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "decimal",
-    .m_doc = doc__decimal,
+    .m_doc = "C decimal arithmetic module",
     .m_size = sizeof(decimal_state),
     .m_methods = _decimal_methods,
     .m_slots = _decimal_slots,
