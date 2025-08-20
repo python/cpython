@@ -1,0 +1,1 @@
+This change updates some comments and the calculation of _MAX_WINDOWS_WORKERS but the actual value is unchanged.
