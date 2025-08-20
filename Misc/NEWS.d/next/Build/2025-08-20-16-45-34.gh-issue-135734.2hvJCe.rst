@@ -1,4 +1,4 @@
 Python can correctly be configured and built with
-``./configure --enable-optimizations --disable-test-modules --disable-gil``.
+``./configure --enable-optimizations --disable-test-modules``.
 Previously, the profile data generation step failed due to PGO tests where
 immortalization couldn't be properly suppressed. Patch by Bénédikt Tran.
