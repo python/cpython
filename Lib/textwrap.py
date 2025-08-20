@@ -122,7 +122,8 @@ class TextWrapper:
                  tabsize=8,
                  *,
                  max_lines=None,
-                 placeholder=' [...]'):
+                 placeholder=' [...]',
+                 text_len=len):
         self.width = width
         self.initial_indent = initial_indent
         self.subsequent_indent = subsequent_indent
@@ -135,6 +136,7 @@ class TextWrapper:
         self.tabsize = tabsize
         self.max_lines = max_lines
         self.placeholder = placeholder
+        self.text_len = text_len
 
 
     # -- Private methods -----------------------------------------------
@@ -194,6 +196,25 @@ class TextWrapper:
             else:
                 i += 1
 
+    def _find_width_index(self, text, width):
+        """_find_length_index(text : string, width : int)
+
+        Find at which index the text has the required width, since when using a
+        different text_len, this index will not be equal to the required width.
+        """
+        # When using default len as self.text_len, the required index and width
+        # will be equal, this prevents calculation time.
+        if self.text_len(text[:width]) == width:
+            # For character widths greater than one, width can be more than the
+            # number of characters
+            return min(width, len(text))
+        cur_text = ''
+        for i, c in enumerate(text):
+            cur_text += c
+            cur_width = self.text_len(cur_text)
+            if cur_width > width:
+                return max(i, 1)
+
     def _handle_long_word(self, reversed_chunks, cur_line, cur_len, width):
         """_handle_long_word(chunks : [string],
                              cur_line : [string],
@@ -212,12 +233,12 @@ class TextWrapper:
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
         if self.break_long_words:
-            end = space_left
             chunk = reversed_chunks[-1]
-            if self.break_on_hyphens and len(chunk) > space_left:
+            end = self._find_width_index(chunk, space_left)
+            if self.break_on_hyphens and self.text_len(chunk) > space_left:
                 # break after last hyphen, but only if there are
                 # non-hyphens before it
-                hyphen = chunk.rfind('-', 0, space_left)
+                hyphen = chunk.rfind('-', 0, end)
                 if hyphen > 0 and any(c != '-' for c in chunk[:hyphen]):
                     end = hyphen + 1
             cur_line.append(chunk[:end])
@@ -256,7 +277,8 @@ class TextWrapper:
                 indent = self.subsequent_indent
             else:
                 indent = self.initial_indent
-            if len(indent) + len(self.placeholder.lstrip()) > self.width:
+            if (self.text_len(indent) +
+                    self.text_len(self.placeholder.lstrip()) > self.width):
                 raise ValueError("placeholder too large for max width")
 
         # Arrange in reverse order so items can be efficiently popped
@@ -277,7 +299,7 @@ class TextWrapper:
                 indent = self.initial_indent
 
             # Maximum width for this line.
-            width = self.width - len(indent)
+            width = self.width - self.text_len(indent)
 
             # First chunk on line is whitespace -- drop it, unless this
             # is the very beginning of the text (ie. no lines started yet).
@@ -285,7 +307,7 @@ class TextWrapper:
                 del chunks[-1]
 
             while chunks:
-                l = len(chunks[-1])
+                l = self.text_len(chunks[-1])
 
                 # Can at least squeeze this chunk onto the current line.
                 if cur_len + l <= width:
@@ -298,13 +320,13 @@ class TextWrapper:
 
             # The current line is full, and the next chunk is too big to
             # fit on *any* line (not just this one).
-            if chunks and len(chunks[-1]) > width:
+            if chunks and self.text_len(chunks[-1]) > width:
                 self._handle_long_word(chunks, cur_line, cur_len, width)
-                cur_len = sum(map(len, cur_line))
+                cur_len = sum(map(self.text_len, cur_line))
 
             # If the last chunk on this line is all whitespace, drop it.
             if self.drop_whitespace and cur_line and cur_line[-1].strip() == '':
-                cur_len -= len(cur_line[-1])
+                cur_len -= self.text_len(cur_line[-1])
                 del cur_line[-1]
 
             if cur_line:
@@ -320,16 +342,17 @@ class TextWrapper:
                 else:
                     while cur_line:
                         if (cur_line[-1].strip() and
-                            cur_len + len(self.placeholder) <= width):
+                            cur_len + self.text_len(self.placeholder) <= width):
                             cur_line.append(self.placeholder)
                             lines.append(indent + ''.join(cur_line))
                             break
-                        cur_len -= len(cur_line[-1])
+                        cur_len -= self.text_len(cur_line[-1])
                         del cur_line[-1]
                     else:
                         if lines:
                             prev_line = lines[-1].rstrip()
-                            if (len(prev_line) + len(self.placeholder) <=
+                            if (self.text_len(prev_line) +
+                                    self.text_len(self.placeholder) <=
                                     self.width):
                                 lines[-1] = prev_line + self.placeholder
                                 break
