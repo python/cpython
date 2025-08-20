@@ -4348,6 +4348,8 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 
 /* Boolean function without a context arg. */
 #define Dec_BoolFunc(MPDFUNC) \
+static PyObject *                                           \
+dec_##MPDFUNC(PyObject *self, PyObject *Py_UNUSED(dummy))   \
 {                                                           \
     return MPDFUNC(MPD(self)) ? incr_true() : incr_false(); \
 }
@@ -4421,9 +4423,19 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
    NOT take a context. The context is used to record InvalidOperation
    if the second operand cannot be converted exactly. */
 #define Dec_BinaryFuncVA_NO_CTX(MPDFUNC) \
+static PyObject *                                               \
+dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)   \
 {                                                               \
+    static char *kwlist[] = {"other", "context", NULL};         \
+    PyObject *context = Py_None;                                \
+    PyObject *other;                                            \
     PyObject *a, *b;                                            \
     PyObject *result;                                           \
+                                                                \
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist, \
+                                     &other, &context)) {       \
+        return NULL;                                            \
+    }                                                           \
     decimal_state *state =                                      \
         get_module_state_by_def(Py_TYPE(self));                 \
     CONTEXT_CHECK_VA(state, context);                           \
@@ -4846,98 +4858,13 @@ _decimal_Decimal_fma_impl(PyObject *self, PyObject *other, PyObject *third,
 Dec_TernaryFuncVA(mpd_qfma)
 
 /* Boolean functions, no context arg */
-
-/*[clinic input]
-_decimal.Decimal.is_canonical
-
-Return True if the argument is canonical and False otherwise.
-
-Currently, a Decimal instance is always canonical, so this operation
-always returns True.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_is_canonical_impl(PyObject *self)
-/*[clinic end generated code: output=b29668684f45443e input=b3b3e6878ccf40b8]*/
 Dec_BoolFunc(mpd_iscanonical)
-
-/*[clinic input]
-_decimal.Decimal.is_finite
-
-Return True if the argument is a finite number, and False otherwise.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_is_finite_impl(PyObject *self)
-/*[clinic end generated code: output=537306fbfc9131f8 input=e9b8b5866704bae6]*/
 Dec_BoolFunc(mpd_isfinite)
-
-/*[clinic input]
-_decimal.Decimal.is_infinite
-
-Return True if the argument is infinite, and False otherwise.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_is_infinite_impl(PyObject *self)
-/*[clinic end generated code: output=31b775ff28f05ce2 input=8f3937a790ee4ec2]*/
 Dec_BoolFunc(mpd_isinfinite)
-
-/*[clinic input]
-_decimal.Decimal.is_nan
-
-Return True if the argument is a (quiet or signaling) NaN, else False.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_is_nan_impl(PyObject *self)
-/*[clinic end generated code: output=b704e8b49a164388 input=795e5dac85976994]*/
 Dec_BoolFunc(mpd_isnan)
-
-/*[clinic input]
-_decimal.Decimal.is_qnan
-
-Return True if the argument is a quiet NaN, and False otherwise.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_is_qnan_impl(PyObject *self)
-/*[clinic end generated code: output=85b5241f43798376 input=00485f3c3cfae0af]*/
 Dec_BoolFunc(mpd_isqnan)
-
-/*[clinic input]
-_decimal.Decimal.is_snan
-
-Return True if the argument is a signaling NaN and False otherwise.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_is_snan_impl(PyObject *self)
-/*[clinic end generated code: output=50de9ec6507e4a4f input=f3b0f8592c921879]*/
 Dec_BoolFunc(mpd_issnan)
-
-/*[clinic input]
-_decimal.Decimal.is_signed
-
-Return True if the argument has a negative sign and False otherwise.
-
-Note that both zeros and NaNs can carry signs.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_is_signed_impl(PyObject *self)
-/*[clinic end generated code: output=8ec7bc85d8e755e4 input=97c3437ab5dffecc]*/
 Dec_BoolFunc(mpd_issigned)
-
-/*[clinic input]
-_decimal.Decimal.is_zero
-
-Return True if the argument is a zero and False otherwise.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_is_zero_impl(PyObject *self)
-/*[clinic end generated code: output=2d87ea1b15879112 input=ae616674cd050a51]*/
 Dec_BoolFunc(mpd_iszero)
 
 /* Boolean functions, optional context arg */
@@ -5217,57 +5144,7 @@ _decimal_Decimal_to_eng_string_impl(PyObject *self, PyObject *context)
 }
 
 /* Binary functions, optional context arg for conversion errors */
-
-/*[clinic input]
-_decimal.Decimal.compare_total = _decimal.Decimal.compare
-
-Compare two operands using their abstract representation.
-
-Similar to the compare() method, but the result
-gives a total ordering on Decimal instances.  Two Decimal instances with
-the same numeric value but different representations compare unequal
-in this ordering:
-
-    >>> Decimal('12.0').compare_total(Decimal('12'))
-    Decimal('-1')
-
-Quiet and signaling NaNs are also included in the total ordering. The
-result of this function is Decimal('0') if both operands have the same
-representation, Decimal('-1') if the first operand is lower in the
-total order than the second, and Decimal('1') if the first operand is
-higher in the total order than the second operand. See the
-specification for details of the total order.
-
-This operation is unaffected by context and is quiet: no flags are
-changed and no rounding is performed. As an exception, the C version
-may raise InvalidOperation if the second operand cannot be converted
-exactly.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_compare_total_impl(PyObject *self, PyObject *other,
-                                    PyObject *context)
-/*[clinic end generated code: output=dca119b5e881a83e input=6f3111ec5fdbf3c1]*/
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total)
-
-/*[clinic input]
-_decimal.Decimal.compare_total_mag = _decimal.Decimal.compare
-
-As compare_total(), but ignores the sign of each operand.
-
-x.compare_total_mag(y) is equivalent to
-x.copy_abs().compare_total(y.copy_abs()).
-
-This operation is unaffected by context and is quiet: no flags are
-changed and no rounding is performed. As an exception, the C version
-may raise InvalidOperation if the second operand cannot be converted
-exactly.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Decimal_compare_total_mag_impl(PyObject *self, PyObject *other,
-                                        PyObject *context)
-/*[clinic end generated code: output=6bf1b3419112d0dd input=eba17c4c24eb2833]*/
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total_mag)
 
 /*[clinic input]
@@ -5906,14 +5783,14 @@ static PyMethodDef dec_methods [] =
   _DECIMAL_DECIMAL_FMA_METHODDEF
 
   /* Boolean functions, no context arg */
-  _DECIMAL_DECIMAL_IS_CANONICAL_METHODDEF
-  _DECIMAL_DECIMAL_IS_FINITE_METHODDEF
-  _DECIMAL_DECIMAL_IS_INFINITE_METHODDEF
-  _DECIMAL_DECIMAL_IS_NAN_METHODDEF
-  _DECIMAL_DECIMAL_IS_QNAN_METHODDEF
-  _DECIMAL_DECIMAL_IS_SNAN_METHODDEF
-  _DECIMAL_DECIMAL_IS_SIGNED_METHODDEF
-  _DECIMAL_DECIMAL_IS_ZERO_METHODDEF
+  { "is_canonical", dec_mpd_iscanonical, METH_NOARGS, doc_is_canonical },
+  { "is_finite", dec_mpd_isfinite, METH_NOARGS, doc_is_finite },
+  { "is_infinite", dec_mpd_isinfinite, METH_NOARGS, doc_is_infinite },
+  { "is_nan", dec_mpd_isnan, METH_NOARGS, doc_is_nan },
+  { "is_qnan", dec_mpd_isqnan, METH_NOARGS, doc_is_qnan },
+  { "is_snan", dec_mpd_issnan, METH_NOARGS, doc_is_snan },
+  { "is_signed", dec_mpd_issigned, METH_NOARGS, doc_is_signed },
+  { "is_zero", dec_mpd_iszero, METH_NOARGS, doc_is_zero },
 
   /* Boolean functions, optional context arg */
   _DECIMAL_DECIMAL_IS_NORMAL_METHODDEF
@@ -5936,8 +5813,8 @@ static PyMethodDef dec_methods [] =
   _DECIMAL_DECIMAL_TO_ENG_STRING_METHODDEF
 
   /* Binary functions, optional context arg for conversion errors */
-  _DECIMAL_DECIMAL_COMPARE_TOTAL_METHODDEF
-  _DECIMAL_DECIMAL_COMPARE_TOTAL_MAG_METHODDEF
+  { "compare_total", _PyCFunction_CAST(dec_mpd_compare_total), METH_VARARGS|METH_KEYWORDS, doc_compare_total },
+  { "compare_total_mag", _PyCFunction_CAST(dec_mpd_compare_total_mag), METH_VARARGS|METH_KEYWORDS, doc_compare_total_mag },
   _DECIMAL_DECIMAL_COPY_SIGN_METHODDEF
   _DECIMAL_DECIMAL_SAME_QUANTUM_METHODDEF
 
@@ -6145,12 +6022,19 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args) \
 
 /* Ternary context method. */
 #define DecCtx_TernaryFunc(MPDFUNC) \
+static PyObject *                                                        \
+ctx_##MPDFUNC(PyObject *context, PyObject *args)                         \
 {                                                                        \
+    PyObject *v, *w, *x;                                                 \
     PyObject *a, *b, *c;                                                 \
     PyObject *result;                                                    \
     uint32_t status = 0;                                                 \
                                                                          \
-    CONVERT_TERNOP_RAISE(&a, &b, &c, x, y, z, context);                  \
+    if (!PyArg_ParseTuple(args, "OOO", &v, &w, &x)) {                    \
+        return NULL;                                                     \
+    }                                                                    \
+                                                                         \
+    CONVERT_TERNOP_RAISE(&a, &b, &c, v, w, x, context);                  \
     decimal_state *state = get_module_state_from_ctx(context);           \
     if ((result = dec_alloc(state)) == NULL) {                           \
         Py_DECREF(a);                                                    \
@@ -6322,23 +6206,6 @@ _decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
 }
 
 /* Ternary arithmetic functions */
-
-/*[clinic input]
-_decimal.Context.fma
-
-    self as context: self
-    x: object
-    y: object
-    z: object
-    /
-
-Return x multiplied by y, plus z.
-[clinic start generated code]*/
-
-static PyObject *
-_decimal_Context_fma_impl(PyObject *context, PyObject *x, PyObject *y,
-                          PyObject *z)
-/*[clinic end generated code: output=2d6174716faaf4e1 input=80479612da3333d1]*/
 DecCtx_TernaryFunc(mpd_qfma)
 
 /* No argument */
@@ -6633,7 +6500,7 @@ static PyMethodDef context_methods [] =
   _DECIMAL_CONTEXT_POWER_METHODDEF
 
   /* Ternary arithmetic functions */
-  _DECIMAL_CONTEXT_FMA_METHODDEF
+  { "fma", ctx_mpd_qfma, METH_VARARGS, doc_ctx_fma },
 
   /* No argument */
   _DECIMAL_CONTEXT_ETINY_METHODDEF

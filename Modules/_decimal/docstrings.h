@@ -10,6 +10,53 @@
 
 #include "pymacro.h"
 
+PyDoc_STRVAR(doc_is_canonical,
+"is_canonical($self, /)\n--\n\n\
+Return True if the argument is canonical and False otherwise.  Currently,\n\
+a Decimal instance is always canonical, so this operation always returns\n\
+True.\n\
+\n");
+
+PyDoc_STRVAR(doc_is_finite,
+"is_finite($self, /)\n--\n\n\
+Return True if the argument is a finite number, and False if the argument\n\
+is infinite or a NaN.\n\
+\n");
+
+PyDoc_STRVAR(doc_is_infinite,
+"is_infinite($self, /)\n--\n\n\
+Return True if the argument is either positive or negative infinity and\n\
+False otherwise.\n\
+\n");
+
+PyDoc_STRVAR(doc_is_nan,
+"is_nan($self, /)\n--\n\n\
+Return True if the argument is a (quiet or signaling) NaN and False\n\
+otherwise.\n\
+\n");
+
+PyDoc_STRVAR(doc_is_qnan,
+"is_qnan($self, /)\n--\n\n\
+Return True if the argument is a quiet NaN, and False otherwise.\n\
+\n");
+
+PyDoc_STRVAR(doc_is_signed,
+"is_signed($self, /)\n--\n\n\
+Return True if the argument has a negative sign and False otherwise.\n\
+Note that both zeros and NaNs can carry signs.\n\
+\n");
+
+PyDoc_STRVAR(doc_is_snan,
+"is_snan($self, /)\n--\n\n\
+Return True if the argument is a signaling NaN and False otherwise.\n\
+\n");
+
+PyDoc_STRVAR(doc_is_zero,
+"is_zero($self, /)\n--\n\n\
+Return True if the argument is a (positive or negative) zero and False\n\
+otherwise.\n\
+\n");
+
 /******************************************************************************/
 /*                       Context Object and Methods                           */
 /******************************************************************************/
@@ -135,6 +182,45 @@ Return quotient and remainder of the division x / y.\n\
 PyDoc_STRVAR(doc_ctx_exp,
 "exp($self, x, /)\n--\n\n\
 Return e ** x.\n\
+\n");
+
+PyDoc_STRVAR(doc_ctx_fma,
+"fma($self, x, y, z, /)\n--\n\n\
+Return x multiplied by y, plus z.\n\
+\n");
+
+PyDoc_STRVAR(doc_compare_total,
+"compare_total($self, /, other, context=None)\n--\n\n\
+Compare two operands using their abstract representation rather than\n\
+their numerical value.  Similar to the compare() method, but the result\n\
+gives a total ordering on Decimal instances.  Two Decimal instances with\n\
+the same numeric value but different representations compare unequal\n\
+in this ordering:\n\
+\n\
+    >>> Decimal('12.0').compare_total(Decimal('12'))\n\
+    Decimal('-1')\n\
+\n\
+Quiet and signaling NaNs are also included in the total ordering. The result\n\
+of this function is Decimal('0') if both operands have the same representation,\n\
+Decimal('-1') if the first operand is lower in the total order than the second,\n\
+and Decimal('1') if the first operand is higher in the total order than the\n\
+second operand. See the specification for details of the total order.\n\
+\n\
+This operation is unaffected by context and is quiet: no flags are changed\n\
+and no rounding is performed. As an exception, the C version may raise\n\
+InvalidOperation if the second operand cannot be converted exactly.\n\
+\n");
+
+PyDoc_STRVAR(doc_compare_total_mag,
+"compare_total_mag($self, /, other, context=None)\n--\n\n\
+Compare two operands using their abstract representation rather than their\n\
+value as in compare_total(), but ignoring the sign of each operand.\n\
+\n\
+x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).\n\
+\n\
+This operation is unaffected by context and is quiet: no flags are changed\n\
+and no rounding is performed. As an exception, the C version may raise\n\
+InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_is_canonical,
