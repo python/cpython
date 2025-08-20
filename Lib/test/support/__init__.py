@@ -519,24 +519,44 @@ def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
         reason = e.args[0] if e.args else reason
     return unittest.skipIf(skip, reason)
 
-@contextlib.contextmanager
-def suppress_immortalization(suppress=True):
-    """Suppress immortalization of deferred objects."""
+
+def can_use_suppress_immortalization(suppress=True):
+    """Check if suppress_immortalization(suppress) can be used.
+
+    Use this helper in code where SkipTest must be eagerly handled.
+    """
+    if not suppress:
+        return True
     try:
         import _testinternalcapi
     except ImportError:
-        yield
+        return False
+    return True
+
+
+@contextlib.contextmanager
+def suppress_immortalization(suppress=True):
+    """Suppress immortalization of deferred objects.
+
+    If _testinternalcapi is not available, the decorated test or class
+    is skipped. Use can_use_suppress_immortalization() outside test cases
+    to check if this decorator can be used.
+    """
+    if not suppress:
+        yield  # no-op
         return
 
-    if not suppress:
-        yield
-        return
+    try:
+        import _testinternalcapi
+    except ImportError:
+        raise unittest.SkipTest("requires _testinternalcapi") from None
 
     _testinternalcapi.suppress_immortalization(True)
     try:
         yield
     finally:
         _testinternalcapi.suppress_immortalization(False)
+
 
 def skip_if_suppress_immortalization():
     try:

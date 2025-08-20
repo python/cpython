@@ -9,6 +9,7 @@ import trace
 from typing import NoReturn
 
 from test.support import (os_helper, MS_WINDOWS, flush_std_streams,
+                          can_use_suppress_immortalization,
                           suppress_immortalization)
 
 from .cmdline import _parse_args, Namespace
@@ -536,8 +537,15 @@ class Regrtest:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
             else:
+                # gh-135734: suppress_immortalization() raises SkipTest
+                # if _testinternalcapi is missing and the -R option is set.
+                if not can_use_suppress_immortalization(runtests.hunt_refleak):
+                    print("Module '_testinternalcapi' is missing. "
+                          "Did you disable it with --disable-test-modules?")
+                    raise SystemExit(1)
+
                 # gh-117783: don't immortalize deferred objects when tracking
-                # refleaks. Only releveant for the free-threaded build.
+                # refleaks. Only relevant for the free-threaded build.
                 with suppress_immortalization(runtests.hunt_refleak):
                     self.run_tests_sequentially(runtests)
 
