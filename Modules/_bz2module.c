@@ -669,9 +669,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
-    if (self->unused_data == NULL)
-        goto error;
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     bzerror = BZ2_bzDecompressInit(&self->bzs, 0, 0);
     if (catch_bz2_error(bzerror))
