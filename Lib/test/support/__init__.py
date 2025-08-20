@@ -546,11 +546,9 @@ def suppress_immortalization(suppress=True):
         yield  # no-op
         return
 
-    try:
-        import _testinternalcapi
-    except ImportError:
-        raise unittest.SkipTest("requires _testinternalcapi") from None
+    from .import_helper import import_module
 
+    _testinternalcapi = import_module("_testinternalcapi")
     _testinternalcapi.suppress_immortalization(True)
     try:
         yield
