@@ -155,6 +155,10 @@ def available_timezones():
 
             for file in files:
                 fpath = os.path.join(root, file)
+                
+                # Skip symlinks to avoid including files like 'localtime'
+                if os.path.islink(fpath):
+                    continue
 
                 key = os.path.relpath(fpath, start=tz_root)
                 if os.sep != "/":  # pragma: nocover

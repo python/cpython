@@ -1941,6 +1941,27 @@ class TestModule(ZoneInfoTestBase):
                 actual = self.module.available_timezones()
                 self.assertEqual(actual, expected)
 
+    def test_exclude_symlinks(self):
+        expected = {
+            "America/New_York",
+            "Europe/London",
+        }
+
+        tree = list(expected) + ["localtime"]
+
+        with tempfile.TemporaryDirectory() as td:
+            # Create regular timezone files
+            for key in expected:
+                self.touch_zone(key, td)
+            
+            # Create a symlink named "localtime" pointing to one of the timezone files
+            os.symlink("America/New_York", os.path.join(td, "localtime"))
+
+            with self.tzpath_context([td]):
+                actual = self.module.available_timezones()
+                self.assertEqual(actual, expected)
+                self.assertNotIn("localtime", actual)
+
 
 class CTestModule(TestModule):
     module = c_zoneinfo
