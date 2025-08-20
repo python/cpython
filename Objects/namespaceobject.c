@@ -97,7 +97,7 @@ namespace_repr(PyObject *ns)
     PyObject *separator, *pairsrepr, *repr = NULL;
     const char * name;
 
-    name = Py_IS_TYPE(ns, &_PyNamespace_Type) ? "namespace"
+    name = Py_IS_TYPE(ns, &_PyNamespace_Type) ? "SimpleNamespace"
                                                : Py_TYPE(ns)->tp_name;
 
     i = Py_ReprEnter(ns);
