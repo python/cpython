@@ -415,6 +415,16 @@ class NewIMAPTestsMixin():
                 r'\[AUTHENTICATIONFAILED\] invalid'):
             client.authenticate('MYAUTH', lambda x: b'fake')
 
+    def test_invalid_login(self):
+        class MyServer(SimpleIMAPHandler):
+            def cmd_LOGIN(self, tag, args):
+                self.server.logged = args[0]
+                self._send_tagged(tag, 'NO', '[LOGIN] failed')
+        client, _ = self._setup(MyServer)
+        with self.assertRaisesRegex(imaplib.IMAP4.error,
+                r'\[LOGIN\] failed'):
+            client.login('user', 'wrongpass')
+
     def test_valid_authentication_bytes(self):
         class MyServer(SimpleIMAPHandler):
             def cmd_AUTHENTICATE(self, tag, args):
