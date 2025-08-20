@@ -1,0 +1,10 @@
+Fix :class:`multiprocessing.shared_memory.ShareableList` memory bloat by
+reading the offsets directly from the shared memory. Improve
+:class:`multiprocessing.shared_memory.ShareableList` performance by merging
+the area in shared memory dedicated to offsets and packing formats together.
+This allows a single :func:`struct.unpack_from` call to retrieve both the
+offset and the packing format of a sinlge entry Fix UnicodeDecodeError with
+multibyte utf8 characters in
+:class:`multiprocessing.shared_memory.ShareableList` by allocating the
+shared memory using the length of the utf8 encoded string rather than the
+length of the string.
