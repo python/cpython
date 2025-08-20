@@ -1991,31 +1991,40 @@ class TNavigator(object):
         """ Draw a circle with given radius.
 
         Arguments:
-        radius -- a number
-        extent (optional) -- a number
+        radius -- a number (distance)
+        extent (optional) -- a number (angle, in degrees)
         steps (optional) -- an integer
+        
+        With one argument, draw a circle with the given radius. The
+        center is radius units to the left of the turtle. If radius is
+        negative, the center is to the right.
 
-        Draw a circle with given radius. The center is radius units left
-        of the turtle; extent - an angle - determines which part of the
-        circle is drawn. If extent is not given, draw the entire circle.
-        If extent is not a full circle, one endpoint of the arc is the
-        current pen position. Draw the arc in counterclockwise direction
-        if radius is positive, otherwise in clockwise direction. Finally
-        the direction of the turtle is changed by the amount of extent.
+        If extent is given, do not draw the whole circle, but only an
+        arc of the circle extent degrees wide starting from the current
+        position. If extent is negative, draw the arc while moving
+        backwards around the circle from the current position. In either
+        case the final heading of the turtle will be extent degrees
+        different from the original heading.
 
-        As the circle is approximated by an inscribed regular polygon,
-        steps determines the number of steps to use. If not given,
-        it will be calculated automatically. Maybe used to draw regular
-        polygons.
+        The circle or arc drawn is not a true geometric curve (impossible
+        on a computer screen composed of pixels), but rather is composed
+        of many very short straight steps. The number of steps to use is
+        calculated automatically to give the appearance of a true curve.
 
-        call: circle(radius)                  # full circle
-        --or: circle(radius, extent)          # arc
-        --or: circle(radius, extent, steps)
-        --or: circle(radius, steps=6)         # 6-sided polygon
+        If steps argument is given, that many steps are taken around the
+        circle or arc rather than the number being calculated automatically.
+        This can be used to draw regular polygons.
 
-        Example (for a Turtle instance named turtle):
-        >>> turtle.circle(50)
-        >>> turtle.circle(120, 180)  # semicircle
+        Examples (for a Turtle instance named turtle):
+        >>> turtle.circle(50)           # full circle of radius 50 drawn counter-clockwise
+        >>> turtle.circle(-75)          # full circle of radius 75 drawn clockwise
+        >>> turtle.circle(-50, 60)      # 60 degree arc with radius 50 drawn clockwise
+        >>> turtle.circle(80, steps=6)  # regular hexagon
+
+        Unusual cases:
+        >>> turtle.circle(-50, -180)    # semicircle drawn backwards, counter-clockwise
+        >>> turtle.circle(100, 180, 2)  # two sides of a square with diagonal length 200
+        >>> turtle.circle(100, 720, 10) # go twice around a pentagon
         """
         if self.undobuffer:
             self.undobuffer.push(["seq"])
