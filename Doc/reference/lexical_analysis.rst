@@ -1353,78 +1353,61 @@ Formally, imaginary literals are described by the following lexical definition:
 
 .. _delimiters:
 .. _operators:
+.. _lexical-ellipsis:
 
 Operators and delimiters
 ========================
 
-.. index:: single: operators
+.. index::
+   single: operators
+   single: delimiters
 
-The following tokens are :dfn:`operators` -- they are used to combine
-:ref:`expressions <expressions>`.
+The following grammar defines :dfn:`operator` and :dfn:`delimiter` tokens,
+that is, the generic :data:`~token.OP` token type:
 
-.. code-block:: none
+.. grammar-snippet::
+   :group: python-grammar
 
+   OP:
+      | arithmetic_operator
+      | bitwise_operator
+      | comparison_operator
+      | enclosing_delimiter
+      | other_delimiter
+      | assignment_operator
+      | other_op
+      | "..."
 
-   +       -       *       **      /       //      %
-   <<      >>      &       |       ^       ~
-   <       >       <=      >=      ==      !=
-   .       @       :=
+   arithmetic_operator:   "+"  | "-"  | "*"  | "**"  | "/"   | "//"  | "%"
+   bitwise_operator:      "&"  | "^"  | "~"  | "<<"  | ">>"
+   assignment_operator:   "+=" | "-=" | "*=" | "**=" | "/="  | "//=" | "%=" |
+                          "&=" | "|=" | "^=" | "<<=" | ">>=" | "@="  | ":="
+   comparison_operator:   "<"  | ">"  | "<=" | ">="  | "=="  | "!="
+   enclosing_delimiter:   "("  | ")"  | "["  | "]"   | "{"   | "}"
+   other_delimiter:       ","  | ":"  | "!"  | ";"   | "="   | "->"
+   other_op:              "."  | "@"
 
-Plus (``+``) and minus (``-``) signs can also occur in
-:ref:`floating-point <floating>` and :ref:`imaginary` literals.
+.. note::
 
-.. index:: single: delimiters
+   Generally, *operators* are used to combine :ref:`expressions <expressions>`,
+   while *delimiters* serve other purposes.
+   However, there is no clear, formal distinction between the two categories.
 
-The following tokens are :dfn:`delimiters` -- simple tokens that
-are not operators:
+   Some tokens can serve as either operators or delimiters, depending on usage.
+   For example, ``*`` is both the multiplication operator and a delimiter used
+   for sequence unpacking, and ``@`` is both the matrix multiplication and
+   a delimiter that introduces decorators.
 
-.. code-block:: none
+   For some tokens, the distinction is unclear.
+   For example, some people consider ``. ( )`` to be delimiters, while others
+   see the :py:func:`getattr` operator and the function call operator(s).
 
-   (       )       [       ]       {       }
-   ,       :       !       ;       =       ->
-   .       @
+   Some of Python's operators, like ``and``, ``or``, and ``not in``, use
+   :ref:`keyword <keywords>` tokens rather than "symbols" (operator tokens).
 
-The period (``.``) and at-sign (``@``) can serve either as operators
-or delimiters.
-
-The period can also occur in :ref:`floating-point <floating>` and
-:ref:`imaginary` literals.
-
-The symbols ``{``, ``}``, ``!`` and ``:`` have special meaning in
-:ref:`formatted string literals <f-strings>` and
-:ref:`template string literals <t-strings>`.
-
-.. _lexical-ellipsis:
-
-A sequence of three periods (without whitespace between them) has a special
-meaning as an :py:data:`Ellipsis` literal:
-
-.. code-block:: none
-
-   ...
-
-The following tokens are :ref:`augmented assignment <augassign>` operators:
-they serve lexically as delimiters, but also perform an operation:
-
-.. code-block:: none
-
-   +=      -=      *=      **=     /=      //=     %=
-   <<=     >>=     &=      |=      ^=      @=
+A sequence of three consecutive periods (``...``) has a special
+meaning as an :py:data:`Ellipsis` literal.
 
 See :ref:`operator and delimiter tokens <token_operators_delimiters>`
 in the :mod:`!token` module documentation for names of the operator and
 delimiter tokens.
-
-The following printing ASCII characters have special meaning as part of other
-tokens or are otherwise significant to the lexical analyzer:
-
-.. code-block:: none
-
-   '       "       #       \
-
-The following printing ASCII characters are not used in Python.  Their
-occurrence outside string literals and comments is an unconditional error:
-
-.. code-block:: none
-
-   $       ?       `
