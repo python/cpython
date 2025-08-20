@@ -482,13 +482,6 @@ optimize_uops(
     _PyUOpInstruction *corresponding_check_stack = NULL;
 
     _Py_uop_abstractcontext_init(ctx);
-
-    // Note: this must happen before frame_new, as it might override
-    // the result should frame_new set things to bottom.
-    ctx->done = false;
-    ctx->out_of_space = false;
-    ctx->contradiction = false;
-
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
         return 0;
