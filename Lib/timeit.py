@@ -227,6 +227,9 @@ separate argument; indented lines are possible by enclosing an
 argument in quotes and using leading spaces.  Multiple -s options are
 treated similarly.
 
+Use "--" to separate command-line options from actual statements,
+or when a statement starts with '-'.
+
 If -n is not given, a suitable number of loops is calculated by trying
 increasing numbers from the sequence 1, 2, 5, 10, 20, 50, ... until the
 total time is at least 0.2 seconds.
@@ -265,13 +268,9 @@ measured by invoking the program without arguments.""",
         "-v", "--verbose", action="count", default=0,
         help="print raw timing results; repeat for more digits precision",
     )
-    # add a dummy option to document '--'
-    group.add_argument(
-        "--", dest="_", action="store_const", const=None,
-        help="separate options from statement; "
-             "use when statement starts with -",
-    )
-    # use argparse.REMAINDER to ignore option-like argument found at the end
+    # Use argparse.REMAINDER to ignore option-like argument found at the end.
+    # If '--' is being specified as the "first" statement, it will be ignored
+    # and used to separate the options from the list of statements.
     group.add_argument(
         "statement", nargs=argparse.REMAINDER,
         help="statement to be timed (default: 'pass')",
@@ -300,6 +299,8 @@ def main(args=None, *, _wrap_timer=None):
     args = parser.parse_args(args)
 
     setup = "\n".join(args.setup) or "pass"
+    if args.statement and args.statement[0] == '--':
+        args.statement.pop(0)
     stmt = "\n".join(args.statement) or "pass"
     timer = time.process_time if args.process else default_timer
     number = args.number  # will be deduced if 0

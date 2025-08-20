@@ -246,9 +246,11 @@ class TestTimeit(unittest.TestCase):
         args.append(self.fake_stmt)
         # timeit.main() modifies sys.path, so save and restore it.
         orig_sys_path = sys.path[:]
-        with captured_stdout() as s:
-            timeit.main(args=args, _wrap_timer=timer.wrap_timer)
-        sys.path[:] = orig_sys_path[:]
+        try:
+            with captured_stdout() as s:
+                timeit.main(args=args, _wrap_timer=timer.wrap_timer)
+        finally:
+            sys.path[:] = orig_sys_path[:]
         return s.getvalue()
 
     def test_main_bad_switch(self):
@@ -352,6 +354,17 @@ class TestTimeit(unittest.TestCase):
         with captured_stderr() as error_stringio:
             s = self.run_main(switches=['-n1', '1/0'])
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
+
+    def test_main_without_option_separator(self):
+        out = self.run_main(switches=['-n2', '-r2', '1'])
+        self.assertEqual(out, "2 loops, best of 2: 1 sec per loop\n")
+
+    def test_main_with_option_separator(self):
+        with self.assertRaises(SyntaxError):
+            self.run_main(switches=['--', '1 + 1', '--'])
+
+        out = self.run_main(switches=['-n2', '-r2', '--', '1'])
+        self.assertEqual(out, "2 loops, best of 2: 1 sec per loop\n")
 
     def test_main_with_option_like_at_the_end(self):
         with captured_stderr() as s:
