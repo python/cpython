@@ -636,7 +636,7 @@ done::
 .. rubric:: Footnotes
 
 .. [1] If ``newline=''`` is not specified, newlines embedded inside quoted fields
-   will not be interpreted correctly, and on platforms that use ``\r\n`` linendings
+   will not be interpreted correctly, and on platforms that use ``\r\n`` line endings
    on write an extra ``\r`` will be added.  It should always be safe to specify
    ``newline=''``, since the csv module does its own
    (:term:`universal <universal newlines>`) newline handling.
