@@ -706,6 +706,43 @@ class BaseEventLoopTests(test_utils.TestCase):
                     'Unhandled error in exception handler'),
                 exc_info=(AttributeError, MOCK_ANY, MOCK_ANY))
 
+    def test_set_exception_handler_crash_handler(self):
+        self.loop._process_events = mock.Mock()
+        self.loop.set_exception_handler(asyncio.crash_exception_handler)
+
+        def crash(e):
+            raise e
+
+        self.loop.call_soon(crash, RuntimeError("hello"))
+        self.loop.call_soon(crash, ValueError("world"))
+
+        with self.assertRaises(ExceptionGroup) as exc_info:
+            self.loop.run_forever()
+
+        self.assertIsInstance(exc_info.exception.exceptions[0], RuntimeError)
+        self.assertIsInstance(exc_info.exception.exceptions[1], ValueError)
+
+    def test_set_exception_handler_crash_handler_be(self):
+        self.loop._process_events = mock.Mock()
+        self.loop.set_exception_handler(asyncio.crash_exception_handler)
+
+        class MyBaseException(BaseException):
+            pass
+
+        def crash(e):
+            raise e
+
+        self.loop.call_soon(crash, RuntimeError("hello"))
+        self.loop.call_soon(crash, ValueError("world"))
+        self.loop.call_soon(crash, MyBaseException("mbe"))
+
+        with self.assertRaises(BaseExceptionGroup) as exc_info:
+            self.loop.run_forever()
+
+        self.assertIsInstance(exc_info.exception.exceptions[0], RuntimeError)
+        self.assertIsInstance(exc_info.exception.exceptions[1], ValueError)
+        self.assertIsInstance(exc_info.exception.exceptions[2], MyBaseException)
+
     def test_default_exc_handler_broken(self):
         _context = None
 
