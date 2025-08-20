@@ -1953,7 +1953,7 @@ class TestModule(ZoneInfoTestBase):
             # Create regular timezone files
             for key in expected:
                 self.touch_zone(key, td)
-            
+
             # Create a symlink named "localtime" pointing to one of the timezone files
             os.symlink("America/New_York", os.path.join(td, "localtime"))
 

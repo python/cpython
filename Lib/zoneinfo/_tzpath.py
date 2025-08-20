@@ -9,7 +9,7 @@ def _reset_tzpath(to=None, stacklevel=4):
     if tzpaths is not None:
         if isinstance(tzpaths, (str, bytes)):
             raise TypeError(
-                f"tzpaths must be a list or tuple, "
+                "tzpaths must be a list or tuple, "
                 + f"not {type(tzpaths)}: {tzpaths!r}"
             )
 
@@ -155,7 +155,7 @@ def available_timezones():
 
             for file in files:
                 fpath = os.path.join(root, file)
-                
+
                 # Skip symlinks to avoid including files like 'localtime'
                 if os.path.islink(fpath):
                     continue
