@@ -503,6 +503,65 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.findall(r"(a|(b))", "aba"),
                          [("a", ""),("b", "b"),("a", "")])
 
+    def test_bug_7940(self):
+        # Issue 7940: re.finditer and re.findall should support negative end positions
+        pat = re.compile(".")
+
+        with self.assertWarns(FutureWarning) as cm:
+            self.assertEqual(pat.findall("abcd", -1, 1), [])
+        self.assertEqual(str(cm.warning), "Negative start index will not "
+                         "be truncated to zero in the future")
+
+        with self.assertWarns(FutureWarning) as cm:
+            self.assertEqual(pat.findall("abcd", 1, -1), ['b', 'c'])
+        self.assertEqual(str(cm.warning), "Negative end index will not "
+                         "be truncated to zero in the future")
+
+        with self.assertWarns(FutureWarning) as cm:
+            self.assertEqual(pat.findall("abcd", 1, 3), ['b', 'c'])
+            self.assertEqual(pat.findall("abcd", 1, -1), ['b', 'c'])
+            self.assertEqual(pat.findall("abcd", -3, -1), ['b', 'c'])
+            self.assertEqual(pat.findall("abcd", -3, 3), ['b', 'c'])
+            self.assertEqual(pat.findall("abcd", -1, 1), [])
+            self.assertEqual(pat.findall("abcd", -1, -3), [])
+            self.assertEqual(pat.findall("abcd", -200, -1), ['a', 'b', 'c'])
+            self.assertEqual(pat.findall("abcd", -200, -100), [])
+            self.assertEqual(pat.findall("abcd", pos=1, endpos=-1), ['b', 'c'])
+        self.assertEqual(len(cm.warnings), 12)
+
+        with self.assertWarns(FutureWarning) as cm:
+            self.assertEqual([m[0] for m in pat.finditer("abcd", -1, 1)],
+                             [])
+        self.assertEqual(str(cm.warning), "Negative start index will not "
+                         "be truncated to zero in the future")
+
+        with self.assertWarns(FutureWarning) as cm:
+            self.assertEqual([m[0] for m in pat.finditer("abcd", 1, -1)],
+                             ['b', 'c'])
+        self.assertEqual(str(cm.warning), "Negative end index will not "
+                         "be truncated to zero in the future")
+
+        with self.assertWarns(FutureWarning) as cm:
+            self.assertEqual([m[0] for m in pat.finditer("abcd", 1, 3)],
+                            ['b', 'c'])
+            self.assertEqual([m[0] for m in pat.finditer("abcd", 1, -1)],
+                            ['b', 'c'])
+            self.assertEqual([m[0] for m in pat.finditer("abcd", -3, -1)],
+                            ['b', 'c'])
+            self.assertEqual([m[0] for m in pat.finditer("abcd", -3, 3)],
+                            ['b', 'c'])
+            self.assertEqual([m[0] for m in pat.finditer("abcd", -1, 1)],
+                            [])
+            self.assertEqual([m[0] for m in pat.finditer("abcd", -1, -3)],
+                            [])
+            self.assertEqual([m[0] for m in pat.finditer("abcd", -200, -1)],
+                            ['a', 'b', 'c'])
+            self.assertEqual([m[0] for m in pat.finditer("abcd", -200, -100)],
+                            [])
+            self.assertEqual([m[0] for m in pat.finditer("abcd", pos=1,
+                                                        endpos=-1)], ['b', 'c'])
+        self.assertEqual(len(cm.warnings), 12)
+
     def test_re_match(self):
         for string in 'a', S('a'):
             self.assertEqual(re.match('a', string).groups(), ())
