@@ -1,0 +1,1 @@
+Avoid shutting down handlers during reconfiguration
