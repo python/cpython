@@ -61,7 +61,7 @@ below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.
     \number  Matches the contents of the group of the same number.
     \A       Matches only at the start of the string.
-    \Z       Matches only at the end of the string.
+    \z       Matches only at the end of the string.
     \b       Matches the empty string, but only at the start or end of a word.
     \B       Matches the empty string, but not at the start or end of a word.
     \d       Matches any decimal digit; equivalent to the set [0-9] in
@@ -117,7 +117,8 @@ A, L, and U are mutually exclusive.
     U  UNICODE     For compatibility only. Ignored for string patterns (it
                    is the default), and forbidden for bytes patterns.
 
-This module also defines an exception 'error'.
+This module also defines exception 'PatternError', aliased to 'error' for
+backward compatibility.
 
 """
 
@@ -133,7 +134,7 @@ __all__ = [
     "findall", "finditer", "compile", "purge", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE", "NOFLAG", "RegexFlag",
+    "UNICODE", "NOFLAG", "RegexFlag", "PatternError"
 ]
 
 __version__ = "2.2.1"
@@ -155,7 +156,7 @@ class RegexFlag:
     _numeric_repr_ = hex
 
 # sre exception
-error = _compiler.error
+PatternError = error = _compiler.PatternError
 
 # --------------------------------------------------------------------
 # public interface

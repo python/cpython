@@ -94,6 +94,24 @@ WIN32 is still required for the locale module.
 #endif
 #endif /* Py_BUILD_CORE || Py_BUILD_CORE_BUILTIN || Py_BUILD_CORE_MODULE */
 
+/* _DEBUG implies Py_DEBUG */
+#ifdef _DEBUG
+#  define Py_DEBUG 1
+#endif
+
+/* Define to 1 when compiling for experimental free-threaded builds */
+#ifdef Py_GIL_DISABLED
+/* We undefine if it was set to zero because all later checks are #ifdef.
+ * Note that non-Windows builds do not do this, and so every effort should
+ * be made to avoid defining the variable at all when not desired. However,
+ * sysconfig.get_config_var always returns a 1 or a 0, and so it seems likely
+ * that a build backend will define it with the value.
+ */
+#if Py_GIL_DISABLED == 0
+#undef Py_GIL_DISABLED
+#endif
+#endif
+
 /* Compiler specific defines */
 
 /* ------------------------------------------------------------------------*/
@@ -161,9 +179,9 @@ WIN32 is still required for the locale module.
 #endif /* MS_WIN64 */
 
 /* set the version macros for the windows headers */
-/* Python 3.9+ requires Windows 8 or greater */
-#define Py_WINVER 0x0602 /* _WIN32_WINNT_WIN8 */
-#define Py_NTDDI NTDDI_WIN8
+/* Python 3.13+ requires Windows 10 or greater */
+#define Py_WINVER 0x0A00 /* _WIN32_WINNT_WIN10 */
+#define Py_NTDDI NTDDI_WIN10
 
 /* We only set these values when building Python - we don't want to force
    these values on extensions, as that will affect the prototypes and
@@ -303,18 +321,31 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #ifdef MS_COREDLL
 #       if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
                 /* not building the core - must be an ext */
-#               if defined(_MSC_VER)
+#               if defined(_MSC_VER) && !defined(Py_NO_LINK_LIB)
                         /* So MSVC users need not specify the .lib
-                        file in their Makefile (other compilers are
-                        generally taken care of by distutils.) */
-#                       if defined(_DEBUG)
-#                               pragma comment(lib,"python313_d.lib")
+                        file in their Makefile */
+                        /* Define Py_NO_LINK_LIB to build extension disabling pragma
+                        based auto-linking.
+                        This is relevant when using build-system generator (e.g CMake) where
+                        the linking is explicitly handled */
+#                       if defined(Py_GIL_DISABLED)
+#                       if defined(Py_DEBUG)
+#                               pragma comment(lib,"python315t_d.lib")
+#                       elif defined(Py_LIMITED_API)
+#                               pragma comment(lib,"python3t.lib")
+#                       else
+#                               pragma comment(lib,"python315t.lib")
+#                       endif /* Py_DEBUG */
+#                       else /* Py_GIL_DISABLED */
+#                       if defined(Py_DEBUG)
+#                               pragma comment(lib,"python315_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
-#                               pragma comment(lib,"python313.lib")
-#                       endif /* _DEBUG */
-#               endif /* _MSC_VER */
+#                               pragma comment(lib,"python315.lib")
+#                       endif /* Py_DEBUG */
+#                       endif /* Py_GIL_DISABLED */
+#               endif /* _MSC_VER && !Py_NO_LINK_LIB */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */
 
@@ -354,11 +385,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       endif
 #       define ALIGNOF_MAX_ALIGN_T 8
 #endif
-
-#ifdef _DEBUG
-#       define Py_DEBUG
-#endif
-
 
 #ifdef MS_WIN32
 
@@ -513,9 +539,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if you want to compile in mimalloc memory allocator. */
 #define WITH_MIMALLOC 1
-
-/* Define if you want to compile in object freelists optimization */
-#define WITH_FREELISTS 1
 
 /* Define if you have clock.  */
 /* #define HAVE_CLOCK */
@@ -738,5 +761,8 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 
 /* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
 #define HAVE_X509_VERIFY_PARAM_SET1_HOST 1
+
+// Truncate the thread name to 32766 characters.
+#define _PYTHREAD_NAME_MAXLEN 32766
 
 #endif /* !Py_CONFIG_H */

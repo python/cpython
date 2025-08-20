@@ -1,16 +1,38 @@
-from parsing import (
+from parsing import (  # noqa: F401
     InstDef,
     Macro,
     Pseudo,
     Family,
+    LabelDef,
     Parser,
     Context,
     CacheEffect,
     StackEffect,
+    InputEffect,
     OpName,
     AstNode,
+    Stmt,
+    SimpleStmt,
+    IfStmt,
+    ForStmt,
+    WhileStmt,
+    BlockStmt,
+    MacroIfStmt,
 )
-from formatting import prettify_filename
+
+import pprint
+
+CodeDef = InstDef | LabelDef
+
+def prettify_filename(filename: str) -> str:
+    # Make filename more user-friendly and less platform-specific,
+    # it is only used for error reporting at this point.
+    filename = filename.replace("\\", "/")
+    if filename.startswith("./"):
+        filename = filename[2:]
+    if filename.endswith(".new"):
+        filename = filename[:-4]
+    return filename
 
 
 BEGIN_MARKER = "// BEGIN BYTECODES //"
@@ -48,6 +70,7 @@ def parse_files(filenames: list[str]) -> list[AstNode]:
             assert node is not None
             result.append(node)  # type: ignore[arg-type]
         if not psr.eof():
+            pprint.pprint(result)
             psr.backup()
             raise psr.make_syntax_error(
                 f"Extra stuff at the end of {filename}", psr.next(True)

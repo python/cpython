@@ -33,7 +33,7 @@ extern "C" {
 static inline void _Py_ADJUST_ERANGE1(double x)
 {
     if (errno == 0) {
-        if (x == Py_HUGE_VAL || x == -Py_HUGE_VAL) {
+        if (x == Py_INFINITY || x == -Py_INFINITY) {
             errno = ERANGE;
         }
     }
@@ -44,8 +44,8 @@ static inline void _Py_ADJUST_ERANGE1(double x)
 
 static inline void _Py_ADJUST_ERANGE2(double x, double y)
 {
-    if (x == Py_HUGE_VAL || x == -Py_HUGE_VAL ||
-        y == Py_HUGE_VAL || y == -Py_HUGE_VAL)
+    if (x == Py_INFINITY || x == -Py_INFINITY ||
+        y == Py_INFINITY || y == -Py_INFINITY)
     {
         if (errno == 0) {
             errno = ERANGE;
