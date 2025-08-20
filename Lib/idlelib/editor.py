@@ -907,9 +907,8 @@ class EditorWindow:
             self.text.event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
-            if xkeydefs:
-                for event, keylist in xkeydefs.items():
-                    self.text.event_delete(event, *keylist)
+            for event, keylist in xkeydefs.items():
+                self.text.event_delete(event, *keylist)
 
     def ApplyKeybindings(self):
         """Apply the virtual, configurable keybindings.
