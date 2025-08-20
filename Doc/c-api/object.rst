@@ -392,9 +392,9 @@ Object Protocol
    class, are considered classes.  However, objects can override this by having
    a :attr:`~type.__bases__` attribute (which must be a tuple of base classes).
 
-   Another function, :attr:`~class.__base__` that is specific to CPython and also
-   exists in Jython and PyPy can also be used on a class inheriting from one
-   or more classes.
+   Another attribute, ``__base__`` is specific to CPython and also exists in
+   Jython and PyPy.  It can be used on a class inheriting from one or more
+   classes.
 
    ``__base__`` corresponds to the :c:member:`~PyTypeObject.tp_base` in a
    type object.  At the C level, Python has a single inheritance model
@@ -432,7 +432,7 @@ Object Protocol
 
    The first user defined class that inherits  either an object or
    derives from a class (directly or indirectly) that inherits an
-   object is the value returned by the :attr:`~class.__base__` function.
+   object is the value returned by the ``__base__`` attribute.
 
    >>> class D(B, A): pass
    ...
@@ -440,7 +440,8 @@ Object Protocol
    <class 'B'>
 
    .. impl-detail::
-      Note that behavior of the ``__base__`` attribute is dependent on the :term:`CPython` implementation.
+      Note that behavior of the ``__base__`` attribute is dependent on the
+      :term:`CPython` implementation.
 
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
