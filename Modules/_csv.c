@@ -1304,10 +1304,11 @@ join_append_lineterminator(WriterObj *self)
 }
 
 PyDoc_STRVAR(csv_writerow_doc,
-"writerow(iterable)\n"
+"writerow($self, row, /)\n"
+"--\n\n"
+"Construct and write a CSV record from an iterable of fields.\n"
 "\n"
-"Construct and write a CSV record from an iterable of fields.  Non-string\n"
-"elements will be converted to string.");
+"Non-string elements will be converted to string.");
 
 static PyObject *
 csv_writerow(PyObject *op, PyObject *seq)
@@ -1414,10 +1415,11 @@ csv_writerow(PyObject *op, PyObject *seq)
 }
 
 PyDoc_STRVAR(csv_writerows_doc,
-"writerows(iterable of iterables)\n"
+"writerows($self, rows, /)\n"
+"--\n\n"
+"Construct and write a series of iterables to a csv file.\n"
 "\n"
-"Construct and write a series of iterables to a csv file.  Non-string\n"
-"elements will be converted to string.");
+"Non-string elements will be converted to string.");
 
 static PyObject *
 csv_writerows(PyObject *self, PyObject *seqseq)
