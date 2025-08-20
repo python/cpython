@@ -1,7 +1,7 @@
 """
 Module difflib -- helpers for computing deltas between objects.
 
-Function get_close_matches(word, possibilities, n=3, cutoff=0.6):
+Function get_close_matches(word, possibilities, n=3, cutoff=0.6, key=None):
     Use SequenceMatcher to return list of the best "good enough" matches.
 
 Function context_diff(a, b):
@@ -664,7 +664,7 @@ class SequenceMatcher:
     __class_getitem__ = classmethod(GenericAlias)
 
 
-def get_close_matches(word, possibilities, n=3, cutoff=0.6):
+def get_close_matches(word, possibilities, n=3, cutoff=0.6, key=None):
     """Use SequenceMatcher to return list of the best "good enough" matches.
 
     word is a sequence for which close matches are desired (typically a
@@ -679,11 +679,18 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     Optional arg cutoff (default 0.6) is a float in [0, 1].  Possibilities
     that don't score at least that similar to word are ignored.
 
+    Optional arg key specifies a function of one argument that is used to
+    extract a comparison key from each element in iterable (for example,
+    key=str.lower). The default value is None (compare the elements directly).
+
     The best (no more than n) matches among the possibilities are returned
     in a list, sorted by similarity score, most similar first.
 
     >>> get_close_matches("appel", ["ape", "apple", "peach", "puppy"])
     ['apple', 'ape']
+    >>> get_close_matches("appel", [("aple", 9), ("peach", 8), ("puppy", 7)],
+    ...                   key=lambda x: x[0])
+    [('aple', 9)]
     >>> import keyword as _keyword
     >>> get_close_matches("wheel", _keyword.kwlist)
     ['while']
@@ -701,7 +708,10 @@ def get_close_matches(word, possibilities, n=3, cutoff=0.6):
     s = SequenceMatcher()
     s.set_seq2(word)
     for x in possibilities:
-        s.set_seq1(x)
+        if key is None:
+            s.set_seq1(x)
+        else:
+            s.set_seq1(key(x))
         if s.real_quick_ratio() >= cutoff and \
            s.quick_ratio() >= cutoff and \
            s.ratio() >= cutoff:
