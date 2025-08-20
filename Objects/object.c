@@ -3286,17 +3286,22 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
     _Py_AssertHoldsTstate();
+    _PyEval_StopTheWorldAll(&_PyRuntime);
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
+    _PyEval_StartTheWorldAll(&_PyRuntime);
     return 0;
 }
 
 PyRefTracer PyRefTracer_GetTracer(void** data) {
     _Py_AssertHoldsTstate();
+    _PyEval_StopTheWorldAll(&_PyRuntime);
     if (data != NULL) {
         *data = _PyRuntime.ref_tracer.tracer_data;
     }
-    return _PyRuntime.ref_tracer.tracer_func;
+    PyRefTracer tracer = _PyRuntime.ref_tracer.tracer_func;
+    _PyEval_StartTheWorldAll(&_PyRuntime);
+    return tracer;
 }
 
 
