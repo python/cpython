@@ -75,7 +75,7 @@ class ExecuteJsonTests(unittest.TestCase):
 
     def test_execute_json_with_named_parameters(self):
         # Test execute_json with named parameters
-        result = self.cu.execute_json("select * from test where income > :min_income", 
+        result = self.cu.execute_json("select * from test where income > :min_income",
                                      {"min_income": 150})
         data = json.loads(result)
         self.assertIsInstance(data, list)
@@ -92,7 +92,7 @@ class ExecuteJsonTests(unittest.TestCase):
 
     def test_execute_json_non_select(self):
         # Test execute_json with non-SELECT statement
-        result = self.cu.execute_json("insert into test(name, income) values (?, ?)", 
+        result = self.cu.execute_json("insert into test(name, income) values (?, ?)",
                                      ("new_entry", 400))
         data = json.loads(result)
         self.assertIsInstance(data, list)

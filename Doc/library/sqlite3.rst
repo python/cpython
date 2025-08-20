@@ -1552,6 +1552,11 @@ Cursor objects
          print(json_result)
          # Output: [{"id":1,"name":"Alice","email":"alice@example.com"},{"id":2,"name":"Bob","email":"bob@example.com"}]
 
+      .. testoutput:: sqlite3.cursor
+         :hide:
+
+         [{"id":1,"name":"Alice","email":"alice@example.com"},{"id":2,"name":"Bob","email":"bob@example.com"}]
+
       .. versionadded:: 3.15
 
    .. method:: executemany(sql, parameters, /)

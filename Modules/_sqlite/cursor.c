@@ -998,51 +998,51 @@ pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
         return NULL;
     }
     Py_DECREF(result);
-    
+
     // Check if we have a statement with results
     if (!self->statement || sqlite3_column_count(self->statement->st) == 0) {
         // No results to convert to JSON, return empty JSON array
         return PyUnicode_FromString("[]");
     }
-    
+
     // Build a JSON query that wraps the original query
     sqlite3_stmt *stmt = self->statement->st;
     int numcols = sqlite3_column_count(stmt);
-    
+
     // Build the json_object parameters
     PyObject *column_list = PyList_New(0);
     if (!column_list) {
         return NULL;
     }
-    
+
     for (int i = 0; i < numcols; i++) {
         const char *colname = sqlite3_column_name(stmt, i);
         if (!colname) {
             Py_DECREF(column_list);
             return PyErr_NoMemory();
         }
-        
+
         // Add column name as quoted string literal for json_object keys
         PyObject *colname_obj = PyUnicode_FromFormat("'%s'", colname);
         if (!colname_obj) {
             Py_DECREF(column_list);
             return NULL;
         }
-        
+
         if (PyList_Append(column_list, colname_obj) < 0) {
             Py_DECREF(colname_obj);
             Py_DECREF(column_list);
             return NULL;
         }
         Py_DECREF(colname_obj);
-        
+
         // Add column reference
         PyObject *colref_obj = PyUnicode_FromFormat("row.%s", colname);
         if (!colref_obj) {
             Py_DECREF(column_list);
             return NULL;
         }
-        
+
         if (PyList_Append(column_list, colref_obj) < 0) {
             Py_DECREF(colref_obj);
             Py_DECREF(column_list);
@@ -1050,21 +1050,21 @@ pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
         }
         Py_DECREF(colref_obj);
     }
-    
+
     // Join the column list with commas
     PyObject *comma = PyUnicode_FromString(",");
     if (!comma) {
         Py_DECREF(column_list);
         return NULL;
     }
-    
+
     PyObject *column_str = PyUnicode_Join(comma, column_list);
     Py_DECREF(comma);
     if (!column_str) {
         Py_DECREF(column_list);
         return NULL;
     }
-    
+
     // Complete the JSON query
     PyObject *full_query = PyUnicode_FromFormat("SELECT json_group_array(json_object(%S)) FROM (%U) AS row", column_str, sql);
     Py_DECREF(column_str);
@@ -1072,14 +1072,14 @@ pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
     if (!full_query) {
         return NULL;
     }
-    
+
     // Execute the JSON query
     pysqlite_Statement *json_stmt = pysqlite_statement_create(self->connection, full_query);
     Py_DECREF(full_query);
     if (!json_stmt) {
         return NULL;
     }
-    
+
     // Bind parameters if needed
     if (parameters != NULL && parameters != Py_None) {
         bind_parameters(self->connection->state, json_stmt, parameters);
@@ -1088,7 +1088,7 @@ pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
             return NULL;
         }
     }
-    
+
     // Execute the statement
     int rc = stmt_step(json_stmt->st);
     if (rc != SQLITE_ROW) {
@@ -1102,7 +1102,7 @@ pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
             return NULL;
         }
     }
-    
+
     // Get the JSON result
     const char *json_result = (const char*)sqlite3_column_text(json_stmt->st, 0);
     PyObject *result_str = NULL;
@@ -1112,7 +1112,7 @@ pysqlite_cursor_execute_json_impl(pysqlite_Cursor *self, PyObject *sql,
         // NULL result, return empty JSON array
         result_str = PyUnicode_FromString("[]");
     }
-    
+
     Py_DECREF(json_stmt);
     return result_str;
 }
