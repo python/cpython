@@ -8,7 +8,9 @@ import os
 import select
 import signal
 import socket
+import sys
 import threading
+import time
 import unittest
 import socketserver
 
@@ -501,6 +503,25 @@ class MiscTestCase(unittest.TestCase):
                 server.handle_request()
         self.assertLess(len(server._threads), 10)
         server.server_close()
+
+    @unittest.skipUnless(any(sys.platform.startswith(p) for p in ['linux', 'win']),
+                         'Test only valid for Linux and Windows')
+    def test_tcp_server_shutdown_immediatly(self):
+        # Issue #41093: TcpServer should shutdown immediatly after
+        # calling shutdown()
+
+        with socketserver.TCPServer(('', 8000),
+                                    socketserver.BaseRequestHandler) as server:
+
+            def serve():
+                server.serve_forever(poll_interval=30.0)
+
+            serve_thread = threading.Thread(target=serve)
+            serve_thread.start()
+
+            start = time.time()
+            server.shutdown()
+            self.assertTrue(time.time() - start < 1.0)
 
 
 if __name__ == "__main__":
