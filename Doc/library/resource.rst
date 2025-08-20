@@ -78,12 +78,12 @@ this module for those platforms.
 
    Sets new limits of consumption of *resource*. The *limits* argument must be a
    tuple ``(soft, hard)`` of two integers describing the new limits. A value of
-   :data:`~resource.RLIM_INFINITY` can be used to request a limit that is
+   :const:`~resource.RLIM_INFINITY` can be used to request a limit that is
    unlimited.
 
    Raises :exc:`ValueError` if an invalid resource is specified, if the new soft
    limit exceeds the hard limit, or if a process tries to raise its hard limit.
-   Specifying a limit of :data:`~resource.RLIM_INFINITY` when the hard or
+   Specifying a limit of :const:`~resource.RLIM_INFINITY` when the hard or
    system limit for that resource is not unlimited will result in a
    :exc:`ValueError`.  A process with the effective UID of super-user can
    request any valid limit value, including unlimited, but :exc:`ValueError`
@@ -93,7 +93,7 @@ this module for those platforms.
    ``setrlimit`` may also raise :exc:`error` if the underlying system call
    fails.
 
-   VxWorks only supports setting :data:`RLIMIT_NOFILE`.
+   VxWorks only supports setting :const:`RLIMIT_NOFILE`.
 
    .. audit-event:: resource.setrlimit resource,limits resource.setrlimit
 
