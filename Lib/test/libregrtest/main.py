@@ -541,7 +541,8 @@ class Regrtest:
                 # if _testinternalcapi is missing and the -R option is set.
                 if not can_use_suppress_immortalization(runtests.hunt_refleak):
                     print("Module '_testinternalcapi' is missing. "
-                          "Did you disable it with --disable-test-modules?")
+                          "Did you disable it with --disable-test-modules?",
+                          file=sys.stderr)
                     raise SystemExit(1)
 
                 # gh-117783: don't immortalize deferred objects when tracking
