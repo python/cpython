@@ -17,6 +17,21 @@ encoding = 'utf-8'
 errors = 'surrogatepass' if sys.platform == 'win32' else 'surrogateescape'
 
 
+def libmodules():
+    libdir = os.path.dirname(os.path.dirname(__file__))
+    for entry in os.listdir(libdir):
+        if entry.endswith(".py"):
+            yield entry[:-3]
+        fullpath = os.path.join(libdir, entry)
+        if (os.path.isdir(fullpath) and
+                os.path.exists(os.path.join(fullpath, "__init__.py"))):
+            yield entry
+
+
+islibmodule = frozenset(libmodules()).__contains__
+isbinmodule = frozenset(sys.builtin_module_names).__contains__
+
+
 class IOBinding:
 # One instance per editor Window so methods know which to save, close.
 # Open returns focus to self.editwin if aborted.
@@ -379,6 +394,11 @@ class IOBinding:
                 pwd = ""
             return pwd, ""
 
+    def warnbadfilename(self, msg):
+        return tkMessageBox.askokcancel(
+            title="Bad File Name", message=msg,
+            default=tkMessageBox.CANCEL, parent=self.text)
+
     def asksavefile(self):
         dir, base = self.defaultfilename("save")
         if not self.savedialog:
@@ -386,8 +406,30 @@ class IOBinding:
                     parent=self.text,
                     filetypes=self.filetypes,
                     defaultextension=self.defaultextension)
-        filename = self.savedialog.show(initialdir=dir, initialfile=base)
-        return filename
+        go = False
+        while not go:
+            filename = self.savedialog.show(initialdir=dir, initialfile=base)
+            if not filename:
+                return ''
+            name = os.path.splitext(os.path.basename(filename))[0]
+            stdlibmsg = ("Neither you nor python will be able to import the "
+                         "stdlib module.")
+            if islibmodule(name):
+                go = self.warnbadfilename(
+                        f"This name matches a stdlib name in the Lib "
+                        f"directory.\n{stdlibmsg}")
+            elif isbinmodule(name):
+                go = self.warnbadfilename(
+                        f"This name matches a builtin stdlib name.\n"
+                        f"{stdlibmsg}")
+            elif not name.isidentifier():
+                go = self.warnbadfilename(
+                        "This name is not a valid identifier.\n"
+                        "You will not be able to import this file.")
+            else:
+                go = True
+            if go:
+                return filename
 
     def updaterecentfileslist(self,filename):
         "Update recent file list on all editor windows"
