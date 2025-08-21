@@ -975,9 +975,7 @@ PyPreConfig
       Set to ``0`` or ``1`` by the :option:`-X utf8 <-X>` command line option
       and the :envvar:`PYTHONUTF8` environment variable.
 
-      Also set to ``1`` if the ``LC_CTYPE`` locale is ``C`` or ``POSIX``.
-
-      Default: ``-1`` in Python config and ``0`` in isolated config.
+      Default: ``1``.
 
 
 .. _c-preinit:
@@ -2260,6 +2258,7 @@ If a ``._pth`` file is present:
 * Set :c:member:`~PyConfig.isolated` to ``1``.
 * Set :c:member:`~PyConfig.use_environment` to ``0``.
 * Set :c:member:`~PyConfig.site_import` to ``0``.
+* Set :c:member:`~PyConfig.user_site_directory` to ``0`` (since 3.15).
 * Set :c:member:`~PyConfig.safe_path` to ``1``.
 
 If :c:member:`~PyConfig.home` is not set and a ``pyvenv.cfg`` file is present in
@@ -2278,6 +2277,12 @@ The ``__PYVENV_LAUNCHER__`` environment variable is used to set
    :c:member:`~PyConfig.prefix`, and :c:member:`~PyConfig.exec_prefix`, are now
    set to the ``pyvenv.cfg`` directory. This was previously done by :mod:`site`,
    therefore affected by :option:`-S`.
+
+
+.. versionchanged:: 3.15
+
+   :c:member:`~PyConfig.user_site_directory` is now set to ``0`` when a
+   ``._pth`` file is present.
 
 
 Py_GetArgcArgv()

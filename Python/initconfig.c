@@ -312,7 +312,7 @@ The following implementation-specific options are available:\n\
 "-X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
 #endif
 "\
--X importtime[=2]: show how long each import takes; use -X importtime=2 to\
+-X importtime[=2]: show how long each import takes; use -X importtime=2 to\n\
          log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
@@ -459,7 +459,7 @@ static const char usage_envvars[] =
 
 /* --- Global configuration variables ----------------------------- */
 
-/* UTF-8 mode (PEP 540): if equals to 1, use the UTF-8 encoding, and change
+/* UTF-8 mode (PEP 540): if equal to 1, use the UTF-8 encoding, and change
    stdin and stdout error handler to "surrogateescape". */
 int Py_UTF8Mode = 0;
 int Py_DebugFlag = 0; /* Needed by parser.c */

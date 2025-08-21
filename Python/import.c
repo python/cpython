@@ -3960,25 +3960,28 @@ PyImport_Import(PyObject *module_name)
     }
 
     /* Get the builtins from current globals */
-    globals = PyEval_GetGlobals();
+    globals = PyEval_GetGlobals();  // borrowed
     if (globals != NULL) {
         Py_INCREF(globals);
+        // XXX Use _PyEval_EnsureBuiltins()?
         builtins = PyObject_GetItem(globals, &_Py_ID(__builtins__));
         if (builtins == NULL) {
             // XXX Fall back to interp->builtins or sys.modules['builtins']?
             goto err;
         }
     }
+    else if (_PyErr_Occurred(tstate)) {
+        goto err;
+    }
     else {
         /* No globals -- use standard builtins, and fake globals */
-        builtins = PyImport_ImportModuleLevel("builtins",
-                                              NULL, NULL, NULL, 0);
-        if (builtins == NULL) {
+        globals = PyDict_New();
+        if (globals == NULL) {
             goto err;
         }
-        globals = Py_BuildValue("{OO}", &_Py_ID(__builtins__), builtins);
-        if (globals == NULL)
+        if (_PyEval_EnsureBuiltinsWithModule(tstate, globals, &builtins) < 0) {
             goto err;
+        }
     }
 
     /* Get the __import__ function from the builtins */
@@ -4256,6 +4259,7 @@ _imp_lock_held_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _imp.acquire_lock
 
 Acquires the interpreter's import lock for the current thread.
@@ -4266,7 +4270,7 @@ modules. On platforms without threads, this function does nothing.
 
 static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
-/*[clinic end generated code: output=1aff58cb0ee1b026 input=4a2d4381866d5fdc]*/
+/*[clinic end generated code: output=1aff58cb0ee1b026 input=e1a4ef049d34e7dd]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyImport_AcquireLock(interp);
