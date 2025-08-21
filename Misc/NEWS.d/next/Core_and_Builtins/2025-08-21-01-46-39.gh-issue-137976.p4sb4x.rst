@@ -1,1 +1,1 @@
-Removed `localtime` from the list of reported system timezones.
+Removed ``localtime`` from the list of reported system timezones.
