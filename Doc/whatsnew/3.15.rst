@@ -190,11 +190,11 @@ Improved error messages
            return pi * self.radius**2
 
      class Container:
-        def __init__(self, inner: Any) -> None:
+        def __init__(self, inner: Circle) -> None:
            self.inner = inner
 
-     square = Square(side=4)
-     container = Container(square)
+     circle = Circle(radius=4.0)
+     container = Container(circle)
      print(container.area)
 
   Running this code now produces a clearer suggestion:
