@@ -3233,6 +3233,10 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            break;
+        }
+
+        case _CHECK_RECURSION_REMAINING: {
             if (tstate->py_recursion_remaining <= 1) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();

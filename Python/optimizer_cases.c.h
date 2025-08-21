@@ -1660,6 +1660,10 @@
             break;
         }
 
+        case _CHECK_RECURSION_REMAINING: {
+            break;
+        }
+
         case _INIT_CALL_PY_EXACT_ARGS: {
             _Py_UopsSymbol **args;
             _Py_UopsSymbol *self_or_null;

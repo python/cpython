@@ -537,6 +537,13 @@ class TestCallCache(TestBase):
         MyClass.__init__.__code__ = count_args.__code__
         instantiate()
 
+    def test_recursion_check_for_general_calls(self):
+        def test(default=None):
+            return test()
+
+        with self.assertRaises(RecursionError):
+            test()
+
 
 @threading_helper.requires_working_threading()
 @requires_specialization
