@@ -6026,7 +6026,9 @@ static PyType_Spec dec_spec = {
 /*     Macros for converting mpdecimal functions to Context methods     */
 /************************************************************************/
 
-/* Boolean context method. */
+/* Boolean context method.
+   Argument Clinic provides PyObject *context, PyObject *x
+*/
 #define DecCtx_BoolFunc(MPDFUNC) \
 {                                                                     \
     PyObject *ret;                                                    \
@@ -6039,7 +6041,9 @@ static PyType_Spec dec_spec = {
     return ret;                                                       \
 }
 
-/* Boolean context method. MPDFUNC does NOT use a context. */
+/* Boolean context method. MPDFUNC does NOT use a context.
+   Argument Clinic provides PyObject *context, PyObject *x
+*/
 #define DecCtx_BoolFunc_NO_CTX(MPDFUNC) \
 {                                                       \
     PyObject *ret;                                      \
@@ -6079,7 +6083,7 @@ static PyType_Spec dec_spec = {
 }
 
 /* Binary context method.
-   Argument Clinic provides PyObject *context, PyObject *v, PyObject *w
+   Argument Clinic provides PyObject *context, PyObject *x, PyObject *y
 */
 #define DecCtx_BinaryFunc(MPDFUNC) \
 {                                                                \
@@ -6110,6 +6114,7 @@ static PyType_Spec dec_spec = {
 /*
  * Binary context method. The context is only used for conversion.
  * The actual MPDFUNC does NOT take a context arg.
+ * Argument Clinic provides PyObject *context, PyObject *x, PyObject *y
  */
 #define DecCtx_BinaryFunc_NO_CTX(MPDFUNC) \
 {                                                \
@@ -6133,8 +6138,8 @@ static PyType_Spec dec_spec = {
 }
 
 /* Ternary context method.
-   Argument Clinic provides PyObject *context, PyObject *v, PyObject *w,
-                            PyObject *x
+   Argument Clinic provides PyObject *context, PyObject *x, PyObject *y,
+                            PyObject *z
 */
 #define DecCtx_TernaryFunc(MPDFUNC) \
 {                                                                        \
