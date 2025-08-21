@@ -744,6 +744,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(len(info.__dict__), 3)
         pointer_bits = 64 if sys.maxsize > 2**32 else 32
         self.assertEqual(info.pointer_bits, pointer_bits)
+        self.assertEqual(info.byteorder, sys.byteorder)
         for attr, flag in [
             ("free_threaded", "Py_GIL_DISABLED"),
             ("debug", "Py_REF_DEBUG"),

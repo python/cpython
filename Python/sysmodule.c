@@ -3680,6 +3680,20 @@ make_abi_info(void)
         goto error;
     }
 
+#if PY_BIG_ENDIAN
+    value = PyUnicode_FromString("big");
+#else
+    value = PyUnicode_FromString("little");
+#endif
+    if (value == NULL) {
+        goto error;
+    }
+    res = PyDict_SetItemString(abi_info, "byteorder", value);
+    if (res < 0) {
+        goto error;
+    }
+    Py_DECREF(value);
+
     ns = _PyNamespace_New(abi_info);
     Py_DECREF(abi_info);
     return ns;
