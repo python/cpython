@@ -38,6 +38,20 @@ typedef struct {
     struct llist_node shutdown_handles;
 } thread_module_state;
 
+typedef struct {
+    PyObject_HEAD
+    PyMutex lock;
+} lockobject;
+
+#define lockobject_CAST(op) ((lockobject *)(op))
+
+typedef struct {
+    PyObject_HEAD
+    _PyRecursiveMutex lock;
+} rlockobject;
+
+#define rlockobject_CAST(op)    ((rlockobject *)(op))
+
 static inline thread_module_state*
 get_thread_state(PyObject *module)
 {
@@ -753,13 +767,6 @@ static PyType_Spec ThreadHandle_Type_spec = {
 
 /* Lock objects */
 
-typedef struct {
-    PyObject_HEAD
-    PyMutex lock;
-} lockobject;
-
-#define lockobject_CAST(op) ((lockobject *)(op))
-
 static int
 lock_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -779,16 +786,8 @@ lock_dealloc(PyObject *self)
 
 
 static int
-lock_acquire_parse_args(PyObject *args, PyObject *kwds,
-                        PyTime_t *timeout)
+lock_acquire_parse_timeout(PyObject *timeout_obj, int blocking, PyTime_t *timeout)
 {
-    char *kwlist[] = {"blocking", "timeout", NULL};
-    int blocking = 1;
-    PyObject *timeout_obj = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO:acquire", kwlist,
-                                     &blocking, &timeout_obj))
-        return -1;
-
     // XXX Use PyThread_ParseTimeoutArg().
 
     const PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
@@ -823,14 +822,29 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     }
     return 0;
 }
+/*[clinic input]
+_thread.lock.acquire
+    blocking: bool = True
+    timeout as timeoutobj: object(py_default="-1") = NULL
+
+Lock the lock.
+
+Without argument, this blocks if the lock is already
+locked (even by the same thread), waiting for another thread to release
+the lock, and return True once the lock is acquired.
+With an argument, this will only block if the argument is true,
+and the return value reflects whether the lock is acquired.
+The blocking operation is interruptible.
+[clinic start generated code]*/
 
 static PyObject *
-lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
+_thread_lock_acquire_impl(lockobject *self, int blocking,
+                          PyObject *timeoutobj)
+/*[clinic end generated code: output=569d6b25d508bf6f input=13e999649bc1c798]*/
 {
-    lockobject *self = lockobject_CAST(op);
-
     PyTime_t timeout;
-    if (lock_acquire_parse_args(args, kwds, &timeout) < 0) {
+
+    if (lock_acquire_parse_timeout(timeoutobj, blocking, &timeout) < 0) {
         return NULL;
     }
 
@@ -848,33 +862,34 @@ lock_PyThread_acquire_lock(PyObject *op, PyObject *args, PyObject *kwds)
     return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
-PyDoc_STRVAR(acquire_doc,
-"acquire($self, /, blocking=True, timeout=-1)\n\
---\n\
-\n\
-Lock the lock.  Without argument, this blocks if the lock is already\n\
-locked (even by the same thread), waiting for another thread to release\n\
-the lock, and return True once the lock is acquired.\n\
-With an argument, this will only block if the argument is true,\n\
-and the return value reflects whether the lock is acquired.\n\
-The blocking operation is interruptible.");
+/*[clinic input]
+_thread.lock.acquire_lock = _thread.lock.acquire
 
-PyDoc_STRVAR(acquire_lock_doc,
-"acquire_lock($self, /, blocking=True, timeout=-1)\n\
---\n\
-\n\
-An obsolete synonym of acquire().");
-
-PyDoc_STRVAR(enter_doc,
-"__enter__($self, /)\n\
---\n\
-\n\
-Lock the lock.");
+An obsolete synonym of acquire().
+[clinic start generated code]*/
 
 static PyObject *
-lock_PyThread_release_lock(PyObject *op, PyObject *Py_UNUSED(dummy))
+_thread_lock_acquire_lock_impl(lockobject *self, int blocking,
+                               PyObject *timeoutobj)
+/*[clinic end generated code: output=ea6c87ea13b56694 input=5e65bd56327ebe85]*/
 {
-    lockobject *self = lockobject_CAST(op);
+    return _thread_lock_acquire_impl(self, blocking, timeoutobj);
+}
+
+/*[clinic input]
+_thread.lock.release
+
+Release the lock.
+
+Allows another thread that is blocked waiting for
+the lock to acquire the lock.  The lock must be in the locked state,
+but it needn't be locked by the same thread that unlocks it.
+[clinic start generated code]*/
+
+static PyObject *
+_thread_lock_release_impl(lockobject *self)
+/*[clinic end generated code: output=a4ab0d75d6e9fb73 input=dfe48f962dfe99b4]*/
+{
     /* Sanity check: the lock must be locked */
     if (_PyMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(ThreadError, "release unlocked lock");
@@ -884,44 +899,76 @@ lock_PyThread_release_lock(PyObject *op, PyObject *Py_UNUSED(dummy))
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(release_doc,
-"release($self, /)\n\
---\n\
-\n\
-Release the lock, allowing another thread that is blocked waiting for\n\
-the lock to acquire the lock.  The lock must be in the locked state,\n\
-but it needn't be locked by the same thread that unlocks it.");
+/*[clinic input]
+_thread.lock.release_lock
 
-PyDoc_STRVAR(release_lock_doc,
-"release_lock($self, /)\n\
---\n\
-\n\
-An obsolete synonym of release().");
-
-PyDoc_STRVAR(lock_exit_doc,
-"__exit__($self, /, *exc_info)\n\
---\n\
-\n\
-Release the lock.");
+An obsolete synonym of release().
+[clinic start generated code]*/
 
 static PyObject *
-lock_locked_lock(PyObject *op, PyObject *Py_UNUSED(dummy))
+_thread_lock_release_lock_impl(lockobject *self)
+/*[clinic end generated code: output=43025044d51789bb input=74d91374fc601433]*/
 {
-    lockobject *self = lockobject_CAST(op);
+    return _thread_lock_release_impl(self);
+}
+
+/*[clinic input]
+_thread.lock.__enter__
+
+Lock the lock.
+[clinic start generated code]*/
+
+static PyObject *
+_thread_lock___enter___impl(lockobject *self)
+/*[clinic end generated code: output=f27725de751ae064 input=8f982991608d38e7]*/
+{
+    return _thread_lock_acquire_impl(self, 1, NULL);
+}
+
+/*[clinic input]
+_thread.lock.__exit__
+    exc_type: object
+    exc_value: object
+    exc_tb: object
+    /
+
+Release the lock.
+[clinic start generated code]*/
+
+static PyObject *
+_thread_lock___exit___impl(lockobject *self, PyObject *exc_type,
+                           PyObject *exc_value, PyObject *exc_tb)
+/*[clinic end generated code: output=c9e8eefa69beed07 input=c74d4abe15a6c037]*/
+{
+    return _thread_lock_release_impl(self);
+}
+
+
+/*[clinic input]
+_thread.lock.locked
+
+Return whether the lock is in the locked state.
+[clinic start generated code]*/
+
+static PyObject *
+_thread_lock_locked_impl(lockobject *self)
+/*[clinic end generated code: output=63bb94e5a9efa382 input=d8e3d64861bbce73]*/
+{
     return PyBool_FromLong(PyMutex_IsLocked(&self->lock));
 }
 
-PyDoc_STRVAR(locked_doc,
-"locked($self, /)\n\
---\n\
-\n\
-Return whether the lock is in the locked state.");
+/*[clinic input]
+_thread.lock.locked_lock
 
-PyDoc_STRVAR(locked_lock_doc,
-"locked_lock($self, /)\n\
---\n\
-\n\
-An obsolete synonym of locked().");
+An obsolete synonym of locked().
+[clinic start generated code]*/
+
+static PyObject *
+_thread_lock_locked_lock_impl(lockobject *self)
+/*[clinic end generated code: output=f747c8329e905f8e input=500b0c3592f9bf84]*/
+{
+    return _thread_lock_locked_impl(self);
+}
 
 static PyObject *
 lock_repr(PyObject *op)
@@ -932,10 +979,14 @@ lock_repr(PyObject *op)
 }
 
 #ifdef HAVE_FORK
+/*[clinic input]
+_thread.lock._at_fork_reinit
+[clinic start generated code]*/
+
 static PyObject *
-lock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(dummy))
+_thread_lock__at_fork_reinit_impl(lockobject *self)
+/*[clinic end generated code: output=d8609f2d3bfa1fd5 input=a970cb76e2a0a131]*/
 {
-    lockobject *self = lockobject_CAST(op);
     _PyMutex_at_fork_reinit(&self->lock);
     Py_RETURN_NONE;
 }
@@ -960,25 +1011,16 @@ lock_new_impl(PyTypeObject *type)
 
 
 static PyMethodDef lock_methods[] = {
-    {"acquire_lock", _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, acquire_lock_doc},
-    {"acquire",      _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, acquire_doc},
-    {"release_lock", lock_PyThread_release_lock,
-     METH_NOARGS, release_lock_doc},
-    {"release",      lock_PyThread_release_lock,
-     METH_NOARGS, release_doc},
-    {"locked_lock",  lock_locked_lock,
-     METH_NOARGS, locked_lock_doc},
-    {"locked",       lock_locked_lock,
-     METH_NOARGS, locked_doc},
-    {"__enter__",    _PyCFunction_CAST(lock_PyThread_acquire_lock),
-     METH_VARARGS | METH_KEYWORDS, enter_doc},
-    {"__exit__",    lock_PyThread_release_lock,
-     METH_VARARGS, lock_exit_doc},
+    _THREAD_LOCK_ACQUIRE_LOCK_METHODDEF
+    _THREAD_LOCK_ACQUIRE_METHODDEF
+    _THREAD_LOCK_RELEASE_LOCK_METHODDEF
+    _THREAD_LOCK_RELEASE_METHODDEF
+    _THREAD_LOCK_LOCKED_LOCK_METHODDEF
+    _THREAD_LOCK_LOCKED_METHODDEF
+    _THREAD_LOCK___ENTER___METHODDEF
+    _THREAD_LOCK___EXIT___METHODDEF
 #ifdef HAVE_FORK
-    {"_at_fork_reinit", lock__at_fork_reinit,
-     METH_NOARGS, NULL},
+    _THREAD_LOCK__AT_FORK_REINIT_METHODDEF
 #endif
     {NULL,           NULL}              /* sentinel */
 };
@@ -1018,13 +1060,6 @@ static PyType_Spec lock_type_spec = {
 
 /* Recursive lock objects */
 
-typedef struct {
-    PyObject_HEAD
-    _PyRecursiveMutex lock;
-} rlockobject;
-
-#define rlockobject_CAST(op)    ((rlockobject *)(op))
-
 static int
 rlock_traverse(PyObject *self, visitproc visit, void *arg)
 {
@@ -1048,14 +1083,35 @@ rlock_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+_thread.RLock.acquire
+    blocking: bool = True
+    timeout as timeoutobj: object(py_default="-1") = NULL
+
+Lock the lock.
+
+`blocking` indicates whether we should wait
+for the lock to be available or not.  If `blocking` is False
+and another thread holds the lock, the method will return False
+immediately.  If `blocking` is True and another thread holds
+the lock, the method will wait for the lock to be released,
+take it and then return True.
+(note: the blocking operation is interruptible.)
+
+In all other cases, the method will return True immediately.
+Precisely, if the current thread already holds the lock, its
+internal counter is simply incremented. If nobody holds the lock,
+the lock is taken and its internal counter initialized to 1.
+[clinic start generated code]*/
 
 static PyObject *
-rlock_acquire(PyObject *op, PyObject *args, PyObject *kwds)
+_thread_RLock_acquire_impl(rlockobject *self, int blocking,
+                           PyObject *timeoutobj)
+/*[clinic end generated code: output=73df5af6f67c1513 input=d55a0f5014522a8d]*/
 {
-    rlockobject *self = rlockobject_CAST(op);
     PyTime_t timeout;
 
-    if (lock_acquire_parse_args(args, kwds, &timeout) < 0) {
+    if (lock_acquire_parse_timeout(timeoutobj, blocking, &timeout) < 0) {
         return NULL;
     }
 
@@ -1073,33 +1129,38 @@ rlock_acquire(PyObject *op, PyObject *args, PyObject *kwds)
     return PyBool_FromLong(r == PY_LOCK_ACQUIRED);
 }
 
-PyDoc_STRVAR(rlock_acquire_doc,
-"acquire($self, /, blocking=True, timeout=-1)\n\
---\n\
-\n\
-Lock the lock.  `blocking` indicates whether we should wait\n\
-for the lock to be available or not.  If `blocking` is False\n\
-and another thread holds the lock, the method will return False\n\
-immediately.  If `blocking` is True and another thread holds\n\
-the lock, the method will wait for the lock to be released,\n\
-take it and then return True.\n\
-(note: the blocking operation is interruptible.)\n\
-\n\
-In all other cases, the method will return True immediately.\n\
-Precisely, if the current thread already holds the lock, its\n\
-internal counter is simply incremented. If nobody holds the lock,\n\
-the lock is taken and its internal counter initialized to 1.");
+/*[clinic input]
+_thread.RLock.__enter__
 
-PyDoc_STRVAR(rlock_enter_doc,
-"__enter__($self, /)\n\
---\n\
-\n\
-Lock the lock.");
+Lock the lock.
+[clinic start generated code]*/
 
 static PyObject *
-rlock_release(PyObject *op, PyObject *Py_UNUSED(dummy))
+_thread_RLock___enter___impl(rlockobject *self)
+/*[clinic end generated code: output=63135898476bf89f input=33be37f459dca390]*/
 {
-    rlockobject *self = rlockobject_CAST(op);
+    return _thread_RLock_acquire_impl(self, 1, NULL);
+}
+
+/*[clinic input]
+_thread.RLock.release
+
+Release the lock.
+
+Allows another thread that is blocked waiting for
+the lock to acquire the lock.  The lock must be in the locked state,
+and must be locked by the same thread that unlocks it; otherwise a
+`RuntimeError` is raised.
+
+Do note that if the lock was acquire()d several times in a row by the
+current thread, release() needs to be called as many times for the lock
+to be available for other threads.
+[clinic start generated code]*/
+
+static PyObject *
+_thread_RLock_release_impl(rlockobject *self)
+/*[clinic end generated code: output=51f4a013c5fae2c5 input=d425daf1a5782e63]*/
+{
     if (_PyRecursiveMutex_TryUnlock(&self->lock) < 0) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
@@ -1108,46 +1169,55 @@ rlock_release(PyObject *op, PyObject *Py_UNUSED(dummy))
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(rlock_release_doc,
-"release($self, /)\n\
---\n\
-\n\
-Release the lock, allowing another thread that is blocked waiting for\n\
-the lock to acquire the lock.  The lock must be in the locked state,\n\
-and must be locked by the same thread that unlocks it; otherwise a\n\
-`RuntimeError` is raised.\n\
-\n\
-Do note that if the lock was acquire()d several times in a row by the\n\
-current thread, release() needs to be called as many times for the lock\n\
-to be available for other threads.");
+/*[clinic input]
+_thread.RLock.__exit__
+    exc_type: object
+    exc_value: object
+    exc_tb: object
+    /
 
-PyDoc_STRVAR(rlock_exit_doc,
-"__exit__($self, /, *exc_info)\n\
---\n\
-\n\
-Release the lock.");
+Release the lock.
+
+[clinic start generated code]*/
 
 static PyObject *
-rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
+_thread_RLock___exit___impl(rlockobject *self, PyObject *exc_type,
+                            PyObject *exc_value, PyObject *exc_tb)
+/*[clinic end generated code: output=79bb44d551aedeb5 input=79accf0778d91002]*/
 {
-    rlockobject *self = rlockobject_CAST(op);
+    return _thread_RLock_release_impl(self);
+}
+
+/*[clinic input]
+_thread.RLock.locked
+
+Return a boolean indicating whether this object is locked right now.
+[clinic start generated code]*/
+
+static PyObject *
+_thread_RLock_locked_impl(rlockobject *self)
+/*[clinic end generated code: output=e9b6060492b3f94e input=8866d9237ba5391b]*/
+{
     int is_locked = rlock_locked_impl(self);
     return PyBool_FromLong(is_locked);
 }
 
-PyDoc_STRVAR(rlock_locked_doc,
-"locked()\n\
-\n\
-Return a boolean indicating whether this object is locked right now.");
+/*[clinic input]
+_thread.RLock._acquire_restore
+    state: object
+    /
+
+For internal use by `threading.Condition`.
+[clinic start generated code]*/
 
 static PyObject *
-rlock_acquire_restore(PyObject *op, PyObject *args)
+_thread_RLock__acquire_restore_impl(rlockobject *self, PyObject *state)
+/*[clinic end generated code: output=beb8f2713a35e775 input=c8f2094fde059447]*/
 {
-    rlockobject *self = rlockobject_CAST(op);
     PyThread_ident_t owner;
     Py_ssize_t count;
 
-    if (!PyArg_ParseTuple(args, "(n" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
+    if (!PyArg_Parse(state, "(n" Py_PARSE_THREAD_IDENT_T "):_acquire_restore",
             &count, &owner))
         return NULL;
 
@@ -1157,17 +1227,17 @@ rlock_acquire_restore(PyObject *op, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(rlock_acquire_restore_doc,
-"_acquire_restore($self, state, /)\n\
---\n\
-\n\
-For internal use by `threading.Condition`.");
+
+/*[clinic input]
+_thread.RLock._release_save
+
+For internal use by `threading.Condition`.
+[clinic start generated code]*/
 
 static PyObject *
-rlock_release_save(PyObject *op, PyObject *Py_UNUSED(dummy))
+_thread_RLock__release_save_impl(rlockobject *self)
+/*[clinic end generated code: output=d2916487315bea93 input=809d227cfc4a112c]*/
 {
-    rlockobject *self = rlockobject_CAST(op);
-
     if (!_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
@@ -1181,41 +1251,37 @@ rlock_release_save(PyObject *op, PyObject *Py_UNUSED(dummy))
     return Py_BuildValue("n" Py_PARSE_THREAD_IDENT_T, count, owner);
 }
 
-PyDoc_STRVAR(rlock_release_save_doc,
-"_release_save($self, /)\n\
---\n\
-\n\
-For internal use by `threading.Condition`.");
+
+/*[clinic input]
+_thread.RLock._recursion_count
+
+For internal use by reentrancy checks.
+[clinic start generated code]*/
 
 static PyObject *
-rlock_recursion_count(PyObject *op, PyObject *Py_UNUSED(dummy))
+_thread_RLock__recursion_count_impl(rlockobject *self)
+/*[clinic end generated code: output=7993fb9695ef2c4d input=7fd1834cd7a4b044]*/
 {
-    rlockobject *self = rlockobject_CAST(op);
     if (_PyRecursiveMutex_IsLockedByCurrentThread(&self->lock)) {
         return PyLong_FromSize_t(self->lock.level + 1);
     }
     return PyLong_FromLong(0);
 }
 
-PyDoc_STRVAR(rlock_recursion_count_doc,
-"_recursion_count($self, /)\n\
---\n\
-\n\
-For internal use by reentrancy checks.");
+
+/*[clinic input]
+_thread.RLock._is_owned
+
+For internal use by `threading.Condition`.
+[clinic start generated code]*/
 
 static PyObject *
-rlock_is_owned(PyObject *op, PyObject *Py_UNUSED(dummy))
+_thread_RLock__is_owned_impl(rlockobject *self)
+/*[clinic end generated code: output=bf14268a3cabbe07 input=fba6535538deb858]*/
 {
-    rlockobject *self = rlockobject_CAST(op);
     long owned = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
     return PyBool_FromLong(owned);
 }
-
-PyDoc_STRVAR(rlock_is_owned_doc,
-"_is_owned($self, /)\n\
---\n\
-\n\
-For internal use by `threading.Condition`.");
 
 /*[clinic input]
 @classmethod
@@ -1256,10 +1322,14 @@ rlock_repr(PyObject *op)
 
 
 #ifdef HAVE_FORK
+/*[clinic input]
+_thread.RLock._at_fork_reinit
+[clinic start generated code]*/
+
 static PyObject *
-rlock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(dummy))
+_thread_RLock__at_fork_reinit_impl(rlockobject *self)
+/*[clinic end generated code: output=d77a4ce40351817c input=a3b625b026a8df4f]*/
 {
-    rlockobject *self = rlockobject_CAST(op);
     self->lock = (_PyRecursiveMutex){0};
     Py_RETURN_NONE;
 }
@@ -1267,27 +1337,17 @@ rlock__at_fork_reinit(PyObject *op, PyObject *Py_UNUSED(dummy))
 
 
 static PyMethodDef rlock_methods[] = {
-    {"acquire",      _PyCFunction_CAST(rlock_acquire),
-     METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
-    {"release",      rlock_release,
-     METH_NOARGS, rlock_release_doc},
-    {"locked",       rlock_locked,
-     METH_NOARGS, rlock_locked_doc},
-    {"_is_owned",     rlock_is_owned,
-     METH_NOARGS, rlock_is_owned_doc},
-    {"_acquire_restore", rlock_acquire_restore,
-     METH_VARARGS, rlock_acquire_restore_doc},
-    {"_release_save", rlock_release_save,
-     METH_NOARGS, rlock_release_save_doc},
-    {"_recursion_count", rlock_recursion_count,
-     METH_NOARGS, rlock_recursion_count_doc},
-    {"__enter__",    _PyCFunction_CAST(rlock_acquire),
-     METH_VARARGS | METH_KEYWORDS, rlock_enter_doc},
-    {"__exit__",    rlock_release,
-     METH_VARARGS, rlock_exit_doc},
+    _THREAD_RLOCK_ACQUIRE_METHODDEF
+    _THREAD_RLOCK_RELEASE_METHODDEF
+    _THREAD_RLOCK_LOCKED_METHODDEF
+    _THREAD_RLOCK__IS_OWNED_METHODDEF
+    _THREAD_RLOCK__ACQUIRE_RESTORE_METHODDEF
+    _THREAD_RLOCK__RELEASE_SAVE_METHODDEF
+    _THREAD_RLOCK__RECURSION_COUNT_METHODDEF
+    _THREAD_RLOCK___ENTER___METHODDEF
+    _THREAD_RLOCK___EXIT___METHODDEF
 #ifdef HAVE_FORK
-    {"_at_fork_reinit", rlock__at_fork_reinit,
-     METH_NOARGS, NULL},
+    _THREAD_RLOCK__AT_FORK_REINIT_METHODDEF
 #endif
     {NULL,           NULL}              /* sentinel */
 };

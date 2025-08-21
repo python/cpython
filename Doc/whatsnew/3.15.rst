@@ -204,6 +204,17 @@ Other language changes
   controlled by :ref:`environment variables <using-on-controlling-color>`.
   (Contributed by Peter Bierma in :gh:`134170`.)
 
+* The :meth:`~object.__repr__` of :class:`ImportError` and :class:`ModuleNotFoundError`
+  now shows "name" and "path" as ``name=<name>`` and ``path=<path>`` if they were given
+  as keyword arguments at construction time.
+  (Contributed by Serhiy Storchaka, Oleg Iarygin, and Yoav Nir in :gh:`74185`.)
+
+* The :attr:`~object.__dict__` and :attr:`!__weakref__` descriptors now use a
+  single descriptor instance per interpreter, shared across all types that
+  need them.
+  This speeds up class creation, and helps avoid reference cycles.
+  (Contributed by Petr Viktorin in :gh:`135228`.)
+
 
 New modules
 ===========
@@ -263,6 +274,22 @@ http.client
   (Contributed by Alexander Enrique Urieles Nieto in :gh:`131724`.)
 
 
+http.cookies
+------------
+
+* Allow '``"``' double quotes in cookie values.
+  (Contributed by Nick Burns and Senthil Kumaran in :gh:`92936`.)
+
+
+locale
+------
+
+* :func:`~locale.setlocale` now supports language codes with ``@``-modifiers.
+  ``@``-modifier are no longer silently removed in :func:`~locale.getlocale`,
+  but included in the language code.
+  (Contributed by Serhiy Storchaka in :gh:`137729`.)
+
+
 math
 ----
 
@@ -284,6 +311,15 @@ os.path
   If used, errors other than :exc:`FileNotFoundError` will be re-raised;
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
+resource
+--------
+
+* Add new constants: :data:`~resource.RLIMIT_NTHR`,
+  :data:`~resource.RLIMIT_UMTXP`, :data:`~resource.RLIMIT_THREADS`,
+  :data:`~resource.RLIM_SAVED_CUR`, and :data:`~resource.RLIM_SAVED_MAX`.
+  (Contributed by Serhiy Storchaka in :gh:`137512`.)
+
 
 shelve
 ------
@@ -567,6 +603,12 @@ Porting to Python 3.15
 
   The |pythoncapi_compat_project| can be used to get most of these new
   functions on Python 3.14 and older.
+
+* :data:`resource.RLIM_INFINITY` is now always positive.
+  Passing a negative integer value that corresponded to its old value
+  (such as ``-1`` or ``-3``, depending on platform) to
+  :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
+  (Contributed by Serhiy Storchaka in :gh:`137044`.)
 
 
 Deprecated C APIs
