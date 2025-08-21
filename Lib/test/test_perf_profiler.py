@@ -283,6 +283,7 @@ def run_perf(cwd, *args, **env_vars):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
+        text=True,
     )
     if proc.returncode:
         print(proc.stderr)
@@ -295,10 +296,9 @@ def run_perf(cwd, *args, **env_vars):
         stderr=subprocess.PIPE,
         env=env,
         check=True,
+        text=True,
     )
-    return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode(
-        "utf-8", "replace"
-    )
+    return proc.stdout, proc.stderr
 
 
 @unittest.skipUnless(perf_command_works(), "perf command doesn't work")
