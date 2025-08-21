@@ -14,7 +14,19 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. data:: abi_info
 
    An object containing information about the ABI of the currently running
-   Python interpreter.  The following attributes are available in cpython:
+   Python interpreter.
+   It should include information that affect the CPython ABI in ways that require
+   a specific build of the interpreter chosen from variants that can co-exist on
+   a single machine.  For example, it does not encode the base OS (Linux or
+   Windows), but does include pointer size since some systems support both 32-
+   and 64- builds.  The available entries are the same on all platforms; e.g.
+   pointer_size is available even on 64-bit-only architectures.
+
+   New entries should be added when needed for a supported platform, or (for
+   enabling an unsupported one) by core dev consensus.  Entries should be removed
+   following :pep:`387`.
+
+   The following attributes are available in cpython:
 
    *pointer_bits* is the width of pointers in bits, as an integer, equivalent
    to ``8 * sizeof(void *)``, i.e. usually ``32`` or ``64``.
