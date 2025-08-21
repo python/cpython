@@ -4624,6 +4624,7 @@ sock_send_impl(PySocketSockObject *s, void *data)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _socket.socket.send
     self as s: self(type="PySocketSockObject *")
     data as pbuf: Py_buffer
@@ -4638,7 +4639,7 @@ Return the number of bytes sent; this may be less than len(data) if the network 
 
 static PyObject *
 _socket_socket_send_impl(PySocketSockObject *s, Py_buffer *pbuf, int flags)
-/*[clinic end generated code: output=3ddf83f17d0c875b input=befe7d7790ccb035]*/
+/*[clinic end generated code: output=3ddf83f17d0c875b input=e776a48af2e3d615]*/
 
 {
     struct sock_send ctx;
@@ -6693,6 +6694,7 @@ _socket_htonl_impl(PyObject *module, uint32_t x)
 /* socket.inet_aton() and socket.inet_ntoa() functions. */
 
 /*[clinic input]
+@permit_long_summary
 _socket.inet_aton
     ip_addr: str
     /
@@ -6702,7 +6704,7 @@ Convert an IP address in string format (123.45.67.89) to the 32-bit packed binar
 
 static PyObject *
 _socket_inet_aton_impl(PyObject *module, const char *ip_addr)
-/*[clinic end generated code: output=f2c2f772eb721b6e input=3a52dec207bf8956]*/
+/*[clinic end generated code: output=f2c2f772eb721b6e input=0bd9e5ee400fafd6]*/
 {
 #ifdef HAVE_INET_ATON
     struct in_addr buf;

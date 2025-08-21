@@ -888,6 +888,13 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
 
     // Frame setup
     ctx->curr_frame_depth = 0;
+
+    // Ctx signals.
+    // Note: this must happen before frame_new, as it might override
+    // the result should frame_new set things to bottom.
+    ctx->done = false;
+    ctx->out_of_space = false;
+    ctx->contradiction = false;
 }
 
 int
