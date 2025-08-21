@@ -1771,7 +1771,7 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     return title % desc + '\n\n' + renderer.document(object, name)
 
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
-        output=None, is_cli=False):
+        output=None, is_cli=False, is_interactive=False):
     """Display text documentation, given an object or a path to an object."""
     if output is None:
         try:
@@ -1787,7 +1787,11 @@ def doc(thing, title='Python Library Documentation: %s', forceload=0,
         except ImportError as exc:
             if is_cli:
                 raise
-            print(exc)
+            if is_interactive:
+                # don't show the usual hints if we're running interactively
+                print(exc.args[0].splitlines(False)[0])
+            else:
+                print(exc)
     else:
         try:
             s = render_doc(thing, title, forceload, plaintext)
@@ -2070,10 +2074,7 @@ has the same effect as typing a particular string at the help> prompt.
                     and request[0] not in request[1:-1]):
                 request = request[1:-1]
             if request.lower() in ('q', 'quit', 'exit'): break
-            if request == 'help':
-                self.intro()
-            else:
-                self.help(request)
+            self.help(request, is_interactive=True)
 
     def getline(self, prompt):
         """Read one line, using input() when appropriate."""
@@ -2084,7 +2085,7 @@ has the same effect as typing a particular string at the help> prompt.
             self.output.flush()
             return self.input.readline()
 
-    def help(self, request, is_cli=False):
+    def help(self, request, is_cli=False, is_interactive=False):
         if isinstance(request, str):
             request = request.strip()
             if request == 'keywords': self.listkeywords()
@@ -2099,7 +2100,8 @@ has the same effect as typing a particular string at the help> prompt.
                 doc(eval(request), 'Help on %s:', output=self._output, is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
-            elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
+            elif request:
+                doc(request, 'Help on %s:', output=self._output, is_cli=is_cli, is_interactive=is_interactive)
             else: doc(str, 'Help on %s:', output=self._output, is_cli=is_cli)
         elif isinstance(request, Helper): self()
         else: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
