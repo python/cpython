@@ -494,6 +494,11 @@ free_interpreter(PyInterpreterState *interp)
 static inline int check_interpreter_whence(long);
 #endif
 
+extern _Py_CODEUNIT *
+_Py_LazyJitTrampoline(
+    struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
