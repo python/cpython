@@ -73,7 +73,7 @@ def create(maxsize=0, *, unbounditems=UNBOUND):
     """
     unbound = _serialize_unbound(unbounditems)
     unboundop, = unbound
-    qid = _queues.create(maxsize, unboundop)
+    qid = _queues.create(maxsize, unboundop, -1)
     self = Queue(qid)
     self._set_unbound(unboundop, unbounditems)
     return self

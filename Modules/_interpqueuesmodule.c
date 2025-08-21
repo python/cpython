@@ -1486,7 +1486,7 @@ queuesmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     Py_ssize_t maxsize;
     int unboundarg = -1;
     int fallbackarg = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n|i$p:create", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "n|ii:create", kwlist,
                                      &maxsize, &unboundarg, &fallbackarg))
     {
         return NULL;
@@ -1603,7 +1603,7 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *obj;
     int unboundarg = -1;
     int fallbackarg = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|i$p:put", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|ii:put", kwlist,
                                      qidarg_converter, &qidarg, &obj,
                                      &unboundarg, &fallbackarg))
     {
