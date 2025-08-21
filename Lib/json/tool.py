@@ -72,6 +72,11 @@ def main():
                        help='suppress all whitespace separation (most compact)')
     options = parser.parse_args()
 
+    # Check if reading from stdin in a terminal without piped input
+    if options.infile == '-' and sys.stdin.isatty():
+        parser.print_help()
+        return
+
     dump_args = {
         'sort_keys': options.sort_keys,
         'indent': options.indent,
