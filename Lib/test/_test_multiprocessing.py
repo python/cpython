@@ -3577,14 +3577,7 @@ class FakeConnection:
 class TestManagerExceptions(unittest.TestCase):
     # Issue 106558: Manager exceptions avoids creating cyclic references.
     def setUp(self):
-        # gh-135427
-        # In some of the tests, a forked child forks another child of itself. In that case, using
-        # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
-        # child of child, and a warnings_helper.ignore_warnings exception is raised.
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    message=".*fork.*may lead to deadlocks in the child.*",
-                                    category=DeprecationWarning)
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
             self.mgr = multiprocessing.Manager()
 
     def tearDown(self):
@@ -5364,14 +5357,7 @@ def initializer(ns):
 @hashlib_helper.requires_hashdigest('sha256')
 class TestInitializers(unittest.TestCase):
     def setUp(self):
-        # gh-135427
-        # In some of the tests, a forked child forks another child of itself. In that case, using
-        # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
-        # child of child, and a warnings_helper.ignore_warnings exception is raised.
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    message=".*fork.*may lead to deadlocks in the child.*",
-                                    category=DeprecationWarning)
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
             self.mgr = multiprocessing.Manager()
             self.ns = self.mgr.Namespace()
             self.ns.test = 0
@@ -6412,14 +6398,7 @@ class TestSyncManagerTypes(unittest.TestCase):
 
     def setUp(self):
         self.manager = self.manager_class()
-        # gh-135427
-        # In some of the tests, a forked child forks another child of itself. In that case, using
-        # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
-        # child of child, and a warnings_helper.ignore_warnings exception is raised.
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    message=".*fork.*may lead to deadlocks in the child.*",
-                                    category=DeprecationWarning)
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
             self.manager.start()
         self.proc = None
 
@@ -7128,14 +7107,7 @@ class ManagerMixin(BaseMixin):
 
     @classmethod
     def setUpClass(cls):
-        # gh-135427
-        # In some of the tests, a forked child forks another child of itself. In that case, using
-        # warnings_helper.ignore_warnings decorator does not actually ignore the warning from that
-        # child of child, and a warnings_helper.ignore_warnings exception is raised.
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    message=".*fork.*may lead to deadlocks in the child.*",
-                                    category=DeprecationWarning)
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
             super().setUpClass()
             cls.manager = multiprocessing.Manager()
 
