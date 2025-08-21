@@ -10,119 +10,6 @@
 
 #include "pymacro.h"
 
-
-/******************************************************************************/
-/*                                Module                                      */
-/******************************************************************************/
-
-
-PyDoc_STRVAR(doc__decimal,
-"C decimal arithmetic module");
-
-PyDoc_STRVAR(doc_getcontext,
-"getcontext($module, /)\n--\n\n\
-Get the current default context.\n\
-\n");
-
-PyDoc_STRVAR(doc_setcontext,
-"setcontext($module, context, /)\n--\n\n\
-Set a new default context.\n\
-\n");
-
-PyDoc_STRVAR(doc_localcontext,
-"localcontext($module, /, ctx=None, **kwargs)\n--\n\n\
-Return a context manager that will set the default context to a copy of ctx\n\
-on entry to the with-statement and restore the previous default context when\n\
-exiting the with-statement. If no context is specified, a copy of the current\n\
-default context is used.\n\
-\n");
-
-PyDoc_STRVAR(doc_ieee_context,
-"IEEEContext($module, bits, /)\n--\n\n\
-Return a context object initialized to the proper values for one of the\n\
-IEEE interchange formats.  The argument must be a multiple of 32 and less\n\
-than IEEE_CONTEXT_MAX_BITS.\n\
-\n");
-
-
-/******************************************************************************/
-/*                       Decimal Object and Methods                           */
-/******************************************************************************/
-
-PyDoc_STRVAR(doc_decimal,
-"Decimal(value=\"0\", context=None)\n--\n\n\
-Construct a new Decimal object. 'value' can be an integer, string, tuple,\n\
-or another Decimal object. If no value is given, return Decimal('0'). The\n\
-context does not affect the conversion and is only passed to determine if\n\
-the InvalidOperation trap is active.\n\
-\n");
-
-PyDoc_STRVAR(doc_compare,
-"compare($self, /, other, context=None)\n--\n\n\
-Compare self to other.  Return a decimal value:\n\
-\n\
-    a or b is a NaN ==> Decimal('NaN')\n\
-    a < b           ==> Decimal('-1')\n\
-    a == b          ==> Decimal('0')\n\
-    a > b           ==> Decimal('1')\n\
-\n");
-
-PyDoc_STRVAR(doc_compare_signal,
-"compare_signal($self, /, other, context=None)\n--\n\n\
-Identical to compare, except that all NaNs signal.\n\
-\n");
-
-PyDoc_STRVAR(doc_compare_total,
-"compare_total($self, /, other, context=None)\n--\n\n\
-Compare two operands using their abstract representation rather than\n\
-their numerical value.  Similar to the compare() method, but the result\n\
-gives a total ordering on Decimal instances.  Two Decimal instances with\n\
-the same numeric value but different representations compare unequal\n\
-in this ordering:\n\
-\n\
-    >>> Decimal('12.0').compare_total(Decimal('12'))\n\
-    Decimal('-1')\n\
-\n\
-Quiet and signaling NaNs are also included in the total ordering. The result\n\
-of this function is Decimal('0') if both operands have the same representation,\n\
-Decimal('-1') if the first operand is lower in the total order than the second,\n\
-and Decimal('1') if the first operand is higher in the total order than the\n\
-second operand. See the specification for details of the total order.\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
-\n");
-
-PyDoc_STRVAR(doc_compare_total_mag,
-"compare_total_mag($self, /, other, context=None)\n--\n\n\
-Compare two operands using their abstract representation rather than their\n\
-value as in compare_total(), but ignoring the sign of each operand.\n\
-\n\
-x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
-\n");
-
-PyDoc_STRVAR(doc_exp,
-"exp($self, /, context=None)\n--\n\n\
-Return the value of the (natural) exponential function e**x at the given\n\
-number.  The function always uses the ROUND_HALF_EVEN mode and the result\n\
-is correctly rounded.\n\
-\n");
-
-PyDoc_STRVAR(doc_fma,
-"fma($self, /, other, third, context=None)\n--\n\n\
-Fused multiply-add.  Return self*other+third with no rounding of the\n\
-intermediate product self*other.\n\
-\n\
-    >>> Decimal(2).fma(3, 5)\n\
-    Decimal('11')\n\
-\n\
-\n");
-
 PyDoc_STRVAR(doc_is_canonical,
 "is_canonical($self, /)\n--\n\n\
 Return True if the argument is canonical and False otherwise.  Currently,\n\
@@ -148,13 +35,6 @@ Return True if the argument is a (quiet or signaling) NaN and False\n\
 otherwise.\n\
 \n");
 
-PyDoc_STRVAR(doc_is_normal,
-"is_normal($self, /, context=None)\n--\n\n\
-Return True if the argument is a normal finite non-zero number with an\n\
-adjusted exponent greater than or equal to Emin. Return False if the\n\
-argument is zero, subnormal, infinite or a NaN.\n\
-\n");
-
 PyDoc_STRVAR(doc_is_qnan,
 "is_qnan($self, /)\n--\n\n\
 Return True if the argument is a quiet NaN, and False otherwise.\n\
@@ -171,161 +51,11 @@ PyDoc_STRVAR(doc_is_snan,
 Return True if the argument is a signaling NaN and False otherwise.\n\
 \n");
 
-PyDoc_STRVAR(doc_is_subnormal,
-"is_subnormal($self, /, context=None)\n--\n\n\
-Return True if the argument is subnormal, and False otherwise. A number is\n\
-subnormal if it is non-zero, finite, and has an adjusted exponent less\n\
-than Emin.\n\
-\n");
-
 PyDoc_STRVAR(doc_is_zero,
 "is_zero($self, /)\n--\n\n\
 Return True if the argument is a (positive or negative) zero and False\n\
 otherwise.\n\
 \n");
-
-PyDoc_STRVAR(doc_ln,
-"ln($self, /, context=None)\n--\n\n\
-Return the natural (base e) logarithm of the operand. The function always\n\
-uses the ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
-\n");
-
-PyDoc_STRVAR(doc_log10,
-"log10($self, /, context=None)\n--\n\n\
-Return the base ten logarithm of the operand. The function always uses the\n\
-ROUND_HALF_EVEN mode and the result is correctly rounded.\n\
-\n");
-
-PyDoc_STRVAR(doc_logb,
-"logb($self, /, context=None)\n--\n\n\
-For a non-zero number, return the adjusted exponent of the operand as a\n\
-Decimal instance.  If the operand is a zero, then Decimal('-Infinity') is\n\
-returned and the DivisionByZero condition is raised. If the operand is\n\
-an infinity then Decimal('Infinity') is returned.\n\
-\n");
-
-PyDoc_STRVAR(doc_logical_and,
-"logical_and($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'and' of the two (logical) operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_logical_invert,
-"logical_invert($self, /, context=None)\n--\n\n\
-Return the digit-wise inversion of the (logical) operand.\n\
-\n");
-
-PyDoc_STRVAR(doc_logical_or,
-"logical_or($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'or' of the two (logical) operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_logical_xor,
-"logical_xor($self, /, other, context=None)\n--\n\n\
-Return the digit-wise 'exclusive or' of the two (logical) operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_max,
-"max($self, /, other, context=None)\n--\n\n\
-Maximum of self and other.  If one operand is a quiet NaN and the other is\n\
-numeric, the numeric operand is returned.\n\
-\n");
-
-PyDoc_STRVAR(doc_max_mag,
-"max_mag($self, /, other, context=None)\n--\n\n\
-Similar to the max() method, but the comparison is done using the absolute\n\
-values of the operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_min,
-"min($self, /, other, context=None)\n--\n\n\
-Minimum of self and other. If one operand is a quiet NaN and the other is\n\
-numeric, the numeric operand is returned.\n\
-\n");
-
-PyDoc_STRVAR(doc_min_mag,
-"min_mag($self, /, other, context=None)\n--\n\n\
-Similar to the min() method, but the comparison is done using the absolute\n\
-values of the operands.\n\
-\n");
-
-PyDoc_STRVAR(doc_next_minus,
-"next_minus($self, /, context=None)\n--\n\n\
-Return the largest number representable in the given context (or in the\n\
-current default context if no context is given) that is smaller than the\n\
-given operand.\n\
-\n");
-
-PyDoc_STRVAR(doc_next_plus,
-"next_plus($self, /, context=None)\n--\n\n\
-Return the smallest number representable in the given context (or in the\n\
-current default context if no context is given) that is larger than the\n\
-given operand.\n\
-\n");
-
-PyDoc_STRVAR(doc_next_toward,
-"next_toward($self, /, other, context=None)\n--\n\n\
-If the two operands are unequal, return the number closest to the first\n\
-operand in the direction of the second operand.  If both operands are\n\
-numerically equal, return a copy of the first operand with the sign set\n\
-to be the same as the sign of the second operand.\n\
-\n");
-
-PyDoc_STRVAR(doc_normalize,
-"normalize($self, /, context=None)\n--\n\n\
-Normalize the number by stripping the rightmost trailing zeros and\n\
-converting any result equal to Decimal('0') to Decimal('0e0').  Used\n\
-for producing canonical values for members of an equivalence class.\n\
-For example, Decimal('32.100') and Decimal('0.321000e+2') both normalize\n\
-to the equivalent value Decimal('32.1').\n\
-\n");
-
-PyDoc_STRVAR(doc_remainder_near,
-"remainder_near($self, /, other, context=None)\n--\n\n\
-Return the remainder from dividing self by other.  This differs from\n\
-self % other in that the sign of the remainder is chosen so as to minimize\n\
-its absolute value. More precisely, the return value is self - n * other\n\
-where n is the integer nearest to the exact value of self / other, and\n\
-if two integers are equally near then the even one is chosen.\n\
-\n\
-If the result is zero then its sign will be the sign of self.\n\
-\n");
-
-PyDoc_STRVAR(doc_rotate,
-"rotate($self, /, other, context=None)\n--\n\n\
-Return the result of rotating the digits of the first operand by an amount\n\
-specified by the second operand.  The second operand must be an integer in\n\
-the range -precision through precision. The absolute value of the second\n\
-operand gives the number of places to rotate. If the second operand is\n\
-positive then rotation is to the left; otherwise rotation is to the right.\n\
-The coefficient of the first operand is padded on the left with zeros to\n\
-length precision if necessary. The sign and exponent of the first operand are\n\
-unchanged.\n\
-\n");
-
-PyDoc_STRVAR(doc_scaleb,
-"scaleb($self, /, other, context=None)\n--\n\n\
-Return the first operand with the exponent adjusted the second.  Equivalently,\n\
-return the first operand multiplied by 10**other. The second operand must be\n\
-an integer.\n\
-\n");
-
-PyDoc_STRVAR(doc_shift,
-"shift($self, /, other, context=None)\n--\n\n\
-Return the result of shifting the digits of the first operand by an amount\n\
-specified by the second operand.  The second operand must be an integer in\n\
-the range -precision through precision. The absolute value of the second\n\
-operand gives the number of places to shift. If the second operand is\n\
-positive, then the shift is to the left; otherwise the shift is to the\n\
-right. Digits shifted into the coefficient are zeros. The sign and exponent\n\
-of the first operand are unchanged.\n\
-\n");
-
-PyDoc_STRVAR(doc_sqrt,
-"sqrt($self, /, context=None)\n--\n\n\
-Return the square root of the argument to full precision. The result is\n\
-correctly rounded using the ROUND_HALF_EVEN rounding mode.\n\
-\n");
-
 
 /******************************************************************************/
 /*                       Context Object and Methods                           */
@@ -382,19 +112,6 @@ PyDoc_STRVAR(doc_ctx_create_decimal_from_float,
 "create_decimal_from_float($self, f, /)\n--\n\n\
 Create a new Decimal instance from float f.  Unlike the Decimal.from_float()\n\
 class method, this function observes the context limits.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_Etiny,
-"Etiny($self, /)\n--\n\n\
-Return a value equal to Emin - prec + 1, which is the minimum exponent value\n\
-for subnormal results.  When underflow occurs, the exponent is set to Etiny.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_Etop,
-"Etop($self, /)\n--\n\n\
-Return a value equal to Emax - prec + 1.  This is the maximum exponent\n\
-if the _clamp field of the context is set to 1 (IEEE clamp mode).  Etop()\n\
-must not be negative.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_abs,
@@ -470,6 +187,40 @@ Return e ** x.\n\
 PyDoc_STRVAR(doc_ctx_fma,
 "fma($self, x, y, z, /)\n--\n\n\
 Return x multiplied by y, plus z.\n\
+\n");
+
+PyDoc_STRVAR(doc_compare_total,
+"compare_total($self, /, other, context=None)\n--\n\n\
+Compare two operands using their abstract representation rather than\n\
+their numerical value.  Similar to the compare() method, but the result\n\
+gives a total ordering on Decimal instances.  Two Decimal instances with\n\
+the same numeric value but different representations compare unequal\n\
+in this ordering:\n\
+\n\
+    >>> Decimal('12.0').compare_total(Decimal('12'))\n\
+    Decimal('-1')\n\
+\n\
+Quiet and signaling NaNs are also included in the total ordering. The result\n\
+of this function is Decimal('0') if both operands have the same representation,\n\
+Decimal('-1') if the first operand is lower in the total order than the second,\n\
+and Decimal('1') if the first operand is higher in the total order than the\n\
+second operand. See the specification for details of the total order.\n\
+\n\
+This operation is unaffected by context and is quiet: no flags are changed\n\
+and no rounding is performed. As an exception, the C version may raise\n\
+InvalidOperation if the second operand cannot be converted exactly.\n\
+\n");
+
+PyDoc_STRVAR(doc_compare_total_mag,
+"compare_total_mag($self, /, other, context=None)\n--\n\n\
+Compare two operands using their abstract representation rather than their\n\
+value as in compare_total(), but ignoring the sign of each operand.\n\
+\n\
+x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).\n\
+\n\
+This operation is unaffected by context and is quiet: no flags are changed\n\
+and no rounding is performed. As an exception, the C version may raise\n\
+InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_is_canonical,
@@ -619,32 +370,9 @@ Plus corresponds to the unary prefix plus operator in Python, but applies\n\
 the context to the result.\n\
 \n");
 
-PyDoc_STRVAR(doc_ctx_power,
-"power($self, /, a, b, modulo=None)\n--\n\n\
-Compute a**b. If 'a' is negative, then 'b' must be integral. The result\n\
-will be inexact unless 'a' is integral and the result is finite and can\n\
-be expressed exactly in 'precision' digits.  In the Python version the\n\
-result is always correctly rounded, in the C version the result is almost\n\
-always correctly rounded.\n\
-\n\
-If modulo is given, compute (a**b) % modulo. The following restrictions\n\
-hold:\n\
-\n\
-    * all three arguments must be integral\n\
-    * 'b' must be nonnegative\n\
-    * at least one of 'a' or 'b' must be nonzero\n\
-    * modulo must be nonzero and less than 10**prec in absolute value\n\
-\n\
-\n");
-
 PyDoc_STRVAR(doc_ctx_quantize,
 "quantize($self, x, y, /)\n--\n\n\
 Return a value equal to x (rounded), having the exponent of y.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_radix,
-"radix($self, /)\n--\n\n\
-Return 10.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_remainder,

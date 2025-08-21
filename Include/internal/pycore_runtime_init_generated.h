@@ -564,6 +564,8 @@ extern "C" {
 
 #define _Py_str_identifiers_INIT { \
     INIT_ID(CANCELLED), \
+    INIT_ID(Emax), \
+    INIT_ID(Emin), \
     INIT_ID(FINISHED), \
     INIT_ID(False), \
     INIT_ID(JSONDecodeError), \
@@ -834,6 +836,7 @@ extern "C" {
     INIT_ID(c_exception), \
     INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
+    INIT_ID(c_stack), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
@@ -845,10 +848,13 @@ extern "C" {
     INIT_ID(callback), \
     INIT_ID(cancel), \
     INIT_ID(capath), \
+    INIT_ID(capitals), \
     INIT_ID(category), \
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
+    INIT_ID(chain), \
     INIT_ID(check_same_thread), \
+    INIT_ID(clamp), \
     INIT_ID(clear), \
     INIT_ID(close), \
     INIT_ID(closed), \
@@ -888,6 +894,7 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(covariant), \
+    INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
     INIT_ID(data), \
@@ -943,6 +950,7 @@ extern "C" {
     INIT_ID(excepthook), \
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
+    INIT_ID(exit), \
     INIT_ID(exp), \
     INIT_ID(expression), \
     INIT_ID(extend), \
@@ -1109,6 +1117,7 @@ extern "C" {
     INIT_ID(module), \
     INIT_ID(module_globals), \
     INIT_ID(modules), \
+    INIT_ID(modulo), \
     INIT_ID(month), \
     INIT_ID(mro), \
     INIT_ID(msg), \
@@ -1177,6 +1186,7 @@ extern "C" {
     INIT_ID(pos1), \
     INIT_ID(pos2), \
     INIT_ID(posix), \
+    INIT_ID(prec), \
     INIT_ID(preserve_exc), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
@@ -1204,6 +1214,7 @@ extern "C" {
     INIT_ID(rel_tol), \
     INIT_ID(release), \
     INIT_ID(reload), \
+    INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
     INIT_ID(reqrefs), \
@@ -1242,6 +1253,7 @@ extern "C" {
     INIT_ID(shared), \
     INIT_ID(show_cmd), \
     INIT_ID(signed), \
+    INIT_ID(signum), \
     INIT_ID(size), \
     INIT_ID(sizehint), \
     INIT_ID(skip_file_prefixes), \
@@ -1285,6 +1297,7 @@ extern "C" {
     INIT_ID(template), \
     INIT_ID(term), \
     INIT_ID(text), \
+    INIT_ID(third), \
     INIT_ID(threading), \
     INIT_ID(throw), \
     INIT_ID(time), \
@@ -1299,6 +1312,7 @@ extern "C" {
     INIT_ID(traceback), \
     INIT_ID(trailers), \
     INIT_ID(translate), \
+    INIT_ID(traps), \
     INIT_ID(true), \
     INIT_ID(truncate), \
     INIT_ID(twice), \
