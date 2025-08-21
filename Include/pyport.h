@@ -385,19 +385,13 @@ extern "C" {
 #  define Py_NO_INLINE
 #endif
 
-// Any function annotated with this MUST not modify global state.
-// It can only modify state referenced by its parameters.
-// This is useful for optimizations on certain compilers.
-// Please see https://learn.microsoft.com/en-us/cpp/cpp/noalias
-#if defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER)
-#  define Py_NOALIAS
-#elif defined(_MSC_VER)
-#  define Py_NOALIAS __declspec(noalias)
+#if defined(_MSC_VER) && Py_TAIL_CALL_INTERP
+#  define Py_NO_INLINE_MSVC_TAILCALL Py_NO_INLINE
 #else
-#  define Py_NOALIAS
+#  define Py_NO_INLINE_MSVC_TAILCALL
 #endif
 
-// A no-op at compile time. Hints to the programmer
+// Just a scope. Hints to the programmer
 // That any local variable defined within this block MUST
 // not escape from the current definition.
 # define Py_BEGIN_LOCALS_MUST_NOT_ESCAPE() {
