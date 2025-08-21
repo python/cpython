@@ -4346,7 +4346,9 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
     return result;                                               \
 }
 
-/* Boolean function without a context arg. */
+/* Boolean function without a context arg.
+   Argument Clinic provides PyObject *self
+*/
 #define Dec_BoolFunc(MPDFUNC) \
 {                                                           \
     return MPDFUNC(MPD(self)) ? incr_true() : incr_false(); \
@@ -4419,7 +4421,10 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 
 /* Binary function with an optional context arg. Actual MPDFUNC does
    NOT take a context. The context is used to record InvalidOperation
-   if the second operand cannot be converted exactly. */
+   if the second operand cannot be converted exactly.
+
+   Argument Clinic provides PyObject *self, PyObject *other, PyObject *context
+*/
 #define Dec_BinaryFuncVA_NO_CTX(MPDFUNC) \
 {                                                               \
     PyObject *a, *b;                                            \
@@ -6047,7 +6052,9 @@ static PyType_Spec dec_spec = {
     return ret;                                         \
 }
 
-/* Unary context method. */
+/* Unary context method.
+   Argument Clinic provides PyObject *context, PyObject *x
+*/
 #define DecCtx_UnaryFunc(MPDFUNC) \
 {                                                        \
     PyObject *result, *a;                                \
@@ -6071,7 +6078,9 @@ static PyType_Spec dec_spec = {
     return result;                                       \
 }
 
-/* Binary context method. */
+/* Binary context method.
+   Argument Clinic provides PyObject *context, PyObject *v, PyObject *w
+*/
 #define DecCtx_BinaryFunc(MPDFUNC) \
 {                                                                \
     PyObject *a, *b;                                             \
@@ -6130,7 +6139,10 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args) \
     return result;                               \
 }
 
-/* Ternary context method. */
+/* Ternary context method.
+   Argument Clinic provides PyObject *context, PyObject *v, PyObject *w,
+                            PyObject *x
+*/
 #define DecCtx_TernaryFunc(MPDFUNC) \
 {                                                                        \
     PyObject *a, *b, *c;                                                 \
