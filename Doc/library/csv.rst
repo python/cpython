@@ -470,6 +470,7 @@ Dialects support the following attributes:
    The default is :const:`False`.  When combining ``delimiter=' '`` with
    ``skipinitialspace=True``, unquoted empty fields are not allowed.
 
+
 .. attribute:: Dialect.strict
 
    When ``True``, raise exception :exc:`Error` on bad CSV input.
