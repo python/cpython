@@ -288,6 +288,13 @@ For example (assuming the above class)::
 creates a new *instance* of the class and assigns this object to the local
 variable ``x``.
 
+.. note::
+
+   Be careful to include the parentheses ``()`` when instantiating.  
+   Writing ``x = MyClass`` (without ``()``) will not create an instance,  
+   and calling ``x.f()`` will raise ``TypeError: missing 1 required positional argument: 'self'``.  
+   The correct usage is ``x = MyClass()``.
+
 The instantiation operation ("calling" a class object) creates an empty object.
 Many classes like to create objects with instances customized to a specific
 initial state. Therefore a class may define a special method named
