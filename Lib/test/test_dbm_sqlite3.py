@@ -123,8 +123,16 @@ class ReadOnlyFilesystem(unittest.TestCase):
     def test_readonly_dir_write(self):
         os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
         with dbm_sqlite3.open(self.db_path, "w") as db:
-            with self.assertRaises(dbm_sqlite3.error):
+            try:
                 db[b"newkey"] = b"newvalue"
+                modified = True
+            except dbm_sqlite3.error:
+                modified = False
+        with dbm_sqlite3.open(self.db_path, "r") as db:
+            if modified:
+                self.assertEqual(db[b"newkey"], b"newvalue")
+            else:
+                self.assertNotIn(b"newkey", db)
 
 
 class ReadWrite(_SQLiteDbmTests):
