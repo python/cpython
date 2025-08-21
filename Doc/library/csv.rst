@@ -467,25 +467,8 @@ Dialects support the following attributes:
 .. attribute:: Dialect.skipinitialspace
 
    When :const:`True`, spaces immediately following the *delimiter* are ignored.
-   The default is :const:`False`.
-
-   .. note::
-
-      When combining ``delimiter=' '`` (a space) with ``skipinitialspace=True``,
-      the writer must quote empty fields.
-
-      If an unquoted empty field would be emitted (for example writing ``''`` or
-      values that become empty like :data:`None` under some quoting modes),
-      :class:`writer` raises :exc:`csv.Error`. Quoting (the default
-      :data:`QUOTE_MINIMAL` is sufficient) avoids this error.
-
-      Example::
-
-          >>> import csv, io
-          >>> buf = io.StringIO()
-          >>> w = csv.writer(buf, delimiter=' ', skipinitialspace=True,
-          ...                 quoting=csv.QUOTE_NONE)
-          >>> w.writerow(['', 'x'])  # raises csv.Error
+   The default is :const:`False`.  When combining ``delimiter=' '`` with
+   ``skipinitialspace=True``, unquoted empty fields are not allowed.
 
 .. attribute:: Dialect.strict
 
