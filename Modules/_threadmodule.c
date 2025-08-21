@@ -2611,20 +2611,57 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 #endif
 
     const char *name = PyBytes_AS_STRING(name_encoded);
+    int rc;
 #ifdef __APPLE__
-    int rc = pthread_setname_np(name);
+    rc = pthread_setname_np(name);
 #elif defined(__NetBSD__)
     pthread_t thread = pthread_self();
-    int rc = pthread_setname_np(thread, "%s", (void *)name);
+    rc = pthread_setname_np(thread, "%s", (void *)name);
 #elif defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_t thread = pthread_self();
-    int rc = pthread_setname_np(thread, name);
+    rc = pthread_setname_np(thread, name);
 #else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
     pthread_t thread = pthread_self();
-    int rc = 0; /* pthread_set_name_np() returns void */
+    rc = 0; /* pthread_set_name_np() returns void */
     pthread_set_name_np(thread, name);
 #endif
     Py_DECREF(name_encoded);
+
+    // Fallback: If EINVAL, try ASCII encoding with "replace"
+    if (rc == EINVAL) {
+        name_encoded = PyUnicode_AsEncodedString(name_obj, "ascii", "replace");
+        if (name_encoded == NULL) {
+            return NULL;
+        }
+#ifdef _PYTHREAD_NAME_MAXLEN
+        if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
+            PyObject *truncated;
+            truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
+                                                  _PYTHREAD_NAME_MAXLEN);
+            if (truncated == NULL) {
+                Py_DECREF(name_encoded);
+                return NULL;
+            }
+            Py_SETREF(name_encoded, truncated);
+        }
+#endif
+        name = PyBytes_AS_STRING(name_encoded);
+#ifdef __APPLE__
+        rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+        thread = pthread_self();
+        rc = pthread_setname_np(thread, "%s", (void *)name);
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
+        thread = pthread_self();
+        rc = pthread_setname_np(thread, name);
+#else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
+        thread = pthread_self();
+        rc = 0;
+        pthread_set_name_np(thread, name);
+#endif
+        Py_DECREF(name_encoded);
+    }
+
     if (rc) {
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
