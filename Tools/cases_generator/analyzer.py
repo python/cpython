@@ -692,6 +692,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_Wrap",
     "PyStackRef_Unwrap",
     "_PyLong_CheckExactAndCompact",
+    "Py_BEGIN_LOCALS_MUST_NOT_ESCAPE",
+    "Py_END_LOCALS_MUST_NOT_ESCAPE",
 )
 
 

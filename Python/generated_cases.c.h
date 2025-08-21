@@ -7093,10 +7093,13 @@
                         JUMP_TO_LABEL(error);
                     }
                 }
-                PyObject *stack[] = {class, self};
+                PyObject *super;
+                Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
+                PyObject *restrict stack[] = {class, self};
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+                super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                Py_END_LOCALS_MUST_NOT_ESCAPE();
                 if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                     PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                     if (super == NULL) {
@@ -9489,10 +9492,13 @@
                         JUMP_TO_LABEL(error);
                     }
                 }
-                PyObject *stack[] = {class, self};
+                PyObject *super;
+                Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
+                PyObject *restrict stack[] = {class, self};
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
+                super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                Py_END_LOCALS_MUST_NOT_ESCAPE();
                 if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
                     PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                     if (super == NULL) {
@@ -12035,11 +12041,16 @@
             }
             assert(PyStackRef_IsTaggedInt(lasti));
             (void)lasti;
-            PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
+            PyObject* res_o;
+            Py_BEGIN_LOCALS_MUST_NOT_ESCAPE();
+            PyObject *restrict stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
-                (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
+                                        (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            Py_END_LOCALS_MUST_NOT_ESCAPE();
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_XDECREF(original_tb);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
