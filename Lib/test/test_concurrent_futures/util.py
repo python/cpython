@@ -11,7 +11,6 @@ from concurrent.futures.process import _check_system_limits
 
 from test import support
 from test.support import threading_helper
-import warnings
 
 
 def create_future(state=PENDING, exception=None, result=None):
