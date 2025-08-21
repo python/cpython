@@ -1689,6 +1689,7 @@ to speed up repeated connections from the same clients.
    be a string in the `OpenSSL cipher list format
    <https://docs.openssl.org/master/man1/ciphers/>`_.
    To set allowed TLS 1.3 ciphers, use :meth:`SSLContext.set_ciphersuites`.
+
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1708,6 +1709,8 @@ to speed up repeated connections from the same clients.
    .. note::
       When connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
       return details about the negotiated cipher.
+
+   .. versionadded:: next
 
 .. method:: SSLContext.set_groups(groups)
 
@@ -2856,10 +2859,10 @@ The TLS 1.3 protocol behaves slightly differently than previous version
 of TLS/SSL. Some new TLS 1.3 features are not yet available.
 
 - TLS 1.3 uses a disjunct set of cipher suites.  All AES-GCM and ChaCha20
-  cipher suites are enabled by default.  To restrict which TLS1.3 ciphers
+  cipher suites are enabled by default.  To restrict which TLS 1.3 ciphers
   are allowed, the method :meth:`SSLContext.set_ciphersuites` should be
   called instead of :meth:`SSLContext.set_ciphers`, which only affects
-  ciphers in older TLS versions.  The method :meth:`SSLContext.get_ciphers`
+  ciphers in older TLS versions.  The :meth:`SSLContext.get_ciphers` method
   returns information about ciphers for both TLS 1.3 and earlier versions
   and the method :meth:`SSLSocket.cipher` returns information about the
   negotiated cipher for both TLS 1.3 and earlier versions once a connection

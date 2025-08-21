@@ -3595,7 +3595,12 @@ _ssl__SSLContext_set_ciphers_impl(PySSLContext *self, const char *cipherlist)
 {
     int ret = SSL_CTX_set_cipher_list(self->ctx, cipherlist);
     if (ret == 0) {
-        _setSSLError(get_state_ctx(self), "No cipher can be selected.", 0, __FILE__, __LINE__);
+        /* Clearing the error queue is necessary on some OpenSSL versions,
+           otherwise the error will be reported again when another SSL call
+           is done. */
+        ERR_clear_error();
+        PyErr_SetString(get_state_ctx(self)->PySSLErrorObject,
+                        "No cipher can be selected.");
         return NULL;
     }
     Py_RETURN_NONE;

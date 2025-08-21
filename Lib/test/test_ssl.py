@@ -263,7 +263,8 @@ ignore_deprecation = warnings_helper.ignore_warnings(
 
 def test_wrap_socket(sock, *,
                      cert_reqs=ssl.CERT_NONE, ca_certs=None,
-                     ciphers=None, ciphersuites=None, min_version=None,
+                     ciphers=None, ciphersuites=None,
+                     min_version=None, max_version=None,
                      certfile=None, keyfile=None,
                      **kwargs):
     if not kwargs.get("server_side"):
@@ -285,6 +286,8 @@ def test_wrap_socket(sock, *,
         context.set_ciphersuites(ciphersuites)
     if min_version is not None:
         context.minimum_version = min_version
+    if max_version is not None:
+        context.maximum_version = max_version
     return context.wrap_socket(sock, **kwargs)
 
 
@@ -2245,7 +2248,7 @@ class SimpleBackgroundTests(unittest.TestCase):
 
 @requires_tls_version('TLSv1_3')
 class SimpleBackgroundTestsTLS_1_3(unittest.TestCase):
-    """Tests that connect to a simple server running in the background"""
+    """Tests that connect to a simple server running in the background."""
 
     def setUp(self):
         ciphers = [cipher['name'] for cipher in ctx.get_ciphers()
@@ -2278,16 +2281,16 @@ class SimpleBackgroundTestsTLS_1_3(unittest.TestCase):
             s.connect(self.server_addr)
             self.assertEqual(s.cipher()[0], self.matching_cipher)
 
-        # Test mismatched TLS 1.3 cipher suites
-        if self.matching_client != self.mismatched_cipher:
-            with test_wrap_socket(socket.socket(socket.AF_INET),
-                                  cert_reqs=ssl.CERT_NONE,
-                                  ciphersuites=self.mismatched_cipher,
-                                  min_version=ssl.TLSVersion.TLSv1_3) as s:
-                with self.assertRaises(ssl.SSLError):
-                    s.connect(self.server_addr)
-        else:
+    def test_ciphersuite_mismatch(self):
+        if self.matching_cipher == self.mismatched_cipher:
             self.skipTest("Multiple TLS 1.3 ciphers are not available")
+
+        with test_wrap_socket(socket.socket(socket.AF_INET),
+                              cert_reqs=ssl.CERT_NONE,
+                              ciphersuites=self.mismatched_cipher,
+                              min_version=ssl.TLSVersion.TLSv1_3) as s:
+            with self.assertRaises(ssl.SSLError):
+                s.connect(self.server_addr)
 
 
 @support.requires_resource('network')
