@@ -6112,18 +6112,11 @@ static PyType_Spec dec_spec = {
  * The actual MPDFUNC does NOT take a context arg.
  */
 #define DecCtx_BinaryFunc_NO_CTX(MPDFUNC) \
-static PyObject *                                \
-ctx_##MPDFUNC(PyObject *context, PyObject *args) \
 {                                                \
-    PyObject *v, *w;                             \
     PyObject *a, *b;                             \
     PyObject *result;                            \
                                                  \
-    if (!PyArg_ParseTuple(args, "OO", &v, &w)) { \
-        return NULL;                             \
-    }                                            \
-                                                 \
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);  \
+    CONVERT_BINOP_RAISE(&a, &b, x, y, context);  \
     decimal_state *state =                       \
         get_module_state_from_ctx(context);      \
     if ((result = dec_alloc(state)) == NULL) {   \
@@ -6945,7 +6938,34 @@ ctx_mpd_to_eng(PyObject *context, PyObject *v)
 }
 
 /* Functions with two decimal arguments */
+
+/*[clinic input]
+_decimal.Context.compare_total
+
+    self as context: self
+    x: object
+    y: object
+    /
+
+Compare x and y using their abstract representation.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_compare_total_impl(PyObject *context, PyObject *x,
+                                    PyObject *y)
+/*[clinic end generated code: output=a9299ef125fb2245 input=020b30c9bc2ea2c6]*/
 DecCtx_BinaryFunc_NO_CTX(mpd_compare_total)
+
+/*[clinic input]
+_decimal.Context.compare_total_mag = _decimal.Context.compare_total
+
+Compare x and y using their abstract representation, ignoring sign.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_compare_total_mag_impl(PyObject *context, PyObject *x,
+                                        PyObject *y)
+/*[clinic end generated code: output=7c376de9f94feeaf input=2b982e69f932dcb2]*/
 DecCtx_BinaryFunc_NO_CTX(mpd_compare_total_mag)
 
 static PyObject *
@@ -7143,8 +7163,8 @@ static PyMethodDef context_methods [] =
   { "to_eng_string", ctx_mpd_to_eng, METH_O, doc_ctx_to_eng_string },
 
   /* Functions with two decimal arguments */
-  { "compare_total", ctx_mpd_compare_total, METH_VARARGS, doc_ctx_compare_total },
-  { "compare_total_mag", ctx_mpd_compare_total_mag, METH_VARARGS, doc_ctx_compare_total_mag },
+  _DECIMAL_CONTEXT_COMPARE_TOTAL_METHODDEF
+  _DECIMAL_CONTEXT_COMPARE_TOTAL_MAG_METHODDEF
   { "copy_sign", ctx_mpd_qcopy_sign, METH_VARARGS, doc_ctx_copy_sign },
   _DECIMAL_CONTEXT_LOGICAL_AND_METHODDEF
   _DECIMAL_CONTEXT_LOGICAL_OR_METHODDEF

@@ -72,16 +72,6 @@ PyDoc_STRVAR(doc_ctx_canonical,
 Return a new instance of x.\n\
 \n");
 
-PyDoc_STRVAR(doc_ctx_compare_total,
-"compare_total($self, x, y, /)\n--\n\n\
-Compare x and y using their abstract representation.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_compare_total_mag,
-"compare_total_mag($self, x, y, /)\n--\n\n\
-Compare x and y using their abstract representation, ignoring sign.\n\
-\n");
-
 PyDoc_STRVAR(doc_ctx_copy_abs,
 "copy_abs($self, x, /)\n--\n\n\
 Return a copy of x with the sign set to 0.\n\

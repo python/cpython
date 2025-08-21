@@ -4243,6 +4243,68 @@ PyDoc_STRVAR(_decimal_Context_logical_invert__doc__,
 #define _DECIMAL_CONTEXT_LOGICAL_INVERT_METHODDEF    \
     {"logical_invert", (PyCFunction)_decimal_Context_logical_invert, METH_O, _decimal_Context_logical_invert__doc__},
 
+PyDoc_STRVAR(_decimal_Context_compare_total__doc__,
+"compare_total($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare x and y using their abstract representation.");
+
+#define _DECIMAL_CONTEXT_COMPARE_TOTAL_METHODDEF    \
+    {"compare_total", _PyCFunction_CAST(_decimal_Context_compare_total), METH_FASTCALL, _decimal_Context_compare_total__doc__},
+
+static PyObject *
+_decimal_Context_compare_total_impl(PyObject *context, PyObject *x,
+                                    PyObject *y);
+
+static PyObject *
+_decimal_Context_compare_total(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("compare_total", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_compare_total_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_compare_total_mag__doc__,
+"compare_total_mag($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare x and y using their abstract representation, ignoring sign.");
+
+#define _DECIMAL_CONTEXT_COMPARE_TOTAL_MAG_METHODDEF    \
+    {"compare_total_mag", _PyCFunction_CAST(_decimal_Context_compare_total_mag), METH_FASTCALL, _decimal_Context_compare_total_mag__doc__},
+
+static PyObject *
+_decimal_Context_compare_total_mag_impl(PyObject *context, PyObject *x,
+                                        PyObject *y);
+
+static PyObject *
+_decimal_Context_compare_total_mag(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("compare_total_mag", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_compare_total_mag_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_decimal_Context_logical_and__doc__,
 "logical_and($self, x, y, /)\n"
 "--\n"
@@ -4424,4 +4486,4 @@ _decimal_Context_shift(PyObject *context, PyObject *const *args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a919211d848d4da8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=db00589bcc7a168d input=a9049054013a1b77]*/
