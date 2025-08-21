@@ -19,7 +19,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
                           requires_debug_ranges, has_no_debug_ranges,
                           requires_subprocess)
 from test.support.os_helper import TESTFN, unlink
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure, make_script
 from test.support.import_helper import forget
 from test.support import force_not_colorized, force_not_colorized_test_class
 
@@ -1740,6 +1740,49 @@ class TracebackErrorLocationCaretTestBase:
         ]
         self.assertEqual(result_lines, expected)
 
+class TestKeywordTypoSuggestions(unittest.TestCase):
+    TYPO_CASES = [
+        ("with block ad something:\n  pass", "and"),
+        ("fur a in b:\n  pass", "for"),
+        ("for a in b:\n  pass\nelso:\n  pass", "else"),
+        ("whille True:\n  pass", "while"),
+        ("iff x > 5:\n  pass", "if"),
+        ("if x:\n  pass\nelseif y:\n  pass", "elif"),
+        ("tyo:\n  pass\nexcept y:\n  pass", "try"),
+        ("classe MyClass:\n  pass", "class"),
+        ("impor math", "import"),
+        ("form x import y", "from"),
+        ("defn calculate_sum(a, b):\n  return a + b", "def"),
+        ("def foo():\n  returm result", "return"),
+        ("lamda x: x ** 2", "lambda"),
+        ("def foo():\n  yeld i", "yield"),
+        ("def foo():\n  globel counter", "global"),
+        ("frum math import sqrt", "from"),
+        ("asynch def fetch_data():\n  pass", "async"),
+        ("async def foo():\n  awaid fetch_data()", "await"),
+        ('raisee ValueError("Error")', "raise"),
+        ("[x for x\nin range(3)\nof x]", "if"),
+        ("[123 fur x\nin range(3)\nif x]", "for"),
+        ("for x im n:\n  pass", "in"),
+    ]
+
+    def test_keyword_suggestions_from_file(self):
+        with tempfile.TemporaryDirectory() as script_dir:
+            for i, (code, expected_kw) in enumerate(self.TYPO_CASES):
+                with self.subTest(typo=expected_kw):
+                    source = textwrap.dedent(code).strip()
+                    script_name = make_script(script_dir, f"script_{i}", source)
+                    rc, stdout, stderr = assert_python_failure(script_name)
+                    stderr_text = stderr.decode('utf-8')
+                    self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
+
+    def test_keyword_suggestions_from_command_string(self):
+        for code, expected_kw in self.TYPO_CASES:
+            with self.subTest(typo=expected_kw):
+                source = textwrap.dedent(code).strip()
+                rc, stdout, stderr = assert_python_failure('-c', source)
+                stderr_text = stderr.decode('utf-8')
+                self.assertIn(f"Did you mean '{expected_kw}'", stderr_text)
 
 @requires_debug_ranges()
 @force_not_colorized_test_class
@@ -4218,6 +4261,184 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(B(), 'something')
         self.assertIn("Did you mean", actual)
         self.assertIn("bluch", actual)
+
+    def test_getattr_nested_attribute_suggestions(self):
+        # Test that nested attributes are suggested when no direct match
+        class Inner:
+            def __init__(self):
+                self.value = 42
+                self.data = "test"
+
+        class Outer:
+            def __init__(self):
+                self.inner = Inner()
+
+        # Should suggest 'inner.value'
+        actual = self.get_suggestion(Outer(), 'value')
+        self.assertIn("Did you mean: 'inner.value'", actual)
+
+        # Should suggest 'inner.data'
+        actual = self.get_suggestion(Outer(), 'data')
+        self.assertIn("Did you mean: 'inner.data'", actual)
+
+    def test_getattr_nested_prioritizes_direct_matches(self):
+        # Test that direct attribute matches are prioritized over nested ones
+        class Inner:
+            def __init__(self):
+                self.foo = 42
+
+        class Outer:
+            def __init__(self):
+                self.inner = Inner()
+                self.fooo = 100  # Similar to 'foo'
+
+        # Should suggest 'fooo' (direct) not 'inner.foo' (nested)
+        actual = self.get_suggestion(Outer(), 'foo')
+        self.assertIn("Did you mean: 'fooo'", actual)
+        self.assertNotIn("inner.foo", actual)
+
+    def test_getattr_nested_with_property(self):
+        # Test that descriptors (including properties) are suggested in nested attributes
+        class Inner:
+            @property
+            def computed(self):
+                return 42
+
+        class Outer:
+            def __init__(self):
+                self.inner = Inner()
+
+        actual = self.get_suggestion(Outer(), 'computed')
+        # Descriptors should not be suggested to avoid executing arbitrary code
+        self.assertIn("inner.computed", actual)
+
+    def test_getattr_nested_no_suggestion_for_deep_nesting(self):
+        # Test that deeply nested attributes (2+ levels) are not suggested
+        class Deep:
+            def __init__(self):
+                self.value = 42
+
+        class Middle:
+            def __init__(self):
+                self.deep = Deep()
+
+        class Outer:
+            def __init__(self):
+                self.middle = Middle()
+
+        # Should not suggest 'middle.deep.value' (too deep)
+        actual = self.get_suggestion(Outer(), 'value')
+        self.assertNotIn("Did you mean", actual)
+
+    def test_getattr_nested_ignores_private_attributes(self):
+        # Test that nested suggestions ignore private attributes
+        class Inner:
+            def __init__(self):
+                self.public_value = 42
+
+        class Outer:
+            def __init__(self):
+                self._private_inner = Inner()
+
+        # Should not suggest '_private_inner.public_value'
+        actual = self.get_suggestion(Outer(), 'public_value')
+        self.assertNotIn("Did you mean", actual)
+
+    def test_getattr_nested_limits_attribute_checks(self):
+        # Test that nested suggestions are limited to checking first 20 non-private attributes
+        class Inner:
+            def __init__(self):
+                self.target_value = 42
+
+        class Outer:
+            def __init__(self):
+                # Add many attributes before 'inner'
+                for i in range(25):
+                    setattr(self, f'attr_{i:02d}', i)
+                # Add the inner object after 20+ attributes
+                self.inner = Inner()
+
+        obj = Outer()
+        # Verify that 'inner' is indeed present but after position 20
+        attrs = [x for x in sorted(dir(obj)) if not x.startswith('_')]
+        inner_position = attrs.index('inner')
+        self.assertGreater(inner_position, 19, "inner should be after position 20 in sorted attributes")
+
+        # Should not suggest 'inner.target_value' because inner is beyond the first 20 attributes checked
+        actual = self.get_suggestion(obj, 'target_value')
+        self.assertNotIn("inner.target_value", actual)
+
+    def test_getattr_nested_returns_first_match_only(self):
+        # Test that only the first nested match is returned (not multiple)
+        class Inner1:
+            def __init__(self):
+                self.value = 1
+
+        class Inner2:
+            def __init__(self):
+                self.value = 2
+
+        class Inner3:
+            def __init__(self):
+                self.value = 3
+
+        class Outer:
+            def __init__(self):
+                # Multiple inner objects with same attribute
+                self.a_inner = Inner1()
+                self.b_inner = Inner2()
+                self.c_inner = Inner3()
+
+        # Should suggest only the first match (alphabetically)
+        actual = self.get_suggestion(Outer(), 'value')
+        self.assertIn("'a_inner.value'", actual)
+        # Verify it's a single suggestion, not multiple
+        self.assertEqual(actual.count("Did you mean"), 1)
+
+    def test_getattr_nested_handles_attribute_access_exceptions(self):
+        # Test that exceptions raised when accessing attributes don't crash the suggestion system
+        class ExplodingProperty:
+            @property
+            def exploding_attr(self):
+                raise RuntimeError("BOOM! This property always explodes")
+
+            def __repr__(self):
+                raise RuntimeError("repr also explodes")
+
+        class SafeInner:
+            def __init__(self):
+                self.target = 42
+
+        class Outer:
+            def __init__(self):
+                self.exploder = ExplodingProperty()  # Accessing attributes will raise
+                self.safe_inner = SafeInner()
+
+        # Should still suggest 'safe_inner.target' without crashing
+        # even though accessing exploder.target would raise an exception
+        actual = self.get_suggestion(Outer(), 'target')
+        self.assertIn("'safe_inner.target'", actual)
+
+    def test_getattr_nested_handles_hasattr_exceptions(self):
+        # Test that exceptions in hasattr don't crash the system
+        class WeirdObject:
+            def __getattr__(self, name):
+                if name == 'target':
+                    raise RuntimeError("Can't check for target attribute")
+                raise AttributeError(f"No attribute {name}")
+
+        class NormalInner:
+            def __init__(self):
+                self.target = 100
+
+        class Outer:
+            def __init__(self):
+                self.weird = WeirdObject()  # hasattr will raise for 'target'
+                self.normal = NormalInner()
+
+        # Should still find 'normal.target' even though weird.target check fails
+        actual = self.get_suggestion(Outer(), 'target')
+        self.assertIn("'normal.target'", actual)
 
     def make_module(self, code):
         tmpdir = Path(tempfile.mkdtemp())
