@@ -10,61 +10,6 @@
 
 #include "pymacro.h"
 
-
-/******************************************************************************/
-/*                                Module                                      */
-/******************************************************************************/
-
-
-PyDoc_STRVAR(doc__decimal,
-"C decimal arithmetic module");
-
-/******************************************************************************/
-/*                       Decimal Object and Methods                           */
-/******************************************************************************/
-
-PyDoc_STRVAR(doc_decimal,
-"Decimal(value=\"0\", context=None)\n--\n\n\
-Construct a new Decimal object. 'value' can be an integer, string, tuple,\n\
-or another Decimal object. If no value is given, return Decimal('0'). The\n\
-context does not affect the conversion and is only passed to determine if\n\
-the InvalidOperation trap is active.\n\
-\n");
-
-PyDoc_STRVAR(doc_compare_total,
-"compare_total($self, /, other, context=None)\n--\n\n\
-Compare two operands using their abstract representation rather than\n\
-their numerical value.  Similar to the compare() method, but the result\n\
-gives a total ordering on Decimal instances.  Two Decimal instances with\n\
-the same numeric value but different representations compare unequal\n\
-in this ordering:\n\
-\n\
-    >>> Decimal('12.0').compare_total(Decimal('12'))\n\
-    Decimal('-1')\n\
-\n\
-Quiet and signaling NaNs are also included in the total ordering. The result\n\
-of this function is Decimal('0') if both operands have the same representation,\n\
-Decimal('-1') if the first operand is lower in the total order than the second,\n\
-and Decimal('1') if the first operand is higher in the total order than the\n\
-second operand. See the specification for details of the total order.\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
-\n");
-
-PyDoc_STRVAR(doc_compare_total_mag,
-"compare_total_mag($self, /, other, context=None)\n--\n\n\
-Compare two operands using their abstract representation rather than their\n\
-value as in compare_total(), but ignoring the sign of each operand.\n\
-\n\
-x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).\n\
-\n\
-This operation is unaffected by context and is quiet: no flags are changed\n\
-and no rounding is performed. As an exception, the C version may raise\n\
-InvalidOperation if the second operand cannot be converted exactly.\n\
-\n");
-
 PyDoc_STRVAR(doc_is_canonical,
 "is_canonical($self, /)\n--\n\n\
 Return True if the argument is canonical and False otherwise.  Currently,\n\
@@ -169,19 +114,6 @@ Create a new Decimal instance from float f.  Unlike the Decimal.from_float()\n\
 class method, this function observes the context limits.\n\
 \n");
 
-PyDoc_STRVAR(doc_ctx_Etiny,
-"Etiny($self, /)\n--\n\n\
-Return a value equal to Emin - prec + 1, which is the minimum exponent value\n\
-for subnormal results.  When underflow occurs, the exponent is set to Etiny.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_Etop,
-"Etop($self, /)\n--\n\n\
-Return a value equal to Emax - prec + 1.  This is the maximum exponent\n\
-if the _clamp field of the context is set to 1 (IEEE clamp mode).  Etop()\n\
-must not be negative.\n\
-\n");
-
 PyDoc_STRVAR(doc_ctx_abs,
 "abs($self, x, /)\n--\n\n\
 Return the absolute value of x.\n\
@@ -255,6 +187,40 @@ Return e ** x.\n\
 PyDoc_STRVAR(doc_ctx_fma,
 "fma($self, x, y, z, /)\n--\n\n\
 Return x multiplied by y, plus z.\n\
+\n");
+
+PyDoc_STRVAR(doc_compare_total,
+"compare_total($self, /, other, context=None)\n--\n\n\
+Compare two operands using their abstract representation rather than\n\
+their numerical value.  Similar to the compare() method, but the result\n\
+gives a total ordering on Decimal instances.  Two Decimal instances with\n\
+the same numeric value but different representations compare unequal\n\
+in this ordering:\n\
+\n\
+    >>> Decimal('12.0').compare_total(Decimal('12'))\n\
+    Decimal('-1')\n\
+\n\
+Quiet and signaling NaNs are also included in the total ordering. The result\n\
+of this function is Decimal('0') if both operands have the same representation,\n\
+Decimal('-1') if the first operand is lower in the total order than the second,\n\
+and Decimal('1') if the first operand is higher in the total order than the\n\
+second operand. See the specification for details of the total order.\n\
+\n\
+This operation is unaffected by context and is quiet: no flags are changed\n\
+and no rounding is performed. As an exception, the C version may raise\n\
+InvalidOperation if the second operand cannot be converted exactly.\n\
+\n");
+
+PyDoc_STRVAR(doc_compare_total_mag,
+"compare_total_mag($self, /, other, context=None)\n--\n\n\
+Compare two operands using their abstract representation rather than their\n\
+value as in compare_total(), but ignoring the sign of each operand.\n\
+\n\
+x.compare_total_mag(y) is equivalent to x.copy_abs().compare_total(y.copy_abs()).\n\
+\n\
+This operation is unaffected by context and is quiet: no flags are changed\n\
+and no rounding is performed. As an exception, the C version may raise\n\
+InvalidOperation if the second operand cannot be converted exactly.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_is_canonical,
@@ -407,11 +373,6 @@ the context to the result.\n\
 PyDoc_STRVAR(doc_ctx_quantize,
 "quantize($self, x, y, /)\n--\n\n\
 Return a value equal to x (rounded), having the exponent of y.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_radix,
-"radix($self, /)\n--\n\n\
-Return 10.\n\
 \n");
 
 PyDoc_STRVAR(doc_ctx_remainder,

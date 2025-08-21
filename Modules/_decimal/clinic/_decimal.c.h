@@ -9,6 +9,48 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_decimal_Context_Etiny__doc__,
+"Etiny($self, /)\n"
+"--\n"
+"\n"
+"Return a value equal to Emin - prec + 1.\n"
+"\n"
+"This is the minimum exponent value for subnormal results.  When\n"
+"underflow occurs, the exponent is set to Etiny.");
+
+#define _DECIMAL_CONTEXT_ETINY_METHODDEF    \
+    {"Etiny", (PyCFunction)_decimal_Context_Etiny, METH_NOARGS, _decimal_Context_Etiny__doc__},
+
+static PyObject *
+_decimal_Context_Etiny_impl(PyObject *self);
+
+static PyObject *
+_decimal_Context_Etiny(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_Etiny_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Context_Etop__doc__,
+"Etop($self, /)\n"
+"--\n"
+"\n"
+"Return a value equal to Emax - prec + 1.\n"
+"\n"
+"This is the maximum exponent if the _clamp field of the context is set\n"
+"to 1 (IEEE clamp mode).  Etop() must not be negative.");
+
+#define _DECIMAL_CONTEXT_ETOP_METHODDEF    \
+    {"Etop", (PyCFunction)_decimal_Context_Etop, METH_NOARGS, _decimal_Context_Etop__doc__},
+
+static PyObject *
+_decimal_Context_Etop_impl(PyObject *self);
+
+static PyObject *
+_decimal_Context_Etop(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_Etop_impl(self);
+}
+
 PyDoc_STRVAR(_decimal_IEEEContext__doc__,
 "IEEEContext($module, bits, /)\n"
 "--\n"
@@ -266,6 +308,80 @@ _decimal_Decimal_from_number(PyObject *type, PyObject *number)
 
     return_value = _decimal_Decimal_from_number_impl((PyTypeObject *)type, number);
 
+    return return_value;
+}
+
+PyDoc_STRVAR(dec_new__doc__,
+"Decimal(value=\'0\', context=None)\n"
+"--\n"
+"\n"
+"Construct a new Decimal object.\n"
+"\n"
+"value can be an integer, string, tuple, or another Decimal object.  If\n"
+"no value is given, return Decimal(\'0\'). The context does not affect\n"
+"the conversion and is only passed to determine if the InvalidOperation\n"
+"trap is active.");
+
+static PyObject *
+dec_new_impl(PyTypeObject *type, PyObject *value, PyObject *context);
+
+static PyObject *
+dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(value), &_Py_ID(context), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"value", "context", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Decimal",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *value = NULL;
+    PyObject *context = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        value = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    context = fastargs[1];
+skip_optional_pos:
+    return_value = dec_new_impl(type, value, context);
+
+exit:
     return return_value;
 }
 
@@ -549,6 +665,38 @@ _decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssi
     context = args[1];
 skip_optional_pos:
     return_value = _decimal_Decimal_to_integral_exact_impl(self, rounding, context);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Decimal___round____doc__,
+"__round__($self, ndigits=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Return the Integral closest to self, rounding half toward even.");
+
+#define _DECIMAL_DECIMAL___ROUND___METHODDEF    \
+    {"__round__", _PyCFunction_CAST(_decimal_Decimal___round__), METH_FASTCALL, _decimal_Decimal___round____doc__},
+
+static PyObject *
+_decimal_Decimal___round___impl(PyObject *self, PyObject *ndigits);
+
+static PyObject *
+_decimal_Decimal___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *ndigits = NULL;
+
+    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    ndigits = args[0];
+skip_optional:
+    return_value = _decimal_Decimal___round___impl(self, ndigits);
 
 exit:
     return return_value;
@@ -2841,6 +2989,139 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_Decimal___ceil____doc__,
+"__ceil__($self, /)\n"
+"--\n"
+"\n"
+"Return the ceiling as an Integral.");
+
+#define _DECIMAL_DECIMAL___CEIL___METHODDEF    \
+    {"__ceil__", (PyCFunction)_decimal_Decimal___ceil__, METH_NOARGS, _decimal_Decimal___ceil____doc__},
+
+static PyObject *
+_decimal_Decimal___ceil___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___ceil__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___ceil___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___complex____doc__,
+"__complex__($self, /)\n"
+"--\n"
+"\n"
+"Convert this value to exact type complex.");
+
+#define _DECIMAL_DECIMAL___COMPLEX___METHODDEF    \
+    {"__complex__", (PyCFunction)_decimal_Decimal___complex__, METH_NOARGS, _decimal_Decimal___complex____doc__},
+
+static PyObject *
+_decimal_Decimal___complex___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___complex__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___complex___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___copy____doc__,
+"__copy__($self, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_DECIMAL___COPY___METHODDEF    \
+    {"__copy__", (PyCFunction)_decimal_Decimal___copy__, METH_NOARGS, _decimal_Decimal___copy____doc__},
+
+static PyObject *
+_decimal_Decimal___copy___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___copy__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___copy___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___deepcopy____doc__,
+"__deepcopy__($self, memo, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_DECIMAL___DEEPCOPY___METHODDEF    \
+    {"__deepcopy__", (PyCFunction)_decimal_Decimal___deepcopy__, METH_O, _decimal_Decimal___deepcopy____doc__},
+
+PyDoc_STRVAR(_decimal_Decimal___floor____doc__,
+"__floor__($self, /)\n"
+"--\n"
+"\n"
+"Return the floor as an Integral.");
+
+#define _DECIMAL_DECIMAL___FLOOR___METHODDEF    \
+    {"__floor__", (PyCFunction)_decimal_Decimal___floor__, METH_NOARGS, _decimal_Decimal___floor____doc__},
+
+static PyObject *
+_decimal_Decimal___floor___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___floor__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___floor___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___reduce____doc__,
+"__reduce__($self, /)\n"
+"--\n"
+"\n"
+"Return state information for pickling.");
+
+#define _DECIMAL_DECIMAL___REDUCE___METHODDEF    \
+    {"__reduce__", (PyCFunction)_decimal_Decimal___reduce__, METH_NOARGS, _decimal_Decimal___reduce____doc__},
+
+static PyObject *
+_decimal_Decimal___reduce___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___reduce___impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___sizeof____doc__,
+"__sizeof__($self, /)\n"
+"--\n"
+"\n"
+"Returns size in memory, in bytes");
+
+#define _DECIMAL_DECIMAL___SIZEOF___METHODDEF    \
+    {"__sizeof__", (PyCFunction)_decimal_Decimal___sizeof__, METH_NOARGS, _decimal_Decimal___sizeof____doc__},
+
+static PyObject *
+_decimal_Decimal___sizeof___impl(PyObject *v);
+
+static PyObject *
+_decimal_Decimal___sizeof__(PyObject *v, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___sizeof___impl(v);
+}
+
+PyDoc_STRVAR(_decimal_Decimal___trunc____doc__,
+"__trunc__($self, /)\n"
+"--\n"
+"\n"
+"Return the Integral closest to x between 0 and x.");
+
+#define _DECIMAL_DECIMAL___TRUNC___METHODDEF    \
+    {"__trunc__", (PyCFunction)_decimal_Decimal___trunc__, METH_NOARGS, _decimal_Decimal___trunc____doc__},
+
+static PyObject *
+_decimal_Decimal___trunc___impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal___trunc__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal___trunc___impl(self);
+}
+
 PyDoc_STRVAR(_decimal_Context_power__doc__,
 "power($self, /, a, b, modulo=None)\n"
 "--\n"
@@ -2922,4 +3203,22 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9bbde3e723166dd3 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_decimal_Context_radix__doc__,
+"radix($self, /)\n"
+"--\n"
+"\n"
+"Return 10.");
+
+#define _DECIMAL_CONTEXT_RADIX_METHODDEF    \
+    {"radix", (PyCFunction)_decimal_Context_radix, METH_NOARGS, _decimal_Context_radix__doc__},
+
+static PyObject *
+_decimal_Context_radix_impl(PyObject *context);
+
+static PyObject *
+_decimal_Context_radix(PyObject *context, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_radix_impl(context);
+}
+/*[clinic end generated code: output=ffc58f98fffed531 input=a9049054013a1b77]*/
