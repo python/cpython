@@ -301,6 +301,26 @@ Data Types
       No longer used, kept for backward compatibility.
       (class attribute, removed during class creation).
 
+      The :attr:`~Enum._order_` attribute can be provided to help keep Python 2 / Python 3 code in sync.
+      It will be checked against the actual order of the enumeration and raise an error if the two do not match::
+
+         >>> class Color(Enum):
+         ...     _order_ = 'RED GREEN BLUE'
+         ...     RED = 1
+         ...     BLUE = 3
+         ...     GREEN = 2
+         ...
+         Traceback (most recent call last):
+         ...
+         TypeError: member order does not match _order_:
+            ['RED', 'BLUE', 'GREEN']
+            ['RED', 'GREEN', 'BLUE']
+
+      .. note::
+
+         In Python 2 code the :attr:`~Enum._order_` attribute is necessary as definition
+         order is lost before it can be recorded.
+
    .. attribute:: Enum._ignore_
 
       ``_ignore_`` is only used during creation and is removed from the
@@ -480,7 +500,8 @@ Data Types
          >>> Color(42)
          <Color.RED: 1>
 
-      Raises a :exc:`ValueError` if the value is already linked with a different member.
+      | Raises a :exc:`ValueError` if the value is already linked with a different member.
+      | See :ref:`multi-value-enum` for an example.
 
       .. versionadded:: 3.13
 
@@ -879,6 +900,8 @@ Data Types
 
 ---------------
 
+.. _enum-dunder-sunder:
+
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
@@ -886,7 +909,7 @@ Supported ``__dunder__`` names
 items.  It is only available on the class.
 
 :meth:`~Enum.__new__`, if specified, must create and return the enum members;
-it is also a very good idea to set the member's :attr:`!_value_` appropriately.
+it is also a very good idea to set the member's :attr:`~Enum._value_` appropriately.
 Once all the members are created it is no longer used.
 
 
@@ -902,6 +925,7 @@ Supported ``_sunder_`` names
   from the final class
 - :attr:`~Enum._order_` -- no longer used, kept for backward
   compatibility (class attribute, removed during class creation)
+
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
 
