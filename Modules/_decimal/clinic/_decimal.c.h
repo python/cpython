@@ -4144,6 +4144,87 @@ _decimal_Context_radix(PyObject *context, PyObject *Py_UNUSED(ignored))
     return _decimal_Context_radix_impl(context);
 }
 
+PyDoc_STRVAR(_decimal_Context_is_normal__doc__,
+"is_normal($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a normal number, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_NORMAL_METHODDEF    \
+    {"is_normal", (PyCFunction)_decimal_Context_is_normal, METH_O, _decimal_Context_is_normal__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_subnormal__doc__,
+"is_subnormal($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is subnormal, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_SUBNORMAL_METHODDEF    \
+    {"is_subnormal", (PyCFunction)_decimal_Context_is_subnormal, METH_O, _decimal_Context_is_subnormal__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_finite__doc__,
+"is_finite($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is finite, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_FINITE_METHODDEF    \
+    {"is_finite", (PyCFunction)_decimal_Context_is_finite, METH_O, _decimal_Context_is_finite__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_infinite__doc__,
+"is_infinite($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is infinite, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_INFINITE_METHODDEF    \
+    {"is_infinite", (PyCFunction)_decimal_Context_is_infinite, METH_O, _decimal_Context_is_infinite__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_nan__doc__,
+"is_nan($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a qNaN or sNaN, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_NAN_METHODDEF    \
+    {"is_nan", (PyCFunction)_decimal_Context_is_nan, METH_O, _decimal_Context_is_nan__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_qnan__doc__,
+"is_qnan($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a quiet NaN, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_QNAN_METHODDEF    \
+    {"is_qnan", (PyCFunction)_decimal_Context_is_qnan, METH_O, _decimal_Context_is_qnan__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_snan__doc__,
+"is_snan($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a signaling NaN, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_SNAN_METHODDEF    \
+    {"is_snan", (PyCFunction)_decimal_Context_is_snan, METH_O, _decimal_Context_is_snan__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_signed__doc__,
+"is_signed($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is negative, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_SIGNED_METHODDEF    \
+    {"is_signed", (PyCFunction)_decimal_Context_is_signed, METH_O, _decimal_Context_is_signed__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_zero__doc__,
+"is_zero($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a zero, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_ZERO_METHODDEF    \
+    {"is_zero", (PyCFunction)_decimal_Context_is_zero, METH_O, _decimal_Context_is_zero__doc__},
+
 PyDoc_STRVAR(_decimal_Context_logb__doc__,
 "logb($self, x, /)\n"
 "--\n"
@@ -4343,4 +4424,4 @@ _decimal_Context_shift(PyObject *context, PyObject *const *args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7165f88e99c22606 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a919211d848d4da8 input=a9049054013a1b77]*/

@@ -6023,13 +6023,11 @@ static PyType_Spec dec_spec = {
 
 /* Boolean context method. */
 #define DecCtx_BoolFunc(MPDFUNC) \
-static PyObject *                                                     \
-ctx_##MPDFUNC(PyObject *context, PyObject *v)                         \
 {                                                                     \
     PyObject *ret;                                                    \
     PyObject *a;                                                      \
                                                                       \
-    CONVERT_OP_RAISE(&a, v, context);                                 \
+    CONVERT_OP_RAISE(&a, x, context);                                 \
                                                                       \
     ret = MPDFUNC(MPD(a), CTX(context)) ? incr_true() : incr_false(); \
     Py_DECREF(a);                                                     \
@@ -6038,13 +6036,11 @@ ctx_##MPDFUNC(PyObject *context, PyObject *v)                         \
 
 /* Boolean context method. MPDFUNC does NOT use a context. */
 #define DecCtx_BoolFunc_NO_CTX(MPDFUNC) \
-static PyObject *                                       \
-ctx_##MPDFUNC(PyObject *context, PyObject *v)           \
 {                                                       \
     PyObject *ret;                                      \
     PyObject *a;                                        \
                                                         \
-    CONVERT_OP_RAISE(&a, v, context);                   \
+    CONVERT_OP_RAISE(&a, x, context);                   \
                                                         \
     ret = MPDFUNC(MPD(a)) ? incr_true() : incr_false(); \
     Py_DECREF(a);                                       \
@@ -6654,14 +6650,108 @@ _decimal_Context_radix_impl(PyObject *context)
 }
 
 /* Boolean functions: single decimal argument */
+
+/*[clinic input]
+_decimal.Context.is_normal
+
+    self as context: self
+    x: object
+    /
+
+Return True if x is a normal number, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_normal(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=fed613aed8b286de input=1e7ff3f560842b8d]*/
 DecCtx_BoolFunc(mpd_isnormal)
+
+/*[clinic input]
+_decimal.Context.is_subnormal = _decimal.Context.is_normal
+
+Return True if x is subnormal, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_subnormal(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=834450c602d58759 input=73f1bd9367b913a4]*/
 DecCtx_BoolFunc(mpd_issubnormal)
+
+/*[clinic input]
+_decimal.Context.is_finite = _decimal.Context.is_normal
+
+Return True if x is finite, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_finite(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=45606d2f56874fef input=abff92a8a6bb85e6]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isfinite)
+
+/*[clinic input]
+_decimal.Context.is_infinite = _decimal.Context.is_normal
+
+Return True if x is infinite, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_infinite(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=35c480cd0a2c3cf9 input=591242ae9a1e60e6]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isinfinite)
+
+/*[clinic input]
+_decimal.Context.is_nan = _decimal.Context.is_normal
+
+Return True if x is a qNaN or sNaN, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_nan(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=cb529f55bf3106b3 input=520218376d5eec5e]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isnan)
+
+/*[clinic input]
+_decimal.Context.is_qnan = _decimal.Context.is_normal
+
+Return True if x is a quiet NaN, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_qnan(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=3e2e750eb643db1d input=97d06a14ab3360d1]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isqnan)
-DecCtx_BoolFunc_NO_CTX(mpd_issigned)
+
+/*[clinic input]
+_decimal.Context.is_snan = _decimal.Context.is_normal
+
+Return True if x is a signaling NaN, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_snan(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=a7ead03a2dfa15e4 input=0059fe4e9c3b25a8]*/
 DecCtx_BoolFunc_NO_CTX(mpd_issnan)
+
+/*[clinic input]
+_decimal.Context.is_signed = _decimal.Context.is_normal
+
+Return True if x is negative, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_signed(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=c85cc15479d5ed47 input=b950cd697721ab8b]*/
+DecCtx_BoolFunc_NO_CTX(mpd_issigned)
+
+/*[clinic input]
+_decimal.Context.is_zero = _decimal.Context.is_normal
+
+Return True if x is a zero, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_zero(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=24150f3c2422ebf8 input=bf08197d142a8027]*/
 DecCtx_BoolFunc_NO_CTX(mpd_iszero)
 
 static PyObject *
@@ -7015,15 +7105,15 @@ static PyMethodDef context_methods [] =
 
   /* Boolean functions */
   { "is_canonical", ctx_iscanonical, METH_O, doc_ctx_is_canonical },
-  { "is_finite", ctx_mpd_isfinite, METH_O, doc_ctx_is_finite },
-  { "is_infinite", ctx_mpd_isinfinite, METH_O, doc_ctx_is_infinite },
-  { "is_nan", ctx_mpd_isnan, METH_O, doc_ctx_is_nan },
-  { "is_normal", ctx_mpd_isnormal, METH_O, doc_ctx_is_normal },
-  { "is_qnan", ctx_mpd_isqnan, METH_O, doc_ctx_is_qnan },
-  { "is_signed", ctx_mpd_issigned, METH_O, doc_ctx_is_signed },
-  { "is_snan", ctx_mpd_issnan, METH_O, doc_ctx_is_snan },
-  { "is_subnormal", ctx_mpd_issubnormal, METH_O, doc_ctx_is_subnormal },
-  { "is_zero", ctx_mpd_iszero, METH_O, doc_ctx_is_zero },
+  _DECIMAL_CONTEXT_IS_FINITE_METHODDEF
+  _DECIMAL_CONTEXT_IS_INFINITE_METHODDEF
+  _DECIMAL_CONTEXT_IS_NAN_METHODDEF
+  _DECIMAL_CONTEXT_IS_NORMAL_METHODDEF
+  _DECIMAL_CONTEXT_IS_QNAN_METHODDEF
+  _DECIMAL_CONTEXT_IS_SIGNED_METHODDEF
+  _DECIMAL_CONTEXT_IS_SNAN_METHODDEF
+  _DECIMAL_CONTEXT_IS_SUBNORMAL_METHODDEF
+  _DECIMAL_CONTEXT_IS_ZERO_METHODDEF
 
   /* Functions with a single decimal argument */
   { "_apply", PyDecContext_Apply, METH_O, NULL }, /* alias for apply */

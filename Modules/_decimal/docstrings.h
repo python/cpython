@@ -107,51 +107,6 @@ PyDoc_STRVAR(doc_ctx_is_canonical,
 Return True if x is canonical, False otherwise.\n\
 \n");
 
-PyDoc_STRVAR(doc_ctx_is_finite,
-"is_finite($self, x, /)\n--\n\n\
-Return True if x is finite, False otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_is_infinite,
-"is_infinite($self, x, /)\n--\n\n\
-Return True if x is infinite, False otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_is_nan,
-"is_nan($self, x, /)\n--\n\n\
-Return True if x is a qNaN or sNaN, False otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_is_normal,
-"is_normal($self, x, /)\n--\n\n\
-Return True if x is a normal number, False otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_is_qnan,
-"is_qnan($self, x, /)\n--\n\n\
-Return True if x is a quiet NaN, False otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_is_signed,
-"is_signed($self, x, /)\n--\n\n\
-Return True if x is negative, False otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_is_snan,
-"is_snan($self, x, /)\n--\n\n\
-Return True if x is a signaling NaN, False otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_is_subnormal,
-"is_subnormal($self, x, /)\n--\n\n\
-Return True if x is subnormal, False otherwise.\n\
-\n");
-
-PyDoc_STRVAR(doc_ctx_is_zero,
-"is_zero($self, x, /)\n--\n\n\
-Return True if x is a zero, False otherwise.\n\
-\n");
-
 PyDoc_STRVAR(doc_ctx_normalize,
 "normalize($self, x, /)\n--\n\n\
 Reduce x to its simplest form. Alias for reduce(x).\n\
