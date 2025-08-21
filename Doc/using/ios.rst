@@ -170,7 +170,7 @@ helpful.
 To add Python to an iOS Xcode project:
 
 1. Build or obtain a Python ``XCFramework``. See the instructions in
-   :source:`iOS/README.rst` (in the CPython source distribution) for details on
+   :source:`Apple/iOS/README.rst` (in the CPython source distribution) for details on
    how to build a Python ``XCFramework``. At a minimum, you will need a build
    that supports ``arm64-apple-ios``, plus one of either
    ``arm64-apple-ios-simulator`` or ``x86_64-apple-ios-simulator``.
@@ -180,7 +180,7 @@ To add Python to an iOS Xcode project:
    of your project; however, you can use any other location that you want by
    adjusting paths as needed.
 
-3. Drag the ``iOS/Resources/dylib-Info-template.plist`` file into your project,
+3. Drag the ``Apple/iOS/Resources/dylib-Info-template.plist`` file into your project,
    and ensure it is associated with the app target.
 
 4. Add your application code as a folder in your Xcode project. In the
@@ -264,6 +264,7 @@ To add Python to an iOS Xcode project:
            if [ ! -d "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER" ]; then
                echo "Creating framework for $RELATIVE_EXT"
                mkdir -p "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER"
+
                cp "$CODESIGNING_FOLDER_PATH/dylib-Info-template.plist" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
                plutil -replace CFBundleExecutable -string "$FULL_MODULE_NAME" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
                plutil -replace CFBundleIdentifier -string "$FRAMEWORK_BUNDLE_ID" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
@@ -334,25 +335,30 @@ modules in your app, some additional steps will be required:
 Testing a Python package
 ------------------------
 
-The CPython source tree contains :source:`a testbed project <iOS/testbed>` that
+The CPython source tree contains :source:`a testbed project <Apple/iOS/testbed>` that
 is used to run the CPython test suite on the iOS simulator. This testbed can also
 be used as a testbed project for running your Python library's test suite on iOS.
 
-After building or obtaining an iOS XCFramework (See :source:`iOS/README.rst`
-for details), create a clone of the Python iOS testbed project by running:
+After building or obtaining an iOS XCFramework (see :source:`Apple/iOS/README.rst`
+for details), create a clone of the Python iOS testbed project. If you used the
+``Apple`` build script to build the XCframework, you can run:
 
 .. code-block:: bash
 
-    $ python iOS/testbed clone --framework <path/to/Python.xcframework> --app <path/to/module1> --app <path/to/module2> app-testbed
+    $ python cross-build/iOS/testbed clone --app <path/to/module1> --app <path/to/module2> app-testbed
 
-You will need to modify the ``iOS/testbed`` reference to point to that
-directory in the CPython source tree; any folders specified with the ``--app``
-flag will be copied into the cloned testbed project. The resulting testbed will
-be created in the ``app-testbed`` folder. In this example, the ``module1`` and
-``module2`` would be importable modules at runtime. If your project has
-additional dependencies, they can be installed into the
-``app-testbed/iOSTestbed/app_packages`` folder (using ``pip install --target
-app-testbed/iOSTestbed/app_packages`` or similar).
+Or, if you've sourced your own XCframework, by running:
+
+.. code-block:: bash
+
+    $ python Apple/testbed clone --platform iOS --framework <path/to/Python.xcframework> --app <path/to/module1> --app <path/to/module2> app-testbed
+
+Any folders specified with the ``--app`` flag will be copied into the cloned
+testbed project. The resulting testbed will be created in the ``app-testbed``
+folder. In this example, the ``module1`` and ``module2`` would be importable
+modules at runtime. If your project has additional dependencies, they can be
+installed into the ``app-testbed/Testbed/app_packages`` folder (using ``pip
+install --target app-testbed/Testbed/app_packages`` or similar).
 
 You can then use the ``app-testbed`` folder to run the test suite for your app,
 For example, if ``module1.tests`` was the entry point to your test suite, you
@@ -381,7 +387,7 @@ tab. Modify the "Arguments Passed On Launch" value to change the testing
 arguments.
 
 The test plan also disables parallel testing, and specifies the use of the
-``iOSTestbed.lldbinit`` file for providing configuration of the debugger. The
+``Testbed.lldbinit`` file for providing configuration of the debugger. The
 default debugger configuration disables automatic breakpoints on the
 ``SIGINT``, ``SIGUSR1``, ``SIGUSR2``, and ``SIGXFSZ`` signals.
 

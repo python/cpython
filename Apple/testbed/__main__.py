@@ -6,6 +6,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+TEST_SLICES = {
+    "iOS": "ios-arm64_x86_64-simulator",
+}
 
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
@@ -21,45 +24,49 @@ LOG_PREFIX_REGEX = re.compile(
 
 
 # Select a simulator device to use.
-def select_simulator_device():
+def select_simulator_device(platform):
     # List the testing simulators, in JSON format
     raw_json = subprocess.check_output(["xcrun", "simctl", "list", "-j"])
     json_data = json.loads(raw_json)
 
-    # Any device will do; we'll look for "SE" devices - but the name isn't
-    # consistent over time. Older Xcode versions will use "iPhone SE (Nth
-    # generation)"; As of 2025, they've started using "iPhone 16e".
-    #
-    # When Xcode is updated after a new release, new devices will be available
-    # and old ones will be dropped from the set available on the latest iOS
-    # version. Select the one with the highest minimum runtime version - this
-    # is an indicator of the "newest" released device, which should always be
-    # supported on the "most recent" iOS version.
-    se_simulators = sorted(
-        (devicetype["minRuntimeVersion"], devicetype["name"])
-        for devicetype in json_data["devicetypes"]
-        if devicetype["productFamily"] == "iPhone"
-        and (
-            (
-                "iPhone " in devicetype["name"]
-                and devicetype["name"].endswith("e")
+    if platform == "iOS":
+        # Any iOS device will do; we'll look for "SE" devices - but the name isn't
+        # consistent over time. Older Xcode versions will use "iPhone SE (Nth
+        # generation)"; As of 2025, they've started using "iPhone 16e".
+        #
+        # When Xcode is updated after a new release, new devices will be available
+        # and old ones will be dropped from the set available on the latest iOS
+        # version. Select the one with the highest minimum runtime version - this
+        # is an indicator of the "newest" released device, which should always be
+        # supported on the "most recent" iOS version.
+        se_simulators = sorted(
+            (devicetype["minRuntimeVersion"], devicetype["name"])
+            for devicetype in json_data["devicetypes"]
+            if devicetype["productFamily"] == "iPhone"
+            and (
+                (
+                    "iPhone " in devicetype["name"]
+                    and devicetype["name"].endswith("e")
+                )
+                or "iPhone SE " in devicetype["name"]
             )
-            or "iPhone SE " in devicetype["name"]
         )
-    )
+        simulator = se_simulators[-1][1]
+    else:
+        raise ValueError(f"Unknown platform {platform}")
 
-    return se_simulators[-1][1]
+    return simulator
 
 
-def xcode_test(location, simulator, verbose):
+def xcode_test(location: Path, platform: str, simulator: str, verbose: bool):
     # Build and run the test suite on the named simulator.
     args = [
         "-project",
-        str(location / "iOSTestbed.xcodeproj"),
+        str(location / f"{platform}Testbed.xcodeproj"),
         "-scheme",
-        "iOSTestbed",
+        f"{platform}Testbed",
         "-destination",
-        f"platform=iOS Simulator,name={simulator}",
+        f"platform={platform} Simulator,name={simulator}",
         "-derivedDataPath",
         str(location / "DerivedData"),
     ]
@@ -89,10 +96,24 @@ def xcode_test(location, simulator, verbose):
     exit(status)
 
 
+def copy(src, tgt):
+    """An all-purpose copy.
+
+    If src is a file, it is copied. If src is a symlink, it is copied *as a
+    symlink*. If src is a directory, the full tree is duplicated, with symlinks
+    being preserved.
+    """
+    if src.is_file() or src.is_symlink():
+        shutil.copyfile(src, tgt, follow_symlinks=False)
+    else:
+        shutil.copytree(src, tgt, symlinks=True)
+
+
 def clone_testbed(
     source: Path,
     target: Path,
     framework: Path,
+    platform: str,
     apps: list[Path],
 ) -> None:
     if target.exists():
@@ -101,11 +122,11 @@ def clone_testbed(
 
     if framework is None:
         if not (
-            source / "Python.xcframework/ios-arm64_x86_64-simulator/bin"
+            source / "Python.xcframework" / TEST_SLICES[platform] / "bin"
         ).is_dir():
             print(
                 f"The testbed being cloned ({source}) does not contain "
-                f"a simulator framework. Re-run with --framework"
+                "a framework with slices. Re-run with --framework"
             )
             sys.exit(11)
     else:
@@ -124,33 +145,49 @@ def clone_testbed(
 
     print("Cloning testbed project:")
     print(f"  Cloning {source}...", end="")
-    shutil.copytree(source, target, symlinks=True)
+    # Only copy the files for the platform being cloned plus the files common
+    # to all platforms. The XCframework will be copied later, if needed.
+    target.mkdir(parents=True)
+
+    for name in [
+        "__main__.py",
+        "TestbedTests",
+        "Testbed.lldbinit",
+        f"{platform}Testbed",
+        f"{platform}Testbed.xcodeproj",
+        f"{platform}Testbed.xctestplan",
+    ]:
+        copy(source / name, target / name)
+
     print(" done")
 
+    orig_xc_framework_path = source / "Python.xcframework"
     xc_framework_path = target / "Python.xcframework"
-    sim_framework_path = xc_framework_path / "ios-arm64_x86_64-simulator"
+    test_framework_path = xc_framework_path / TEST_SLICES[platform]
     if framework is not None:
         if framework.suffix == ".xcframework":
             print("  Installing XCFramework...", end="")
-            if xc_framework_path.is_dir():
-                shutil.rmtree(xc_framework_path)
-            else:
-                xc_framework_path.unlink(missing_ok=True)
             xc_framework_path.symlink_to(
                 framework.relative_to(xc_framework_path.parent, walk_up=True)
             )
             print(" done")
         else:
             print("  Installing simulator framework...", end="")
-            if sim_framework_path.is_dir():
-                shutil.rmtree(sim_framework_path)
+            # We're only installing a slice of a framework; we need
+            # to do a full tree copy to make sure we don't damage
+            # symlinked content.
+            shutil.copytree(orig_xc_framework_path, xc_framework_path)
+            if test_framework_path.is_dir():
+                shutil.rmtree(test_framework_path)
             else:
-                sim_framework_path.unlink(missing_ok=True)
-            sim_framework_path.symlink_to(
-                framework.relative_to(sim_framework_path.parent, walk_up=True)
+                test_framework_path.unlink(missing_ok=True)
+            test_framework_path.symlink_to(
+                framework.relative_to(test_framework_path.parent, walk_up=True)
             )
             print(" done")
     else:
+        copy(orig_xc_framework_path, xc_framework_path)
+
         if (
             xc_framework_path.is_symlink()
             and not xc_framework_path.readlink().is_absolute()
@@ -158,39 +195,39 @@ def clone_testbed(
             # XCFramework is a relative symlink. Rewrite the symlink relative
             # to the new location.
             print("  Rewriting symlink to XCframework...", end="")
-            orig_xc_framework_path = (
+            resolved_xc_framework_path = (
                 source / xc_framework_path.readlink()
             ).resolve()
             xc_framework_path.unlink()
             xc_framework_path.symlink_to(
-                orig_xc_framework_path.relative_to(
+                resolved_xc_framework_path.relative_to(
                     xc_framework_path.parent, walk_up=True
                 )
             )
             print(" done")
         elif (
-            sim_framework_path.is_symlink()
-            and not sim_framework_path.readlink().is_absolute()
+            test_framework_path.is_symlink()
+            and not test_framework_path.readlink().is_absolute()
         ):
             print("  Rewriting symlink to simulator framework...", end="")
             # Simulator framework is a relative symlink. Rewrite the symlink
             # relative to the new location.
-            orig_sim_framework_path = (
-                source / "Python.XCframework" / sim_framework_path.readlink()
+            orig_test_framework_path = (
+                source / "Python.XCframework" / test_framework_path.readlink()
             ).resolve()
-            sim_framework_path.unlink()
-            sim_framework_path.symlink_to(
-                orig_sim_framework_path.relative_to(
-                    sim_framework_path.parent, walk_up=True
+            test_framework_path.unlink()
+            test_framework_path.symlink_to(
+                orig_test_framework_path.relative_to(
+                    test_framework_path.parent, walk_up=True
                 )
             )
             print(" done")
         else:
-            print("  Using pre-existing iOS framework.")
+            print("  Using pre-existing Python framework.")
 
     for app_src in apps:
         print(f"  Installing app {app_src.name!r}...", end="")
-        app_target = target / f"iOSTestbed/app/{app_src.name}"
+        app_target = target / f"Testbed/app/{app_src.name}"
         if app_target.is_dir():
             shutil.rmtree(app_target)
         shutil.copytree(app_src, app_target)
@@ -199,9 +236,9 @@ def clone_testbed(
     print(f"Successfully cloned testbed: {target.resolve()}")
 
 
-def update_test_plan(testbed_path, args):
+def update_test_plan(testbed_path, platform, args):
     # Modify the test plan to use the requested test arguments.
-    test_plan_path = testbed_path / "iOSTestbed.xctestplan"
+    test_plan_path = testbed_path / f"{platform}Testbed.xctestplan"
     with test_plan_path.open("r", encoding="utf-8") as f:
         test_plan = json.load(f)
 
@@ -213,32 +250,50 @@ def update_test_plan(testbed_path, args):
         json.dump(test_plan, f, indent=2)
 
 
-def run_testbed(simulator: str | None, args: list[str], verbose: bool = False):
+def run_testbed(
+    platform: str,
+    simulator: str | None,
+    args: list[str],
+    verbose: bool = False,
+):
     location = Path(__file__).parent
     print("Updating test plan...", end="")
-    update_test_plan(location, args)
+    update_test_plan(location, platform, args)
     print(" done.")
 
     if simulator is None:
-        simulator = select_simulator_device()
+        simulator = select_simulator_device(platform)
     print(f"Running test on {simulator}")
 
-    xcode_test(location, simulator=simulator, verbose=verbose)
+    xcode_test(
+        location,
+        platform=platform,
+        simulator=simulator,
+        verbose=verbose,
+    )
 
 
 def main():
+    # Look for directories like `iOSTestbed` as an indicator of the platforms
+    # that the testbed folder supports. The original source testbed can support
+    # many platforms, but when cloned, only one platform is preserved.
+    available_platforms = [
+        platform
+        for platform in ["iOS"]
+        if (Path(__file__).parent / f"{platform}Testbed").is_dir()
+    ]
+
     parser = argparse.ArgumentParser(
         description=(
-            "Manages the process of testing a Python project in the iOS simulator."
+            "Manages the process of testing an Apple Python project through Xcode."
         ),
     )
 
     subcommands = parser.add_subparsers(dest="subcommand")
-
     clone = subcommands.add_parser(
         "clone",
         description=(
-            "Clone the testbed project, copying in an iOS Python framework and"
+            "Clone the testbed project, copying in a Python framework and"
             "any specified application code."
         ),
         help="Clone a testbed project to a new location.",
@@ -249,6 +304,13 @@ def main():
             "The location of the XCFramework (or simulator-only slice of an "
             "XCFramework) to use when running the testbed"
         ),
+    )
+    clone.add_argument(
+        "--platform",
+        dest="platform",
+        choices=available_platforms,
+        default=available_platforms[0],
+        help=f"The platform to target (default: {available_platforms[0]})",
     )
     clone.add_argument(
         "--app",
@@ -271,6 +333,13 @@ def main():
             "`python -m`."
         ),
         help="Run a testbed project",
+    )
+    run.add_argument(
+        "--platform",
+        dest="platform",
+        choices=available_platforms,
+        default=available_platforms[0],
+        help=f"The platform to target (default: {available_platforms[0]})",
     )
     run.add_argument(
         "--simulator",
@@ -306,22 +375,26 @@ def main():
             framework=Path(context.framework).resolve()
             if context.framework
             else None,
+            platform=context.platform,
             apps=[Path(app) for app in context.apps],
         )
     elif context.subcommand == "run":
         if test_args:
             if not (
                 Path(__file__).parent
-                / "Python.xcframework/ios-arm64_x86_64-simulator/bin"
+                / "Python.xcframework"
+                / TEST_SLICES[context.platform]
+                / "bin"
             ).is_dir():
                 print(
-                    f"Testbed does not contain a compiled iOS framework. Use "
+                    f"Testbed does not contain a compiled Python framework. Use "
                     f"`python {sys.argv[0]} clone ...` to create a runnable "
                     f"clone of this testbed."
                 )
                 sys.exit(20)
 
             run_testbed(
+                platform=context.platform,
                 simulator=context.simulator,
                 verbose=context.verbose,
                 args=test_args,

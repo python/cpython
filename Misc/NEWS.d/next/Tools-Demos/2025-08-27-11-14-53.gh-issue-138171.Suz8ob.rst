@@ -1,0 +1,3 @@
+A script for building an iOS XCframework was added. As part of this change,
+the top level ``iOS`` folder has been moved to be a subdirectory of the
+``Apple`` folder.
