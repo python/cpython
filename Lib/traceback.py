@@ -1622,10 +1622,7 @@ def _check_for_nested_attribute(obj, wrong_name, attrs):
 
             # Check if the nested attribute exists and is not a descriptor
             nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
-            if nested_attr_from_class is not None and hasattr(nested_attr_from_class, '__get__'):
-                continue  # Skip if the nested attribute is a descriptor
 
-            # Safe to check since nested attribute is not a descriptor
             if hasattr(attr_obj, wrong_name):
                 return f"{attr_name}.{wrong_name}"
 
