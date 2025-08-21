@@ -38,6 +38,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    *debug* is a boolean indicating whether the interpreter was built in
    :ref:`debug mode <debug-build>`, i.e. with the :option:`--with-pydebug` option.
 
+   *byteorder* is a string indicating the native byte order, either ``'big'`` or
+   ``'little'``.  This is the same as the :data:`byteorder` attribute.
+
    .. versionadded:: next
 
 
