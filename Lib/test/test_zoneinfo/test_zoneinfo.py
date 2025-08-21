@@ -1954,9 +1954,10 @@ class MiscTests(unittest.TestCase):
             sys.modules['_datetime'] = None
             import datetime
             import zoneinfo
-            tzinfo = zoneinfo.ZoneInfo('Europe/Paris')
+            tzinfo = zoneinfo.ZoneInfo('Europe/London')
             datetime.datetime(2025, 10, 26, 2, 0, tzinfo=tzinfo)
-            ''')
+            ''',
+            PYTHONTZPATH=str(ZONEINFO_DATA.tzpath))
 
 
 class ExtensionBuiltTest(unittest.TestCase):
