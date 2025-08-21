@@ -79,11 +79,14 @@
 #endif
 
 #if Py_TAIL_CALL_INTERP
-    // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
-#   define Py_MUSTTAIL [[clang::musttail]]
-#   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
+#   ifdef _MSC_VER
+#      define Py_MUSTTAIL [[msvc::musttail]]
+#      define Py_PRESERVE_NONE_CC __preserve_none
+#   else
+#       define Py_MUSTTAIL [[clang::musttail]]
+#       define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
     Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
-
+#   endif
 #   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
 #   define DISPATCH_GOTO() \
         do { \
