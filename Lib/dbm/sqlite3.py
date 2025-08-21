@@ -69,8 +69,8 @@ class _Database(MutableMapping):
         except sqlite3.Error as exc:
             raise error(str(exc))
 
-        # This is an optimization only; it's ok if it fails.
         if flag != "ro":
+            # This is an optimization only; it's ok if it fails.
             with suppress(sqlite3.OperationalError):
                 self._cx.execute("PRAGMA journal_mode = wal")
 

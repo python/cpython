@@ -1,1 +1,2 @@
-Fix :exc:`sqlite3.OperationalError` error when using :func:`dbm.open` with a read-only file object.
+Fix opening a :mod:`dbm.sqlite3` database for reading from read-only file
+or directory.
