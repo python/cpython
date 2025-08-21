@@ -72,7 +72,7 @@ class _Database(MutableMapping):
         # This is an optimization only; it's ok if it fails.
         if flag != "ro":
             with suppress(sqlite3.OperationalError):
-                self._cx.execute("PRAGMA journal_mode = OFF")
+                self._cx.execute("PRAGMA journal_mode = wal")
 
             if flag == "rwc":
                 self._execute(BUILD_TABLE)
