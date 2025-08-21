@@ -750,7 +750,8 @@ class SysModuleTest(unittest.TestCase):
             ("debug", "Py_REF_DEBUG"),
         ]:
             self.assertEqual(getattr(info, attr, None),
-                             bool(sysconfig.get_config_var(flag)))
+                             bool(sysconfig.get_config_var(flag)),
+                             f"for {attr}")
 
     @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
     def test_emscripten_info(self):
