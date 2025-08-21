@@ -559,13 +559,16 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     return 0;
 }
 
-// Compiles executor in-place. Don't forget to call _PyJIT_Free later!
+/* One-off compilation of the jit entry trampoline
+ * We compile this once only as it effectively a normal
+ * function, but we need to use the JIT because it needs
+ * to understand the jit-specific calling convention.
+ */
 static _PyJitEntryFuncPtr
 compile_trampoline(void)
 {
     _PyExecutorObject dummy;
     const StencilGroup *group;
-    // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
     jit_state state = {0};
@@ -583,7 +586,6 @@ compile_trampoline(void)
     if (memory == NULL) {
         return NULL;
     }
-    // Loop again to emit the code:
     unsigned char *code = memory;
     state.trampolines.mem = memory + code_size;
     unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
