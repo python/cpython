@@ -1,0 +1,1 @@
+Fix a crash when :mod:`warnings` state was finalised too early. Patch by Kumar Aditya.
