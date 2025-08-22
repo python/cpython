@@ -71,12 +71,15 @@ get_thread_state_by_cls(PyTypeObject *cls)
     return get_thread_state(module);
 }
 
-
 #ifdef MS_WINDOWS
 typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
 typedef HRESULT (WINAPI *PF_SET_THREAD_DESCRIPTION)(HANDLE, PCWSTR);
 static PF_GET_THREAD_DESCRIPTION pGetThreadDescription = NULL;
 static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
+#endif
+
+#ifndef MS_WINDOWS
+static int _set_thread_name(const char *name);
 #endif
 
 
