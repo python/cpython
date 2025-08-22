@@ -2576,7 +2576,9 @@ _thread.set_name
 Set the name of the current thread.
 [clinic start generated code]*/
 
-// Helper to set the thread name using platform-specific APIs
+
+#ifndef MS_WINDOWS
+// Helper to set the thread name using platform-specific APIs (POSIX only)
 static int
 _set_thread_name(const char *name)
 {
@@ -2596,18 +2598,18 @@ _set_thread_name(const char *name)
 #endif
     return rc;
 }
+#endif // !MS_WINDOWS
+
 
 static PyObject *
 _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 /*[clinic end generated code: output=402b0c68e0c0daed input=7e7acd98261be82f]*/
 {
 #ifndef MS_WINDOWS
+    // POSIX and non-Windows platforms
 #ifdef __sun
-    // Solaris always uses UTF-8
     const char *encoding = "utf-8";
 #else
-    // Encode the thread name to the filesystem encoding using the "replace"
-    // error handler
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const char *encoding = interp->unicode.fs_codec.encoding;
 #endif
