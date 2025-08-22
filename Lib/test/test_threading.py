@@ -2359,20 +2359,13 @@ class MiscTestCase(unittest.TestCase):
             with self.subTest(name=name, expected=expected):
                 work_name = None
                 thread = threading.Thread(target=work, name=name)
-                try:
-                    thread.start()
-                    thread.join()
-                    # If the name is non-ASCII and the result is empty, skip (platform limitation)
-                    if any(ord(c) > 127 for c in name) and (not work_name or work_name == ""):
-                        self.skipTest(f"Platform does not support non-ASCII thread names: got empty name for {name!r}")
-                    self.assertEqual(work_name, expected,
-                                     f"{len(work_name)=} and {len(expected)=}")
-                except OSError as exc:
-                    # Accept EINVAL (22) for non-ASCII names on platforms that do not support them
-                    if getattr(exc, 'errno', None) == 22 and any(ord(c) > 127 for c in name):
-                        self.skipTest(f"Platform does not support non-ASCII thread names: {exc}")
-                    else:
-                        raise
+                thread.start()
+                thread.join()
+                # If the name is non-ASCII and the result is empty, skip (platform limitation)
+                if any(ord(c) > 127 for c in name) and (not work_name or work_name == ""):
+                    self.skipTest(f"Platform does not support non-ASCII thread names: got empty name for {name!r}")
+                self.assertEqual(work_name, expected,
+                                 f"{len(work_name)=} and {len(expected)=}")
 
     @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
     @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
