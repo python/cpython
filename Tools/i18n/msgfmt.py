@@ -5,8 +5,7 @@
 
 This program converts a textual Uniforum-style message catalog (.po file) into
 a binary GNU catalog (.mo file).  This is essentially the same function as the
-GNU msgfmt program, however, it is a simpler implementation.  Currently it
-does not handle plural forms but it does handle message contexts.
+GNU msgfmt program, however, it is a simpler implementation.
 
 Usage: msgfmt.py [OPTIONS] filename.po
 
@@ -32,8 +31,10 @@ import getopt
 import struct
 import array
 from email.parser import HeaderParser
+import codecs
 
 __version__ = "1.2"
+
 
 MESSAGES = {}
 
@@ -116,6 +117,14 @@ def make(filename, outfile):
         print(msg, file=sys.stderr)
         sys.exit(1)
 
+    if lines[0].startswith(codecs.BOM_UTF8):
+        print(
+            f"The file {infile} starts with a UTF-8 BOM which is not allowed in .po files.\n"
+            "Please save the file without a BOM and try again.",
+            file=sys.stderr
+        )
+        sys.exit(1)
+
     section = msgctxt = None
     fuzzy = 0
 
@@ -148,13 +157,19 @@ def make(filename, outfile):
             msgctxt = b''
         elif l.startswith('msgid') and not l.startswith('msgid_plural'):
             if section == STR:
-                add(msgctxt, msgid, msgstr, fuzzy)
                 if not msgid:
+                    # Filter out POT-Creation-Date
+                    # See issue #131852
+                    msgstr = b''.join(line for line in msgstr.splitlines(True)
+                                      if not line.startswith(b'POT-Creation-Date:'))
+
                     # See whether there is an encoding declaration
                     p = HeaderParser()
                     charset = p.parsestr(msgstr.decode(encoding)).get_content_charset()
                     if charset:
                         encoding = charset
+                add(msgctxt, msgid, msgstr, fuzzy)
+                msgctxt = None
             section = ID
             l = l[5:]
             msgid = msgstr = b''

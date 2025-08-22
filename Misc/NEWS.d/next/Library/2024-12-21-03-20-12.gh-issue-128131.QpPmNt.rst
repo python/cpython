@@ -1,2 +1,0 @@
-Completely support random access of uncompressed unencrypted read-only
-zip files obtained by :meth:`ZipFile.open <zipfile.ZipFile.open>`.

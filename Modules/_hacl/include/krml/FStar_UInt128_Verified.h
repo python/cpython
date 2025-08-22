@@ -10,7 +10,7 @@
 #include "FStar_UInt_8_16_32_64.h"
 #include <inttypes.h>
 #include <stdbool.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/internal/target.h"
 
 static inline uint64_t FStar_UInt128_constant_time_carry(uint64_t a, uint64_t b)
@@ -257,11 +257,11 @@ FStar_UInt128_gte_mask(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
   FStar_UInt128_uint128 lit;
   lit.low =
-    (FStar_UInt64_gte_mask(a.high, b.high) & ~FStar_UInt64_eq_mask(a.high, b.high))
-    | (FStar_UInt64_eq_mask(a.high, b.high) & FStar_UInt64_gte_mask(a.low, b.low));
+    (FStar_UInt64_gte_mask(a.high, b.high) & ~FStar_UInt64_eq_mask(a.high, b.high)) |
+      (FStar_UInt64_eq_mask(a.high, b.high) & FStar_UInt64_gte_mask(a.low, b.low));
   lit.high =
-    (FStar_UInt64_gte_mask(a.high, b.high) & ~FStar_UInt64_eq_mask(a.high, b.high))
-    | (FStar_UInt64_eq_mask(a.high, b.high) & FStar_UInt64_gte_mask(a.low, b.low));
+    (FStar_UInt64_gte_mask(a.high, b.high) & ~FStar_UInt64_eq_mask(a.high, b.high)) |
+      (FStar_UInt64_eq_mask(a.high, b.high) & FStar_UInt64_gte_mask(a.low, b.low));
   return lit;
 }
 
@@ -294,14 +294,12 @@ static inline FStar_UInt128_uint128 FStar_UInt128_mul32(uint64_t x, uint32_t y)
 {
   FStar_UInt128_uint128 lit;
   lit.low =
-    FStar_UInt128_u32_combine((x >> FStar_UInt128_u32_32)
-      * (uint64_t)y
-      + (FStar_UInt128_u64_mod_32(x) * (uint64_t)y >> FStar_UInt128_u32_32),
+    FStar_UInt128_u32_combine((x >> FStar_UInt128_u32_32) * (uint64_t)y +
+        (FStar_UInt128_u64_mod_32(x) * (uint64_t)y >> FStar_UInt128_u32_32),
       FStar_UInt128_u64_mod_32(FStar_UInt128_u64_mod_32(x) * (uint64_t)y));
   lit.high =
-    ((x >> FStar_UInt128_u32_32)
-    * (uint64_t)y
-    + (FStar_UInt128_u64_mod_32(x) * (uint64_t)y >> FStar_UInt128_u32_32))
+    ((x >> FStar_UInt128_u32_32) * (uint64_t)y +
+      (FStar_UInt128_u64_mod_32(x) * (uint64_t)y >> FStar_UInt128_u32_32))
     >> FStar_UInt128_u32_32;
   return lit;
 }
@@ -315,28 +313,19 @@ static inline FStar_UInt128_uint128 FStar_UInt128_mul_wide(uint64_t x, uint64_t 
 {
   FStar_UInt128_uint128 lit;
   lit.low =
-    FStar_UInt128_u32_combine_(FStar_UInt128_u64_mod_32(x)
-      * (y >> FStar_UInt128_u32_32)
-      +
-        FStar_UInt128_u64_mod_32((x >> FStar_UInt128_u32_32)
-          * FStar_UInt128_u64_mod_32(y)
-          + (FStar_UInt128_u64_mod_32(x) * FStar_UInt128_u64_mod_32(y) >> FStar_UInt128_u32_32)),
+    FStar_UInt128_u32_combine_(FStar_UInt128_u64_mod_32(x) * (y >> FStar_UInt128_u32_32) +
+        FStar_UInt128_u64_mod_32((x >> FStar_UInt128_u32_32) * FStar_UInt128_u64_mod_32(y) +
+            (FStar_UInt128_u64_mod_32(x) * FStar_UInt128_u64_mod_32(y) >> FStar_UInt128_u32_32)),
       FStar_UInt128_u64_mod_32(FStar_UInt128_u64_mod_32(x) * FStar_UInt128_u64_mod_32(y)));
   lit.high =
-    (x >> FStar_UInt128_u32_32)
-    * (y >> FStar_UInt128_u32_32)
-    +
-      (((x >> FStar_UInt128_u32_32)
-      * FStar_UInt128_u64_mod_32(y)
-      + (FStar_UInt128_u64_mod_32(x) * FStar_UInt128_u64_mod_32(y) >> FStar_UInt128_u32_32))
+    (x >> FStar_UInt128_u32_32) * (y >> FStar_UInt128_u32_32) +
+      (((x >> FStar_UInt128_u32_32) * FStar_UInt128_u64_mod_32(y) +
+        (FStar_UInt128_u64_mod_32(x) * FStar_UInt128_u64_mod_32(y) >> FStar_UInt128_u32_32))
       >> FStar_UInt128_u32_32)
     +
-      ((FStar_UInt128_u64_mod_32(x)
-      * (y >> FStar_UInt128_u32_32)
-      +
-        FStar_UInt128_u64_mod_32((x >> FStar_UInt128_u32_32)
-          * FStar_UInt128_u64_mod_32(y)
-          + (FStar_UInt128_u64_mod_32(x) * FStar_UInt128_u64_mod_32(y) >> FStar_UInt128_u32_32)))
+      ((FStar_UInt128_u64_mod_32(x) * (y >> FStar_UInt128_u32_32) +
+        FStar_UInt128_u64_mod_32((x >> FStar_UInt128_u32_32) * FStar_UInt128_u64_mod_32(y) +
+            (FStar_UInt128_u64_mod_32(x) * FStar_UInt128_u64_mod_32(y) >> FStar_UInt128_u32_32)))
       >> FStar_UInt128_u32_32);
   return lit;
 }

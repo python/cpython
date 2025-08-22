@@ -1,3 +1,5 @@
+import os
+import stat
 import sys
 import unittest
 from contextlib import closing
@@ -36,7 +38,7 @@ class URI(unittest.TestCase):
         )
         for path, normalized in dataset:
             with self.subTest(path=path, normalized=normalized):
-                self.assertTrue(_normalize_uri(path).endswith(normalized))
+                self.assertEndsWith(_normalize_uri(path), normalized)
 
     @unittest.skipUnless(sys.platform == "win32", "requires Windows")
     def test_uri_windows(self):
@@ -55,7 +57,7 @@ class URI(unittest.TestCase):
             with self.subTest(path=path, normalized=normalized):
                 if not Path(path).is_absolute():
                     self.skipTest(f"skipping relative path: {path!r}")
-                self.assertTrue(_normalize_uri(path).endswith(normalized))
+                self.assertEndsWith(_normalize_uri(path), normalized)
 
 
 class ReadOnly(_SQLiteDbmTests):
@@ -88,6 +90,49 @@ class ReadOnly(_SQLiteDbmTests):
 
     def test_readonly_iter(self):
         self.assertEqual([k for k in self.db], [b"key1", b"key2"])
+
+
+class ReadOnlyFilesystem(unittest.TestCase):
+
+    def setUp(self):
+        self.test_dir = os_helper.TESTFN
+        self.addCleanup(os_helper.rmtree, self.test_dir)
+        os.mkdir(self.test_dir)
+        self.db_path = os.path.join(self.test_dir, "test.db")
+
+        db = dbm_sqlite3.open(self.db_path, "c")
+        db[b"key"] = b"value"
+        db.close()
+
+    def test_readonly_file_read(self):
+        os.chmod(self.db_path, stat.S_IREAD)
+        with dbm_sqlite3.open(self.db_path, "r") as db:
+            self.assertEqual(db[b"key"], b"value")
+
+    def test_readonly_file_write(self):
+        os.chmod(self.db_path, stat.S_IREAD)
+        with dbm_sqlite3.open(self.db_path, "w") as db:
+            with self.assertRaises(dbm_sqlite3.error):
+                db[b"newkey"] = b"newvalue"
+
+    def test_readonly_dir_read(self):
+        os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
+        with dbm_sqlite3.open(self.db_path, "r") as db:
+            self.assertEqual(db[b"key"], b"value")
+
+    def test_readonly_dir_write(self):
+        os.chmod(self.test_dir, stat.S_IREAD | stat.S_IEXEC)
+        with dbm_sqlite3.open(self.db_path, "w") as db:
+            try:
+                db[b"newkey"] = b"newvalue"
+                modified = True  # on Windows and macOS
+            except dbm_sqlite3.error:
+                modified = False
+        with dbm_sqlite3.open(self.db_path, "r") as db:
+            if modified:
+                self.assertEqual(db[b"newkey"], b"newvalue")
+            else:
+                self.assertNotIn(b"newkey", db)
 
 
 class ReadWrite(_SQLiteDbmTests):

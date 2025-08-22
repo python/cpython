@@ -1,3 +1,0 @@
-Fixed issue in NamespaceReader where a non-path item in a namespace path,
-such as a sentinel added by an editable installer, would break resource
-loading.

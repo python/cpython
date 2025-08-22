@@ -392,7 +392,7 @@ An :class:`IMAP4` instance has the following methods:
       iteration, and public method to remain stable, but should not subclass,
       instantiate, compare, or otherwise directly reference the class.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. method:: IMAP4.list([directory[, pattern]])
@@ -412,6 +412,9 @@ An :class:`IMAP4` instance has the following methods:
    Force use of ``CRAM-MD5`` authentication when identifying the client to protect
    the password.  Will only work if the server ``CAPABILITY`` response includes the
    phrase ``AUTH=CRAM-MD5``.
+
+   .. versionchanged:: next
+      An :exc:`IMAP4.error` is raised if MD5 support is not available.
 
 
 .. method:: IMAP4.logout()

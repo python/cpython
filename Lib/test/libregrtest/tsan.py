@@ -2,10 +2,11 @@
 # chosen because they use threads and run in a reasonable amount of time.
 
 TSAN_TESTS = [
-    # TODO: enable more of test_capi once bugs are fixed (GH-116908, GH-116909).
-    'test_capi.test_mem',
-    'test_capi.test_pyatomic',
+    'test_asyncio',
+    'test_capi',
     'test_code',
+    'test_ctypes',
+    'test_concurrent_futures',
     'test_enum',
     'test_functools',
     'test_httpservers',
@@ -13,6 +14,7 @@ TSAN_TESTS = [
     'test_importlib',
     'test_io',
     'test_logging',
+    'test_opcache',
     'test_queue',
     'test_signal',
     'test_socket',
@@ -20,6 +22,7 @@ TSAN_TESTS = [
     'test_ssl',
     'test_syslog',
     'test_thread',
+    'test_thread_local_bytecode',
     'test_threadedtempfile',
     'test_threading',
     'test_threading_local',

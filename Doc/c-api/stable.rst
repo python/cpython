@@ -51,6 +51,7 @@ It is generally intended for specialized, low-level tools like debuggers.
 Projects that use this API are expected to follow
 CPython development and spend extra effort adjusting to changes.
 
+.. _stable-application-binary-interface:
 
 Stable Application Binary Interface
 ===================================
