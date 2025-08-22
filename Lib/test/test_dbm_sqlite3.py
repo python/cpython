@@ -17,6 +17,11 @@ import sqlite3
 from dbm.sqlite3 import _normalize_uri
 
 
+root_in_posix = False
+if hasattr(os, 'geteuid'):
+    root_in_posix = (os.geteuid() == 0)
+
+
 class _SQLiteDbmTests(unittest.TestCase):
 
     def setUp(self):
@@ -93,6 +98,7 @@ class ReadOnly(_SQLiteDbmTests):
         self.assertEqual([k for k in self.db], [b"key1", b"key2"])
 
 
+@unittest.skipIf(root_in_posix, "test is meanless with root privilege")
 class ReadOnlyFilesystem(unittest.TestCase):
 
     def setUp(self):
