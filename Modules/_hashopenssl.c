@@ -2229,13 +2229,12 @@ _hashlib_hmac_digest_size(HMACobject *self)
     return (unsigned int)digest_size;
 }
 
-
 static int
-_hmac_update(HMACobject *self, PyObject *data)
+_hmac_update(HMACobject *self, PyObject *obj)
 {
     int r;
     Py_buffer view = {0};
-    GET_BUFFER_VIEW_OR_ERROR(data, &view, return -1);
+    GET_BUFFER_VIEW_OR_ERROR(obj, &view, return -1);
     HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
         self, view.len,
         r = hashlib_openssl_HMAC_update_once(self->ctx, &view)
