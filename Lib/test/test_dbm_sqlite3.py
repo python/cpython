@@ -125,7 +125,7 @@ class ReadOnlyFilesystem(unittest.TestCase):
         with dbm_sqlite3.open(self.db_path, "w") as db:
             try:
                 db[b"newkey"] = b"newvalue"
-                modified = True
+                modified = True  # on Windows and macOS
             except dbm_sqlite3.error:
                 modified = False
         with dbm_sqlite3.open(self.db_path, "r") as db:
