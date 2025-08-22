@@ -208,7 +208,20 @@ class SimpleIMAPHandler(socketserver.StreamRequestHandler):
             self._send_tagged(tag, 'BAD', 'No mailbox selected')
 
 
-class NewIMAPTestsMixin():
+class AuthHandler_CRAM_MD5(SimpleIMAPHandler):
+    capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
+    def cmd_AUTHENTICATE(self, tag, args):
+        self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
+                            'VzdG9uLm1jaS5uZXQ=')
+        r = yield
+        if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
+                 b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
+            self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
+        else:
+            self._send_tagged(tag, 'NO', 'No access')
+
+
+class NewIMAPTestsMixin:
     client = None
 
     def _setup(self, imap_handler, connect=True):
