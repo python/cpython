@@ -1292,7 +1292,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       before the object. Currently, this macro is equivalent to
       :c:expr:`Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF`.
 
-      This macro value relies on VM implementation, so his value is not
+      This macro value relies on the implementation of the VM, so its value is not
       stable and may change in a future version. Prefer using individual
       flags instead.
 
