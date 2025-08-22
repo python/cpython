@@ -1950,7 +1950,11 @@ py_openssl_wrapper_HMAC_CTX_new(void)
     }
     return ctx;
 }
+#endif
 
+static int _hmac_update(HMACobject*, PyObject*);
+
+#ifndef Py_HAS_OPENSSL3_SUPPORT
 static const EVP_MD *
 _hashlib_hmac_get_md(HMACobject *self)
 {
@@ -1992,20 +1996,6 @@ hashlib_openssl_HMAC_CTX_free(PY_HMAC_CTX_TYPE *ctx)
     if (ctx) {
         PY_HMAC_CTX_free(ctx);
     }
-}
-
-static int
-_hmac_update(HMACobject *self, PyObject *data)
-{
-    int r;
-    Py_buffer view = {0};
-    GET_BUFFER_VIEW_OR_ERROR(data, &view, return -1);
-    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
-        self, view.len,
-        r = hashlib_openssl_HMAC_update_once(self->ctx, &view)
-    );
-    PyBuffer_Release(&view);
-    return r;
 }
 
 static PY_HMAC_CTX_TYPE *
@@ -2205,6 +2195,55 @@ error:
     return NULL;
 }
 
+/* helper functions */
+#define BAD_DIGEST_SIZE 0
+
+/*
+ * Return the digest size in bytes.
+ *
+ * On error, set an exception and return BAD_DIGEST_SIZE.
+ */
+static unsigned int
+_hashlib_hmac_digest_size(HMACobject *self)
+{
+    assert(EVP_MAX_MD_SIZE < INT_MAX);
+#ifdef Py_HAS_OPENSSL3_SUPPORT
+    assert(self->ctx != NULL);
+    size_t digest_size = EVP_MAC_CTX_get_mac_size(self->ctx);
+    assert(digest_size <= (size_t)EVP_MAX_MD_SIZE);
+#else
+    const EVP_MD *md = _hashlib_hmac_get_md(self);
+    if (md == NULL) {
+        return BAD_DIGEST_SIZE;
+    }
+    int digest_size = EVP_MD_size(md);
+    /* digest_size < 0 iff EVP_MD context is NULL (which is impossible here) */
+    assert(digest_size >= 0);
+    assert(digest_size <= (int)EVP_MAX_MD_SIZE);
+#endif
+    /* digest_size == 0 means that the context is not entirely initialized */
+    if (digest_size == 0) {
+        raise_ssl_error(PyExc_ValueError, "missing digest size");
+        return BAD_DIGEST_SIZE;
+    }
+    return (unsigned int)digest_size;
+}
+
+
+static int
+_hmac_update(HMACobject *self, PyObject *data)
+{
+    int r;
+    Py_buffer view = {0};
+    GET_BUFFER_VIEW_OR_ERROR(data, &view, return -1);
+    HASHLIB_EXTERNAL_INSTRUCTIONS_LOCKED(
+        self, view.len,
+        r = hashlib_openssl_HMAC_update_once(self->ctx, &view)
+    );
+    PyBuffer_Release(&view);
+    return r;
+}
+
 /*[clinic input]
 _hashlib.HMAC.copy
 
@@ -2270,39 +2309,6 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
         return NULL;
     }
     Py_RETURN_NONE;
-}
-
-#define BAD_DIGEST_SIZE 0
-
-/*
- * Return the digest size in bytes.
- *
- * On error, set an exception and return BAD_DIGEST_SIZE.
- */
-static unsigned int
-_hashlib_hmac_digest_size(HMACobject *self)
-{
-    assert(EVP_MAX_MD_SIZE < INT_MAX);
-#ifdef Py_HAS_OPENSSL3_SUPPORT
-    assert(self->ctx != NULL);
-    size_t digest_size = EVP_MAC_CTX_get_mac_size(self->ctx);
-    assert(digest_size <= (size_t)EVP_MAX_MD_SIZE);
-#else
-    const EVP_MD *md = _hashlib_hmac_get_md(self);
-    if (md == NULL) {
-        return BAD_DIGEST_SIZE;
-    }
-    int digest_size = EVP_MD_size(md);
-    /* digest_size < 0 iff EVP_MD context is NULL (which is impossible here) */
-    assert(digest_size >= 0);
-    assert(digest_size <= (int)EVP_MAX_MD_SIZE);
-#endif
-    /* digest_size == 0 means that the context is not entirely initialized */
-    if (digest_size == 0) {
-        raise_ssl_error(PyExc_ValueError, "missing digest size");
-        return BAD_DIGEST_SIZE;
-    }
-    return (unsigned int)digest_size;
 }
 
 /*
