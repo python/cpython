@@ -1995,7 +1995,7 @@ hashlib_openssl_HMAC_CTX_free(PY_HMAC_CTX_TYPE *ctx)
 }
 
 static int
-hashlib_openssl_HMAC_update_with_lock(HMACobject *self, PyObject *data)
+_hmac_update(HMACobject *self, PyObject *data)
 {
     int r;
     Py_buffer view = {0};
@@ -2193,7 +2193,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
 
     /* feed initial data */
     if ((msg_obj != NULL) && (msg_obj != Py_None)) {
-        if (hashlib_openssl_HMAC_update_with_lock(self, msg_obj) < 0) {
+        if (_hmac_update(self, msg_obj) < 0) {
             goto error;
         }
     }
@@ -2266,7 +2266,7 @@ static PyObject *
 _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
 /*[clinic end generated code: output=f31f0ace8c625b00 input=1829173bb3cfd4e6]*/
 {
-    if (hashlib_openssl_HMAC_update_with_lock(self, msg) < 0) {
+    if (_hmac_update(self, msg) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
