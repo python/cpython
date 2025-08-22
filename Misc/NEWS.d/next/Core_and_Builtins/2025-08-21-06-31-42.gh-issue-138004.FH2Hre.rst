@@ -1,7 +1,1 @@
-```
-Core and Builtins
------------------
-
-* _thread.set_name() now retries with an ASCII fallback if pthread_setname_np() rejects UTF-8 names on some platforms (e.g. OpenIndiana).
-* test_threading.py was updated to skip non-ASCII thread name tests on platforms that do not support them.
-```
+_thread.set_name() now retries with an ASCII fallback if pthread_setname_np() rejects UTF-8 names on some POSIX-compliant platforms.
