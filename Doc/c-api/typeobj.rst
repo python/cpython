@@ -1289,11 +1289,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_PREHEADER
 
-      This bit indicates that the VM will manage some fields by storing them before the object.
-      Currently, this macro is equivalent to
+      These bits indicate that the VM will manage some fields by storing them
+      before the object. Currently, this macro is equivalent to
       :c:expr:`Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF`.
 
-      This macro is intended for internal usage only; prefer using individual
+      This macro value relies on VM implementation, so his value is not
+      stable and may change in a future version. Prefer using individual
       flags instead.
 
       .. versionadded:: 3.12
