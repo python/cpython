@@ -2576,6 +2576,27 @@ _thread.set_name
 Set the name of the current thread.
 [clinic start generated code]*/
 
+// Helper to set the thread name using platform-specific APIs
+static int
+_set_thread_name(const char *name)
+{
+    int rc;
+#ifdef __APPLE__
+    rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+    pthread_t thread = pthread_self();
+    rc = pthread_setname_np(thread, "%s", (void *)name);
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
+    pthread_t thread = pthread_self();
+    rc = pthread_setname_np(thread, name);
+#else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
+    pthread_t thread = pthread_self();
+    rc = 0; /* pthread_set_name_np() returns void */
+    pthread_set_name_np(thread, name);
+#endif
+    return rc;
+}
+
 static PyObject *
 _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 /*[clinic end generated code: output=402b0c68e0c0daed input=7e7acd98261be82f]*/
@@ -2591,17 +2612,15 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     const char *encoding = interp->unicode.fs_codec.encoding;
 #endif
     PyObject *name_encoded;
+    int rc;
+
     name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
     if (name_encoded == NULL) {
         return NULL;
     }
-
 #ifdef _PYTHREAD_NAME_MAXLEN
-    // Truncate to _PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
     if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
-        PyObject *truncated;
-        truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
-                                              _PYTHREAD_NAME_MAXLEN);
+        PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded), _PYTHREAD_NAME_MAXLEN);
         if (truncated == NULL) {
             Py_DECREF(name_encoded);
             return NULL;
@@ -2609,22 +2628,8 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         Py_SETREF(name_encoded, truncated);
     }
 #endif
-
     const char *name = PyBytes_AS_STRING(name_encoded);
-    int rc;
-#ifdef __APPLE__
-    rc = pthread_setname_np(name);
-#elif defined(__NetBSD__)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, "%s", (void *)name);
-#elif defined(HAVE_PTHREAD_SETNAME_NP)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, name);
-#else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
-    pthread_t thread = pthread_self();
-    rc = 0; /* pthread_set_name_np() returns void */
-    pthread_set_name_np(thread, name);
-#endif
+    rc = _set_thread_name(name);
     Py_DECREF(name_encoded);
 
     // Fallback: If EINVAL, try ASCII encoding with "replace"
@@ -2635,9 +2640,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         }
 #ifdef _PYTHREAD_NAME_MAXLEN
         if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
-            PyObject *truncated;
-            truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
-                                                  _PYTHREAD_NAME_MAXLEN);
+            PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded), _PYTHREAD_NAME_MAXLEN);
             if (truncated == NULL) {
                 Py_DECREF(name_encoded);
                 return NULL;
@@ -2646,19 +2649,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         }
 #endif
         name = PyBytes_AS_STRING(name_encoded);
-#ifdef __APPLE__
-        rc = pthread_setname_np(name);
-#elif defined(__NetBSD__)
-        thread = pthread_self();
-        rc = pthread_setname_np(thread, "%s", (void *)name);
-#elif defined(HAVE_PTHREAD_SETNAME_NP)
-        thread = pthread_self();
-        rc = pthread_setname_np(thread, name);
-#else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
-        thread = pthread_self();
-        rc = 0;
-        pthread_set_name_np(thread, name);
-#endif
+        rc = _set_thread_name(name);
         Py_DECREF(name_encoded);
     }
 

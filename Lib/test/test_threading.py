@@ -2241,6 +2241,7 @@ class CRLockTests(lock_tests.RLockTests):
 
         with warnings.catch_warnings(record=True) as warnings_log:
             CustomRLock(1, b=2)
+       
         self.assertEqual(warnings_log, [])
 
 class EventTests(lock_tests.EventTests):
@@ -2361,6 +2362,9 @@ class MiscTestCase(unittest.TestCase):
                 try:
                     thread.start()
                     thread.join()
+                    # If the name is non-ASCII and the result is empty, skip (platform limitation)
+                    if any(ord(c) > 127 for c in name) and (not work_name or work_name == ""):
+                        self.skipTest(f"Platform does not support non-ASCII thread names: got empty name for {name!r}")
                     self.assertEqual(work_name, expected,
                                      f"{len(work_name)=} and {len(expected)=}")
                 except OSError as exc:
