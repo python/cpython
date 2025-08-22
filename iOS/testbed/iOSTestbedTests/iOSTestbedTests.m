@@ -38,16 +38,20 @@
     // Arguments to pass into the test suite runner.
     // argv[0] must identify the process; any subsequent arg
     // will be handled as if it were an argument to `python -m test`
-    test_args = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"TestArgs"];
+    // The processInfo arguments contain the binary that is running,
+    // followed by the arguments defined in the test plan. This means:
+    //    run_module = test_args[1]
+    //    argv = ["iOSTestbed"] + test_args[2:]
+    test_args = [[NSProcessInfo processInfo] arguments];
     if (test_args == NULL) {
         NSLog(@"Unable to identify test arguments.");
     }
-    argv = malloc(sizeof(char *) * ([test_args count] + 1));
+    NSLog(@"Test arguments: %@", test_args);
+    argv = malloc(sizeof(char *) * ([test_args count] - 1));
     argv[0] = "iOSTestbed";
-    for (int i = 1; i < [test_args count]; i++) {
-        argv[i] = [[test_args objectAtIndex:i] UTF8String];
+    for (int i = 1; i < [test_args count] - 1; i++) {
+        argv[i] = [[test_args objectAtIndex:i+1] UTF8String];
     }
-    NSLog(@"Test command: %@", test_args);
 
     // Generate an isolated Python configuration.
     NSLog(@"Configuring isolated Python...");
@@ -68,7 +72,7 @@
     // Ensure that signal handlers are installed
     config.install_signal_handlers = 1;
     // Run the test module.
-    config.run_module = Py_DecodeLocale([[test_args objectAtIndex:0] UTF8String], NULL);
+    config.run_module = Py_DecodeLocale([[test_args objectAtIndex:1] UTF8String], NULL);
     // For debugging - enable verbose mode.
     // config.verbose = 1;
 
@@ -101,7 +105,7 @@
     }
 
     NSLog(@"Configure argc/argv...");
-    status = PyConfig_SetBytesArgv(&config, [test_args count], (char**) argv);
+    status = PyConfig_SetBytesArgv(&config, [test_args count] - 1, (char**) argv);
     if (PyStatus_Exception(status)) {
         XCTFail(@"Unable to configure argc/argv: %s", status.err_msg);
         PyConfig_Clear(&config);

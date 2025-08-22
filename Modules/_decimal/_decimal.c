@@ -4346,10 +4346,10 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
     return result;                                               \
 }
 
-/* Boolean function without a context arg. */
+/* Boolean function without a context arg.
+   Argument Clinic provides PyObject *self
+*/
 #define Dec_BoolFunc(MPDFUNC) \
-static PyObject *                                           \
-dec_##MPDFUNC(PyObject *self, PyObject *Py_UNUSED(dummy))   \
 {                                                           \
     return MPDFUNC(MPD(self)) ? incr_true() : incr_false(); \
 }
@@ -4421,21 +4421,14 @@ dec_##MPDFUNC(PyObject *self, PyObject *Py_UNUSED(dummy))   \
 
 /* Binary function with an optional context arg. Actual MPDFUNC does
    NOT take a context. The context is used to record InvalidOperation
-   if the second operand cannot be converted exactly. */
+   if the second operand cannot be converted exactly.
+
+   Argument Clinic provides PyObject *self, PyObject *other, PyObject *context
+*/
 #define Dec_BinaryFuncVA_NO_CTX(MPDFUNC) \
-static PyObject *                                               \
-dec_##MPDFUNC(PyObject *self, PyObject *args, PyObject *kwds)   \
 {                                                               \
-    static char *kwlist[] = {"other", "context", NULL};         \
-    PyObject *context = Py_None;                                \
-    PyObject *other;                                            \
     PyObject *a, *b;                                            \
     PyObject *result;                                           \
-                                                                \
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O", kwlist, \
-                                     &other, &context)) {       \
-        return NULL;                                            \
-    }                                                           \
     decimal_state *state =                                      \
         get_module_state_by_def(Py_TYPE(self));                 \
     CONTEXT_CHECK_VA(state, context);                           \
@@ -4858,13 +4851,98 @@ _decimal_Decimal_fma_impl(PyObject *self, PyObject *other, PyObject *third,
 Dec_TernaryFuncVA(mpd_qfma)
 
 /* Boolean functions, no context arg */
+
+/*[clinic input]
+_decimal.Decimal.is_canonical
+
+Return True if the argument is canonical and False otherwise.
+
+Currently, a Decimal instance is always canonical, so this operation
+always returns True.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_is_canonical_impl(PyObject *self)
+/*[clinic end generated code: output=b29668684f45443e input=b3b3e6878ccf40b8]*/
 Dec_BoolFunc(mpd_iscanonical)
+
+/*[clinic input]
+_decimal.Decimal.is_finite
+
+Return True if the argument is a finite number, and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_is_finite_impl(PyObject *self)
+/*[clinic end generated code: output=537306fbfc9131f8 input=e9b8b5866704bae6]*/
 Dec_BoolFunc(mpd_isfinite)
+
+/*[clinic input]
+_decimal.Decimal.is_infinite
+
+Return True if the argument is infinite, and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_is_infinite_impl(PyObject *self)
+/*[clinic end generated code: output=31b775ff28f05ce2 input=8f3937a790ee4ec2]*/
 Dec_BoolFunc(mpd_isinfinite)
+
+/*[clinic input]
+_decimal.Decimal.is_nan
+
+Return True if the argument is a (quiet or signaling) NaN, else False.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_is_nan_impl(PyObject *self)
+/*[clinic end generated code: output=b704e8b49a164388 input=795e5dac85976994]*/
 Dec_BoolFunc(mpd_isnan)
+
+/*[clinic input]
+_decimal.Decimal.is_qnan
+
+Return True if the argument is a quiet NaN, and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_is_qnan_impl(PyObject *self)
+/*[clinic end generated code: output=85b5241f43798376 input=00485f3c3cfae0af]*/
 Dec_BoolFunc(mpd_isqnan)
+
+/*[clinic input]
+_decimal.Decimal.is_snan
+
+Return True if the argument is a signaling NaN and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_is_snan_impl(PyObject *self)
+/*[clinic end generated code: output=50de9ec6507e4a4f input=f3b0f8592c921879]*/
 Dec_BoolFunc(mpd_issnan)
+
+/*[clinic input]
+_decimal.Decimal.is_signed
+
+Return True if the argument has a negative sign and False otherwise.
+
+Note that both zeros and NaNs can carry signs.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_is_signed_impl(PyObject *self)
+/*[clinic end generated code: output=8ec7bc85d8e755e4 input=97c3437ab5dffecc]*/
 Dec_BoolFunc(mpd_issigned)
+
+/*[clinic input]
+_decimal.Decimal.is_zero
+
+Return True if the argument is a zero and False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_is_zero_impl(PyObject *self)
+/*[clinic end generated code: output=2d87ea1b15879112 input=ae616674cd050a51]*/
 Dec_BoolFunc(mpd_iszero)
 
 /* Boolean functions, optional context arg */
@@ -5144,7 +5222,57 @@ _decimal_Decimal_to_eng_string_impl(PyObject *self, PyObject *context)
 }
 
 /* Binary functions, optional context arg for conversion errors */
+
+/*[clinic input]
+_decimal.Decimal.compare_total = _decimal.Decimal.compare
+
+Compare two operands using their abstract representation.
+
+Similar to the compare() method, but the result
+gives a total ordering on Decimal instances.  Two Decimal instances with
+the same numeric value but different representations compare unequal
+in this ordering:
+
+    >>> Decimal('12.0').compare_total(Decimal('12'))
+    Decimal('-1')
+
+Quiet and signaling NaNs are also included in the total ordering. The
+result of this function is Decimal('0') if both operands have the same
+representation, Decimal('-1') if the first operand is lower in the
+total order than the second, and Decimal('1') if the first operand is
+higher in the total order than the second operand. See the
+specification for details of the total order.
+
+This operation is unaffected by context and is quiet: no flags are
+changed and no rounding is performed. As an exception, the C version
+may raise InvalidOperation if the second operand cannot be converted
+exactly.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_compare_total_impl(PyObject *self, PyObject *other,
+                                    PyObject *context)
+/*[clinic end generated code: output=dca119b5e881a83e input=6f3111ec5fdbf3c1]*/
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total)
+
+/*[clinic input]
+_decimal.Decimal.compare_total_mag = _decimal.Decimal.compare
+
+As compare_total(), but ignores the sign of each operand.
+
+x.compare_total_mag(y) is equivalent to
+x.copy_abs().compare_total(y.copy_abs()).
+
+This operation is unaffected by context and is quiet: no flags are
+changed and no rounding is performed. As an exception, the C version
+may raise InvalidOperation if the second operand cannot be converted
+exactly.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Decimal_compare_total_mag_impl(PyObject *self, PyObject *other,
+                                        PyObject *context)
+/*[clinic end generated code: output=6bf1b3419112d0dd input=eba17c4c24eb2833]*/
 Dec_BinaryFuncVA_NO_CTX(mpd_compare_total_mag)
 
 /*[clinic input]
@@ -5783,14 +5911,14 @@ static PyMethodDef dec_methods [] =
   _DECIMAL_DECIMAL_FMA_METHODDEF
 
   /* Boolean functions, no context arg */
-  { "is_canonical", dec_mpd_iscanonical, METH_NOARGS, doc_is_canonical },
-  { "is_finite", dec_mpd_isfinite, METH_NOARGS, doc_is_finite },
-  { "is_infinite", dec_mpd_isinfinite, METH_NOARGS, doc_is_infinite },
-  { "is_nan", dec_mpd_isnan, METH_NOARGS, doc_is_nan },
-  { "is_qnan", dec_mpd_isqnan, METH_NOARGS, doc_is_qnan },
-  { "is_snan", dec_mpd_issnan, METH_NOARGS, doc_is_snan },
-  { "is_signed", dec_mpd_issigned, METH_NOARGS, doc_is_signed },
-  { "is_zero", dec_mpd_iszero, METH_NOARGS, doc_is_zero },
+  _DECIMAL_DECIMAL_IS_CANONICAL_METHODDEF
+  _DECIMAL_DECIMAL_IS_FINITE_METHODDEF
+  _DECIMAL_DECIMAL_IS_INFINITE_METHODDEF
+  _DECIMAL_DECIMAL_IS_NAN_METHODDEF
+  _DECIMAL_DECIMAL_IS_QNAN_METHODDEF
+  _DECIMAL_DECIMAL_IS_SNAN_METHODDEF
+  _DECIMAL_DECIMAL_IS_SIGNED_METHODDEF
+  _DECIMAL_DECIMAL_IS_ZERO_METHODDEF
 
   /* Boolean functions, optional context arg */
   _DECIMAL_DECIMAL_IS_NORMAL_METHODDEF
@@ -5813,8 +5941,8 @@ static PyMethodDef dec_methods [] =
   _DECIMAL_DECIMAL_TO_ENG_STRING_METHODDEF
 
   /* Binary functions, optional context arg for conversion errors */
-  { "compare_total", _PyCFunction_CAST(dec_mpd_compare_total), METH_VARARGS|METH_KEYWORDS, doc_compare_total },
-  { "compare_total_mag", _PyCFunction_CAST(dec_mpd_compare_total_mag), METH_VARARGS|METH_KEYWORDS, doc_compare_total_mag },
+  _DECIMAL_DECIMAL_COMPARE_TOTAL_METHODDEF
+  _DECIMAL_DECIMAL_COMPARE_TOTAL_MAG_METHODDEF
   _DECIMAL_DECIMAL_COPY_SIGN_METHODDEF
   _DECIMAL_DECIMAL_SAME_QUANTUM_METHODDEF
 
@@ -5898,45 +6026,45 @@ static PyType_Spec dec_spec = {
 /*     Macros for converting mpdecimal functions to Context methods     */
 /************************************************************************/
 
-/* Boolean context method. */
+/* Boolean context method.
+   Argument Clinic provides PyObject *context, PyObject *x
+*/
 #define DecCtx_BoolFunc(MPDFUNC) \
-static PyObject *                                                     \
-ctx_##MPDFUNC(PyObject *context, PyObject *v)                         \
 {                                                                     \
     PyObject *ret;                                                    \
     PyObject *a;                                                      \
                                                                       \
-    CONVERT_OP_RAISE(&a, v, context);                                 \
+    CONVERT_OP_RAISE(&a, x, context);                                 \
                                                                       \
     ret = MPDFUNC(MPD(a), CTX(context)) ? incr_true() : incr_false(); \
     Py_DECREF(a);                                                     \
     return ret;                                                       \
 }
 
-/* Boolean context method. MPDFUNC does NOT use a context. */
+/* Boolean context method. MPDFUNC does NOT use a context.
+   Argument Clinic provides PyObject *context, PyObject *x
+*/
 #define DecCtx_BoolFunc_NO_CTX(MPDFUNC) \
-static PyObject *                                       \
-ctx_##MPDFUNC(PyObject *context, PyObject *v)           \
 {                                                       \
     PyObject *ret;                                      \
     PyObject *a;                                        \
                                                         \
-    CONVERT_OP_RAISE(&a, v, context);                   \
+    CONVERT_OP_RAISE(&a, x, context);                   \
                                                         \
     ret = MPDFUNC(MPD(a)) ? incr_true() : incr_false(); \
     Py_DECREF(a);                                       \
     return ret;                                         \
 }
 
-/* Unary context method. */
+/* Unary context method.
+   Argument Clinic provides PyObject *context, PyObject *x
+*/
 #define DecCtx_UnaryFunc(MPDFUNC) \
-static PyObject *                                        \
-ctx_##MPDFUNC(PyObject *context, PyObject *v)            \
 {                                                        \
     PyObject *result, *a;                                \
     uint32_t status = 0;                                 \
                                                          \
-    CONVERT_OP_RAISE(&a, v, context);                    \
+    CONVERT_OP_RAISE(&a, x, context);                    \
     decimal_state *state =                               \
         get_module_state_from_ctx(context);              \
     if ((result = dec_alloc(state)) == NULL) {           \
@@ -5954,21 +6082,16 @@ ctx_##MPDFUNC(PyObject *context, PyObject *v)            \
     return result;                                       \
 }
 
-/* Binary context method. */
+/* Binary context method.
+   Argument Clinic provides PyObject *context, PyObject *x, PyObject *y
+*/
 #define DecCtx_BinaryFunc(MPDFUNC) \
-static PyObject *                                                \
-ctx_##MPDFUNC(PyObject *context, PyObject *args)                 \
 {                                                                \
-    PyObject *v, *w;                                             \
     PyObject *a, *b;                                             \
     PyObject *result;                                            \
     uint32_t status = 0;                                         \
                                                                  \
-    if (!PyArg_ParseTuple(args, "OO", &v, &w)) {                 \
-        return NULL;                                             \
-    }                                                            \
-                                                                 \
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);                  \
+    CONVERT_BINOP_RAISE(&a, &b, x, y, context);                  \
     decimal_state *state =                                       \
         get_module_state_from_ctx(context);                      \
     if ((result = dec_alloc(state)) == NULL) {                   \
@@ -5991,20 +6114,14 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args)                 \
 /*
  * Binary context method. The context is only used for conversion.
  * The actual MPDFUNC does NOT take a context arg.
+ * Argument Clinic provides PyObject *context, PyObject *x, PyObject *y
  */
 #define DecCtx_BinaryFunc_NO_CTX(MPDFUNC) \
-static PyObject *                                \
-ctx_##MPDFUNC(PyObject *context, PyObject *args) \
 {                                                \
-    PyObject *v, *w;                             \
     PyObject *a, *b;                             \
     PyObject *result;                            \
                                                  \
-    if (!PyArg_ParseTuple(args, "OO", &v, &w)) { \
-        return NULL;                             \
-    }                                            \
-                                                 \
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);  \
+    CONVERT_BINOP_RAISE(&a, &b, x, y, context);  \
     decimal_state *state =                       \
         get_module_state_from_ctx(context);      \
     if ((result = dec_alloc(state)) == NULL) {   \
@@ -6020,21 +6137,17 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args) \
     return result;                               \
 }
 
-/* Ternary context method. */
+/* Ternary context method.
+   Argument Clinic provides PyObject *context, PyObject *x, PyObject *y,
+                            PyObject *z
+*/
 #define DecCtx_TernaryFunc(MPDFUNC) \
-static PyObject *                                                        \
-ctx_##MPDFUNC(PyObject *context, PyObject *args)                         \
 {                                                                        \
-    PyObject *v, *w, *x;                                                 \
     PyObject *a, *b, *c;                                                 \
     PyObject *result;                                                    \
     uint32_t status = 0;                                                 \
                                                                          \
-    if (!PyArg_ParseTuple(args, "OOO", &v, &w, &x)) {                    \
-        return NULL;                                                     \
-    }                                                                    \
-                                                                         \
-    CONVERT_TERNOP_RAISE(&a, &b, &c, v, w, x, context);                  \
+    CONVERT_TERNOP_RAISE(&a, &b, &c, x, y, z, context);                  \
     decimal_state *state = get_module_state_from_ctx(context);           \
     if ((result = dec_alloc(state)) == NULL) {                           \
         Py_DECREF(a);                                                    \
@@ -6057,34 +6170,337 @@ ctx_##MPDFUNC(PyObject *context, PyObject *args)                         \
 
 
 /* Unary arithmetic functions */
+
+/*[clinic input]
+_decimal.Context.abs
+
+    self as context: self
+    x: object
+    /
+
+Return the absolute value of x.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_abs(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=5cafb5edf96df9e4 input=8384b327e52d6723]*/
 DecCtx_UnaryFunc(mpd_qabs)
+
+/*[clinic input]
+_decimal.Context.exp = _decimal.Context.abs
+
+Return e ** x.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_exp(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=787085815e6a9aa4 input=5b443c4ab153dd2e]*/
 DecCtx_UnaryFunc(mpd_qexp)
+
+/*[clinic input]
+_decimal.Context.ln = _decimal.Context.abs
+
+Return the natural (base e) logarithm of x.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_ln(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=9ecce76097f16bbe input=cf43cd98a0fe7425]*/
 DecCtx_UnaryFunc(mpd_qln)
+
+/*[clinic input]
+_decimal.Context.log10 = _decimal.Context.abs
+
+Return the base 10 logarithm of x.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_log10(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=08080765645630e4 input=309e57faf42c257d]*/
 DecCtx_UnaryFunc(mpd_qlog10)
+
+/*[clinic input]
+_decimal.Context.minus = _decimal.Context.abs
+
+Minus corresponds to unary prefix minus in Python.
+
+This operation applies the context to the result.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_minus(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=49c1a0d59f4585b6 input=63be4c419d1d554b]*/
 DecCtx_UnaryFunc(mpd_qminus)
+
+/*[clinic input]
+_decimal.Context.next_minus = _decimal.Context.abs
+
+Return the largest representable number smaller than x.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_next_minus(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=0c11a0d5fa9103d2 input=969f4d24dfcd5e85]*/
 DecCtx_UnaryFunc(mpd_qnext_minus)
+
+/*[clinic input]
+_decimal.Context.next_plus = _decimal.Context.abs
+
+Return the smallest representable number larger than x.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_next_plus(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=fd834e8c58b76031 input=af1a85ee59b56a3c]*/
 DecCtx_UnaryFunc(mpd_qnext_plus)
-DecCtx_UnaryFunc(mpd_qplus)
+
+/*[clinic input]
+_decimal.Context.normalize = _decimal.Context.abs
+
+Reduce x to its simplest form. Alias for reduce(x).
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_normalize(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=492c6ca375bcf020 input=a65bc39c81a654a9]*/
 DecCtx_UnaryFunc(mpd_qreduce)
+
+/*[clinic input]
+_decimal.Context.plus = _decimal.Context.abs
+
+Plus corresponds to the unary prefix plus operator in Python.
+
+This operation applies the context to the result.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_plus(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=ee089d734941936e input=5d8a75702d20e2f9]*/
+DecCtx_UnaryFunc(mpd_qplus)
+
+/*[clinic input]
+_decimal.Context.to_integral_value = _decimal.Context.abs
+
+Round to an integer.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_to_integral_value(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=ffc6470421c1439b input=3103e147cb9de9ed]*/
 DecCtx_UnaryFunc(mpd_qround_to_int)
+
+/*[clinic input]
+_decimal.Context.to_integral_exact = _decimal.Context.abs
+
+Round to an integer. Signal if the result is rounded or inexact.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_to_integral_exact(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=7fac8eca35da9290 input=677dc4b915907b68]*/
 DecCtx_UnaryFunc(mpd_qround_to_intx)
+
+/*[clinic input]
+_decimal.Context.to_integral = _decimal.Context.abs
+
+Identical to to_integral_value(x).
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_to_integral(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=2741701ed141df91 input=89d4a4b15495b8c9]*/
+DecCtx_UnaryFunc(mpd_qround_to_int)
+
+/*[clinic input]
+_decimal.Context.sqrt = _decimal.Context.abs
+
+Square root of a non-negative number to context precision.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_sqrt(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=5595ae901120606c input=90bd954b0b8076fb]*/
 DecCtx_UnaryFunc(mpd_qsqrt)
 
 /* Binary arithmetic functions */
+
+/*[clinic input]
+_decimal.Context.add
+
+    self as context: self
+    x: object
+    y: object
+    /
+
+Return the sum of x and y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_add_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=9957850af48fe295 input=8b8eac286bdf6cb4]*/
 DecCtx_BinaryFunc(mpd_qadd)
+
+/*[clinic input]
+_decimal.Context.compare = _decimal.Context.add
+
+Compare x and y numerically.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_compare_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=646ab96420b9aad7 input=f701cb179c966ec1]*/
 DecCtx_BinaryFunc(mpd_qcompare)
+
+/*[clinic input]
+_decimal.Context.compare_signal = _decimal.Context.add
+
+Compare x and y numerically.  All NaNs signal.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_compare_signal_impl(PyObject *context, PyObject *x,
+                                     PyObject *y)
+/*[clinic end generated code: output=dd56e9e6c3d12216 input=32a1bcef7bbc5179]*/
 DecCtx_BinaryFunc(mpd_qcompare_signal)
+
+/*[clinic input]
+_decimal.Context.divide = _decimal.Context.add
+
+Return x divided by y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_divide_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=0a07a5e718fe4a2c input=00cd9bc2ba2a1786]*/
 DecCtx_BinaryFunc(mpd_qdiv)
+
+/*[clinic input]
+_decimal.Context.divide_int = _decimal.Context.add
+
+Return x divided by y, truncated to an integer.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_divide_int_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=8c2d505d4339f4ef input=e80ada2f50d9719d]*/
 DecCtx_BinaryFunc(mpd_qdivint)
+
+/*[clinic input]
+_decimal.Context.max = _decimal.Context.add
+
+Compare the values numerically and return the maximum.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_max_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=c8545b7718414761 input=22008ab898c86a8b]*/
 DecCtx_BinaryFunc(mpd_qmax)
+
+/*[clinic input]
+_decimal.Context.max_mag = _decimal.Context.add
+
+Compare the values numerically with their sign ignored.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_max_mag_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=3cd67457cbc4d961 input=f7ce42ef82a7c52e]*/
 DecCtx_BinaryFunc(mpd_qmax_mag)
+
+/*[clinic input]
+_decimal.Context.min = _decimal.Context.add
+
+Compare the values numerically and return the minimum.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_min_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=c1bc3852a7c09707 input=2aeec1167638c5ef]*/
 DecCtx_BinaryFunc(mpd_qmin)
+
+/*[clinic input]
+_decimal.Context.min_mag = _decimal.Context.add
+
+Compare the values numerically with their sign ignored.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_min_mag_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=f662c9d1b49abfd2 input=19d158c29e4fc140]*/
 DecCtx_BinaryFunc(mpd_qmin_mag)
+
+/*[clinic input]
+_decimal.Context.multiply = _decimal.Context.add
+
+Return the product of x and y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_multiply_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=970be645784d70ad input=2fdd01acdbeef8ba]*/
 DecCtx_BinaryFunc(mpd_qmul)
+
+/*[clinic input]
+_decimal.Context.next_toward = _decimal.Context.add
+
+Return the number closest to x, in the direction towards y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_next_toward_impl(PyObject *context, PyObject *x,
+                                  PyObject *y)
+/*[clinic end generated code: output=938f2b4034e83618 input=aac775298e02b68c]*/
 DecCtx_BinaryFunc(mpd_qnext_toward)
+
+/*[clinic input]
+_decimal.Context.quantize = _decimal.Context.add
+
+Return a value equal to x (rounded), having the exponent of y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_quantize_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=38ae7ac037d093d0 input=43d67a696ab6d895]*/
 DecCtx_BinaryFunc(mpd_qquantize)
+
+/*[clinic input]
+_decimal.Context.remainder = _decimal.Context.add
+
+Return the remainder from integer division.
+
+The sign of the result, if non-zero, is the same as that of the
+original dividend.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_remainder_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=eb158964831b5ca4 input=36d0eb2b392c1215]*/
 DecCtx_BinaryFunc(mpd_qrem)
+
+/*[clinic input]
+_decimal.Context.remainder_near = _decimal.Context.add
+
+Return x - y * n.
+
+Here n is the integer nearest the exact value of x / y (if the result
+is 0 then its sign will be the sign of x).
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_remainder_near_impl(PyObject *context, PyObject *x,
+                                     PyObject *y)
+/*[clinic end generated code: output=2bcbd9bb031d0d13 input=bafb6327bb314c5c]*/
 DecCtx_BinaryFunc(mpd_qrem_near)
+
+/*[clinic input]
+_decimal.Context.subtract = _decimal.Context.add
+
+Return the difference between x and y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_subtract_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=fa8847e07b7c2bcc input=6767683ec68f7a1a]*/
 DecCtx_BinaryFunc(mpd_qsub)
 
 static PyObject *
@@ -6206,6 +6622,23 @@ _decimal_Context_power_impl(PyObject *context, PyObject *base, PyObject *exp,
 }
 
 /* Ternary arithmetic functions */
+
+/*[clinic input]
+_decimal.Context.fma
+
+    self as context: self
+    x: object
+    y: object
+    z: object
+    /
+
+Return x multiplied by y, plus z.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_fma_impl(PyObject *context, PyObject *x, PyObject *y,
+                          PyObject *z)
+/*[clinic end generated code: output=2d6174716faaf4e1 input=80479612da3333d1]*/
 DecCtx_TernaryFunc(mpd_qfma)
 
 /* No argument */
@@ -6227,14 +6660,108 @@ _decimal_Context_radix_impl(PyObject *context)
 }
 
 /* Boolean functions: single decimal argument */
+
+/*[clinic input]
+_decimal.Context.is_normal
+
+    self as context: self
+    x: object
+    /
+
+Return True if x is a normal number, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_normal(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=fed613aed8b286de input=1e7ff3f560842b8d]*/
 DecCtx_BoolFunc(mpd_isnormal)
+
+/*[clinic input]
+_decimal.Context.is_subnormal = _decimal.Context.is_normal
+
+Return True if x is subnormal, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_subnormal(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=834450c602d58759 input=73f1bd9367b913a4]*/
 DecCtx_BoolFunc(mpd_issubnormal)
+
+/*[clinic input]
+_decimal.Context.is_finite = _decimal.Context.is_normal
+
+Return True if x is finite, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_finite(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=45606d2f56874fef input=abff92a8a6bb85e6]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isfinite)
+
+/*[clinic input]
+_decimal.Context.is_infinite = _decimal.Context.is_normal
+
+Return True if x is infinite, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_infinite(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=35c480cd0a2c3cf9 input=591242ae9a1e60e6]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isinfinite)
+
+/*[clinic input]
+_decimal.Context.is_nan = _decimal.Context.is_normal
+
+Return True if x is a qNaN or sNaN, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_nan(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=cb529f55bf3106b3 input=520218376d5eec5e]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isnan)
+
+/*[clinic input]
+_decimal.Context.is_qnan = _decimal.Context.is_normal
+
+Return True if x is a quiet NaN, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_qnan(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=3e2e750eb643db1d input=97d06a14ab3360d1]*/
 DecCtx_BoolFunc_NO_CTX(mpd_isqnan)
-DecCtx_BoolFunc_NO_CTX(mpd_issigned)
+
+/*[clinic input]
+_decimal.Context.is_snan = _decimal.Context.is_normal
+
+Return True if x is a signaling NaN, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_snan(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=a7ead03a2dfa15e4 input=0059fe4e9c3b25a8]*/
 DecCtx_BoolFunc_NO_CTX(mpd_issnan)
+
+/*[clinic input]
+_decimal.Context.is_signed = _decimal.Context.is_normal
+
+Return True if x is negative, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_signed(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=c85cc15479d5ed47 input=b950cd697721ab8b]*/
+DecCtx_BoolFunc_NO_CTX(mpd_issigned)
+
+/*[clinic input]
+_decimal.Context.is_zero = _decimal.Context.is_normal
+
+Return True if x is a zero, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_is_zero(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=24150f3c2422ebf8 input=bf08197d142a8027]*/
 DecCtx_BoolFunc_NO_CTX(mpd_iszero)
 
 static PyObject *
@@ -6333,7 +6860,26 @@ ctx_mpd_qcopy_negate(PyObject *context, PyObject *v)
     return result;
 }
 
+/*[clinic input]
+_decimal.Context.logb = _decimal.Context.abs
+
+Return the exponent of the magnitude of the operand's MSD.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_logb(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=d2d8469f828daa41 input=28d1cd1a8a906b9a]*/
 DecCtx_UnaryFunc(mpd_qlogb)
+
+/*[clinic input]
+_decimal.Context.logical_invert = _decimal.Context.abs
+
+Invert all digits of x.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_logical_invert(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=b863a5cdb986f684 input=1fa8dcc59c557fcc]*/
 DecCtx_UnaryFunc(mpd_qinvert)
 
 static PyObject *
@@ -6397,7 +6943,34 @@ ctx_mpd_to_eng(PyObject *context, PyObject *v)
 }
 
 /* Functions with two decimal arguments */
+
+/*[clinic input]
+_decimal.Context.compare_total
+
+    self as context: self
+    x: object
+    y: object
+    /
+
+Compare x and y using their abstract representation.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_compare_total_impl(PyObject *context, PyObject *x,
+                                    PyObject *y)
+/*[clinic end generated code: output=a9299ef125fb2245 input=020b30c9bc2ea2c6]*/
 DecCtx_BinaryFunc_NO_CTX(mpd_compare_total)
+
+/*[clinic input]
+_decimal.Context.compare_total_mag = _decimal.Context.compare_total
+
+Compare x and y using their abstract representation, ignoring sign.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_compare_total_mag_impl(PyObject *context, PyObject *x,
+                                        PyObject *y)
+/*[clinic end generated code: output=7c376de9f94feeaf input=2b982e69f932dcb2]*/
 DecCtx_BinaryFunc_NO_CTX(mpd_compare_total_mag)
 
 static PyObject *
@@ -6432,12 +7005,72 @@ ctx_mpd_qcopy_sign(PyObject *context, PyObject *args)
     return result;
 }
 
+/*[clinic input]
+_decimal.Context.logical_and = _decimal.Context.add
+
+Digit-wise and of x and y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_logical_and_impl(PyObject *context, PyObject *x,
+                                  PyObject *y)
+/*[clinic end generated code: output=f1e9bf7844a395fc input=30ee33b5b365fd80]*/
 DecCtx_BinaryFunc(mpd_qand)
+
+/*[clinic input]
+_decimal.Context.logical_or = _decimal.Context.add
+
+Digit-wise or of x and y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_logical_or_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=28f7ecd1af3262f0 input=3b1a6725d0262fb9]*/
 DecCtx_BinaryFunc(mpd_qor)
+
+/*[clinic input]
+_decimal.Context.logical_xor = _decimal.Context.add
+
+Digit-wise xor of x and y.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_logical_xor_impl(PyObject *context, PyObject *x,
+                                  PyObject *y)
+/*[clinic end generated code: output=7d8461ace42d1871 input=5ebbbe8bb35da380]*/
 DecCtx_BinaryFunc(mpd_qxor)
 
+/*[clinic input]
+_decimal.Context.rotate = _decimal.Context.add
+
+Return a copy of x, rotated by y places.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_rotate_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=6d8b718f218712a2 input=7ad91845c909eb0a]*/
 DecCtx_BinaryFunc(mpd_qrotate)
+
+/*[clinic input]
+_decimal.Context.scaleb = _decimal.Context.add
+
+Return the first operand after adding the second value to its exp.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_scaleb_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=3c9cb117027c7722 input=c5d2ee7a57f65f8c]*/
 DecCtx_BinaryFunc(mpd_qscaleb)
+
+/*[clinic input]
+_decimal.Context.shift = _decimal.Context.add
+
+Return a copy of x, shifted by y places.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_shift_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=78625878a264b3e5 input=1ab44ff0854420ce]*/
 DecCtx_BinaryFunc(mpd_qshift)
 
 static PyObject *
@@ -6464,43 +7097,43 @@ ctx_mpd_same_quantum(PyObject *context, PyObject *args)
 static PyMethodDef context_methods [] =
 {
   /* Unary arithmetic functions */
-  { "abs", ctx_mpd_qabs, METH_O, doc_ctx_abs },
-  { "exp", ctx_mpd_qexp, METH_O, doc_ctx_exp },
-  { "ln", ctx_mpd_qln, METH_O, doc_ctx_ln },
-  { "log10", ctx_mpd_qlog10, METH_O, doc_ctx_log10 },
-  { "minus", ctx_mpd_qminus, METH_O, doc_ctx_minus },
-  { "next_minus", ctx_mpd_qnext_minus, METH_O, doc_ctx_next_minus },
-  { "next_plus", ctx_mpd_qnext_plus, METH_O, doc_ctx_next_plus },
-  { "normalize", ctx_mpd_qreduce, METH_O, doc_ctx_normalize },
-  { "plus", ctx_mpd_qplus, METH_O, doc_ctx_plus },
-  { "to_integral", ctx_mpd_qround_to_int, METH_O, doc_ctx_to_integral },
-  { "to_integral_exact", ctx_mpd_qround_to_intx, METH_O, doc_ctx_to_integral_exact },
-  { "to_integral_value", ctx_mpd_qround_to_int, METH_O, doc_ctx_to_integral_value },
-  { "sqrt", ctx_mpd_qsqrt, METH_O, doc_ctx_sqrt },
+  _DECIMAL_CONTEXT_ABS_METHODDEF
+  _DECIMAL_CONTEXT_EXP_METHODDEF
+  _DECIMAL_CONTEXT_LN_METHODDEF
+  _DECIMAL_CONTEXT_LOG10_METHODDEF
+  _DECIMAL_CONTEXT_MINUS_METHODDEF
+  _DECIMAL_CONTEXT_NEXT_MINUS_METHODDEF
+  _DECIMAL_CONTEXT_NEXT_PLUS_METHODDEF
+  _DECIMAL_CONTEXT_NORMALIZE_METHODDEF
+  _DECIMAL_CONTEXT_PLUS_METHODDEF
+  _DECIMAL_CONTEXT_TO_INTEGRAL_METHODDEF
+  _DECIMAL_CONTEXT_TO_INTEGRAL_EXACT_METHODDEF
+  _DECIMAL_CONTEXT_TO_INTEGRAL_VALUE_METHODDEF
+  _DECIMAL_CONTEXT_SQRT_METHODDEF
 
   /* Binary arithmetic functions */
-  { "add", ctx_mpd_qadd, METH_VARARGS, doc_ctx_add },
-  { "compare", ctx_mpd_qcompare, METH_VARARGS, doc_ctx_compare },
-  { "compare_signal", ctx_mpd_qcompare_signal, METH_VARARGS, doc_ctx_compare_signal },
-  { "divide", ctx_mpd_qdiv, METH_VARARGS, doc_ctx_divide },
-  { "divide_int", ctx_mpd_qdivint, METH_VARARGS, doc_ctx_divide_int },
+  _DECIMAL_CONTEXT_ADD_METHODDEF
+  _DECIMAL_CONTEXT_COMPARE_METHODDEF
+  _DECIMAL_CONTEXT_COMPARE_SIGNAL_METHODDEF
+  _DECIMAL_CONTEXT_DIVIDE_METHODDEF
+  _DECIMAL_CONTEXT_DIVIDE_INT_METHODDEF
   { "divmod", ctx_mpd_qdivmod, METH_VARARGS, doc_ctx_divmod },
-  { "max", ctx_mpd_qmax, METH_VARARGS, doc_ctx_max },
-  { "max_mag", ctx_mpd_qmax_mag, METH_VARARGS, doc_ctx_max_mag },
-  { "min", ctx_mpd_qmin, METH_VARARGS, doc_ctx_min },
-  { "min_mag", ctx_mpd_qmin_mag, METH_VARARGS, doc_ctx_min_mag },
-  { "multiply", ctx_mpd_qmul, METH_VARARGS, doc_ctx_multiply },
-  { "next_toward", ctx_mpd_qnext_toward, METH_VARARGS, doc_ctx_next_toward },
-  { "quantize", ctx_mpd_qquantize, METH_VARARGS, doc_ctx_quantize },
-  { "remainder", ctx_mpd_qrem, METH_VARARGS, doc_ctx_remainder },
-  { "remainder_near", ctx_mpd_qrem_near, METH_VARARGS, doc_ctx_remainder_near },
-  { "subtract", ctx_mpd_qsub, METH_VARARGS, doc_ctx_subtract },
+  _DECIMAL_CONTEXT_MAX_METHODDEF
+  _DECIMAL_CONTEXT_MAX_MAG_METHODDEF
+  _DECIMAL_CONTEXT_MIN_METHODDEF
+  _DECIMAL_CONTEXT_MIN_MAG_METHODDEF
+  _DECIMAL_CONTEXT_MULTIPLY_METHODDEF
+  _DECIMAL_CONTEXT_NEXT_TOWARD_METHODDEF
+  _DECIMAL_CONTEXT_QUANTIZE_METHODDEF
+  _DECIMAL_CONTEXT_REMAINDER_METHODDEF
+  _DECIMAL_CONTEXT_REMAINDER_NEAR_METHODDEF
+  _DECIMAL_CONTEXT_SUBTRACT_METHODDEF
 
   /* Binary or ternary arithmetic functions */
   _DECIMAL_CONTEXT_POWER_METHODDEF
 
   /* Ternary arithmetic functions */
-  { "fma", ctx_mpd_qfma, METH_VARARGS, doc_ctx_fma },
+  _DECIMAL_CONTEXT_FMA_METHODDEF
 
   /* No argument */
   _DECIMAL_CONTEXT_ETINY_METHODDEF
@@ -6509,15 +7142,15 @@ static PyMethodDef context_methods [] =
 
   /* Boolean functions */
   { "is_canonical", ctx_iscanonical, METH_O, doc_ctx_is_canonical },
-  { "is_finite", ctx_mpd_isfinite, METH_O, doc_ctx_is_finite },
-  { "is_infinite", ctx_mpd_isinfinite, METH_O, doc_ctx_is_infinite },
-  { "is_nan", ctx_mpd_isnan, METH_O, doc_ctx_is_nan },
-  { "is_normal", ctx_mpd_isnormal, METH_O, doc_ctx_is_normal },
-  { "is_qnan", ctx_mpd_isqnan, METH_O, doc_ctx_is_qnan },
-  { "is_signed", ctx_mpd_issigned, METH_O, doc_ctx_is_signed },
-  { "is_snan", ctx_mpd_issnan, METH_O, doc_ctx_is_snan },
-  { "is_subnormal", ctx_mpd_issubnormal, METH_O, doc_ctx_is_subnormal },
-  { "is_zero", ctx_mpd_iszero, METH_O, doc_ctx_is_zero },
+  _DECIMAL_CONTEXT_IS_FINITE_METHODDEF
+  _DECIMAL_CONTEXT_IS_INFINITE_METHODDEF
+  _DECIMAL_CONTEXT_IS_NAN_METHODDEF
+  _DECIMAL_CONTEXT_IS_NORMAL_METHODDEF
+  _DECIMAL_CONTEXT_IS_QNAN_METHODDEF
+  _DECIMAL_CONTEXT_IS_SIGNED_METHODDEF
+  _DECIMAL_CONTEXT_IS_SNAN_METHODDEF
+  _DECIMAL_CONTEXT_IS_SUBNORMAL_METHODDEF
+  _DECIMAL_CONTEXT_IS_ZERO_METHODDEF
 
   /* Functions with a single decimal argument */
   { "_apply", PyDecContext_Apply, METH_O, NULL }, /* alias for apply */
@@ -6528,23 +7161,23 @@ static PyMethodDef context_methods [] =
   { "copy_abs", ctx_mpd_qcopy_abs, METH_O, doc_ctx_copy_abs },
   { "copy_decimal", ctx_copy_decimal, METH_O, doc_ctx_copy_decimal },
   { "copy_negate", ctx_mpd_qcopy_negate, METH_O, doc_ctx_copy_negate },
-  { "logb", ctx_mpd_qlogb, METH_O, doc_ctx_logb },
-  { "logical_invert", ctx_mpd_qinvert, METH_O, doc_ctx_logical_invert },
+  _DECIMAL_CONTEXT_LOGB_METHODDEF
+  _DECIMAL_CONTEXT_LOGICAL_INVERT_METHODDEF
   { "number_class", ctx_mpd_class, METH_O, doc_ctx_number_class },
   { "to_sci_string", ctx_mpd_to_sci, METH_O, doc_ctx_to_sci_string },
   { "to_eng_string", ctx_mpd_to_eng, METH_O, doc_ctx_to_eng_string },
 
   /* Functions with two decimal arguments */
-  { "compare_total", ctx_mpd_compare_total, METH_VARARGS, doc_ctx_compare_total },
-  { "compare_total_mag", ctx_mpd_compare_total_mag, METH_VARARGS, doc_ctx_compare_total_mag },
+  _DECIMAL_CONTEXT_COMPARE_TOTAL_METHODDEF
+  _DECIMAL_CONTEXT_COMPARE_TOTAL_MAG_METHODDEF
   { "copy_sign", ctx_mpd_qcopy_sign, METH_VARARGS, doc_ctx_copy_sign },
-  { "logical_and", ctx_mpd_qand, METH_VARARGS, doc_ctx_logical_and },
-  { "logical_or", ctx_mpd_qor, METH_VARARGS, doc_ctx_logical_or },
-  { "logical_xor", ctx_mpd_qxor, METH_VARARGS, doc_ctx_logical_xor },
-  { "rotate", ctx_mpd_qrotate, METH_VARARGS, doc_ctx_rotate },
+  _DECIMAL_CONTEXT_LOGICAL_AND_METHODDEF
+  _DECIMAL_CONTEXT_LOGICAL_OR_METHODDEF
+  _DECIMAL_CONTEXT_LOGICAL_XOR_METHODDEF
+  _DECIMAL_CONTEXT_ROTATE_METHODDEF
   { "same_quantum", ctx_mpd_same_quantum, METH_VARARGS, doc_ctx_same_quantum },
-  { "scaleb", ctx_mpd_qscaleb, METH_VARARGS, doc_ctx_scaleb },
-  { "shift", ctx_mpd_qshift, METH_VARARGS, doc_ctx_shift },
+  _DECIMAL_CONTEXT_SCALEB_METHODDEF
+  _DECIMAL_CONTEXT_SHIFT_METHODDEF
 
   /* Set context values */
   { "clear_flags", context_clear_flags, METH_NOARGS, doc_ctx_clear_flags },
