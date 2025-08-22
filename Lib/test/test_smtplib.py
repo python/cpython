@@ -17,6 +17,7 @@ import textwrap
 import threading
 
 import unittest
+import unittest.mock as mock
 from test import support, mock_socket
 from test.support import hashlib_helper
 from test.support import socket_helper
@@ -1034,7 +1035,6 @@ class SimSMTPServer(smtpd.SMTPServer):
 class SMTPSimTests(unittest.TestCase):
 
     def setUp(self):
-        smtplib._have_cram_md5_support.cache_clear()
         self.thread_key = threading_helper.threading_setup()
         self.real_getfqdn = socket.getfqdn
         socket.getfqdn = mock_socket.getfqdn
@@ -1186,6 +1186,7 @@ class SMTPSimTests(unittest.TestCase):
         smtp.close()
 
     @hashlib_helper.block_algorithm('md5')
+    @mock.patch("smtplib._have_cram_md5_support", False)
     def testAUTH_CRAM_MD5_blocked(self):
         # CRAM-MD5 is the only "known" method by the server,
         # but it is not supported by the client. In particular,
@@ -1199,6 +1200,7 @@ class SMTPSimTests(unittest.TestCase):
             smtp.login(sim_auth[0], sim_auth[1])
 
     @hashlib_helper.block_algorithm('md5')
+    @mock.patch("smtplib._have_cram_md5_support", False)
     def testAUTH_CRAM_MD5_blocked_and_fallback(self):
         # Test that PLAIN is tried after CRAM-MD5 failed
         self.serv.add_feature("AUTH CRAM-MD5 PLAIN")

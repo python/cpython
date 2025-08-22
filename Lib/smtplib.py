@@ -45,7 +45,6 @@ import re
 import email.utils
 import email.message
 import email.generator
-import functools
 import base64
 import hmac
 import copy
@@ -179,19 +178,12 @@ def _fix_eols(data):
     return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
 
 
-# Use unbounded LRU cache instead of global variable to ease mocking.
-@functools.cache
-def _have_cram_md5_support():
-    """Check if CRAM-MD5 is supported by the host.
-
-    Note that CRAM-MD5 may be supported by the server
-    but not by the client if HMAC-MD5 is not supported.
-    """
-    try:
-        hmac.digest(b'', b'', 'md5')
-        return True
-    except ValueError:
-        return False
+try:
+    hmac.digest(b'', b'', 'md5')
+except ValueError:
+    _have_cram_md5_support = False
+else:
+    _have_cram_md5_support = True
 
 
 try:
@@ -682,7 +674,7 @@ class SMTP:
         # CRAM-MD5 does not support initial-response.
         if challenge is None:
             return None
-        if not _have_cram_md5_support():
+        if not _have_cram_md5_support:
             raise SMTPException("CRAM-MD5 is not supported")
         password = self.password.encode('ascii')
         authcode = hmac.HMAC(password, challenge, 'md5')
@@ -738,7 +730,7 @@ class SMTP:
         advertised_authlist = self.esmtp_features["auth"].split()
 
         # Authentication methods we can handle in our preferred order:
-        if _have_cram_md5_support():
+        if _have_cram_md5_support:
             preferred_auths = ['CRAM-MD5', 'PLAIN', 'LOGIN']
         else:
             preferred_auths = ['PLAIN', 'LOGIN']
