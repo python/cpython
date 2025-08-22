@@ -8,6 +8,7 @@
    Andrew Kuchling (amk@amk.ca)
    Greg Stein (gstein@lyra.org)
    Trevor Perrin (trevp@trevp.net)
+   Bénédikt Tran (10796600+picnixz@users.noreply.github.com)
 
    Copyright (C) 2005-2007   Gregory P. Smith (greg@krypto.org)
    Licensed to PSF under a Contributor Agreement.
@@ -25,18 +26,14 @@
 
 #include "hashlib.h"
 
-/*[clinic input]
-module _md5
-class MD5Type "MD5object *" "&PyType_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6e5261719957a912]*/
+#include "_hacl/Hacl_Hash_MD5.h"
 
 /* The MD5 block size and message digest sizes, in bytes */
 
 #define MD5_BLOCKSIZE    64
 #define MD5_DIGESTSIZE   16
 
-#include "_hacl/Hacl_Hash_MD5.h"
+// --- Module objects ---------------------------------------------------------
 
 typedef struct {
     HASHLIB_OBJECT_HEAD
@@ -45,8 +42,7 @@ typedef struct {
 
 #define _MD5object_CAST(op)     ((MD5object *)(op))
 
-#include "clinic/md5module.c.h"
-
+// --- Module state -----------------------------------------------------------
 
 typedef struct {
     PyTypeObject* md5_type;
@@ -59,6 +55,18 @@ md5_get_state(PyObject *module)
     assert(state != NULL);
     return (MD5State *)state;
 }
+
+// --- Module clinic configuration --------------------------------------------
+
+/*[clinic input]
+module _md5
+class MD5Type "MD5object *" "&PyType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6e5261719957a912]*/
+
+#include "clinic/md5module.c.h"
+
+// --- MD5 object interface ---------------------------------------------------
 
 static MD5object *
 newMD5object(MD5State * st)

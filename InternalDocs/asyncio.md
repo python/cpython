@@ -2,10 +2,12 @@ asyncio
 =======
 
 
-This document describes the working and implementation details of C
-implementation of the
+This document describes the working and implementation details of the
 [`asyncio`](https://docs.python.org/3/library/asyncio.html) module.
 
+**The following section describes the implementation details of the C implementation**.
+
+# Task management
 
 ## Pre-Python 3.14 implementation
 
@@ -158,7 +160,8 @@ flowchart TD
     subgraph two["Thread deallocating"]
         A1{"thread's task list empty? <br> llist_empty(tstate->asyncio_tasks_head)"}
         A1 --> |true| B1["deallocate thread<br>free_threadstate(tstate)"]
-        A1 --> |false| C1["add tasks to interpreter's task list<br> llist_concat(&tstate->interp->asyncio_tasks_head,tstate->asyncio_tasks_head)"]
+        A1 --> |false| C1["add tasks to interpreter's task list<br> llist_concat(&tstate->interp->asyncio_tasks_head,
+        &tstate->asyncio_tasks_head)"]
         C1 --> B1
     end
 
@@ -205,6 +208,121 @@ In free-threading, it avoids contention on a global dictionary as
 threads can access the current task of thier running loop without any
 locking.
 
+---
+
+**The following section describes the implementation details of the Python implementation**.
+
+# async generators
+
+This section describes the implementation details of async generators in `asyncio`.
+
+Since async generators are meant to be used from coroutines,
+their finalization (execution of finally blocks) needs
+to be done while the loop is running.
+Most async generators are closed automatically
+when they are fully iterated over and exhausted; however,
+if the async generator is not fully iterated over,
+it may not be closed properly, leading to the `finally` blocks not being executed.
+
+Consider the following code:
+```py
+import asyncio
+
+async def agen():
+    try:
+        yield 1
+    finally:
+        await asyncio.sleep(1)
+        print("finally executed")
+
+
+async def main():
+    async for i in agen():
+        break
+
+loop = asyncio.EventLoop()
+loop.run_until_complete(main())
+```
+
+The above code will not print "finally executed", because the
+async generator `agen` is not fully iterated over
+and it is not closed manually by awaiting `agen.aclose()`.
+
+To solve this, `asyncio` uses the `sys.set_asyncgen_hooks` function to
+set hooks for finalizing async generators as described in
+[PEP 525](https://peps.python.org/pep-0525/).
+
+- **firstiter hook**: When the async generator is iterated over for the first time,
+the *firstiter hook* is called. The async generator is added to `loop._asyncgens` WeakSet
+and the event loop tracks all active async generators.
+
+- **finalizer hook**: When the async generator is about to be finalized,
+the *finalizer hook* is called. The event loop removes the async generator
+from `loop._asyncgens` WeakSet, and schedules the finalization of the async
+generator by creating a task calling `agen.aclose()`. This ensures that the
+finally block is executed while the event loop is running. When the loop is
+shutting down, the loop checks if there are active async generators and if so,
+it similarly schedules the finalization of all active async generators by calling
+`agen.aclose()` on each of them and waits for them to complete before shutting
+down the loop.
+
+This ensures that the async generator's `finally` blocks are executed even
+if the generator is not explicitly closed.
+
+Consider the following example:
+
+```python
+import asyncio
+
+async def agen():
+    try:
+        yield 1
+        yield 2
+    finally:
+        print("executing finally block")
+
+async def main():
+    async for item in agen():
+        print(item)
+        break  # not fully iterated
+
+asyncio.run(main())
+```
+
+```mermaid
+flowchart TD
+    subgraph one["Loop running"]
+        A["asyncio.run(main())"] --> B
+        B["set async generator hooks <br> sys.set_asyncgen_hooks()"] --> C
+        C["async for item in agen"] --> F
+        F{"first iteration?"} --> |true|D
+        F{"first iteration?"} --> |false|H
+        D["calls firstiter hook<br>loop._asyncgen_firstiter_hook(agen)"] --> E
+        E["add agen to WeakSet<br> loop._asyncgens.add(agen)"] --> H
+        H["item = await agen.\_\_anext\_\_()"] --> J
+        J{"StopAsyncIteration?"} --> |true|M
+        J{"StopAsyncIteration?"} --> |false|I
+        I["print(item)"] --> S
+        S{"continue iterating?"} --> |true|C
+        S{"continue iterating?"} --> |false|M
+        M{"agen is no longer referenced?"} --> |true|N
+        M{"agen is no longer referenced?"} --> |false|two
+        N["finalize agen<br>_PyGen_Finalize(agen)"] --> O
+        O["calls finalizer hook<br>loop._asyncgen_finalizer_hook(agen)"] --> P
+        P["remove agen from WeakSet<br>loop._asyncgens.discard(agen)"] --> Q
+        Q["schedule task to close it<br>self.create_task(agen.aclose())"] --> R
+        R["print('executing finally block')"] --> E1
+
+    end
+
+    subgraph two["Loop shutting down"]
+        A1{"check for alive async generators?"} --> |true|B1
+        B1["close all async generators <br> await asyncio.gather\(*\[ag.aclose\(\) for ag in loop._asyncgens\]"] --> R
+        A1{"check for alive async generators?"} --> |false|E1
+        E1["loop.close()"]
+    end
+
+```
 
 [^1]: https://github.com/python/cpython/issues/123089
 [^2]: https://github.com/python/cpython/issues/80788

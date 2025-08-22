@@ -324,7 +324,6 @@ _Py_COMP_DIAG_POP
         &(runtime)->unicode_state.ids.mutex, \
         &(runtime)->imports.extensions.mutex, \
         &(runtime)->ceval.pending_mainthread.mutex, \
-        &(runtime)->ceval.sys_trace_profile_mutex, \
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
@@ -495,6 +494,11 @@ free_interpreter(PyInterpreterState *interp)
 static inline int check_interpreter_whence(long);
 #endif
 
+extern _Py_CODEUNIT *
+_Py_LazyJitTrampoline(
+    struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -565,8 +569,6 @@ init_interpreter(PyInterpreterState *interp,
         }
         interp->monitoring_tool_versions[t] = 0;
     }
-    interp->sys_profile_initialized = false;
-    interp->sys_trace_initialized = false;
     interp->_code_object_generation = 0;
     interp->jit = false;
     interp->executor_list_head = NULL;
@@ -773,8 +775,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
             Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
-    interp->sys_profile_initialized = false;
-    interp->sys_trace_initialized = false;
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
         Py_CLEAR(interp->monitoring_tool_names[t]);
     }
@@ -805,7 +805,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     _Py_ClearExecutorDeletionList(interp);
 #endif
     _PyAST_Fini(interp);
-    _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
@@ -816,6 +815,16 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     _PyGC_CollectNoFail(tstate);
     _PyGC_Fini(interp);
 
+    // Finalize warnings after last gc so that any finalizers can
+    // access warnings state
+    _PyWarnings_Fini(interp);
+    struct _PyExecutorObject *cold = interp->cold_executor;
+    if (cold != NULL) {
+        interp->cold_executor = NULL;
+        assert(cold->vm_data.valid);
+        assert(cold->vm_data.warm);
+        _PyExecutor_Free(cold);
+    }
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
        which requires sysdict and builtins. */
@@ -1469,6 +1478,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
     tstate->current_executor = NULL;
+    tstate->jit_exit = NULL;
     tstate->dict_global_version = 0;
 
     _tstate->c_stack_soft_limit = UINTPTR_MAX;
@@ -1683,13 +1693,14 @@ PyThreadState_Clear(PyThreadState *tstate)
     }
 
     if (tstate->c_profilefunc != NULL) {
-        tstate->interp->sys_profiling_threads--;
+        FT_ATOMIC_ADD_SSIZE(tstate->interp->sys_profiling_threads, -1);
         tstate->c_profilefunc = NULL;
     }
     if (tstate->c_tracefunc != NULL) {
-        tstate->interp->sys_tracing_threads--;
+        FT_ATOMIC_ADD_SSIZE(tstate->interp->sys_tracing_threads, -1);
         tstate->c_tracefunc = NULL;
     }
+
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
 

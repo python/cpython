@@ -1189,11 +1189,17 @@ class TestBuggyCases(GetSourceBase):
 
         self.assertSourceEqual(run(mod2.func225), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
+        self.assertSourceEqual(mod2.cls226.func232, 232, 235)
         self.assertSourceEqual(run(mod2.cls226().func232), 233, 234)
 
     def test_class_definition_same_name_diff_methods(self):
         self.assertSourceEqual(mod2.cls296, 296, 298)
         self.assertSourceEqual(mod2.cls310, 310, 312)
+
+    def test_generator_expression(self):
+        self.assertSourceEqual(next(mod2.ge377), 377, 380)
+        self.assertSourceEqual(next(mod2.func383()), 385, 388)
+
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
@@ -2820,7 +2826,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        asyncio._set_event_loop_policy(None)
+        asyncio.events._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -5786,6 +5792,7 @@ class TestSignatureDefinitions(unittest.TestCase):
             'AsyncGeneratorType': {'athrow'},
             'CoroutineType': {'throw'},
             'GeneratorType': {'throw'},
+            'FrameLocalsProxyType': {'setdefault', 'pop', 'get'},
         }
         self._test_module_has_signatures(types,
                 unsupported_signature=unsupported_signature,
@@ -5829,6 +5836,21 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_collections_abc_module_has_signatures(self):
         import collections.abc
         self._test_module_has_signatures(collections.abc)
+
+    def test_datetime_module_has_signatures(self):
+        # Only test if the C implementation is available.
+        import_helper.import_module('_datetime')
+        import datetime
+        no_signature = {'tzinfo'}
+        unsupported_signature = {'timezone'}
+        methods_unsupported_signature = {
+            'date': {'replace'},
+            'time': {'replace'},
+            'datetime': {'replace', 'combine'},
+        }
+        self._test_module_has_signatures(datetime,
+                no_signature, unsupported_signature,
+                methods_unsupported_signature=methods_unsupported_signature)
 
     def test_errno_module_has_signatures(self):
         import errno
@@ -5916,6 +5938,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_threading_module_has_signatures(self):
         import threading
         self._test_module_has_signatures(threading)
+        self.assertIsNotNone(inspect.signature(threading.__excepthook__))
 
     def test_thread_module_has_signatures(self):
         import _thread

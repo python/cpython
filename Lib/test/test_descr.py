@@ -3942,7 +3942,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # it as a leak.
         del C.__del__
 
-    @unittest.skipIf(support.is_emscripten, "Seems to works in Pyodide?")
+    @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     def test_slots_trash(self):
         # Testing slot trash...
@@ -6011,6 +6011,70 @@ class MroTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             class A(metaclass=M):
                 pass
+
+
+class TestGenericDescriptors(unittest.TestCase):
+    def test___dict__(self):
+        class CustomClass:
+            pass
+        class SlotClass:
+            __slots__ = ['foo']
+        class SlotSubClass(SlotClass):
+            pass
+        class IntSubclass(int):
+            pass
+
+        dict_descriptor = CustomClass.__dict__['__dict__']
+        self.assertEqual(dict_descriptor.__objclass__, object)
+
+        for cls in CustomClass, SlotSubClass, IntSubclass:
+            with self.subTest(cls=cls):
+                self.assertIs(cls.__dict__['__dict__'], dict_descriptor)
+                instance = cls()
+                instance.attr = 123
+                self.assertEqual(
+                    dict_descriptor.__get__(instance, cls),
+                    {'attr': 123},
+                )
+        with self.assertRaises(AttributeError):
+            print(dict_descriptor.__get__(True, bool))
+        with self.assertRaises(AttributeError):
+            print(dict_descriptor.__get__(SlotClass(), SlotClass))
+
+        # delegation to type.__dict__
+        self.assertIsInstance(
+            dict_descriptor.__get__(type, type),
+            types.MappingProxyType,
+        )
+
+    def test___weakref__(self):
+        class CustomClass:
+            pass
+        class SlotClass:
+            __slots__ = ['foo']
+        class SlotSubClass(SlotClass):
+            pass
+        class IntSubclass(int):
+            pass
+
+        weakref_descriptor = CustomClass.__dict__['__weakref__']
+        self.assertEqual(weakref_descriptor.__objclass__, object)
+
+        for cls in CustomClass, SlotSubClass:
+            with self.subTest(cls=cls):
+                self.assertIs(cls.__dict__['__weakref__'], weakref_descriptor)
+                instance = cls()
+                instance.attr = 123
+                self.assertEqual(
+                    weakref_descriptor.__get__(instance, cls),
+                    None,
+                )
+        with self.assertRaises(AttributeError):
+            weakref_descriptor.__get__(True, bool)
+        with self.assertRaises(AttributeError):
+            weakref_descriptor.__get__(SlotClass(), SlotClass)
+        with self.assertRaises(AttributeError):
+            weakref_descriptor.__get__(IntSubclass(), IntSubclass)
 
 
 if __name__ == "__main__":

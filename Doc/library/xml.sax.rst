@@ -18,11 +18,10 @@ SAX exceptions and the convenience functions which will be most used by users of
 the SAX API.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.sax` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 .. versionchanged:: 3.7.1
 

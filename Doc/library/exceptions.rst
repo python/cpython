@@ -204,10 +204,16 @@ The following exceptions are the exceptions that are usually raised.
    assignment fails.  (When an object does not support attribute references or
    attribute assignments at all, :exc:`TypeError` is raised.)
 
-   The :attr:`name` and :attr:`obj` attributes can be set using keyword-only
-   arguments to the constructor. When set they represent the name of the attribute
-   that was attempted to be accessed and the object that was accessed for said
-   attribute, respectively.
+   The optional *name* and *obj* keyword-only arguments
+   set the corresponding attributes:
+
+   .. attribute:: name
+
+      The name of the attribute that was attempted to be accessed.
+
+   .. attribute:: obj
+
+      The object that was accessed for the named attribute.
 
    .. versionchanged:: 3.10
       Added the :attr:`name` and :attr:`obj` attributes.
@@ -215,7 +221,7 @@ The following exceptions are the exceptions that are usually raised.
 .. exception:: EOFError
 
    Raised when the :func:`input` function hits an end-of-file condition (EOF)
-   without reading any data. (N.B.: the :meth:`io.IOBase.read` and
+   without reading any data. (Note: the :meth:`!io.IOBase.read` and
    :meth:`io.IOBase.readline` methods return an empty string when they hit EOF.)
 
 
@@ -312,9 +318,11 @@ The following exceptions are the exceptions that are usually raised.
    unqualified names.  The associated value is an error message that includes the
    name that could not be found.
 
-   The :attr:`name` attribute can be set using a keyword-only argument to the
-   constructor. When set it represent the name of the variable that was attempted
-   to be accessed.
+   The optional *name* keyword-only argument sets the attribute:
+
+   .. attribute:: name
+
+      The name of the variable that was attempted to be accessed.
 
    .. versionchanged:: 3.10
       Added the :attr:`name` attribute.
@@ -382,7 +390,7 @@ The following exceptions are the exceptions that are usually raised.
 
       The corresponding error message, as provided by
       the operating system.  It is formatted by the C
-      functions :c:func:`perror` under POSIX, and :c:func:`FormatMessage`
+      functions :c:func:`!perror` under POSIX, and :c:func:`!FormatMessage`
       under Windows.
 
    .. attribute:: filename
@@ -398,7 +406,7 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.3
       :exc:`EnvironmentError`, :exc:`IOError`, :exc:`WindowsError`,
       :exc:`socket.error`, :exc:`select.error` and
-      :exc:`mmap.error` have been merged into :exc:`OSError`, and the
+      :exc:`!mmap.error` have been merged into :exc:`OSError`, and the
       constructor may return a subclass.
 
    .. versionchanged:: 3.4
@@ -429,7 +437,9 @@ The following exceptions are the exceptions that are usually raised.
 
    * Creating a new Python thread.
    * :meth:`Joining <threading.Thread.join>` a running daemon thread.
-   * :func:`os.fork`.
+   * :func:`os.fork`,
+   * acquiring a lock such as :class:`threading.Lock`, when it is known that
+     the operation would otherwise deadlock.
 
    See also the :func:`sys.is_finalizing` function.
 
@@ -439,6 +449,11 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.14
 
       :meth:`threading.Thread.join` can now raise this exception.
+
+   .. versionchanged:: next
+
+      This exception may be raised when acquiring :meth:`threading.Lock`
+      or :meth:`threading.RLock`.
 
 .. exception:: RecursionError
 
@@ -590,7 +605,7 @@ The following exceptions are the exceptions that are usually raised.
    handled, the Python interpreter exits; no stack traceback is printed.  The
    constructor accepts the same optional argument passed to :func:`sys.exit`.
    If the value is an integer, it specifies the system exit status (passed to
-   C's :c:func:`exit` function); if it is ``None``, the exit status is zero; if
+   C's :c:func:`!exit` function); if it is ``None``, the exit status is zero; if
    it has another type (such as a string), the object's value is printed and
    the exit status is one.
 
@@ -1048,7 +1063,7 @@ their subgroups based on the types of the contained exceptions.
    subclasses that need a different constructor signature need to
    override that rather than :meth:`~object.__init__`. For example, the following
    defines an exception group subclass which accepts an exit_code and
-   and constructs the group's message from it. ::
+   constructs the group's message from it. ::
 
       class Errors(ExceptionGroup):
          def __new__(cls, errors, exit_code):

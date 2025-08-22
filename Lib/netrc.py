@@ -162,8 +162,8 @@ class netrc:
                 fowner = _getpwuid(prop.st_uid)
                 user = _getpwuid(current_user_id)
                 raise NetrcParseError(
-                    (f"~/.netrc file owner ({fowner}, {user}) does not match"
-                     " current user"))
+                    f"~/.netrc file owner ({fowner}) does not match"
+                    f" current user ({user})")
             if (prop.st_mode & (stat.S_IRWXG | stat.S_IRWXO)):
                 raise NetrcParseError(
                     "~/.netrc access too permissive: access"

@@ -56,6 +56,11 @@ whose size is determined when the object is allocated.
 #  define Py_REF_DEBUG
 #endif
 
+#if defined(_Py_OPAQUE_PYOBJECT) && !defined(Py_LIMITED_API)
+#   error "_Py_OPAQUE_PYOBJECT only makes sense with Py_LIMITED_API"
+#endif
+
+#ifndef _Py_OPAQUE_PYOBJECT
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD                   PyObject ob_base;
 
@@ -99,6 +104,8 @@ whose size is determined when the object is allocated.
  * not necessarily a byte count.
  */
 #define PyObject_VAR_HEAD      PyVarObject ob_base;
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
+
 #define Py_INVALID_SIZE (Py_ssize_t)-1
 
 /* PyObjects are given a minimum alignment so that the least significant bits
@@ -112,7 +119,9 @@ whose size is determined when the object is allocated.
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
-#ifndef Py_GIL_DISABLED
+#ifdef _Py_OPAQUE_PYOBJECT
+  /* PyObject is opaque */
+#elif !defined(Py_GIL_DISABLED)
 struct _object {
 #if (defined(__GNUC__) || defined(__clang__)) \
         && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
@@ -168,15 +177,18 @@ struct _object {
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
     PyTypeObject *ob_type;
 };
-#endif
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
 
-typedef struct {
+#ifndef _Py_OPAQUE_PYOBJECT
+struct PyVarObject {
     PyObject ob_base;
     Py_ssize_t ob_size; /* Number of items in variable part */
-} PyVarObject;
+};
+#endif
+typedef struct PyVarObject PyVarObject;
 
 /* Cast argument to PyVarObject* type. */
 #define _PyVarObject_CAST(op) _Py_CAST(PyVarObject*, (op))
@@ -286,6 +298,7 @@ PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_DATA(PyTypeObject) PyBool_Type;
 
+#ifndef _Py_OPAQUE_PYOBJECT
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
     assert(Py_TYPE(ob) != &PyLong_Type);
@@ -295,6 +308,7 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
 #endif
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
     return Py_TYPE(ob) == type;
@@ -304,6 +318,7 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 #endif
 
 
+#ifndef _Py_OPAQUE_PYOBJECT
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
     ob->ob_type = type;
 }
@@ -323,6 +338,7 @@ static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))
 #endif
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 
 /*

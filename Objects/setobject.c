@@ -40,6 +40,7 @@
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_LOAD_SSIZE_RELAXED()
 #include "pycore_pyerrors.h"            // _PyErr_SetKeyError()
 #include "pycore_setobject.h"           // _PySet_NextEntry() definition
+#include "pycore_weakref.h"             // FT_CLEAR_WEAKREFS()
 
 #include "stringlib/eq.h"               // unicode_eq()
 #include <stddef.h>                     // offsetof()
@@ -536,8 +537,7 @@ set_dealloc(PyObject *self)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(so);
-    if (so->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) so);
+    FT_CLEAR_WEAKREFS(self, so->weakreflist);
 
     for (entry = so->table; used > 0; entry++) {
         if (entry->key && entry->key != dummy) {
@@ -1962,6 +1962,7 @@ set_symmetric_difference_update_set(PySetObject *so, PySetObject *other)
 }
 
 /*[clinic input]
+@permit_long_summary
 set.symmetric_difference_update
     so: setobject
     other: object
@@ -1972,7 +1973,7 @@ Update the set, keeping only elements found in either set, but not in both.
 
 static PyObject *
 set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=79f80b4ee5da66c1 input=a50acf0365e1f0a5]*/
+/*[clinic end generated code: output=79f80b4ee5da66c1 input=86a3dddac9bfb15e]*/
 {
     if (Py_Is((PyObject *)so, other)) {
         return set_clear((PyObject *)so, NULL);
