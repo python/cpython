@@ -79,7 +79,7 @@ static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
 #endif
 
 #if defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SET_NAME_NP)
-static int _set_thread_name(const char *name);
+int _set_thread_name(const char *name);
 #endif
 
 
@@ -2582,7 +2582,7 @@ Set the name of the current thread.
 
 #ifndef MS_WINDOWS
 // Helper to set the thread name using platform-specific APIs (POSIX only)
-static int
+int
 _set_thread_name(const char *name)
 {
     int rc;
@@ -2708,6 +2708,25 @@ _set_thread_name(const char *name)
     return 0;   /* indicate success (no-op) */
 }
 #endif
+
+/* Weak global fallback when the platform-specific helper isn't compiled.
+ * On toolchains that support weak symbols (GCC/Clang), mark it weak so a
+ * real strong implementation will override it. */
+#if !defined(HAVE_PTHREAD_SETNAME_NP) && !defined(HAVE_PTHREAD_SET_NAME_NP) && !defined(MS_WINDOWS)
+
+#if defined(__GNUC__) || defined(__clang__)
+int __attribute__((weak))
+_set_thread_name(const char *name)
+#else
+int
+_set_thread_name(const char *name)
+#endif
+{
+    (void)name;
+    return 0;
+}
+#endif
+
 
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        thread_PyThread_start_new_thread,
