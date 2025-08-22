@@ -681,14 +681,15 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_value__doc__,
 "rounding mode of the current default context is used.");
 
 #define _DECIMAL_DECIMAL_TO_INTEGRAL_VALUE_METHODDEF    \
-    {"to_integral_value", _PyCFunction_CAST(_decimal_Decimal_to_integral_value), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_value__doc__},
+    {"to_integral_value", _PyCFunction_CAST(_decimal_Decimal_to_integral_value), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_value__doc__},
 
 static PyObject *
-_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_value_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *rounding,
                                         PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_integral_value(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_integral_value(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -739,7 +740,7 @@ _decimal_Decimal_to_integral_value(PyObject *self, PyObject *const *args, Py_ssi
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_value_impl(self, rounding, context);
+    return_value = _decimal_Decimal_to_integral_value_impl(self, cls, rounding, context);
 
 exit:
     return return_value;
@@ -755,14 +756,14 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral__doc__,
 "versions.");
 
 #define _DECIMAL_DECIMAL_TO_INTEGRAL_METHODDEF    \
-    {"to_integral", _PyCFunction_CAST(_decimal_Decimal_to_integral), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral__doc__},
+    {"to_integral", _PyCFunction_CAST(_decimal_Decimal_to_integral), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral__doc__},
 
 static PyObject *
-_decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
-                                  PyObject *context);
+_decimal_Decimal_to_integral_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *rounding, PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_integral(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_integral(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -813,7 +814,7 @@ _decimal_Decimal_to_integral(PyObject *self, PyObject *const *args, Py_ssize_t n
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_impl(self, rounding, context);
+    return_value = _decimal_Decimal_to_integral_impl(self, cls, rounding, context);
 
 exit:
     return return_value;
@@ -831,14 +832,15 @@ PyDoc_STRVAR(_decimal_Decimal_to_integral_exact__doc__,
 "given, then the rounding mode of the current default context is used.");
 
 #define _DECIMAL_DECIMAL_TO_INTEGRAL_EXACT_METHODDEF    \
-    {"to_integral_exact", _PyCFunction_CAST(_decimal_Decimal_to_integral_exact), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_exact__doc__},
+    {"to_integral_exact", _PyCFunction_CAST(_decimal_Decimal_to_integral_exact), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_to_integral_exact__doc__},
 
 static PyObject *
-_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *rounding,
                                         PyObject *context);
 
 static PyObject *
-_decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_decimal_Decimal_to_integral_exact(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -889,7 +891,7 @@ _decimal_Decimal_to_integral_exact(PyObject *self, PyObject *const *args, Py_ssi
     }
     context = args[1];
 skip_optional_pos:
-    return_value = _decimal_Decimal_to_integral_exact_impl(self, rounding, context);
+    return_value = _decimal_Decimal_to_integral_exact_impl(self, cls, rounding, context);
 
 exit:
     return return_value;
@@ -4900,4 +4902,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=1e10ddd6610e17dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4845342b88f87963 input=a9049054013a1b77]*/

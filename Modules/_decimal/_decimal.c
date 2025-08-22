@@ -4042,6 +4042,7 @@ error:
 /*[clinic input]
 _decimal.Decimal.to_integral_value
 
+    cls: defining_class
     rounding: object = None
     context: object = None
 
@@ -4053,15 +4054,16 @@ rounding mode of the current default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_value_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_value_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *rounding,
                                         PyObject *context)
-/*[clinic end generated code: output=7301465765f48b6b input=04e2312d5ed19f77]*/
+/*[clinic end generated code: output=23047d848ef84db1 input=85aa9499a21ea8d7]*/
 {
     PyObject *result;
     uint32_t status = 0;
     mpd_context_t workctx;
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     CONTEXT_CHECK_VA(state, context);
 
     workctx = *CTX(context);
@@ -4099,11 +4101,12 @@ versions.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_impl(PyObject *self, PyObject *rounding,
-                                  PyObject *context)
-/*[clinic end generated code: output=a0c7188686ee7f5c input=709b54618ecd0d8b]*/
+_decimal_Decimal_to_integral_impl(PyObject *self, PyTypeObject *cls,
+                                  PyObject *rounding, PyObject *context)
+/*[clinic end generated code: output=5dac8f54c2a3ed26 input=709b54618ecd0d8b]*/
 {
-    return _decimal_Decimal_to_integral_value_impl(self, rounding, context);
+    return _decimal_Decimal_to_integral_value_impl(self, cls, rounding,
+                                                   context);
 }
 
 /*[clinic input]
@@ -4118,9 +4121,10 @@ given, then the rounding mode of the current default context is used.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyObject *rounding,
+_decimal_Decimal_to_integral_exact_impl(PyObject *self, PyTypeObject *cls,
+                                        PyObject *rounding,
                                         PyObject *context)
-/*[clinic end generated code: output=8b004f9b45ac7746 input=fabce7a744b8087c]*/
+/*[clinic end generated code: output=543a39a02eea9917 input=fabce7a744b8087c]*/
 {
     PyObject *result;
     uint32_t status = 0;
