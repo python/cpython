@@ -114,7 +114,7 @@ encode_thread_name(PyObject *name_obj, const char *encoding)
         Py_DECREF(name_encoded);
         return truncated;
         Py_DECREF(name_encoded);
-        return truncated
+        return truncated;
     }
 #endif
     return name_encoded;
