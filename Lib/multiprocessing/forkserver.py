@@ -146,9 +146,9 @@ class ForkServer(object):
                    'main(%d, %d, %r, **%r)')
 
             if self._preload_modules:
-                desired_keys = {'main_path', 'sys_path'}
+                desired_keys = {'main_path': 'init_main_from_path', 'sys_path': 'sys_path'}
                 data = spawn.get_preparation_data('ignore')
-                main_kws = {x: y for x, y in data.items() if x in desired_keys}
+                main_kws = {x: data[y] for x, y in desired_keys.items() if y in data}
             else:
                 main_kws = {}
 
