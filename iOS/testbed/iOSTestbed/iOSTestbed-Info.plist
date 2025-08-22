@@ -41,18 +41,6 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>TestArgs</key>
-	<array>
-		<string>test</string> <!-- Invoke "python -m test" -->
-        <string>-uall</string> <!-- Enable all resources -->
-        <string>--single-process</string> <!-- always run all tests sequentially in a single process -->
-        <string>--rerun</string> <!-- Re-run failed tests in verbose mode -->
-        <string>-W</string> <!-- Display test output on failure -->
-		<!-- To run a subset of tests, add the test names below; e.g.,
-        <string>test_os</string>
-        <string>test_sys</string>
-		-->
-    </array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
