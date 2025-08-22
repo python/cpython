@@ -5,7 +5,7 @@ try:
 except ImportError:
     SQLITE_KEYWORDS = ()
 
-SQLITE_KEYWORDS += ('.quit', '.help', '.version')
+CLI_COMMANDS = ('.quit', '.help', '.version')
 
 _completion_matches = []
 
@@ -15,7 +15,7 @@ def _complete(text, state):
 
     if state == 0:
         if text.startswith('.'):
-            _completion_matches = [c for c in SQLITE_KEYWORDS if c.startswith(text)]
+            _completion_matches = [c for c in CLI_COMMANDS if c.startswith(text)]
         else:
             text_upper = text.upper()
             _completion_matches = [c for c in SQLITE_KEYWORDS if c.startswith(text_upper)]

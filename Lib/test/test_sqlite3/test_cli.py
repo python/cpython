@@ -306,7 +306,7 @@ class Completion(unittest.TestCase):
             self.assertEqual(len(indices), 2)
             start, end = indices
             candidates = [l.strip() for l in lines[start+1:end]]
-            self.assertEqual(candidates, sorted(SQLITE_KEYWORDS + ('.help', '.quit', '.version')))
+            self.assertEqual(candidates, sorted(SQLITE_KEYWORDS))
         except:
             if verbose:
                 print(' PTY output: '.center(30, '-'))
