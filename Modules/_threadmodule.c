@@ -79,21 +79,21 @@ get_thread_state_by_cls(PyTypeObject *cls)
 static int
 set_native_thread_name(const char *name)
 {
+    int rc;
 #ifdef __APPLE__
-    return pthread_setname_np(name);
+    rc = pthread_setname_np(name);
 #elif defined(__NetBSD__)
     pthread_t thread = pthread_self();
-    return pthread_setname_np(thread, "%s", (void *)name);
+    rc = pthread_setname_np(thread, "%s", (void *)name);
 #elif defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_t thread = pthread_self();
-    return pthread_setname_np(thread, name);
+    rc = pthread_setname_np(thread, name);
 #elif defined(HAVE_PTHREAD_SET_NAME_NP)
     pthread_t thread = pthread_self();
     pthread_set_name_np(thread, name);
-    return 0; /* pthread_set_name_np() returns void */
-#else
-    return 0;
+    rc = 0; /* pthread_set_name_np() returns void */
 #endif
+    return rc;
 }
 
 // Helper to encode and truncate thread name
@@ -111,11 +111,8 @@ encode_thread_name(PyObject *name_obj, const char *encoding)
 #ifdef _PYTHREAD_NAME_MAXLEN
     if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
         PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded), _PYTHREAD_NAME_MAXLEN);
-        if (truncated == NULL) {
-            Py_DECREF(name_encoded);
-            return NULL;
-        }
-        Py_SETREF(name_encoded, truncated);
+        Py_DECREF(name_encoded);
+        return truncated
     }
 #endif
     return name_encoded;
