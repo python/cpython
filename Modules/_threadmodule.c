@@ -112,10 +112,26 @@ encode_thread_name(PyObject *name_obj, const char *encoding)
     if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
         PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded), _PYTHREAD_NAME_MAXLEN);
         Py_DECREF(name_encoded);
+        return truncated;
+        Py_DECREF(name_encoded);
         return truncated
     }
 #endif
     return name_encoded;
+}
+
+// Helper to encode, set, and cleanup thread name in one step
+static int
+set_thread_name_with_encoding(PyObject *name_obj, const char *encoding)
+{
+    PyObject *name_encoded = encode_thread_name(name_obj, encoding);
+    if (name_encoded == NULL) {
+        return -1; // error, exception set
+    }
+    const char *name = PyBytes_AS_STRING(name_encoded);
+    int rc = set_native_thread_name(name);
+    Py_DECREF(name_encoded);
+    return rc;
 }
 
 #ifdef MS_WINDOWS
@@ -2629,40 +2645,25 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 #ifndef MS_WINDOWS
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const char *encoding = interp->unicode.fs_codec.encoding;
-    PyObject *name_encoded = encode_thread_name(name_obj, encoding);
-    if (name_encoded == NULL) {
-        return NULL;
-    }
-    const char *name = PyBytes_AS_STRING(name_encoded);
-    int rc = set_native_thread_name(name);
+    int rc = set_thread_name_with_encoding(name_obj, encoding);
     if (rc) {
         int err = rc;
-        Py_DECREF(name_encoded);
         if (err == EINVAL && strcmp(encoding, "ascii") != 0) {
-            // Retry with ASCII encoding and 'replace' if not already ASCII
-            name_encoded = encode_thread_name(name_obj, "ascii");
-            if (name_encoded == NULL) {
-                return NULL;
-            }
-            name = PyBytes_AS_STRING(name_encoded);
-            rc = set_native_thread_name(name);
+            rc = set_thread_name_with_encoding(name_obj, "ascii");
             if (rc) {
-                err = rc;
-                Py_DECREF(name_encoded);
-                errno = err;
+                errno = rc;
                 return PyErr_SetFromErrno(PyExc_OSError);
             }
-            Py_DECREF(name_encoded);
             Py_RETURN_NONE;
         }
         errno = err;
         return PyErr_SetFromErrno(PyExc_OSError);
     }
-    Py_DECREF(name_encoded);
     Py_RETURN_NONE;
 #else
     // Windows implementation
     assert(pSetThreadDescription != NULL);
+    
     Py_ssize_t len;
     wchar_t *name = PyUnicode_AsWideCharString(name_obj, &len);
     if (name == NULL) {
