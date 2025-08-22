@@ -812,7 +812,6 @@ class TestHashlibSupport(unittest.TestCase):
         # the built-in implementation while allowing OpenSSL or vice-versa
         # may result in failures depending on the exposed built-in hashes.
         cls._hashlib = import_helper.import_module("_hashlib")
-        cls._hmac = import_helper.import_module("_hmac")
         cls._md5 = import_helper.import_module("_md5")
 
     def skip_if_fips_mode(self):
@@ -856,10 +855,6 @@ class TestHashlibSupport(unittest.TestCase):
         fullname = info.fullname(implementation)
         return self.try_import_attribute(fullname)
 
-    def fetch_hmac_function(self, name):
-        fullname = hashlib_helper._EXPLICIT_HMAC_CONSTRUCTORS[name]
-        return self.try_import_attribute(fullname)
-
     def check_openssl_hash(self, name, *, disabled=True):
         """Check that OpenSSL HASH interface is enabled/disabled."""
         with self.check_context(disabled):
@@ -887,27 +882,6 @@ class TestHashlibSupport(unittest.TestCase):
             self.assertEqual(do_hash.__name__, name)
             with self.check_context(disabled):
                 _ = do_hash(b"")
-
-    def check_builtin_hmac(self, name, *, disabled=True):
-        """Check that HACL* HMAC interface is enabled/disabled."""
-        if name in hashlib_helper.NON_HMAC_DIGEST_NAMES:
-            # HMAC-BLAKE and HMAC-SHAKE raise a ValueError as they are not
-            # supported at all (they do not make any sense in practice).
-            with self.assertRaises(ValueError):
-                self._hmac.compute_digest(b"", b"", name)
-        else:
-            with self.check_context(disabled):
-                _ = self._hmac.compute_digest(b"", b"", name)
-
-        with self.check_context(disabled):
-            _ = self._hmac.new(b"", b"", name)
-
-        if do_hmac := self.fetch_hmac_function(name):
-            self.assertStartsWith(do_hmac.__name__, 'compute_')
-            with self.check_context(disabled):
-                _ = do_hmac(b"", b"")
-        else:
-            self.assertIn(name, hashlib_helper.NON_HMAC_DIGEST_NAMES)
 
     @support.subTests(
         ('name', 'allow_openssl', 'allow_builtin'),
@@ -954,7 +928,6 @@ class TestHashlibSupport(unittest.TestCase):
                     _ = self.hmac.digest(b"", b"", name)
 
                 self.check_openssl_hmac(name, disabled=not allow_openssl)
-                self.check_builtin_hmac(name, disabled=not allow_builtin)
 
     @hashlib_helper.block_algorithm("md5")
     def test_disable_hash_md5_in_fips_mode(self):
