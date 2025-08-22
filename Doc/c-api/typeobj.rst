@@ -1289,7 +1289,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. c:macro:: Py_TPFLAGS_PREHEADER
 
-      A shorthand for checking if VM-managed fields are present.
+      This bit indicates that the VM will manage some fields by storing them before the object.
       Currently, this macro is equivalent to
       :c:expr:`Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_MANAGED_WEAKREF`.
 
