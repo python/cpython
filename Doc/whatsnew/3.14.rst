@@ -2223,7 +2223,7 @@ webbrowser
   supported browsers on macOS.
 
 
-zipinfo
+zipfile
 -------
 
 * Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
