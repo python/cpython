@@ -78,7 +78,7 @@ static PF_GET_THREAD_DESCRIPTION pGetThreadDescription = NULL;
 static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
 #endif
 
-#ifndef MS_WINDOWS
+#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SET_NAME_NP)
 static int _set_thread_name(const char *name);
 #endif
 
