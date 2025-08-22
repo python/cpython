@@ -1207,7 +1207,15 @@ class SMTPSimTests(unittest.TestCase):
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
                             timeout=support.LOOPBACK_TIMEOUT)
         self.addCleanup(smtp.close)
-        resp = smtp.login(sim_auth[0], sim_auth[1])
+        with (
+            mock.patch.object(smtp, "auth_cram_md5") as smtp_auth_cram_md5,
+            mock.patch.object(
+                smtp, "auth_plain", wraps=smtp.auth_plain
+            ) as smtp_auth_plain
+        ):
+            resp = smtp.login(sim_auth[0], sim_auth[1])
+        smtp_auth_plain.assert_called_once()
+        smtp_auth_cram_md5.assert_not_called()
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
