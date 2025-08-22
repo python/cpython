@@ -1803,6 +1803,155 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_Decimal_is_canonical__doc__,
+"is_canonical($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is canonical and False otherwise.\n"
+"\n"
+"Currently, a Decimal instance is always canonical, so this operation\n"
+"always returns True.");
+
+#define _DECIMAL_DECIMAL_IS_CANONICAL_METHODDEF    \
+    {"is_canonical", (PyCFunction)_decimal_Decimal_is_canonical, METH_NOARGS, _decimal_Decimal_is_canonical__doc__},
+
+static PyObject *
+_decimal_Decimal_is_canonical_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_canonical(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_canonical_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_finite__doc__,
+"is_finite($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a finite number, and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_FINITE_METHODDEF    \
+    {"is_finite", (PyCFunction)_decimal_Decimal_is_finite, METH_NOARGS, _decimal_Decimal_is_finite__doc__},
+
+static PyObject *
+_decimal_Decimal_is_finite_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_finite(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_finite_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_infinite__doc__,
+"is_infinite($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is infinite, and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_INFINITE_METHODDEF    \
+    {"is_infinite", (PyCFunction)_decimal_Decimal_is_infinite, METH_NOARGS, _decimal_Decimal_is_infinite__doc__},
+
+static PyObject *
+_decimal_Decimal_is_infinite_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_infinite(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_infinite_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_nan__doc__,
+"is_nan($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a (quiet or signaling) NaN, else False.");
+
+#define _DECIMAL_DECIMAL_IS_NAN_METHODDEF    \
+    {"is_nan", (PyCFunction)_decimal_Decimal_is_nan, METH_NOARGS, _decimal_Decimal_is_nan__doc__},
+
+static PyObject *
+_decimal_Decimal_is_nan_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_nan(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_nan_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_qnan__doc__,
+"is_qnan($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a quiet NaN, and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_QNAN_METHODDEF    \
+    {"is_qnan", (PyCFunction)_decimal_Decimal_is_qnan, METH_NOARGS, _decimal_Decimal_is_qnan__doc__},
+
+static PyObject *
+_decimal_Decimal_is_qnan_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_qnan(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_qnan_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_snan__doc__,
+"is_snan($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a signaling NaN and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_SNAN_METHODDEF    \
+    {"is_snan", (PyCFunction)_decimal_Decimal_is_snan, METH_NOARGS, _decimal_Decimal_is_snan__doc__},
+
+static PyObject *
+_decimal_Decimal_is_snan_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_snan(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_snan_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_signed__doc__,
+"is_signed($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument has a negative sign and False otherwise.\n"
+"\n"
+"Note that both zeros and NaNs can carry signs.");
+
+#define _DECIMAL_DECIMAL_IS_SIGNED_METHODDEF    \
+    {"is_signed", (PyCFunction)_decimal_Decimal_is_signed, METH_NOARGS, _decimal_Decimal_is_signed__doc__},
+
+static PyObject *
+_decimal_Decimal_is_signed_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_signed(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_signed_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Decimal_is_zero__doc__,
+"is_zero($self, /)\n"
+"--\n"
+"\n"
+"Return True if the argument is a zero and False otherwise.");
+
+#define _DECIMAL_DECIMAL_IS_ZERO_METHODDEF    \
+    {"is_zero", (PyCFunction)_decimal_Decimal_is_zero, METH_NOARGS, _decimal_Decimal_is_zero__doc__},
+
+static PyObject *
+_decimal_Decimal_is_zero_impl(PyObject *self);
+
+static PyObject *
+_decimal_Decimal_is_zero(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Decimal_is_zero_impl(self);
+}
+
 PyDoc_STRVAR(_decimal_Decimal_is_normal__doc__,
 "is_normal($self, /, context=None)\n"
 "--\n"
@@ -2330,6 +2479,166 @@ _decimal_Decimal_to_eng_string(PyObject *self, PyObject *const *args, Py_ssize_t
     context = args[0];
 skip_optional_pos:
     return_value = _decimal_Decimal_to_eng_string_impl(self, context);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Decimal_compare_total__doc__,
+"compare_total($self, /, other, context=None)\n"
+"--\n"
+"\n"
+"Compare two operands using their abstract representation.\n"
+"\n"
+"Similar to the compare() method, but the result\n"
+"gives a total ordering on Decimal instances.  Two Decimal instances with\n"
+"the same numeric value but different representations compare unequal\n"
+"in this ordering:\n"
+"\n"
+"    >>> Decimal(\'12.0\').compare_total(Decimal(\'12\'))\n"
+"    Decimal(\'-1\')\n"
+"\n"
+"Quiet and signaling NaNs are also included in the total ordering. The\n"
+"result of this function is Decimal(\'0\') if both operands have the same\n"
+"representation, Decimal(\'-1\') if the first operand is lower in the\n"
+"total order than the second, and Decimal(\'1\') if the first operand is\n"
+"higher in the total order than the second operand. See the\n"
+"specification for details of the total order.\n"
+"\n"
+"This operation is unaffected by context and is quiet: no flags are\n"
+"changed and no rounding is performed. As an exception, the C version\n"
+"may raise InvalidOperation if the second operand cannot be converted\n"
+"exactly.");
+
+#define _DECIMAL_DECIMAL_COMPARE_TOTAL_METHODDEF    \
+    {"compare_total", _PyCFunction_CAST(_decimal_Decimal_compare_total), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total__doc__},
+
+static PyObject *
+_decimal_Decimal_compare_total_impl(PyObject *self, PyObject *other,
+                                    PyObject *context);
+
+static PyObject *
+_decimal_Decimal_compare_total(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(other), &_Py_ID(context), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"other", "context", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compare_total",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *other;
+    PyObject *context = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    other = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    context = args[1];
+skip_optional_pos:
+    return_value = _decimal_Decimal_compare_total_impl(self, other, context);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Decimal_compare_total_mag__doc__,
+"compare_total_mag($self, /, other, context=None)\n"
+"--\n"
+"\n"
+"As compare_total(), but ignores the sign of each operand.\n"
+"\n"
+"x.compare_total_mag(y) is equivalent to\n"
+"x.copy_abs().compare_total(y.copy_abs()).\n"
+"\n"
+"This operation is unaffected by context and is quiet: no flags are\n"
+"changed and no rounding is performed. As an exception, the C version\n"
+"may raise InvalidOperation if the second operand cannot be converted\n"
+"exactly.");
+
+#define _DECIMAL_DECIMAL_COMPARE_TOTAL_MAG_METHODDEF    \
+    {"compare_total_mag", _PyCFunction_CAST(_decimal_Decimal_compare_total_mag), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_compare_total_mag__doc__},
+
+static PyObject *
+_decimal_Decimal_compare_total_mag_impl(PyObject *self, PyObject *other,
+                                        PyObject *context);
+
+static PyObject *
+_decimal_Decimal_compare_total_mag(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(other), &_Py_ID(context), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"other", "context", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "compare_total_mag",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *other;
+    PyObject *context = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    other = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    context = args[1];
+skip_optional_pos:
+    return_value = _decimal_Decimal_compare_total_mag_impl(self, other, context);
 
 exit:
     return return_value;
@@ -3122,6 +3431,586 @@ _decimal_Decimal___trunc__(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _decimal_Decimal___trunc___impl(self);
 }
 
+PyDoc_STRVAR(_decimal_Context_abs__doc__,
+"abs($self, x, /)\n"
+"--\n"
+"\n"
+"Return the absolute value of x.");
+
+#define _DECIMAL_CONTEXT_ABS_METHODDEF    \
+    {"abs", (PyCFunction)_decimal_Context_abs, METH_O, _decimal_Context_abs__doc__},
+
+PyDoc_STRVAR(_decimal_Context_exp__doc__,
+"exp($self, x, /)\n"
+"--\n"
+"\n"
+"Return e ** x.");
+
+#define _DECIMAL_CONTEXT_EXP_METHODDEF    \
+    {"exp", (PyCFunction)_decimal_Context_exp, METH_O, _decimal_Context_exp__doc__},
+
+PyDoc_STRVAR(_decimal_Context_ln__doc__,
+"ln($self, x, /)\n"
+"--\n"
+"\n"
+"Return the natural (base e) logarithm of x.");
+
+#define _DECIMAL_CONTEXT_LN_METHODDEF    \
+    {"ln", (PyCFunction)_decimal_Context_ln, METH_O, _decimal_Context_ln__doc__},
+
+PyDoc_STRVAR(_decimal_Context_log10__doc__,
+"log10($self, x, /)\n"
+"--\n"
+"\n"
+"Return the base 10 logarithm of x.");
+
+#define _DECIMAL_CONTEXT_LOG10_METHODDEF    \
+    {"log10", (PyCFunction)_decimal_Context_log10, METH_O, _decimal_Context_log10__doc__},
+
+PyDoc_STRVAR(_decimal_Context_minus__doc__,
+"minus($self, x, /)\n"
+"--\n"
+"\n"
+"Minus corresponds to unary prefix minus in Python.\n"
+"\n"
+"This operation applies the context to the result.");
+
+#define _DECIMAL_CONTEXT_MINUS_METHODDEF    \
+    {"minus", (PyCFunction)_decimal_Context_minus, METH_O, _decimal_Context_minus__doc__},
+
+PyDoc_STRVAR(_decimal_Context_next_minus__doc__,
+"next_minus($self, x, /)\n"
+"--\n"
+"\n"
+"Return the largest representable number smaller than x.");
+
+#define _DECIMAL_CONTEXT_NEXT_MINUS_METHODDEF    \
+    {"next_minus", (PyCFunction)_decimal_Context_next_minus, METH_O, _decimal_Context_next_minus__doc__},
+
+PyDoc_STRVAR(_decimal_Context_next_plus__doc__,
+"next_plus($self, x, /)\n"
+"--\n"
+"\n"
+"Return the smallest representable number larger than x.");
+
+#define _DECIMAL_CONTEXT_NEXT_PLUS_METHODDEF    \
+    {"next_plus", (PyCFunction)_decimal_Context_next_plus, METH_O, _decimal_Context_next_plus__doc__},
+
+PyDoc_STRVAR(_decimal_Context_normalize__doc__,
+"normalize($self, x, /)\n"
+"--\n"
+"\n"
+"Reduce x to its simplest form. Alias for reduce(x).");
+
+#define _DECIMAL_CONTEXT_NORMALIZE_METHODDEF    \
+    {"normalize", (PyCFunction)_decimal_Context_normalize, METH_O, _decimal_Context_normalize__doc__},
+
+PyDoc_STRVAR(_decimal_Context_plus__doc__,
+"plus($self, x, /)\n"
+"--\n"
+"\n"
+"Plus corresponds to the unary prefix plus operator in Python.\n"
+"\n"
+"This operation applies the context to the result.");
+
+#define _DECIMAL_CONTEXT_PLUS_METHODDEF    \
+    {"plus", (PyCFunction)_decimal_Context_plus, METH_O, _decimal_Context_plus__doc__},
+
+PyDoc_STRVAR(_decimal_Context_to_integral_value__doc__,
+"to_integral_value($self, x, /)\n"
+"--\n"
+"\n"
+"Round to an integer.");
+
+#define _DECIMAL_CONTEXT_TO_INTEGRAL_VALUE_METHODDEF    \
+    {"to_integral_value", (PyCFunction)_decimal_Context_to_integral_value, METH_O, _decimal_Context_to_integral_value__doc__},
+
+PyDoc_STRVAR(_decimal_Context_to_integral_exact__doc__,
+"to_integral_exact($self, x, /)\n"
+"--\n"
+"\n"
+"Round to an integer. Signal if the result is rounded or inexact.");
+
+#define _DECIMAL_CONTEXT_TO_INTEGRAL_EXACT_METHODDEF    \
+    {"to_integral_exact", (PyCFunction)_decimal_Context_to_integral_exact, METH_O, _decimal_Context_to_integral_exact__doc__},
+
+PyDoc_STRVAR(_decimal_Context_to_integral__doc__,
+"to_integral($self, x, /)\n"
+"--\n"
+"\n"
+"Identical to to_integral_value(x).");
+
+#define _DECIMAL_CONTEXT_TO_INTEGRAL_METHODDEF    \
+    {"to_integral", (PyCFunction)_decimal_Context_to_integral, METH_O, _decimal_Context_to_integral__doc__},
+
+PyDoc_STRVAR(_decimal_Context_sqrt__doc__,
+"sqrt($self, x, /)\n"
+"--\n"
+"\n"
+"Square root of a non-negative number to context precision.");
+
+#define _DECIMAL_CONTEXT_SQRT_METHODDEF    \
+    {"sqrt", (PyCFunction)_decimal_Context_sqrt, METH_O, _decimal_Context_sqrt__doc__},
+
+PyDoc_STRVAR(_decimal_Context_add__doc__,
+"add($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return the sum of x and y.");
+
+#define _DECIMAL_CONTEXT_ADD_METHODDEF    \
+    {"add", _PyCFunction_CAST(_decimal_Context_add), METH_FASTCALL, _decimal_Context_add__doc__},
+
+static PyObject *
+_decimal_Context_add_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_add(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("add", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_add_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_compare__doc__,
+"compare($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare x and y numerically.");
+
+#define _DECIMAL_CONTEXT_COMPARE_METHODDEF    \
+    {"compare", _PyCFunction_CAST(_decimal_Context_compare), METH_FASTCALL, _decimal_Context_compare__doc__},
+
+static PyObject *
+_decimal_Context_compare_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_compare(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("compare", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_compare_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_compare_signal__doc__,
+"compare_signal($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare x and y numerically.  All NaNs signal.");
+
+#define _DECIMAL_CONTEXT_COMPARE_SIGNAL_METHODDEF    \
+    {"compare_signal", _PyCFunction_CAST(_decimal_Context_compare_signal), METH_FASTCALL, _decimal_Context_compare_signal__doc__},
+
+static PyObject *
+_decimal_Context_compare_signal_impl(PyObject *context, PyObject *x,
+                                     PyObject *y);
+
+static PyObject *
+_decimal_Context_compare_signal(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("compare_signal", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_compare_signal_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_divide__doc__,
+"divide($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return x divided by y.");
+
+#define _DECIMAL_CONTEXT_DIVIDE_METHODDEF    \
+    {"divide", _PyCFunction_CAST(_decimal_Context_divide), METH_FASTCALL, _decimal_Context_divide__doc__},
+
+static PyObject *
+_decimal_Context_divide_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_divide(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("divide", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_divide_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_divide_int__doc__,
+"divide_int($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return x divided by y, truncated to an integer.");
+
+#define _DECIMAL_CONTEXT_DIVIDE_INT_METHODDEF    \
+    {"divide_int", _PyCFunction_CAST(_decimal_Context_divide_int), METH_FASTCALL, _decimal_Context_divide_int__doc__},
+
+static PyObject *
+_decimal_Context_divide_int_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_divide_int(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("divide_int", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_divide_int_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_max__doc__,
+"max($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare the values numerically and return the maximum.");
+
+#define _DECIMAL_CONTEXT_MAX_METHODDEF    \
+    {"max", _PyCFunction_CAST(_decimal_Context_max), METH_FASTCALL, _decimal_Context_max__doc__},
+
+static PyObject *
+_decimal_Context_max_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_max(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("max", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_max_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_max_mag__doc__,
+"max_mag($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare the values numerically with their sign ignored.");
+
+#define _DECIMAL_CONTEXT_MAX_MAG_METHODDEF    \
+    {"max_mag", _PyCFunction_CAST(_decimal_Context_max_mag), METH_FASTCALL, _decimal_Context_max_mag__doc__},
+
+static PyObject *
+_decimal_Context_max_mag_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_max_mag(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("max_mag", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_max_mag_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_min__doc__,
+"min($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare the values numerically and return the minimum.");
+
+#define _DECIMAL_CONTEXT_MIN_METHODDEF    \
+    {"min", _PyCFunction_CAST(_decimal_Context_min), METH_FASTCALL, _decimal_Context_min__doc__},
+
+static PyObject *
+_decimal_Context_min_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_min(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("min", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_min_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_min_mag__doc__,
+"min_mag($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare the values numerically with their sign ignored.");
+
+#define _DECIMAL_CONTEXT_MIN_MAG_METHODDEF    \
+    {"min_mag", _PyCFunction_CAST(_decimal_Context_min_mag), METH_FASTCALL, _decimal_Context_min_mag__doc__},
+
+static PyObject *
+_decimal_Context_min_mag_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_min_mag(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("min_mag", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_min_mag_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_multiply__doc__,
+"multiply($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return the product of x and y.");
+
+#define _DECIMAL_CONTEXT_MULTIPLY_METHODDEF    \
+    {"multiply", _PyCFunction_CAST(_decimal_Context_multiply), METH_FASTCALL, _decimal_Context_multiply__doc__},
+
+static PyObject *
+_decimal_Context_multiply_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_multiply(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("multiply", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_multiply_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_next_toward__doc__,
+"next_toward($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return the number closest to x, in the direction towards y.");
+
+#define _DECIMAL_CONTEXT_NEXT_TOWARD_METHODDEF    \
+    {"next_toward", _PyCFunction_CAST(_decimal_Context_next_toward), METH_FASTCALL, _decimal_Context_next_toward__doc__},
+
+static PyObject *
+_decimal_Context_next_toward_impl(PyObject *context, PyObject *x,
+                                  PyObject *y);
+
+static PyObject *
+_decimal_Context_next_toward(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("next_toward", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_next_toward_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_quantize__doc__,
+"quantize($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return a value equal to x (rounded), having the exponent of y.");
+
+#define _DECIMAL_CONTEXT_QUANTIZE_METHODDEF    \
+    {"quantize", _PyCFunction_CAST(_decimal_Context_quantize), METH_FASTCALL, _decimal_Context_quantize__doc__},
+
+static PyObject *
+_decimal_Context_quantize_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_quantize(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("quantize", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_quantize_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_remainder__doc__,
+"remainder($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return the remainder from integer division.\n"
+"\n"
+"The sign of the result, if non-zero, is the same as that of the\n"
+"original dividend.");
+
+#define _DECIMAL_CONTEXT_REMAINDER_METHODDEF    \
+    {"remainder", _PyCFunction_CAST(_decimal_Context_remainder), METH_FASTCALL, _decimal_Context_remainder__doc__},
+
+static PyObject *
+_decimal_Context_remainder_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_remainder(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("remainder", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_remainder_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_remainder_near__doc__,
+"remainder_near($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return x - y * n.\n"
+"\n"
+"Here n is the integer nearest the exact value of x / y (if the result\n"
+"is 0 then its sign will be the sign of x).");
+
+#define _DECIMAL_CONTEXT_REMAINDER_NEAR_METHODDEF    \
+    {"remainder_near", _PyCFunction_CAST(_decimal_Context_remainder_near), METH_FASTCALL, _decimal_Context_remainder_near__doc__},
+
+static PyObject *
+_decimal_Context_remainder_near_impl(PyObject *context, PyObject *x,
+                                     PyObject *y);
+
+static PyObject *
+_decimal_Context_remainder_near(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("remainder_near", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_remainder_near_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_subtract__doc__,
+"subtract($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return the difference between x and y.");
+
+#define _DECIMAL_CONTEXT_SUBTRACT_METHODDEF    \
+    {"subtract", _PyCFunction_CAST(_decimal_Context_subtract), METH_FASTCALL, _decimal_Context_subtract__doc__},
+
+static PyObject *
+_decimal_Context_subtract_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_subtract(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("subtract", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_subtract_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_decimal_Context_power__doc__,
 "power($self, /, a, b, modulo=None)\n"
 "--\n"
@@ -3204,6 +4093,39 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_Context_fma__doc__,
+"fma($self, x, y, z, /)\n"
+"--\n"
+"\n"
+"Return x multiplied by y, plus z.");
+
+#define _DECIMAL_CONTEXT_FMA_METHODDEF    \
+    {"fma", _PyCFunction_CAST(_decimal_Context_fma), METH_FASTCALL, _decimal_Context_fma__doc__},
+
+static PyObject *
+_decimal_Context_fma_impl(PyObject *context, PyObject *x, PyObject *y,
+                          PyObject *z);
+
+static PyObject *
+_decimal_Context_fma(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+    PyObject *z;
+
+    if (!_PyArg_CheckPositional("fma", nargs, 3, 3)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    z = args[2];
+    return_value = _decimal_Context_fma_impl(context, x, y, z);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_decimal_Context_radix__doc__,
 "radix($self, /)\n"
 "--\n"
@@ -3221,4 +4143,347 @@ _decimal_Context_radix(PyObject *context, PyObject *Py_UNUSED(ignored))
 {
     return _decimal_Context_radix_impl(context);
 }
-/*[clinic end generated code: output=ffc58f98fffed531 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_decimal_Context_is_normal__doc__,
+"is_normal($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a normal number, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_NORMAL_METHODDEF    \
+    {"is_normal", (PyCFunction)_decimal_Context_is_normal, METH_O, _decimal_Context_is_normal__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_subnormal__doc__,
+"is_subnormal($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is subnormal, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_SUBNORMAL_METHODDEF    \
+    {"is_subnormal", (PyCFunction)_decimal_Context_is_subnormal, METH_O, _decimal_Context_is_subnormal__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_finite__doc__,
+"is_finite($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is finite, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_FINITE_METHODDEF    \
+    {"is_finite", (PyCFunction)_decimal_Context_is_finite, METH_O, _decimal_Context_is_finite__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_infinite__doc__,
+"is_infinite($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is infinite, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_INFINITE_METHODDEF    \
+    {"is_infinite", (PyCFunction)_decimal_Context_is_infinite, METH_O, _decimal_Context_is_infinite__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_nan__doc__,
+"is_nan($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a qNaN or sNaN, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_NAN_METHODDEF    \
+    {"is_nan", (PyCFunction)_decimal_Context_is_nan, METH_O, _decimal_Context_is_nan__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_qnan__doc__,
+"is_qnan($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a quiet NaN, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_QNAN_METHODDEF    \
+    {"is_qnan", (PyCFunction)_decimal_Context_is_qnan, METH_O, _decimal_Context_is_qnan__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_snan__doc__,
+"is_snan($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a signaling NaN, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_SNAN_METHODDEF    \
+    {"is_snan", (PyCFunction)_decimal_Context_is_snan, METH_O, _decimal_Context_is_snan__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_signed__doc__,
+"is_signed($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is negative, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_SIGNED_METHODDEF    \
+    {"is_signed", (PyCFunction)_decimal_Context_is_signed, METH_O, _decimal_Context_is_signed__doc__},
+
+PyDoc_STRVAR(_decimal_Context_is_zero__doc__,
+"is_zero($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is a zero, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_ZERO_METHODDEF    \
+    {"is_zero", (PyCFunction)_decimal_Context_is_zero, METH_O, _decimal_Context_is_zero__doc__},
+
+PyDoc_STRVAR(_decimal_Context_logb__doc__,
+"logb($self, x, /)\n"
+"--\n"
+"\n"
+"Return the exponent of the magnitude of the operand\'s MSD.");
+
+#define _DECIMAL_CONTEXT_LOGB_METHODDEF    \
+    {"logb", (PyCFunction)_decimal_Context_logb, METH_O, _decimal_Context_logb__doc__},
+
+PyDoc_STRVAR(_decimal_Context_logical_invert__doc__,
+"logical_invert($self, x, /)\n"
+"--\n"
+"\n"
+"Invert all digits of x.");
+
+#define _DECIMAL_CONTEXT_LOGICAL_INVERT_METHODDEF    \
+    {"logical_invert", (PyCFunction)_decimal_Context_logical_invert, METH_O, _decimal_Context_logical_invert__doc__},
+
+PyDoc_STRVAR(_decimal_Context_compare_total__doc__,
+"compare_total($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare x and y using their abstract representation.");
+
+#define _DECIMAL_CONTEXT_COMPARE_TOTAL_METHODDEF    \
+    {"compare_total", _PyCFunction_CAST(_decimal_Context_compare_total), METH_FASTCALL, _decimal_Context_compare_total__doc__},
+
+static PyObject *
+_decimal_Context_compare_total_impl(PyObject *context, PyObject *x,
+                                    PyObject *y);
+
+static PyObject *
+_decimal_Context_compare_total(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("compare_total", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_compare_total_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_compare_total_mag__doc__,
+"compare_total_mag($self, x, y, /)\n"
+"--\n"
+"\n"
+"Compare x and y using their abstract representation, ignoring sign.");
+
+#define _DECIMAL_CONTEXT_COMPARE_TOTAL_MAG_METHODDEF    \
+    {"compare_total_mag", _PyCFunction_CAST(_decimal_Context_compare_total_mag), METH_FASTCALL, _decimal_Context_compare_total_mag__doc__},
+
+static PyObject *
+_decimal_Context_compare_total_mag_impl(PyObject *context, PyObject *x,
+                                        PyObject *y);
+
+static PyObject *
+_decimal_Context_compare_total_mag(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("compare_total_mag", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_compare_total_mag_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_logical_and__doc__,
+"logical_and($self, x, y, /)\n"
+"--\n"
+"\n"
+"Digit-wise and of x and y.");
+
+#define _DECIMAL_CONTEXT_LOGICAL_AND_METHODDEF    \
+    {"logical_and", _PyCFunction_CAST(_decimal_Context_logical_and), METH_FASTCALL, _decimal_Context_logical_and__doc__},
+
+static PyObject *
+_decimal_Context_logical_and_impl(PyObject *context, PyObject *x,
+                                  PyObject *y);
+
+static PyObject *
+_decimal_Context_logical_and(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("logical_and", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_logical_and_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_logical_or__doc__,
+"logical_or($self, x, y, /)\n"
+"--\n"
+"\n"
+"Digit-wise or of x and y.");
+
+#define _DECIMAL_CONTEXT_LOGICAL_OR_METHODDEF    \
+    {"logical_or", _PyCFunction_CAST(_decimal_Context_logical_or), METH_FASTCALL, _decimal_Context_logical_or__doc__},
+
+static PyObject *
+_decimal_Context_logical_or_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_logical_or(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("logical_or", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_logical_or_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_logical_xor__doc__,
+"logical_xor($self, x, y, /)\n"
+"--\n"
+"\n"
+"Digit-wise xor of x and y.");
+
+#define _DECIMAL_CONTEXT_LOGICAL_XOR_METHODDEF    \
+    {"logical_xor", _PyCFunction_CAST(_decimal_Context_logical_xor), METH_FASTCALL, _decimal_Context_logical_xor__doc__},
+
+static PyObject *
+_decimal_Context_logical_xor_impl(PyObject *context, PyObject *x,
+                                  PyObject *y);
+
+static PyObject *
+_decimal_Context_logical_xor(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("logical_xor", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_logical_xor_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_rotate__doc__,
+"rotate($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return a copy of x, rotated by y places.");
+
+#define _DECIMAL_CONTEXT_ROTATE_METHODDEF    \
+    {"rotate", _PyCFunction_CAST(_decimal_Context_rotate), METH_FASTCALL, _decimal_Context_rotate__doc__},
+
+static PyObject *
+_decimal_Context_rotate_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_rotate(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("rotate", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_rotate_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_scaleb__doc__,
+"scaleb($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return the first operand after adding the second value to its exp.");
+
+#define _DECIMAL_CONTEXT_SCALEB_METHODDEF    \
+    {"scaleb", _PyCFunction_CAST(_decimal_Context_scaleb), METH_FASTCALL, _decimal_Context_scaleb__doc__},
+
+static PyObject *
+_decimal_Context_scaleb_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_scaleb(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("scaleb", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_scaleb_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_shift__doc__,
+"shift($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return a copy of x, shifted by y places.");
+
+#define _DECIMAL_CONTEXT_SHIFT_METHODDEF    \
+    {"shift", _PyCFunction_CAST(_decimal_Context_shift), METH_FASTCALL, _decimal_Context_shift__doc__},
+
+static PyObject *
+_decimal_Context_shift_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_shift(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("shift", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_shift_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=db00589bcc7a168d input=a9049054013a1b77]*/

@@ -494,10 +494,6 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     size_t code_size = 0;
     size_t data_size = 0;
     jit_state state = {0};
-    group = &shim;
-    code_size += group->code_size;
-    data_size += group->data_size;
-    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
@@ -539,13 +535,6 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     unsigned char *code = memory;
     state.trampolines.mem = memory + code_size;
     unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
-    // Compile the shim, which handles converting between the native
-    // calling convention and the calling convention used by jitted code
-    // (which may be different for efficiency reasons).
-    group = &shim;
-    group->emit(code, data, executor, NULL, &state);
-    code += group->code_size;
-    data += group->data_size;
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     for (size_t i = 0; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
@@ -566,9 +555,73 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
         return -1;
     }
     executor->jit_code = memory;
-    executor->jit_side_entry = memory + shim.code_size;
     executor->jit_size = total_size;
     return 0;
+}
+
+/* One-off compilation of the jit entry trampoline
+ * We compile this once only as it effectively a normal
+ * function, but we need to use the JIT because it needs
+ * to understand the jit-specific calling convention.
+ */
+static _PyJitEntryFuncPtr
+compile_trampoline(void)
+{
+    _PyExecutorObject dummy;
+    const StencilGroup *group;
+    size_t code_size = 0;
+    size_t data_size = 0;
+    jit_state state = {0};
+    group = &trampoline;
+    code_size += group->code_size;
+    data_size += group->data_size;
+    combine_symbol_mask(group->trampoline_mask, state.trampolines.mask);
+    // Round up to the nearest page:
+    size_t page_size = get_page_size();
+    assert((page_size & (page_size - 1)) == 0);
+    size_t code_padding = DATA_ALIGN - ((code_size + state.trampolines.size) & (DATA_ALIGN - 1));
+    size_t padding = page_size - ((code_size + state.trampolines.size + code_padding + data_size) & (page_size - 1));
+    size_t total_size = code_size + state.trampolines.size + code_padding + data_size + padding;
+    unsigned char *memory = jit_alloc(total_size);
+    if (memory == NULL) {
+        return NULL;
+    }
+    unsigned char *code = memory;
+    state.trampolines.mem = memory + code_size;
+    unsigned char *data = memory + code_size + state.trampolines.size + code_padding;
+    // Compile the shim, which handles converting between the native
+    // calling convention and the calling convention used by jitted code
+    // (which may be different for efficiency reasons).
+    group = &trampoline;
+    group->emit(code, data, &dummy, NULL, &state);
+    code += group->code_size;
+    data += group->data_size;
+    assert(code == memory + code_size);
+    assert(data == memory + code_size + state.trampolines.size + code_padding + data_size);
+    if (mark_executable(memory, total_size)) {
+        jit_free(memory, total_size);
+        return NULL;
+    }
+    return (_PyJitEntryFuncPtr)memory;
+}
+
+static PyMutex lazy_jit_mutex = { 0 };
+
+_Py_CODEUNIT *
+_Py_LazyJitTrampoline(
+    _PyExecutorObject *executor, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
+) {
+    PyMutex_Lock(&lazy_jit_mutex);
+    if (_Py_jit_entry == _Py_LazyJitTrampoline) {
+        _PyJitEntryFuncPtr trampoline = compile_trampoline();
+        if (trampoline == NULL) {
+            PyMutex_Unlock(&lazy_jit_mutex);
+            Py_FatalError("Cannot allocate core JIT code");
+        }
+        _Py_jit_entry = trampoline;
+    }
+    PyMutex_Unlock(&lazy_jit_mutex);
+    return _Py_jit_entry(executor, frame, stack_pointer, tstate);
 }
 
 void
@@ -578,7 +631,6 @@ _PyJIT_Free(_PyExecutorObject *executor)
     size_t size = executor->jit_size;
     if (memory) {
         executor->jit_code = NULL;
-        executor->jit_side_entry = NULL;
         executor->jit_size = 0;
         if (jit_free(memory, size)) {
             PyErr_FormatUnraisable("Exception ignored while "

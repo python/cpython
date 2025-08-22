@@ -5493,7 +5493,7 @@
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
-            GOTO_TIER_TWO(executor);
+            TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -7667,7 +7667,7 @@
                         assert(tstate->current_executor == NULL);
                         assert(executor != tstate->interp->cold_executor);
                         tstate->jit_exit = NULL;
-                        GOTO_TIER_TWO(executor);
+                        TIER1_TO_TIER2(executor);
                     }
                 }
                 else {
