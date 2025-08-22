@@ -2280,7 +2280,7 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
  * On error, set an exception and return BAD_DIGEST_SIZE.
  */
 static unsigned int
-hashlib_openssl_HMAC_digest_size(HMACobject *self)
+_hashlib_hmac_digest_size(HMACobject *self)
 {
     assert(EVP_MAX_MD_SIZE < INT_MAX);
 #ifdef Py_HAS_OPENSSL3_SUPPORT
@@ -2314,9 +2314,9 @@ hashlib_openssl_HMAC_digest_size(HMACobject *self)
  * On error, set an exception and return -1.
  */
 static Py_ssize_t
-hashlib_openssl_HMAC_digest_compute(HMACobject *self, unsigned char *buf)
+_hmac_digest(HMACobject *self, unsigned char *buf)
 {
-    unsigned int digest_size = hashlib_openssl_HMAC_digest_size(self);
+    unsigned int digest_size = _hashlib_hmac_digest_size(self);
     assert(digest_size <= EVP_MAX_MD_SIZE);
     if (digest_size == BAD_DIGEST_SIZE) {
         assert(PyErr_Occurred());
@@ -2353,7 +2353,7 @@ _hashlib_HMAC_digest_impl(HMACobject *self)
 /*[clinic end generated code: output=1b1424355af7a41e input=bff07f74da318fb4]*/
 {
     unsigned char buf[EVP_MAX_MD_SIZE];
-    Py_ssize_t n = hashlib_openssl_HMAC_digest_compute(self, buf);
+    Py_ssize_t n = _hmac_digest(self, buf);
     return n < 0 ? NULL : PyBytes_FromStringAndSize((const char *)buf, n);
 }
 
@@ -2373,7 +2373,7 @@ _hashlib_HMAC_hexdigest_impl(HMACobject *self)
 /*[clinic end generated code: output=80d825be1eaae6a7 input=5e48db83ab1a4d19]*/
 {
     unsigned char buf[EVP_MAX_MD_SIZE];
-    Py_ssize_t n = hashlib_openssl_HMAC_digest_compute(self, buf);
+    Py_ssize_t n = _hmac_digest(self, buf);
     return n < 0 ? NULL : _Py_strhex((const char *)buf, n);
 }
 
@@ -2381,7 +2381,7 @@ static PyObject *
 _hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    unsigned int size = hashlib_openssl_HMAC_digest_size(self);
+    unsigned int size = _hashlib_hmac_digest_size(self);
     return size == BAD_DIGEST_SIZE ? NULL : PyLong_FromLong(size);
 }
 
