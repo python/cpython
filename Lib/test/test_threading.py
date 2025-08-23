@@ -2361,7 +2361,6 @@ class MiscTestCase(unittest.TestCase):
                 thread = threading.Thread(target=work, name=name)
                 thread.start()
                 thread.join()
-                # If the name is non-ASCII and the result is empty, skip (platform limitation)
                 if not name.isascii() and not work_name:
                     self.skipTest(f"Platform does not support non-ASCII thread names: got empty name for {name!r}")
                 self.assertEqual(work_name, expected,

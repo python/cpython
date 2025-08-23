@@ -113,8 +113,6 @@ encode_thread_name(PyObject *name_obj, const char *encoding)
         PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded), _PYTHREAD_NAME_MAXLEN);
         Py_DECREF(name_encoded);
         return truncated;
-        Py_DECREF(name_encoded);
-        return truncated;
     }
 #endif
     return name_encoded;
