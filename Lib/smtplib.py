@@ -179,6 +179,15 @@ def _quote_periods(bindata):
 def _fix_eols(data):
     return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
 
+
+try:
+    hmac.digest(b'', b'', 'md5')
+except ValueError:
+    _have_cram_md5_support = False
+else:
+    _have_cram_md5_support = True
+
+
 try:
     import ssl
 except ImportError:
@@ -667,8 +676,11 @@ class SMTP:
         # CRAM-MD5 does not support initial-response.
         if challenge is None:
             return None
-        return self.user + " " + hmac.HMAC(
-            self.password.encode('ascii'), challenge, 'md5').hexdigest()
+        if not _have_cram_md5_support:
+            raise SMTPException("CRAM-MD5 is not supported")
+        password = self.password.encode('ascii')
+        authcode = hmac.HMAC(password, challenge, 'md5')
+        return f"{self.user} {authcode.hexdigest()}"
 
     def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
@@ -720,8 +732,10 @@ class SMTP:
         advertised_authlist = self.esmtp_features["auth"].split()
 
         # Authentication methods we can handle in our preferred order:
-        preferred_auths = ['CRAM-MD5', 'PLAIN', 'LOGIN']
-
+        if _have_cram_md5_support:
+            preferred_auths = ['CRAM-MD5', 'PLAIN', 'LOGIN']
+        else:
+            preferred_auths = ['PLAIN', 'LOGIN']
         # We try the supported authentications in our preferred order, if
         # the server supports them.
         authlist = [auth for auth in preferred_auths
