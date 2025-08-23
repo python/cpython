@@ -782,6 +782,9 @@ get_openssl_digest_name(_hashlibstate *state,
 {
     PY_EVP_MD *md = get_openssl_evp_md(state, digestmod, py_ht);
     if (md == NULL) {
+        if (evp_md != NULL) {
+            *evp_md = NULL;
+        }
         return NULL;
     }
     int nid = EVP_MD_nid(md);
@@ -1867,7 +1870,7 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 #else
     unsigned int md_len = 0;
 #endif
-    const void *result;
+    unsigned char *result = NULL;
     PY_EVP_MD *evp = NULL;
     int is_xof;
 
@@ -2065,6 +2068,7 @@ hashlib_HMAC_CTX_new_from_digestmod(_hashlibstate *state,
     digest = get_openssl_digest_name(state, digestmod, Py_ht_mac, &md);
     assert((digest == NULL && md == NULL) || (digest != NULL && md != NULL));
     if (digest == NULL) {
+        *nid = NID_undef;
         return NULL;
     }
     *nid = EVP_MD_nid(md);
