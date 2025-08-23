@@ -1,1 +1,3 @@
-Fix preloading of __main__ for forkserver multiprocessing.
+:mod:`multiprocessing`: Fix preloading of ``__main__`` for
+:ref:`forkserver <multiprocessing-start-method-forkserver>`
+start method.
