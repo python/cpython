@@ -271,11 +271,8 @@ class HTMLParser(_markupbase.ParserBase):
                                 j -= len(suffix)
                                 break
                         self.handle_comment(rawdata[i+4:j])
-                    elif startswith("<![CDATA[", i):
-                        if self._support_cdata:
-                            self.unknown_decl(rawdata[i+3:])
-                        else:
-                            self.handle_comment(rawdata[i+1:])
+                    elif startswith("<![CDATA[", i) and self._support_cdata:
+                        self.unknown_decl(rawdata[i+3:])
                     elif rawdata[i:i+9].lower() == '<!doctype':
                         self.handle_decl(rawdata[i+2:])
                     elif startswith("<!", i):
@@ -350,15 +347,12 @@ class HTMLParser(_markupbase.ParserBase):
         if rawdata[i:i+4] == '<!--':
             # this case is actually already handled in goahead()
             return self.parse_comment(i)
-        elif rawdata[i:i+9] == '<![CDATA[':
-            if self._support_cdata:
-                j = rawdata.find(']]>', i+9)
-                if j < 0:
-                    return -1
-                self.unknown_decl(rawdata[i+3: j])
-                return j + 3
-            else:
-                return self.parse_bogus_comment(i)
+        elif rawdata[i:i+9] == '<![CDATA[' and self._support_cdata:
+            j = rawdata.find(']]>', i+9)
+            if j < 0:
+                return -1
+            self.unknown_decl(rawdata[i+3: j])
+            return j + 3
         elif rawdata[i:i+9].lower() == '<!doctype':
             # find the closing >
             gtpos = rawdata.find('>', i+9)

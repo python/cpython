@@ -2971,7 +2971,7 @@ dummy_func(
                     assert(tstate->current_executor == NULL);
                     assert(executor != tstate->interp->cold_executor);
                     tstate->jit_exit = NULL;
-                    GOTO_TIER_TWO(executor);
+                    TIER1_TO_TIER2(executor);
                 }
             }
             else {
@@ -3037,7 +3037,7 @@ dummy_func(
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
-            GOTO_TIER_TWO(executor);
+            TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -4721,6 +4721,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION_KW +
+            _CHECK_RECURSION_REMAINING +
             _PY_FRAME_KW +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -5256,7 +5257,7 @@ dummy_func(
             }
         #endif
             tstate->jit_exit = exit;
-            GOTO_TIER_TWO(exit->executor);
+            TIER2_TO_TIER2(exit->executor);
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
@@ -5352,7 +5353,7 @@ dummy_func(
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
 #ifndef _Py_JIT
-            current_executor = (_PyExecutorObject*)executor;
+            assert(current_executor == (_PyExecutorObject*)executor);
 #endif
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)executor;
@@ -5433,7 +5434,7 @@ dummy_func(
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
-            GOTO_TIER_TWO(exit->executor);
+            TIER2_TO_TIER2(exit->executor);
         }
 
         label(pop_2_error) {

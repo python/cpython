@@ -1056,7 +1056,7 @@ class BlockFinder:
     """Provide a tokeneater() method to detect the end of a code block."""
     def __init__(self):
         self.indent = 0
-        self.islambda = False
+        self.singleline = False
         self.started = False
         self.passline = False
         self.indecorator = False
@@ -1065,19 +1065,22 @@ class BlockFinder:
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started and not self.indecorator:
+            if type == tokenize.INDENT or token == "async":
+                pass
             # skip any decorators
-            if token == "@":
+            elif token == "@":
                 self.indecorator = True
-            # look for the first "def", "class" or "lambda"
-            elif token in ("def", "class", "lambda"):
-                if token == "lambda":
-                    self.islambda = True
+            else:
+                # For "def" and "class" scan to the end of the block.
+                # For "lambda" and generator expression scan to
+                # the end of the logical line.
+                self.singleline = token not in ("def", "class")
                 self.started = True
             self.passline = True    # skip to the end of the line
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
-            if self.islambda:       # lambdas always end at the first NEWLINE
+            if self.singleline:
                 raise EndOfBlock
             # hitting a NEWLINE when in a decorator without args
             # ends the decorator
@@ -1698,7 +1701,8 @@ def _shadowed_dict_from_weakref_mro_tuple(*weakref_mro):
             class_dict = dunder_dict['__dict__']
             if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
-                    class_dict.__objclass__ is entry):
+                    (class_dict.__objclass__ is object or
+                     class_dict.__objclass__ is entry)):
                 return class_dict
     return _sentinel
 
