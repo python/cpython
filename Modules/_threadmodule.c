@@ -2629,7 +2629,6 @@ _thread.set_name
 Set the name of the current thread.
 [clinic start generated code]*/
 
-/* Implementation of _thread.set_name */
 static PyObject *
 _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 /*[clinic end generated code: output=402b0c68e0c0daed input=7e7acd98261be82f]*/
