@@ -2088,7 +2088,9 @@ has the same effect as typing a particular string at the help> prompt.
     def help(self, request, is_cli=False, is_interactive=False):
         if isinstance(request, str):
             request = request.strip()
-            if request == 'keywords': self.listkeywords()
+            if request == 'help':
+                self.helphelp(is_interactive=is_interactive)
+            elif request == 'keywords': self.listkeywords()
             elif request == 'symbols': self.listsymbols()
             elif request == 'topics': self.listtopics()
             elif request == 'modules': self.listmodules()
@@ -2103,9 +2105,34 @@ has the same effect as typing a particular string at the help> prompt.
             elif request:
                 doc(request, 'Help on %s:', output=self._output, is_cli=is_cli, is_interactive=is_interactive)
             else: doc(str, 'Help on %s:', output=self._output, is_cli=is_cli)
-        elif isinstance(request, Helper): self()
+        elif isinstance(request, (Helper, type(builtins.help))):
+            self.helphelp(is_interactive=is_interactive)
         else: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
         self.output.write('\n')
+
+    def helphelp(self, is_interactive=False):
+        if is_interactive:
+            self.output.write(_introdoc())
+        else:
+            pager(textwrap.dedent("""\
+                help - Interactive Help
+                =======================
+                The built-in help function implements an interactive help utility.  You
+                can make use of it in a few different ways:
+
+                * Calling help() with no arguments starts an interactive help session.
+
+                * Calling help(x) will have one of two behaviors depending on the type
+                  of the argument:
+
+                    * If x is a string, help(x) provides information about the given
+                      topic.  For example, help("class") will provide information about
+                      the "class" keyword, and help("math.sqrt") will provide
+                      information about the "math.sqrt" function.
+
+                    * If x is not a string, help(x) prints information about x's type.
+                      For example, help(42) will provide information about the int type.
+            """))
 
     def intro(self):
         self.output.write(_introdoc())
