@@ -164,7 +164,7 @@ with Python 1.5.2; you can drop this version on top of it.)
 COPYRIGHT
 
 IDLE is covered by the standard Python copyright notice
-(http://www.python.org/doc/Copyright.html).
+(https://www.python.org/doc/copyright).
 
 
 New in IDLE 0.5 (2/15/2000)
