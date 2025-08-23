@@ -75,9 +75,55 @@ get_thread_state_by_cls(PyTypeObject *cls)
     return get_thread_state(module);
 }
 
-// Declarations for thread name handling
-static int set_native_thread_name(const char *name);
-static PyObject *encode_thread_name(PyObject *name_obj, const char *encoding);
+/* Helper to set the thread name using platform-specific APIs */
+static int
+set_native_thread_name(const char *name)
+{
+    int rc = 0;
+#ifdef __APPLE__
+    rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+    pthread_t thread = pthread_self();
+    rc = pthread_setname_np(thread, "%s", (void *)name);
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
+    pthread_t thread = pthread_self();
+    rc = pthread_setname_np(thread, name);
+#elif defined(HAVE_PTHREAD_SET_NAME_NP)
+    pthread_t thread = pthread_self();
+    pthread_set_name_np(thread, name);
+    rc = 0; /* pthread_set_name_np() returns void */
+#endif
+    return rc;
+}
+
+/* Helper to encode and truncate thread name; returns new reference or NULL */
+static PyObject *
+encode_thread_name(PyObject *name_obj, const char *encoding)
+{
+#ifdef __sun
+    /* Solaris always uses UTF-8 */
+    encoding = "utf-8";
+#endif
+
+    PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
+    if (name_encoded == NULL) {
+        return NULL;
+    }
+
+#ifdef _PYTHREAD_NAME_MAXLEN
+    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
+        PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
+                                                        _PYTHREAD_NAME_MAXLEN);
+        Py_DECREF(name_encoded);
+        if (truncated == NULL) {
+            return NULL;
+        }
+        return truncated;
+    }
+#endif
+
+    return name_encoded;
+}
 
 #ifdef MS_WINDOWS
 typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
@@ -2582,56 +2628,6 @@ _thread.set_name
 
 Set the name of the current thread.
 [clinic start generated code]*/
-
-/* Helper to set the thread name using platform-specific APIs */
-static int
-set_native_thread_name(const char *name)
-{
-    int rc = 0;
-#ifdef __APPLE__
-    rc = pthread_setname_np(name);
-#elif defined(__NetBSD__)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, "%s", (void *)name);
-#elif defined(HAVE_PTHREAD_SETNAME_NP)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, name);
-#elif defined(HAVE_PTHREAD_SET_NAME_NP)
-    pthread_t thread = pthread_self();
-    pthread_set_name_np(thread, name);
-    rc = 0; /* pthread_set_name_np() returns void */
-#endif
-    return rc;
-}
-
-/* Helper to encode and truncate thread name; returns new reference or NULL */
-static PyObject *
-encode_thread_name(PyObject *name_obj, const char *encoding)
-{
-#ifdef __sun
-    /* Solaris always uses UTF-8 */
-    encoding = "utf-8";
-#endif
-
-    PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
-    if (name_encoded == NULL) {
-        return NULL;
-    }
-
-#ifdef _PYTHREAD_NAME_MAXLEN
-    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
-        PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
-                                                        _PYTHREAD_NAME_MAXLEN);
-        Py_DECREF(name_encoded);
-        if (truncated == NULL) {
-            return NULL;
-        }
-        return truncated;
-    }
-#endif
-
-    return name_encoded;
-}
 
 /* Implementation of _thread.set_name */
 static PyObject *
