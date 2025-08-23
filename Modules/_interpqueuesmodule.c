@@ -1603,7 +1603,7 @@ queuesmod_put(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *obj;
     int unboundarg = -1;
     int fallbackarg = -1;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|ii$p:put", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|ii:put", kwlist,
                                      qidarg_converter, &qidarg, &obj,
                                      &unboundarg, &fallbackarg))
     {
