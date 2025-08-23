@@ -274,6 +274,8 @@ class Reader:
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
         self.can_colorize = _colorize.can_colorize()
+        if self.can_colorize:
+            self.theme = THEME()
 
         self.last_refresh_cache.screeninfo = self.screeninfo
         self.last_refresh_cache.pos = self.pos
@@ -491,7 +493,7 @@ class Reader:
             prompt = self.ps1
 
         if self.can_colorize:
-            t = THEME()
+            t = self.theme
             prompt = f"{t.prompt}{prompt}{t.reset}"
         return prompt
 
