@@ -1,25 +1,30 @@
 """Tests for the annotations module."""
 
+import textwrap
+import annotationlib
 import builtins
 import collections
 import functools
 import itertools
 import pickle
-import textwrap
+from string.templatelib import Template
 import typing
 import unittest
-from string.templatelib import Template
+from annotationlib import (
+    Format,
+    ForwardRef,
+    get_annotations,
+    annotations_to_string,
+    type_repr,
+)
+from typing import Unpack, get_type_hints, List, Union
+
 from test import support
 from test.support import import_helper
-from test.test_inspect import (inspect_stock_annotations,
-                               inspect_stringized_annotations,
-                               inspect_stringized_annotations_2,
-                               inspect_stringized_annotations_pep695)
-from typing import List, Union, Unpack, get_type_hints
-
-import annotationlib
-from annotationlib import (Format, ForwardRef, annotations_to_string,
-                           get_annotations, type_repr)
+from test.test_inspect import inspect_stock_annotations
+from test.test_inspect import inspect_stringized_annotations
+from test.test_inspect import inspect_stringized_annotations_2
+from test.test_inspect import inspect_stringized_annotations_pep695
 
 
 def times_three(fn):
@@ -1698,7 +1703,6 @@ class TestForwardRefClass(unittest.TestCase):
         global alias2
         alias2 = str
         self.assertIs(evaluated.evaluate(), str)
-
 
 
 class TestAnnotationLib(unittest.TestCase):
