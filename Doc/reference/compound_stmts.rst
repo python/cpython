@@ -386,7 +386,7 @@ have ambiguous semantics.
 
 It is not possible to mix :keyword:`except` and :keyword:`!except*`
 in the same :keyword:`try`.
-:keyword:`break`, :keyword:`continue` and :keyword:`return`
+The :keyword:`break`, :keyword:`continue`, and :keyword:`return` statements
 cannot appear in an :keyword:`!except*` clause.
 
 
@@ -852,8 +852,8 @@ A literal pattern corresponds to most
 
 The rule ``strings`` and the token ``NUMBER`` are defined in the
 :doc:`standard Python grammar <./grammar>`.  Triple-quoted strings are
-supported.  Raw strings and byte strings are supported.  :ref:`f-strings` are
-not supported.
+supported.  Raw strings and byte strings are supported.  :ref:`f-strings`
+and :ref:`t-strings` are not supported.
 
 The forms ``signed_number '+' NUMBER`` and ``signed_number '-' NUMBER`` are
 for expressing :ref:`complex numbers <imaginary>`; they require a real number
@@ -1421,6 +1421,9 @@ is equivalent to ::
    class Foo(object):
        pass
 
+There may be one or more base classes; see :ref:`multiple-inheritance` below for more
+information.
+
 The class's suite is then executed in a new execution frame (see :ref:`naming`),
 using a newly created local namespace and the original global namespace.
 (Usually, the suite contains mostly function definitions.)  When the class's
@@ -1489,6 +1492,119 @@ can be used to create instance variables with different implementation details.
       The proposal that added class decorators.  Function and method decorators
       were introduced in :pep:`318`.
 
+
+.. _multiple-inheritance:
+
+Multiple inheritance
+--------------------
+
+Python classes may have multiple base classes, a technique known as
+*multiple inheritance*.  The base classes are specified in the class definition
+by listing them in parentheses after the class name, separated by commas.
+For example, the following class definition:
+
+.. doctest::
+
+   >>> class A: pass
+   >>> class B: pass
+   >>> class C(A, B): pass
+
+defines a class ``C`` that inherits from classes ``A`` and ``B``.
+
+The :term:`method resolution order` (MRO) is the order in which base classes are
+searched when looking up an attribute on a class. See :ref:`python_2.3_mro` for a
+description of how Python determines the MRO for a class.
+
+Multiple inheritance is not always allowed. Attempting to define a class with multiple
+inheritance will raise an error if one of the bases does not allow subclassing, if a consistent MRO
+cannot be created, if no valid metaclass can be determined, or if there is an instance
+layout conflict. We'll discuss each of these in turn.
+
+First, all base classes must allow subclassing. While most classes allow subclassing,
+some built-in classes do not, such as :class:`bool`:
+
+.. doctest::
+
+   >>> class SubBool(bool):  # TypeError
+   ...    pass
+   Traceback (most recent call last):
+      ...
+   TypeError: type 'bool' is not an acceptable base type
+
+In the resolved MRO of a class, the class's bases appear in the order they were
+specified in the class's bases list. Additionally, the MRO always lists a child
+class before any of its bases. A class definition will fail if it is impossible to
+resolve a consistent MRO that satisfies these rules from the list of bases provided:
+
+.. doctest::
+
+   >>> class Base: pass
+   >>> class Child(Base): pass
+   >>> class Grandchild(Base, Child): pass  # TypeError
+   Traceback (most recent call last):
+      ...
+   TypeError: Cannot create a consistent method resolution order (MRO) for bases Base, Child
+
+In the MRO of ``Grandchild``, ``Base`` must appear before ``Child`` because it is first
+in the base class list, but it must also appear after ``Child`` because it is a parent of
+``Child``. This is a contradiction, so the class cannot be defined.
+
+If some of the bases have a custom :term:`metaclass`, the metaclass of the resulting class
+is chosen among the metaclasses of the bases and the explicitly specified metaclass of the
+child class. It must be a metaclass that is a subclass of
+all other candidate metaclasses. If no such metaclass exists among the candidates,
+the class cannot be created, as explained in :ref:`metaclass-determination`.
+
+Finally, the instance layouts of the bases must be compatible. This means that it must be
+possible to compute a *solid base* for the class. Exactly which classes are solid bases
+depends on the Python implementation.
+
+.. impl-detail::
+
+   In CPython, a class is a solid base if it has a
+   nonempty :attr:`~object.__slots__` definition.
+   Many but not all classes defined in C are also solid bases, including most
+   builtins (such as :class:`int` or :class:`BaseException`)
+   but excluding most concrete :class:`Exception` classes. Generally, a C class
+   is a solid base if its underlying struct is different in size from its base class.
+
+Every class has a solid base. :class:`object`, the base class, has itself as its solid base.
+If there is a single base, the child class's solid base is that class if it is a solid base,
+or else the base class's solid base. If there are multiple bases, we first find the solid base
+for each base class to produce a list of candidate solid bases. If there is a unique solid base
+that is a subclass of all others, then that class is the solid base. Otherwise, class creation
+fails.
+
+Example:
+
+.. doctest::
+
+   >>> class Solid1:
+   ...    __slots__ = ("solid1",)
+   >>>
+   >>> class Solid2:
+   ...    __slots__ = ("solid2",)
+   >>>
+   >>> class SolidChild(Solid1):
+   ...    __slots__ = ("solid_child",)
+   >>>
+   >>> class C1:  # solid base is `object`
+   ...    pass
+   >>>
+   >>> # OK: solid bases are `Solid1` and `object`, and `Solid1` is a subclass of `object`.
+   >>> class C2(Solid1, C1):  # solid base is `Solid1`
+   ...    pass
+   >>>
+   >>> # OK: solid bases are `SolidChild` and `Solid1`, and `SolidChild` is a subclass of `Solid1`.
+   >>> class C3(SolidChild, Solid1):  # solid base is `SolidChild`
+   ...    pass
+   >>>
+   >>> # Error: solid bases are `Solid1` and `Solid2`, but neither is a subclass of the other.
+   >>> class C4(Solid1, Solid2):  # error: no single solid base
+   ...    pass
+   Traceback (most recent call last):
+     ...
+   TypeError: multiple bases have instance lay-out conflict
 
 .. _async:
 

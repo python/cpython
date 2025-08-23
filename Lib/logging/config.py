@@ -1018,7 +1018,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         """
 
         allow_reuse_address = True
-        allow_reuse_port = True
+        allow_reuse_port = False
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):

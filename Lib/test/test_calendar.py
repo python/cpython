@@ -8,6 +8,7 @@ import datetime
 import io
 import locale
 import os
+import platform
 import sys
 import time
 
@@ -417,7 +418,7 @@ class OutputTestCase(unittest.TestCase):
         self.check_htmlcalendar_encoding('utf-8', 'utf-8')
 
     def test_output_htmlcalendar_encoding_default(self):
-        self.check_htmlcalendar_encoding(None, sys.getdefaultencoding())
+        self.check_htmlcalendar_encoding(None, 'utf-8')
 
     def test_yeardatescalendar(self):
         def shrink(cal):
@@ -546,7 +547,8 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(value[::-1], list(reversed(value)))
 
     def test_months(self):
-        for attr in "month_name", "month_abbr":
+        for attr in ("month_name", "month_abbr", "standalone_month_name",
+                     "standalone_month_abbr"):
             value = getattr(calendar, attr)
             self.assertEqual(len(value), 13)
             self.assertEqual(len(value[:]), 13)
@@ -555,6 +557,38 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(len(set(value)), 13)
             # verify it "acts like a sequence" in two forms of iteration
             self.assertEqual(value[::-1], list(reversed(value)))
+
+    @support.run_with_locale('LC_ALL', 'pl_PL')
+    @unittest.skipUnless(sys.platform == 'darwin' or platform.libc_ver()[0] == 'glibc',
+                         "Guaranteed to work with glibc and macOS")
+    def test_standalone_month_name_and_abbr_pl_locale(self):
+        expected_standalone_month_names = [
+            "", "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+            "lipiec", "sierpień", "wrzesień", "październik", "listopad",
+            "grudzień"
+        ]
+        expected_standalone_month_abbr = [
+            "", "sty", "lut", "mar", "kwi", "maj", "cze",
+            "lip", "sie", "wrz", "paź", "lis", "gru"
+        ]
+        self.assertEqual(
+            list(calendar.standalone_month_name),
+            expected_standalone_month_names
+        )
+        self.assertEqual(
+            list(calendar.standalone_month_abbr),
+            expected_standalone_month_abbr
+        )
+
+    def test_standalone_month_name_and_abbr_C_locale(self):
+        # Ensure that the standalone month names and abbreviations are
+        # equal to the regular month names and abbreviations for
+        # the "C" locale.
+        with calendar.different_locale("C"):
+            self.assertListEqual(list(calendar.month_name),
+                                 list(calendar.standalone_month_name))
+            self.assertListEqual(list(calendar.month_abbr),
+                                 list(calendar.standalone_month_abbr))
 
     def test_locale_text_calendar(self):
         try:
@@ -661,6 +695,52 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(cal.formatweekday(0, 10), "  Monday  ")
         except locale.Error:
             raise unittest.SkipTest('cannot set the en_US locale')
+
+    # These locales have weekday names all shorter than English's longest
+    # 'Wednesday'. They should not be abbreviated unnecessarily
+    @support.run_with_locales("LC_ALL",
+            'Chinese', 'zh_CN.UTF-8',
+            'French', 'fr_FR.UTF-8',
+            'Norwegian', 'nb_NO.UTF-8',
+            'Malay', 'ms_MY.UTF8'
+    )
+    def test_locale_calendar_short_weekday_names(self):
+        names = (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))
+        max_length = max(map(len, names))
+        if max_length >= 9:
+            self.skipTest('weekday names are too long')
+
+        def get_weekday_names(width):
+            return calendar.TextCalendar().formatweekheader(width).split()
+
+        # Weekday names should not be abbreviated if the width is sufficient
+        self.assertEqual(
+            get_weekday_names(max_length),
+            get_weekday_names(max_length + 10)
+        )
+
+        # Any width shorter than necessary should produce abbreviations
+        self.assertNotEqual(
+            get_weekday_names(max_length),
+            get_weekday_names(max_length - 1)
+        )
+
+    # These locales have a weekday name longer than 'Wednesday'
+    # They should be properly abbreviated rather than truncated
+    @support.run_with_locales("LC_ALL",
+            'Portuguese', 'pt_PT.UTF-8',
+            'German',  'de_DE.UTF-8',
+            'Russian', 'ru_RU.UTF-8',
+    )
+    def test_locale_calendar_long_weekday_names(self):
+        names = (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))
+        max_length = max(map(len, names))
+        if max_length <= 9:
+            self.skipTest('weekday names are too short')
+
+        def get_weekday_names(width):
+            return calendar.TextCalendar().formatweekheader(width).split()
+        self.assertEqual(get_weekday_names(4), get_weekday_names(9))
 
     def test_locale_calendar_formatmonthname(self):
         try:
