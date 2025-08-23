@@ -1683,26 +1683,14 @@ class TestForwardRefClass(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             fr.evaluate()
 
-    def test_re_evaluate(self):
+    def test_re_evaluate_generics(self):
+        global alias
         class C:
-            x: alias
+            x: alias[int]
 
         evaluated = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(format=Format.FORWARDREF)
-        alias = int
-        self.assertIs(evaluated.evaluate(), int)
-
-        del alias
-        evaluated = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(format=Format.FORWARDREF)
-        with self.assertRaises(NameError):
-            evaluated.evaluate()
-
-        class C:
-            x: alias2
-
-        evaluated = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(format=Format.FORWARDREF)
-        global alias2
-        alias2 = str
-        self.assertIs(evaluated.evaluate(), str)
+        alias = list
+        self.assertEqual(evaluated.evaluate(), list[int])
 
 
 class TestAnnotationLib(unittest.TestCase):
