@@ -63,6 +63,8 @@ For example::
    5.0
    >>> 8 / 5  # division always returns a floating-point number
    1.6
+   >>> 2 ** 9 #2 raised to the power of 9
+   512
 
 The integer numbers (e.g. ``2``, ``4``, ``20``) have type :class:`int`,
 the ones with a fractional part (e.g. ``5.0``, ``1.6``) have type
