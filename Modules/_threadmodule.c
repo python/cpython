@@ -75,63 +75,6 @@ get_thread_state_by_cls(PyTypeObject *cls)
     return get_thread_state(module);
 }
 
-// Helper to set the thread name using platform-specific APIs
-static int
-set_native_thread_name(const char *name)
-{
-    int rc;
-#ifdef __APPLE__
-    rc = pthread_setname_np(name);
-#elif defined(__NetBSD__)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, "%s", (void *)name);
-#elif defined(HAVE_PTHREAD_SETNAME_NP)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, name);
-#elif defined(HAVE_PTHREAD_SET_NAME_NP)
-    pthread_t thread = pthread_self();
-    pthread_set_name_np(thread, name);
-    rc = 0; /* pthread_set_name_np() returns void */
-#endif
-    return rc;
-}
-
-// Helper to encode and truncate thread name
-static PyObject *
-encode_thread_name(PyObject *name_obj, const char *encoding)
-{
-#ifdef __sun
-    // Solaris always uses UTF-8
-    encoding = "utf-8";
-#endif
-    PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
-    if (name_encoded == NULL) {
-        return NULL;
-    }
-#ifdef _PYTHREAD_NAME_MAXLEN
-    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
-        PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded), _PYTHREAD_NAME_MAXLEN);
-        Py_DECREF(name_encoded);
-        return truncated;
-    }
-#endif
-    return name_encoded;
-}
-
-// Helper to encode, set, and cleanup thread name in one step
-static int
-set_thread_name_with_encoding(PyObject *name_obj, const char *encoding)
-{
-    PyObject *name_encoded = encode_thread_name(name_obj, encoding);
-    if (name_encoded == NULL) {
-        return -1; // error, exception set
-    }
-    const char *name = PyBytes_AS_STRING(name_encoded);
-    int rc = set_native_thread_name(name);
-    Py_DECREF(name_encoded);
-    return rc;
-}
-
 #ifdef MS_WINDOWS
 typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
 typedef HRESULT (WINAPI *PF_SET_THREAD_DESCRIPTION)(HANDLE, PCWSTR);
@@ -2636,38 +2579,110 @@ _thread.set_name
 Set the name of the current thread.
 [clinic start generated code]*/
 
+/* Helper to set the thread name using platform-specific APIs */
+static int
+set_native_thread_name(const char *name)
+{
+    int rc = 0;
+#ifdef __APPLE__
+    rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+    pthread_t thread = pthread_self();
+    rc = pthread_setname_np(thread, "%s", (void *)name);
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
+    pthread_t thread = pthread_self();
+    rc = pthread_setname_np(thread, name);
+#elif defined(HAVE_PTHREAD_SET_NAME_NP)
+    pthread_t thread = pthread_self();
+    pthread_set_name_np(thread, name);
+    rc = 0; /* pthread_set_name_np() returns void */
+#endif
+    return rc;
+}
+
+/* Helper to encode and truncate thread name; returns new reference or NULL */
+static PyObject *
+encode_thread_name(PyObject *name_obj, const char *encoding)
+{
+#ifdef __sun
+    /* Solaris always uses UTF-8 */
+    encoding = "utf-8";
+#endif
+
+    PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
+    if (name_encoded == NULL) {
+        return NULL;
+    }
+
+#ifdef _PYTHREAD_NAME_MAXLEN
+    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
+        PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
+                                                        _PYTHREAD_NAME_MAXLEN);
+        Py_DECREF(name_encoded);
+        if (truncated == NULL) {
+            return NULL;
+        }
+        return truncated;
+    }
+#endif
+
+    return name_encoded;
+}
+
+/* Implementation of _thread.set_name */
 static PyObject *
 _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 /*[clinic end generated code: output=402b0c68e0c0daed input=7e7acd98261be82f]*/
 {
 #ifndef MS_WINDOWS
+#ifdef __sun
+    const char *encoding = "utf-8";
+#else
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const char *encoding = interp->unicode.fs_codec.encoding;
-    int rc = set_thread_name_with_encoding(name_obj, encoding);
+#endif
+
+    /* First attempt using filesystem (or platform) encoding */
+    PyObject *name_encoded = encode_thread_name(name_obj, encoding);
+    if (name_encoded == NULL) {
+        return NULL;
+    }
+    const char *name = PyBytes_AS_STRING(name_encoded);
+    int rc = set_native_thread_name(name);
+    Py_DECREF(name_encoded);
+
+    /* If native API refused (EINVAL) and we didn't try ASCII, retry with ASCII. */
     if (rc) {
         if (rc == EINVAL && strcmp(encoding, "ascii") != 0) {
-            rc = set_thread_name_with_encoding(name_obj, "ascii");
-            if (rc) {
-                errno = rc;
-                return PyErr_SetFromErrno(PyExc_OSError);
+            PyObject *name_encoded2 = encode_thread_name(name_obj, "ascii");
+            if (name_encoded2 == NULL) {
+                return NULL;
             }
-            Py_RETURN_NONE;
+            const char *name2 = PyBytes_AS_STRING(name_encoded2);
+            rc = set_native_thread_name(name2);
+            Py_DECREF(name_encoded2);
+
+            if (rc == 0) {
+                Py_RETURN_NONE;
+            }
+            /* if still failing, fall through to raise errno below */
         }
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
     }
+
     Py_RETURN_NONE;
 #else
-    // Windows implementation
     assert(pSetThreadDescription != NULL);
-    
+
     Py_ssize_t len;
     wchar_t *name = PyUnicode_AsWideCharString(name_obj, &len);
     if (name == NULL) {
         return NULL;
     }
+
     if (len > _PYTHREAD_NAME_MAXLEN) {
-        // Truncate the name
+        /* Truncate the name */
         Py_UCS4 ch = name[_PYTHREAD_NAME_MAXLEN-1];
         if (Py_UNICODE_IS_HIGH_SURROGATE(ch)) {
             name[_PYTHREAD_NAME_MAXLEN-1] = 0;
@@ -2676,6 +2691,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
             name[_PYTHREAD_NAME_MAXLEN] = 0;
         }
     }
+
     HRESULT hr = pSetThreadDescription(GetCurrentThread(), name);
     PyMem_Free(name);
     if (FAILED(hr)) {
@@ -2685,6 +2701,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     Py_RETURN_NONE;
 #endif
 }
+
 #endif  // HAVE_PTHREAD_SETNAME_NP || HAVE_PTHREAD_SET_NAME_NP || MS_WINDOWS
 
 
