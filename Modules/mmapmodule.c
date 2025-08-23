@@ -28,6 +28,12 @@
 #include "pycore_fileutils.h"     // _Py_stat_struct
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
+/*[clinic input]
+module mmap
+class mmap.mmap "mmap_object *" "mmap_object_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4ebde54549b9daa7]*/
+
 #include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
 #  include <unistd.h>             // close()
@@ -127,6 +133,9 @@ typedef struct {
 } mmap_object;
 
 #define mmap_object_CAST(op)    ((mmap_object *)(op))
+#define MMAP_GET_SIZE(self)     (mmap_object_CAST(self)->size)
+
+#include "clinic/mmapmodule.c.h"
 
 static int
 mmap_object_traverse(PyObject *op, visitproc visit, void *arg)
@@ -924,15 +933,26 @@ mmap_tell_method(PyObject *op, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSize_t(self->pos);
 }
 
+/*[clinic input]
+mmap.mmap.flush
+
+    offset: Py_ssize_t = 0
+    size: Py_ssize_t(c_default="MMAP_GET_SIZE(self)") = None
+    /
+
+Flushes changes made to the in-memory copy of a file back to disk.
+
+If offset and size are specified, only the specified range will
+be flushed. If not specified, the entire mapped region will be
+flushed.
+[clinic start generated code]*/
+
 static PyObject *
-mmap_flush_method(PyObject *op, PyObject *args)
+mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
+/*[clinic end generated code: output=956ced67466149cf input=23ac67c08804a13a]*/
 {
-    Py_ssize_t offset = 0;
-    mmap_object *self = mmap_object_CAST(op);
-    Py_ssize_t size = self->size;
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|nn:flush", &offset, &size))
-        return NULL;
+
     if (size < 0 || offset < 0 || self->size - offset < size) {
         PyErr_SetString(PyExc_ValueError, "flush values out of range");
         return NULL;
@@ -1194,7 +1214,7 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"close",           mmap_close_method,        METH_NOARGS},
     {"find",            mmap_find_method,         METH_VARARGS},
     {"rfind",           mmap_rfind_method,        METH_VARARGS},
-    {"flush",           mmap_flush_method,        METH_VARARGS},
+    MMAP_MMAP_FLUSH_METHODDEF
 #ifdef HAVE_MADVISE
     {"madvise",         mmap_madvise_method,      METH_VARARGS},
 #endif
