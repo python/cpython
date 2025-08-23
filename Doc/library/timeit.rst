@@ -71,7 +71,8 @@ The module defines three convenience functions and a public class:
    *global_setup* global code and *timer* function and run its :meth:`.timeit`
    method with the given *number* executions.
    The optional *globals* argument specifies a namespace in which to execute the
-   code.
+   code. Names created in the global setup are seen as globals in the setup and
+   testing code.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
@@ -89,7 +90,8 @@ The module defines three convenience functions and a public class:
    *global_setup* global code and *timer* function and run its :meth:`.repeat`
    method with the given *repeat* count and *number* executions.
    The optional *globals* argument specifies a namespace in which to execute the
-   code.
+   code. Names created in the global setup are seen as globals in the setup and
+   testing code.
 
    .. versionchanged:: 3.5
       The optional *globals* parameter was added.
@@ -125,7 +127,9 @@ The module defines three convenience functions and a public class:
    string literals.
 
    The statement will by default be executed within timeit's namespace; this behavior
-   can be controlled by passing a namespace to *globals*.
+   can be controlled by passing a namespace to *globals*. Names created in the
+   global setup are seen as globals in the setup and testing code, and may
+   overwrite those already specified in *globals*.
 
    The distinction between *setup* and *global_setup* is that *setup* is
    executed once per :meth:`.timeit` call while *global_setup* is executed
