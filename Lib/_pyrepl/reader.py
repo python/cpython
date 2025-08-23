@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import sys
 import _colorize
-from _colorize import Syntax
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
@@ -214,7 +213,6 @@ class Reader:
     lxy: tuple[int, int] = field(init=False)
     scheduled_commands: list[str] = field(default_factory=list)
     can_colorize: bool = False
-    theme: Syntax | None = None
     threading_hook: Callback | None = None
 
     ## cached metadata to speed up screen refreshes
@@ -276,8 +274,6 @@ class Reader:
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
         self.can_colorize = _colorize.can_colorize()
-        if self.can_colorize:
-            self.theme = THEME()
 
         self.last_refresh_cache.screeninfo = self.screeninfo
         self.last_refresh_cache.pos = self.pos
@@ -495,8 +491,7 @@ class Reader:
             prompt = self.ps1
 
         if self.can_colorize:
-            t = self.theme
-            assert t is not None
+            t = THEME(force_color=self.can_colorize)
             prompt = f"{t.prompt}{prompt}{t.reset}"
         return prompt
 
