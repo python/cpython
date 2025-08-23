@@ -133,7 +133,6 @@ typedef struct {
 } mmap_object;
 
 #define mmap_object_CAST(op)    ((mmap_object *)(op))
-#define MMAP_GET_SIZE(self)     (mmap_object_CAST(self)->size)
 
 #include "clinic/mmapmodule.c.h"
 
@@ -937,7 +936,7 @@ mmap_tell_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 mmap.mmap.flush
 
     offset: Py_ssize_t = 0
-    size: Py_ssize_t(c_default="MMAP_GET_SIZE(self)") = None
+    size: Py_ssize_t(c_default="-1") = None
     /
 
 Flushes changes made to the in-memory copy of a file back to disk.
@@ -949,9 +948,14 @@ flushed.
 
 static PyObject *
 mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
-/*[clinic end generated code: output=956ced67466149cf input=23ac67c08804a13a]*/
+/*[clinic end generated code: output=956ced67466149cf input=07c2c6d4e69263a4]*/
 {
     CHECK_VALID(NULL);
+
+    /* If size is -1 (default), calculate size from offset to end */
+    if (size == -1) {
+        size = self->size - offset;
+    }
 
     if (size < 0 || offset < 0 || self->size - offset < size) {
         PyErr_SetString(PyExc_ValueError, "flush values out of range");
