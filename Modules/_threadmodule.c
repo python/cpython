@@ -2645,8 +2645,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     const char *encoding = interp->unicode.fs_codec.encoding;
     int rc = set_thread_name_with_encoding(name_obj, encoding);
     if (rc) {
-        int err = rc;
-        if (err == EINVAL && strcmp(encoding, "ascii") != 0) {
+        if (rc == EINVAL && strcmp(encoding, "ascii") != 0) {
             rc = set_thread_name_with_encoding(name_obj, "ascii");
             if (rc) {
                 errno = rc;
@@ -2654,7 +2653,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
             }
             Py_RETURN_NONE;
         }
-        errno = err;
+        errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
     }
     Py_RETURN_NONE;
