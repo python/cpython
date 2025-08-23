@@ -75,61 +75,93 @@ get_thread_state_by_cls(PyTypeObject *cls)
     return get_thread_state(module);
 }
 
-// Helper to set the thread name using platform-specific APIs
-static int
-set_native_thread_name(const char *name)
-{
-    int rc;
-#ifdef __APPLE__
-    rc = pthread_setname_np(name);
-#elif defined(__NetBSD__)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, "%s", (void *)name);
-#elif defined(HAVE_PTHREAD_SETNAME_NP)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, name);
-#elif defined(HAVE_PTHREAD_SET_NAME_NP)
-    pthread_t thread = pthread_self();
-    pthread_set_name_np(thread, name);
-    rc = 0; /* pthread_set_name_np() returns void */
-#endif
-    return rc;
-}
-
-// Helper to encode and truncate thread name
-static PyObject *
-encode_thread_name(PyObject *name_obj, const char *encoding)
-{
-#ifdef __sun
-    // Solaris always uses UTF-8
-    encoding = "utf-8";
-#endif
-    PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
-    if (name_encoded == NULL) {
-        return NULL;
-    }
-#ifdef _PYTHREAD_NAME_MAXLEN
-    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
-        PyObject *truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded), _PYTHREAD_NAME_MAXLEN);
-        Py_DECREF(name_encoded);
-        return truncated;
-    }
-#endif
-    return name_encoded;
-}
-
-// Helper to encode, set, and cleanup thread name in one step
 static int
 set_thread_name_with_encoding(PyObject *name_obj, const char *encoding)
 {
-    PyObject *name_encoded = encode_thread_name(name_obj, encoding);
-    if (name_encoded == NULL) {
-        return -1; // error, exception set
+    PyObject *name_encoded = NULL;
+
+#ifndef MS_WINDOWS
+    /* Determine encoding to use. If encoding arg is NULL, use FS codec. */
+    const char *enc = encoding;
+#ifdef __sun
+    enc = "utf-8";  /* Solaris always uses UTF-8 */
+#else
+    if (enc == NULL) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        enc = interp->unicode.fs_codec.encoding;
     }
+#endif
+
+    name_encoded = PyUnicode_AsEncodedString(name_obj, enc, "replace");
+    if (name_encoded == NULL) {
+        return -1; /* Python exception set */
+    }
+
+#ifdef _PYTHREAD_NAME_MAXLEN
+    /* Truncate to _PYTHREAD_NAME_MAXLEN bytes if needed */
+    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
+        PyObject *truncated = PyBytes_FromStringAndSize(
+                                PyBytes_AS_STRING(name_encoded),
+                                _PYTHREAD_NAME_MAXLEN);
+        if (truncated == NULL) {
+            Py_DECREF(name_encoded);
+            return -1; /* Python exception set */
+        }
+        Py_SETREF(name_encoded, truncated);
+    }
+#endif
+
     const char *name = PyBytes_AS_STRING(name_encoded);
-    int rc = set_native_thread_name(name);
+
+#ifdef __APPLE__
+    int rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+    pthread_t thread = pthread_self();
+    int rc = pthread_setname_np(thread, "%s", (void *)name);
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
+    pthread_t thread = pthread_self();
+    int rc = pthread_setname_np(thread, name);
+#else
+    /* pthread_set_name_np() (void) on some platforms */
+    pthread_t thread = pthread_self();
+    int rc = 0;
+    pthread_set_name_np(thread, name);
+#endif
+
     Py_DECREF(name_encoded);
-    return rc;
+    return rc; /* 0 on success, errno-style >0 on error */
+#else
+    /* Windows: convert to wide string and call SetThreadDescription */
+    assert(pSetThreadDescription != NULL);
+    Py_ssize_t len;
+    wchar_t *wname = PyUnicode_AsWideCharString(name_obj, &len);
+    if (wname == NULL) {
+        return -1; /* Python exception set */
+    }
+
+    /* Truncate if necessary (len is number of wchar_t characters) */
+#ifdef _PYTHREAD_NAME_MAXLEN
+    if (len > _PYTHREAD_NAME_MAXLEN) {
+        /* Ensure we null-terminate safely. Use maxlen as max characters allowed. */
+        /* If the char at max-1 is a high surrogate, avoid chopping the surrogate pair. */
+        Py_UCS4 ch = (Py_UCS4)wname[_PYTHREAD_NAME_MAXLEN - 1];
+        if (Py_UNICODE_IS_HIGH_SURROGATE(ch) && _PYTHREAD_NAME_MAXLEN >= 2) {
+            wname[_PYTHREAD_NAME_MAXLEN - 1] = L'\0';
+        } else {
+            wname[_PYTHREAD_NAME_MAXLEN] = L'\0';
+        }
+    }
+#endif
+
+    HRESULT hr = pSetThreadDescription(GetCurrentThread(), wname);
+    PyMem_Free(wname);
+    if (FAILED(hr)) {
+        /* Convert to a Python exception and return -1 so caller propagates it */
+        PyErr_SetFromWindowsErr((int)hr);
+        return -1;
+    }
+    return 0;
+#endif
 }
 
 #ifdef MS_WINDOWS
