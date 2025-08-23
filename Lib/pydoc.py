@@ -2112,7 +2112,7 @@ has the same effect as typing a particular string at the help> prompt.
 
     def helphelp(self, is_interactive=False):
         if is_interactive:
-            self.output.write(_introdoc())
+            self.intro()
         else:
             pager(textwrap.dedent("""\
                 help - Interactive Help
