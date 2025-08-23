@@ -952,7 +952,7 @@ mmap_mmap_flush_impl(mmap_object *self, Py_ssize_t offset, Py_ssize_t size)
 {
     CHECK_VALID(NULL);
 
-    /* If size is -1 (default), calculate size from offset to end */
+    // If size is -1 (default), calculate size from offset to end.
     if (size == -1) {
         size = self->size - offset;
     }
