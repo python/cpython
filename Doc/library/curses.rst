@@ -122,10 +122,15 @@ The module :mod:`curses` defines the following functions:
 .. function:: color_pair(pair_number)
 
    Return the attribute value for displaying text in the specified color pair.
-   Only the first 256 color pairs are supported. This
-   attribute value can be combined with :const:`A_STANDOUT`, :const:`A_REVERSE`,
-   and the other :const:`!A_\*` attributes.  :func:`pair_number` is the counterpart
-   to this function.
+   Only the first 256 color pairs are supported. The value returned by
+   ``color_pair(n)`` is an attribute mask. It can be combined (using bitwise OR, ``|``)
+   with other style attributes such as :const:`A_BOLD`, :const:`A_REVERSE`,
+   :const:`A_UNDERLINE`, etc. Note that :const:`A_COLOR`, :const:`A_ATTRIBUTES`,
+   and :const:`A_CHARTEXT` are extraction masks used with bitwise AND (``&``) on
+   values returned from functions like :meth:`window.inch`. They are not style
+   attributes and must not be combined with :func:`color_pair`. :func:`pair_number`
+   is the counterpart to this function.
+
 
 
 .. function:: curs_set(visibility)
