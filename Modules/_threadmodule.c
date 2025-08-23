@@ -75,6 +75,10 @@ get_thread_state_by_cls(PyTypeObject *cls)
     return get_thread_state(module);
 }
 
+// Declarations for thread name handling
+static int set_native_thread_name(const char *name);
+static PyObject *encode_thread_name(PyObject *name_obj, const char *encoding);
+
 #ifdef MS_WINDOWS
 typedef HRESULT (WINAPI *PF_GET_THREAD_DESCRIPTION)(HANDLE, PCWSTR*);
 typedef HRESULT (WINAPI *PF_SET_THREAD_DESCRIPTION)(HANDLE, PCWSTR);
