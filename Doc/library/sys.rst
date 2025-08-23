@@ -1764,7 +1764,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    :func:`settrace` for each thread being debugged or use :func:`threading.settrace`.
 
    Trace functions should have three arguments: *frame*, *event*, and
-   *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
+   *arg*. *frame* is the :ref:`current stack frame <frame-objects>`. *event* is a string: ``'call'``,
    ``'line'``, ``'return'``, ``'exception'`` or ``'opcode'``.  *arg* depends on
    the event type.
 
