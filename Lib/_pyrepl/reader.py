@@ -496,7 +496,7 @@ class Reader:
 
         if self.can_colorize:
             t = self.theme
-            assert t is not None  # theme is set when can_colorize is True
+            assert t is not None
             prompt = f"{t.prompt}{prompt}{t.reset}"
         return prompt
 
