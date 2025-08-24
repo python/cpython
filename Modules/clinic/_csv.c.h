@@ -12,7 +12,9 @@ PyDoc_STRVAR(_csv_list_dialects__doc__,
 "list_dialects($module, /)\n"
 "--\n"
 "\n"
-"Return a list of all known dialect names.");
+"Return a list of all known dialect names.\n"
+"\n"
+"    names = csv.list_dialects()");
 
 #define _CSV_LIST_DIALECTS_METHODDEF    \
     {"list_dialects", (PyCFunction)_csv_list_dialects, METH_NOARGS, _csv_list_dialects__doc__},
@@ -30,7 +32,9 @@ PyDoc_STRVAR(_csv_unregister_dialect__doc__,
 "unregister_dialect($module, /, name)\n"
 "--\n"
 "\n"
-"Delete the name/dialect mapping associated with a string name.");
+"Delete the name/dialect mapping associated with a string name.\n"
+"\n"
+"    csv.unregister_dialect(name)");
 
 #define _CSV_UNREGISTER_DIALECT_METHODDEF    \
     {"unregister_dialect", _PyCFunction_CAST(_csv_unregister_dialect), METH_FASTCALL|METH_KEYWORDS, _csv_unregister_dialect__doc__},
@@ -55,15 +59,6 @@ _csv_unregister_dialect(PyObject *module, PyObject *const *args, Py_ssize_t narg
         .ob_hash = -1,
         .ob_item = { &_Py_ID(name), },
     };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"name", NULL};
-    static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "unregister_dialect",
         .kwtuple = KWTUPLE,
@@ -88,7 +83,9 @@ PyDoc_STRVAR(_csv_get_dialect__doc__,
 "get_dialect($module, /, name)\n"
 "--\n"
 "\n"
-"Return the dialect instance associated with name.");
+"Return the dialect instance associated with name.\n"
+"\n"
+"    dialect = csv.get_dialect(name)");
 
 #define _CSV_GET_DIALECT_METHODDEF    \
     {"get_dialect", _PyCFunction_CAST(_csv_get_dialect), METH_FASTCALL|METH_KEYWORDS, _csv_get_dialect__doc__},
@@ -147,6 +144,8 @@ PyDoc_STRVAR(_csv_field_size_limit__doc__,
 "--\n"
 "\n"
 "Sets an upper limit on parsed fields.\n"
+"\n"
+"    csv.field_size_limit([limit])\n"
 "\n"
 "Returns old limit. If limit is not given, no new limit is set and\n"
 "the old limit is returned");
@@ -207,4 +206,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ed77cb69fad9f3b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1fb09d5e7667ad0d input=a9049054013a1b77]*/

@@ -1304,11 +1304,10 @@ join_append_lineterminator(WriterObj *self)
 }
 
 PyDoc_STRVAR(csv_writerow_doc,
-"writerow($self, row, /)\n"
-"--\n\n"
-"Construct and write a CSV record from an iterable of fields.\n"
+"writerow(iterable)\n"
 "\n"
-"Non-string elements will be converted to string.");
+"Construct and write a CSV record from an iterable of fields.  Non-string\n"
+"elements will be converted to string.");
 
 static PyObject *
 csv_writerow(PyObject *op, PyObject *seq)
@@ -1415,11 +1414,10 @@ csv_writerow(PyObject *op, PyObject *seq)
 }
 
 PyDoc_STRVAR(csv_writerows_doc,
-"writerows($self, rows, /)\n"
-"--\n\n"
-"Construct and write a series of iterables to a csv file.\n"
+"writerows(iterable of iterables)\n"
 "\n"
-"Non-string elements will be converted to string.");
+"Construct and write a series of iterables to a csv file.  Non-string\n"
+"elements will be converted to string.");
 
 static PyObject *
 csv_writerows(PyObject *self, PyObject *seqseq)
@@ -1576,11 +1574,13 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 _csv.list_dialects
 
 Return a list of all known dialect names.
+
+    names = csv.list_dialects()
 [clinic start generated code]*/
 
 static PyObject *
 _csv_list_dialects_impl(PyObject *module)
-/*[clinic end generated code: output=a5b92b215b006a6d input=ec58040aafd6a20a]*/
+/*[clinic end generated code: output=a5b92b215b006a6d input=8953943eb17d98ab]*/
 {
     return PyDict_Keys(get_csv_state(module)->dialects);
 }
@@ -1617,11 +1617,13 @@ _csv.unregister_dialect
     name: object
 
 Delete the name/dialect mapping associated with a string name.
+
+    csv.unregister_dialect(name)
 [clinic start generated code]*/
 
 static PyObject *
 _csv_unregister_dialect_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=0813ebca6c058df4 input=e1cf81bfe3ba0f62]*/
+/*[clinic end generated code: output=0813ebca6c058df4 input=6b5c1557bf60c7e7]*/
 {
     _csvstate *module_state = get_csv_state(module);
     int rc = PyDict_Pop(module_state->dialects, name, NULL);
@@ -1641,11 +1643,13 @@ _csv.get_dialect
     name: object
 
 Return the dialect instance associated with name.
+
+    dialect = csv.get_dialect(name)
 [clinic start generated code]*/
 
 static PyObject *
 _csv_get_dialect_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=aa988cd573bebebb input=74865c659dcb441f]*/
+/*[clinic end generated code: output=aa988cd573bebebb input=edf9ddab32e448fb]*/
 {
     return get_dialect_from_registry(name, get_csv_state(module));
 }
@@ -1657,13 +1661,15 @@ _csv.field_size_limit
 
 Sets an upper limit on parsed fields.
 
+    csv.field_size_limit([limit])
+
 Returns old limit. If limit is not given, no new limit is set and
 the old limit is returned
 [clinic start generated code]*/
 
 static PyObject *
 _csv_field_size_limit_impl(PyObject *module, PyObject *new_limit)
-/*[clinic end generated code: output=f2799ecd908e250b input=77db7485ee3ae90a]*/
+/*[clinic end generated code: output=f2799ecd908e250b input=cec70e9226406435]*/
 {
     _csvstate *module_state = get_csv_state(module);
     Py_ssize_t old_limit = FT_ATOMIC_LOAD_SSIZE_RELAXED(module_state->field_limit);
@@ -1699,13 +1705,14 @@ PyType_Spec error_spec = {
 PyDoc_STRVAR(csv_module_doc, "CSV parsing and writing.\n");
 
 PyDoc_STRVAR(csv_reader_doc,
-"reader($module, iterable, /, dialect='excel', **fmtparams)\n"
-"--\n\n"
-"Return a reader object that will process lines from the given iterable.\n"
+"    csv_reader = reader(iterable [, dialect='excel']\n"
+"                        [optional keyword args])\n"
+"    for row in csv_reader:\n"
+"        process(row)\n"
 "\n"
 "The \"iterable\" argument can be any object that returns a line\n"
 "of input for each iteration, such as a file object or a list.  The\n"
-"optional \"dialect\" argument defines a CSV dialect.  The function\n"
+"optional \"dialect\" parameter is discussed below.  The function\n"
 "also accepts optional keyword arguments which override settings\n"
 "provided by the dialect.\n"
 "\n"
@@ -1713,24 +1720,22 @@ PyDoc_STRVAR(csv_reader_doc,
 "of the CSV file (which can span multiple input lines).\n");
 
 PyDoc_STRVAR(csv_writer_doc,
-"writer($module, fileobj, /, dialect='excel', **fmtparams)\n"
-"--\n\n"
-"Return a writer object that will write user data on the given file object.\n"
+"    csv_writer = csv.writer(fileobj [, dialect='excel']\n"
+"                            [optional keyword args])\n"
+"    for row in sequence:\n"
+"        csv_writer.writerow(row)\n"
 "\n"
-"The \"fileobj\" argument can be any object that supports the file API.\n"
-"The optional \"dialect\" argument defines a CSV dialect.  The function\n"
-"also accepts optional keyword arguments which override settings\n"
-"provided by the dialect.\n");
+"    [or]\n"
+"\n"
+"    csv_writer = csv.writer(fileobj [, dialect='excel']\n"
+"                            [optional keyword args])\n"
+"    csv_writer.writerows(rows)\n"
+"\n"
+"The \"fileobj\" argument can be any object that supports the file API.\n");
 
 PyDoc_STRVAR(csv_register_dialect_doc,
-"register_dialect($module, name, /, dialect='excel', **fmtparams)\n"
-"--\n\n"
-"Create a mapping from a string name to a CVS dialect.\n"
-"\n"
-"The optional \"dialect\" argument specifies the base dialect instance\n"
-"or the name of the registered dialect.  The function also accepts\n"
-"optional keyword arguments which override settings provided by the\n"
-"dialect.\n");
+"Create a mapping from a string name to a dialect class.\n"
+"    dialect = csv.register_dialect(name[, dialect[, **fmtparams]])");
 
 static struct PyMethodDef csv_methods[] = {
     { "reader", _PyCFunction_CAST(csv_reader),
