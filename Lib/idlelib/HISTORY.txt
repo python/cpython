@@ -59,8 +59,8 @@ IDLEfork 0.7.1 - 29 May 2000
   get to keep both pieces.
 
 - If you have problems or suggestions, you should either contact me or post to
-  the list at http://www.python.org/mailman/listinfo/idle-dev (making it clear
-  that you are using this modified version of IDLE).
+  the idle-dev mailing list (making it clear that you are using this modified
+  version of IDLE).
 
 - Changes:
 
