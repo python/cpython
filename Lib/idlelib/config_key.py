@@ -1,6 +1,5 @@
-"""
-Dialog for building Tkinter accelerator key bindings
-"""
+# Dialog for building Tkinter accelerator key bindings
+
 from tkinter import Toplevel, Listbox, StringVar, TclError
 from tkinter.ttk import Frame, Button, Checkbutton, Entry, Label, Scrollbar
 from tkinter import messagebox
@@ -167,13 +166,12 @@ class GetKeysFrame(Frame):
         self.toggle_level()
 
     def set_modifiers_for_platform(self):
-        """Determine list of names of key modifiers for this platform.
+        # Determine list of names of key modifiers for this platform.
+        # The names are used to build Tk bindings -- it doesn't matter if the
+        # keyboard has these keys; it matters if Tk understands them.  The
+        # order is also important: key binding equality depends on it, so
+        # config-keys.def must use the same ordering.
 
-        The names are used to build Tk bindings -- it doesn't matter if the
-        keyboard has these keys; it matters if Tk understands them.  The
-        order is also important: key binding equality depends on it, so
-        config-keys.def must use the same ordering.
-        """
         if sys.platform == "darwin":
             self.modifiers = ['Shift', 'Control', 'Option', 'Command']
         else:

@@ -1,12 +1,11 @@
-"""Module browser.
+#Module browser.
 
-XXX TO DO:
+# XXX TO DO:
 
-- reparse when source changed (maybe just a button would be OK?)
-    (or recheck on window popup)
-- add popup menu with more options (e.g. doc strings, base classes, imports)
-- add base classes to class browser tree
-"""
+# - reparse when source changed (maybe just a button would be OK?)
+#     (or recheck on window popup)
+# - add popup menu with more options (e.g. doc strings, base classes, imports)
+# - add base classes to class browser tree
 
 import os
 import pyclbr
