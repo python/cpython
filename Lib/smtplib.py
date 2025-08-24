@@ -734,6 +734,7 @@ class SMTP:
             preferred_auths = ['CRAM-MD5', 'PLAIN', 'LOGIN']
         else:
             preferred_auths = ['PLAIN', 'LOGIN']
+        # We try the supported authentications in our preferred order, if
         # the server supports them.
         authlist = [auth for auth in preferred_auths
                     if auth in advertised_authlist]
