@@ -286,7 +286,7 @@ def decolor(text: str) -> str:
     return text
 
 
-def can_colorize(*, file: IO[str] | IO[bytes] | None = None, already_colorize=False) -> bool:
+def can_colorize(*, file: IO[str] | IO[bytes] | None = None, already_colorize: bool = False) -> bool:
     if already_colorize:
         return True
 
