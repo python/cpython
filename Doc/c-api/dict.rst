@@ -258,6 +258,14 @@ Dictionary Objects
    value represents offsets within the internal dictionary structure, and
    since the structure is sparse, the offsets are not consecutive.
 
+   .. note::
+
+      In the free-threaded build, this function can be used safely inside
+      a critical section. However, the references returned for *pkey* and
+      *pvalue* are borrowed and only valid while the critical section is
+      held. If you need to use these objects outside the critical section,
+      create strong references (for example, with :c:func:`Py_NewRef`).
+
    For example::
 
       PyObject *key, *value;
