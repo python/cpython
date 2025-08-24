@@ -304,12 +304,18 @@ class TestConsole(TestCase):
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
 
-    @unittest.skipUnless(sys.platform == "darwin",  "requires OS X")
-    def test_mac_with_invalid_environ(self, _os_write):
+    @unittest.skipUnless(sys.platform == "darwin", "requires OS X")
+    def test_is_mac_with_invalid_environ(self, _os_write):
         # gh-128636 for macOS
         console = UnixConsole(term="xterm")
         with os_helper.EnvironmentVarGuard() as env:
             is_mac = os.getenv("TERM_PROGRAM") == "Apple_Terminal"
             self.assertEqual(console.is_mac, is_mac)
             os.environ = []
-            self.assertIsInstance(console.getheightwidth(), tuple)
+            console.prepare()  # Need to prepare before restore
+            try:
+                console.restore()  # This should not crash
+            except (KeyError, AttributeError, TypeError) as e:
+                self.fail(f"restore() failed with invalid environ: {e}")
+
+            self.assertEqual(console.is_mac, is_mac)
