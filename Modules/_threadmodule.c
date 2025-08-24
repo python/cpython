@@ -2649,13 +2649,9 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 #endif
 
     int rc = set_encoded_thread_name(name_obj, encoding);
-    if (rc == -1) {
-        /* Confirm a Python exception was set by the helper.
-           If not, convert to a runtime error (defensive). */
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        PyErr_SetString(PyExc_RuntimeError, "internal error in set_encoded_thread_name");
+    /* Confirm a Python exception was set by the helper.
+    If not, convert to a runtime error (defensive). */
+    if (rc == -1 && PyErr_Occurred()) {
         return NULL;
     }
 
@@ -2663,11 +2659,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         /* If native API refused (EINVAL) and we didn't try ASCII, retry with ASCII. */
         if (rc == EINVAL && strcmp(encoding, "ascii") != 0) {
             rc = set_encoded_thread_name(name_obj, "ascii");
-            if (rc == -1) {
-                if (PyErr_Occurred()) {
-                    return NULL;
-                }
-                PyErr_SetString(PyExc_RuntimeError, "internal error in set_encoded_thread_name");
+            if (rc == -1 && PyErr_Occurred()) {
                 return NULL;
             }
             if (rc == 0) {
