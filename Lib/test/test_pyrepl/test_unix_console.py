@@ -304,14 +304,12 @@ class TestConsole(TestCase):
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
 
+    @unittest.skipUnless(sys.platform == "darwin",  "requires OS X")
     def test_mac_with_invalid_environ(self, _os_write):
         # gh-128636 for macOS
-        if sys.platform == "darwin":
-            console = UnixConsole(term="xterm")
-            with os_helper.EnvironmentVarGuard() as env:
-                if os.getenv("TERM_PROGRAM") == "Apple_Terminal":
-                    self.assertEqual(console.is_mac, True)
-                else:
-                    self.assertEqual(console.is_mac, False)
-                os.environ = []
-                self.assertIsInstance(console.getheightwidth(), tuple)
+        console = UnixConsole(term="xterm")
+        with os_helper.EnvironmentVarGuard() as env:
+            is_mac = os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+            self.assertEqual(console.is_mac, is_mac)
+            os.environ = []
+            self.assertIsInstance(console.getheightwidth(), tuple)
