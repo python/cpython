@@ -630,7 +630,7 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
 
         with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
             with self.assertRaises(ValueError):
-                zipfp.open(TESTFN, mode='w')
+                zipfp.open(TESTFN, mode='w').close()
 
     def test_add_file_before_1980(self):
         # Set atime and mtime to 1970-01-01
@@ -1015,7 +1015,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             file_size_64_set=True,
         )
         with self.assertRaises(zipfile.BadZipFile) as e:
-            zipfile.ZipFile(io.BytesIO(missing_file_size_extra))
+            zipfile.ZipFile(io.BytesIO(missing_file_size_extra)).close()
         self.assertIn('file size', str(e.exception).lower())
 
         # zip64 file size present, zip64 compress size present, one field in
@@ -1026,7 +1026,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             compress_size_64_set=True,
         )
         with self.assertRaises(zipfile.BadZipFile) as e:
-            zipfile.ZipFile(io.BytesIO(missing_compress_size_extra))
+            zipfile.ZipFile(io.BytesIO(missing_compress_size_extra)).close()
         self.assertIn('compress size', str(e.exception).lower())
 
         # zip64 compress size present, no fields in extra, expecting one,
@@ -1035,7 +1035,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             compress_size_64_set=True,
         )
         with self.assertRaises(zipfile.BadZipFile) as e:
-            zipfile.ZipFile(io.BytesIO(missing_compress_size_extra))
+            zipfile.ZipFile(io.BytesIO(missing_compress_size_extra)).close()
         self.assertIn('compress size', str(e.exception).lower())
 
         # zip64 file size present, zip64 compress size present, zip64 header
@@ -1049,7 +1049,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             header_offset_64_set=True,
         )
         with self.assertRaises(zipfile.BadZipFile) as e:
-            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
+            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra)).close()
         self.assertIn('header offset', str(e.exception).lower())
 
         # zip64 compress size present, zip64 header offset present, one field
@@ -1061,7 +1061,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             header_offset_64_set=True,
         )
         with self.assertRaises(zipfile.BadZipFile) as e:
-            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
+            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra)).close()
         self.assertIn('header offset', str(e.exception).lower())
 
         # zip64 file size present, zip64 header offset present, one field in
@@ -1073,7 +1073,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             header_offset_64_set=True,
         )
         with self.assertRaises(zipfile.BadZipFile) as e:
-            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
+            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra)).close()
         self.assertIn('header offset', str(e.exception).lower())
 
         # zip64 header offset present, no fields in extra, expecting one,
@@ -1084,7 +1084,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
             header_offset_64_set=True,
         )
         with self.assertRaises(zipfile.BadZipFile) as e:
-            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
+            zipfile.ZipFile(io.BytesIO(missing_header_offset_extra)).close()
         self.assertIn('header offset', str(e.exception).lower())
 
     def test_generated_valid_zip64_extra(self):
@@ -1163,10 +1163,10 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
         self.assertEqual(ex_csize, 1)  # compressed size
         self.assertEqual(cd_sig, b"PK\x01\x02") # ensure the central directory header is next
 
-        z = zipfile.ZipFile(io.BytesIO(zipdata))
-        zinfos = z.infolist()
-        self.assertEqual(len(zinfos), 1)
-        self.assertGreaterEqual(zinfos[0].extract_version, zipfile.ZIP64_VERSION)  # requires zip64 to extract
+        with zipfile.ZipFile(io.BytesIO(zipdata)) as z:
+            zinfos = z.infolist()
+            self.assertEqual(len(zinfos), 1)
+            self.assertGreaterEqual(zinfos[0].extract_version, zipfile.ZIP64_VERSION)  # requires zip64 to extract
 
     def test_unseekable_zip_unknown_filesize(self):
         """Test that creating a zip with/without seeking will raise a RuntimeError if zip64 was required but not used"""
@@ -1186,7 +1186,7 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
                 # pretend zipfile.ZipInfo.from_file was used to get the name and filesize
                 info = zipfile.ZipInfo("text.txt")
                 info.file_size = zipfile.ZIP64_LIMIT + 1
-                zf.open(info, mode="w")
+                zf.open(info, mode="w").close()
 
         self.assertRaises(zipfile.LargeZipFile, make_zip, io.BytesIO())
         self.assertRaises(zipfile.LargeZipFile, make_zip, Unseekable(io.BytesIO()))
@@ -1936,7 +1936,7 @@ class OtherTests(unittest.TestCase):
         with zipfile.ZipFile(TESTFN2, "x", zipfile.ZIP_STORED) as zipfp:
             zipfp.writestr(filename, content)
         with self.assertRaises(FileExistsError):
-            zipfile.ZipFile(TESTFN2, "x", zipfile.ZIP_STORED)
+            zipfile.ZipFile(TESTFN2, "x", zipfile.ZIP_STORED).close()
         with zipfile.ZipFile(TESTFN2, "r") as zipfp:
             self.assertEqual(zipfp.namelist(), [filename])
             self.assertEqual(zipfp.read(filename), content)
@@ -1973,6 +1973,8 @@ class OtherTests(unittest.TestCase):
             zf = zipfile.ZipFile(TESTFN)
         except zipfile.BadZipFile:
             pass
+        finally:
+            zf.close()
 
     def test_is_zip_erroneous_file(self):
         """Check that is_zipfile() correctly identifies non-zip files."""
@@ -2256,6 +2258,8 @@ class OtherTests(unittest.TestCase):
             zipf = zipfile.ZipFile(TESTFN, mode="r")
         except zipfile.BadZipFile:
             self.fail("Unable to create empty ZIP file in 'w' mode")
+        finally:
+            zipf.close()
 
         zipf = zipfile.ZipFile(TESTFN, mode="a")
         zipf.close()
@@ -3293,10 +3297,10 @@ class TestWithDirectory(unittest.TestCase):
         the zip file, this is a strange behavior, but we should support it.
         """
         in_memory_file = io.BytesIO()
-        zf = zipfile.ZipFile(in_memory_file, "w")
-        zf.mkdir('/')
-        zf.writestr('./a.txt', 'aaa')
-        zf.extractall(TESTFN2)
+        with zipfile.ZipFile(in_memory_file, "w") as zf:
+            zf.mkdir('/')
+            zf.writestr('./a.txt', 'aaa')
+            zf.extractall(TESTFN2)
 
     def tearDown(self):
         rmtree(TESTFN2)
@@ -3540,9 +3544,9 @@ class EncodedMetadataTests(unittest.TestCase):
         # Read the ZIP archive with metadata_encoding unsuitable for
         # decoding metadata
         with self.assertRaises(UnicodeDecodeError):
-            zipfile.ZipFile(TESTFN, "r", metadata_encoding='ascii')
+            zipfile.ZipFile(TESTFN, "r", metadata_encoding='ascii').close()
         with self.assertRaises(UnicodeDecodeError):
-            zipfile.ZipFile(TESTFN, "r", metadata_encoding='utf-8')
+            zipfile.ZipFile(TESTFN, "r", metadata_encoding='utf-8').close()
 
     def test_read_after_append(self):
         newname = '\u56db'  # Han 'four'
@@ -3575,7 +3579,7 @@ class EncodedMetadataTests(unittest.TestCase):
         for mode in ("w", "x", "a"):
             with self.assertRaisesRegex(ValueError,
                                         "^metadata_encoding is only"):
-                ZF("nonesuch.zip", mode, metadata_encoding="shift_jis")
+                ZF("nonesuch.zip", mode, metadata_encoding="shift_jis").close()
 
     def test_cli_with_metadata_encoding(self):
         errmsg = "Non-conforming encodings not supported with -c."
