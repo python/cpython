@@ -310,9 +310,9 @@ the iterable expression in the leftmost :keyword:`!for` clause, it is called an
 execution of the coroutine function in which it appears.
 See also :pep:`530`.
 
-Note that this behavior extends to nested scopes: if a comprehension or generator
+Note that this behavior extends to immediately nested scopes: if a comprehension or generator
 expression contains asynchronous comprehensions (but not asynchronous generator
-expressions) in nested scopes, the outer comprehension or generator expression
+expressions) in immediately nested scopes, the outer comprehension or generator expression
 implicitly becomes asynchronous.
 
 .. versionadded:: 3.6
@@ -491,7 +491,7 @@ which is an asynchronous iterator (see :ref:`async-iterators`).
 
 Note that a generator expression also becomes an asynchronous generator expression
 if it contains asynchronous comprehensions (list, set, or dict comprehensions with
-:keyword:`!async for`) in nested scopes. For example::
+:keyword:`!async for`) in immediately nested scopes. For example::
 
     # This becomes an async generator expression
     ([a async for a in async_iterable] for x in [1])
