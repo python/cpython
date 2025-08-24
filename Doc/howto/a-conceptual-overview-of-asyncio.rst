@@ -358,7 +358,7 @@ The design intentionally trades off some conceptual clarity around usage of
 ``await`` for improved performance.
 Each time a task is awaited, control needs to be passed all the way up the
 call stack to the event loop.
-Then, the event loop needs to manage its data structures and work through
+Then, the event loop needs to manage its internal state and work through
 its processing logic to resume the next job.
 That might sound minor, but in a large program with many ``await``\ s, that
 overhead can add up to a meaningful performance drag.
