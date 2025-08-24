@@ -1,5 +1,5 @@
-IDLE History
-============
+IDLE History from Python 1.5.2 to 2.1
+=====================================
 
 This file contains the release messages for previous IDLE releases.
 As you read on you go back to the dark ages of IDLE's history.
