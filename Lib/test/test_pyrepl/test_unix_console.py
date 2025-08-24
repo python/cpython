@@ -305,7 +305,6 @@ class TestConsole(TestCase):
             self.assertIsInstance(console.getheightwidth(), tuple)
 
     @unittest.skipUnless(sys.platform == "darwin", "requires OS X")
-    @unittest.skipUnless(sys.platform == "darwin", "requires OS X")
     def test_restore_with_invalid_environ_on_macOS(self, _os_write):
         # gh-128636 for macOS
         console = UnixConsole(term="xterm")
