@@ -266,6 +266,7 @@ def disp_str(
     colors: list[ColorSpan] | None = None,
     start_index: int = 0,
     force_color: bool = False,
+    already_colorize: bool = False,
 ) -> tuple[CharBuffer, CharWidths]:
     r"""Decompose the input buffer into a printable variant with applied colors.
 
@@ -306,7 +307,7 @@ def disp_str(
         # move past irrelevant spans
         colors.pop(0)
 
-    theme = THEME(force_color=force_color)
+    theme = THEME(force_color=force_color, already_colorize=already_colorize)
     pre_color = ""
     post_color = ""
     if colors and colors[0].span.start < start_index:

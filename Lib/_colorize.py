@@ -286,7 +286,10 @@ def decolor(text: str) -> str:
     return text
 
 
-def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
+def can_colorize(*, file: IO[str] | IO[bytes] | None = None, already_colorize=False) -> bool:
+    if already_colorize:
+        return True
+
     if file is None:
         file = sys.stdout
 
@@ -331,6 +334,7 @@ def get_theme(
     tty_file: IO[str] | IO[bytes] | None = None,
     force_color: bool = False,
     force_no_color: bool = False,
+    already_colorize: bool = False,
 ) -> Theme:
     """Returns the currently set theme, potentially in a zero-color variant.
 
@@ -344,7 +348,8 @@ def get_theme(
     environment (including environment variable state and console configuration
     on Windows) can also change in the course of the application life cycle.
     """
-    if force_color or (not force_no_color and can_colorize(file=tty_file)):
+    if force_color or (not force_no_color and
+                       can_colorize(file=tty_file, already_colorize=already_colorize)):
         return _theme
     return theme_no_color
 

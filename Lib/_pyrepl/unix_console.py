@@ -159,7 +159,10 @@ class UnixConsole(Console):
         self.pollob.register(self.input_fd, select.POLLIN)
         self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
-        self.is_mac = platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+        self.is_mac = (
+            platform.system() == "Darwin"
+            and os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+        )
 
         @overload
         def _my_getstr(cap: str, optional: Literal[False] = False) -> bytes: ...
