@@ -1970,11 +1970,10 @@ class OtherTests(unittest.TestCase):
         with open(TESTFN, "w", encoding="utf-8") as fp:
             fp.write("this is not a legal zip file\n")
         try:
-            zf = zipfile.ZipFile(TESTFN)
+            with zipfile.ZipFile(TESTFN) as zf:
+                pass
         except zipfile.BadZipFile:
             pass
-        finally:
-            zf.close()
 
     def test_is_zip_erroneous_file(self):
         """Check that is_zipfile() correctly identifies non-zip files."""
@@ -2255,11 +2254,10 @@ class OtherTests(unittest.TestCase):
         zipf = zipfile.ZipFile(TESTFN, mode="w")
         zipf.close()
         try:
-            zipf = zipfile.ZipFile(TESTFN, mode="r")
+            with zipfile.ZipFile(TESTFN, mode="r") as zipf:
+                pass
         except zipfile.BadZipFile:
             self.fail("Unable to create empty ZIP file in 'w' mode")
-        finally:
-            zipf.close()
 
         zipf = zipfile.ZipFile(TESTFN, mode="a")
         zipf.close()
