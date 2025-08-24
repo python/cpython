@@ -59,6 +59,15 @@ _csv_unregister_dialect(PyObject *module, PyObject *const *args, Py_ssize_t narg
         .ob_hash = -1,
         .ob_item = { &_Py_ID(name), },
     };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", NULL};
+    static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "unregister_dialect",
         .kwtuple = KWTUPLE,
