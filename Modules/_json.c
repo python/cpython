@@ -1457,7 +1457,7 @@ write_newline_indent(PyUnicodeWriter *writer,
 static PyObject *
 encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    /* Python callable interface to encode_listencode_obj */
+    /* Python callable interface to encoder_listencode_obj */
     static char *kwlist[] = {"obj", "_current_indent_level", NULL};
     PyObject *obj;
     Py_ssize_t indent_level;
@@ -1779,11 +1779,24 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(dct, &pos, &key, &value)) {
+#ifdef Py_GIL_DISABLED
+        // gh-119438: in the free-threading build the lock on dct can get suspended
+        Py_IncRef(key);
+        Py_IncRef(value);
+#endif
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                     indent_level, indent_cache,
                                     separator) < 0) {
+#ifdef Py_GIL_DISABLED
+            Py_DecRef(key);
+            Py_DecRef(value);
+#endif
             return -1;
         }
+#ifdef Py_GIL_DISABLED
+        Py_DecRef(key);
+        Py_DecRef(value);
+#endif
     }
     return 0;
 }
@@ -1887,15 +1900,28 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 {
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
+#ifdef Py_GIL_DISABLED
+        // gh-119438: in the free-threading build the lock on s_fast can get suspended
+        Py_IncRef(obj);
+#endif
         if (i) {
             if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
+#ifdef Py_GIL_DISABLED
+                Py_DecRef(obj);
+#endif
                 return -1;
             }
         }
         if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
             _PyErr_FormatNote("when serializing %T item %zd", seq, i);
+#ifdef Py_GIL_DISABLED
+            Py_DecRef(obj);
+#endif
             return -1;
         }
+#ifdef Py_GIL_DISABLED
+        Py_DecRef(obj);
+#endif
     }
     return 0;
 }
