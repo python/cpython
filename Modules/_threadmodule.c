@@ -21,6 +21,7 @@
 #  include <pthread.h>
 #endif
 #include <errno.h>
+#include <string.h>
 
 // ThreadError is just an alias to PyExc_RuntimeError
 #define ThreadError PyExc_RuntimeError
@@ -2541,15 +2542,10 @@ set_native_thread_name(const char *name)
     return rc;
 }
 
-/* Helper to encode and truncate thread name; returns new reference or NULL */
+/* Helper to encode and truncate thread name */
 static PyObject *
 encode_thread_name(PyObject *name_obj, const char *encoding)
 {
-#ifdef __sun
-    /* Solaris always uses UTF-8 */
-    encoding = "utf-8";
-#endif
-
     PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
     if (name_encoded == NULL) {
         return NULL;
