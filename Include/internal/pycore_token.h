@@ -82,7 +82,7 @@ extern "C" {
 #define NL              66
 #define ERRORTOKEN      67
 #define N_TOKENS        69
-#define NT_OFFSET       256 /* Deprecated and will be removed in 3.17 */
+#define NT_OFFSET       256
 
 /* Special definitions for cooperation with parser */
 
