@@ -945,10 +945,12 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 
 
 PyObject **
-_PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch)
+_PyObjectArray_FromStackRefArray(_PyThreadStateImpl *_tstate, _PyStackRef *input, Py_ssize_t nargs)
 {
     PyObject **result;
-    if (nargs > MAX_STACKREF_SCRATCH) {
+    /* +1 because vectorcall might use -1 to write self */
+    PyObject **target = _tstate->stackref_scratch + _tstate->n_stackref_scratch_used + nargs + 1;
+    if (target > _tstate->stackref_scratch + MAX_STACKREF_SCRATCH) {
         // +1 in case PY_VECTORCALL_ARGUMENTS_OFFSET is set.
         result = PyMem_Malloc((nargs + 1) * sizeof(PyObject *));
         if (result == NULL) {
@@ -957,7 +959,9 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject 
         result++;
     }
     else {
-        result = scratch;
+        result = _tstate->stackref_scratch + _tstate->n_stackref_scratch_used;
+        _tstate->n_stackref_scratch_used += (int)nargs + 1;
+        assert(_tstate->n_stackref_scratch_used < MAX_STACKREF_SCRATCH);
     }
     for (int i = 0; i < nargs; i++) {
         result[i] = PyStackRef_AsPyObjectBorrow(input[i]);
@@ -966,10 +970,15 @@ _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject 
 }
 
 void
-_PyObjectArray_Free(PyObject **array, PyObject **scratch)
+_PyObjectArray_Free(_PyThreadStateImpl *_tstate, PyObject **array, Py_ssize_t nargs, PyObject **temp_arr)
 {
-    if (array != scratch) {
-        PyMem_Free(array);
+    /* -1 because we +1 previously */
+    if (array == temp_arr) {
+        _tstate->n_stackref_scratch_used -= ((int)nargs + 1);
+        assert(_tstate->n_stackref_scratch_used >= 0);
+    }
+    else {
+        PyMem_Free(array-1);
     }
 }
 

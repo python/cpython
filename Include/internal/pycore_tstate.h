@@ -22,7 +22,7 @@ struct _gc_thread_state {
 #endif
 
 /* How much scratch space to give stackref to PyObject* conversion. */
-#define MAX_STACKREF_SCRATCH 10
+#define MAX_STACKREF_SCRATCH 1024
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
@@ -50,7 +50,8 @@ typedef struct _PyThreadStateImpl {
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
     struct llist_node mem_free_queue; // delayed free queue
 
-    PyObject *stackref_scratch[MAX_STACKREF_SCRATCH + 1];
+    PyObject *stackref_scratch[MAX_STACKREF_SCRATCH];
+    int n_stackref_scratch_used;
 #ifdef Py_GIL_DISABLED
     // Stack references for the current thread that exist on the C stack
     struct _PyCStackRef *c_stack_refs;

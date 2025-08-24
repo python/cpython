@@ -1983,7 +1983,7 @@ dummy_func(
                 ERROR_IF(true);
             }
             PyObject *str_o = _PyUnicode_JoinArray(&_Py_STR(empty), pieces_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o, oparg);
             DECREF_INPUTS();
             ERROR_IF(str_o == NULL);
             str = PyStackRef_FromPyObjectSteal(str_o);
@@ -2108,7 +2108,7 @@ dummy_func(
                     values_o, 2,
                     values_o+1, 2,
                     oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o, oparg*2);
             DECREF_INPUTS();
             ERROR_IF(map_o == NULL);
             map = PyStackRef_FromPyObjectStealMortal(map_o);
@@ -3755,7 +3755,7 @@ dummy_func(
                 callable_o, args_o,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(arguments[0]);
@@ -3910,7 +3910,7 @@ dummy_func(
                 callable_o, args_o,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
@@ -4193,7 +4193,7 @@ dummy_func(
                 ERROR_IF(true);
             }
             PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4264,7 +4264,7 @@ dummy_func(
                 PyCFunction_GET_SELF(callable_o),
                 args_o,
                 total_args);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
@@ -4300,7 +4300,7 @@ dummy_func(
                 ERROR_IF(true);
             }
             PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
@@ -4480,7 +4480,7 @@ dummy_func(
             PyCFunctionFastWithKeywords cfunc =
                 _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
@@ -4559,7 +4559,7 @@ dummy_func(
             }
             PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);
@@ -4658,7 +4658,7 @@ dummy_func(
                 callable_o, args_o,
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 kwnames_o);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             if (opcode == INSTRUMENTED_CALL_KW) {
                 PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : PyStackRef_AsPyObjectBorrow(arguments[0]);
@@ -4815,7 +4815,7 @@ dummy_func(
                 positional_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 kwnames_o);
             PyStackRef_CLOSE(kwnames);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL);

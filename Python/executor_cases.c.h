@@ -2744,7 +2744,7 @@
                 JUMP_TO_ERROR();
             }
             PyObject *str_o = _PyUnicode_JoinArray(&_Py_STR(empty), pieces_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o, oparg);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
             for (int _i = oparg; --_i >= 0;) {
@@ -3020,7 +3020,7 @@
                 values_o+1, 2,
                 oparg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(values_o, oparg*2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
             for (int _i = oparg*2; --_i >= 0;) {
@@ -5064,7 +5064,7 @@
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
@@ -5650,7 +5650,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
             for (int _i = oparg; --_i >= 0;) {
@@ -5790,7 +5790,7 @@
                 args_o,
                 total_args);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
@@ -5874,7 +5874,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
@@ -6208,7 +6208,7 @@
             _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
@@ -6367,7 +6367,7 @@
             PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
@@ -6613,7 +6613,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(kwnames);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(args_o, total_args);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;

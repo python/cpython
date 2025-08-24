@@ -394,22 +394,13 @@ do {                                                   \
 /* Stackref macros */
 
 
-#if Py_TAIL_CALL_INTERP && defined(_MSC_VER)
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
-    /* +1 because vectorcall might use -1 to write self */ \
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate; \
-    PyObject **NAME##_temp = _tstate->stackref_scratch; \
-    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
-#else
-#define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
-    /* +1 because vectorcall might use -1 to write self */ \
-    PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
-    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
-#endif
+    PyObject **NAME##_temp = _tstate->stackref_scratch + _tstate->n_stackref_scratch_used;                                                  \
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(_tstate, ARGS, ARG_COUNT);
 
-#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
-    /* +1 because we +1 previously */ \
-    _PyObjectArray_Free(NAME - 1, NAME##_temp);
+#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME, ARG_COUNT) \
+    _PyObjectArray_Free(_tstate, NAME, ARG_COUNT, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
 
