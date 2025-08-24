@@ -100,8 +100,8 @@ The following additional methods are supported:
 
    .. warning::
 
-      When calling :meth:`sync`, *writeback* attribute is temporarily set to
-      :const:`False` and other threads will stop updating the cache. As such,
+      When calling :meth:`sync`, the *writeback* attribute is temporarily set
+      to :const:`False` and other threads will stop updating the cache. Thus,
       this method, and any method calling it, is **not** thread-safe.
 
 .. method:: Shelf.reorganize()
