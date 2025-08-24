@@ -1,0 +1,2 @@
+Deprecate and schedule for removal in 3.17, :func:`token.ISTERMINAL`,
+:func:`token.ISNONTERMINAL` and :func:`token.ISEOF`.

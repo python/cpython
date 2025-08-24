@@ -440,6 +440,15 @@ hashlib
   (Contributed by Bénédikt Tran in :gh:`134978`.)
 
 
+token
+-----
+
+* The :func:`token.ISTERMINAL`, :func:`token.ISNONTERMINAL` and
+  :func:`token.ISEOF` tokens are now deprecated, and will be removed
+  in Python 3.17.
+  (Contributed by Stan Ulbrych in :gh:`86353`)
+
+
 .. Add deprecations above alphabetically, not here at the end.
 
 Removed
