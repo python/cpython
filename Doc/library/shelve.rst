@@ -89,7 +89,7 @@ Shelf objects support most of methods and operations supported by dictionaries
 (except copying, constructors and operators ``|`` and ``|=``).  This eases the
 transition from dictionary based scripts to those requiring persistent storage.
 
-Two additional methods are supported:
+The following additional methods are supported:
 
 .. method:: Shelf.sync()
 
@@ -98,19 +98,18 @@ Two additional methods are supported:
    dictionary on disk, if feasible.  This is called automatically when
    :meth:`reorganize` is called or the shelf is closed with :meth:`close`.
 
+   .. warning::
+
+      When calling :meth:`sync`, *writeback* attribute is temporarily set to
+      :const:`False` and other threads will stop updating the cache. As such,
+      this method, and any method calling it, is **not** thread-safe.
+
 .. method:: Shelf.reorganize()
 
    Calls :meth:`sync` and attempts to shrink space used on disk by removing empty
    space resulting from deletions.
 
    .. versionadded:: next
-
-   .. warning::
-
-      During the call to :meth:`!sync`, the *writeback* attribute is set to
-      :const:`False` and other threads will stop updating the cache. As such,
-      this method is **not** thread-safe.
-
 
 .. method:: Shelf.close()
 
