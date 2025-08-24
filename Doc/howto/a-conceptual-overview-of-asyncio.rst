@@ -377,7 +377,7 @@ and how to make your own asynchronous operators.
 The inner workings of coroutines
 ================================
 
-:mod:`!asyncio` leverages four components of the Python language to pass
+:mod:`!asyncio` leverages four components of Python to pass
 around control.
 
 :meth:`coroutine.send(arg) <generator.send>` is the method used to start or
