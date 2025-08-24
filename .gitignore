@@ -178,16 +178,4 @@ CLAUDE.local.md
 #### main branch only stuff below this line, things to backport go above. ####
 # main branch only: ABI files are not checked/maintained.
 Doc/data/python*.abi
-validation_test.py
-test_nested_difference.py
-commit_message.txt
-demo_issue_138097.py
-PR_template.md
-check_format.py
-lint_check.py
-Doc/reference/expressions.rst
-check_our_changes.py
-clean_whitespace.py
-detailed_check.py
-check_fixed.py
-final_lint_check.py
+
