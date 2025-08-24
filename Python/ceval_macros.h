@@ -394,7 +394,7 @@ do {                                                   \
     /* +1 because vectorcall might use -1 to write self */ \
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate; \
     PyObject **NAME##_temp = _tstate->stackref_scratch; \
-    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT,
+    PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
 
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
