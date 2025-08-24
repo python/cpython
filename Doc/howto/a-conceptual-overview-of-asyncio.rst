@@ -60,7 +60,7 @@ This process repeats indefinitely with the event loop cycling endlessly
 onwards.
 If there are no more jobs pending execution, the event loop is smart enough to
 rest and avoid needlessly wasting CPU cycles, and will come back when there's
-more work to be done - such as when I/O operations complete or timers expire.
+more work to be done, such as when I/O operations complete or timers expire.
 
 Effective execution relies on jobs sharing well and cooperating; a greedy job
 could hog control and leave the other jobs to starve, rendering the overall
