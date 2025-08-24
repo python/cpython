@@ -152,6 +152,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 fcntl.ioctl
 
     fd: fildes
@@ -193,7 +194,7 @@ code.
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                  int mutate_arg)
-/*[clinic end generated code: output=f72baba2454d7a62 input=9c6cca5e2c339622]*/
+/*[clinic end generated code: output=f72baba2454d7a62 input=d7fe504d335449e2]*/
 {
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
        because the system expects it to be a 32bit bit field value
@@ -400,6 +401,7 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 fcntl.lockf
 
     fd: fildes
@@ -436,7 +438,7 @@ starts.  `whence` is as with fileobj.seek(), specifically:
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence)
-/*[clinic end generated code: output=4985e7a172e7461a input=5480479fc63a04b8]*/
+/*[clinic end generated code: output=4985e7a172e7461a input=f666662ec2edd775]*/
 {
     int ret;
     int async_err = 0;

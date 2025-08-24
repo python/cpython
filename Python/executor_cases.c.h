@@ -7122,7 +7122,7 @@
             }
             #endif
             tstate->jit_exit = exit;
-            GOTO_TIER_TWO(exit->executor);
+            TIER2_TO_TIER2(exit->executor);
             break;
         }
 
@@ -7400,7 +7400,7 @@
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND0();
             #ifndef _Py_JIT
-            current_executor = (_PyExecutorObject*)executor;
+            assert(current_executor == (_PyExecutorObject*)executor);
             #endif
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)executor;
@@ -7503,7 +7503,7 @@
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
-            GOTO_TIER_TWO(exit->executor);
+            TIER2_TO_TIER2(exit->executor);
             break;
         }
 
