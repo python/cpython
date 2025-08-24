@@ -177,10 +177,10 @@ callback to run it in the event loop's to-do list, that is, collection of jobs).
 The recommended way to create tasks is via :func:`asyncio.create_task`.
 
 :mod:`!asyncio` automatically associates tasks with the event loop for you.
-In many applications there's only a single thread with the one event loop,
-but you can have multiple threads, each with their own event loop.
-Each event loop is stored in thread-local storage, making it easy for
-:mod:`!asyncio` to associate tasks with the relevant loop for each thread.
+Typically there's only one event loop, so that's quite straightforward.
+It's uncommon, but some applications use multithreading and :mod:`!asyncio`
+together, where there's one event loop per thread, stored in thread-local
+storage.
 
 ::
 
