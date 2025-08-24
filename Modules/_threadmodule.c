@@ -2635,6 +2635,7 @@ Set the name of the current thread.
 
 static PyObject *
 _thread_set_name_impl(PyObject *module, PyObject *name_obj)
+/*[clinic end generated code: output=402b0c68e0c0daed input=7e7acd98261be82f]*/
 {
 #ifndef MS_WINDOWS
 #ifdef __sun
