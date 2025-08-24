@@ -303,3 +303,13 @@ class TestConsole(TestCase):
             self.assertIsInstance(console.getheightwidth(), tuple)
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
+
+    def test_mac_with_invalid_environ(self, _os_write):
+        # gh-128636 for macOS
+        if sys.platform == "darwin":
+            console = UnixConsole(term="xterm")
+            with os_helper.EnvironmentVarGuard() as env:
+                env["TERM_PROGRAM"] = "Apple_Terminal"
+                console.is_mac = True
+                os.environ = []
+                self.assertIsInstance(console.getheightwidth(), tuple)
