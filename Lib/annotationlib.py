@@ -159,12 +159,12 @@ class ForwardRef:
             type_params = getattr(owner, "__type_params__", None)
 
         # Type parameters exist in their own scope, which is logically
-        # between the locals and the globals. We simulate this by adding
-        # them to the globals.
+        # between the locals and the globals.
+        type_param_scope = {}
         if type_params is not None:
-            globals = dict(globals)
             for param in type_params:
-                globals[param.__name__] = param
+                type_param_scope[param.__name__] = param
+
         if self.__extra_names__:
             locals = {**locals, **self.__extra_names__}
 
@@ -172,6 +172,8 @@ class ForwardRef:
         if arg.isidentifier() and not keyword.iskeyword(arg):
             if arg in locals:
                 return locals[arg]
+            elif arg in type_param_scope:
+                return type_param_scope[arg]
             elif arg in globals:
                 return globals[arg]
             elif hasattr(builtins, arg):
@@ -183,12 +185,12 @@ class ForwardRef:
         else:
             code = self.__forward_code__
             try:
-                return eval(code, globals=globals, locals=locals)
+                return eval(code, globals=globals, locals={**type_param_scope, **locals})
             except Exception:
                 if not is_forwardref_format:
                     raise
             new_locals = _StringifierDict(
-                {**builtins.__dict__, **locals},
+                {**type_param_scope, **builtins.__dict__, **locals},
                 globals=globals,
                 owner=owner,
                 is_class=self.__forward_is_class__,
