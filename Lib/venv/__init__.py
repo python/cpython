@@ -17,6 +17,8 @@ import shlex
 CORE_VENV_DEPS = ('pip',)
 logger = logging.getLogger(__name__)
 
+_USE_SYMLINKS = os.name != 'nt'
+
 
 class EnvBuilder:
     """
@@ -47,7 +49,7 @@ class EnvBuilder:
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False, with_pip=False, prompt=None,
+                 symlinks=_USE_SYMLINKS, upgrade=False, with_pip=False, prompt=None,
                  upgrade_deps=False, *, scm_ignore_files=frozenset()):
         self.system_site_packages = system_site_packages
         self.clear = clear
@@ -600,7 +602,7 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-           symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
+           symlinks=_USE_SYMLINKS, with_pip=False, prompt=None, upgrade_deps=False,
            *, scm_ignore_files=frozenset()):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
@@ -630,17 +632,13 @@ def main(args=None):
                         action='store_true', dest='system_site',
                         help='Give the virtual environment access to the '
                              'system site-packages dir.')
-    if os.name == 'nt':
-        use_symlinks = False
-    else:
-        use_symlinks = True
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--symlinks', default=use_symlinks,
+    group.add_argument('--symlinks', default=_USE_SYMLINKS,
                        action='store_true', dest='symlinks',
                        help='Try to use symlinks rather than copies, '
                             'when symlinks are not the default for '
                             'the platform.')
-    group.add_argument('--copies', default=not use_symlinks,
+    group.add_argument('--copies', default=not _USE_SYMLINKS,
                        action='store_false', dest='symlinks',
                        help='Try to use copies rather than symlinks, '
                             'even when symlinks are the default for '
