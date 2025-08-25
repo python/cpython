@@ -49,12 +49,15 @@ class FileList:
     def new(self, filename=None):
         return self.EditorWindow(self, filename)
 
-    def close_all_callback(self, *args, **kwds):
+    def close_all_callback(self, *args, force=False, **kwds):
         for edit in list(self.inversedict):
-            reply = edit.close()
+            reply = edit.close(force=force)
             if reply == "cancel":
                 break
         return "break"
+
+    def close_all_force_callback(self, *args, **kwds):
+        return self.close_all_callback(*args, force=True, **kwds)
 
     def unregister_maybe_terminate(self, edit):
         try:
