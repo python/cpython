@@ -1,0 +1,4 @@
+Document that :envvar:`!SystemRoot` is also required for a Python subprocess
+that uses :mod:`socket` or :mod:`asyncio` on Windows, and add a
+:exc:`RuntimeWarning` if an *env* supplied to :class:`subprocess.Popen`
+lacks it. Patch by John Keith Hohm.
