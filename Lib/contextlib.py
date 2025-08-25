@@ -164,7 +164,9 @@ class _GeneratorContextManager(
                 # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
                 # raised inside the "with" statement from being suppressed.
-                return exc is not value
+                result = exc is not value
+                del exc, value  # avoid cyclic reference
+                return result
             except RuntimeError as exc:
                 # Don't re-raise the passed in exception. (issue27122)
                 if exc is value:
