@@ -1,19 +1,8 @@
-import functools
-import warnings
 import re
 import textwrap
 import email.message
 
 from ._text import FoldedCase
-
-
-# Do not remove prior to 2024-01-01 or Python 3.14
-_warn = functools.partial(
-    warnings.warn,
-    "Implicit None on return values is deprecated and will raise KeyErrors.",
-    DeprecationWarning,
-    stacklevel=2,
-)
 
 
 class Message(email.message.Message):
@@ -52,12 +41,17 @@ class Message(email.message.Message):
 
     def __getitem__(self, item):
         """
-        Warn users that a ``KeyError`` can be expected when a
-        missing key is supplied. Ref python/importlib_metadata#371.
+        Override parent behavior to typical dict behavior.
+
+        ``email.message.Message`` will emit None values for missing
+        keys. Typical mappings, including this ``Message``, will raise
+        a key error for missing keys.
+
+        Ref python/importlib_metadata#371.
         """
         res = super().__getitem__(item)
         if res is None:
-            _warn()
+            raise KeyError(item)
         return res
 
     def _repair_headers(self):

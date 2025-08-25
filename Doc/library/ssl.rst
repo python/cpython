@@ -1898,8 +1898,9 @@ to speed up repeated connections from the same clients.
 .. attribute:: SSLContext.sslsocket_class
 
    The return type of :meth:`SSLContext.wrap_socket`, defaults to
-   :class:`SSLSocket`. The attribute can be overridden on instance of class
-   in order to return a custom subclass of :class:`SSLSocket`.
+   :class:`SSLSocket`. The attribute can be assigned to on instances of
+   :class:`SSLContext` in order to return a custom subclass of
+   :class:`SSLSocket`.
 
    .. versionadded:: 3.7
 

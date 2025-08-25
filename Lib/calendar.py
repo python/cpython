@@ -378,7 +378,7 @@ class TextCalendar(Calendar):
         """
         Returns a formatted week day name.
         """
-        if width >= 9:
+        if width >= max(map(len, day_name)):
             names = day_name
         else:
             names = day_abbr
