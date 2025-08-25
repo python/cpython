@@ -336,7 +336,15 @@ class UnixConsole(Console):
         raw.lflag |= termios.ISIG
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
-        tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
+        try:
+            tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
+        except termios.error as e:
+            if e.args[0] != errno.EIO:
+                # gh-135329
+                # When running under external programs (like strace),
+                # tcsetattr may fail with EIO. We can safely ignore this
+                # and continue with default terminal settings.
+                raise
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
         if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
@@ -368,7 +376,15 @@ class UnixConsole(Console):
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
-        tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+        try:
+            tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+        except termios.error as e:
+            if e.args[0] != errno.EIO:
+                # gh-135329
+                # When running under external programs (like strace),
+                # tcsetattr may fail with EIO. We can safely ignore this
+                # and continue with default terminal settings.
+                raise
 
         if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
             os.write(self.output_fd, b"\033[?7h")
@@ -407,6 +423,13 @@ class UnixConsole(Console):
                             return self.event_queue.get()
                         else:
                             continue
+                    elif err.errno == errno.EIO:
+                        # gh-135329
+                        # When running under external programs (like strace),
+                        # os.read may fail with EIO. In this case, we should
+                        # exit gracefully to avoid infinite error loops.
+                        import sys
+                        sys.exit(errno.EIO)
                     else:
                         raise
                 else:
