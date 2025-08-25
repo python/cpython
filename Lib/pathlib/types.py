@@ -13,7 +13,7 @@ Protocols for supporting classes in pathlib.
 from abc import ABC, abstractmethod
 from glob import _GlobberBase
 from io import text_encoding
-from pathlib._os import (magic_open, vfspath, ensure_distinct_paths,
+from pathlib._os import (vfsopen, vfspath, ensure_distinct_paths,
                          ensure_different_files, copyfileobj)
 from pathlib import PurePath, Path
 from typing import Optional, Protocol, runtime_checkable
@@ -264,10 +264,10 @@ class _ReadablePath(_JoinablePath):
         raise NotImplementedError
 
     @abstractmethod
-    def __open_rb__(self, buffering=-1):
+    def __open_reader__(self):
         """
         Open the file pointed to by this path for reading in binary mode and
-        return a file object, like open(mode='rb').
+        return a file object.
         """
         raise NotImplementedError
 
@@ -275,7 +275,7 @@ class _ReadablePath(_JoinablePath):
         """
         Open the file in bytes mode, read it, and close the file.
         """
-        with magic_open(self, mode='rb', buffering=0) as f:
+        with vfsopen(self, mode='rb') as f:
             return f.read()
 
     def read_text(self, encoding=None, errors=None, newline=None):
@@ -285,7 +285,7 @@ class _ReadablePath(_JoinablePath):
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = text_encoding(encoding)
-        with magic_open(self, mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+        with vfsopen(self, mode='r', encoding=encoding, errors=errors, newline=newline) as f:
             return f.read()
 
     @abstractmethod
@@ -394,10 +394,10 @@ class _WritablePath(_JoinablePath):
         raise NotImplementedError
 
     @abstractmethod
-    def __open_wb__(self, buffering=-1):
+    def __open_writer__(self, mode):
         """
         Open the file pointed to by this path for writing in binary mode and
-        return a file object, like open(mode='wb').
+        return a file object.
         """
         raise NotImplementedError
 
@@ -407,7 +407,7 @@ class _WritablePath(_JoinablePath):
         """
         # type-check for the buffer interface before truncating the file
         view = memoryview(data)
-        with magic_open(self, mode='wb') as f:
+        with vfsopen(self, mode='wb') as f:
             return f.write(view)
 
     def write_text(self, data, encoding=None, errors=None, newline=None):
@@ -420,7 +420,7 @@ class _WritablePath(_JoinablePath):
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+        with vfsopen(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
     def _copy_from(self, source, follow_symlinks=True):
@@ -439,8 +439,8 @@ class _WritablePath(_JoinablePath):
                     stack.append((child, dst.joinpath(child.name)))
             else:
                 ensure_different_files(src, dst)
-                with magic_open(src, 'rb') as source_f:
-                    with magic_open(dst, 'wb') as target_f:
+                with vfsopen(src, 'rb') as source_f:
+                    with vfsopen(dst, 'wb') as target_f:
                         copyfileobj(source_f, target_f)
 
 
