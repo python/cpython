@@ -584,12 +584,9 @@ class EnvBuilder:
                     logger.warning('unable to copy script %r, '
                                    'may be binary: %s', srcfile, e)
                     continue
-                if new_data == data:
-                    shutil.copy2(srcfile, dstfile)
-                else:
-                    with open(dstfile, 'wb') as f:
-                        f.write(new_data)
-                    shutil.copymode(srcfile, dstfile)
+                with open(dstfile, 'wb') as f:
+                    f.write(new_data)
+                shutil.copymode(srcfile, dstfile)
 
     def upgrade_dependencies(self, context):
         logger.debug(
