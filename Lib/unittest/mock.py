@@ -1170,9 +1170,10 @@ class CallableMixin(Base):
     def __call__(self, /, *args, **kwargs):
         # can't use self in-case a function / method we are mocking uses self
         # in the signature
-        self._mock_check_sig(*args, **kwargs)
-        self._increment_mock_call(*args, **kwargs)
-        return self._mock_call(*args, **kwargs)
+        with NonCallableMock._lock:
+            self._mock_check_sig(*args, **kwargs)
+            self._increment_mock_call(*args, **kwargs)
+            return self._mock_call(*args, **kwargs)
 
 
     def _mock_call(self, /, *args, **kwargs):
@@ -2256,10 +2257,11 @@ class MagicProxy(Base):
     def create_mock(self):
         entry = self.name
         parent = self.parent
-        m = parent._get_child_mock(name=entry, _new_name=entry,
-                                   _new_parent=parent)
-        setattr(parent, entry, m)
-        _set_return_value(parent, m, entry)
+        with NonCallableMock._lock:
+            m = parent._get_child_mock(name=entry, _new_name=entry,
+                                       _new_parent=parent)
+            setattr(parent, entry, m)
+            _set_return_value(parent, m, entry)
         return m
 
     def __get__(self, obj, _type=None):
