@@ -739,7 +739,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       Never extract archives from untrusted sources without prior inspection.
       It is possible that files are created outside of the path specified in
       the *extract_dir* argument, e.g. members that have absolute filenames
-      starting with "/" or filenames with two dots "..".
+      starting with "/" or filenames with relative path components "../".
 
       Since Python 3.14, the defaults for both built-in formats (zip and tar
       files) will prevent the most dangerous of such security issues,
