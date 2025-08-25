@@ -70,14 +70,6 @@ The `co_linetable` bytes object of code objects contains a compact
 representation of the source code positions of instructions, which are
 returned by the `co_positions()` iterator.
 
-> [!NOTE]
-> `co_linetable` is not to be confused with `co_lnotab`.
-> For backwards compatibility, `co_lnotab` exposes the format
-> as it existed in Python 3.10 and lower: this older format
-> stores only the start line for each instruction.
-> It is lazily created from `co_linetable` when accessed.
-> See [`Objects/lnotab_notes.txt`](../Objects/lnotab_notes.txt) for more details.
-
 `co_linetable` consists of a sequence of location entries.
 Each entry starts with a byte with the most significant bit set, followed by
 zero or more bytes with the most significant bit unset.
