@@ -2565,6 +2565,7 @@ LIBSUBDIRS=	asyncio \
 		multiprocessing multiprocessing/dummy \
 		pathlib \
 		profile \
+		profiling \
 		pydoc_data \
 		re \
 		site-packages \
@@ -2677,6 +2678,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_pathlib \
 		test/test_pathlib/support \
 		test/test_peg_generator \
+		test/test_profiling \
 		test/test_pydoc \
 		test/test_pyrepl \
 		test/test_string \
