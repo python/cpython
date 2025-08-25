@@ -1,0 +1,2 @@
+Fix for incorrect source code being shown in tracebacks from the Basic REPL
+when :envvar:`PYTHONSTARTUP` is given. Patch by Adam Hartz.
