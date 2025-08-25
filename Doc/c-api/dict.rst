@@ -301,6 +301,15 @@ Dictionary Objects
       }
       Py_END_CRITICAL_SECTION();
 
+   .. note::
+
+      On the free-threaded build, this function can be used safely inside a
+      critical section. However, the references returned for *pkey* and *pvalue*
+      are :term:`borrowed <borrowed reference>` and are only valid while the
+      critical section is held. If you need to use these objects outside the
+      critical section or when the critical section can be suspended, create a
+      :term:`strong reference <strong reference>` (for example, using
+      :c:func:`Py_NewRef`).
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
 
