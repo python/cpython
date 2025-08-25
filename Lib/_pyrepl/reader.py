@@ -343,7 +343,7 @@ class Reader:
                 screeninfo.append((0, []))
             pos -= line_len + 1
             prompt, prompt_len = self.process_prompt(prompt)
-            chars, char_widths = disp_str(line, colors, offset, already_colorize=self.can_colorize)
+            chars, char_widths = disp_str(line, colors, offset)
             wrapcount = (sum(char_widths) + prompt_len) // self.console.width
             if wrapcount == 0 or not char_widths:
                 offset += line_len + 1  # Takes all of the line plus the newline
@@ -491,7 +491,7 @@ class Reader:
             prompt = self.ps1
 
         if self.can_colorize:
-            t = THEME(already_colorize=self.can_colorize)
+            t = THEME()
             prompt = f"{t.prompt}{prompt}{t.reset}"
         return prompt
 
