@@ -1621,9 +1621,9 @@ iterations of the loop.
     The positional arguments tuple and the keyword arguments dict are each
     "unpacked" and passed to the callable. ``CALL_FUNCTION_EX`` pops all these
     items and pushes the callable's return value.
-   The presence of keyword arguments is indicated solely by whether the
-   last stack item is ``NULL`` or a :class:`dict`; there is no operand or
-   flag associated with this opcode.
+    The presence of keyword arguments is indicated solely by whether the
+    last stack item is ``NULL`` or a :class:`dict`; there is no operand or
+    flag associated with this opcode.
 
     .. versionadded:: 3.6
     .. versionchanged:: 3.14
