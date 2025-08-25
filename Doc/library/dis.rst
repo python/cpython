@@ -1621,16 +1621,14 @@ iterations of the loop.
     The positional arguments tuple and the keyword arguments dict are each
     "unpacked" and passed to the callable. ``CALL_FUNCTION_EX`` pops all these
     items and pushes the callable's return value.
-
-    Earlier Python versions documented an integer *flags* operand indicating
-    the presence of a mapping object for keyword arguments; this no longer
-    applies. The opcode itself no longer has a separate operand or flag bits
-    for this purpose in Python 3.14 and later.
+   The presence of keyword arguments is indicated solely by whether the
+   last stack item is ``NULL`` or a :class:`dict`; there is no operand or
+   flag associated with this opcode.
 
     .. versionadded:: 3.6
     .. versionchanged:: 3.14
-         The obsolete *flags* argument was removed from the documentation; the
-         opcode no longer uses an operand to signal presence of ``**kwargs``.
+       The opcode no longer uses a flags operand to signal the presence of
+       ``**kwargs``; the stack layout alone determines this.
 
 
 .. opcode:: PUSH_NULL
