@@ -2241,7 +2241,6 @@ class CRLockTests(lock_tests.RLockTests):
 
         with warnings.catch_warnings(record=True) as warnings_log:
             CustomRLock(1, b=2)
-
         self.assertEqual(warnings_log, [])
 
 class EventTests(lock_tests.EventTests):
@@ -2361,10 +2360,44 @@ class MiscTestCase(unittest.TestCase):
                 thread = threading.Thread(target=work, name=name)
                 thread.start()
                 thread.join()
-                if not name.isascii() and not work_name:
-                    self.skipTest(f"Platform does not support non-ASCII thread names: got empty name for {name!r}")
-                self.assertEqual(work_name, expected,
-                                 f"{len(work_name)=} and {len(expected)=}")
+
+                # Detect if running on OpenIndiana / illumos
+                try:
+                    is_illumos = os.uname().version.startswith('illumos')
+                except AttributeError:
+                    is_illumos = False
+
+                if is_illumos:
+                    # illumos requires ASCII-encoded thread names
+                    if not work_name:
+                        # name didn't get set (set_name may have failed)
+                        self.skipTest(
+                            f"Platform does not support non-ASCII thread names: got empty name for {name!r}"
+                        )
+
+                    work_name_bytes = (
+                        work_name.encode('ascii', errors='ignore')
+                        if isinstance(work_name, str)
+                        else work_name
+                    )
+                    expected_bytes = expected.encode('ascii', errors='ignore')
+
+                    self.assertEqual(
+                        work_name_bytes,
+                        expected_bytes,
+                        f"{len(work_name)=} and {len(expected)=}"
+                    )
+
+                elif not name.isascii() and not work_name:
+                    # Platform does not support non-ASCII thread names
+                    self.skipTest(
+                        f"Platform does not support non-ASCII thread names: got empty name for {name!r}"
+                    )
+
+                else:
+                    # Most platforms
+                    self.assertEqual(work_name, expected,
+                                    f"{len(work_name)=} and {len(expected)=}")
 
     @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
     @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")

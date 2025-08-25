@@ -2655,18 +2655,15 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
         return NULL;
     }
 
-    if (rc) {
-        /* If native API refused (EINVAL) and we didn't try ASCII, retry with ASCII. */
-        if (rc == EINVAL && strcmp(encoding, "ascii") != 0) {
-            rc = set_encoded_thread_name(name_obj, "ascii");
-            if (rc == -1 && PyErr_Occurred()) {
-                return NULL;
-            }
-            if (rc == 0) {
-                Py_RETURN_NONE;
-            }
-            /* fall through to raise errno below */
+    /* If native API refused (EINVAL) and we didn't try ASCII, retry with ASCII. */
+    if (rc == EINVAL && strcmp(encoding, "ascii") != 0) {
+        rc = set_encoded_thread_name(name_obj, "ascii");
+        if (rc == -1 && PyErr_Occurred()) {
+            return NULL;
         }
+        /* fall through to raise errno below */
+    }
+    if (rc) {
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
     }
