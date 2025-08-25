@@ -691,7 +691,7 @@ class TestMessageAPI(TestEmailBase):
         x = 'this is a br\xf6ken thing to do'
         msg = Message()
         msg['content-type'] = 'text/plain'
-        msg['content-transfer-encoding'] = '8bit'
+        msg['content-transfer-encoding'] = '7bit'
         msg.set_payload(x)
         self.assertEqual(msg.get_payload(decode=True),
                          bytes(x, 'raw-unicode-escape'))
@@ -792,6 +792,15 @@ class TestMessageAPI(TestEmailBase):
                 msg.get_payload(decode=True),
                 b'foo\xe6\x96\x87bar',
                 'get_payload returns wrong result with charset %s.' % charset)
+
+    def test_8bit_utf8_payload(self):
+        x = 'this is the hötel'
+        msg = Message()
+        msg['content-type'] = 'text/plain'
+        msg['content-transfer-encoding'] = '8bit'
+        msg.set_payload(x)
+        self.assertEqual(msg.get_payload(decode=True),
+                         bytes(x, 'utf-8'))
 
     def test_binary_uuencode_payload(self):
         for charset in ('latin-1', 'ascii'):
