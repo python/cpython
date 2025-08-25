@@ -1815,6 +1815,11 @@ class MappingTestCase(TestBase):
     def test_weak_keyed_dict_update(self):
         self.check_update(weakref.WeakKeyDictionary,
                           {C(): 1, C(): 2, C(): 3})
+        d = weakref.WeakKeyDictionary()
+        msg = ("Keyword arguments are not supported: "
+               "cannot create weak reference to 'str' object")
+        with self.assertRaisesRegex(TypeError, msg):
+            d.update(k='v')
 
     def test_weak_keyed_delitem(self):
         d = weakref.WeakKeyDictionary()
