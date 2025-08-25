@@ -1351,67 +1351,63 @@ Formally, imaginary literals are described by the following lexical definition:
    imagnumber: (`floatnumber` | `digitpart`) ("j" | "J")
 
 
-.. _operators:
-
-Operators
-=========
-
-.. index:: single: operators
-
-The following tokens are operators:
-
-.. code-block:: none
-
-
-   +       -       *       **      /       //      %      @
-   <<      >>      &       |       ^       ~       :=
-   <       >       <=      >=      ==      !=
-
-
 .. _delimiters:
-
-Delimiters
-==========
-
-.. index:: single: delimiters
-
-The following tokens serve as delimiters in the grammar:
-
-.. code-block:: none
-
-   (       )       [       ]       {       }
-   ,       :       !       .       ;       @       =
-
-The period can also occur in floating-point and imaginary literals.
-
+.. _operators:
 .. _lexical-ellipsis:
 
-A sequence of three periods has a special meaning as an
-:py:data:`Ellipsis` literal:
+Operators and delimiters
+========================
 
-.. code-block:: none
+.. index::
+   single: operators
+   single: delimiters
 
-   ...
+The following grammar defines :dfn:`operator` and :dfn:`delimiter` tokens,
+that is, the generic :data:`~token.OP` token type:
 
-The following *augmented assignment operators* serve
-lexically as delimiters, but also perform an operation:
+.. grammar-snippet::
+   :group: python-grammar
 
-.. code-block:: none
+   OP:
+      | arithmetic_operator
+      | bitwise_operator
+      | comparison_operator
+      | enclosing_delimiter
+      | other_delimiter
+      | assignment_operator
+      | other_op
+      | "..."
 
-   ->      +=      -=      *=      /=      //=     %=
-   @=      &=      |=      ^=      >>=     <<=     **=
+   arithmetic_operator:   "+"  | "-"  | "*"  | "**"  | "/"   | "//"  | "%"
+   bitwise_operator:      "&"  | "^"  | "~"  | "<<"  | ">>"
+   assignment_operator:   "+=" | "-=" | "*=" | "**=" | "/="  | "//=" | "%=" |
+                          "&=" | "|=" | "^=" | "<<=" | ">>=" | "@="  | ":="
+   comparison_operator:   "<"  | ">"  | "<=" | ">="  | "=="  | "!="
+   enclosing_delimiter:   "("  | ")"  | "["  | "]"   | "{"   | "}"
+   other_delimiter:       ","  | ":"  | "!"  | ";"   | "="   | "->"
+   other_op:              "."  | "@"
 
-The following printing ASCII characters have special meaning as part of other
-tokens or are otherwise significant to the lexical analyzer:
+.. note::
 
-.. code-block:: none
+   Generally, *operators* are used to combine :ref:`expressions <expressions>`,
+   while *delimiters* serve other purposes.
+   However, there is no clear, formal distinction between the two categories.
 
-   '       "       #       \
+   Some tokens can serve as either operators or delimiters, depending on usage.
+   For example, ``*`` is both the multiplication operator and a delimiter used
+   for sequence unpacking, and ``@`` is both the matrix multiplication and
+   a delimiter that introduces decorators.
 
-The following printing ASCII characters are not used in Python.  Their
-occurrence outside string literals and comments is an unconditional error:
+   For some tokens, the distinction is unclear.
+   For example, some people consider ``. ( )`` to be delimiters, while others
+   see the :py:func:`getattr` operator and the function call operator(s).
 
-.. code-block:: none
+   Some of Python's operators, like ``and``, ``or``, and ``not in``, use
+   :ref:`keyword <keywords>` tokens rather than "symbols" (operator tokens).
 
-   $       ?       `
+A sequence of three consecutive periods (``...``) has a special
+meaning as an :py:data:`Ellipsis` literal.
 
+See :ref:`operator and delimiter tokens <token_operators_delimiters>`
+in the :mod:`!token` module documentation for names of the operator and
+delimiter tokens.
