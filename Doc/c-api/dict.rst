@@ -297,11 +297,12 @@ Dictionary Objects
 
 .. note::
 
-   On the :term:`free threaded <free threading>` build, this function can be used safely inside
-   a critical section. However, the references returned for *pkey* and
-   *pvalue* are :term:`borrowed <borrowed reference>` and only valid while the critical section
-   is held. If you need to use these objects outside the critical section or when the critical section
-   can be suspended, create :term:`strong reference <strong reference>` (for example, with
+   On the :term:`free-threaded <free threading>` build, this function can be
+   used safely inside a critical section. However, the references returned
+   for *pkey* and *pvalue* are :term:`borrowed <borrowed reference>` and only
+   valid while the critical section is held. If you need to use these objects
+   outside the critical section or when the critical section can be suspended,
+   create :term:`strong reference <strong reference>` (for example, with
    :c:func:`Py_NewRef`).
 
    .. code-block:: c
