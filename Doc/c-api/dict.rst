@@ -299,20 +299,18 @@ Dictionary Objects
 
    On the :term:`free threaded <free threading>` build, this function can be used safely inside
    a critical section. However, the references returned for *pkey* and
-   *pvalue* are :term:`borrowed <borrowed reference>` and only valid while the critical section is
-   held. If you need to use these objects outside the critical section or when the critical section
+   *pvalue* are :term:`borrowed <borrowed reference>` and only valid while the critical section
+   is held. If you need to use these objects outside the critical section or when the critical section
    can be suspended, create :term:`strong reference <strong reference>` (for example, with
    :c:func:`Py_NewRef`).
 
-.. code-block:: c
+   .. code-block:: c
 
-   Py_BEGIN_CRITICAL_SECTION(self->dict);
-   while (PyDict_Next(self->dict, &pos, &key, &value)) {
-       ...
-   }
-   Py_END_CRITICAL_SECTION();
-
-
+      Py_BEGIN_CRITICAL_SECTION(self->dict);
+      while (PyDict_Next(self->dict, &pos, &key, &value)) {
+          ...
+      }
+      Py_END_CRITICAL_SECTION();
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
 
