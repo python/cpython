@@ -354,13 +354,16 @@ append_ast_set(PyUnicodeWriter *writer, expr_ty e)
 {
     Py_ssize_t i, elem_count;
 
-    APPEND_CHAR('{');
     elem_count = asdl_seq_LEN(e->v.Set.elts);
+    if (elem_count == 0) {
+        APPEND_STR_FINISH("{/}");
+    }
+
+    APPEND_CHAR('{');
     for (i = 0; i < elem_count; i++) {
         APPEND_STR_IF(i > 0, ", ");
         APPEND_EXPR((expr_ty)asdl_seq_GET(e->v.Set.elts, i), PR_TEST);
     }
-
     APPEND_CHAR_FINISH('}');
 }
 
