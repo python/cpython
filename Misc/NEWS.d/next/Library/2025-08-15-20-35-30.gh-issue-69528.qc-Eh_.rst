@@ -1,0 +1,2 @@
+The :attr:`~io.FileIO.mode` attribute of files opened in the ``'wb+'`` mode is
+now ``'wb+'`` instead of ``'rb+'``.
