@@ -28,6 +28,23 @@ class DictTest(unittest.TestCase):
         self.assertEqual(dict(), {})
         self.assertIsNot(dict(), {})
 
+    def test_constructor_positional_argument_error_messages(self):
+        with self.assertRaisesRegex(TypeError,
+                                   r"dict expected at most 1 positional argument, got 2"):
+            dict('John', 36)
+        with self.assertRaisesRegex(TypeError,
+                                   r"dict expected at most 1 positional argument, got 3"):
+            dict('a', 'b', 'c')
+
+    def test_update_positional_argument_error_messages(self):
+        d = {}
+        with self.assertRaisesRegex(TypeError,
+                                   r"update expected at most 1 positional argument, got 2"):
+            d.update('John', 36)
+        with self.assertRaisesRegex(TypeError,
+                                   r"update expected at most 1 positional argument, got 3"):
+            d.update('a', 'b', 'c')
+
     def test_literal_constructor(self):
         # check literal constructor for different sized dicts
         # (to exercise the BUILD_MAP oparg).
