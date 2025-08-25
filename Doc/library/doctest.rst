@@ -616,7 +616,8 @@ doctest decides whether actual output matches an example's expected output:
    sequence of whitespace within the actual output. By default, whitespace must
    match exactly. :const:`NORMALIZE_WHITESPACE` is especially useful when a line of
    expected output is very long, and you want to wrap it across multiple lines in
-   your source.
+   your source. If the expected output does not contain any whitespace, consider
+   using :data:`IGNORE_LINEBREAK` or :data:`ELLIPSIS`.
 
 
 .. index:: single: ...; in doctests
@@ -664,6 +665,31 @@ doctest decides whether actual output matches an example's expected output:
    .. versionchanged:: 3.2
       :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information relating
       to the module containing the exception under test.
+
+
+.. data:: IGNORE_LINEBREAK
+
+   When specified, single line breaks in the expected output are eliminated,
+   thereby allowing strings without whitespaces to span multiple lines.
+
+   .. doctest::
+      :no-trim-doctest-flags:
+
+      >>> "foobar123456"            # doctest: +IGNORE_LINEBREAK
+      'foobar
+      123456'
+
+   Consider using :data:`NORMALIZE_WHITESPACE` when strings with whitespaces
+   need to be split across multiple lines:
+
+   .. doctest::
+      :no-trim-doctest-flags:
+
+      >>> "the string to split"     # doctest: +NORMALIZE_WHITESPACE
+      'the string
+      to split'
+
+   .. versionadded:: next
 
 
 .. data:: SKIP

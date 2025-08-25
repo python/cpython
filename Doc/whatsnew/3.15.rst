@@ -311,6 +311,23 @@ difflib
   (Contributed by Jiahao Li in :gh:`134580`.)
 
 
+doctest
+-------
+
+* Add :data:`~doctest.IGNORE_LINEBREAK` option to allow breaking expected
+  output strings without whitespaces into multiple lines:
+
+  .. doctest::
+     :no-trim-doctest-flags:
+
+     >>> import string
+     >>> print(string.ascii_letters)  # doctest: +IGNORE_LINEBREAK
+     abcdefghijklmnopqrstuvwxyz
+     ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+  (Contributed by Bénédikt Tran in :gh:`138135`.)
+
+
 hashlib
 -------
 

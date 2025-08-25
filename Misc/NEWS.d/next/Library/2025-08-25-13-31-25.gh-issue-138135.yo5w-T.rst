@@ -1,0 +1,3 @@
+:mod:`doctest`: Add :data:`~doctest.IGNORE_LINEBREAK` option to allow
+breaking expected output strings without whitespaces into multiple lines.
+Patch by Bénédikt Tran.
