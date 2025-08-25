@@ -1599,6 +1599,7 @@
     added = '3.2'
 [function.PyWeakref_GetObject]
     added = '3.2'
+    abi_only = true
 [function.PyWeakref_NewProxy]
     added = '3.2'
 [function.PyWeakref_NewRef]

@@ -2947,12 +2947,6 @@ PyWeakref_CheckProxy:PyObject*:ob:0:
 PyWeakref_CheckRef:int:::
 PyWeakref_CheckRef:PyObject*:ob:0:
 
-PyWeakref_GET_OBJECT:PyObject*::0:
-PyWeakref_GET_OBJECT:PyObject*:ref:0:
-
-PyWeakref_GetObject:PyObject*::0:
-PyWeakref_GetObject:PyObject*:ref:0:
-
 PyWeakref_GetRef:int:::
 PyWeakref_GetRef:PyObject*:ref:0:
 PyWeakref_GetRef:PyObject**:pobj:+1:
