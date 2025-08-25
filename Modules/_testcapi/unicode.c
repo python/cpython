@@ -220,6 +220,72 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
+static PyObject *
+unicode_case_operation(PyObject *str, Py_ssize_t (*function)(Py_UCS4, Py_UCS4 *, Py_ssize_t),
+                       Py_UCS4 *buf, Py_ssize_t size)
+{
+    if (!PyUnicode_Check(str)) {
+        PyErr_Format(PyExc_TypeError, "expect str type, got %T", str);
+        return NULL;
+    }
+
+    if (PyUnicode_GET_LENGTH(str) != 1) {
+        PyErr_SetString(PyExc_ValueError, "expecting 1-character strings only");
+        return NULL;
+    }
+
+    Py_UCS4 c = PyUnicode_READ_CHAR(str, 0);
+
+    Py_ssize_t chars = function(c, buf, size);
+    if (chars < 0) {
+        return NULL;
+    }
+
+    return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, buf, chars);
+}
+
+/* Test PyUCS4_ToLower() */
+static PyObject *
+unicode_tolower(PyObject *self, PyObject *arg)
+{
+    Py_UCS4 buf[PyUCS4_CASE_CONVERSION_BUFFER_SIZE];
+    return unicode_case_operation(arg, PyUCS4_ToLower, buf, PyUCS4_CASE_CONVERSION_BUFFER_SIZE);
+}
+
+
+/* Test PyUCS4_ToUpper() */
+static PyObject *
+unicode_toupper(PyObject *self, PyObject *arg)
+{
+    Py_UCS4 buf[PyUCS4_CASE_CONVERSION_BUFFER_SIZE];
+    return unicode_case_operation(arg, PyUCS4_ToUpper, buf, PyUCS4_CASE_CONVERSION_BUFFER_SIZE);
+}
+
+/* Test PyUCS4_ToUpper() with a small buffer */
+static PyObject *
+unicode_toupper_buffer_too_small(PyObject *self, PyObject *arg)
+{
+    Py_UCS4 buf;
+    return unicode_case_operation(arg, PyUCS4_ToUpper, &buf, 1);
+}
+
+/* Test PyUCS4_ToLower() */
+static PyObject *
+unicode_totitle(PyObject *self, PyObject *arg)
+{
+    Py_UCS4 buf[PyUCS4_CASE_CONVERSION_BUFFER_SIZE];
+    return unicode_case_operation(arg, PyUCS4_ToTitle, buf, PyUCS4_CASE_CONVERSION_BUFFER_SIZE);
+}
+
+/* Test PyUCS4_ToLower() */
+static PyObject *
+unicode_tofolded(PyObject *self, PyObject *arg)
+{
+    Py_UCS4 buf[PyUCS4_CASE_CONVERSION_BUFFER_SIZE];
+    return unicode_case_operation(arg, PyUCS4_ToFolded, buf, PyUCS4_CASE_CONVERSION_BUFFER_SIZE);
+}
+
+
 static PyObject*
 unicode_GET_CACHED_HASH(PyObject *self, PyObject *arg)
 {
@@ -577,6 +643,11 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
     {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
+    {"unicode_tolower",          unicode_tolower,                METH_O},
+    {"unicode_toupper",          unicode_toupper,                METH_O},
+    {"unicode_toupper_buffer_too_small",    unicode_toupper_buffer_too_small,   METH_O},
+    {"unicode_totitle",          unicode_totitle,                METH_O},
+    {"unicode_tofolded",         unicode_tofolded,               METH_O},
     {NULL},
 };
 
