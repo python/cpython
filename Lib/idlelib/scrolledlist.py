@@ -16,7 +16,7 @@ class ScrolledList:
         self.vbar = vbar = Scrollbar(frame, name="vbar")
         self.vbar.pack(side="right", fill="y")
         self.listbox = listbox = Listbox(frame, exportselection=0,
-            background="white")
+            background="white", foreground="black")
         if options:
             listbox.configure(options)
         listbox.pack(expand=1, fill="both")
