@@ -340,6 +340,11 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 gil_slot = cur_slot->value;
                 has_gil_slot = 1;
                 break;
+            case Py_mod_abi:
+                if (PyABIInfo_Check((PyABIInfo *)cur_slot->value, name) < 0) {
+                    goto error;
+                }
+                break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
@@ -514,6 +519,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                 break;
             case Py_mod_multiple_interpreters:
             case Py_mod_gil:
+            case Py_mod_abi:
                 /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:
