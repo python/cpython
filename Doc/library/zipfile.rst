@@ -171,7 +171,8 @@ ZipFile Objects
 
 .. class:: ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                    compresslevel=None, *, strict_timestamps=True, \
-                   metadata_encoding=None)
+                   metadata_encoding=None, \
+                   zipinfo_class=ZipInfo, zipextfile_class=ZipExtFile)
 
    Open a ZIP file, where *file* can be a path to a file (a string), a
    file-like object or a :term:`path-like object`.
@@ -228,6 +229,9 @@ ZipFile Objects
    :meth:`closed <close>` without adding any files to the archive, the appropriate
    ZIP structures for an empty archive will be written to the file.
 
+   The *zipinfo_class* and *zipextfile_class* arguments can be used to replace
+   the default :class:`ZipInfo` and :class:`!ZipExtFile` classes with different ones.
+
    ZipFile is also a context manager and therefore supports the
    :keyword:`with` statement.  In the example, *myzip* is closed after the
    :keyword:`!with` statement's suite is finished---even if an exception occurs::
@@ -277,6 +281,9 @@ ZipFile Objects
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
       metadata in the zipfile's directory and file headers.
+
+   .. versionchanged:: next
+      Added the *zipinfo_class* and *zipextfile_class* parameters.
 
 
 .. method:: ZipFile.close()
