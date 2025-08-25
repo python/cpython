@@ -372,16 +372,7 @@ Miscellaneous options
    :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
    randomization is enabled by default.
 
-   On previous versions of Python, this option turns on hash randomization,
-   so that the :meth:`~object.__hash__` values of str and bytes objects
-   are "salted" with an unpredictable random value.  Although they remain
-   constant within an individual Python process, they are not predictable
-   between repeated invocations of Python.
-
-   Hash randomization is intended to provide protection against a
-   denial-of-service caused by carefully chosen inputs that exploit the worst
-   case performance of a dict construction, *O*\ (*n*\ :sup:`2`) complexity.  See
-   http://ocert.org/advisories/ocert-2011-003.html for details.
+   See :meth:`~object.__hash__` for more information about hash randomization.
 
    :envvar:`PYTHONHASHSEED` allows you to set a fixed value for the hash
    seed secret.
@@ -390,6 +381,8 @@ Miscellaneous options
 
    .. versionchanged:: 3.7
       The option is no longer ignored.
+
+   .. deprecated-removed:: next 3.17
 
 
 .. option:: -s
