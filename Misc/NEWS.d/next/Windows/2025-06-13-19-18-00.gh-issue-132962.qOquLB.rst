@@ -1,0 +1,3 @@
+The interactive interpreter (-i) on Windows no longer crashes when standard
+output is redirected. It now correctly falls back to the basic REPL in this
+situation.
