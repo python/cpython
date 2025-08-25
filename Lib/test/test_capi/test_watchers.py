@@ -653,6 +653,16 @@ class TestContextObjectWatchers(unittest.TestCase):
             # Break reference cycle
             unraisables = None
 
+    def test_exception_save(self):
+        with self.context_watcher(2):
+            with catch_unraisable_exception() as cm:
+                def _in_context():
+                    raise RuntimeError("test")
+
+                with self.assertRaisesRegex(RuntimeError, "test"):
+                    contextvars.copy_context().run(_in_context)
+                self.assertEqual(str(cm.unraisable.exc_value), "boom!")
+
     def test_clear_out_of_range_watcher_id(self):
         with self.assertRaisesRegex(ValueError, r"Invalid context watcher ID -1"):
             _testcapi.clear_context_watcher(-1)
