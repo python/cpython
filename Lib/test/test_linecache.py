@@ -209,8 +209,8 @@ class LineCacheTests(unittest.TestCase):
         lines = linecache.getlines(NONEXISTENT_FILENAME, globals())
         linecache.clearcache()
         self.assertEqual(
-            True, linecache.lazycache(NONEXISTENT_FILENAME, globals()))
-        self.assertEqual(1, len(linecache.cache[NONEXISTENT_FILENAME]))
+            False, linecache.lazycache(NONEXISTENT_FILENAME, globals()))
+        self.assertEqual(False, NONEXISTENT_FILENAME in linecache.cache)
         # Note here that we're looking up a nonexistent filename with no
         # globals: this would error if the lazy value wasn't resolved.
         self.assertEqual(lines, linecache.getlines(NONEXISTENT_FILENAME))
@@ -235,11 +235,11 @@ class LineCacheTests(unittest.TestCase):
 
     def test_lazycache_already_cached(self):
         linecache.clearcache()
-        lines = linecache.getlines(NONEXISTENT_FILENAME, globals())
+        lines = linecache.getlines(FILENAME, globals())
         self.assertEqual(
             False,
-            linecache.lazycache(NONEXISTENT_FILENAME, globals()))
-        self.assertEqual(4, len(linecache.cache[NONEXISTENT_FILENAME]))
+            linecache.lazycache(FILENAME, globals()))
+        self.assertEqual(4, len(linecache.cache[FILENAME]))
 
     def test_memoryerror(self):
         lines = linecache.getlines(FILENAME)
