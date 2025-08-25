@@ -50,8 +50,6 @@
 #include <ctype.h>                // isascii()
 #include <stdlib.h>
 
-#include "docstrings.h"
-
 #ifdef EXTRA_FUNCTIONALITY
   #define _PY_DEC_ROUND_GUARD MPD_ROUND_GUARD
 #else
@@ -1390,15 +1388,29 @@ context_setattrs(PyObject *self, PyObject *prec, PyObject *rounding,
     return 0;
 }
 
+/*[clinic input]
+_decimal.Context.clear_traps
+
+Set all traps to False.
+[clinic start generated code]*/
+
 static PyObject *
-context_clear_traps(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Context_clear_traps_impl(PyObject *self)
+/*[clinic end generated code: output=b47cfa6e32407d40 input=3872e80637148035]*/
 {
     CTX(self)->traps = 0;
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_decimal.Context.clear_flags
+
+Reset all flags to False.
+[clinic start generated code]*/
+
 static PyObject *
-context_clear_flags(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Context_clear_flags_impl(PyObject *self)
+/*[clinic end generated code: output=c86719a70177d0b6 input=a06055e2f3e7edb1]*/
 {
     CTX(self)->status = 0;
     Py_RETURN_NONE;
@@ -1496,32 +1508,37 @@ context_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
+/*[clinic input]
+_decimal.Context.__init__ as context_init
+
+    prec: object = None
+    rounding: object = None
+    Emin as emin: object = None
+    Emax as emax: object = None
+    capitals: object = None
+    clamp: object = None
+    flags as status: object = None
+    traps: object = None
+
+Create context.
+
+The context affects almost all operations and controls rounding,
+Over/Underflow, raising of exceptions and much more.  A new context
+can be constructed as follows:
+
+    >>> c = Context(prec=28, Emin=-425000000, Emax=425000000,
+    ...             rounding=ROUND_HALF_EVEN, capitals=1, clamp=1,
+    ...             traps=[InvalidOperation, DivisionByZero, Overflow],
+    ...             flags=[])
+    >>>
+[clinic start generated code]*/
+
 static int
-context_init(PyObject *self, PyObject *args, PyObject *kwds)
+context_init_impl(PyObject *self, PyObject *prec, PyObject *rounding,
+                  PyObject *emin, PyObject *emax, PyObject *capitals,
+                  PyObject *clamp, PyObject *status, PyObject *traps)
+/*[clinic end generated code: output=8bfdc59fbe862f44 input=45c704b93cd02959]*/
 {
-    static char *kwlist[] = {
-      "prec", "rounding", "Emin", "Emax", "capitals", "clamp",
-      "flags", "traps", NULL
-    };
-    PyObject *prec = Py_None;
-    PyObject *rounding = Py_None;
-    PyObject *emin = Py_None;
-    PyObject *emax = Py_None;
-    PyObject *capitals = Py_None;
-    PyObject *clamp = Py_None;
-    PyObject *status = Py_None;
-    PyObject *traps = Py_None;
-
-    assert(PyTuple_Check(args));
-
-    if (!PyArg_ParseTupleAndKeywords(
-            args, kwds,
-            "|OOOOOOOO", kwlist,
-            &prec, &rounding, &emin, &emax, &capitals, &clamp, &status, &traps
-         )) {
-        return -1;
-    }
-
     return context_setattrs(
         self, prec, rounding,
         emin, emax, capitals,
@@ -1631,8 +1648,15 @@ error:
     return NULL;
 }
 
+/*[clinic input]
+_decimal.Context.copy
+
+Return a duplicate of the context with all flags cleared.
+[clinic start generated code]*/
+
 static PyObject *
-context_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
+_decimal_Context_copy_impl(PyObject *self)
+/*[clinic end generated code: output=f99649a60a9c10f8 input=2589aa46b77cbc28]*/
 {
     PyObject *copy;
 
@@ -1647,6 +1671,12 @@ context_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
     CtxCaps(copy) = CtxCaps(self);
 
     return copy;
+}
+
+static PyObject *
+context_copy(PyObject *self, PyObject *Py_UNUSED(dummy))
+{
+    return _decimal_Context_copy_impl(self);
 }
 
 static PyObject *
@@ -3048,11 +3078,26 @@ _decimal_Decimal_from_number_impl(PyTypeObject *type, PyObject *number)
 }
 
 /* create_decimal_from_float */
+
+/*[clinic input]
+_decimal.Context.create_decimal_from_float
+
+    self as context: self
+    f: object
+    /
+
+Create a new Decimal instance from float f.
+
+Unlike the Decimal.from_float() class method, this function observes
+the context limits.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_from_float(PyObject *context, PyObject *v)
+_decimal_Context_create_decimal_from_float(PyObject *context, PyObject *f)
+/*[clinic end generated code: output=c660c343f6f7158b input=05a8c54b7a5b457b]*/
 {
     decimal_state *state = get_module_state_from_ctx(context);
-    return PyDec_FromFloat(state, v, context);
+    return PyDec_FromFloat(state, f, context);
 }
 
 /* Apply the context to the input operand. Return a new PyDecObject. */
@@ -3194,16 +3239,24 @@ dec_new_impl(PyTypeObject *type, PyObject *value, PyObject *context)
     return PyDecType_FromObjectExact(type, value, context);
 }
 
+/*[clinic input]
+_decimal.Context.create_decimal
+
+    self as context: self
+    num: object(c_default="NULL") = "0"
+    /
+
+Create a new Decimal instance from num, using self as the context.
+
+Unlike the Decimal constructor, this function observes the context
+limits.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_create_decimal(PyObject *context, PyObject *args)
+_decimal_Context_create_decimal_impl(PyObject *context, PyObject *num)
+/*[clinic end generated code: output=85e08ae02f3b34da input=d2c4946cf7804fbe]*/
 {
-    PyObject *v = NULL;
-
-    if (!PyArg_ParseTuple(args, "|O", &v)) {
-        return NULL;
-    }
-
-    return PyDec_FromObject(v, context);
+    return PyDec_FromObject(num, context);
 }
 
 
@@ -6503,20 +6556,27 @@ _decimal_Context_subtract_impl(PyObject *context, PyObject *x, PyObject *y)
 /*[clinic end generated code: output=fa8847e07b7c2bcc input=6767683ec68f7a1a]*/
 DecCtx_BinaryFunc(mpd_qsub)
 
+/*[clinic input]
+_decimal.Context.divmod
+
+    self as context: self
+    x: object
+    y: object
+    /
+
+Return quotient and remainder of the division x / y.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_qdivmod(PyObject *context, PyObject *args)
+_decimal_Context_divmod_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=5dbf5410e3f302af input=4d8eee07823c752a]*/
 {
-    PyObject *v, *w;
     PyObject *a, *b;
     PyObject *q, *r;
     uint32_t status = 0;
     PyObject *ret;
 
-    if (!PyArg_ParseTuple(args, "OO", &v, &w)) {
-        return NULL;
-    }
-
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
+    CONVERT_BINOP_RAISE(&a, &b, x, y, context);
     decimal_state *state = get_module_state_from_ctx(context);
     q = dec_alloc(state);
     if (q == NULL) {
@@ -6764,52 +6824,95 @@ _decimal_Context_is_zero(PyObject *context, PyObject *x)
 /*[clinic end generated code: output=24150f3c2422ebf8 input=bf08197d142a8027]*/
 DecCtx_BoolFunc_NO_CTX(mpd_iszero)
 
+/*[clinic input]
+_decimal.Context.is_canonical = _decimal.Context.is_normal
+
+Return True if x is canonical, False otherwise.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_iscanonical(PyObject *context, PyObject *v)
+_decimal_Context_is_canonical(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=b5b522b930a41186 input=1bf2129808e55eb9]*/
 {
     decimal_state *state = get_module_state_from_ctx(context);
-    if (!PyDec_Check(state, v)) {
+    if (!PyDec_Check(state, x)) {
         PyErr_SetString(PyExc_TypeError,
             "argument must be a Decimal");
         return NULL;
     }
 
-    return mpd_iscanonical(MPD(v)) ? incr_true() : incr_false();
+    return mpd_iscanonical(MPD(x)) ? incr_true() : incr_false();
 }
 
 /* Functions with a single decimal argument */
+/*[clinic input]
+_decimal.Context._apply = _decimal.Context.is_normal
+
+Apply self to Decimal x.
+[clinic start generated code]*/
+
 static PyObject *
-PyDecContext_Apply(PyObject *context, PyObject *v)
+_decimal_Context__apply(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=8db39d294602492e input=12b34468ca4a4c30]*/
 {
     PyObject *result, *a;
 
-    CONVERT_OP_RAISE(&a, v, context);
+    CONVERT_OP_RAISE(&a, x, context);
 
     result = dec_apply(a, context);
     Py_DECREF(a);
     return result;
 }
 
+#ifdef EXTRA_FUNCTIONALITY
+/*[clinic input]
+_decimal.Context.apply = _decimal.Context._apply
+
+Apply self to Decimal x.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_canonical(PyObject *context, PyObject *v)
+_decimal_Context_apply(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=4d39653645a6df44 input=388e66ca82733516]*/
+{
+    return _decimal_Context__apply(context, v);
+}
+#endif
+
+/*[clinic input]
+_decimal.Context.canonical = _decimal.Context.is_normal
+
+Return a new instance of x.
+[clinic start generated code]*/
+
+static PyObject *
+_decimal_Context_canonical(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=28fa845499e5d485 input=025ecb106ac15bff]*/
 {
     decimal_state *state = get_module_state_from_ctx(context);
-    if (!PyDec_Check(state, v)) {
+    if (!PyDec_Check(state, x)) {
         PyErr_SetString(PyExc_TypeError,
             "argument must be a Decimal");
         return NULL;
     }
 
-    return Py_NewRef(v);
+    return Py_NewRef(x);
 }
 
+/*[clinic input]
+_decimal.Context.copy_abs = _decimal.Context.is_normal
+
+Return a copy of x with the sign set to 0.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_qcopy_abs(PyObject *context, PyObject *v)
+_decimal_Context_copy_abs(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=a9035e6606261b30 input=4aa2f612625f0f73]*/
 {
     PyObject *result, *a;
     uint32_t status = 0;
 
-    CONVERT_OP_RAISE(&a, v, context);
+    CONVERT_OP_RAISE(&a, x, context);
     decimal_state *state = get_module_state_from_ctx(context);
     result = dec_alloc(state);
     if (result == NULL) {
@@ -6827,22 +6930,36 @@ ctx_mpd_qcopy_abs(PyObject *context, PyObject *v)
     return result;
 }
 
+/*[clinic input]
+_decimal.Context.copy_decimal = _decimal.Context.is_normal
+
+Return a copy of Decimal x.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_copy_decimal(PyObject *context, PyObject *v)
+_decimal_Context_copy_decimal(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=b9ec251a2a568a14 input=4db4f942f45fb7c9]*/
 {
     PyObject *result;
 
-    CONVERT_OP_RAISE(&result, v, context);
+    CONVERT_OP_RAISE(&result, x, context);
     return result;
 }
 
+/*[clinic input]
+_decimal.Context.copy_negate = _decimal.Context.is_normal
+
+Return a copy of x with the sign inverted.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_qcopy_negate(PyObject *context, PyObject *v)
+_decimal_Context_copy_negate(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=5fe136d7bac13391 input=2e6e213e2ed0efda]*/
 {
     PyObject *result, *a;
     uint32_t status = 0;
 
-    CONVERT_OP_RAISE(&a, v, context);
+    CONVERT_OP_RAISE(&a, x, context);
     decimal_state *state = get_module_state_from_ctx(context);
     result = dec_alloc(state);
     if (result == NULL) {
@@ -6882,13 +6999,20 @@ _decimal_Context_logical_invert(PyObject *context, PyObject *x)
 /*[clinic end generated code: output=b863a5cdb986f684 input=1fa8dcc59c557fcc]*/
 DecCtx_UnaryFunc(mpd_qinvert)
 
+/*[clinic input]
+_decimal.Context.number_class = _decimal.Context.is_normal
+
+Return an indication of the class of x.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_class(PyObject *context, PyObject *v)
+_decimal_Context_number_class(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=2b39fa98dd723c6f input=1ead8462f1800e4e]*/
 {
     PyObject *a;
     const char *cp;
 
-    CONVERT_OP_RAISE(&a, v, context);
+    CONVERT_OP_RAISE(&a, x, context);
 
     cp = mpd_class(MPD(a), CTX(context));
     Py_DECREF(a);
@@ -6896,15 +7020,22 @@ ctx_mpd_class(PyObject *context, PyObject *v)
     return PyUnicode_FromString(cp);
 }
 
+/*[clinic input]
+_decimal.Context.to_sci_string = _decimal.Context.is_normal
+
+Convert a number to a string using scientific notation.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_to_sci(PyObject *context, PyObject *v)
+_decimal_Context_to_sci_string(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=7d461d24824c6f15 input=ed442677c66d342d]*/
 {
     PyObject *result;
     PyObject *a;
     mpd_ssize_t size;
     char *s;
 
-    CONVERT_OP_RAISE(&a, v, context);
+    CONVERT_OP_RAISE(&a, x, context);
 
     size = mpd_to_sci_size(&s, MPD(a), CtxCaps(context));
     Py_DECREF(a);
@@ -6919,15 +7050,22 @@ ctx_mpd_to_sci(PyObject *context, PyObject *v)
     return result;
 }
 
+/*[clinic input]
+_decimal.Context.to_eng_string = _decimal.Context.is_normal
+
+Convert a number to a string, using engineering notation.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_to_eng(PyObject *context, PyObject *v)
+_decimal_Context_to_eng_string(PyObject *context, PyObject *x)
+/*[clinic end generated code: output=3a54b9de0b01708f input=a574385e2e3e3bc0]*/
 {
     PyObject *result;
     PyObject *a;
     mpd_ssize_t size;
     char *s;
 
-    CONVERT_OP_RAISE(&a, v, context);
+    CONVERT_OP_RAISE(&a, x, context);
 
     size = mpd_to_eng_size(&s, MPD(a), CtxCaps(context));
     Py_DECREF(a);
@@ -6973,19 +7111,21 @@ _decimal_Context_compare_total_mag_impl(PyObject *context, PyObject *x,
 /*[clinic end generated code: output=7c376de9f94feeaf input=2b982e69f932dcb2]*/
 DecCtx_BinaryFunc_NO_CTX(mpd_compare_total_mag)
 
+/*[clinic input]
+_decimal.Context.copy_sign = _decimal.Context.compare_total
+
+Copy the sign from y to x.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_qcopy_sign(PyObject *context, PyObject *args)
+_decimal_Context_copy_sign_impl(PyObject *context, PyObject *x, PyObject *y)
+/*[clinic end generated code: output=fff3c5c474acf78e input=c0682aeaffc7cfdf]*/
 {
-    PyObject *v, *w;
     PyObject *a, *b;
     PyObject *result;
     uint32_t status = 0;
 
-    if (!PyArg_ParseTuple(args, "OO", &v, &w)) {
-        return NULL;
-    }
-
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
+    CONVERT_BINOP_RAISE(&a, &b, x, y, context);
     decimal_state *state = get_module_state_from_ctx(context);
     result = dec_alloc(state);
     if (result == NULL) {
@@ -7073,18 +7213,21 @@ _decimal_Context_shift_impl(PyObject *context, PyObject *x, PyObject *y)
 /*[clinic end generated code: output=78625878a264b3e5 input=1ab44ff0854420ce]*/
 DecCtx_BinaryFunc(mpd_qshift)
 
+/*[clinic input]
+_decimal.Context.same_quantum = _decimal.Context.add
+
+Return True if the two operands have the same exponent.
+[clinic start generated code]*/
+
 static PyObject *
-ctx_mpd_same_quantum(PyObject *context, PyObject *args)
+_decimal_Context_same_quantum_impl(PyObject *context, PyObject *x,
+                                   PyObject *y)
+/*[clinic end generated code: output=137acab27ece605c input=194cd156e398eaf9]*/
 {
-    PyObject *v, *w;
     PyObject *a, *b;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "OO", &v, &w)) {
-        return NULL;
-    }
-
-    CONVERT_BINOP_RAISE(&a, &b, v, w, context);
+    CONVERT_BINOP_RAISE(&a, &b, x, y, context);
 
     result = mpd_same_quantum(MPD(a), MPD(b)) ? incr_true() : incr_false();
     Py_DECREF(a);
@@ -7117,7 +7260,7 @@ static PyMethodDef context_methods [] =
   _DECIMAL_CONTEXT_COMPARE_SIGNAL_METHODDEF
   _DECIMAL_CONTEXT_DIVIDE_METHODDEF
   _DECIMAL_CONTEXT_DIVIDE_INT_METHODDEF
-  { "divmod", ctx_mpd_qdivmod, METH_VARARGS, doc_ctx_divmod },
+  _DECIMAL_CONTEXT_DIVMOD_METHODDEF
   _DECIMAL_CONTEXT_MAX_METHODDEF
   _DECIMAL_CONTEXT_MAX_MAG_METHODDEF
   _DECIMAL_CONTEXT_MIN_METHODDEF
@@ -7141,7 +7284,7 @@ static PyMethodDef context_methods [] =
   _DECIMAL_CONTEXT_RADIX_METHODDEF
 
   /* Boolean functions */
-  { "is_canonical", ctx_iscanonical, METH_O, doc_ctx_is_canonical },
+  _DECIMAL_CONTEXT_IS_CANONICAL_METHODDEF
   _DECIMAL_CONTEXT_IS_FINITE_METHODDEF
   _DECIMAL_CONTEXT_IS_INFINITE_METHODDEF
   _DECIMAL_CONTEXT_IS_NAN_METHODDEF
@@ -7153,35 +7296,33 @@ static PyMethodDef context_methods [] =
   _DECIMAL_CONTEXT_IS_ZERO_METHODDEF
 
   /* Functions with a single decimal argument */
-  { "_apply", PyDecContext_Apply, METH_O, NULL }, /* alias for apply */
-#ifdef EXTRA_FUNCTIONALITY
-  { "apply", PyDecContext_Apply, METH_O, doc_ctx_apply },
-#endif
-  { "canonical", ctx_canonical, METH_O, doc_ctx_canonical },
-  { "copy_abs", ctx_mpd_qcopy_abs, METH_O, doc_ctx_copy_abs },
-  { "copy_decimal", ctx_copy_decimal, METH_O, doc_ctx_copy_decimal },
-  { "copy_negate", ctx_mpd_qcopy_negate, METH_O, doc_ctx_copy_negate },
+  _DECIMAL_CONTEXT__APPLY_METHODDEF
+  _DECIMAL_CONTEXT_APPLY_METHODDEF
+  _DECIMAL_CONTEXT_CANONICAL_METHODDEF
+  _DECIMAL_CONTEXT_COPY_ABS_METHODDEF
+  _DECIMAL_CONTEXT_COPY_DECIMAL_METHODDEF
+  _DECIMAL_CONTEXT_COPY_NEGATE_METHODDEF
   _DECIMAL_CONTEXT_LOGB_METHODDEF
   _DECIMAL_CONTEXT_LOGICAL_INVERT_METHODDEF
-  { "number_class", ctx_mpd_class, METH_O, doc_ctx_number_class },
-  { "to_sci_string", ctx_mpd_to_sci, METH_O, doc_ctx_to_sci_string },
-  { "to_eng_string", ctx_mpd_to_eng, METH_O, doc_ctx_to_eng_string },
+  _DECIMAL_CONTEXT_NUMBER_CLASS_METHODDEF
+  _DECIMAL_CONTEXT_TO_SCI_STRING_METHODDEF
+  _DECIMAL_CONTEXT_TO_ENG_STRING_METHODDEF
 
   /* Functions with two decimal arguments */
   _DECIMAL_CONTEXT_COMPARE_TOTAL_METHODDEF
   _DECIMAL_CONTEXT_COMPARE_TOTAL_MAG_METHODDEF
-  { "copy_sign", ctx_mpd_qcopy_sign, METH_VARARGS, doc_ctx_copy_sign },
+  _DECIMAL_CONTEXT_COPY_SIGN_METHODDEF
   _DECIMAL_CONTEXT_LOGICAL_AND_METHODDEF
   _DECIMAL_CONTEXT_LOGICAL_OR_METHODDEF
   _DECIMAL_CONTEXT_LOGICAL_XOR_METHODDEF
   _DECIMAL_CONTEXT_ROTATE_METHODDEF
-  { "same_quantum", ctx_mpd_same_quantum, METH_VARARGS, doc_ctx_same_quantum },
+  _DECIMAL_CONTEXT_SAME_QUANTUM_METHODDEF
   _DECIMAL_CONTEXT_SCALEB_METHODDEF
   _DECIMAL_CONTEXT_SHIFT_METHODDEF
 
   /* Set context values */
-  { "clear_flags", context_clear_flags, METH_NOARGS, doc_ctx_clear_flags },
-  { "clear_traps", context_clear_traps, METH_NOARGS, doc_ctx_clear_traps },
+  _DECIMAL_CONTEXT_CLEAR_FLAGS_METHODDEF
+  _DECIMAL_CONTEXT_CLEAR_TRAPS_METHODDEF
 
 #ifdef CONFIG_32
   /* Unsafe set functions with relaxed range checks */
@@ -7193,9 +7334,9 @@ static PyMethodDef context_methods [] =
   /* Miscellaneous */
   { "__copy__", context_copy, METH_NOARGS, NULL },
   { "__reduce__", context_reduce, METH_NOARGS, NULL },
-  { "copy", context_copy, METH_NOARGS, doc_ctx_copy },
-  { "create_decimal", ctx_create_decimal, METH_VARARGS, doc_ctx_create_decimal },
-  { "create_decimal_from_float", ctx_from_float, METH_O, doc_ctx_create_decimal_from_float },
+  _DECIMAL_CONTEXT_COPY_METHODDEF
+  _DECIMAL_CONTEXT_CREATE_DECIMAL_METHODDEF
+  _DECIMAL_CONTEXT_CREATE_DECIMAL_FROM_FLOAT_METHODDEF
 
   { NULL, NULL, 1 }
 };
@@ -7208,7 +7349,7 @@ static PyType_Slot context_slots[] = {
     {Py_tp_repr, context_repr},
     {Py_tp_getattro, context_getattr},
     {Py_tp_setattro, context_setattr},
-    {Py_tp_doc, (void *)doc_context},
+    {Py_tp_doc, (void *)context_init__doc__},
     {Py_tp_methods, context_methods},
     {Py_tp_getset, context_getsets},
     {Py_tp_init, context_init},
