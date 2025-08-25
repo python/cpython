@@ -72,6 +72,9 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
             for filename in filenames:
+                # Exclude .pyc files from digest computation to ensure reproducible builds.
+                if filename.endswith(".pyc"):
+                    continue
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
 
