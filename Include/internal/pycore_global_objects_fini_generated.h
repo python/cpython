@@ -944,6 +944,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(env));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(errors));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(event_id));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(eventmask));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(exc));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(exc_type));
@@ -1200,6 +1201,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(query));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(quotetabs));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(raw));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(raw_data));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(read));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(read1));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(readable));
@@ -1280,6 +1282,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strict));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strict_mode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(string));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(strings));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sub_key));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(subcalls));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(symmetric_difference_update));
