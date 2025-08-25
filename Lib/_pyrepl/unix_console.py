@@ -339,13 +339,11 @@ class UnixConsole(Console):
         try:
             tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
         except termios.error as e:
-            if e.args[0] == errno.EIO:
+            if e.args[0] != errno.EIO:
                 # gh-135329
                 # When running under external programs (like strace),
                 # tcsetattr may fail with EIO. We can safely ignore this
                 # and continue with default terminal settings.
-                pass
-            else:
                 raise
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
@@ -381,13 +379,11 @@ class UnixConsole(Console):
         try:
             tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
         except termios.error as e:
-            if e.args[0] == errno.EIO:
+            if e.args[0] != errno.EIO:
                 # gh-135329
                 # When running under external programs (like strace),
                 # tcsetattr may fail with EIO. We can safely ignore this
-                # as the terminal state will be restored by the external program.
-                pass
-            else:
+                # and continue with default terminal settings.
                 raise
 
         if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
