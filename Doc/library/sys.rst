@@ -1558,7 +1558,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    recommended to use the following idiom::
 
       if sys.platform.startswith('sunos'):
-          # SunOS-specific code here...
+          ...  # SunOS-specific code here
 
    .. versionchanged:: 3.3
       On Linux, :data:`sys.platform` doesn't contain the major version anymore.

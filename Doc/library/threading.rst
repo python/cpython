@@ -1192,7 +1192,7 @@ when they need to connect to the server::
    with pool_sema:
        conn = connectdb()
        try:
-           # ... use connection ...
+           ...  # use connection
        finally:
            conn.close()
 
@@ -1411,13 +1411,13 @@ entered, and ``release`` will be called when the block is exited.  Hence,
 the following snippet::
 
    with some_lock:
-       # do something...
+       ...  # do something
 
 is equivalent to::
 
    some_lock.acquire()
    try:
-       # do something...
+       ...  # do something
    finally:
        some_lock.release()
 
