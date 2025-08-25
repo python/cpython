@@ -642,7 +642,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                         opcode = buffer[pc].opcode = op_without_pop[opcode];
                         if (op_without_pop[last->opcode]) {
                             opcode = last->opcode;
-                            pc = last - buffer;
+                            pc = (int)(last - buffer);
                         }
                     }
                     else if (last->opcode == _PUSH_NULL) {
