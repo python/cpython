@@ -28,6 +28,7 @@ import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 from types import GenericAlias
 from string import Template
 from string import Formatter as StrFormatter
+from string.templatelib import Template as TStringTemplate, Interpolation
 
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
@@ -289,11 +290,14 @@ class LogRecord(object):
 
     LogRecord instances are created every time something is logged. They
     contain all the information pertinent to the event being logged. The
-    main information passed in is in msg and args, which are combined
-    using str(msg) % args to create the message field of the record. The
-    record also includes information such as when the record was created,
-    the source line where the logging call was made, and any exception
-    information to be logged.
+    main information passed in is in msg and args. These are combined
+    using str(msg) % args to create the message field of the record. A
+    special case here is that if the msg is a t-string, it will be
+    formatted as if it was an f-string without using the provided args.
+
+    The record also includes information such as when the record was
+    created, the source line where the logging call was made, and any
+    exception information to be logged.
     """
     def __init__(self, name, level, pathname, lineno,
                  msg, args, exc_info, func=None, sinfo=None, **kwargs):
@@ -303,7 +307,14 @@ class LogRecord(object):
         ct = time.time_ns()
         self.name = name
         self.msg = msg
-        #
+
+        # When logging a t-string, pull the values out of it and prepend
+        # them to any provided args
+        if isinstance(msg, TStringTemplate):
+            args = (
+                {x.expression: x.value for x in msg if isinstance(x, Interpolation)},
+                *args
+            )
         # The following statement allows passing of a dictionary as a sole
         # argument, so that you can do something like
         #  logging.debug("a %(a)d b %(b)s", {'a':1, 'b':2})
@@ -394,7 +405,21 @@ class LogRecord(object):
 
         Return the message for this LogRecord after merging any user-supplied
         arguments with the message.
+        If the messsage is a t-string object it will be formatted in the same
+        way as an f-string without any extra user-supplied arguments.
         """
+        if isinstance(self.msg, TStringTemplate):
+            return "".join(
+                (
+                    _str_formatter.format_field(
+                        _str_formatter.convert_field(x.value, x.conversion),
+                        x.format_spec
+                    )
+                ) if isinstance(x, Interpolation)
+                else x
+                for x in self.msg
+            )
+
         msg = str(self.msg)
         if self.args:
             msg = msg % self.args
