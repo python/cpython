@@ -338,7 +338,7 @@ class _Stream:
     """
 
     def __init__(self, name, mode, comptype, fileobj, bufsize,
-                 compresslevel, preset):
+                 compresslevel, preset, mtime):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -373,7 +373,7 @@ class _Stream:
                     self.exception = zlib.error
                     self._init_read_gz()
                 else:
-                    self._init_write_gz(compresslevel)
+                    self._init_write_gz(compresslevel, mtime)
 
             elif comptype == "bz2":
                 try:
@@ -422,7 +422,7 @@ class _Stream:
         if hasattr(self, "closed") and not self.closed:
             self.close()
 
-    def _init_write_gz(self, compresslevel):
+    def _init_write_gz(self, compresslevel, mtime):
         """Initialize for writing with gzip compression.
         """
         self.cmp = self.zlib.compressobj(compresslevel,
@@ -430,7 +430,9 @@ class _Stream:
                                          -self.zlib.MAX_WBITS,
                                          self.zlib.DEF_MEM_LEVEL,
                                          0)
-        timestamp = struct.pack("<L", int(time.time()))
+        if mtime is None:
+            mtime = int(time.time())
+        timestamp = struct.pack("<L", mtime)
         self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
@@ -1725,7 +1727,7 @@ class TarFile(object):
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,
             errors="surrogateescape", pax_headers=None, debug=None,
-            errorlevel=None, copybufsize=None, stream=False):
+            errorlevel=None, copybufsize=None, stream=False, mtime=None):
         """Open an (uncompressed) tar archive 'name'. 'mode' is either 'r' to
            read from an existing archive, 'a' to append data to an existing
            file or 'w' to create a new file overwriting an existing one. 'mode'
@@ -1931,8 +1933,9 @@ class TarFile(object):
 
             compresslevel = kwargs.pop("compresslevel", 6)
             preset = kwargs.pop("preset", None)
+            mtime = kwargs.pop("mtime", None)
             stream = _Stream(name, filemode, comptype, fileobj, bufsize,
-                             compresslevel, preset)
+                             compresslevel, preset, mtime)
             try:
                 t = cls(name, filemode, stream, **kwargs)
             except:
@@ -1968,7 +1971,8 @@ class TarFile(object):
             raise CompressionError("gzip module is not available") from None
 
         try:
-            fileobj = GzipFile(name, mode + "b", compresslevel, fileobj)
+            mtime = kwargs.pop("mtime", None)
+            fileobj = GzipFile(name, mode + "b", compresslevel, fileobj, mtime=mtime)
         except OSError as e:
             if fileobj is not None and mode == 'r':
                 raise ReadError("not a gzip file") from e

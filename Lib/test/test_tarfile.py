@@ -1809,6 +1809,11 @@ class GzipStreamWriteTest(GzipTest, StreamWriteTest):
         payload = pathlib.Path(tmpname).read_text(encoding='latin-1')
         assert os.path.dirname(tmpname) not in payload
 
+    def test_create_with_mtime(self):
+        tarfile.open(tmpname, self.mode, mtime=0).close()
+        with self.open(tmpname, 'r') as fobj:
+            fobj.read()
+            self.assertEqual(fobj.mtime, 0)
 
 class Bz2StreamWriteTest(Bz2Test, StreamWriteTest):
     decompressor = bz2.BZ2Decompressor if bz2 else None
@@ -2115,6 +2120,11 @@ class GzipCreateTest(GzipTest, CreateTest):
         with tarfile.open(tmpname, 'r:gz', compresslevel=1) as tobj:
             pass
 
+    def test_create_with_mtime(self):
+        tarfile.open(tmpname, self.mode, mtime=0).close()
+        with self.open(tmpname, 'rb') as fobj:
+            fobj.read()
+            self.assertEqual(fobj.mtime, 0)
 
 class Bz2CreateTest(Bz2Test, CreateTest):
 
