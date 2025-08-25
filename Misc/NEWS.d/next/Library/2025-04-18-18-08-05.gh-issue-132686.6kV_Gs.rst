@@ -1,0 +1,2 @@
+Add parameters *inherit_class_doc* and *fallback_to_class_doc* for
+:func:`inspect.getdoc`.
