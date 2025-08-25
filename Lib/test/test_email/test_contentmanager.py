@@ -481,6 +481,45 @@ class TestRawDataManager(TestEmailBase):
         self.assertEqual(m.get_payload(decode=True).decode('utf-8'), content)
         self.assertEqual(m.get_content(), content)
 
+    def test_set_text_non_ascii_with_policy_max_line_length_none_or_0(self):
+        for max_line_length in (0, None):
+            with self.subTest(max_line_length=max_line_length):
+                policy = self.policy.clone(max_line_length=max_line_length)
+                m = self.message(policy=policy)
+                content = ("áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
+                           "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
+                           "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő.\n")
+                raw_data_manager.set_content(m, content)
+                self.assertEqual(bytes(m), (textwrap.dedent("""\
+                    Content-Type: text/plain; charset="utf-8"
+                    Content-Transfer-Encoding: 8bit
+                    """) + "\n" + \
+                    "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
+                    "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő"
+                    "áàäéèęöőáàäéèęöőáàäéèęöőáàäéèęöő.\n"
+                    ).encode('utf8'))
+                self.assertEqual(
+                    m.get_payload(decode=True).decode('utf-8'), content)
+                self.assertEqual(m.get_content(), content)
+
+    def test_set_bytes_with_policy_max_line_length_none_or_0(self):
+        for max_line_length in (0, None):
+            with self.subTest(max_line_length=max_line_length):
+                policy = self.policy.clone(max_line_length=max_line_length)
+                m = self.message(policy=policy)
+                content = b'b\xFFgus\tcon\nt\rent ' + b'z'*80
+                raw_data_manager.set_content(
+                    m, content, maintype='application', subtype='octet-stream')
+                self.assertEqual(bytes(m), textwrap.dedent("""\
+                    Content-Type: application/octet-stream
+                    Content-Transfer-Encoding: base64
+                    """).encode('ascii') + b"\n" +
+                    b"Yv9ndXMJY29uCnQNZW50IHp6enp6enp6enp6enp6enp6enp6enp6enp6"
+                    b"enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6enp6"
+                    b"enp6enp6enp6enp6\n")
+                self.assertEqual(m.get_payload(decode=True), content)
+                self.assertEqual(m.get_content(), content)
+
     def test_set_text_non_ascii_with_cte_7bit_raises(self):
         m = self._make_message()
         with self.assertRaises(UnicodeError):
