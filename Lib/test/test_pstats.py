@@ -1,9 +1,11 @@
 import unittest
+from os.path import join
 
 from test import support
 from test.support.import_helper import ensure_lazy_imports
 from io import StringIO
 from pstats import SortKey
+from pstats import _build_minimal_path_by_full_path
 from enum import StrEnum, _test_simple_enum
 
 import os
@@ -154,6 +156,67 @@ class StatsTestCase(unittest.TestCase):
     def test_SortKey_enum(self):
         self.assertEqual(SortKey.FILENAME, 'filename')
         self.assertNotEqual(SortKey.FILENAME, SortKey.CALLS)
+
+class BuildMinimalPathTests(unittest.TestCase):
+    def test_non_unique(self):
+        self.assertEqual(
+            _build_minimal_path_by_full_path([
+                'foo/bar',
+                'foo/bar',
+            ]),
+            {
+                'foo/bar': 'bar',
+            },
+        )
+
+    def test_needs_no_minimizing(self):
+        self.assertEqual(
+            _build_minimal_path_by_full_path([
+                'foo',
+                'bar',
+            ]),
+            {
+                'foo': 'foo',
+                'bar': 'bar',
+            },
+        )
+
+    def test_normal_case(self):
+        self.assertEqual(
+            _build_minimal_path_by_full_path([
+                join('foo', 'bar'),
+                join('baz', 'bar'),
+                join('apple', 'orange'),
+            ]),
+            {
+                join('foo', 'bar'): join('foo', 'bar'),
+                join('baz', 'bar'): join('baz', 'bar'),
+                join('apple', 'orange'): 'orange',
+            }
+        )
+
+    def test_intermediate(self):
+        self.assertEqual(
+            _build_minimal_path_by_full_path([
+                join('apple', 'mango', 'orange', 'grape', 'melon'),
+                join('apple', 'mango', 'lemon', 'grape', 'melon'),
+            ]),
+            {
+                join('apple', 'mango', 'orange', 'grape', 'melon'): join('orange', 'grape', 'melon'),
+                join('apple', 'mango', 'lemon', 'grape', 'melon'): join('lemon', 'grape', 'melon'),
+            }
+        )
+
+    def test_dunder_init_special_case(self):
+        self.assertEqual(
+            _build_minimal_path_by_full_path([
+                join('apple', 'mango', 'orange', 'grape', '__init__.py'),
+            ]),
+            {
+                join('apple', 'mango', 'orange', 'grape', '__init__.py'): join('grape', '__init__.py'),
+            }
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
