@@ -264,6 +264,7 @@ class ThreadPoolExecutor(_base.Executor):
                         break
                     if work_item is not None:
                         work_item.future.cancel()
+                        work_item.future.set_running_or_notify_cancel()
 
             # Send a wake-up to prevent threads calling
             # _work_queue.get(block=True) from permanently blocking.
