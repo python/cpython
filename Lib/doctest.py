@@ -53,6 +53,7 @@ __all__ = [
     'DONT_ACCEPT_TRUE_FOR_1',
     'DONT_ACCEPT_BLANKLINE',
     'NORMALIZE_WHITESPACE',
+    'IGNORE_LINEBREAK',
     'ELLIPSIS',
     'SKIP',
     'IGNORE_EXCEPTION_DETAIL',
@@ -156,6 +157,7 @@ def register_optionflag(name):
 DONT_ACCEPT_TRUE_FOR_1 = register_optionflag('DONT_ACCEPT_TRUE_FOR_1')
 DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
 NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
+IGNORE_LINEBREAK = register_optionflag('IGNORE_LINEBREAK')
 ELLIPSIS = register_optionflag('ELLIPSIS')
 SKIP = register_optionflag('SKIP')
 IGNORE_EXCEPTION_DETAIL = register_optionflag('IGNORE_EXCEPTION_DETAIL')
@@ -1751,9 +1753,18 @@ class OutputChecker:
             if got == want:
                 return True
 
+        # This flag causes doctest to ignore '\n' in `want`.
+        # Note that this can be used in conjunction with
+        # the NORMALIZE_WHITESPACE and ELLIPSIS flags.
+        if optionflags & IGNORE_LINEBREAK:
+            # `want` originally ends with '\n' so we add it back
+            want = ''.join(want.split('\n')) + '\n'
+            if got == want:
+                return True
+
         # This flag causes doctest to ignore any differences in the
         # contents of whitespace strings.  Note that this can be used
-        # in conjunction with the ELLIPSIS flag.
+        # in conjunction with the IGNORE_LINEBREAK and ELLIPSIS flags.
         if optionflags & NORMALIZE_WHITESPACE:
             got = ' '.join(got.split())
             want = ' '.join(want.split())
@@ -2268,7 +2279,7 @@ def set_unittest_reportflags(flags):
       >>> doctest.set_unittest_reportflags(ELLIPSIS)
       Traceback (most recent call last):
       ...
-      ValueError: ('Only reporting flags allowed', 8)
+      ValueError: ('Only reporting flags allowed', 16)
 
       >>> doctest.set_unittest_reportflags(old) == (REPORT_NDIFF |
       ...                                   REPORT_ONLY_FIRST_FAILURE)
@@ -2923,6 +2934,13 @@ __test__ = {"_TestClass": _TestClass,
                     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
                      15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
                      27, 28, 29]
+            """,
+
+            "line break elimination": r"""
+                >>> "foobar"  # doctest: +IGNORE_LINEBREAK
+                'foo
+                bar
+                '
             """,
            }
 

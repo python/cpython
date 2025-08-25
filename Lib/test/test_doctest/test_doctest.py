@@ -204,7 +204,7 @@ keyword arguments:
     ...                           options={doctest.ELLIPSIS: True})
     >>> (example.source, example.want, example.exc_msg,
     ...  example.lineno, example.indent, example.options)
-    ('[].pop()\n', '', 'IndexError: pop from an empty list\n', 5, 4, {8: True})
+    ('[].pop()\n', '', 'IndexError: pop from an empty list\n', 5, 4, {16: True})
 
 The constructor normalizes the `source` string to end in a newline:
 
@@ -1395,6 +1395,55 @@ treated as equal:
     >>> print(list(range(20))) #doctest: +NORMALIZE_WHITESPACE
     [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
     10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+The IGNORE_LINEBREAK flag causes all sequences of newlines to be removed:
+
+    >>> def f(x):
+    ...     '\n>>> "foobar"\n\'foo\nbar\''
+
+    >>> # Without the flag:
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line 3, in f
+    Failed example:
+        "foobar"
+    Expected:
+        'foo
+        bar'
+    Got:
+        'foobar'
+    TestResults(failed=1, attempted=1)
+
+    >>> # With the flag:
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> flags = doctest.IGNORE_LINEBREAK
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    TestResults(failed=0, attempted=1)
+
+    ... ignore surrounding new lines
+
+    >>> "foobar"  # doctest: +IGNORE_LINEBREAK
+    '
+    foo
+    bar'
+    >>> "foobar"  # doctest: +IGNORE_LINEBREAK
+    'foo
+    bar
+    '
+    >>> "foobar"  # doctest: +IGNORE_LINEBREAK
+    '
+    foo
+    bar
+    '
+
+    ... non-quoted output:
+
+    >>> import string
+    >>> print(string.ascii_letters)  # doctest: +IGNORE_LINEBREAK
+    abcdefghijklmnopqrstuvwxyz
+    ABCDEFGHIJKLMNOPQRSTUVWXYZ
 
 The ELLIPSIS flag causes ellipsis marker ("...") in the expected
 output to match any substring in the actual output:
