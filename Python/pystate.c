@@ -9,7 +9,9 @@
 #include "pycore_critical_section.h" // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_emscripten_trampoline.h" // _Py_EmscriptenTrampoline_Init()
+#include "pycore_frame.h"         // FRAME_ZOMBIE
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
 #include "pycore_object.h"        // _PyType_InitCache()
@@ -1633,18 +1635,28 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     int verbose = _PyInterpreterState_GetConfig(tstate->interp)->verbose;
 
-    if (verbose && tstate->current_frame != NULL) {
-        /* bpo-20526: After the main thread calls
-           _PyInterpreterState_SetFinalizing() in Py_FinalizeEx()
-           (or in Py_EndInterpreter() for subinterpreters),
-           threads must exit when trying to take the GIL.
-           If a thread exit in the middle of _PyEval_EvalFrameDefault(),
-           tstate->frame is not reset to its previous value.
-           It is more likely with daemon threads, but it can happen
-           with regular threads if threading._shutdown() fails
-           (ex: interrupted by CTRL+C). */
-        fprintf(stderr,
-          "PyThreadState_Clear: warning: thread still has a frame\n");
+    if (tstate->current_frame != NULL) {
+        _PyInterpreterFrame *frame = tstate->current_frame;
+        if (verbose) {
+            /* bpo-20526: After the main thread calls
+            _PyInterpreterState_SetFinalizing() in Py_FinalizeEx()
+            (or in Py_EndInterpreter() for subinterpreters),
+            threads must exit when trying to take the GIL.
+            If a thread exit in the middle of _PyEval_EvalFrameDefault(),
+            tstate->frame is not reset to its previous value.
+            It is more likely with daemon threads, but it can happen
+            with regular threads if threading._shutdown() fails
+            (ex: interrupted by CTRL+C). */
+            fprintf(stderr,
+            "PyThreadState_Clear: warning: thread still has a frame\n");
+        }
+        do {
+            if (frame->owner == FRAME_OWNED_BY_GENERATOR) {
+                PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame);
+                gen->gi_frame_state = FRAME_ZOMBIE;
+            }
+            frame = frame->previous;
+        } while (frame != NULL);
     }
 
     if (verbose && tstate->current_exception != NULL) {
