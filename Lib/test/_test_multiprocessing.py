@@ -4465,6 +4465,41 @@ class _TestSharedMemory(BaseTestCase):
             self.addCleanup(shm2.unlink)
             self.assertEqual(shm2._name, names[1])
 
+    @unittest.skipUnless(hasattr(shared_memory.SharedMemory, "rename"),
+                         "requires SharedMomery.rename")
+    def test_shared_memory_rename(self):
+        name1 = self._new_shm_name('testrename01_tsmb')
+        name2 = self._new_shm_name('testrename02_tsmb')
+        sms = shared_memory.SharedMemory(name1, create=True, size=512)
+        self.addCleanup(sms.unlink)
+
+        sms.rename(name2)
+        self.assertEqual(sms.name, name2)
+
+    @unittest.skipUnless(hasattr(shared_memory.SharedMemory, "rename"),
+                         "requires SharedMomery.rename")
+    def test_shared_memory_rename_noreplace(self):
+        name1 = self._new_shm_name('testrename01_tsmb')
+        name2 = self._new_shm_name('testrename02_tsmb')
+        sms1 = shared_memory.SharedMemory(name1, create=True, size=512)
+        sms2 = shared_memory.SharedMemory(name2, create=True, size=512)
+        self.addCleanup(sms1.unlink)
+        self.addCleanup(sms2.unlink)
+
+        with self.assertRaises(FileExistsError):
+            sms1.rename(name2, flags=shared_memory.SHM_RENAME_NOREPLACE)
+
+    @unittest.skipUnless(hasattr(shared_memory.SharedMemory, "rename"),
+                         "requires SharedMomery.rename")
+    def test_shared_memory_rename_exchange(self):
+        name1 = self._new_shm_name('testrename01_tsmb')
+        name2 = self._new_shm_name('testrename02_tsmb')
+        sms1 = shared_memory.SharedMemory(name1, create=True, size=512)
+        sms2 = shared_memory.SharedMemory(name2, create=True, size=512)
+        self.addCleanup(sms2.unlink)
+
+        sms1.rename(name2, flags=shared_memory.SHM_RENAME_EXCHANGE)
+
     def test_invalid_shared_memory_creation(self):
         # Test creating a shared memory segment with negative size
         with self.assertRaises(ValueError):
