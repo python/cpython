@@ -157,8 +157,10 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 
 * *message* is a string containing a regular expression that the start of
   the warning message must match, case-insensitively.  In :option:`-W` and
-  :envvar:`PYTHONWARNINGS`, *message* is a literal string that the start of the
-  warning message must contain (case-insensitively), ignoring any whitespace at
+  :envvar:`PYTHONWARNINGS`, if *message* starts and ends with a forward slash
+  (``/``), it specifies a regular expression as above;
+  otherwise it is a literal string that the start of the
+  warning message must match (case-insensitively), ignoring any whitespace at
   the start or end of *message*.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
@@ -166,7 +168,9 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
 
 * *module* is a string containing a regular expression that the start of the
   fully qualified module name must match, case-sensitively.  In :option:`-W` and
-  :envvar:`PYTHONWARNINGS`, *module* is a literal string that the
+  :envvar:`PYTHONWARNINGS`, if *module* starts and ends with a forward slash
+  (``/``), it specifies a regular expression as above;
+  otherwise it is a literal string that the
   fully qualified module name must be equal to (case-sensitively), ignoring any
   whitespace at the start or end of *module*.
 
