@@ -9788,6 +9788,19 @@ class AnnotatedTests(BaseTestCase):
         self.assertIs(type(field_c2.__metadata__[0]), float)
         self.assertIs(type(field_c3.__metadata__[0]), bool)
 
+    def test_forwardref_partial_evaluation(self):
+        # Test that Annotated partially evaluates if it contains a ForwardRef
+        # See: https://github.com/python/cpython/issues/137706
+        def f(x: Annotated[undefined, '']): pass
+
+        ann = annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF)
+
+        # Test that the attributes are retrievable from the partially evaluated annotation
+        x_ann = ann['x']
+        self.assertIs(get_origin(x_ann), Annotated)
+        self.assertEqual(x_ann.__origin__, EqualToForwardRef('undefined', owner=f))
+        self.assertEqual(x_ann.__metadata__, ('',))
+
 
 class TypeAliasTests(BaseTestCase):
     def test_canonical_usage_with_variable_annotation(self):
