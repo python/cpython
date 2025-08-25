@@ -4648,7 +4648,19 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict
     }
 
     type->tp_basicsize = slotoffset;
-    type->tp_itemsize = ctx->base->tp_itemsize;
+
+    // Only inherit tp_itemsize if this type defines its own __slots__
+    // Classes that don't define __slots__ but inherit from __slots__ classes
+    // should not inherit tp_itemsize as they don't use variable-size items
+    if (et->ht_slots != NULL && PyTuple_GET_SIZE(et->ht_slots) > 0) {
+        // This type defines its own __slots__, inherit tp_itemsize
+        type->tp_itemsize = ctx->base->tp_itemsize;
+    }
+    else {
+        // This type doesn't define __slots__, don't inherit tp_itemsize
+        type->tp_itemsize = 0;
+    }
+
     type->tp_members = _PyHeapType_GET_MEMBERS(et);
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
