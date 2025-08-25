@@ -1298,12 +1298,12 @@ _curses.window.attron
     attr: long
     /
 
-Add attribute attr from the "background" set.
+Add attribute attr to the "background" set.
 [clinic start generated code]*/
 
 static PyObject *
 _curses_window_attron_impl(PyCursesWindowObject *self, long attr)
-/*[clinic end generated code: output=7afea43b237fa870 input=5a88fba7b1524f32]*/
+/*[clinic end generated code: output=7afea43b237fa870 input=b57f824e1bf58326]*/
 {
     int rtn = wattron(self->win, (attr_t)attr);
     return curses_window_check_err(self, rtn, "wattron", "attron");

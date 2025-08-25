@@ -1084,7 +1084,14 @@ references to all its items, so when item 1 is replaced, it has to dispose of
 the original item 1.  Now let's suppose the original item 1 was an instance of a
 user-defined class, and let's further suppose that the class defined a
 :meth:`!__del__` method.  If this class instance has a reference count of 1,
-disposing of it will call its :meth:`!__del__` method.
+disposing of it will call its :meth:`!__del__` method. Internally,
+:c:func:`PyList_SetItem` calls :c:func:`Py_DECREF` on the replaced item,
+which invokes replaced item's corresponding
+:c:member:`~PyTypeObject.tp_dealloc` function. During
+deallocation, :c:member:`~PyTypeObject.tp_dealloc` calls
+:c:member:`~PyTypeObject.tp_finalize`, which is mapped to the
+:meth:`!__del__` method for class instances (see :pep:`442`). This entire
+sequence happens synchronously within the :c:func:`PyList_SetItem` call.
 
 Since it is written in Python, the :meth:`!__del__` method can execute arbitrary
 Python code.  Could it perhaps do something to invalidate the reference to
