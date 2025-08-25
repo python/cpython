@@ -1812,7 +1812,7 @@ class OtherTests(unittest.TestCase):
 
             with zipfile.ZipFile(TESTFN, "r") as zf:
                 zip_info = zf.getinfo("test_source_date_epoch.txt")
-                get_time = time.localtime(int(os.environ['SOURCE_DATE_EPOCH']))[:6]
+                get_time = time.gmtime(int(os.environ['SOURCE_DATE_EPOCH']))[:6]
                 # Compare each element of the date_time tuple
                 # Allow for a 1-second difference
                 for z_time, g_time in zip(zip_info.date_time, get_time):
