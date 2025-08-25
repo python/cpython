@@ -1,0 +1,1 @@
+prevent infinite traceback loop on Ctrl-C for strace
