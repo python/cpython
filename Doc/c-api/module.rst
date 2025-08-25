@@ -600,7 +600,7 @@ or code that creates modules dynamically.
 
    Add a string constant to *module* as *name*.  This convenience function can be
    used from the module's initialization function.  The string *value* must be
-   ``NULL``-terminated.
+   ``NULL``-terminated and UTF-8 encoded.
    Return ``-1`` with an exception set on error, ``0`` on success.
 
    This is a convenience function that calls
@@ -618,7 +618,13 @@ or code that creates modules dynamically.
 
 .. c:macro:: PyModule_AddStringMacro(module, macro)
 
-   Add a string constant to *module*.
+   Add a string constant to *module*. The name and the value are taken from
+   *macro*. For example ``PyModule_AddStrMacro(module, STRINGLIB_TYPE_NAME)``
+   adds the string constant *STRINGLIB_TYPE_NAME* with the value of
+   *STRINGLIB_TYPE_NAME* to *module*. The string *value* must be
+   ``NULL``-terminated and UTF-8 encoded.
+   Return ``-1`` with an exception set on error, ``0`` on success.
+
 
 .. c:function:: int PyModule_AddType(PyObject *module, PyTypeObject *type)
 
