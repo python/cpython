@@ -2168,8 +2168,9 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                             Py_TYPE(annotations)->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                             "__annotate__() must return a dict, not %T",
+                             annotations);
                 Py_DECREF(annotations);
                 Py_DECREF(annotate);
                 Py_DECREF(dict);
@@ -3510,10 +3511,8 @@ mro_check(PyTypeObject *type, PyObject *mro)
     for (i = 0; i < n; i++) {
         PyObject *obj = PyTuple_GET_ITEM(mro, i);
         if (!PyType_Check(obj)) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "mro() returned a non-class ('%.500s')",
-                Py_TYPE(obj)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                         "%N.mro() returned a non-class ('%T')", type, obj);
             return -1;
         }
         PyTypeObject *base = (PyTypeObject*)obj;
@@ -3521,8 +3520,8 @@ mro_check(PyTypeObject *type, PyObject *mro)
         if (!is_subtype_with_mro(lookup_tp_mro(solid), solid, solid_base(base))) {
             PyErr_Format(
                 PyExc_TypeError,
-                "mro() returned base with unsuitable layout ('%.500s')",
-                base->tp_name);
+                "%N.mro() returned base with unsuitable layout ('%N')",
+                type, base);
             return -1;
         }
     }
@@ -4040,26 +4039,15 @@ subtype_getweakref(PyObject *obj, void *context)
     return Py_NewRef(result);
 }
 
-/* Three variants on the subtype_getsets list. */
-
-static PyGetSetDef subtype_getsets_full[] = {
-    {"__dict__", subtype_dict, subtype_setdict,
-     PyDoc_STR("dictionary for instance variables")},
-    {"__weakref__", subtype_getweakref, NULL,
-     PyDoc_STR("list of weak references to the object")},
-    {0}
+/* getset definitions for common descriptors */
+static PyGetSetDef subtype_getset_dict = {
+    "__dict__", subtype_dict, subtype_setdict,
+    PyDoc_STR("dictionary for instance variables"),
 };
 
-static PyGetSetDef subtype_getsets_dict_only[] = {
-    {"__dict__", subtype_dict, subtype_setdict,
-     PyDoc_STR("dictionary for instance variables")},
-    {0}
-};
-
-static PyGetSetDef subtype_getsets_weakref_only[] = {
-    {"__weakref__", subtype_getweakref, NULL,
-     PyDoc_STR("list of weak references to the object")},
-    {0}
+static PyGetSetDef subtype_getset_weakref = {
+    "__weakref__", subtype_getweakref, NULL,
+    PyDoc_STR("list of weak references to the object"),
 };
 
 static int
@@ -4595,10 +4583,36 @@ type_new_classmethod(PyObject *dict, PyObject *attr)
     return 0;
 }
 
+/* Add __dict__ or __weakref__ descriptor */
+static int
+type_add_common_descriptor(PyInterpreterState *interp,
+                           PyObject **cache,
+                           PyGetSetDef *getset_def,
+                           PyObject *dict)
+{
+#ifdef Py_GIL_DISABLED
+    PyMutex_Lock(&interp->cached_objects.descriptor_mutex);
+#endif
+    PyObject *descr = *cache;
+    if (!descr) {
+        descr = PyDescr_NewGetSet(&PyBaseObject_Type, getset_def);
+        *cache = descr;
+    }
+#ifdef Py_GIL_DISABLED
+    PyMutex_Unlock(&interp->cached_objects.descriptor_mutex);
+#endif
+    if (!descr) {
+        return -1;
+    }
+    if (PyDict_SetDefaultRef(dict, PyDescr_NAME(descr), descr, NULL) < 0) {
+        return -1;
+    }
+    return 0;
+}
 
 /* Add descriptors for custom slots from __slots__, or for __dict__ */
 static int
-type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
+type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type, PyObject *dict)
 {
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     Py_ssize_t slotoffset = ctx->base->tp_basicsize;
@@ -4636,6 +4650,30 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
     type->tp_basicsize = slotoffset;
     type->tp_itemsize = ctx->base->tp_itemsize;
     type->tp_members = _PyHeapType_GET_MEMBERS(et);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
+    if (type->tp_dictoffset) {
+        if (type_add_common_descriptor(
+            interp,
+            &interp->cached_objects.dict_descriptor,
+            &subtype_getset_dict,
+            dict) < 0)
+        {
+            return -1;
+        }
+    }
+    if (type->tp_weaklistoffset) {
+        if (type_add_common_descriptor(
+            interp,
+            &interp->cached_objects.weakref_descriptor,
+            &subtype_getset_weakref,
+            dict) < 0)
+        {
+            return -1;
+        }
+    }
+
     return 0;
 }
 
@@ -4643,18 +4681,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
 static void
 type_new_set_slots(const type_new_ctx *ctx, PyTypeObject *type)
 {
-    if (type->tp_weaklistoffset && type->tp_dictoffset) {
-        type->tp_getset = subtype_getsets_full;
-    }
-    else if (type->tp_weaklistoffset && !type->tp_dictoffset) {
-        type->tp_getset = subtype_getsets_weakref_only;
-    }
-    else if (!type->tp_weaklistoffset && type->tp_dictoffset) {
-        type->tp_getset = subtype_getsets_dict_only;
-    }
-    else {
-        type->tp_getset = NULL;
-    }
+    type->tp_getset = NULL;
 
     /* Special case some slots */
     if (type->tp_dictoffset != 0 || ctx->nslot > 0) {
@@ -4759,7 +4786,7 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
 
-    if (type_new_descriptors(ctx, type) < 0) {
+    if (type_new_descriptors(ctx, type, dict) < 0) {
         return -1;
     }
 
@@ -6640,6 +6667,14 @@ void
 _PyStaticType_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
 {
     fini_static_type(interp, type, 1, _Py_IsMainInterpreter(interp));
+}
+
+
+void
+_PyTypes_FiniCachedDescriptors(PyInterpreterState *interp)
+{
+    Py_CLEAR(interp->cached_objects.dict_descriptor);
+    Py_CLEAR(interp->cached_objects.weakref_descriptor);
 }
 
 
@@ -10419,9 +10454,8 @@ slot_nb_bool(PyObject *self)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "__bool__ should return "
-                     "bool, returned %s",
-                     Py_TYPE(value)->tp_name);
+                     "%T.__bool__() must return a bool, not %T",
+                     self, value);
         result = -1;
     }
     Py_DECREF(value);
@@ -10901,7 +10935,8 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
     }
     if (!PyMemoryView_Check(ret)) {
         PyErr_Format(PyExc_TypeError,
-                     "__buffer__ returned non-memoryview object");
+                     "%T.__buffer__() must return a memoryview, not %T",
+                     self, ret);
         goto fail;
     }
 
