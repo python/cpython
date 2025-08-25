@@ -258,15 +258,6 @@ Dictionary Objects
    value represents offsets within the internal dictionary structure, and
    since the structure is sparse, the offsets are not consecutive.
 
-   .. note::
-
-      On the :term:`free threaded <free threading>` build, this function can be used safely inside
-      a critical section. However, the references returned for *pkey* and
-      *pvalue* are :term:`borrowed <borrowed reference>` and only valid while the critical section is
-      held. If you need to use these objects outside the critical section or when the critical section
-      can be suspended, create :term:`strong references <strong reference>` (for example, with
-      :c:func:`Py_NewRef`).
-
    For example::
 
       PyObject *key, *value;
@@ -303,6 +294,15 @@ Dictionary Objects
    build without external synchronization.  You can use
    :c:macro:`Py_BEGIN_CRITICAL_SECTION` to lock the dictionary while iterating
    over it::
+
+   .. note::
+
+      On the :term:`free threaded <free threading>` build, this function can be used safely inside
+      a critical section. However, the references returned for *pkey* and
+      *pvalue* are :term:`borrowed <borrowed reference>` and only valid while the critical section is
+      held. If you need to use these objects outside the critical section or when the critical section
+      can be suspended, create :term:`strong references <strong reference>` (for example, with
+      :c:func:`Py_NewRef`).
 
       Py_BEGIN_CRITICAL_SECTION(self->dict);
       while (PyDict_Next(self->dict, &pos, &key, &value)) {
