@@ -1259,17 +1259,18 @@ class _SubParsersAction(Action):
             if alias in self._name_parser_map:
                 raise ValueError(f'conflicting subparser alias: {alias}')
 
-        # create a pseudo-action to hold the choice help
-        if 'help' in kwargs:
-            help = kwargs.pop('help')
-            choice_action = self._ChoicesPseudoAction(name, aliases, help)
-            self._choices_actions.append(choice_action)
-        else:
-            choice_action = None
+        help_provided = 'help' in kwargs
+        help_text = kwargs.pop('help', None) if help_provided else None
 
-        # create the parser and add it to the map
+        # Set description default ONLY if:
+        if 'description' not in kwargs and help_text is not None:
+            kwargs['description'] = help_text
+
+        # Create the parser and pseudo-action
         parser = self._parser_class(**kwargs)
-        if choice_action is not None:
+        if help_provided:
+            choice_action = self._ChoicesPseudoAction(name, aliases, help_text)
+            self._choices_actions.append(choice_action)
             parser._check_help(choice_action)
         self._name_parser_map[name] = parser
 

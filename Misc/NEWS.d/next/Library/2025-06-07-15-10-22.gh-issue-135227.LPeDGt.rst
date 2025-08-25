@@ -1,0 +1,3 @@
+The :meth:`!add_parser` method of the special action object returned by
+:meth:`argparse.ArgumentParser.add_subparsers` now uses the *help* value as
+the default *description* if none is provided. Patch by Swayam.
