@@ -2,11 +2,13 @@ import itertools
 import os
 import sys
 import unittest
+import errno
+import termios
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
 
 from unittest import TestCase
-from unittest.mock import MagicMock, call, patch, ANY
+from unittest.mock import MagicMock, call, patch, ANY, Mock
 
 from .support import handle_all_events, code_to_events
 
@@ -303,3 +305,54 @@ class TestConsole(TestCase):
             self.assertIsInstance(console.getheightwidth(), tuple)
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
+
+
+class TestUnixConsoleEIOHandling(TestCase):
+
+    @patch('_pyrepl.unix_console.tcsetattr')
+    @patch('_pyrepl.unix_console.tcgetattr')
+    def test_eio_error_handling_in_prepare(self, mock_tcgetattr, mock_tcsetattr):
+        mock_termios = Mock()
+        mock_termios.iflag = 0
+        mock_termios.oflag = 0
+        mock_termios.cflag = 0
+        mock_termios.lflag = 0
+        mock_termios.cc = [0] * 32
+        mock_termios.copy.return_value = mock_termios
+        mock_tcgetattr.return_value = mock_termios
+
+        mock_tcsetattr.side_effect = termios.error(errno.EIO, "Input/output error")
+
+        console = UnixConsole(term="xterm")
+
+        try:
+            console.prepare()
+        except termios.error as e:
+            if e.args[0] == errno.EIO:
+                self.fail("EIO error should have been handled gracefully in prepare()")
+            raise
+
+    @patch('_pyrepl.unix_console.tcsetattr')
+    @patch('_pyrepl.unix_console.tcgetattr')
+    def test_eio_error_handling_in_restore(self, mock_tcgetattr, mock_tcsetattr):
+
+        mock_termios = Mock()
+        mock_termios.iflag = 0
+        mock_termios.oflag = 0
+        mock_termios.cflag = 0
+        mock_termios.lflag = 0
+        mock_termios.cc = [0] * 32
+        mock_termios.copy.return_value = mock_termios
+        mock_tcgetattr.return_value = mock_termios
+
+        console = UnixConsole(term="xterm")
+        console.prepare()
+
+        mock_tcsetattr.side_effect = termios.error(errno.EIO, "Input/output error")
+
+        try:
+            console.restore()
+        except termios.error as e:
+            if e.args[0] == errno.EIO:
+                self.fail("EIO error should have been handled gracefully in restore()")
+            raise
