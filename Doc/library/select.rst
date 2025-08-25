@@ -158,6 +158,14 @@ The module defines the following:
       library, and does not handle file descriptors that don't originate from
       WinSock.
 
+   .. note::
+
+      :c:func:`!select` may not work with file objects that
+      internally buffer data because select is only aware of data in the
+      file descriptor provided by the kernel. However, :term:`file-like objects <file object>` often
+      contain a reference to a file descriptor via a :meth:`!fileno` method
+      which will work with select.
+
    .. versionchanged:: 3.5
       The function is now retried with a recomputed timeout when interrupted by
       a signal, except if the signal handler raises an exception (see
