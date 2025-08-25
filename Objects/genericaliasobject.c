@@ -793,8 +793,8 @@ static PyMethodDef ga_methods[] = {
 };
 
 static PyMemberDef ga_members[] = {
-    {"__origin__", _Py_T_OBJECT, offsetof(gaobject, origin), Py_READONLY},
-    {"__args__", _Py_T_OBJECT, offsetof(gaobject, args), Py_READONLY},
+    {"__origin__", Py_T_OBJECT_EX, offsetof(gaobject, origin), Py_READONLY},
+    {"__args__", Py_T_OBJECT_EX, offsetof(gaobject, args), Py_READONLY},
     {"__unpacked__", Py_T_BOOL, offsetof(gaobject, starred), Py_READONLY},
     {0}
 };
