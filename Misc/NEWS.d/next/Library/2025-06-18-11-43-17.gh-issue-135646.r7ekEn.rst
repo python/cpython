@@ -1,0 +1,1 @@
+Raise consistent :exc:`NameError` exceptions in :func:`annotationlib.ForwardRef.evaluate`

@@ -4,6 +4,7 @@ import queue
 import time
 import unittest
 import sys
+import io
 from concurrent.futures._base import BrokenExecutor
 from concurrent.futures.process import _check_system_limits
 
@@ -19,6 +20,10 @@ INITIALIZER_STATUS = 'uninitialized'
 def init(x):
     global INITIALIZER_STATUS
     INITIALIZER_STATUS = x
+    # InterpreterPoolInitializerTest.test_initializer fails
+    # if we don't have a LOAD_GLOBAL.  (It could be any global.)
+    # We will address this separately.
+    INITIALIZER_STATUS
 
 def get_init_status():
     return INITIALIZER_STATUS
@@ -124,7 +129,7 @@ class FailingInitializerResourcesTest(unittest.TestCase):
         except NotImplementedError:
             self.skipTest("ProcessPoolExecutor unavailable on this system")
 
-        runner = unittest.TextTestRunner()
+        runner = unittest.TextTestRunner(stream=io.StringIO())
         runner.run(test_class('test_initializer'))
 
         # GH-104090:
@@ -138,6 +143,7 @@ class FailingInitializerResourcesTest(unittest.TestCase):
     def test_spawn(self):
         self._test(ProcessPoolSpawnFailingInitializerTest)
 
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_forkserver(self):
         self._test(ProcessPoolForkserverFailingInitializerTest)
 

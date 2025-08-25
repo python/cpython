@@ -46,10 +46,6 @@ In addition to enabling the debug mode, consider also:
 
 When the debug mode is enabled:
 
-* asyncio checks for :ref:`coroutines that were not awaited
-  <asyncio-coroutine-not-scheduled>` and logs them; this mitigates
-  the "forgotten await" pitfall.
-
 * Many non-threadsafe asyncio APIs (such as :meth:`loop.call_soon` and
   :meth:`loop.call_at` methods) raise an exception if they are called
   from a wrong thread.
@@ -103,7 +99,8 @@ To handle signals the event loop must be
 run in the main thread.
 
 The :meth:`loop.run_in_executor` method can be used with a
-:class:`concurrent.futures.ThreadPoolExecutor` to execute
+:class:`concurrent.futures.ThreadPoolExecutor` or
+:class:`~concurrent.futures.InterpreterPoolExecutor` to execute
 blocking code in a different OS thread without blocking the OS thread
 that the event loop runs in.
 
@@ -128,7 +125,8 @@ if a function performs a CPU-intensive calculation for 1 second,
 all concurrent asyncio Tasks and IO operations would be delayed
 by 1 second.
 
-An executor can be used to run a task in a different thread or even in
+An executor can be used to run a task in a different thread,
+including in a different interpreter, or even in
 a different process to avoid blocking the OS thread with the
 event loop.  See the :meth:`loop.run_in_executor` method for more
 details.

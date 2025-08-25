@@ -1,2 +1,0 @@
-Add ``--bisect`` option to regrtest test runner: run failed tests with
-``test.bisect_cmd`` to identify failing tests. Patch by Victor Stinner.

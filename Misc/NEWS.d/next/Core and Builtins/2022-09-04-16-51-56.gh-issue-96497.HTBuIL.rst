@@ -1,2 +1,0 @@
-Fix incorrect resolution of mangled class variables used in assignment
-expressions in comprehensions.

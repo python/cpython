@@ -1,3 +1,0 @@
-Fix improper decreasing the reference count for ``None`` argument in
-:class:`property` methods :meth:`~property.getter`, :meth:`~property.setter`
-and :meth:`~property.deleter`.

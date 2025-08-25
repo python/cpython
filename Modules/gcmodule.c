@@ -8,6 +8,7 @@
 #include "pycore_gc.h"
 #include "pycore_object.h"      // _PyObject_IS_GC()
 #include "pycore_pystate.h"     // _PyInterpreterState_GET()
+#include "pycore_tuple.h"       // _PyTuple_FromArray()
 
 typedef struct _gc_runtime_state GCState;
 
@@ -158,17 +159,12 @@ gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
 {
     GCState *gcstate = get_gc_state();
 
-    gcstate->generations[0].threshold = threshold0;
+    gcstate->young.threshold = threshold0;
     if (group_right_1) {
-        gcstate->generations[1].threshold = threshold1;
+        gcstate->old[0].threshold = threshold1;
     }
     if (group_right_2) {
-        gcstate->generations[2].threshold = threshold2;
-
-        /* generations higher than 2 get the same threshold */
-        for (int i = 3; i < NUM_GENERATIONS; i++) {
-            gcstate->generations[i].threshold = gcstate->generations[2].threshold;
-        }
+        gcstate->old[1].threshold = threshold2;
     }
     Py_RETURN_NONE;
 }
@@ -185,9 +181,9 @@ gc_get_threshold_impl(PyObject *module)
 {
     GCState *gcstate = get_gc_state();
     return Py_BuildValue("(iii)",
-                         gcstate->generations[0].threshold,
-                         gcstate->generations[1].threshold,
-                         gcstate->generations[2].threshold);
+                         gcstate->young.threshold,
+                         gcstate->old[0].threshold,
+                         0);
 }
 
 /*[clinic input]
@@ -207,34 +203,34 @@ gc_get_count_impl(PyObject *module)
     struct _gc_thread_state *gc = &tstate->gc;
 
     // Flush the local allocation count to the global count
-    _Py_atomic_add_int(&gcstate->generations[0].count, (int)gc->alloc_count);
+    _Py_atomic_add_int(&gcstate->young.count, (int)gc->alloc_count);
     gc->alloc_count = 0;
 #endif
 
     return Py_BuildValue("(iii)",
-                         gcstate->generations[0].count,
-                         gcstate->generations[1].count,
-                         gcstate->generations[2].count);
+                         gcstate->young.count,
+                         gcstate->old[gcstate->visited_space].count,
+                         gcstate->old[gcstate->visited_space^1].count);
 }
 
 /*[clinic input]
 gc.get_referrers
 
-    *objs as args: object
+    *objs: tuple
 
 Return the list of objects that directly refer to any of 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referrers_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=296a09587f6a86b5 input=bae96961b14a0922]*/
+gc_get_referrers_impl(PyObject *module, PyObject *objs)
+/*[clinic end generated code: output=929d6dff26f609b9 input=9102be7ebee69ee3]*/
 {
-    if (PySys_Audit("gc.get_referrers", "(O)", args) < 0) {
+    if (PySys_Audit("gc.get_referrers", "(O)", objs) < 0) {
         return NULL;
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetReferrers(interp, args);
+    return _PyGC_GetReferrers(interp, objs);
 }
 
 /* Append obj to list; return true if error (out of memory), false if OK. */
@@ -268,27 +264,28 @@ append_referrents(PyObject *result, PyObject *args)
 /*[clinic input]
 gc.get_referents
 
-    *objs as args: object
+    *objs: tuple
 
 Return the list of objects that are directly referred to by 'objs'.
 [clinic start generated code]*/
 
 static PyObject *
-gc_get_referents_impl(PyObject *module, PyObject *args)
-/*[clinic end generated code: output=d47dc02cefd06fe8 input=b3ceab0c34038cbf]*/
+gc_get_referents_impl(PyObject *module, PyObject *objs)
+/*[clinic end generated code: output=6dfde40cd1588e1d input=55c078a6d0248fe0]*/
 {
-    if (PySys_Audit("gc.get_referents", "(O)", args) < 0) {
+    if (PySys_Audit("gc.get_referents", "(O)", objs) < 0) {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *result = PyList_New(0);
 
-    if (result == NULL)
+    if (result == NULL) {
         return NULL;
+    }
 
     // NOTE: stop the world is a no-op in default build
     _PyEval_StopTheWorld(interp);
-    int err = append_referrents(result, args);
+    int err = append_referrents(result, objs);
     _PyEval_StartTheWorld(interp);
 
     if (err < 0) {
@@ -299,6 +296,7 @@ gc_get_referents_impl(PyObject *module, PyObject *args)
 }
 
 /*[clinic input]
+@permit_long_summary
 gc.get_objects
     generation: Py_ssize_t(accept={int, NoneType}, c_default="-1") = None
         Generation to extract the objects from.
@@ -311,7 +309,7 @@ that are in that generation.
 
 static PyObject *
 gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
-/*[clinic end generated code: output=48b35fea4ba6cb0e input=ef7da9df9806754c]*/
+/*[clinic end generated code: output=48b35fea4ba6cb0e input=a887f1d9924be7cf]*/
 {
     if (PySys_Audit("gc.get_objects", "n", generation) < 0) {
         return NULL;
@@ -331,7 +329,7 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    return _PyGC_GetObjects(interp, generation);
+    return _PyGC_GetObjects(interp, (int)generation);
 }
 
 /*[clinic input]
@@ -417,6 +415,7 @@ gc_is_finalized_impl(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
@@ -428,7 +427,7 @@ which can cause copy-on-write.
 
 static PyObject *
 gc_freeze_impl(PyObject *module)
-/*[clinic end generated code: output=502159d9cdc4c139 input=b602b16ac5febbe5]*/
+/*[clinic end generated code: output=502159d9cdc4c139 input=11fb59b0a75dcf3d]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyGC_Freeze(interp);
@@ -540,6 +539,7 @@ gcmodule_exec(PyObject *module)
 static PyModuleDef_Slot gcmodule_slots[] = {
     {Py_mod_exec, gcmodule_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

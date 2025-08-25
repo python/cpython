@@ -70,8 +70,8 @@ Select Customize to review current options.</String>
   <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
   <String Id="Include_pipLabel">&amp;pip</String>
   <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
-  <String Id="Include_tcltkLabel">tcl/tk and &amp;IDLE</String>
-  <String Id="Include_tcltkHelpLabel">Installs tkinter and the IDLE development environment.</String>
+  <String Id="Include_tcltkLabel">Tcl/Tk, turtle and &amp;IDLE</String>
+  <String Id="Include_tcltkHelpLabel">Installs tkinter, turtle and the IDLE development environment.</String>
   <String Id="Include_testLabel">Python &amp;test suite</String>
   <String Id="Include_testHelpLabel">Installs the standard library test suite.</String>
   <String Id="Include_launcherLabel">py &amp;launcher</String>
@@ -88,10 +88,11 @@ Select Customize to review current options.</String>
   <String Id="InstallAllUsersLabel">Install Python [ShortVersion] for &amp;all users</String>
   <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires admin privileges)</String>
   <String Id="ShortInstallLauncherAllUsersLabel">Use admin privi&amp;leges when installing py.exe</String>
+  <String Id="ShortInstallLauncherBlockedLabel">Python Launcher is already installed</String>
   <String Id="PrecompileLabel">&amp;Precompile standard library</String>
   <String Id="Include_symbolsLabel">Download debugging &amp;symbols</String>
   <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2017 or later)</String>
-  <String Id="Include_freethreadedLabel">Download &amp;free-threaded binaries (experimental)</String>
+  <String Id="Include_freethreadedLabel">Download &amp;free-threaded binaries</String>
   
   <String Id="ProgressHeader">[ActionLikeInstallation] Progress</String>
   <String Id="ProgressLabel">[ActionLikeInstalling]:</String>
@@ -122,9 +123,11 @@ Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discus
   <String Id="FailureRestartText">You must restart your computer to complete the rollback of the software.</String>
   <String Id="FailureRestartButton">&amp;Restart</String>
   <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
-  <String Id="FailureOldOS">At least Windows 8.1 or Windows Server 2012 are required to install [WixBundleName]
+  <String Id="FailureOldOS">At least Windows 10 or Windows Server 2016 are required to install [WixBundleName]
 
 Visit &lt;a href="https://www.python.org/downloads/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
   <String Id="SuccessMaxPathButton">Disable path length limit</String>
   <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
+
+  <String Id="DeprecationMessage">NOTE: This installer is being retired and will no longer be available after Python 3.15. &lt;a href="https://docs.python.org/using/windows"&gt;More info&lt;/a&gt;</String>
 </WixLocalization>

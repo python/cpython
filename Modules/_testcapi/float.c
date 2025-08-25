@@ -6,71 +6,6 @@
 #include "clinic/float.c.h"
 
 
-static PyObject *
-float_check(PyObject *Py_UNUSED(module), PyObject *obj)
-{
-    NULLABLE(obj);
-    return PyLong_FromLong(PyFloat_Check(obj));
-}
-
-static PyObject *
-float_checkexact(PyObject *Py_UNUSED(module), PyObject *obj)
-{
-    NULLABLE(obj);
-    return PyLong_FromLong(PyFloat_CheckExact(obj));
-}
-
-static PyObject *
-float_fromstring(PyObject *Py_UNUSED(module), PyObject *obj)
-{
-    NULLABLE(obj);
-    return PyFloat_FromString(obj);
-}
-
-static PyObject *
-float_fromdouble(PyObject *Py_UNUSED(module), PyObject *obj)
-{
-    double d;
-
-    if (!PyArg_Parse(obj, "d", &d)) {
-        return NULL;
-    }
-
-    return PyFloat_FromDouble(d);
-}
-
-static PyObject *
-float_asdouble(PyObject *Py_UNUSED(module), PyObject *obj)
-{
-    double d;
-
-    NULLABLE(obj);
-    d = PyFloat_AsDouble(obj);
-    if (d == -1. && PyErr_Occurred()) {
-        return NULL;
-    }
-
-    return PyFloat_FromDouble(d);
-}
-
-static PyObject *
-float_getinfo(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(arg))
-{
-    return PyFloat_GetInfo();
-}
-
-static PyObject *
-float_getmax(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(arg))
-{
-    return PyFloat_FromDouble(PyFloat_GetMax());
-}
-
-static PyObject *
-float_getmin(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(arg))
-{
-    return PyFloat_FromDouble(PyFloat_GetMin());
-}
-
 /*[clinic input]
 module _testcapi
 [clinic start generated code]*/
@@ -164,17 +99,68 @@ _testcapi_float_unpack_impl(PyObject *module, const char *data,
     return PyFloat_FromDouble(d);
 }
 
+
+/* Test PyOS_string_to_double. */
+static PyObject *
+test_string_to_double(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    double result;
+    const char *msg;
+
+#define CHECK_STRING(STR, expected) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            return NULL; \
+        } \
+        if (result != (double)expected) { \
+            msg = "conversion of " STR " to float failed"; \
+            goto fail; \
+        } \
+    } while (0)
+
+#define CHECK_INVALID(STR) \
+    do { \
+        result = PyOS_string_to_double(STR, NULL, NULL); \
+        if (result == -1.0 && PyErr_Occurred()) { \
+            if (PyErr_ExceptionMatches(PyExc_ValueError)) { \
+                PyErr_Clear(); \
+            } \
+            else { \
+                return NULL; \
+            } \
+        } \
+        else { \
+            msg = "conversion of " STR " didn't raise ValueError"; \
+            goto fail; \
+        } \
+    } while (0)
+
+    CHECK_STRING("0.1", 0.1);
+    CHECK_STRING("1.234", 1.234);
+    CHECK_STRING("-1.35", -1.35);
+    CHECK_STRING(".1e01", 1.0);
+    CHECK_STRING("2.e-2", 0.02);
+
+    CHECK_INVALID(" 0.1");
+    CHECK_INVALID("\t\n-3");
+    CHECK_INVALID(".123 ");
+    CHECK_INVALID("3\n");
+    CHECK_INVALID("123abc");
+
+    Py_RETURN_NONE;
+  fail:
+    PyErr_Format(PyExc_AssertionError, "test_string_to_double: %s", msg);
+    return NULL;
+#undef CHECK_STRING
+#undef CHECK_INVALID
+}
+
+
 static PyMethodDef test_methods[] = {
-    {"float_check", float_check, METH_O},
-    {"float_checkexact", float_checkexact, METH_O},
-    {"float_fromstring", float_fromstring, METH_O},
-    {"float_fromdouble", float_fromdouble, METH_O},
-    {"float_asdouble", float_asdouble, METH_O},
-    {"float_getinfo", float_getinfo, METH_NOARGS},
-    {"float_getmax", float_getmax, METH_NOARGS},
-    {"float_getmin", float_getmin, METH_NOARGS},
     _TESTCAPI_FLOAT_PACK_METHODDEF
     _TESTCAPI_FLOAT_UNPACK_METHODDEF
+    {"test_string_to_double", test_string_to_double, METH_NOARGS},
     {NULL},
 };
 

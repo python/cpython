@@ -10,7 +10,15 @@ try:
 except ImportError:
     SimpleQueue = None
 
-__all__ = ['Empty', 'Full', 'Queue', 'PriorityQueue', 'LifoQueue', 'SimpleQueue']
+__all__ = [
+    'Empty',
+    'Full',
+    'ShutDown',
+    'Queue',
+    'PriorityQueue',
+    'LifoQueue',
+    'SimpleQueue',
+]
 
 
 try:
@@ -71,9 +79,6 @@ class Queue:
         If a join() is currently blocking, it will resume when all items
         have been processed (meaning that a task_done() call was received
         for every item that had been put() into the queue).
-
-        shutdown(immediate=True) calls task_done() for each remaining item in
-        the queue.
 
         Raises a ValueError if called more times than there were items
         placed in the queue.
@@ -231,8 +236,11 @@ class Queue:
         By default, gets will only raise once the queue is empty. Set
         'immediate' to True to make gets raise immediately instead.
 
-        All blocked callers of put() will be unblocked, and also get()
-        and join() if 'immediate'.
+        All blocked callers of put() and get() will be unblocked.
+
+        If 'immediate', the queue is drained and unfinished tasks
+        is reduced by the number of drained tasks.  If unfinished tasks
+        is reduced to zero, callers of Queue.join are unblocked.
         '''
         with self.mutex:
             self.is_shutdown = True
@@ -241,9 +249,10 @@ class Queue:
                     self._get()
                     if self.unfinished_tasks > 0:
                         self.unfinished_tasks -= 1
-                self.not_empty.notify_all()
                 # release all blocked threads in `join()`
                 self.all_tasks_done.notify_all()
+            # All getters need to re-check queue-empty to raise ShutDown
+            self.not_empty.notify_all()
             self.not_full.notify_all()
 
     # Override these methods to implement other queue organizations

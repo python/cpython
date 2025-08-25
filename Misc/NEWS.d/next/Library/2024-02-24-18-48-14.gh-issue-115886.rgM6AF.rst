@@ -1,2 +1,0 @@
-Fix silent truncation of the name with an embedded null character in
-:class:`multiprocessing.shared_memory.SharedMemory`.

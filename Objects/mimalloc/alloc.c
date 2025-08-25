@@ -237,7 +237,7 @@ static inline bool mi_check_is_double_free(const mi_page_t* page, const mi_block
   if (((uintptr_t)n & (MI_INTPTR_SIZE-1))==0 &&  // quick check: aligned pointer?
       (n==NULL || mi_is_in_same_page(block, n))) // quick check: in same page or NULL?
   {
-    // Suspicous: decoded value a in block is in the same page (or NULL) -- maybe a double free?
+    // Suspicious: decoded value a in block is in the same page (or NULL) -- maybe a double free?
     // (continue in separate function to improve code generation)
     is_double_free = mi_check_is_double_freex(page, block);
   }
@@ -609,7 +609,10 @@ bool _mi_free_delayed_block(mi_block_t* block) {
   // get segment and page
   const mi_segment_t* const segment = _mi_ptr_segment(block);
   mi_assert_internal(_mi_ptr_cookie(segment) == segment->cookie);
+#ifndef Py_GIL_DISABLED
+  // The GC traverses heaps of other threads, which can trigger this assert.
   mi_assert_internal(_mi_thread_id() == segment->thread_id);
+#endif
   mi_page_t* const page = _mi_segment_page_of(segment, block);
 
   // Clear the no-delayed flag so delayed freeing is used again for this page.

@@ -1,5 +1,5 @@
-:mod:`enum` --- Support for enumerations
-========================================
+:mod:`!enum` --- Support for enumerations
+=========================================
 
 .. module:: enum
    :synopsis: Implementation of an enumeration class.
@@ -44,7 +44,7 @@ using function-call syntax::
    ...     BLUE = 3
 
    >>> # functional syntax
-   >>> Color = Enum('Color', ['RED', 'GREEN', 'BLUE'])
+   >>> Color = Enum('Color', [('RED', 1), ('GREEN', 2), ('BLUE', 3)])
 
 Even though we can use :keyword:`class` syntax to create Enums, Enums
 are not normal Python classes.  See
@@ -110,6 +110,10 @@ Module Contents
       ``KEEP`` which allows for more fine-grained control over how invalid values
       are dealt with in an enumeration.
 
+   :class:`EnumDict`
+
+      A subclass of :class:`dict` for use when subclassing :class:`EnumType`.
+
    :class:`auto`
 
       Instances are replaced with an appropriate value for Enum members.
@@ -152,6 +156,7 @@ Module Contents
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
+.. versionadded:: 3.13  ``EnumDict``
 
 ---------------
 
@@ -170,7 +175,11 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
-   .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
+   .. versionadded:: 3.11
+
+      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
+
+   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
 
@@ -201,7 +210,7 @@ Data Types
         >>> Color.RED.value in Color
         True
 
-   .. versionchanged:: 3.12
+      .. versionchanged:: 3.12
 
          Before Python 3.12, a ``TypeError`` is raised if a
          non-Enum-member is used in a containment check.
@@ -246,20 +255,6 @@ Data Types
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
 
-   .. method:: EnumType._add_alias_
-
-      Adds a new name as an alias to an existing member.  Raises a
-      :exc:`NameError` if the name is already assigned to a different member.
-
-   .. method:: EnumType._add_value_alias_
-
-      Adds a new value as an alias to an existing member.  Raises a
-      :exc:`ValueError` if the value is already linked with a different member.
-
-   .. versionadded:: 3.11
-
-      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
-
 
 .. class:: Enum
 
@@ -279,6 +274,8 @@ Data Types
          >>> Color.RED.value
          1
 
+      Value of the member, can be set in :meth:`~Enum.__new__`.
+
       .. note:: Enum member values
 
          Member values can be anything: :class:`int`, :class:`str`, etc.  If
@@ -286,13 +283,18 @@ Data Types
          appropriate value will be chosen for you.  See :class:`auto` for the
          details.
 
+         While mutable/unhashable values, such as :class:`dict`, :class:`list` or
+         a mutable :class:`~dataclasses.dataclass`, can be used, they will have a
+         quadratic performance impact during creation relative to the
+         total number of mutable/unhashable values in the enum.
+
    .. attribute:: Enum._name_
 
       Name of the member.
 
    .. attribute:: Enum._value_
 
-      Value of the member, can be set in :meth:`~object.__new__`.
+      Value of the member, can be set in :meth:`~Enum.__new__`.
 
    .. attribute:: Enum._order_
 
@@ -350,7 +352,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init__(self, \*args, \**kwds)
+   .. method:: Enum.__init__(self, *args, **kwds)
 
       By default, does nothing.  If multiple values are given in the member
       assignment, those values become separate arguments to ``__init__``; e.g.
@@ -361,7 +363,7 @@ Data Types
 
       ``Weekday.__init__()`` would be called as ``Weekday.__init__(self, 1, 'Mon')``
 
-   .. method:: Enum.__init_subclass__(cls, \**kwds)
+   .. method:: Enum.__init_subclass__(cls, **kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
       By default, does nothing.
@@ -388,20 +390,22 @@ Data Types
          >>> Build('deBUG')
          <Build.DEBUG: 'debug'>
 
-   .. method:: Enum.__new__(cls, \*args, \**kwds)
+   .. method:: Enum.__new__(cls, *args, **kwds)
 
       By default, doesn't exist.  If specified, either in the enum class
       definition or in a mixin class (such as ``int``), all values given
       in the member assignment will be passed; e.g.
 
          >>> from enum import Enum
-         >>> class MyIntEnum(Enum):
-         ...     SEVENTEEN = '1a', 16
+         >>> class MyIntEnum(int, Enum):
+         ...     TWENTYSIX = '1a', 16
 
-      results in the call ``int('1a', 16)`` and a value of ``17`` for the member.
+      results in the call ``int('1a', 16)`` and a value of ``26`` for the member.
 
-      ..note:: When writing a custom ``__new__``, do not use ``super().__new__`` --
-               call the appropriate ``__new__`` instead.
+      .. note::
+
+         When writing a custom ``__new__``, do not use ``super().__new__`` --
+         call the appropriate ``__new__`` instead.
 
    .. method:: Enum.__repr__(self)
 
@@ -456,6 +460,30 @@ Data Types
 
    .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
 
+   .. method:: Enum._add_alias_
+
+      Adds a new name as an alias to an existing member::
+
+         >>> Color.RED._add_alias_("ERROR")
+         >>> Color.ERROR
+         <Color.RED: 1>
+
+      Raises a :exc:`NameError` if the name is already assigned to a different member.
+
+      .. versionadded:: 3.13
+
+   .. method:: Enum._add_value_alias_
+
+      Adds a new value as an alias to an existing member::
+
+         >>> Color.RED._add_value_alias_(42)
+         >>> Color(42)
+         <Color.RED: 1>
+
+      Raises a :exc:`ValueError` if the value is already linked with a different member.
+
+      .. versionadded:: 3.13
+
 
 .. class:: IntEnum
 
@@ -490,16 +518,31 @@ Data Types
 
 .. class:: StrEnum
 
-   ``StrEnum`` is the same as :class:`Enum`, but its members are also strings and can be used
-   in most of the same places that a string can be used.  The result of any string
-   operation performed on or with a *StrEnum* member is not part of the enumeration.
+   *StrEnum* is the same as :class:`Enum`, but its members are also strings and
+   can be used in most of the same places that a string can be used. The result
+   of any string operation performed on or with a *StrEnum* member is not part
+   of the enumeration.
+
+   >>> from enum import StrEnum, auto
+   >>> class Color(StrEnum):
+   ...     RED = 'r'
+   ...     GREEN = 'g'
+   ...     BLUE = 'b'
+   ...     UNKNOWN = auto()
+   ...
+   >>> Color.RED
+   <Color.RED: 'r'>
+   >>> Color.UNKNOWN
+   <Color.UNKNOWN: 'unknown'>
+   >>> str(Color.UNKNOWN)
+   'unknown'
 
    .. note::
 
       There are places in the stdlib that check for an exact :class:`str`
       instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
       instead of ``isinstance(unknown, str)``), and in those locations you
-      will need to use ``str(StrEnum.member)``.
+      will need to use ``str(MyStrEnum.MY_MEMBER)``.
 
    .. note::
 
@@ -518,7 +561,7 @@ Data Types
 
    ``Flag`` is the same as :class:`Enum`, but its members support the bitwise
    operators ``&`` (*AND*), ``|`` (*OR*), ``^`` (*XOR*), and ``~`` (*INVERT*);
-   the results of those operators are members of the enumeration.
+   the results of those operations are (aliases of) members of the enumeration.
 
    .. method:: __contains__(self, value)
 
@@ -560,6 +603,8 @@ Data Types
          1
          >>> len(white)
          3
+
+      .. versionadded:: 3.11
 
    .. method:: __bool__(self):
 
@@ -620,7 +665,7 @@ Data Types
       of two, starting with ``1``.
 
    .. versionchanged:: 3.11 The *repr()* of zero-valued flags has changed.  It
-      is now::
+      is now:
 
          >>> Color(0) # doctest: +SKIP
          <Color: 0>
@@ -652,7 +697,7 @@ Data Types
    * the result is a valid *IntFlag*: an *IntFlag* is returned
    * the result is not a valid *IntFlag*: the result depends on the :class:`FlagBoundary` setting
 
-   The :func:`repr()` of unnamed zero-valued flags has changed.  It is now:
+   The :func:`repr` of unnamed zero-valued flags has changed.  It is now::
 
       >>> Color(0)
       <Color: 0>
@@ -810,7 +855,27 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
+
+.. class:: EnumDict
+
+   *EnumDict* is a subclass of :class:`dict` that is used as the namespace
+   for defining enum classes (see :ref:`prepare`).
+   It is exposed to allow subclasses of :class:`EnumType` with advanced
+   behavior like having multiple values per member.
+   It should be called with the name of the enum class being created, otherwise
+   private names and internal classes will not be handled correctly.
+
+   Note that only the :class:`~collections.abc.MutableMapping` interface
+   (:meth:`~object.__setitem__` and :meth:`~dict.update`) is overridden.
+   It may be possible to bypass the checks using other :class:`!dict`
+   operations like :meth:`|= <object.__ior__>`.
+
+   .. attribute:: EnumDict.member_names
+
+      A list of member names.
+
+   .. versionadded:: 3.13
 
 ---------------
 
@@ -820,7 +885,7 @@ Supported ``__dunder__`` names
 :attr:`~EnumType.__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
-:meth:`~object.__new__`, if specified, must create and return the enum members;
+:meth:`~Enum.__new__`, if specified, must create and return the enum members;
 it is also a very good idea to set the member's :attr:`!_value_` appropriately.
 Once all the members are created it is no longer used.
 
@@ -828,10 +893,6 @@ Once all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
-  member.
-- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
-  existing member.
 - :attr:`~Enum._name_` -- name of the member
 - :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
 - :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
@@ -852,9 +913,20 @@ Supported ``_sunder_`` names
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
 
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+  existing member.
+
+- While ``_sunder_`` names are generally reserved for the further development
+  of the :class:`Enum` class and can not be used, some are explicitly allowed:
+
+  - ``_repr_*`` (e.g. ``_repr_html_``), as used in `IPython's rich display`_
+
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
-.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``
+.. versionadded:: 3.13 ``_add_alias_``, ``_add_value_alias_``, ``_repr_*``
+.. _`IPython's rich display`: https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display
 
 ---------------
 

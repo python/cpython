@@ -68,8 +68,13 @@ class PyMemDebugTests(unittest.TestCase):
 
     def check_malloc_without_gil(self, code):
         out = self.check(code)
-        expected = ('Fatal Python error: _PyMem_DebugMalloc: '
-                    'Python memory allocator called without holding the GIL')
+        if not support.Py_GIL_DISABLED:
+            expected = ('Fatal Python error: _PyMem_DebugMalloc: '
+                        'Python memory allocator called without holding the GIL')
+        else:
+            expected = ('Fatal Python error: _PyMem_DebugMalloc: '
+                        'Python memory allocator called without an active thread state. '
+                        'Are you trying to call it inside of a Py_BEGIN_ALLOW_THREADS block?')
         self.assertIn(expected, out)
 
     def test_pymem_malloc_without_gil(self):
@@ -148,12 +153,12 @@ class PyMemDebugTests(unittest.TestCase):
             self.assertIn(b'MemoryError', out)
             *_, count = line.split(b' ')
             count = int(count)
-            self.assertLessEqual(count, i*5)
-            self.assertGreaterEqual(count, i*5-2)
+            self.assertLessEqual(count, i*10)
+            self.assertGreaterEqual(count, i*10-4)
 
 
-# Py_GIL_DISABLED requires mimalloc (not malloc)
-@unittest.skipIf(support.Py_GIL_DISABLED, 'need malloc')
+# free-threading requires mimalloc (not malloc)
+@support.requires_gil_enabled()
 class PyMemMallocDebugTests(PyMemDebugTests):
     PYTHONMALLOC = 'malloc_debug'
 

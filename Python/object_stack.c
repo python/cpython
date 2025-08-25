@@ -8,24 +8,11 @@
 extern _PyObjectStackChunk *_PyObjectStackChunk_New(void);
 extern void _PyObjectStackChunk_Free(_PyObjectStackChunk *);
 
-static struct _Py_object_stack_freelist *
-get_object_stack_freelist(void)
-{
-    struct _Py_object_freelists *freelists = _Py_object_freelists_GET();
-    return &freelists->object_stacks;
-}
-
 _PyObjectStackChunk *
 _PyObjectStackChunk_New(void)
 {
-    _PyObjectStackChunk *buf;
-    struct _Py_object_stack_freelist *obj_stack_freelist = get_object_stack_freelist();
-    if (obj_stack_freelist->numfree > 0) {
-        buf = obj_stack_freelist->items;
-        obj_stack_freelist->items = buf->prev;
-        obj_stack_freelist->numfree--;
-    }
-    else {
+    _PyObjectStackChunk *buf = _Py_FREELIST_POP_MEM(object_stack_chunks);
+    if (buf == NULL) {
         // NOTE: we use PyMem_RawMalloc() here because this is used by the GC
         // during mimalloc heap traversal. In that context, it is not safe to
         // allocate mimalloc memory, such as via PyMem_Malloc().
@@ -43,17 +30,7 @@ void
 _PyObjectStackChunk_Free(_PyObjectStackChunk *buf)
 {
     assert(buf->n == 0);
-    struct _Py_object_stack_freelist *obj_stack_freelist = get_object_stack_freelist();
-    if (obj_stack_freelist->numfree >= 0 &&
-        obj_stack_freelist->numfree < _PyObjectStackChunk_MAXFREELIST)
-    {
-        buf->prev = obj_stack_freelist->items;
-        obj_stack_freelist->items = buf;
-        obj_stack_freelist->numfree++;
-    }
-    else {
-        PyMem_RawFree(buf);
-    }
+    _Py_FREELIST_FREE(object_stack_chunks, buf, PyMem_RawFree);
 }
 
 void
@@ -86,23 +63,4 @@ _PyObjectStack_Merge(_PyObjectStack *dst, _PyObjectStack *src)
     // Now that src has all the chunks, set dst to src
     dst->head = src->head;
     src->head = NULL;
-}
-
-void
-_PyObjectStackChunk_ClearFreeList(struct _Py_object_freelists *freelists, int is_finalization)
-{
-    if (!is_finalization) {
-        // Ignore requests to clear the free list during GC. We use object
-        // stacks during GC, so emptying the free-list is counterproductive.
-        return;
-    }
-
-    struct _Py_object_stack_freelist *freelist = &freelists->object_stacks;
-    while (freelist->numfree > 0) {
-        _PyObjectStackChunk *buf = freelist->items;
-        freelist->items = buf->prev;
-        freelist->numfree--;
-        PyMem_RawFree(buf);
-    }
-    freelist->numfree = -1;
 }

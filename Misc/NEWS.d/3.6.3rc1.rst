@@ -85,7 +85,7 @@ wrong line (typically the first line of the file).
 .. nonce: Kl_fS5
 .. section: Core and Builtins
 
-Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C libray
+Include sys/sysmacros.h for major(), minor(), and makedev(). GNU C library
 plans to remove the functions from sys/types.h.
 
 ..

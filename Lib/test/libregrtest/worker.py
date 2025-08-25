@@ -14,10 +14,13 @@ from .utils import (
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
+NEED_TTY = {
+    'test_ioctl',
+}
 
 
 def create_worker_process(runtests: WorkerRunTests, output_fd: int,
-                          tmp_dir: StrPath | None = None) -> subprocess.Popen:
+                          tmp_dir: StrPath | None = None) -> subprocess.Popen[str]:
     worker_json = runtests.as_json()
 
     cmd = runtests.create_python_cmd()
@@ -47,8 +50,20 @@ def create_worker_process(runtests: WorkerRunTests, output_fd: int,
         close_fds=True,
         cwd=work_dir,
     )
-    if USE_PROCESS_GROUP:
+
+    # Don't use setsid() in tests using TTY
+    test_name = runtests.tests[0]
+    if USE_PROCESS_GROUP and test_name not in NEED_TTY:
         kwargs['start_new_session'] = True
+
+    # Include the test name in the TSAN log file name
+    if 'TSAN_OPTIONS' in env:
+        parts = env['TSAN_OPTIONS'].split(' ')
+        for i, part in enumerate(parts):
+            if part.startswith('log_path='):
+                parts[i] = f'{part}.{test_name}'
+                break
+        env['TSAN_OPTIONS'] = ' '.join(parts)
 
     # Pass json_file to the worker process
     json_file = runtests.json_file
@@ -98,7 +113,7 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
     sys.exit(0)
 
 
-def main():
+def main() -> NoReturn:
     if len(sys.argv) != 2:
         print("usage: python -m test.libregrtest.worker JSON")
         sys.exit(1)
