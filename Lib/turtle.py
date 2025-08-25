@@ -2045,7 +2045,19 @@ class TNavigator(object):
             self._rotate(w)
         self._rotate(-w2)
         if speed == 0:
-            self._tracer(tr, dl)
+            previous_values = []
+            for t in self.screen.turtles():
+                if t == self:
+                    continue
+                value_tuple = (t, t._shown, t._hidden_from_screen)
+                t._shown = False
+                t._hidden_from_screen = True
+                previous_values.append(value_tuple)
+            self._tracer(flag=tr, delay=dl)
+            for values in previous_values:
+                t, _shown, _hidden_from_screen = values
+                t._shown = _shown
+                t._hidden_from_screen = _hidden_from_screen
         self.speed(speed)
         if self.undobuffer:
             self.undobuffer.cumulate = False
