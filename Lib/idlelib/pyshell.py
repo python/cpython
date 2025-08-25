@@ -11,10 +11,6 @@ except ImportError:
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     raise SystemExit(1)
 
-if sys.platform == 'win32':
-    from idlelib.util import fix_win_hidpi
-    fix_win_hidpi()
-
 from tkinter import messagebox
 
 from code import InteractiveInterpreter
