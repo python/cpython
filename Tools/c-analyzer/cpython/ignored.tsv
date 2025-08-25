@@ -344,6 +344,8 @@ Objects/obmalloc.c	-	obmalloc_state_main	-
 Objects/obmalloc.c	-	obmalloc_state_initialized	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
+Objects/typevarobject.c	-	_PyNoExtraItems_Type	-
+Objects/typevarobject.c	-	_Py_NoExtraItemsStruct	-
 Objects/unicodeobject.c	-	stripfuncnames	-
 Objects/unicodeobject.c	-	utf7_category	-
 Objects/unicodeobject.c	unicode_decode_call_errorhandler_wchar	argparse	-

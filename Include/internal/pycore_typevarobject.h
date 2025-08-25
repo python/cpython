@@ -21,6 +21,8 @@ extern int _Py_typing_type_repr(PyUnicodeWriter *, PyObject *);
 extern PyTypeObject _PyTypeAlias_Type;
 extern PyTypeObject _PyNoDefault_Type;
 extern PyObject _Py_NoDefaultStruct;
+extern PyTypeObject _PyNoExtraItems_Type;
+extern PyObject _Py_NoExtraItemsStruct;
 
 #ifdef __cplusplus
 }

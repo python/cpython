@@ -41,7 +41,7 @@ from typing import Annotated, ForwardRef
 from typing import Self, LiteralString
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
-from typing import TypeGuard, TypeIs, NoDefault
+from typing import TypeGuard, TypeIs, NoDefault, NoExtraItems
 import abc
 import textwrap
 import typing
@@ -8770,6 +8770,32 @@ class TypedDictTests(BaseTestCase):
                     class Wrong(*bases):
                         pass
 
+    def test_closed_values(self):
+        class Implicit(TypedDict): ...
+        class ExplicitTrue(TypedDict, closed=True): ...
+        class ExplicitFalse(TypedDict, closed=False): ...
+
+        self.assertIsNone(Implicit.__closed__)
+        self.assertIs(ExplicitTrue.__closed__, True)
+        self.assertIs(ExplicitFalse.__closed__, False)
+
+    def test_extra_items_class_arg(self):
+        class TD(TypedDict, extra_items=int):
+            a: str
+
+        self.assertIs(TD.__extra_items__, int)
+        self.assertEqual(TD.__annotations__, {'a': str})
+        self.assertEqual(TD.__required_keys__, frozenset({'a'}))
+        self.assertEqual(TD.__optional_keys__, frozenset())
+
+        class NoExtra(TypedDict):
+            a: str
+
+        self.assertIs(NoExtra.__extra_items__, NoExtraItems)
+        self.assertEqual(NoExtra.__annotations__, {'a': str})
+        self.assertEqual(NoExtra.__required_keys__, frozenset({'a'}))
+        self.assertEqual(NoExtra.__optional_keys__, frozenset())
+
     def test_is_typeddict(self):
         self.assertIs(is_typeddict(Point2D), True)
         self.assertIs(is_typeddict(Union[str, int]), False)
@@ -9097,6 +9123,71 @@ class TypedDictTests(BaseTestCase):
             },
         )
 
+    def test_closed_inheritance(self):
+        class Base(TypedDict, extra_items=ReadOnly[Union[str, None]]):
+            a: int
+
+        self.assertEqual(Base.__required_keys__, frozenset({"a"}))
+        self.assertEqual(Base.__optional_keys__, frozenset({}))
+        self.assertEqual(Base.__readonly_keys__, frozenset({}))
+        self.assertEqual(Base.__mutable_keys__, frozenset({"a"}))
+        self.assertEqual(Base.__annotations__, {"a": int})
+        self.assertEqual(Base.__extra_items__, ReadOnly[Union[str, None]])
+        self.assertIsNone(Base.__closed__)
+
+        class Child(Base, extra_items=int):
+            a: str
+
+        self.assertEqual(Child.__required_keys__, frozenset({'a'}))
+        self.assertEqual(Child.__optional_keys__, frozenset({}))
+        self.assertEqual(Child.__readonly_keys__, frozenset({}))
+        self.assertEqual(Child.__mutable_keys__, frozenset({'a'}))
+        self.assertEqual(Child.__annotations__, {"a": str})
+        self.assertIs(Child.__extra_items__, int)
+        self.assertIsNone(Child.__closed__)
+
+        class GrandChild(Child, closed=True):
+            a: float
+
+        self.assertEqual(GrandChild.__required_keys__, frozenset({'a'}))
+        self.assertEqual(GrandChild.__optional_keys__, frozenset({}))
+        self.assertEqual(GrandChild.__readonly_keys__, frozenset({}))
+        self.assertEqual(GrandChild.__mutable_keys__, frozenset({'a'}))
+        self.assertEqual(GrandChild.__annotations__, {"a": float})
+        self.assertIs(GrandChild.__extra_items__, NoExtraItems)
+        self.assertIs(GrandChild.__closed__, True)
+
+        class GrandGrandChild(GrandChild):
+            ...
+        self.assertEqual(GrandGrandChild.__required_keys__, frozenset({'a'}))
+        self.assertEqual(GrandGrandChild.__optional_keys__, frozenset({}))
+        self.assertEqual(GrandGrandChild.__readonly_keys__, frozenset({}))
+        self.assertEqual(GrandGrandChild.__mutable_keys__, frozenset({'a'}))
+        self.assertEqual(GrandGrandChild.__annotations__, {"a": float})
+        self.assertIs(GrandGrandChild.__extra_items__, NoExtraItems)
+        self.assertIsNone(GrandGrandChild.__closed__)
+
+    def test_implicit_extra_items(self):
+        class Base(TypedDict):
+            a: int
+
+        self.assertIs(Base.__extra_items__, NoExtraItems)
+        self.assertIsNone(Base.__closed__)
+
+        class ChildA(Base, closed=True):
+            ...
+
+        self.assertEqual(ChildA.__extra_items__, NoExtraItems)
+        self.assertIs(ChildA.__closed__, True)
+
+    def test_cannot_combine_closed_and_extra_items(self):
+        with self.assertRaisesRegex(
+            TypeError,
+            "Cannot combine closed=True and extra_items"
+        ):
+            class TD(TypedDict, closed=True, extra_items=range):
+                x: str
+
     def test_annotations(self):
         # _type_check is applied
         with self.assertRaisesRegex(TypeError, "Plain typing.Final is not valid as type argument"):
@@ -9325,6 +9416,12 @@ class RETests(BaseTestCase):
         ):
             class B(typing.Pattern):
                 pass
+
+    def test_typed_dict_signature(self):
+        self.assertListEqual(
+            list(inspect.signature(TypedDict).parameters),
+            ['typename', 'fields', 'total', 'closed', 'extra_items']
+        )
 
 
 class AnnotatedTests(BaseTestCase):
