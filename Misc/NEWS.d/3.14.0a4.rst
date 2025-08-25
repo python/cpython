@@ -164,8 +164,8 @@ with meta (i.e. :kbd:`Alt`), e.g. :kbd:`Alt-d` to ``kill-word`` or
 .. nonce: RIvgwc
 .. section: Library
 
-Unify the instance check for :class:`typing.Union` and
-:class:`types.UnionType`: :class:`!Union` now uses the instance checks
+Unify the instance check for :data:`typing.Union` and
+:class:`types.UnionType`: :data:`!Union` now uses the instance checks
 against its parameters instead of the subclass checks.
 
 ..
