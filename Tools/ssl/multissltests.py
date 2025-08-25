@@ -288,26 +288,51 @@ class AbstractBuilder(object):
             f.write(data)
 
     def _unpack_src(self):
-        """Unpack tar.gz bundle"""
-        # cleanup
-        if os.path.isdir(self.build_dir):
-            shutil.rmtree(self.build_dir)
-        os.makedirs(self.build_dir)
+    	"""Unpack tar.gz bundle"""
+    	# cleanup
+    	if os.path.isdir(self.build_dir):
+        	shutil.rmtree(self.build_dir)
+    	os.makedirs(self.build_dir)
 
-        tf = tarfile.open(self.src_file)
-        name = self.build_template.format(self.version)
-        base = name + '/'
-        # force extraction into build dir
-        members = tf.getmembers()
-        for member in list(members):
-            if member.name == name:
-                members.remove(member)
-            elif not member.name.startswith(base):
-                raise ValueError(member.name, base)
-            member.name = member.name[len(base):].lstrip('/')
-        log.info("Unpacking files to {}".format(self.build_dir))
-        tf.extractall(self.build_dir, members)
-
+    	tf = tarfile.open(self.src_file)
+    	name = self.build_template.format(self.version)
+    	base = name + '/'
+    	# force extraction into build dir
+    	members = tf.getmembers()
+    
+    	log.info("Unpacking files to {}".format(self.build_dir))
+    	build_dir_real = os.path.realpath(self.build_dir)
+    
+    	for member in members:
+        	if member.name == name:
+            		continue
+        	elif not member.name.startswith(base):
+            		raise ValueError(member.name, base)
+            
+       		# Strip the base directory and normalize the path
+        	member.name = member.name[len(base):].lstrip('/')
+        
+        	# Security checks for safe extraction
+        	if member.islnk() or member.issym():
+            		log.warning("Skipping symbolic/hard link: {}".format(member.name))
+            		continue
+            
+        	# Normalize the member path
+        	normalized_path = os.path.normpath(member.name)
+        
+        	# Check for directory traversal attempts
+       		if normalized_path.startswith('/') or '..' in normalized_path.split(os.sep):
+            		log.warning("Skipping potentially malicious member: {}".format(member.name))
+            		continue
+            
+        		# Construct final path and validate it's within build directory
+       		final_path = os.path.realpath(os.path.join(self.build_dir, normalized_path))
+        	if not final_path.startswith(build_dir_real + os.sep) and final_path != build_dir_real:
+            		log.warning("Skipping member attempting directory traversal: {}".format(member.name))
+            		continue
+            
+        # Safe extraction
+    	tf.extract(member, self.build_dir)
     def _build_src(self, config_args=()):
         """Now build openssl"""
         log.info("Running build in {}".format(self.build_dir))
