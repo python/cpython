@@ -1,0 +1,1 @@
+Fix warning deduplication regression for SyntaxWarnings with pseudo-filenames (e.g., <stdin>, <string>).
