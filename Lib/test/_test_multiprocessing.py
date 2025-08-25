@@ -3172,7 +3172,39 @@ class _TestPool(BaseTestCase):
             pool = None
             support.gc_collect()
 
-def raising():
+    def test_callback_errors(self):
+        if self.TYPE == 'manager':
+            self.skipTest("cannot intercept excepthook in manager")
+
+        def _apply(pool, target, **kwargs):
+            return pool.apply_async(target, **kwargs)
+
+        def _map(pool, target, **kwargs):
+            return pool.map_async(target, range(1), **kwargs)
+
+        def record_exceptions(errs):
+            def record(args):
+                errs.append(args.exc_type)
+            return record
+
+        errs = []
+        for func in [_apply, _map]:
+            with self.subTest(func=func):
+                saved_hook = threading.excepthook
+                threading.excepthook = record_exceptions(errs)
+                try:
+                    with self.Pool(1) as pool:
+                        res = func(pool, noop, callback=raising)
+                        res.get()
+                finally:
+                    threading.excepthook = saved_hook
+
+        self.assertEqual(errs, [KeyError, KeyError])
+
+def noop(*args):
+    pass
+
+def raising(*args):
     raise KeyError("key")
 
 def unpickleable_result():
