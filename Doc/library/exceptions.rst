@@ -866,7 +866,8 @@ The following exceptions are used as warning categories; see the
 
    Base class for warnings about dubious syntax.
 
-   This warning is emitted when compiling Python source code to bytecode.
+   This warning is typically emitted when compiling Python source code, and usually won't be reported
+   when running already compiled code.
 
 
 .. exception:: RuntimeWarning
