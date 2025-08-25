@@ -295,20 +295,23 @@ Dictionary Objects
    :c:macro:`Py_BEGIN_CRITICAL_SECTION` to lock the dictionary while iterating
    over it::
 
-   .. note::
+.. note::
 
-      On the :term:`free threaded <free threading>` build, this function can be used safely inside
-      a critical section. However, the references returned for *pkey* and
-      *pvalue* are :term:`borrowed <borrowed reference>` and only valid while the critical section is
-      held. If you need to use these objects outside the critical section or when the critical section
-      can be suspended, create :term:`strong references <strong reference>` (for example, with
-      :c:func:`Py_NewRef`).
+   On the :term:`free threaded <free threading>` build, this function can be used safely inside
+   a critical section. However, the references returned for *pkey* and
+   *pvalue* are :term:`borrowed <borrowed reference>` and only valid while the critical section is
+   held. If you need to use these objects outside the critical section or when the critical section
+   can be suspended, create :term:`strong reference <strong reference>` (for example, with
+   :c:func:`Py_NewRef`).
 
-      Py_BEGIN_CRITICAL_SECTION(self->dict);
-      while (PyDict_Next(self->dict, &pos, &key, &value)) {
-          ...
-      }
-      Py_END_CRITICAL_SECTION();
+.. code-block:: c
+
+   Py_BEGIN_CRITICAL_SECTION(self->dict);
+   while (PyDict_Next(self->dict, &pos, &key, &value)) {
+       ...
+   }
+   Py_END_CRITICAL_SECTION();
+
 
 
 .. c:function:: int PyDict_Merge(PyObject *a, PyObject *b, int override)
