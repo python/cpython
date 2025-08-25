@@ -263,4 +263,21 @@ PyAPI_FUNC(uint32_t) Py_PACK_VERSION(int x, int y);
 #endif // Py_LIMITED_API < 3.14
 
 
+#if defined(__clang__)
+    #define DISABLE_UNINIT_WARNINGS _Pragma("clang diagnostic push") \
+                                     _Pragma("clang diagnostic ignored \"-Wuninitialized\"")
+    #define ENABLE_UNINIT_WARNINGS  _Pragma("clang diagnostic pop")
+#elif defined(__GNUC__) || defined(__GNUG__)
+    #define DISABLE_UNINIT_WARNINGS _Pragma("GCC diagnostic push") \
+                                     _Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+    #define ENABLE_UNINIT_WARNINGS  _Pragma("GCC diagnostic pop")
+#elif defined(_MSC_VER)
+    #define DISABLE_UNINIT_WARNINGS __pragma(warning(push)) \
+                                     __pragma(warning(disable: 4700))
+    #define ENABLE_UNINIT_WARNINGS  __pragma(warning(pop))
+#else
+    #define DISABLE_UNINIT_WARNINGS
+    #define ENABLE_UNINIT_WARNINGS
+#endif
+
 #endif /* Py_PYMACRO_H */
