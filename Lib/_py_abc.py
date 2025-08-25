@@ -32,8 +32,7 @@ class ABCMeta(type):
     #       external code.
     _abc_invalidation_counter = 0
 
-    def __new__(mcls, name, bases, namespace, /, **kwargs):
-        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
+    def __init__(cls, name, bases, namespace, /, **kwargs):
         # Compute set of abstract method names
         abstracts = {name
                      for name, value in namespace.items()
@@ -49,7 +48,6 @@ class ABCMeta(type):
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
-        return cls
 
     def register(cls, subclass):
         """Register a virtual subclass of an ABC.
@@ -91,6 +89,8 @@ class ABCMeta(type):
 
     def __instancecheck__(cls, instance):
         """Override for isinstance(instance, cls)."""
+        if '_abc_cache' not in cls.__dict__:
+            cls.__class__.__init__(cls, cls.__name__, cls.__bases__, cls.__dict__)
         # Inline the cache checking
         subclass = instance.__class__
         if subclass in cls._abc_cache:
@@ -107,6 +107,8 @@ class ABCMeta(type):
 
     def __subclasscheck__(cls, subclass):
         """Override for issubclass(subclass, cls)."""
+        if '_abc_cache' not in cls.__dict__:
+            cls.__class__.__init__(cls, cls.__name__, cls.__bases__, cls.__dict__)
         if not isinstance(subclass, type):
             raise TypeError('issubclass() arg 1 must be a class')
         # Check cache
