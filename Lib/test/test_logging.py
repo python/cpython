@@ -2089,6 +2089,8 @@ class SysLogHandlerTest(BaseTest):
         self.assertEqual(self.log_output, b'<11>h\xc3\xa4m-sp\xc3\xa4m')
 
     def test_udp_reconnection(self):
+        if self.server_exception:
+            self.skipTest(self.server_exception)
         logger = logging.getLogger("slh")
         self.sl_hdlr.close()
         self.handled.clear()
