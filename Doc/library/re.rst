@@ -1064,7 +1064,9 @@ Functions
 
    Return the string obtained by replacing the leftmost non-overlapping occurrences
    of *pattern* in *string* by the replacement *repl*.  If the pattern isn't found,
-   *string* is returned unchanged.  *repl* can be a string or a function; if it is
+   *string* is returned unchanged.
+   *repl* can be a string, a :ref:`template object <template-objects>`,
+   or a callable; if it is
    a string, any backslash escapes in it are processed.  That is, ``\n`` is
    converted to a single newline character, ``\r`` is converted to a carriage return, and
    so forth.  Unknown escapes of ASCII letters are reserved for future use and
@@ -1092,6 +1094,13 @@ Functions
       'Baked Beans & Spam'
 
    The pattern may be a string or a :class:`~re.Pattern`.
+
+   The replacement string can be compiled as well as the pattern::
+
+      >>> pat = re.compile(r'def\s+([a-zA-Z_][a-zA-Z_0-9]*)\s*\(\s*\):')
+      >>> repl = pat.compile_template(r'static PyObject*\npy_\1(void)\n{')
+      >>> re.sub(pat, repl, 'def myfunc():')
+      'static PyObject*\npy_myfunc(void)\n{'
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
@@ -1142,6 +1151,9 @@ Functions
       Passing *count* and *flags* as positional arguments is deprecated.
       In future Python versions they will be
       :ref:`keyword-only parameters <keyword-only_parameter>`.
+
+   .. versionchanged:: next
+      *repl* can be compiled.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
@@ -1335,6 +1347,16 @@ Regular Expression Objects
 .. method:: Pattern.subn(repl, string, count=0)
 
    Identical to the :func:`subn` function, using the compiled pattern.
+
+
+.. method:: Pattern.compile_template(repl)
+
+   Compile a replacement string into a :ref:`template object
+   <template-objects>`, which can be used for replacing patterns in strings
+   using functions :func:`re.sub` or :func:`re.subn` or corresponding methods
+   of the :ref:`pattern object <re-objects>`.
+
+   .. versionadded:: next
 
 
 .. attribute:: Pattern.flags
@@ -1584,6 +1606,25 @@ when there is no match, you can test whether there was a match with a simple
 .. versionchanged:: 3.7
    Added support of :func:`copy.copy` and :func:`copy.deepcopy`.  Match objects
    are considered atomic.
+
+
+.. _template-objects:
+
+Template Objects
+----------------
+
+A replacement string can be compiled into a template object using the :meth:`~re.Pattern.compile_template` method.
+
+.. versionadded:: next
+
+Template object is a callable which takes a single :ref:`match object
+<match-objects>` argument, and returns the replacement string with group
+references resolved.
+
+   >>> pat = re.compile('(.)(.)')
+   >>> templ = pat.compile_template(r'\2-\1')
+   >>> templ(pat.match('ab'))
+   'b-a'
 
 
 .. _re-examples:
