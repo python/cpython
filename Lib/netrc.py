@@ -38,12 +38,24 @@ class _netrclex:
         self.instream = fp
         self.whitespace = "\n\t\r "
         self.pushback = []
+        self.char_pushback = []
 
     def _read_char(self):
+        if self.char_pushback:
+            return self.char_pushback.pop(0)
         ch = self.instream.read(1)
         if ch == "\n":
             self.lineno += 1
         return ch
+
+    def skip_blank_lines(self):
+        fiter = iter(self._read_char, "")
+        for ch in fiter:
+            if ch == '\n':
+                self.lineno += 1
+            else:
+                self.char_pushback.append(ch)
+                return
 
     def get_token(self):
         if self.pushback:
@@ -94,6 +106,7 @@ class netrc:
         lexer = _netrclex(fp)
         while 1:
             # Look for a machine, default, or macdef top-level keyword
+            lexer.skip_blank_lines()
             saved_lineno = lexer.lineno
             toplevel = tt = lexer.get_token()
             if not tt:
@@ -133,6 +146,9 @@ class netrc:
             login = account = password = ''
             self.hosts[entryname] = {}
             while 1:
+                # Trailing blank lines would break the checks that determine if the token
+                # is the last one on its line.
+                lexer.skip_blank_lines()
                 prev_lineno = lexer.lineno
                 tt = lexer.get_token()
                 if tt.startswith('#'):
