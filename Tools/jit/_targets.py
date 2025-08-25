@@ -557,38 +557,45 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     optimizer: type[_optimizers.Optimizer]
     target: _COFF32 | _COFF64 | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
+        host = "aarch64-apple-darwin"
         condition = "defined(__aarch64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerAArch64
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll", "-fplt"]
+        host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
+        args = ["-fms-runtime-lib=dll", "-fplt"]
         optimizer = _optimizers.OptimizerAArch64
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
+        host = "aarch64-unknown-linux-gnu"
+        condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics"]
-        condition = "defined(__aarch64__) && defined(__linux__)"
         optimizer = _optimizers.OptimizerAArch64
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
+        host = "i686-pc-windows-msvc"
+        condition = "defined(_M_IX86)"
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
         args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
         optimizer = _optimizers.OptimizerX86
-        condition = "defined(_M_IX86)"
         target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
+        host = "x86_64-apple-darwin"
         condition = "defined(__x86_64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerX86
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll"]
+        host = "x86_64-pc-windows-msvc"
         condition = "defined(_M_X64)"
+        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerX86
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
+        host = "x86_64-unknown-linux-gnu"
         condition = "defined(__x86_64__) && defined(__linux__)"
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         optimizer = _optimizers.OptimizerX86
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     else:
