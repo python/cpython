@@ -93,7 +93,7 @@ streams of infinite length, so they should only be accessed by functions or
 loops that truncate the stream.
 
 
-.. function:: accumulate(iterable[, function, *, initial=None])
+.. function:: accumulate(iterable, func=None, *, initial=None)
 
     Make an iterator that returns accumulated sums or accumulated
     results from other binary functions.
@@ -107,13 +107,15 @@ loops that truncate the stream.
 
     Roughly equivalent to::
 
-        def accumulate(iterable, function=operator.add, *, initial=None):
+        def accumulate(iterable, func=None, *, initial=None):
             'Return running totals'
             # accumulate([1,2,3,4,5]) → 1 3 6 10 15
             # accumulate([1,2,3,4,5], initial=100) → 100 101 103 106 110 115
             # accumulate([1,2,3,4,5], operator.mul) → 1 2 6 24 120
 
             iterator = iter(iterable)
+            func = func or operator.add
+
             total = initial
             if initial is None:
                 try:
@@ -123,7 +125,7 @@ loops that truncate the stream.
 
             yield total
             for element in iterator:
-                total = function(total, element)
+                total = func(total, element)
                 yield total
 
     To compute a running minimum, set *function* to :func:`min`.
