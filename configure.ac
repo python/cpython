@@ -5104,16 +5104,33 @@ then
     # linked into the binary. Correspondingly, dtrace(1) is missing the ELF
     # generation flag '-G'. We check for presence of this flag, rather than
     # hardcoding support by OS, in the interest of robustness.
+    #
+    # NetBSD DTrace requires the -x nolibs flag to avoid system library conflicts
+    # and uses header generation for testing instead of object generation.
     AC_CACHE_CHECK([whether DTrace probes require linking],
-        [ac_cv_dtrace_link], [dnl
+        [ac_cv_dtrace_link], [
             ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            case $host in
+                *netbsd*)
+                    DTRACE_TEST_FLAGS="-x nolibs -h"
+                    ;;
+                *)
+                    DTRACE_TEST_FLAGS="-G"
+                    ;;
+            esac
+            "$DTRACE" $DFLAGS $DTRACE_TEST_FLAGS -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
     if test "$ac_cv_dtrace_link" = "yes"; then
         DTRACE_OBJS="Python/pydtrace.o"
     fi
+    # Set NetBSD-specific DTrace flags in DFLAGS
+    case $host in
+        *netbsd*)
+            DFLAGS="$DFLAGS -x nolibs"
+            ;;
+    esac
 fi
 
 dnl Platform-specific C and header files.
@@ -5219,7 +5236,7 @@ AC_CHECK_FUNCS([ \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np
+  pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np \
   pthread_setname_np pthread_getattr_np \
   ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
@@ -6783,57 +6800,6 @@ then
   [Define if you have struct stat.st_mtimensec])
 fi
 
-AC_CACHE_CHECK([whether year with century should be normalized for strftime], [ac_cv_normalize_century], [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char year[5];
-  struct tm date = {
-    .tm_year = -1801,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
-    return 1;
-  }
-  return 0;
-}
-]])],
-[ac_cv_normalize_century=yes],
-[ac_cv_normalize_century=no],
-[ac_cv_normalize_century=yes])])
-if test "$ac_cv_normalize_century" = yes
-then
-  AC_DEFINE([_Py_NORMALIZE_CENTURY], [1],
-  [Define if year with century should be normalized for strftime.])
-fi
-
-AC_CACHE_CHECK([whether C99-compatible strftime specifiers are supported], [ac_cv_strftime_c99_support], [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char full_date[11];
-  struct tm date = {
-    .tm_year = 0,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(full_date, sizeof(full_date), "%F", &date) && !strcmp(full_date, "1900-01-01")) {
-    return 0;
-  }
-  return 1;
-}
-]])],
-[ac_cv_strftime_c99_support=yes],
-[AC_MSG_ERROR([Python requires C99-compatible strftime specifiers])],
-[ac_cv_strftime_c99_support=])])
-
 dnl check for ncursesw/ncurses and panelw/panel
 dnl NOTE: old curses is not detected.
 dnl have_curses=[no, yes]
@@ -7187,7 +7153,6 @@ SRCDIRS="\
   Modules/_decimal \
   Modules/_decimal/libmpdec \
   Modules/_hacl \
-  Modules/_hashlib \
   Modules/_io \
   Modules/_multiprocessing \
   Modules/_sqlite \
@@ -7959,15 +7924,6 @@ PY_STDLIB_MOD_SIMPLE([_multibytecodec])
 PY_STDLIB_MOD_SIMPLE([unicodedata])
 
 ###############################################################################
-# Cryptographic primitives
-LIBHASHLIB_INTERNAL_CFLAGS="-I\$(srcdir)/Modules/_hashlib"
-LIBHASHLIB_INTERNAL_LDFLAGS="-lm \$(LIBHASHLIB_INTERNAL_A)"
-LIBHASHLIB_INTERNAL="\$(LIBHASHLIB_INTERNAL_HEADERS) \$(LIBHASHLIB_INTERNAL_A)"
-
-AC_SUBST([LIBHASHLIB_INTERNAL_CFLAGS])
-AC_SUBST([LIBHASHLIB_INTERNAL])
-
-###############################################################################
 # HACL* compilation and linking configuration (contact: @picnixz)
 #
 # Used by the HACL*-based implementations of cryptographic primitives.
@@ -8103,9 +8059,7 @@ dnl The EXTNAME is the name of the extension module being built.
 AC_DEFUN([PY_HACL_CREATE_MODULE], [
   AS_VAR_PUSHDEF([v], [[LIBHACL_][$1][_LDFLAGS]])
   AS_VAR_SET([v], [[LIBHACL_][$1][_LIB_${LIBHACL_LDEPS_LIBTYPE}]])
-  PY_STDLIB_MOD([$2], [$3], [],
-    [$LIBHACL_CFLAGS $LIBHASHLIB_INTERNAL_CFLAGS],
-    [\$($v) $LIBHASHLIB_INTERNAL_LDFLAGS])
+  PY_STDLIB_MOD([$2], [$3], [], [$LIBHACL_CFLAGS], [\$($v)])
   AS_VAR_POPDEF([v])
 ])
 
@@ -8186,8 +8140,7 @@ dnl OpenSSL bindings
 PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $OPENSSL_LIBS])
 PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
-  [$OPENSSL_INCLUDES $LIBHASHLIB_INTERNAL_CFLAGS],
-  [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS $LIBHASHLIB_INTERNAL_LDFLAGS])
+  [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi],

@@ -1,0 +1,2 @@
+Replace the shim code added to every piece of jitted code with a single
+trampoline function.

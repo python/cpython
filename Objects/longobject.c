@@ -6293,6 +6293,7 @@ popcount_digit(digit d)
 }
 
 /*[clinic input]
+@permit_long_summary
 int.bit_count
 
 Number of ones in the binary representation of the absolute value of self.
@@ -6307,7 +6308,7 @@ Also known as the population count.
 
 static PyObject *
 int_bit_count_impl(PyObject *self)
-/*[clinic end generated code: output=2e571970daf1e5c3 input=7e0adef8e8ccdf2e]*/
+/*[clinic end generated code: output=2e571970daf1e5c3 input=f2510a306761db15]*/
 {
     assert(self != NULL);
     assert(PyLong_Check(self));
