@@ -1,7 +1,7 @@
 # Default settings for Ruff in CPython
 
 # PYTHON_FOR_REGEN
-target-version = "py310"
+target-version = "py311"
 
 # PEP 8
 line-length = 79
