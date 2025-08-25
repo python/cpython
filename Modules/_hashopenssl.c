@@ -24,14 +24,17 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
-#include "pycore_strhex.h"               // _Py_strhex()
-#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_RELAXED
-#include "hashlib.h"
+#include "pycore_strhex.h"                  // _Py_strhex()
+#include "pycore_pyatomic_ft_wrappers.h"    // FT_ATOMIC_LOAD_PTR_RELAXED
+
+#include "_hashlib/hashlib_buffer.h"
+#include "_hashlib/hashlib_fetch.h"
+#include "_hashlib/hashlib_mutex.h"
 
 /* EVP is the preferred interface to hashing in OpenSSL */
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
-#include <openssl/crypto.h>              // FIPS_mode()
+#include <openssl/crypto.h>                 // FIPS_mode()
 /* We use the object interface to discover what hashes OpenSSL supports. */
 #include <openssl/objects.h>
 #include <openssl/err.h>
@@ -532,7 +535,7 @@ raise_unsupported_algorithm_error(_hashlibstate *state, PyObject *digestmod)
 {
     raise_unsupported_algorithm_impl(
         state->unsupported_digestmod_error,
-        HASHLIB_UNSUPPORTED_ALGORITHM,
+        _Py_HASHLIB_UNSUPPORTED_ALGORITHM,
         digestmod
     );
 }
@@ -542,7 +545,7 @@ raise_unsupported_str_algorithm_error(_hashlibstate *state, const char *name)
 {
     raise_unsupported_algorithm_impl(
         state->unsupported_digestmod_error,
-        HASHLIB_UNSUPPORTED_STR_ALGORITHM,
+        _Py_HASHLIB_UNSUPPORTED_STR_ALGORITHM,
         name
     );
 }
