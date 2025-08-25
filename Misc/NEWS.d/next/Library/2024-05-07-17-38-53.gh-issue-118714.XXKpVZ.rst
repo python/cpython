@@ -1,2 +1,0 @@
-Allow ``restart`` in post-mortem debugging of :mod:`pdb`. Removed restart message
-when the user quits pdb from post-mortem mode.

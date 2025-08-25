@@ -24,8 +24,7 @@
 #include "prepare_protocol.h"
 
 static int
-pysqlite_prepare_protocol_init(pysqlite_PrepareProtocol *self, PyObject *args,
-                               PyObject *kwargs)
+pysqlite_prepare_protocol_init(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     return 0;
 }
@@ -38,7 +37,7 @@ pysqlite_prepare_protocol_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static void
-pysqlite_prepare_protocol_dealloc(pysqlite_PrepareProtocol *self)
+pysqlite_prepare_protocol_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);

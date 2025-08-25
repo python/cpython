@@ -215,12 +215,11 @@ automatic ``PATH`` modifications to have ``pip`` available from the command
 line by default, otherwise it can still be accessed through the Python
 launcher for Windows as ``py -m pip``.
 
-As `discussed in the PEP`__, platform packagers may choose not to install
+As :pep:`discussed in the PEP <0453#recommendations-for-downstream-distributors>`
+platform packagers may choose not to install
 these commands by default, as long as, when invoked, they provide clear and
 simple directions on how to install them on that platform (usually using
 the system package manager).
-
-__ https://peps.python.org/pep-0453/#recommendations-for-downstream-distributors
 
 .. note::
 
@@ -995,7 +994,7 @@ The :func:`~importlib.reload` function has been moved from :mod:`!imp` to
 :mod:`importlib` as part of the :mod:`!imp` module deprecation.  (Contributed by
 Berker Peksag in :issue:`18193`.)
 
-:mod:`importlib.util` now has a :data:`~importlib.util.MAGIC_NUMBER` attribute
+:mod:`importlib.util` now has a :const:`~importlib.util.MAGIC_NUMBER` attribute
 providing access to the bytecode version number.  This replaces the
 :func:`!get_magic` function in the deprecated :mod:`!imp` module.
 (Contributed by Brett Cannon in :issue:`18192`.)
@@ -1963,7 +1962,7 @@ Other Improvements
   <https://devguide.python.org/coverage/#measuring-coverage-of-c-code-with-gcov-and-lcov>`_
   will build python, run the test suite, and generate an HTML coverage report
   for the C codebase using ``gcov`` and `lcov
-  <https://ltp.sourceforge.net/coverage/lcov.php>`_.
+  <https://github.com/linux-test-project/lcov>`_.
 
 * The ``-R`` option to the :ref:`python regression test suite <regrtest>` now
   also checks for memory allocation leaks, using
@@ -1980,7 +1979,7 @@ Other Improvements
   now works correctly (previously it silently returned the first python
   module in the file).  (Contributed by Václav Šmilauer in :issue:`16421`.)
 
-* A new opcode, :opcode:`LOAD_CLASSDEREF`, has been added to fix a bug in the
+* A new opcode, :opcode:`!LOAD_CLASSDEREF`, has been added to fix a bug in the
   loading of free variables in class bodies that could be triggered by certain
   uses of :ref:`__prepare__ <prepare>`.  (Contributed by Benjamin Peterson in
   :issue:`17853`.)
@@ -2272,7 +2271,8 @@ Changes in the Python API
   :func:`super` and falling through all the way to the ABCs. For compatibility,
   catch both :exc:`NotImplementedError` or the appropriate exception as needed.
 
-* The module type now initializes the :attr:`__package__` and :attr:`__loader__`
+* The module type now initializes the :attr:`~module.__package__` and
+  :attr:`~module.__loader__`
   attributes to ``None`` by default. To determine if these attributes were set
   in a backwards-compatible fashion, use e.g.
   ``getattr(module, '__loader__', None) is not None``.  (:issue:`17115`.)

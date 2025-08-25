@@ -1,2 +1,0 @@
-Disallow using a sequence of parameters with named placeholders in
-:mod:`sqlite3` queries. Patch by Erlend E. Aasland.

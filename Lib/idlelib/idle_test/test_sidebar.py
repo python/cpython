@@ -725,7 +725,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         text.tag_add('sel', f'{first_line}.0', 'end-1c')
         selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('if True:\n'))
+        self.assertStartsWith(selected_text, 'if True:\n')
         self.assertIn('\n1\n', selected_text)
 
         text.event_generate('<<copy>>')
@@ -749,7 +749,7 @@ class ShellSidebarTest(unittest.TestCase):
 
         text.tag_add('sel', f'{first_line}.3', 'end-1c')
         selected_text = text.get('sel.first', 'sel.last')
-        self.assertTrue(selected_text.startswith('True:\n'))
+        self.assertStartsWith(selected_text, 'True:\n')
 
         selected_lines_text = text.get('sel.first linestart', 'sel.last')
         selected_lines = selected_lines_text.split('\n')
