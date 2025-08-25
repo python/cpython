@@ -534,6 +534,7 @@ static int statsForEntry(rotating_node_t *node, void *arg)
 }
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler.getstats
 
     cls: defining_class
@@ -565,7 +566,7 @@ profiler_subentry objects:
 
 static PyObject *
 _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls)
-/*[clinic end generated code: output=1806ef720019ee03 input=445e193ef4522902]*/
+/*[clinic end generated code: output=1806ef720019ee03 input=77dc00ff84d1ed5e]*/
 {
     statscollector_t collect;
     collect.state = _PyType_GetModuleState(cls);
@@ -613,6 +614,7 @@ setBuiltins(ProfilerObject *pObj, int nvalue)
 }
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler._pystart_callback
 
     code: object
@@ -624,7 +626,7 @@ _lsprof.Profiler._pystart_callback
 static PyObject *
 _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self, PyObject *code,
                                         PyObject *instruction_offset)
-/*[clinic end generated code: output=5fec8b7ad5ed25e8 input=b166e6953c579cda]*/
+/*[clinic end generated code: output=5fec8b7ad5ed25e8 input=c9ced1fe7182f358]*/
 {
     ptrace_enter_call((PyObject*)self, (void *)code, code);
 
@@ -632,6 +634,7 @@ _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self, PyObject *code,
 }
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler._pythrow_callback
 
     code: object
@@ -645,7 +648,7 @@ static PyObject *
 _lsprof_Profiler__pythrow_callback_impl(ProfilerObject *self, PyObject *code,
                                         PyObject *instruction_offset,
                                         PyObject *exception)
-/*[clinic end generated code: output=0a32988919dfb94c input=fd728fc2c074f5e6]*/
+/*[clinic end generated code: output=0a32988919dfb94c input=3cd9554a8ebb13d7]*/
 {
     ptrace_enter_call((PyObject*)self, (void *)code, code);
 
@@ -653,6 +656,7 @@ _lsprof_Profiler__pythrow_callback_impl(ProfilerObject *self, PyObject *code,
 }
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler._pyreturn_callback
 
     code: object
@@ -667,7 +671,7 @@ _lsprof_Profiler__pyreturn_callback_impl(ProfilerObject *self,
                                          PyObject *code,
                                          PyObject *instruction_offset,
                                          PyObject *retval)
-/*[clinic end generated code: output=9e2f6fc1b882c51e input=667ffaeb2fa6fd1f]*/
+/*[clinic end generated code: output=9e2f6fc1b882c51e input=4d33df394ab00b42]*/
 {
     ptrace_leave_call((PyObject*)self, (void *)code);
 
@@ -703,6 +707,7 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
 }
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler._ccall_callback
 
     code: object
@@ -717,7 +722,7 @@ static PyObject *
 _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self, PyObject *code,
                                       PyObject *instruction_offset,
                                       PyObject *callable, PyObject *self_arg)
-/*[clinic end generated code: output=152db83cabd18cad input=0e66687cfb95c001]*/
+/*[clinic end generated code: output=152db83cabd18cad input=4c52bc9026278a19]*/
 {
     if (self->flags & POF_BUILTINS) {
         PyObject* cfunc = get_cfunc_from_callable(callable, self_arg, self->missing);
@@ -733,6 +738,7 @@ _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self, PyObject *code,
 }
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler._creturn_callback
 
     code: object
@@ -748,7 +754,7 @@ _lsprof_Profiler__creturn_callback_impl(ProfilerObject *self, PyObject *code,
                                         PyObject *instruction_offset,
                                         PyObject *callable,
                                         PyObject *self_arg)
-/*[clinic end generated code: output=1e886dde8fed8fb0 input=b18afe023746923a]*/
+/*[clinic end generated code: output=1e886dde8fed8fb0 input=7ef849de89bacd71]*/
 {
     if (self->flags & POF_BUILTINS) {
         PyObject* cfunc = get_cfunc_from_callable(callable, self_arg, self->missing);
@@ -780,6 +786,7 @@ static const struct {
 
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler.enable
 
     subcalls: bool = True
@@ -796,7 +803,7 @@ Start collecting profiling information.
 static PyObject *
 _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
                              int builtins)
-/*[clinic end generated code: output=1e747f9dc1edd571 input=9ab81405107ab7f1]*/
+/*[clinic end generated code: output=1e747f9dc1edd571 input=b005b7cb7edcca88]*/
 {
     int all_events = 0;
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
@@ -869,6 +876,7 @@ flush_unmatched(ProfilerObject *pObj)
 
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler.disable
 
 Stop collecting profiling information.
@@ -876,7 +884,7 @@ Stop collecting profiling information.
 
 static PyObject *
 _lsprof_Profiler_disable_impl(ProfilerObject *self)
-/*[clinic end generated code: output=838cffef7f651870 input=05700b3fc68d1f50]*/
+/*[clinic end generated code: output=838cffef7f651870 input=456ec13900aff222]*/
 {
     if (self->flags & POF_EXT_TIMER) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -928,6 +936,7 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self)
 }
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler.clear
 
 Clear all profiling information collected so far.
@@ -935,7 +944,7 @@ Clear all profiling information collected so far.
 
 static PyObject *
 _lsprof_Profiler_clear_impl(ProfilerObject *self)
-/*[clinic end generated code: output=dd1c668fb84b1335 input=fbe1f88c28be4f98]*/
+/*[clinic end generated code: output=dd1c668fb84b1335 input=bdb218890fae64d7]*/
 {
     if (self->flags & POF_EXT_TIMER) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -977,6 +986,7 @@ profiler_dealloc(PyObject *op)
 }
 
 /*[clinic input]
+@critical_section self
 _lsprof.Profiler.__init__ as profiler_init
 
     timer: object(c_default='NULL') = None
@@ -995,7 +1005,7 @@ is, in seconds).
 static int
 profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
                    int subcalls, int builtins)
-/*[clinic end generated code: output=ac523803ec9f9df2 input=8285ca746f96a414]*/
+/*[clinic end generated code: output=ac523803ec9f9df2 input=7022aae930773bba]*/
 {
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
         return -1;
