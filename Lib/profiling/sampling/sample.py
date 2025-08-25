@@ -84,7 +84,7 @@ def _run_with_sync(original_cmd):
 
         # Build command using the sync coordinator
         target_args = original_cmd[1:]  # Remove python executable
-        cmd = (sys.executable, "-m", "profile._sync_coordinator", str(sync_port), cwd) + tuple(target_args)
+        cmd = (sys.executable, "-m", "profiling.sampling._sync_coordinator", str(sync_port), cwd) + tuple(target_args)
 
         # Start the process with coordinator
         process = subprocess.Popen(cmd)
