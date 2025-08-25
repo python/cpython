@@ -15,7 +15,6 @@ extern "C" {
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
 
-
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
 #define FUNC_MAX_WATCHERS 8

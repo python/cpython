@@ -9,4 +9,5 @@ typedef jit_func __attribute__((preserve_none)) jit_func_preserve_none;
 
 #define DECLARE_TARGET(NAME)                     \
     _Py_CODEUNIT *__attribute__((preserve_none, visibility("hidden"))) \
-    NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
+    NAME(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, \
+    _PyStackRef _tos_cache0, _PyStackRef _tos_cache1, _PyStackRef _tos_cache2);

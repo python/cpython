@@ -35,7 +35,7 @@ typedef struct {
     uint8_t linked:1;
     uint8_t chain_depth:6;  // Must be big enough for MAX_CHAIN_DEPTH - 1.
     bool warm;
-    int index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
+    int16_t index;           // Index of ENTER_EXECUTOR (if code isn't NULL, below).
     _PyBloomFilter bloom;
     _PyExecutorLinkListNode links;
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
@@ -119,7 +119,7 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 #define JIT_CLEANUP_THRESHOLD 100000
 
 // This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 800
+#define UOP_MAX_TRACE_LENGTH 1600
 
 #define TRACE_STACK_SIZE 5
 
@@ -373,7 +373,7 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
     );
 }
 
-extern void _PyExecutor_Free(_PyExecutorObject *self);
+extern void _PyExecutor_FreeColdExecutor(_PyExecutorObject *cold);
 
 PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 #ifdef _Py_TIER2
