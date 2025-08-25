@@ -1,0 +1,3 @@
+Optimize (~x1.40-50 speedup) :meth:`fractions.Fraction.from_decimal` and
+:meth:`fractions.Fraction.from_float` for :class:`~decimal.Decimal` and
+:class:`float` inputs, respectively.  Patch by Sergey B Kirpichev.
