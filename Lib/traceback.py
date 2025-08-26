@@ -1086,7 +1086,7 @@ class TracebackException:
             self.exc_type_qualname = exc_type.__qualname__
             self.exc_type_module = exc_type.__module__
             if issubclass(exc_type, SyntaxError):
-                # Handle SyntaxError's specially
+                # Handle SyntaxErrors specially
                 self.filename = exc_value.filename
                 lno = exc_value.lineno
                 self.lineno = str(lno) if lno is not None else None
@@ -1098,8 +1098,8 @@ class TracebackException:
                 self.msg = exc_value.msg
                 self._is_syntax_error = True
                 self._exc_metadata = getattr(exc_value, "_metadata", None)
-            elif suggestion := _compute_suggestion_message(exc_type, exc_value, exc_traceback):
-                if self._str.endswith(('.', '?', '!', '...')):
+            elif suggestion := _suggestion_message(exc_type, exc_value, exc_traceback):
+                if self._str.endswith(('.', '?', '!')):
                     punctuation = ''
                 else:
                     punctuation = '.'
@@ -1367,6 +1367,7 @@ class TracebackException:
                 self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
                 return
 
+
     def _format_syntax_error(self, stype, **kwargs):
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
@@ -1559,6 +1560,7 @@ class TracebackException:
                     assert _ctx.exception_group_depth == 1
                     _ctx.exception_group_depth = 0
 
+
     def print(self, *, file=None, chain=True, **kwargs):
         """Print the result of self.format(chain=chain) to 'file'."""
         colorize = kwargs.get("colorize", False)
@@ -1713,7 +1715,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     return suggestion
 
 
-def _compute_suggestion_message(exc_type, exc_value, exc_traceback):
+def _suggestion_message(exc_type, exc_value, exc_traceback):
     if (
         issubclass(exc_type, ModuleNotFoundError)
         and sys.flags.no_site
