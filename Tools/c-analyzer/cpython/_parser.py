@@ -83,6 +83,8 @@ Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
 Python/optimizer_cases.c.h
+# XXX: Throws errors if PY_VERSION_HEX is not mocked out
+Modules/clinic/_testclinic_depr.c.h
 
 # not actually source
 Python/bytecodes.c

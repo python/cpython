@@ -197,7 +197,7 @@ Object Protocol
    in favour of using :c:func:`PyObject_DelAttr`, but there are currently no
    plans to remove it.
 
-   The function must not be called with ``NULL`` *v* and an an exception set.
+   The function must not be called with a ``NULL`` *v* and an exception set.
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 
@@ -214,7 +214,7 @@ Object Protocol
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
-   The function must not be called with ``NULL`` *v* and an an exception set.
+   The function must not be called with a ``NULL`` *v* and an exception set.
    This case can arise from forgetting ``NULL`` checks and would delete the
    attribute.
 

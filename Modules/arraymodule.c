@@ -1688,6 +1688,7 @@ array_array_insert_impl(arrayobject *self, Py_ssize_t i, PyObject *v)
 
 /*[clinic input]
 @critical_section
+@permit_long_summary
 array.array.buffer_info
 
 Return a tuple (address, length) giving the current memory address and the length in items of the buffer used to hold array's contents.
@@ -1698,7 +1699,7 @@ the buffer length in bytes.
 
 static PyObject *
 array_array_buffer_info_impl(arrayobject *self)
-/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=9d0dc1ff0e6542e8]*/
+/*[clinic end generated code: output=9b2a4ec3ae7e98e7 input=0ca81c3ffb41c306]*/
 {
     PyObject *retval = NULL, *v;
 
@@ -1744,6 +1745,7 @@ array_array_append_impl(arrayobject *self, PyObject *v)
 
 /*[clinic input]
 @critical_section
+@permit_long_docstring_body
 array.array.byteswap
 
 Byteswap all items of the array.
@@ -1754,7 +1756,7 @@ raised.
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self)
-/*[clinic end generated code: output=5f8236cbdf0d90b5 input=e691b6eff94d8b2e]*/
+/*[clinic end generated code: output=5f8236cbdf0d90b5 input=275cdee3cc3404e9]*/
 {
     char *p;
     Py_ssize_t i;
@@ -1838,6 +1840,7 @@ array_array_reverse_impl(arrayobject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
 array.array.fromfile
 
     cls: defining_class
@@ -1851,7 +1854,7 @@ Read n objects from the file object f and append them to the end of the array.
 static PyObject *
 array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
                           Py_ssize_t n)
-/*[clinic end generated code: output=83a667080b345ebc input=3822e907c1c11f1a]*/
+/*[clinic end generated code: output=83a667080b345ebc input=b2b4bdfb7ad4d4ae]*/
 {
     PyObject *b, *res;
     int itemsize = self->ob_descr->itemsize;
@@ -2026,6 +2029,7 @@ error:
 
 /*[clinic input]
 @critical_section
+@permit_long_summary
 array.array.frombytes
 
     buffer: Py_buffer
@@ -2036,7 +2040,7 @@ Appends items from the string, interpreting it as an array of machine values, as
 
 static PyObject *
 array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=d9842c8f7510a516 input=2245f9ea58579960]*/
+/*[clinic end generated code: output=d9842c8f7510a516 input=db8cf498a38b0210]*/
 {
     int itemsize = self->ob_descr->itemsize;
     Py_ssize_t n;
@@ -2068,6 +2072,7 @@ array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer)
 
 /*[clinic input]
 @critical_section
+@permit_long_summary
 array.array.tobytes
 
 Convert the array to an array of machine values and return the bytes representation.
@@ -2075,7 +2080,7 @@ Convert the array to an array of machine values and return the bytes representat
 
 static PyObject *
 array_array_tobytes_impl(arrayobject *self)
-/*[clinic end generated code: output=87318e4edcdc2bb6 input=c4d44d5499d2320f]*/
+/*[clinic end generated code: output=87318e4edcdc2bb6 input=15e6fd44fed32743]*/
 {
     // XXX This check below does nothing useful???
     if (arraydata_size_valid(Py_SIZE(self), self->ob_descr->itemsize)) {
@@ -2088,6 +2093,7 @@ array_array_tobytes_impl(arrayobject *self)
 
 /*[clinic input]
 @critical_section
+@permit_long_docstring_body
 array.array.fromunicode
 
     ustr: unicode
@@ -2102,7 +2108,7 @@ some other type.
 
 static PyObject *
 array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
-/*[clinic end generated code: output=24359f5e001a7f2b input=01e2a776cee82011]*/
+/*[clinic end generated code: output=24359f5e001a7f2b input=478b4f38fd0fc846]*/
 {
     int typecode = self->ob_descr->typecode;
     if (typecode != 'u' && typecode != 'w') {
@@ -2156,6 +2162,7 @@ array_array_fromunicode_impl(arrayobject *self, PyObject *ustr)
 
 /*[clinic input]
 @critical_section
+@permit_long_docstring_body
 array.array.tounicode
 
 Extends this array with data from the unicode string ustr.
@@ -2167,7 +2174,7 @@ unicode string from an array of some other type.
 
 static PyObject *
 array_array_tounicode_impl(arrayobject *self)
-/*[clinic end generated code: output=08e442378336e1ef input=6c69dfe81a279b91]*/
+/*[clinic end generated code: output=08e442378336e1ef input=949f517bec6d37f2]*/
 {
     int typecode = self->ob_descr->typecode;
     if (typecode != 'u' && typecode != 'w') {
