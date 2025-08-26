@@ -1939,20 +1939,30 @@ locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
     return 0;
 }
 
-/* returning 0 means that an error occurred and an exception is set */
+#define BAD_DIGEST_SIZE 0
+
+/*
+ * Return the digest size in bytes.
+ *
+ * On error, set an exception and return BAD_DIGEST_SIZE.
+ */
 static unsigned int
 _hashlib_hmac_digest_size(HMACobject *self)
 {
     const EVP_MD *md = _hashlib_hmac_get_md(self);
     if (md == NULL) {
-        return 0;
+        return BAD_DIGEST_SIZE;
     }
-    unsigned int digest_size = EVP_MD_size(md);
-    assert(digest_size <= EVP_MAX_MD_SIZE);
+    int digest_size = EVP_MD_size(md);
+    /* digest_size < 0 iff EVP_MD context is NULL (which is impossible here) */
+    assert(digest_size >= 0);
+    assert(digest_size <= (int)EVP_MAX_MD_SIZE);
+    /* digest_size == 0 means that the context is not entirely initialized */
     if (digest_size == 0) {
-        notify_ssl_error_occurred("invalid digest size");
+        raise_ssl_error(PyExc_ValueError, "missing digest size");
+        return BAD_DIGEST_SIZE;
     }
-    return digest_size;
+    return (unsigned int)digest_size;
 }
 
 static int
@@ -2053,24 +2063,38 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
     Py_RETURN_NONE;
 }
 
-static int
-_hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
+/*
+ * Extract the MAC value to 'buf' and return the digest size.
+ *
+ * The buffer 'buf' must have at least hashlib_openssl_HMAC_digest_size(self)
+ * bytes. Smaller buffers lead to undefined behaviors.
+ *
+ * On error, set an exception and return -1.
+ */
+static Py_ssize_t
+_hmac_digest(HMACobject *self, unsigned char *buf)
 {
+    unsigned int digest_size = _hashlib_hmac_digest_size(self);
+    assert(digest_size <= EVP_MAX_MD_SIZE);
+    if (digest_size == BAD_DIGEST_SIZE) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
     HMAC_CTX *temp_ctx = py_openssl_wrapper_HMAC_CTX_new();
     if (temp_ctx == NULL) {
-        return 0;
+        return -1;
     }
     if (locked_HMAC_CTX_copy(temp_ctx, self) < 0) {
         HMAC_CTX_free(temp_ctx);
-        return 0;
+        return -1;
     }
-    int r = HMAC_Final(temp_ctx, buf, &len);
+    int r = HMAC_Final(temp_ctx, buf, NULL);
     HMAC_CTX_free(temp_ctx);
     if (r == 0) {
         notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC_Final));
-        return 0;
+        return -1;
     }
-    return 1;
+    return digest_size;
 }
 
 /*[clinic input]
@@ -2082,16 +2106,9 @@ static PyObject *
 _hashlib_HMAC_digest_impl(HMACobject *self)
 /*[clinic end generated code: output=1b1424355af7a41e input=bff07f74da318fb4]*/
 {
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
-    if (digest_size == 0) {
-        return NULL;
-    }
-    int r = _hmac_digest(self, digest, digest_size);
-    if (r == 0) {
-        return NULL;
-    }
-    return PyBytes_FromStringAndSize((const char *)digest, digest_size);
+    unsigned char buf[EVP_MAX_MD_SIZE];
+    Py_ssize_t n = _hmac_digest(self, buf);
+    return n < 0 ? NULL : PyBytes_FromStringAndSize((const char *)buf, n);
 }
 
 /*[clinic input]
@@ -2109,24 +2126,17 @@ static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self)
 /*[clinic end generated code: output=80d825be1eaae6a7 input=5e48db83ab1a4d19]*/
 {
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
-    if (digest_size == 0) {
-        return NULL;
-    }
-    int r = _hmac_digest(self, digest, digest_size);
-    if (r == 0) {
-        return NULL;
-    }
-    return _Py_strhex((const char *)digest, digest_size);
+    unsigned char buf[EVP_MAX_MD_SIZE];
+    Py_ssize_t n = _hmac_digest(self, buf);
+    return n < 0 ? NULL : _Py_strhex((const char *)buf, n);
 }
 
 static PyObject *
 _hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
-    return digest_size == 0 ? NULL : PyLong_FromLong(digest_size);
+    unsigned int size = _hashlib_hmac_digest_size(self);
+    return size == BAD_DIGEST_SIZE ? NULL : PyLong_FromLong(size);
 }
 
 static PyObject *

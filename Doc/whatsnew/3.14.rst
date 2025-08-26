@@ -65,7 +65,7 @@ Summary -- release highlights
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
-Python 3.14 beta is the pre-release of the next version of the Python
+Python 3.14 will be the latest stable release of the Python
 programming language, with a mix of changes to the language, the
 implementation and the standard library.
 
@@ -635,7 +635,7 @@ Improved error messages
   misspellings may still result in regular syntax errors.
   (Contributed by Pablo Galindo in :gh:`132449`.)
 
-* When unpacking assignment fails due to incorrect number of variables, the
+* When an unpacking assignment fails due to an incorrect number of variables, the
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
 
@@ -763,7 +763,7 @@ ABI-compatible changes in the future.
 
 Complete the :pep:`587` :ref:`PyConfig C API <pyconfig_api>` by adding
 :c:func:`PyInitConfig_AddModule` which can be used to add a built-in extension
-module; feature previously referred to as the “inittab”.
+module; a feature previously referred to as the “inittab”.
 
 Add :c:func:`PyConfig_Get` and :c:func:`PyConfig_Set` functions to get and set
 the current runtime configuration.
@@ -1051,7 +1051,7 @@ Concurrent safe warnings control
 The :class:`warnings.catch_warnings` context manager will now optionally
 use a context variable for warning filters.  This is enabled by setting
 the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
-command-line option or an environment variable.  This gives predicable
+command-line option or an environment variable.  This gives predictable
 warnings control when using :class:`~warnings.catch_warnings` combined with
 multiple threads or asynchronous tasks. The flag defaults to true for the
 free-threaded build and false for the GIL-enabled build.
@@ -1152,7 +1152,7 @@ Other language changes
   unlike ``\Z``, which has subtly different behavior.
   (Contributed by Serhiy Storchaka in :gh:`133306`.)
 
-* ``\B`` in :mod:`regular expression <re>` now matches empty input string.
+* ``\B`` in :mod:`regular expression <re>` now matches the empty input string.
   Now it is always the opposite of ``\b``.
   (Contributed by Serhiy Storchaka in :gh:`124130`.)
 
@@ -1221,7 +1221,7 @@ PEP 765: Disallow ``return``/``break``/``continue`` that exit a ``finally`` bloc
 ---------------------------------------------------------------------------------
 
 The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
-:keyword:`continue` statements appears where it exits a :keyword:`finally` block.
+:keyword:`continue` statement appears where it exits a :keyword:`finally` block.
 This change is specified in :pep:`765`.
 
 
@@ -1278,7 +1278,7 @@ ast
   (Contributed by Irit Katriel in :gh:`130139`.)
 
 * Add new ``--feature-version``, ``--optimize``, ``--show-empty`` options to
-  command-line interface.
+  the command-line interface.
   (Contributed by Semyon Moroz in :gh:`133367`.)
 
 
@@ -2157,7 +2157,7 @@ unittest
     :meth:`~unittest.TestCase.assertNotStartsWith`,
     :meth:`~unittest.TestCase.assertEndsWith` and
     :meth:`~unittest.TestCase.assertNotEndsWith` check whether the Unicode
-    or byte string starts or ends with particular string(s).
+    or byte string starts or ends with particular strings.
 
   (Contributed by Serhiy Storchaka in :gh:`71339`.)
 
@@ -2223,7 +2223,7 @@ webbrowser
   supported browsers on macOS.
 
 
-zipinfo
+zipfile
 -------
 
 * Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
@@ -2231,7 +2231,7 @@ zipinfo
   as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
   (Contributed by Bénédikt Tran in :gh:`123424`.)
 
-* :meth:`zipfile.ZipFile.writestr` now respect ``SOURCE_DATE_EPOCH`` that
+* :meth:`zipfile.ZipFile.writestr` now respects ``SOURCE_DATE_EPOCH`` that
   distributions can set centrally and have build tools consume this in order
   to produce reproducible output.
   (Contributed by Jiahao Li in :gh:`91279`.)
@@ -2379,7 +2379,7 @@ zlib
 * On Windows, `zlib-ng <https://github.com/zlib-ng/zlib-ng>`__
   is now used as the implementation of the :mod:`zlib` module
   in the default binaries.
-  There are no known incompatabilities between ``zlib-ng``
+  There are no known incompatibilities between ``zlib-ng``
   and the previously-used ``zlib`` implementation.
   This should result in better performance at all compression levels.
 
@@ -2839,7 +2839,7 @@ Changes in the Python API
     rather than collecting generation 1.
   * Other calls to :func:`!gc.collect` are unchanged.
 
-* The :func:`locale.nl_langinfo` function now sets temporarily the ``LC_CTYPE``
+* The :func:`locale.nl_langinfo` function now temporarily sets the ``LC_CTYPE``
   locale in some cases.
   This temporary change affects other threads.
   (Contributed by Serhiy Storchaka in :gh:`69998`.)
@@ -3019,8 +3019,8 @@ New features
   and get an attribute of the module.
   (Contributed by Victor Stinner in :gh:`128911`.)
 
-* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue` that allows to
-  take a C integer and produce a Python :class:`bool` object. (Contributed by
+* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue` that allows
+  taking a C integer and produces a Python :class:`bool` object. (Contributed by
   Pablo Galindo in :issue:`45325`.)
 
 * Add :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` to determine if an object
