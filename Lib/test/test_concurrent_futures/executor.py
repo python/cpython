@@ -3,7 +3,9 @@ import threading
 import time
 import weakref
 from concurrent import futures
-from operator import add
+from contextlib import suppress
+from functools import partial
+from operator import add, truediv
 from test import support
 from test.support import Py_GIL_DISABLED
 
@@ -156,6 +158,29 @@ class ExecutorTest:
             next(ints),
             buffersize,
             msg="should have fetched only `buffersize` elements from `ints`.",
+        )
+
+    def test_map_buffersize_when_error(self):
+        ints = [1, 2, 3, 0, 4, 5, 6]
+        index_of_zero = ints.index(0)
+        ints_iter = iter(ints)
+        buffersize = 2
+        reciprocal = partial(truediv, 1)
+        results = []
+        with suppress(ZeroDivisionError):
+            for result in self.executor.map(
+                reciprocal, ints_iter, buffersize=buffersize
+            ):
+                results.append(result)
+        self.assertEqual(
+            len(results),
+            index_of_zero,
+            msg="should have mapped until reaching the zero.",
+        )
+        self.assertEqual(
+            len(results) + buffersize + len(list(ints_iter)),
+            len(ints),
+            msg="ints should be either processed, or buffered, or not fetched.",
         )
 
     def test_shutdown_race_issue12456(self):

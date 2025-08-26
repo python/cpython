@@ -304,18 +304,6 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
     done.update(waiter.finished_futures)
     return DoneAndNotDoneFutures(done, fs - done)
 
-
-def _result_or_cancel(fut, timeout=None):
-    try:
-        try:
-            return fut.result(timeout)
-        finally:
-            fut.cancel()
-    finally:
-        # Break a reference cycle with the exception in self._exception
-        del fut
-
-
 class Future(object):
     """Represents the result of an asynchronous computation."""
 
@@ -652,23 +640,35 @@ class Executor(object):
         # before the first iterator value is required.
         def result_iterator():
             try:
-                # reverse to keep finishing order
+                # reverse so that the next (FIFO) future is on the right
                 fs.reverse()
+                # careful not to keep references to futures or results
                 while fs:
+                    # wait for the next result
+                    if timeout is None:
+                        fs[-1].result()
+                    else:
+                        fs[-1].result(end_time - time.monotonic())
+
+                    # buffer next task
                     if (
                         buffersize
                         and (executor := executor_weakref())
                         and (args := next(zipped_iterables, None))
                     ):
                         fs.appendleft(executor.submit(fn, *args))
-                    # Careful not to keep a reference to the popped future
-                    if timeout is None:
-                        yield _result_or_cancel(fs.pop())
-                    else:
-                        yield _result_or_cancel(fs.pop(), end_time - time.monotonic())
+
+                    # yield the awaited result
+                    yield fs.pop()._result
+
             finally:
+                # break the reference cycle with fs[-1]._exception's traceback
+                if fs:
+                    fs.pop().cancel()
+
                 for future in fs:
                     future.cancel()
+
         return result_iterator()
 
     def shutdown(self, wait=True, *, cancel_futures=False):
