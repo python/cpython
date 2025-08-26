@@ -201,7 +201,6 @@ def itn(n, digits=8, format=DEFAULT_FORMAT):
     # base-256 representation. This allows values up to (256**(digits-1))-1.
     # A 0o200 byte indicates a positive number, a 0o377 byte a negative
     # number.
-    original_n = n
     n = int(n)
     if 0 <= n < 8 ** (digits - 1):
         s = bytes("%0*o" % (digits - 1, n), "ascii") + NUL
@@ -353,7 +352,7 @@ class _Stream:
             fileobj = _StreamProxy(fileobj)
             comptype = fileobj.getcomptype()
 
-        self.name     = name or ""
+        self.name     = os.fspath(name) if name is not None else ""
         self.mode     = mode
         self.comptype = comptype
         self.fileobj  = fileobj
@@ -2723,6 +2722,9 @@ class TarFile(object):
                 return
             else:
                 if os.path.exists(tarinfo._link_target):
+                    if os.path.lexists(targetpath):
+                        # Avoid FileExistsError on following os.link.
+                        os.unlink(targetpath)
                     os.link(tarinfo._link_target, targetpath)
                     return
         except symlink_exception:

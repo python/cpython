@@ -1,5 +1,5 @@
 {
-    "image": "ghcr.io/python/devcontainer:2025.05.29.15334414373",
+    "image": "ghcr.io/python/devcontainer:latest",
     "onCreateCommand": [
         // Install common tooling.
         "dnf",

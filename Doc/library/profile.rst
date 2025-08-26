@@ -791,7 +791,7 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       significant entries.  Initially, the list is taken to be the complete set
       of profiled functions.  Each restriction is either an integer (to select a
       count of lines), or a decimal fraction between 0.0 and 1.0 inclusive (to
-      select a percentage of lines), or a string that will interpreted as a
+      select a percentage of lines), or a string that will be interpreted as a
       regular expression (to pattern match the standard name that is printed).
       If several restrictions are provided, then they are applied sequentially.
       For example::
