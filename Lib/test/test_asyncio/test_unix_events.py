@@ -15,7 +15,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, warnings_helper
 from test.support import socket_helper
 from test.support import wait_process
 from test.support import hashlib_helper
@@ -1180,67 +1180,63 @@ class TestFunctional(unittest.TestCase):
 
 
 @support.requires_fork()
-class TestFork(unittest.TestCase):
+class TestFork(unittest.IsolatedAsyncioTestCase):
 
-    def test_fork_not_share_current_task(self):
-        loop = object()
-        task = object()
-        asyncio._set_running_loop(loop)
-        self.addCleanup(asyncio._set_running_loop, None)
-        asyncio.tasks._enter_task(loop, task)
-        self.addCleanup(asyncio.tasks._leave_task, loop, task)
-        self.assertIs(asyncio.current_task(), task)
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
-        pid = os.fork()
-        if pid == 0:
-            # child
-            try:
-                asyncio._set_running_loop(loop)
-                current_task = asyncio.current_task()
-                if current_task is None:
-                    os.write(w, b'NO TASK')
-                else:
-                    os.write(w, b'TASK:' + str(id(current_task)).encode())
-            except BaseException as e:
-                os.write(w, b'ERROR:' + ascii(e).encode())
-            finally:
-                asyncio._set_running_loop(None)
-                os._exit(0)
-        else:
-            # parent
-            result = os.read(r, 100)
-            self.assertEqual(result, b'NO TASK')
-            wait_process(pid, exitcode=0)
+    async def test_fork_not_share_current_task(self):
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+            loop = asyncio.get_running_loop()
+            task = asyncio.current_task()
+            self.assertIsNotNone(task)
+            r, w = os.pipe()
+            self.addCleanup(os.close, r)
+            self.addCleanup(os.close, w)
+            pid = os.fork()
+            if pid == 0:
+                # child
+                try:
+                    asyncio._set_running_loop(loop)
+                    current_task = asyncio.current_task()
+                    if current_task is None:
+                        os.write(w, b'NO TASK')
+                    else:
+                        os.write(w, b'TASK:' + str(id(current_task)).encode())
+                except BaseException as e:
+                    os.write(w, b'ERROR:' + ascii(e).encode())
+                finally:
+                    asyncio._set_running_loop(None)
+                    os._exit(0)
+            else:
+                # parent
+                result = os.read(r, 100)
+                self.assertEqual(result, b'NO TASK')
+                wait_process(pid, exitcode=0)
 
-    def test_fork_not_share_event_loop(self):
-        # The forked process should not share the event loop with the parent
-        loop = object()
-        asyncio._set_running_loop(loop)
-        self.assertIs(asyncio.get_running_loop(), loop)
-        self.addCleanup(asyncio._set_running_loop, None)
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
-        pid = os.fork()
-        if pid == 0:
-            # child
-            try:
-                loop = asyncio.get_event_loop()
-                os.write(w, b'LOOP:' + str(id(loop)).encode())
-            except RuntimeError:
-                os.write(w, b'NO LOOP')
-            except BaseException as e:
-                os.write(w, b'ERROR:' + ascii(e).encode())
-            finally:
-                os._exit(0)
-        else:
-            # parent
-            result = os.read(r, 100)
-            self.assertEqual(result, b'NO LOOP')
-            wait_process(pid, exitcode=0)
+    async def test_fork_not_share_event_loop(self):
+        with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+            # The forked process should not share the event loop with the parent
+            loop = asyncio.get_running_loop()
+            r, w = os.pipe()
+            self.addCleanup(os.close, r)
+            self.addCleanup(os.close, w)
+            pid = os.fork()
+            if pid == 0:
+                # child
+                try:
+                    loop = asyncio.get_event_loop()
+                    os.write(w, b'LOOP:' + str(id(loop)).encode())
+                except RuntimeError:
+                    os.write(w, b'NO LOOP')
+                except BaseException as e:
+                    os.write(w, b'ERROR:' + ascii(e).encode())
+                finally:
+                    os._exit(0)
+            else:
+                # parent
+                result = os.read(r, 100)
+                self.assertEqual(result, b'NO LOOP')
+                wait_process(pid, exitcode=0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_signal_handling(self):
@@ -1288,6 +1284,7 @@ class TestFork(unittest.TestCase):
         self.assertFalse(parent_handled.is_set())
         self.assertTrue(child_handled.is_set())
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_run(self):
@@ -1308,6 +1305,7 @@ class TestFork(unittest.TestCase):
 
         self.assertEqual(result.value, 42)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @hashlib_helper.requires_hashdigest('md5')
     @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_subprocess(self):

@@ -13,7 +13,7 @@ from itertools import product
 from unittest import mock
 
 from test import support
-from test.support import import_helper
+from test.support import import_helper, warnings_helper
 from test.support.script_helper import assert_python_ok
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -1112,6 +1112,7 @@ class BaseTestUUID:
         versions = {u.version for u in uuids}
         self.assertSetEqual(versions, {8})
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @support.requires_fork()
     def testIssue8621(self):
         # On at least some versions of OSX self.uuid.uuid4 generates
