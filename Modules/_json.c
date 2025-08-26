@@ -1781,21 +1781,21 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     while (PyDict_Next(dct, &pos, &key, &value)) {
 #ifdef Py_GIL_DISABLED
         // gh-119438: in the free-threading build the lock on dct can get suspended
-        Py_IncRef(key);
-        Py_IncRef(value);
+        Py_INCREF(key);
+        Py_INCREF(value);
 #endif
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                     indent_level, indent_cache,
                                     separator) < 0) {
 #ifdef Py_GIL_DISABLED
-            Py_DecRef(key);
-            Py_DecRef(value);
+            Py_DECREF(key);
+            Py_DECREF(value);
 #endif
             return -1;
         }
 #ifdef Py_GIL_DISABLED
-        Py_DecRef(key);
-        Py_DecRef(value);
+        Py_DECREF(key);
+        Py_DECREF(value);
 #endif
     }
     return 0;
@@ -1902,12 +1902,12 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
 #ifdef Py_GIL_DISABLED
         // gh-119438: in the free-threading build the lock on s_fast can get suspended
-        Py_IncRef(obj);
+        Py_INCREF(obj);
 #endif
         if (i) {
             if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
 #ifdef Py_GIL_DISABLED
-                Py_DecRef(obj);
+                Py_DECREF(obj);
 #endif
                 return -1;
             }
@@ -1915,12 +1915,12 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
             _PyErr_FormatNote("when serializing %T item %zd", seq, i);
 #ifdef Py_GIL_DISABLED
-            Py_DecRef(obj);
+            Py_DECREF(obj);
 #endif
             return -1;
         }
 #ifdef Py_GIL_DISABLED
-        Py_DecRef(obj);
+        Py_DECREF(obj);
 #endif
     }
     return 0;
