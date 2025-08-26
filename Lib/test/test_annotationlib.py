@@ -1617,6 +1617,32 @@ class TestForwardRefClass(unittest.TestCase):
                     TypeParamsSample.TypeParamsAlias2,
                 )
 
+    def test_evaluate_local_generic(self):
+        class Cls:
+            x: alias
+            y: alias2
+            z: alias3
+
+        fwdref = ForwardRef("alias[int]", owner=Cls)
+        with self.assertRaises(NameError):
+            fwdref.evaluate()
+
+        alias = list
+        self.assertEqual(fwdref.evaluate(), list[int])
+
+        del alias
+        fwdref = ForwardRef("alias[alias]", owner=Cls)
+        alias = list
+        self.assertEqual(fwdref.evaluate(), list[list])
+
+        del alias
+        fwdref = ForwardRef("alias[alias2, alias3]", owner=Cls)
+        alias = dict
+        alias2 = int
+        alias3 = str
+        self.assertEqual(fwdref.evaluate(), dict[int, str])
+
+
     def test_fwdref_with_module(self):
         self.assertIs(ForwardRef("Format", module="annotationlib").evaluate(), Format)
         self.assertIs(
