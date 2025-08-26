@@ -722,6 +722,7 @@ new_buffersize(fileio *self, size_t currentsize)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.readall
 
 Read all data from the file, returned as bytes.
@@ -735,7 +736,7 @@ data is available (EAGAIN is returned before bytes are read) returns None.
 
 static PyObject *
 _io_FileIO_readall_impl(fileio *self)
-/*[clinic end generated code: output=faa0292b213b4022 input=1e19849857f5d0a1]*/
+/*[clinic end generated code: output=faa0292b213b4022 input=10d8b2ec403302dc]*/
 {
     Py_off_t pos, end;
     PyObject *result;
@@ -843,6 +844,7 @@ _io_FileIO_readall_impl(fileio *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.read
     cls: defining_class
     size: Py_ssize_t(accept={int, NoneType}) = -1
@@ -862,7 +864,7 @@ bytes object at EOF.
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=bbd749c7c224143e input=cf21fddef7d38ab6]*/
+/*[clinic end generated code: output=bbd749c7c224143e input=752d1ad3db8564a5]*/
 {
     char *ptr;
     Py_ssize_t n;
@@ -1018,6 +1020,7 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.seek
     pos: object
     whence: int = 0
@@ -1036,7 +1039,7 @@ Note that not all file objects are seekable.
 
 static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence)
-/*[clinic end generated code: output=c976acdf054e6655 input=0439194b0774d454]*/
+/*[clinic end generated code: output=c976acdf054e6655 input=f077c492a84c9e62]*/
 {
     if (self->fd < 0)
         return err_closed();

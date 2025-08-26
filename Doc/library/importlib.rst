@@ -393,6 +393,8 @@ ABC hierarchy::
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
        through :class:`importlib.resources.abc.TraversableResources`.
+       This class exists for backwards compatibility only with other ABCs in
+       this module.
 
     .. method:: get_data(path)
        :abstractmethod:

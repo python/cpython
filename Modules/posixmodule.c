@@ -3238,6 +3238,7 @@ os_stat_impl(PyObject *module, path_t *path, int dir_fd, int follow_symlinks)
 
 
 /*[clinic input]
+@permit_long_summary
 os.lstat
 
     path : path_t
@@ -3254,7 +3255,7 @@ Equivalent to stat(path, follow_symlinks=False).
 
 static PyObject *
 os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=ef82a5d35ce8ab37 input=0b7474765927b925]*/
+/*[clinic end generated code: output=ef82a5d35ce8ab37 input=024102124f88e743]*/
 {
     int follow_symlinks = 0;
     return posix_do_stat(module, "lstat", path, dir_fd, follow_symlinks);
@@ -3295,15 +3296,15 @@ dir_fd, effective_ids, and follow_symlinks may not be implemented
   NotImplementedError.
 
 Note that most operations will use the effective uid/gid, therefore this
-  routine can be used in a suid/sgid environment to test if the invoking user
-  has the specified access to the path.
+  routine can be used in a suid/sgid environment to test if the invoking
+  user has the specified access to the path.
 
 [clinic start generated code]*/
 
 static int
 os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
                int effective_ids, int follow_symlinks)
-/*[clinic end generated code: output=cf84158bc90b1a77 input=3ffe4e650ee3bf20]*/
+/*[clinic end generated code: output=cf84158bc90b1a77 input=c33565f7584b99e4]*/
 {
     int return_value;
 
@@ -4344,6 +4345,7 @@ os_getcwdb_impl(PyObject *module)
 #ifdef HAVE_LINK
 /*[clinic input]
 
+@permit_long_docstring_body
 os.link
 
     src : path_t
@@ -4369,7 +4371,7 @@ src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
 static PyObject *
 os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7f00f6007fd5269a input=1d5e602d115fed7b]*/
+/*[clinic end generated code: output=7f00f6007fd5269a input=e2a50a6497050e44]*/
 {
 #ifdef MS_WINDOWS
     BOOL result = FALSE;
@@ -4663,6 +4665,7 @@ exit:
 
 
 /*[clinic input]
+@permit_long_docstring_body
 os.listdir
 
     path : path_t(nullable=True, allow_fd='PATH_HAVE_FDOPENDIR') = None
@@ -4685,7 +4688,7 @@ entries '.' and '..' even if they are present in the directory.
 
 static PyObject *
 os_listdir_impl(PyObject *module, path_t *path)
-/*[clinic end generated code: output=293045673fcd1a75 input=e3f58030f538295d]*/
+/*[clinic end generated code: output=293045673fcd1a75 input=0bd1728387391b9a]*/
 {
     if (PySys_Audit("os.listdir", "O",
                     path->object ? path->object : Py_None) < 0) {
@@ -5975,6 +5978,7 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
 
 
 /*[clinic input]
+@permit_long_docstring_body
 os.rename
 
     src : path_t
@@ -5995,13 +5999,14 @@ src_dir_fd and dst_dir_fd, may not be implemented on your platform.
 static PyObject *
 os_rename_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                int dst_dir_fd)
-/*[clinic end generated code: output=59e803072cf41230 input=faa61c847912c850]*/
+/*[clinic end generated code: output=59e803072cf41230 input=11aae8c091162766]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 0);
 }
 
 
 /*[clinic input]
+@permit_long_docstring_body
 os.replace = os.rename
 
 Rename a file or directory, overwriting the destination.
@@ -6016,7 +6021,7 @@ src_dir_fd and dst_dir_fd, may not be implemented on your platform.
 static PyObject *
 os_replace_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
                 int dst_dir_fd)
-/*[clinic end generated code: output=1968c02e7857422b input=c003f0def43378ef]*/
+/*[clinic end generated code: output=1968c02e7857422b input=78d6c8087e90994c]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 1);
 }
@@ -8432,6 +8437,7 @@ os_sched_setparam_impl(PyObject *module, pid_t pid, PyObject *param_obj)
 
 #ifdef HAVE_SCHED_RR_GET_INTERVAL
 /*[clinic input]
+@permit_long_summary
 os.sched_rr_get_interval -> double
     pid: pid_t
     /
@@ -8443,7 +8449,7 @@ Value returned is a float.
 
 static double
 os_sched_rr_get_interval_impl(PyObject *module, pid_t pid)
-/*[clinic end generated code: output=7e2d935833ab47dc input=2a973da15cca6fae]*/
+/*[clinic end generated code: output=7e2d935833ab47dc input=cab0b83586776b10]*/
 {
     struct timespec interval;
     if (sched_rr_get_interval(pid, &interval)) {
@@ -8583,6 +8589,7 @@ error:
 
 
 /*[clinic input]
+@permit_long_summary
 os.sched_getaffinity
     pid: pid_t
     /
@@ -8594,7 +8601,7 @@ The affinity is returned as a set of CPU identifiers.
 
 static PyObject *
 os_sched_getaffinity_impl(PyObject *module, pid_t pid)
-/*[clinic end generated code: output=f726f2c193c17a4f input=983ce7cb4a565980]*/
+/*[clinic end generated code: output=f726f2c193c17a4f input=cb79ff13579ef091]*/
 {
     int ncpus = NCPUS_START;
     size_t setsize;
@@ -10952,6 +10959,7 @@ os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
 }
 
 /*[clinic input]
+@permit_long_summary
 os.timerfd_gettime
 
     fd: fildes
@@ -10963,7 +10971,7 @@ Return a tuple of a timer file descriptor's (interval, next expiration) in float
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=8148e3430870da1c]*/
+/*[clinic end generated code: output=ec5a94a66cfe6ab4 input=05f7d568a4820dc6]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -10978,6 +10986,7 @@ os_timerfd_gettime_impl(PyObject *module, int fd)
 
 
 /*[clinic input]
+@permit_long_summary
 os.timerfd_gettime_ns
 
     fd: fildes
@@ -10989,7 +10998,7 @@ Return a tuple of a timer file descriptor's (interval, next expiration) in nanos
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd)
-/*[clinic end generated code: output=580633a4465f39fe input=a825443e4c6b40ac]*/
+/*[clinic end generated code: output=580633a4465f39fe input=d0de95b9782179c5]*/
 {
     struct itimerspec curr_value;
     int result;
@@ -11414,6 +11423,7 @@ os_lockf_impl(PyObject *module, int fd, int command, Py_off_t length)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 os.lseek -> Py_off_t
 
     fd: int
@@ -11434,7 +11444,7 @@ The return value is the number of bytes relative to the beginning of the file.
 
 static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
-/*[clinic end generated code: output=971e1efb6b30bd2f input=f096e754c5367504]*/
+/*[clinic end generated code: output=971e1efb6b30bd2f input=4a3de549f07e1c40]*/
 {
     Py_off_t result;
 
@@ -11503,6 +11513,7 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 os.readinto -> Py_ssize_t
     fd: int
     buffer: Py_buffer(accept={rwbuffer})
@@ -11523,7 +11534,7 @@ negative.
 
 static Py_ssize_t
 os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer)
-/*[clinic end generated code: output=8091a3513c683a80 input=d40074d0a68de575]*/
+/*[clinic end generated code: output=8091a3513c683a80 input=a770382bd3d32f9a]*/
 {
     assert(buffer->len >= 0);
     Py_ssize_t result = _Py_read(fd, buffer->buf, buffer->len);
@@ -11656,6 +11667,7 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
 
 #ifdef HAVE_PREAD
 /*[clinic input]
+@permit_long_summary
 os.pread
 
     fd: int
@@ -11671,7 +11683,7 @@ the beginning of the file.  The file offset remains unchanged.
 
 static PyObject *
 os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
-/*[clinic end generated code: output=3f875c1eef82e32f input=85cb4a5589627144]*/
+/*[clinic end generated code: output=3f875c1eef82e32f input=5943beb009d3da04]*/
 {
     Py_ssize_t n;
     int async_err = 0;
@@ -11708,6 +11720,7 @@ os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
 
 #if defined(HAVE_PREADV) || defined (HAVE_PREADV2)
 /*[clinic input]
+@permit_long_docstring_body
 os.preadv -> Py_ssize_t
 
     fd: int
@@ -11736,7 +11749,7 @@ Using non-zero flags requires Linux 4.6 or newer.
 static Py_ssize_t
 os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                int flags)
-/*[clinic end generated code: output=26fc9c6e58e7ada5 input=4173919dc1f7ed99]*/
+/*[clinic end generated code: output=26fc9c6e58e7ada5 input=c1f876866fcd9d41]*/
 {
     Py_ssize_t cnt, n;
     int async_err = 0;
@@ -12352,6 +12365,8 @@ os_pwrite_impl(PyObject *module, int fd, Py_buffer *buffer, Py_off_t offset)
 
 #if defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 os.pwritev -> Py_ssize_t
 
     fd: int
@@ -12381,7 +12396,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=35358c327e1a2a8e]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=99d8a21493ff76ca]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -12654,6 +12669,7 @@ os_mkfifo_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 /*[clinic input]
+@permit_long_docstring_body
 os.mknod
 
     path: path_t
@@ -12680,7 +12696,7 @@ dir_fd may not be implemented on your platform.
 static PyObject *
 os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
               int dir_fd)
-/*[clinic end generated code: output=92e55d3ca8917461 input=ee44531551a4d83b]*/
+/*[clinic end generated code: output=92e55d3ca8917461 input=7121c4723d22545b]*/
 {
     int result;
     int async_err = 0;
@@ -13271,6 +13287,7 @@ os_WIFSIGNALED_impl(PyObject *module, int status)
 
 #ifdef WIFEXITED
 /*[clinic input]
+@permit_long_summary
 os.WIFEXITED -> bool
 
     status: int
@@ -13280,7 +13297,7 @@ Return True if the process returning status exited via the exit() system call.
 
 static int
 os_WIFEXITED_impl(PyObject *module, int status)
-/*[clinic end generated code: output=01c09d6ebfeea397 input=d63775a6791586c0]*/
+/*[clinic end generated code: output=01c09d6ebfeea397 input=8c24a82148709b30]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13311,6 +13328,7 @@ os_WEXITSTATUS_impl(PyObject *module, int status)
 
 #ifdef WTERMSIG
 /*[clinic input]
+@permit_long_summary
 os.WTERMSIG -> int
 
     status: int
@@ -13320,7 +13338,7 @@ Return the signal that terminated the process that provided the status value.
 
 static int
 os_WTERMSIG_impl(PyObject *module, int status)
-/*[clinic end generated code: output=172f7dfc8dcfc3ad input=727fd7f84ec3f243]*/
+/*[clinic end generated code: output=172f7dfc8dcfc3ad input=89072f6cbf3f8050]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -14862,6 +14880,7 @@ os_getresuid_impl(PyObject *module)
 
 #ifdef HAVE_GETRESGID
 /*[clinic input]
+@permit_long_summary
 os.getresgid
 
 Return a tuple of the current process's real, effective, and saved group ids.
@@ -14869,7 +14888,7 @@ Return a tuple of the current process's real, effective, and saved group ids.
 
 static PyObject *
 os_getresgid_impl(PyObject *module)
-/*[clinic end generated code: output=2719c4bfcf27fb9f input=517e68db9ca32df6]*/
+/*[clinic end generated code: output=2719c4bfcf27fb9f input=ad9adadc86fbdb17]*/
 {
     gid_t rgid, egid, sgid;
     if (getresgid(&rgid, &egid, &sgid) < 0)
@@ -14959,6 +14978,7 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
 
 
 /*[clinic input]
+@permit_long_docstring_body
 os.setxattr
 
     path: path_t(allow_fd=True)
@@ -14980,7 +15000,7 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 static PyObject *
 os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  Py_buffer *value, int flags, int follow_symlinks)
-/*[clinic end generated code: output=98b83f63fdde26bb input=c17c0103009042f0]*/
+/*[clinic end generated code: output=98b83f63fdde26bb input=4098e6f68699f3d7]*/
 {
     ssize_t result;
 
@@ -15062,6 +15082,7 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
 
 
 /*[clinic input]
+@permit_long_docstring_body
 os.listxattr
 
     path: path_t(allow_fd=True, nullable=True) = None
@@ -15079,7 +15100,7 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 
 static PyObject *
 os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
-/*[clinic end generated code: output=bebdb4e2ad0ce435 input=9826edf9fdb90869]*/
+/*[clinic end generated code: output=bebdb4e2ad0ce435 input=48aa9ac8be47dea1]*/
 {
     Py_ssize_t i;
     PyObject *result = NULL;
@@ -15166,6 +15187,7 @@ exit:
 
 
 /*[clinic input]
+@permit_long_summary
 os.urandom
 
     size: Py_ssize_t
@@ -15176,7 +15198,7 @@ Return a bytes object containing random bytes suitable for cryptographic use.
 
 static PyObject *
 os_urandom_impl(PyObject *module, Py_ssize_t size)
-/*[clinic end generated code: output=42c5cca9d18068e9 input=4067cdb1b6776c29]*/
+/*[clinic end generated code: output=42c5cca9d18068e9 input=ade19e6b362e7388]*/
 {
     PyObject *bytes;
     int result;
@@ -16624,6 +16646,7 @@ PyOS_FSPath(PyObject *path)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 os.fspath
 
     path: object
@@ -16637,7 +16660,7 @@ types raise a TypeError.
 
 static PyObject *
 os_fspath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=c3c3b78ecff2914f input=e357165f7b22490f]*/
+/*[clinic end generated code: output=c3c3b78ecff2914f input=f608743e60a3211e]*/
 {
     return PyOS_FSPath(path);
 }

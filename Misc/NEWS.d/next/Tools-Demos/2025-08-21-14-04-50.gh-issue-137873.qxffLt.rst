@@ -1,0 +1,3 @@
+The iOS test runner has been simplified, resolving some issues that have
+been observed using the runner in GitHub Actions and Azure Pipelines test
+environments.
