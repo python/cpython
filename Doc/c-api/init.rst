@@ -2310,22 +2310,9 @@ Critical sections avoid deadlocks by implicitly suspending active critical
 sections, hence, they do not provide exclusive access such as provided by
 traditional locks like :c:type:`PyMutex`.  When a critical section is started,
 the per-object lock for the object is acquired. If the code executed inside the
-critical section suspends the critical section, the per-object lock is released,
-so other threads can acquire the per-object lock for the same object.
-
-The critical sections can be suspended in the following situations:
-
-* Calling back into Python code, such as calling a Python function or method.
-
-* Calling any C API function which internally uses critical sections
-  such as :c:func:`PyList_Append` and :c:func:`PyDict_SetItem`.
-
-* Locking of :c:type:`PyMutex` by :c:func:`PyMutex_Lock`.
-
-* Calling :c:func:`PyEval_SaveThread` to detach the current thread.
-
-* Recursively entering the critical section for the same object.
-
+critical section calls C-API functions then it can suspend the critical section thereby
+releasing the per-object lock, so other threads can acquire the per-object lock
+for the same object.
 
 Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
 available. Use these variants to start a critical section in a situation where
