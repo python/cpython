@@ -3275,7 +3275,7 @@ def TypedDict(typename, fields, /, *, total=True, closed=None,
 
     The closed argument controls whether the TypedDict allows additional
     non-required items during inheritance and assignability checks.
-    If closed=True, the TypedDict is closed to additional items::
+    If closed=True, the TypedDict does not allow additional items::
 
         Point2D = TypedDict('Point2D', {'x': int, 'y': int}, closed=True)
         class Point3D(Point2D):
