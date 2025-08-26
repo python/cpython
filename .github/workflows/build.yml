@@ -317,7 +317,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04]
-        openssl_ver: [3.0.17, 3.2.5, 3.3.4, 3.4.2, 3.5.2]
+        # Keep 1.1.1w in our list despite it being upstream EOL and otherwise
+        # unsupported as it most resembles other 1.1.1-work-a-like ssl APIs
+        # supported by important vendors such as AWS-LC.
+        openssl_ver: [1.1.1w, 3.0.17, 3.2.5, 3.3.4, 3.4.2, 3.5.2]
         # See Tools/ssl/make_ssl_data.py for notes on adding a new version
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
