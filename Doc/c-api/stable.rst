@@ -218,7 +218,18 @@ mechanism, so that detectable incompatibilities raise exceptions rather than
 crash.
 
 Most modules can use this check via the :c:data:`Py_mod_abi`
-slot and the :c:macro:`PyABIInfo_VAR` macro.
+slot and the :c:macro:`PyABIInfo_VAR` macro, for example like this:
+
+.. code-block:: c
+
+   PyABIInfo_VAR(abi_info);
+
+   static PyModuleDef_Slot mymodule_slots[] = {
+      {Py_mod_abi, &abi_info},
+      ...
+   };
+
+
 The full API is described below for advanced use cases.
 
 .. c:function:: int PyABIInfo_Check(PyABIInfo *info, const char *module_name)
