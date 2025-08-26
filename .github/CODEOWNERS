@@ -67,7 +67,7 @@
 Tools/build/compute-changes.py         @AA-Turner
 Tools/build/verify_ensurepip_wheels.py @AA-Turner @pfmoore @pradyunsg
 
-# pre-commit
+# Pre-commit
 .pre-commit-config.yaml       @hugovk
 .ruff.toml                    @hugovk @AlexWaygood @AA-Turner
 
@@ -79,7 +79,7 @@ Tools/patchcheck/             @AA-Turner
 # Build System
 # ----------------------------------------------------------------------------
 
-# autotools
+# Autotools
 configure*                       @erlend-aasland @corona10 @AA-Turner
 Makefile.pre.in                  @erlend-aasland @AA-Turner
 Modules/Setup*                   @erlend-aasland @AA-Turner
@@ -156,17 +156,6 @@ Mac/                          @python/macos-team
 Lib/_osx_support.py           @python/macos-team
 Lib/test/test__osx_support.py @python/macos-team
 
-# Windows
-PC/                           @python/windows-team
-PCbuild/                      @python/windows-team
-
-# Windows Launcher
-PC/launcher.c                 @python/windows-team @vsajip
-
-# Windows installer packages
-Tools/msi/                    @python/windows-team
-Tools/nuget/                  @python/windows-team
-
 # WebAssembly
 Tools/wasm/README.md          @brettcannon @freakboy3742
 
@@ -178,6 +167,17 @@ Tools/wasm/emscripten                     @freakboy3742
 Tools/wasm/wasi-env           @brettcannon
 Tools/wasm/wasi.py            @brettcannon
 Tools/wasm/wasi               @brettcannon
+
+# Windows
+PC/                           @python/windows-team
+PCbuild/                      @python/windows-team
+
+# Windows Launcher
+PC/launcher.c                 @python/windows-team @vsajip
+
+# Windows installer packages
+Tools/msi/                    @python/windows-team
+Tools/nuget/                  @python/windows-team
 
 
 # ----------------------------------------------------------------------------
@@ -234,7 +234,7 @@ Python/context.c                    @1st1
 Lib/test/test_except*.py      @iritkatriel
 Objects/exceptions.c          @iritkatriel
 
-# getpath
+# Getpath
 Lib/test/test_getpath.py      @FFY00
 Modules/getpath*              @FFY00
 
@@ -488,7 +488,7 @@ Doc/library/importlib.resources.rst       @jaraco @warsaw
 Lib/importlib/resources/                  @jaraco @warsaw @FFY00
 Lib/test/test_importlib/resources/        @jaraco @warsaw @FFY00
 
-# itertools
+# Itertools
 Doc/library/itertools.rst     @rhettinger
 Lib/test/test_itertools.py    @rhettinger
 Modules/itertoolsmodule.c     @rhettinger
