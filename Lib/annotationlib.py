@@ -167,6 +167,13 @@ class ForwardRef:
                 globals[param.__name__] = param
         if self.__extra_names__:
             locals = {**locals, **self.__extra_names__}
+        if (annotate := getattr(owner, "__annotate__", None)) and annotate.__closure__:
+            for name, cell in zip(annotate.__code__.co_freevars, annotate.__closure__):
+                if name != "__classdict__":
+                    try:
+                        locals[name] = cell.cell_contents
+                    except ValueError:
+                        pass
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
