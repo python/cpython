@@ -199,6 +199,14 @@ class CFuncPtrTestCase(unittest.TestCase, StructCheckMixin):
         version = wrap_str_ann.Py_GetVersion()
         self.assertIsInstance(version, bytes)
 
+    def test_invalid_argtypes(self):
+        libc = CDLL(None)
+
+        PRINTF_PROTO = CFUNCTYPE(c_int, ctypes.c_char_p)
+        c_printf = PRINTF_PROTO(("printf", libc), ((1,),))
+        c_printf.argtypes = (c_char_p, c_int)
+        with self.assertRaises(TypeError):
+            c_printf(b"Hello\n")
 
 if __name__ == '__main__':
     unittest.main()
