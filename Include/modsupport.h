@@ -56,14 +56,55 @@ PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
 
 #define Py_CLEANUP_SUPPORTED 0x20000
 
-/* The API and ABI versions are left for backwards compatibility.
-   They've not been updated since 2006 and 2010, respectively.
-   API/ABI versioning is now tied to the CPython version.
-   The *_VERSION and *_STRING symbols should define the same value; as
-   number and string literal respectively. Make sure the definitions match.
-*/
 #define PYTHON_API_VERSION 1013
 #define PYTHON_API_STRING "1013"
+/* The API version is maintained (independently from the Python version)
+   so we can detect mismatches between the interpreter and dynamically
+   loaded modules.  These are diagnosed by an error message but
+   the module is still loaded (because the mismatch can only be tested
+   after loading the module).  The error message is intended to
+   explain the core dump a few seconds later.
+
+   The symbol PYTHON_API_STRING defines the same value as a string
+   literal.  *** PLEASE MAKE SURE THE DEFINITIONS MATCH. ***
+
+   Please add a line or two to the top of this log for each API
+   version change:
+
+   22-Feb-2006  MvL     1013    PEP 353 - long indices for sequence lengths
+
+   19-Aug-2002  GvR     1012    Changes to string object struct for
+                                interning changes, saving 3 bytes.
+
+   17-Jul-2001  GvR     1011    Descr-branch, just to be on the safe side
+
+   25-Jan-2001  FLD     1010    Parameters added to PyCode_New() and
+                                PyFrame_New(); Python 2.1a2
+
+   14-Mar-2000  GvR     1009    Unicode API added
+
+   3-Jan-1999   GvR     1007    Decided to change back!  (Don't reuse 1008!)
+
+   3-Dec-1998   GvR     1008    Python 1.5.2b1
+
+   18-Jan-1997  GvR     1007    string interning and other speedups
+
+   11-Oct-1996  GvR     renamed Py_Ellipses to Py_Ellipsis :-(
+
+   30-Jul-1996  GvR     Slice and ellipses syntax added
+
+   23-Jul-1996  GvR     For 1.4 -- better safe than sorry this time :-)
+
+   7-Nov-1995   GvR     Keyword arguments (should've been done at 1.3 :-( )
+
+   10-Jan-1995  GvR     Renamed globals to new naming scheme
+
+   9-Jan-1995   GvR     Initial version (incompatible with older API)
+*/
+
+/* The PYTHON_ABI_VERSION is introduced in PEP 384. For the lifetime of
+   Python 3, it will stay at the value of 3; changes to the limited API
+   must be performed in a strictly backwards-compatible manner. */
 #define PYTHON_ABI_VERSION 3
 #define PYTHON_ABI_STRING "3"
 
