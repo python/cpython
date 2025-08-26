@@ -1445,6 +1445,22 @@ The IGNORE_LINEBREAK flag causes all sequences of newlines to be removed:
     abcdefghijklmnopqrstuvwxyz
     ABCDEFGHIJKLMNOPQRSTUVWXYZ
 
+    ... mixing flags:
+
+    >>> import string
+    >>> print(string.ascii_letters)  # doctest: +ELLIPSIS, +IGNORE_LINEBREAK
+    abc...xyz
+    ABC...
+
+    ... mixing flags:
+
+    >>> import string
+    >>> print(list(string.ascii_letters))  # doctest: +IGNORE_LINEBREAK
+    ...                                    # doctest: +ELLIPSIS
+    ...                                    # doctest: +NORMALIZE_WHITESPACE
+    ['a', ..., 'z',
+     'A', ..., 'Z']
+
 The ELLIPSIS flag causes ellipsis marker ("...") in the expected
 output to match any substring in the actual output:
 

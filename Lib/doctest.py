@@ -1758,7 +1758,7 @@ class OutputChecker:
         # the NORMALIZE_WHITESPACE and ELLIPSIS flags.
         if optionflags & IGNORE_LINEBREAK:
             # `want` originally ends with '\n' so we add it back
-            want = ''.join(want.split('\n')) + '\n'
+            want = ''.join(want.splitlines()) + '\n'
             if got == want:
                 return True
 
