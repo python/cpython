@@ -3194,8 +3194,12 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.py_ssize_t_converter(PY_SSIZE_T_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.py_ssize_t_converter([])
-        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None), (1, 2, 56))
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, -1)
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, 78, -1)
+        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56, 78, 90))
+        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None, 3, None), (1, 2, 56, 3, 90))
 
     def test_slice_index_converter(self):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX

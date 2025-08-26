@@ -1196,7 +1196,7 @@ exit:
 }
 
 PyDoc_STRVAR(py_ssize_t_converter__doc__,
-"py_ssize_t_converter($module, a=12, b=34, c=56, /)\n"
+"py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, /)\n"
 "--\n"
 "\n");
 
@@ -1205,7 +1205,7 @@ PyDoc_STRVAR(py_ssize_t_converter__doc__,
 
 static PyObject *
 py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                          Py_ssize_t c);
+                          Py_ssize_t c, Py_ssize_t d, Py_ssize_t e);
 
 static PyObject *
 py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1214,8 +1214,10 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t a = 12;
     Py_ssize_t b = 34;
     Py_ssize_t c = 56;
+    Py_ssize_t d = 78;
+    Py_ssize_t e = 90;
 
-    if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 3)) {
+    if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 5)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -1254,8 +1256,34 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_Py_convert_optional_to_ssize_t(args[2], &c)) {
         goto exit;
     }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        d = ival;
+        if (d < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "d must not be negative");
+            goto exit;
+        }
+    }
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_non_negative_ssize_t(args[4], &e)) {
+        goto exit;
+    }
 skip_optional:
-    return_value = py_ssize_t_converter_impl(module, a, b, c);
+    return_value = py_ssize_t_converter_impl(module, a, b, c, d, e);
 
 exit:
     return return_value;
@@ -4542,4 +4570,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b04671afdafbecf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ebfd7ad360d0ea26 input=a9049054013a1b77]*/

@@ -420,12 +420,16 @@ class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept: TypeSet = {int}) -> None:
+    def converter_init(self, *, accept: TypeSet = {int}, allow_negative: bool = True) -> None:
+        self.allow_negative = allow_negative
         if accept == {int}:
             self.format_unit = 'n'
             self.default_type = int
         elif accept == {int, NoneType}:
-            self.converter = '_Py_convert_optional_to_ssize_t'
+            if self.allow_negative:
+                self.converter = '_Py_convert_optional_to_ssize_t'
+            else:
+                self.converter = '_Py_convert_optional_to_non_negative_ssize_t'
         else:
             fail(f"Py_ssize_t_converter: illegal 'accept' argument {accept!r}")
 
@@ -433,8 +437,21 @@ class Py_ssize_t_converter(CConverter):
         if self.converter == '_Py_convert_optional_to_ssize_t':
             self.add_include('pycore_abstract.h',
                              '_Py_convert_optional_to_ssize_t()')
+        elif self.converter == '_Py_convert_optional_to_non_negative_ssize_t':
+            self.add_include('pycore_abstract.h',
+                             '_Py_convert_optional_to_non_negative_ssize_t()')
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        if self.allow_negative:
+            non_negative_check = ""
+        else:
+            non_negative_check = self.format_code("""
+                    if ({paramname} < 0) {{{{
+                        PyErr_SetString(PyExc_ValueError,
+                                        "{paramname} must not be negative");
+                        goto exit;
+                    }}}}""",
+            argname=argname)
         if self.format_unit == 'n':
             if limited_capi:
                 PyNumber_Index = 'PyNumber_Index'
@@ -452,11 +469,12 @@ class Py_ssize_t_converter(CConverter):
                     if (ival == -1 && PyErr_Occurred()) {{{{
                         goto exit;
                     }}}}
-                    {paramname} = ival;
+                    {paramname} = ival;{non_negative_check}
                 }}}}
                 """,
                 argname=argname,
-                PyNumber_Index=PyNumber_Index)
+                PyNumber_Index=PyNumber_Index,
+                non_negative_check=non_negative_check)
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
         return self.format_code("""
@@ -465,7 +483,7 @@ class Py_ssize_t_converter(CConverter):
                     {paramname} = PyNumber_AsSsize_t({argname}, PyExc_OverflowError);
                     if ({paramname} == -1 && PyErr_Occurred()) {{{{
                         goto exit;
-                    }}}}
+                    }}}}{non_negative_check}
                 }}}}
                 else {{{{
                     {bad_argument}
@@ -475,6 +493,7 @@ class Py_ssize_t_converter(CConverter):
             """,
             argname=argname,
             bad_argument=self.bad_argument(displayname, 'integer or None', limited_capi=limited_capi),
+            non_negative_check=non_negative_check
         )
 
 
