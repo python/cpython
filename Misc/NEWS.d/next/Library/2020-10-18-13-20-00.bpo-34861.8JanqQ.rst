@@ -1,0 +1,2 @@
+cProfile command line output now defaults to cumulative time
+cProfile command line gives you unique filenames in the output (plus an extra path level of path if the filename is __init__.py)
