@@ -293,6 +293,7 @@ class AbstractBuilder(object):
         if os.path.isdir(self.build_dir):
             shutil.rmtree(self.build_dir)
         os.makedirs(self.build_dir)
+
         tf = tarfile.open(self.src_file)
         name = self.build_template.format(self.version)
         base = name + '/'
