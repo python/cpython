@@ -3056,6 +3056,20 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
+class _NoExtraItemsType:
+    """The type of the NoExtraItems singleton."""
+
+    __slots__ = ()
+
+    def __repr__(self):
+        return 'typing.NoExtraItems'
+
+    def __reduce__(self):
+        return 'NoExtraItems'
+
+NoExtraItems = _NoExtraItemsType()
+
+
 def _get_typeddict_qualifiers(annotation_type):
     while True:
         annotation_origin = get_origin(annotation_type)

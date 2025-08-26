@@ -34,7 +34,7 @@ from typing import reveal_type
 from typing import dataclass_transform
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
-from typing import NamedTuple, NotRequired, Required, ReadOnly, TypedDict
+from typing import NamedTuple, NotRequired, Required, ReadOnly, TypedDict, NoExtraItems
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
 from typing import Annotated, ForwardRef
