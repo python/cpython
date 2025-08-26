@@ -2565,7 +2565,7 @@ LIBSUBDIRS=	asyncio \
 		multiprocessing multiprocessing/dummy \
 		pathlib \
 		profile \
-		profiling \
+		profiling profiling/sampling profiling/tracing \
 		pydoc_data \
 		re \
 		site-packages \
