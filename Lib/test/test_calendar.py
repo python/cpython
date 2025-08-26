@@ -743,7 +743,7 @@ class CalendarTestCase(unittest.TestCase):
 
         def get_weekday_names(width):
             return calendar.TextCalendar().formatweekheader(width).split()
-        self.assertEqual(get_weekday_names(abbrev_max_length+1), get_weekday_names(max_length-1))
+        self.assertEqual(get_weekday_names(abbrev_max_length), get_weekday_names(max_length-1))
 
     def test_locale_calendar_formatmonthname(self):
         try:
