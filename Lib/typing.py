@@ -40,7 +40,6 @@ from _typing import (
     Generic,
     Union,
     NoDefault,
-    NoExtraItems,
 )
 
 # Please keep __all__ alphabetized within each category.

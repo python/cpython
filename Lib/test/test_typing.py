@@ -41,7 +41,7 @@ from typing import Annotated, ForwardRef
 from typing import Self, LiteralString
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
-from typing import TypeGuard, TypeIs, NoDefault, NoExtraItems
+from typing import TypeGuard, TypeIs, NoDefault
 import abc
 import textwrap
 import typing
