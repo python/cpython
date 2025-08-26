@@ -738,8 +738,10 @@ class CalendarTestCase(unittest.TestCase):
         abbrev_names = (datetime.date(2001, 1, i+1).strftime('%a') for i in range(7))
         abbrev_max_length = max(map(len, abbrev_names))
 
-        if max_length - abbrev_max_length < 3:
-            self.skipTest('standard and abbreviated weekday names have too similar lengths')
+        if max_length <= 9:
+            self.skipTest('weekday names are too short')
+        if abbrev_max_length >= 9:
+            self.skipTest('abbreviated weekday names are too long')
 
         def get_weekday_names(width):
             return calendar.TextCalendar().formatweekheader(width).split()
