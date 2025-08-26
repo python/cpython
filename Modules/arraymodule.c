@@ -75,7 +75,7 @@ typedef struct {
     PyObject *str_iter;
 } array_state;
 
-static Py_ssize_t
+static inline Py_ssize_t
 PyArray_GET_SIZE(PyObject *op) {
     arrayobject *ao = (arrayobject *)op;
 #ifdef Py_GIL_DISABLED
