@@ -10,20 +10,32 @@ import _lsprof
 import importlib.machinery
 import importlib.util
 import io
-import profile as _pyprofile
+from profiling.tracing._utils import _Utils
 
 # ____________________________________________________________
 # Simple interface
 
 def run(statement, filename=None, sort=-1):
-    return _pyprofile._Utils(Profile).run(statement, filename, sort)
+    """Run statement under profiler optionally saving results in filename
+
+    This function takes a single argument that can be passed to the
+    "exec" statement, and an optional file name.  In all cases this
+    routine attempts to "exec" its first argument and gather profiling
+    statistics from the execution. If no file name is present, then this
+    function automatically prints a simple profiling report, sorted by the
+    standard name string (file/line/function-name) that is presented in
+    each line.
+    """
+    return _Utils(Profile).run(statement, filename, sort)
 
 def runctx(statement, globals, locals, filename=None, sort=-1):
-    return _pyprofile._Utils(Profile).runctx(statement, globals, locals,
-                                             filename, sort)
+    """Run statement under profiler, supplying your own globals and locals,
+    optionally saving results in filename.
 
-run.__doc__ = _pyprofile.run.__doc__
-runctx.__doc__ = _pyprofile.runctx.__doc__
+    statement and filename have the same semantics as profile.run
+    """
+    return _Utils(Profile).runctx(statement, globals, locals,
+                                             filename, sort)
 
 # ____________________________________________________________
 
