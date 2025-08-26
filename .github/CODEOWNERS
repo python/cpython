@@ -172,12 +172,12 @@ Tools/wasm/wasi               @brettcannon
 PC/                           @python/windows-team
 PCbuild/                      @python/windows-team
 
-# Windows Launcher
-PC/launcher.c                 @python/windows-team @vsajip
-
 # Windows installer packages
 Tools/msi/                    @python/windows-team
 Tools/nuget/                  @python/windows-team
+
+# Windows Launcher
+PC/launcher.c                 @python/windows-team @vsajip
 
 
 # ----------------------------------------------------------------------------
