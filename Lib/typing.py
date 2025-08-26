@@ -3056,10 +3056,21 @@ def _namedtuple_mro_entries(bases):
 NamedTuple.__mro_entries__ = _namedtuple_mro_entries
 
 
-class _NoExtraItemsType:
+class _SingletonMeta(type):
+    def __setattr__(cls, attr, value):
+        # TypeError is consistent with the behavior of NoneType
+        raise TypeError(
+                f"cannot set {attr!r} attribute of immutable type {cls.__name__!r}"
+                )
+
+
+class _NoExtraItemsType(metaclass=_SingletonMeta):
     """The type of the NoExtraItems singleton."""
 
     __slots__ = ()
+
+    def __new__(cls):
+        return globals().get("NoExtraItems") or object.__new__(cls)
 
     def __repr__(self):
         return 'typing.NoExtraItems'
@@ -3068,6 +3079,8 @@ class _NoExtraItemsType:
         return 'NoExtraItems'
 
 NoExtraItems = _NoExtraItemsType()
+del _NoExtraItemsType
+del _SingletonMeta
 
 
 def _get_typeddict_qualifiers(annotation_type):
