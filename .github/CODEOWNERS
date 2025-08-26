@@ -29,7 +29,7 @@
 # Where possible, keep related files together. For example, documentation,
 # code, and tests for a given item should all be listed in the same place.
 #
-# GitHub usernames  should be aligned to column 31, or the next multiple
+# GitHub usernames should be aligned to column 31, or the next multiple
 # of three if the relevant paths are too long to fit.
 #
 # Top-level sections are:
