@@ -10,4 +10,4 @@ This package provides two types of profilers:
   the call stack. Low overhead and suitable for production use.
 """
 
-__all__ = ["tracing", "sampling"]
+__all__ = ("tracing", "sampling")

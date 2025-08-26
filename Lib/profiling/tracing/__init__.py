@@ -1,10 +1,10 @@
 """Tracing profiler for Python.
 
 This module provides deterministic profiling of Python programs by tracing
-every function call and return. It's based on the cProfile implementation.
+every function call and return.
 """
 
-__all__ = ["run", "runctx", "Profile"]
+__all__ = ("run", "runctx", "Profile")
 
 import _lsprof
 import importlib.machinery
