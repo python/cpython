@@ -1686,6 +1686,21 @@ class RequestTests(unittest.TestCase):
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
 
+class ProxyBypassRegistryTests(unittest.TestCase):
+    def test_proxy_bypass_registry_trailing_semicolon(self):
+        fake_proxy_override = "localhost;*.example.com;"
+
+        # Monkeypatch registry reader
+        original_getproxies_registry = urllib.request.getproxies_registry
+        urllib.request.getproxies_registry = lambda: {"no": fake_proxy_override}
+
+        try:
+            self.assertFalse(urllib.request.proxy_bypass("notmatching.com"))
+            self.assertTrue(urllib.request.proxy_bypass("localhost"))
+            self.assertTrue(urllib.request.proxy_bypass("sub.example.com"))
+        finally:
+            urllib.request.getproxies_registry = original_getproxies_registry
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1996,7 +1996,7 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
 
 
 # Same as _proxy_bypass_macosx_sysconf, testable on all platforms
-def _proxy_bypass_winreg_override(host, override):
+def _proxy_bypass_winreg_override(host, proxyOverride):
     """Return True if the host should bypass the proxy server.
 
     The proxy override list is obtained from the Windows
@@ -2008,15 +2008,18 @@ def _proxy_bypass_winreg_override(host, override):
     from fnmatch import fnmatch
 
     host, _ = _splitport(host)
-    proxy_override = override.split(';')
-    for test in proxy_override:
-        test = test.strip()
+
+    # Split and remove empty or whitespace-only entries
+    proxyOverride = [x.strip() for x in proxyOverride.split(';') if x.strip()]
+
+    for test in proxyOverride:
         # "<local>" should bypass the proxy server for all intranet addresses
         if test == '<local>':
             if '.' not in host:
                 return True
         elif fnmatch(host, test):
             return True
+
     return False
 
 
