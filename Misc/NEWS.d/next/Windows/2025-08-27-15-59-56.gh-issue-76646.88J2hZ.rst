@@ -1,2 +1,1 @@
 .. gh-76646: Fix proxy_bypass_registry on Windows when ProxyOverride ends with a trailing semicolon. Empty entries are now ignored.
-
