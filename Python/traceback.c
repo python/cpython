@@ -77,7 +77,7 @@ int
 _PyTraceback_IsSafeToImport(void)
 {
     // Avoid recursion during critical errors
-    static int in_safe_to_import = 0;
+    int in_safe_to_import = 0;
     if (in_safe_to_import) {
         return 1;  // Default to safe during recursion
     }
