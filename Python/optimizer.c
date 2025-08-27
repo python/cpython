@@ -653,13 +653,13 @@ translate_bytecode_to_trace(
             max_length--;
         }
         if (OPCODE_HAS_ERROR(opcode)) {
-           // Make space for error stub and final _EXIT_TRACE:
-           RESERVE_RAW(2, "_ERROR_POP_N");
-           max_length--;
+            // Make space for error stub and final _EXIT_TRACE:
+            RESERVE_RAW(2, "_ERROR_POP_N");
+            max_length--;
         }
         if (OPCODE_HAS_DEOPT(opcode)) {
-           RESERVE_RAW(2, "_DEOPT");
-           max_length--;
+            RESERVE_RAW(2, "_DEOPT");
+            max_length--;
         }
         switch (opcode) {
             case POP_JUMP_IF_NONE:
