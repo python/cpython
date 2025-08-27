@@ -1381,7 +1381,7 @@ is also available in the :mod:`!token` module documentation.
       | "..."
 
    arithmetic_operator:   "+"  | "-"  | "*"  | "**"  | "/"   | "//"  | "%"
-   bitwise_operator:      "&"  | "^"  | "~"  | "<<"  | ">>"
+   bitwise_operator:      "&"  | "|"  | "^"  | "~"   | "<<"  | ">>"
    assignment_operator:   "+=" | "-=" | "*=" | "**=" | "/="  | "//=" | "%=" |
                           "&=" | "|=" | "^=" | "<<=" | ">>=" | "@="  | ":="
    comparison_operator:   "<"  | ">"  | "<=" | ">="  | "=="  | "!="
