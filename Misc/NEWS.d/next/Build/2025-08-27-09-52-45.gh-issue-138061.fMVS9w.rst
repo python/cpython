@@ -1,1 +1,1 @@
-Make JIT stencil header generation reproducible by excluding `__pycache__` directories from the computed digest.
+Ensure reproducible builds by making JIT stencil header generation deterministic.
