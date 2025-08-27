@@ -1,0 +1,1 @@
+Fix :meth:`mmap.mmap.size` method for anonymous mmap files on Unix.
