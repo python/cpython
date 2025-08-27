@@ -1,2 +1,0 @@
-bpo-32465: _proxy_bypass_winreg_override strips empty entries from ProxyOverride on Windows.
-

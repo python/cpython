@@ -1996,23 +1996,23 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
 
 
 # Same as _proxy_bypass_macosx_sysconf, testable on all platforms
-def _proxy_bypass_winreg_override(host, proxyOverride):
+def _proxy_bypass_winreg_override(host, proxy_override):
     """Return True if the host should bypass the proxy server.
 
     The proxy override list is obtained from the Windows
     Internet settings proxy override registry value.
 
     An example of a proxy override value is:
-    "www.example.com;*.example.net; 192.168.0.1"
+    "www.example.com;*.example.net;192.168.0.1"
     """
     from fnmatch import fnmatch
 
     host, _ = _splitport(host)
 
     # Split and remove empty or whitespace-only entries
-    proxyOverride = [x.strip() for x in proxyOverride.split(';') if x.strip()]
+    proxy_override = [x.strip() for x in proxy_override.split(';') if x.strip()]
 
-    for test in proxyOverride:
+    for test in proxy_override:
         # "<local>" should bypass the proxy server for all intranet addresses
         if test == '<local>':
             if '.' not in host:
@@ -2021,7 +2021,7 @@ def _proxy_bypass_winreg_override(host, proxyOverride):
             return True
 
     return False
-
+    
 
 if sys.platform == 'darwin':
     from _scproxy import _get_proxy_settings, _get_proxies
