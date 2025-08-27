@@ -560,8 +560,7 @@ translate_bytecode_to_trace(
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
-    // Leave space for possible trailing _EXIT_TRACE
-    int max_length = buffer_size-2;
+    int max_length = (buffer_size * 2) / 3;  // 67% for trace, 33% for exit stubs
     struct {
         PyFunctionObject *func;
         PyCodeObject *code;
@@ -647,16 +646,6 @@ translate_bytecode_to_trace(
             assert(!OPCODE_HAS_DEOPT(opcode));
         }
 
-        if (OPCODE_HAS_EXIT(opcode)) {
-            // Make space for side exit and final _EXIT_TRACE:
-            RESERVE_RAW(2, "_EXIT_TRACE");
-            max_length--;
-        }
-        if (OPCODE_HAS_ERROR(opcode)) {
-            // Make space for error stub and final _EXIT_TRACE:
-            RESERVE_RAW(2, "_ERROR_POP_N");
-            max_length--;
-        }
         switch (opcode) {
             case POP_JUMP_IF_NONE:
             case POP_JUMP_IF_NOT_NONE:
