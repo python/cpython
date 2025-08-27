@@ -1637,7 +1637,7 @@ then
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     [WASI], [
-      AC_MSG_ERROR([HOSTRUNNER must be set when cross compiling to WASI])
+      AC_MSG_ERROR([HOSTRUNNER must be set when cross-compiling to WASI])
     ],
     [HOSTRUNNER='']
   )

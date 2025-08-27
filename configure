@@ -7905,7 +7905,7 @@ fi
      ;; #(
   WASI) :
 
-      as_fn_error $? "HOSTRUNNER must be set when cross compiling to WASI" "$LINENO" 5
+      as_fn_error $? "HOSTRUNNER must be set when cross-compiling to WASI" "$LINENO" 5
      ;; #(
   *) :
     HOSTRUNNER=''
