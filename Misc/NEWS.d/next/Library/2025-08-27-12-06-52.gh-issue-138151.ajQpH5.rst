@@ -1,0 +1,2 @@
+Fix :meth:`annotationlib.ForwardRef.evaluate` not handling generics with
+nonlocal variables that are defined after the annotation.
