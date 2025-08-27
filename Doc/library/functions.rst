@@ -1734,9 +1734,9 @@ are always available.  They are listed here in alphabetical order.
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
-   sequence type, as documented in :ref:`typesseq-range` and :ref:`typesseq`.
+   :term:`sequence` type, as documented in :ref:`typesseq-range` and :ref:`typesseq`.
 
-   The :class:`range` type is iterable and supports iteration.
+
 .. function:: repr(object)
 
    Return a string containing a printable representation of an object.  For many
