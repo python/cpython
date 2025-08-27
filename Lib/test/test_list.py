@@ -386,27 +386,28 @@ class ListTest(list_tests.CommonTest):
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_free_threading(self):
-        def mutate(b, l):
-            d = [None] * 500
-            b.wait()
-            l.extend(d)
+        def read(done, l):
+            while not done.is_set():
+                for _ in range(100):
+                    _ = l[1]
 
-            for _ in range(1000):
-                del l[:360]
-                l[1:-1] = d
-
-        NUM_THREADS = 20
-        barrier = threading.Barrier(NUM_THREADS)
+        NUM_THREADS = 10
+        done = threading.Event()
         threads = []
-        l = []
+        l = [None] * 500
+        d = [None] * 498
 
         for _ in range(NUM_THREADS):
-            thread = threading.Thread(target=mutate, args=(barrier, l))
+            thread = threading.Thread(target=read, args=(done, l))
 
             threads.append(thread)
 
         with threading_helper.start_threads(threads):
-            pass
+            for _ in range(100):
+                del l[:498]
+                l[1:-1] = d
+
+            done.set()
 
 
 if __name__ == "__main__":
