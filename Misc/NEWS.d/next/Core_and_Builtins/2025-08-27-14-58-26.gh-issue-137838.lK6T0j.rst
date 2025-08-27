@@ -1,0 +1,2 @@
+Fix JIT trace buffer overrun by pre-reserving exit stub space. Patch By
+Donghee Na.
