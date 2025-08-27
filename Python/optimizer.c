@@ -540,6 +540,7 @@ add_to_trace(
     assert(func == NULL || func->func_code == (PyObject *)code); \
     instr = trace_stack[trace_stack_depth].instr;
 
+
 /* Returns the length of the trace on success,
  * 0 if it failed to produce a worthwhile trace,
  * and -1 on an error.
@@ -560,8 +561,10 @@ translate_bytecode_to_trace(
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
-    // Leave space for possible trailing _EXIT_TRACE
-    int max_length = buffer_size-2;
+    // Leave space for possible trailing _EXIT_TRACE and estimated exit stubs
+    // Reserve 20% of buffer space for exit stubs (empirically sufficient)
+    int max_exit_stubs = (buffer_size * 20) / 100; // 20% for exit stubs
+    int max_length = buffer_size - 2 - max_exit_stubs;
     struct {
         PyFunctionObject *func;
         PyCodeObject *code;
@@ -647,16 +650,7 @@ translate_bytecode_to_trace(
             assert(!OPCODE_HAS_DEOPT(opcode));
         }
 
-        if (OPCODE_HAS_EXIT(opcode)) {
-            // Make space for side exit and final _EXIT_TRACE:
-            RESERVE_RAW(2, "_EXIT_TRACE");
-            max_length--;
-        }
-        if (OPCODE_HAS_ERROR(opcode)) {
-            // Make space for error stub and final _EXIT_TRACE:
-            RESERVE_RAW(2, "_ERROR_POP_N");
-            max_length--;
-        }
+        // Note: Exit stub space is pre-reserved in max_length calculation above
         switch (opcode) {
             case POP_JUMP_IF_NONE:
             case POP_JUMP_IF_NOT_NONE:
@@ -731,9 +725,11 @@ translate_bytecode_to_trace(
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
                 if (expansion->nuops > 0) {
-                    // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
+                    // Reserve space for nuops
                     int nuops = expansion->nuops;
-                    RESERVE(nuops + 1); /* One extra for exit */
+
+                    // Reserve space for nuops (exit stub space already pre-reserved)
+                    RESERVE(nuops);
                     int16_t last_op = expansion->uops[nuops-1].uop;
                     if (last_op == _RETURN_VALUE || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
                         // Check for trace stack underflow now:

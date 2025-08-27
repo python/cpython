@@ -13,6 +13,7 @@ import tempfile
 import textwrap
 import subprocess
 import warnings
+
 try:
     import _testinternalcapi
 except ImportError:
@@ -360,6 +361,8 @@ class TraceTestCase(unittest.TestCase):
     # Disable gc collection when tracing, otherwise the
     # deallocators may be traced as well.
     def setUp(self):
+        if os.environ.get('PYTHON_UOPS_OPTIMIZE') == '0':
+            self.skipTest("Line tracing behavior differs when JIT optimizer is disabled")
         self.using_gc = gc.isenabled()
         gc.disable()
         self.addCleanup(sys.settrace, sys.gettrace())
