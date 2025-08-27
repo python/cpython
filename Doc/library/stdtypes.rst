@@ -1919,6 +1919,7 @@ expression support in the :mod:`re` module).
       6
 
    See also :meth:`rfind` and :meth:`index`.
+
    .. note::
 
       The :meth:`~str.find` method should be used only if you need to know the
