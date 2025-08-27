@@ -506,6 +506,8 @@ class MmapTests(unittest.TestCase):
             m[x] = b
             self.assertEqual(m[x], b)
 
+        self.assertEqual(m.size(), PAGESIZE)
+
     def test_read_all(self):
         m = mmap.mmap(-1, 16)
         self.addCleanup(m.close)

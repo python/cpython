@@ -747,6 +747,9 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 
 #ifdef UNIX
     {
+        if (self->trackfd && self->fd == -1) {
+            return PyLong_FromSsize_t(self->size);
+        }
         struct _Py_stat_struct status;
         if (_Py_fstat(self->fd, &status) == -1)
             return NULL;
