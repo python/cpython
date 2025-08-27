@@ -1162,7 +1162,6 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
             Py_XDECREF(print_exception_fn);
         }
     }
-fallback:
 #ifdef Py_DEBUG
      if (PyErr_Occurred()) {
          PyErr_FormatUnraisable(

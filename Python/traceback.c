@@ -15,7 +15,6 @@
 
 #include "osdefs.h"               // SEP
 #include <stdio.h>                // fopen, fclose
-#include <limits.h>               // PATH_MAX
 #include <string.h>               // strlen
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek()
@@ -90,7 +89,7 @@ _PyTraceback_IsSafeToImport(void)
         return 1;
     }
     // Check if traceback.py exists in the first path directory
-    char traceback_path[PATH_MAX];
+    char traceback_path[MAXPATHLEN];
     int ret = snprintf(traceback_path, sizeof(traceback_path), "%s/traceback.py", path_str);
     if (ret <= 0 || ret >= (int)sizeof(traceback_path)) {
         return 1;  // Path too long or other error, default to safe
