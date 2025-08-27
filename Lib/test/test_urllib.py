@@ -1,7 +1,8 @@
 """Regression tests for what was in Python 2's "urllib" module"""
 
 import urllib.parse
-import urllib.request import _proxy_bypass_winreg_override as proxy_bypass_winreg
+import urllib.request 
+import _proxy_bypass_winreg_override as proxy_bypass_winreg
 import urllib.error
 import http.client
 import email.message
