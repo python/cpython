@@ -74,10 +74,10 @@ Lib/test/data/*
 Apple/iOS/Frameworks/
 Apple/iOS/Resources/Info.plist
 Apple/testbed/build
-Apple/testbed/Python.xcframework/*-*/bin
-Apple/testbed/Python.xcframework/*-*/include
-Apple/testbed/Python.xcframework/*-*/lib
-Apple/testbed/Python.xcframework/*-*/Python.framework
+Apple/testbed/Python.xcframework/*/bin
+Apple/testbed/Python.xcframework/*/include
+Apple/testbed/Python.xcframework/*/lib
+Apple/testbed/Python.xcframework/*/Python.framework
 Apple/testbed/*Testbed.xcodeproj/project.xcworkspace
 Apple/testbed/*Testbed.xcodeproj/xcuserdata
 Mac/Makefile
