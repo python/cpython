@@ -5175,6 +5175,43 @@ class TestColorizedTraceback(unittest.TestCase):
                 f'    +------------------------------------',
         ]
         self.assertEqual(actual, expected(**colors))
+class TestTracebackSafety(unittest.TestCase):
+    """Test security fixes for traceback module shadowing (issue gh-138170)"""
+
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tempdir)
+
+    def test_traceback_shadowing_protection(self):
+        """Test that traceback.py files are not executed during exception handling"""
+        import os
+        import sys
+        import subprocess
+        malicious_traceback = os.path.join(self.tempdir, 'traceback.py')
+        with open(malicious_traceback, 'w') as f:
+            f.write('''
+print("MALICIOUS CODE EXECUTED - SECURITY BREACH!")
+print("This should not appear in traceback output")
+''')
+        test_script = os.path.join(self.tempdir, 'test_exception.py')
+        with open(test_script, 'w') as f:
+            f.write('''
+import sys
+sys.path.insert(0, ".")
+raise ValueError("test exception")
+''')
+        old_cwd = os.getcwd()
+        try:
+            os.chdir(self.tempdir)
+            result = subprocess.run([sys.executable, test_script],
+                                  capture_output=True, text=True)
+            self.assertIn("ValueError: test exception", result.stderr)
+            self.assertNotIn("MALICIOUS CODE EXECUTED", result.stdout)
+            self.assertNotIn("MALICIOUS CODE EXECUTED", result.stderr)
+            self.assertNotIn("This should not appear in traceback output", result.stdout)
+            self.assertNotIn("This should not appear in traceback output", result.stderr)
+        finally:
+            os.chdir(old_cwd)
 
 if __name__ == "__main__":
     unittest.main()

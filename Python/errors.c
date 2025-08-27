@@ -13,6 +13,10 @@
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
+#include <stdio.h>                // fopen, fclose
+#include <limits.h>               // PATH_MAX
+#include <string.h>               // strlen
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <winbase.h>
@@ -1488,25 +1492,27 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
 
-    // Try printing the exception using the stdlib module.
-    // If this fails, then we have to use the C implementation.
-    PyObject *print_exception_fn = PyImport_ImportModuleAttrString("traceback",
-                                                                   "_print_exception_bltin");
-    if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
-        PyObject *args[2] = {exc_value, file};
-        PyObject *result = PyObject_Vectorcall(print_exception_fn, args, 2, NULL);
-        int ok = (result != NULL);
-        Py_DECREF(print_exception_fn);
-        Py_XDECREF(result);
-        if (ok) {
-            // Nothing else to do
-            return 0;
+    // Try printing the exception using the stdlib module, but be careful about
+    // traceback module shadowing (issue gh-138170). Use safe import check.
+    if (_PyTraceback_IsSafeToImport()) {
+        PyObject *print_exception_fn = PyImport_ImportModuleAttrString("traceback", "_print_exception_bltin");
+        if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
+            PyObject *args[2] = {exc_value, file};
+            PyObject *result = PyObject_Vectorcall(print_exception_fn, args, 2, NULL);
+            int ok = (result != NULL);
+            Py_DECREF(print_exception_fn);
+            Py_XDECREF(result);
+            if (ok) {
+                // Nothing else to do
+                return 0;
+            }
+        }
+        else {
+            Py_XDECREF(print_exception_fn);
         }
     }
-    else {
-        Py_XDECREF(print_exception_fn);
-    }
-    // traceback module failed, fall back to pure C
+
+    // traceback module failed or unsafe, fall back to pure C
     _PyErr_Clear(tstate);
 
     if (exc_tb != NULL && exc_tb != Py_None) {

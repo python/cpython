@@ -14,6 +14,9 @@
 #include "frameobject.h"          // PyFrame_New()
 
 #include "osdefs.h"               // SEP
+#include <stdio.h>                // fopen, fclose
+#include <limits.h>               // PATH_MAX
+#include <string.h>               // strlen
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek()
 #endif
@@ -68,6 +71,37 @@ class traceback "PyTracebackObject *" "&PyTraceback_Type"
 #define _PyTracebackObject_CAST(op)   ((PyTracebackObject *)(op))
 
 #include "clinic/traceback.c.h"
+
+// Helper function to check if it's safe to import traceback module
+// Returns 0 if a traceback.py file exists in sys.path[0], 1 if safe
+int
+_PyTraceback_IsSafeToImport(void)
+{
+    PyObject *sys_path = PySys_GetObject("path");
+    if (sys_path == NULL || !PyList_Check(sys_path) || PyList_Size(sys_path) == 0) {
+        return 1;  // Default to safe
+    }
+    PyObject *first_path = PyList_GetItem(sys_path, 0);
+    if (first_path == NULL || !PyUnicode_Check(first_path)) {
+        return 1;
+    }
+    const char *path_str = PyUnicode_AsUTF8(first_path);
+    if (path_str == NULL || strlen(path_str) == 0) {
+        return 1;
+    }
+    // Check if traceback.py exists in the first path directory
+    char traceback_path[PATH_MAX];
+    int ret = snprintf(traceback_path, sizeof(traceback_path), "%s/traceback.py", path_str);
+    if (ret <= 0 || ret >= (int)sizeof(traceback_path)) {
+        return 1;  // Path too long or other error, default to safe
+    }
+    FILE *f = fopen(traceback_path, "r");
+    if (f != NULL) {
+        fclose(f);
+        return 0;  // Not safe - traceback.py exists
+    }
+    return 1;  // Safe to import
+}
 
 static PyObject *
 tb_create_raw(PyTracebackObject *next, PyFrameObject *frame, int lasti,

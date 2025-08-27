@@ -14,6 +14,10 @@ PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int, int *, P
 // Export for 'pyexact' shared extension
 PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
 
+// Helper function to check if it's safe to import traceback module
+// Returns 0 if a traceback.py file exists in sys.path[0], 1 if safe
+extern int _PyTraceback_IsSafeToImport(void);
+
 /* Write the Python traceback into the file 'fd'. For example:
 
        Traceback (most recent call first):

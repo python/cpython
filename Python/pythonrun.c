@@ -1146,20 +1146,21 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         }
     }
 
-    // Try first with the stdlib traceback module
-    PyObject *print_exception_fn = PyImport_ImportModuleAttrString(
-        "traceback",
-        "_print_exception_bltin");
-    if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
-        goto fallback;
-    }
-
-    PyObject* result = PyObject_CallOneArg(print_exception_fn, value);
-
-    Py_XDECREF(print_exception_fn);
-    if (result) {
-        Py_DECREF(result);
-        return;
+    // Try first with the stdlib traceback module, but be careful about
+    // traceback module shadowing (issue gh-138170). Use safe import check.
+    if (_PyTraceback_IsSafeToImport()) {
+        PyObject *print_exception_fn = PyImport_ImportModuleAttrString("traceback", "_print_exception_bltin");
+        if (print_exception_fn != NULL && PyCallable_Check(print_exception_fn)) {
+            PyObject* result = PyObject_CallOneArg(print_exception_fn, value);
+            Py_DECREF(print_exception_fn);
+            if (result) {
+                Py_DECREF(result);
+                return;
+            }
+        }
+        else {
+            Py_XDECREF(print_exception_fn);
+        }
     }
 fallback:
 #ifdef Py_DEBUG
