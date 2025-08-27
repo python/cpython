@@ -561,10 +561,10 @@ translate_bytecode_to_trace(
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
     /*
-     * Assumption: 67% reserved for trace, 33% for exit stubs
+     * Assumption: 80% reserved for trace, 20% for exit stubs
      * TODO: Compute the required number of exit stubs dynamically
      */
-    int max_exit_stubs = (buffer_size * 33) / 100; // 33% for exit stubs
+    int max_exit_stubs = (buffer_size * 20) / 100; // 20% for exit stubs
     int max_length = buffer_size - 2 - max_exit_stubs;
     struct {
         PyFunctionObject *func;
