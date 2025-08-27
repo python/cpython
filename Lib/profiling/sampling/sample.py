@@ -25,40 +25,40 @@ Supports the following target modes:
 
 Examples:
   # Profile process 1234 for 10 seconds with default settings
-  python -m profile.sample -p 1234
+  python -m profiling.sampling -p 1234
 
   # Profile a script by running it in a subprocess
-  python -m profile.sample myscript.py arg1 arg2
+  python -m profiling.sampling myscript.py arg1 arg2
 
   # Profile a module by running it as python -m module in a subprocess
-  python -m profile.sample -m mymodule arg1 arg2
+  python -m profiling.sampling -m mymodule arg1 arg2
 
   # Profile with custom interval and duration, save to file
-  python -m profile.sample -i 50 -d 30 -o profile.stats -p 1234
+  python -m profiling.sampling -i 50 -d 30 -o profile.stats -p 1234
 
   # Generate collapsed stacks for flamegraph
-  python -m profile.sample --collapsed -p 1234
+  python -m profiling.sampling --collapsed -p 1234
 
   # Profile all threads, sort by total time
-  python -m profile.sample -a --sort-tottime -p 1234
+  python -m profiling.sampling -a --sort-tottime -p 1234
 
   # Profile for 1 minute with 1ms sampling interval
-  python -m profile.sample -i 1000 -d 60 -p 1234
+  python -m profiling.sampling -i 1000 -d 60 -p 1234
 
   # Show only top 20 functions sorted by direct samples
-  python -m profile.sample --sort-nsamples -l 20 -p 1234
+  python -m profiling.sampling --sort-nsamples -l 20 -p 1234
 
   # Profile all threads and save collapsed stacks
-  python -m profile.sample -a --collapsed -o stacks.txt -p 1234
+  python -m profiling.sampling -a --collapsed -o stacks.txt -p 1234
 
   # Profile with real-time sampling statistics
-  python -m profile.sample --realtime-stats -p 1234
+  python -m profiling.sampling --realtime-stats -p 1234
 
   # Sort by sample percentage to find most sampled functions
-  python -m profile.sample --sort-sample-pct -p 1234
+  python -m profiling.sampling --sort-sample-pct -p 1234
 
   # Sort by cumulative samples to find functions most on call stack
-  python -m profile.sample --sort-nsamples-cumul -p 1234"""
+  python -m profiling.sampling --sort-nsamples-cumul -p 1234"""
 
 
 # Constants for socket synchronization
