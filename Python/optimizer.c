@@ -564,7 +564,8 @@ translate_bytecode_to_trace(
      * Assumption: 67% reserved for trace, 33% for exit stubs
      * TODO: Compute the required number of exit stubs dynamically
      */
-    int max_length = (buffer_size * 2) / 3;
+    int max_exit_stubs = (buffer_size * 33) / 100; // 33% for exit stubs
+    int max_length = buffer_size - 2 - max_exit_stubs;
     struct {
         PyFunctionObject *func;
         PyCodeObject *code;
@@ -724,9 +725,9 @@ translate_bytecode_to_trace(
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
                 if (expansion->nuops > 0) {
-                    // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
+                    // Reserve space for nuops (exit stub space already pre-reserved)
                     int nuops = expansion->nuops;
-                    RESERVE(nuops + 1); /* One extra for exit */
+                    RESERVE(nuops);
                     int16_t last_op = expansion->uops[nuops-1].uop;
                     if (last_op == _RETURN_VALUE || last_op == _RETURN_GENERATOR || last_op == _YIELD_VALUE) {
                         // Check for trace stack underflow now:
