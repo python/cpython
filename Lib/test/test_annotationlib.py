@@ -1619,11 +1619,12 @@ class TestForwardRefClass(unittest.TestCase):
 
     def test_evaluate_local_generic(self):
         class Cls:
-            x: alias
-            y: alias2
-            z: alias3
+            nonlocal alias, alias2, alias3
+            x: alias[int]
+            y: alias[alias]
+            z: alias[alias2, alias3]
 
-        fwdref = ForwardRef("alias[int]", owner=Cls)
+        fwdref = get_annotations(Cls, format=Format.FORWARDREF)["x"]
         with self.assertRaises(NameError):
             fwdref.evaluate()
 
@@ -1631,12 +1632,12 @@ class TestForwardRefClass(unittest.TestCase):
         self.assertEqual(fwdref.evaluate(), list[int])
 
         del alias
-        fwdref = ForwardRef("alias[alias]", owner=Cls)
+        fwdref = get_annotations(Cls, format=Format.FORWARDREF)["y"]
         alias = list
         self.assertEqual(fwdref.evaluate(), list[list])
 
         del alias
-        fwdref = ForwardRef("alias[alias2, alias3]", owner=Cls)
+        fwdref = get_annotations(Cls, format=Format.FORWARDREF)["z"]
         alias = dict
         alias2 = int
         alias3 = str
