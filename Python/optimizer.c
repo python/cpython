@@ -560,7 +560,7 @@ translate_bytecode_to_trace(
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
-    /* 
+    /*
      * Assumption: 67% reserved for trace, 33% for exit stubs
      * TODO: Compute the required number of exit stubs dynamically
      */
