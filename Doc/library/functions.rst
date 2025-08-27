@@ -1736,9 +1736,7 @@ are always available.  They are listed here in alphabetical order.
    Rather than being a function, :class:`range` is actually an immutable
    sequence type, as documented in :ref:`typesseq-range` and :ref:`typesseq`.
 
-   The object returned by :class:`range` is an :term:`iterator` and supports iteration.
-   See also :ref:`iterator` for more information about iterators and how to implement
-   custom iterable classes.
+   The :class:`range` type is iterable and supports iteration.
 .. function:: repr(object)
 
    Return a string containing a printable representation of an object.  For many
