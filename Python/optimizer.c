@@ -560,7 +560,11 @@ translate_bytecode_to_trace(
     _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
-    int max_length = (buffer_size * 2) / 3;  // 67% for trace, 33% for exit stubs
+    /* 
+     * Assumption: 67% reserved for trace, 33% for exit stubs
+     * TODO: Compute the required number of exit stubs dynamically
+     */
+    int max_length = (buffer_size * 2) / 3;
     struct {
         PyFunctionObject *func;
         PyCodeObject *code;
