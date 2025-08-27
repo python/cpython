@@ -577,6 +577,7 @@ def create_xcframework(platform: str) -> str:
 
     # Extract the package version from the merged framework
     version = package_version(package_path / "Python.xcframework")
+    version_tag = ".".join(version.split(".")[:2])
 
     # On non-macOS platforms, each framework in XCframework only contains the
     # headers, libPython, plus an Info.plist. Other resources like the standard
@@ -646,6 +647,23 @@ def create_xcframework(platform: str) -> str:
                 host_framework / "Headers/pyconfig.h",
                 slice_framework / f"Headers/pyconfig-{arch}.h",
             )
+
+            # Apple identifies certain libraries as "security risks"; OpenSSL is
+            # one of those libraries. Since we have statically linked OpenSSL into
+            # dynamic libraries that will be converted into frameworks when an
+            # application is built, we are also responsible for providing
+            # .xcprivacy files for those frameworks.
+            print(f"   - {multiarch} xcprivacy files")
+            for module, privacy in [
+                ("_hashlib", "OpenSSL"),
+                ("_ssl", "OpenSSL"),
+            ]:
+                shutil.copy(
+                    PYTHON_DIR
+                    / f"Apple/{platform}/Resources/{privacy}.xcprivacy",
+                    slice_path
+                    / f"lib-{arch}/python{version_tag}/lib-dynload/{module}.xcprivacy",
+                )
 
     print(" - build tools")
     shutil.copytree(
