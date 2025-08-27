@@ -1,7 +1,7 @@
 .. _a-conceptual-overview-of-asyncio:
 
 ****************************************
-A Conceptual Overview of :mod:`!asyncio`
+A conceptual overview of :mod:`!asyncio`
 ****************************************
 
 This :ref:`HOWTO <how-tos>` article seeks to help you build a sturdy mental
@@ -38,7 +38,7 @@ In part 1, we'll cover the main, high-level building blocks of :mod:`!asyncio`:
 the event loop, coroutine functions, coroutine objects, tasks and ``await``.
 
 ==========
-Event Loop
+Event loop
 ==========
 
 Everything in :mod:`!asyncio` happens relative to the event loop.
