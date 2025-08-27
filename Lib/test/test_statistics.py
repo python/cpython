@@ -2346,6 +2346,7 @@ class TestGeometricMean(unittest.TestCase):
 
 class TestKDE(unittest.TestCase):
 
+    @support.requires_resource('cpu')
     def test_kde(self):
         kde = statistics.kde
         StatisticsError = statistics.StatisticsError
@@ -3318,7 +3319,8 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
-    tests.addTests(doctest.DocTestSuite(statistics))
+    if sys.float_repr_style == 'short':
+        tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
 

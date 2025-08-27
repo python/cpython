@@ -9,6 +9,7 @@
 # * test_univnewlines - tests universal newline support
 # * test_largefile - tests operations on a file greater than 2**32 bytes
 #     (only enabled with -ulargefile)
+# * test_free_threading/test_io - tests thread safety of io objects
 
 ################################################################################
 # ATTENTION TEST WRITERS!!!
@@ -807,7 +808,12 @@ class IOTest(unittest.TestCase):
     def test_garbage_collection(self):
         # FileIO objects are collected, and collecting them flushes
         # all data to disk.
-        with warnings_helper.check_warnings(('', ResourceWarning)):
+        #
+        # Note that using warnings_helper.check_warnings() will keep the
+        # file alive due to the `source` argument to warn().  So, use
+        # catch_warnings() instead.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
             f = self.FileIO(os_helper.TESTFN, "wb")
             f.write(b"abcxxx")
             f.f = f
@@ -1061,6 +1067,37 @@ class IOTest(unittest.TestCase):
 
         # Silence destructor error
         R.flush = lambda self: None
+
+    @threading_helper.requires_working_threading()
+    def test_write_readline_races(self):
+        # gh-134908: Concurrent iteration over a file caused races
+        thread_count = 2
+        write_count = 100
+        read_count = 100
+
+        def writer(file, barrier):
+            barrier.wait()
+            for _ in range(write_count):
+                file.write("x")
+
+        def reader(file, barrier):
+            barrier.wait()
+            for _ in range(read_count):
+                for line in file:
+                    self.assertEqual(line, "")
+
+        with self.open(os_helper.TESTFN, "w+") as f:
+            barrier = threading.Barrier(thread_count + 1)
+            reader = threading.Thread(target=reader, args=(f, barrier))
+            writers = [threading.Thread(target=writer, args=(f, barrier))
+                       for _ in range(thread_count)]
+            with threading_helper.catch_threading_exception() as cm:
+                with threading_helper.start_threads(writers + [reader]):
+                    pass
+                self.assertIsNone(cm.exc_type)
+
+        self.assertEqual(os.stat(os_helper.TESTFN).st_size,
+                         write_count * thread_count)
 
 
 class CIOTest(IOTest):
@@ -1777,7 +1814,11 @@ class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
         # C BufferedReader objects are collected.
         # The Python version has __del__, so it ends into gc.garbage instead
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with warnings_helper.check_warnings(('', ResourceWarning)):
+        # Note that using warnings_helper.check_warnings() will keep the
+        # file alive due to the `source` argument to warn().  So, use
+        # catch_warnings() instead.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
             rawio = self.FileIO(os_helper.TESTFN, "w+b")
             f = self.tp(rawio)
             f.f = f
@@ -2126,7 +2167,11 @@ class CBufferedWriterTest(BufferedWriterTest, SizeofTest):
         # all data to disk.
         # The Python version has __del__, so it ends into gc.garbage instead
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with warnings_helper.check_warnings(('', ResourceWarning)):
+        # Note that using warnings_helper.check_warnings() will keep the
+        # file alive due to the `source` argument to warn().  So, use
+        # catch_warnings() instead.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
             rawio = self.FileIO(os_helper.TESTFN, "w+b")
             f = self.tp(rawio)
             f.write(b"123xxx")
@@ -4048,7 +4093,8 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         # C TextIOWrapper objects are collected, and collecting them flushes
         # all data to disk.
         # The Python version has __del__, so it ends in gc.garbage instead.
-        with warnings_helper.check_warnings(('', ResourceWarning)):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", ResourceWarning)
             rawio = self.FileIO(os_helper.TESTFN, "wb")
             b = self.BufferedWriter(rawio)
             t = self.TextIOWrapper(b, encoding="ascii")

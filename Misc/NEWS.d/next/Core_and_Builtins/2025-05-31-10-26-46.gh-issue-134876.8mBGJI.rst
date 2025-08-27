@@ -1,0 +1,2 @@
+Add support to :pep:`768` remote debugging for Linux kernels which don't
+have CONFIG_CROSS_MEMORY_ATTACH configured.

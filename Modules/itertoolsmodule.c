@@ -1124,12 +1124,12 @@ typedef struct {
     PyObject *it;
     PyObject *saved;
     Py_ssize_t index;
-    int firstpass;
 } cycleobject;
 
 #define cycleobject_CAST(op)    ((cycleobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.cycle.__new__
     iterable: object
@@ -1139,7 +1139,7 @@ Return elements from the iterable until it is exhausted. Then repeat the sequenc
 
 static PyObject *
 itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
-/*[clinic end generated code: output=f60e5ec17a45b35c input=9d1d84bcf66e908b]*/
+/*[clinic end generated code: output=f60e5ec17a45b35c input=ead392f4aac7afd8]*/
 {
     PyObject *it;
     PyObject *saved;
@@ -1165,8 +1165,7 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
     }
     lz->it = it;
     lz->saved = saved;
-    lz->index = 0;
-    lz->firstpass = 0;
+    lz->index = -1;
 
     return (PyObject *)lz;
 }
@@ -1199,11 +1198,11 @@ cycle_next(PyObject *op)
     cycleobject *lz = cycleobject_CAST(op);
     PyObject *item;
 
-    if (lz->it != NULL) {
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->index);
+
+    if (index < 0) {
         item = PyIter_Next(lz->it);
         if (item != NULL) {
-            if (lz->firstpass)
-                return item;
             if (PyList_Append(lz->saved, item)) {
                 Py_DECREF(item);
                 return NULL;
@@ -1213,15 +1212,22 @@ cycle_next(PyObject *op)
         /* Note:  StopIteration is already cleared by PyIter_Next() */
         if (PyErr_Occurred())
             return NULL;
+        index = 0;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, 0);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(lz->it);
+#endif
     }
     if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
-    item = PyList_GET_ITEM(lz->saved, lz->index);
-    lz->index++;
-    if (lz->index >= PyList_GET_SIZE(lz->saved))
-        lz->index = 0;
-    return Py_NewRef(item);
+    item = PyList_GetItemRef(lz->saved, index);
+    assert(item);
+    index++;
+    if (index >= PyList_GET_SIZE(lz->saved)) {
+        index = 0;
+    }
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, index);
+    return item;
 }
 
 static PyType_Slot cycle_slots[] = {
@@ -1381,6 +1387,7 @@ typedef struct {
 #define takewhileobject_CAST(op)    ((takewhileobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.takewhile.__new__
     predicate as func: object
@@ -1391,7 +1398,7 @@ Return successive entries from an iterable as long as the predicate evaluates to
 
 static PyObject *
 itertools_takewhile_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=bb179ea7864e2ef6 input=ba5255f7519aa119]*/
+/*[clinic end generated code: output=bb179ea7864e2ef6 input=61e42255dd0a7657]*/
 {
     PyObject *it;
     takewhileobject *lz;
@@ -1690,6 +1697,7 @@ typedef struct {
 #define starmapobject_CAST(op)  ((starmapobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.starmap.__new__
     function as func: object
@@ -1700,7 +1708,7 @@ Return an iterator whose values are returned from the function evaluated with an
 
 static PyObject *
 itertools_starmap_impl(PyTypeObject *type, PyObject *func, PyObject *seq)
-/*[clinic end generated code: output=79eeb81d452c6e8d input=844766df6a0d4dad]*/
+/*[clinic end generated code: output=79eeb81d452c6e8d input=8c9068da0692d6d2]*/
 {
     PyObject *it;
     starmapobject *lz;
@@ -1833,6 +1841,7 @@ chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 itertools.chain.from_iterable
     iterable as arg: object
@@ -1842,7 +1851,7 @@ Alternative chain() constructor taking a single iterable argument that evaluates
 
 static PyObject *
 itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg)
-/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=72c39e3a2ca3be85]*/
+/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=a9bf8227221c75b3]*/
 {
     PyObject *source;
 
@@ -1875,8 +1884,8 @@ chain_traverse(PyObject *op, visitproc visit, void *arg)
     return 0;
 }
 
-static PyObject *
-chain_next(PyObject *op)
+static inline PyObject *
+chain_next_lock_held(PyObject *op)
 {
     chainobject *lz = chainobject_CAST(op);
     PyObject *item;
@@ -1912,6 +1921,16 @@ chain_next(PyObject *op)
     }
     /* Everything had been consumed already. */
     return NULL;
+}
+
+static PyObject *
+chain_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = chain_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 PyDoc_STRVAR(chain_doc,
@@ -2081,7 +2100,7 @@ product_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-product_next(PyObject *op)
+product_next_lock_held(PyObject *op)
 {
     productobject *lz = productobject_CAST(op);
     PyObject *pool;
@@ -2165,6 +2184,16 @@ product_next(PyObject *op)
 empty:
     lz->stopped = 1;
     return NULL;
+}
+
+static PyObject *
+product_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = product_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
 }
 
 static PyMethodDef product_methods[] = {
@@ -2314,7 +2343,7 @@ combinations_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-combinations_next(PyObject *op)
+combinations_next_lock_held(PyObject *op)
 {
     combinationsobject *co = combinationsobject_CAST(op);
     PyObject *elem;
@@ -2399,6 +2428,16 @@ empty:
     return NULL;
 }
 
+static PyObject *
+combinations_next(PyObject *op)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = combinations_next_lock_held(op);
+    Py_END_CRITICAL_SECTION()
+    return result;
+}
+
 static PyMethodDef combinations_methods[] = {
     {"__sizeof__", combinations_sizeof, METH_NOARGS, sizeof_doc},
     {NULL,              NULL}   /* sentinel */
@@ -2466,6 +2505,8 @@ typedef struct {
 #define cwrobject_CAST(op)  ((cwrobject *)(op))
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 @classmethod
 itertools.combinations_with_replacement.__new__
     iterable: object
@@ -2479,7 +2520,7 @@ static PyObject *
 itertools_combinations_with_replacement_impl(PyTypeObject *type,
                                              PyObject *iterable,
                                              Py_ssize_t r)
-/*[clinic end generated code: output=48b26856d4e659ca input=1dc58e82a0878fdc]*/
+/*[clinic end generated code: output=48b26856d4e659ca input=26ebe0e42149e9fb]*/
 {
     cwrobject *co;
     Py_ssize_t n;

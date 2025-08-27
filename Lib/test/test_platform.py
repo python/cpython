@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, warnings_helper
 
 try:
     # Some of the iOS tests need ctypes to operate.
@@ -132,6 +132,22 @@ class PlatformTest(unittest.TestCase):
         for aliased in (False, True):
             for terse in (False, True):
                 res = platform.platform(aliased, terse)
+
+    def test__platform(self):
+        for src, res in [
+            ('foo bar', 'foo_bar'),
+            (
+                '1/2\\3:4;5"6(7)8(7)6"5;4:3\\2/1',
+                '1-2-3-4-5-6-7-8-7-6-5-4-3-2-1'
+            ),
+            ('--', ''),
+            ('-f', '-f'),
+            ('-foo----', '-foo'),
+            ('--foo---', '-foo'),
+            ('---foo--', '-foo'),
+        ]:
+            with self.subTest(src=src):
+                self.assertEqual(platform._platform(src), res)
 
     def test_system(self):
         res = platform.system()
@@ -449,7 +465,7 @@ class PlatformTest(unittest.TestCase):
             else:
                 self.assertEqual(res[2], 'PowerPC')
 
-
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(sys.platform == 'darwin', "OSX only test")
     def test_mac_ver_with_fork(self):
         # Issue7895: platform.mac_ver() crashes when using fork without exec

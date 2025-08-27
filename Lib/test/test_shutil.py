@@ -3492,7 +3492,7 @@ class PublicAPITests(unittest.TestCase):
             target_api.append('disk_usage')
         self.assertEqual(set(shutil.__all__), set(target_api))
         with self.assertWarns(DeprecationWarning):
-            from shutil import ExecError
+            from shutil import ExecError  # noqa: F401
 
 
 if __name__ == '__main__':

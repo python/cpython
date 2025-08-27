@@ -14,6 +14,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
@@ -92,6 +93,7 @@ iobase_unsupported(_PyIO_State *state, const char *message)
 /* Positioning */
 
 /*[clinic input]
+@permit_long_docstring_body
 _io._IOBase.seek
     cls: defining_class
     offset: int(unused=True)
@@ -115,7 +117,7 @@ Return the new absolute position.
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
                       int Py_UNUSED(offset), int Py_UNUSED(whence))
-/*[clinic end generated code: output=8bd74ea6538ded53 input=74211232b363363e]*/
+/*[clinic end generated code: output=8bd74ea6538ded53 input=a21b5aad416ff6a9]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");
@@ -383,8 +385,7 @@ iobase_dealloc(PyObject *op)
     }
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
-    if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     Py_CLEAR(self->dict);
     tp->tp_free(self);
     Py_DECREF(tp);

@@ -40,6 +40,7 @@ extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_FiniExtTypes(PyInterpreterState *interp);
 extern void _PyTypes_Fini(PyInterpreterState *);
 extern void _PyTypes_AfterFork(void);
+extern void _PyTypes_FiniCachedDescriptors(PyInterpreterState *);
 
 static inline PyObject **
 _PyStaticType_GET_WEAKREFS_LISTPTR(managed_static_type_state *state)
@@ -134,7 +135,6 @@ extern int _PyType_AddMethod(PyTypeObject *, PyMethodDef *);
 extern void _PyType_SetFlagsRecursive(PyTypeObject *self, unsigned long mask,
                                       unsigned long flags);
 
-extern unsigned int _PyType_GetVersionForCurrentState(PyTypeObject *tp);
 PyAPI_FUNC(void) _PyType_SetVersion(PyTypeObject *tp, unsigned int version);
 PyTypeObject *_PyType_LookupByVersion(unsigned int version);
 

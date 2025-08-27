@@ -669,5 +669,5 @@ Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial)
 uint32_t
 Py_PACK_VERSION(int x, int y)
 {
-    return Py_PACK_FULL_VERSION(x, y, 0, 0, 0);
+    return _Py_PACK_VERSION(x, y);
 }
