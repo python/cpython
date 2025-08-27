@@ -591,8 +591,6 @@ translate_bytecode_to_trace(
 
     for (;;) {
         target = INSTR_IP(instr, code);
-        // Every instruction might need _DEOPT, and _DEOPT might have _ERROR_POP_N before it
-        max_length -= 2;
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -631,6 +629,8 @@ translate_bytecode_to_trace(
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
         RESERVE_RAW(2, "_CHECK_VALIDITY");
         ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+        // Need to reserve 1 stub in case the _CHECK_VALIDITY results in a _DEOPT_IF
+        max_length--;
         if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
             RESERVE_RAW(2, "_SET_IP");
             ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)instr, target);
@@ -651,6 +651,15 @@ translate_bytecode_to_trace(
             // Make space for side exit and final _EXIT_TRACE:
             RESERVE_RAW(2, "_EXIT_TRACE");
             max_length--;
+        }
+        if (OPCODE_HAS_ERROR(opcode)) {
+           // Make space for error stub and final _EXIT_TRACE:
+           RESERVE_RAW(2, "_ERROR_POP_N");
+           max_length--;
+        }
+        if (OPCODE_HAS_DEOPT(opcode)) {
+           RESERVE_RAW(2, "_DEOPT");
+           max_length--;
         }
         switch (opcode) {
             case POP_JUMP_IF_NONE:
