@@ -591,8 +591,8 @@ translate_bytecode_to_trace(
 
     for (;;) {
         target = INSTR_IP(instr, code);
-        // Need space for _DEOPT
-        max_length--;
+        // Every instruction might need _DEOPT, and _DEOPT might have _ERROR_POP_N before it
+        max_length -= 2;
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
