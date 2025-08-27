@@ -1363,7 +1363,9 @@ Operators and delimiters
    single: delimiters
 
 The following grammar defines :dfn:`operator` and :dfn:`delimiter` tokens,
-that is, the generic :data:`~token.OP` token type:
+that is, the generic :data:`~token.OP` token type.
+A :ref:`list of these tokens and their names <token_operators_delimiters>`
+is also available in the :mod:`!token` module documentation.
 
 .. grammar-snippet::
    :group: python-grammar
@@ -1408,6 +1410,3 @@ that is, the generic :data:`~token.OP` token type:
 A sequence of three consecutive periods (``...``) has a special
 meaning as an :py:data:`Ellipsis` literal.
 
-See :ref:`operator and delimiter tokens <token_operators_delimiters>`
-in the :mod:`!token` module documentation for names of the operator and
-delimiter tokens.
