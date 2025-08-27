@@ -4153,7 +4153,6 @@ class TestSignatureObject(unittest.TestCase):
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
 
-        # TODO: classmethod is not correct
         with self.subTest('classmethod'):
             class C:
                 @classmethod
@@ -4178,7 +4177,6 @@ class TestSignatureObject(unittest.TestCase):
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
 
-        # TODO: method type is not correct
         with self.subTest('MethodType'):
             class A:
                 @identity
