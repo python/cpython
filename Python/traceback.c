@@ -76,29 +76,42 @@ class traceback "PyTracebackObject *" "&PyTraceback_Type"
 int
 _PyTraceback_IsSafeToImport(void)
 {
+    // Avoid recursion during critical errors
+    static int in_safe_to_import = 0;
+    if (in_safe_to_import) {
+        return 1;  // Default to safe during recursion
+    }
+    in_safe_to_import = 1;
+
     PyObject *sys_path = PySys_GetObject("path");
     if (sys_path == NULL || !PyList_Check(sys_path) || PyList_Size(sys_path) == 0) {
+        in_safe_to_import = 0;
         return 1;  // Default to safe
     }
     PyObject *first_path = PyList_GetItem(sys_path, 0);
     if (first_path == NULL || !PyUnicode_Check(first_path)) {
+        in_safe_to_import = 0;
         return 1;
     }
     const char *path_str = PyUnicode_AsUTF8(first_path);
     if (path_str == NULL || strlen(path_str) == 0) {
+        in_safe_to_import = 0;
         return 1;
     }
     // Check if traceback.py exists in the first path directory
     char traceback_path[MAXPATHLEN];
     int ret = snprintf(traceback_path, sizeof(traceback_path), "%s/traceback.py", path_str);
     if (ret <= 0 || ret >= (int)sizeof(traceback_path)) {
+        in_safe_to_import = 0;
         return 1;  // Path too long or other error, default to safe
     }
     FILE *f = fopen(traceback_path, "r");
     if (f != NULL) {
         fclose(f);
+        in_safe_to_import = 0;
         return 0;  // Not safe - traceback.py exists
     }
+    in_safe_to_import = 0;
     return 1;  // Safe to import
 }
 
