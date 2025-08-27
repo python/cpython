@@ -2009,10 +2009,12 @@ def _proxy_bypass_winreg_override(host, proxy_override):
 
     host, _ = _splitport(host)
 
-    # Split and remove empty or whitespace-only entries
-    proxy_override = [x.strip() for x in proxy_override.split(';') if x.strip()]
-
+    proxy_override = proxy_override.split(';')
     for test in proxy_override:
+        test = test.strip()
+        if not test:
+            continue
+
         # "<local>" should bypass the proxy server for all intranet addresses
         if test == '<local>':
             if '.' not in host:
