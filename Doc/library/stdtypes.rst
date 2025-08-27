@@ -1763,8 +1763,8 @@ expression support in the :mod:`re` module).
 
       >>> 'PYTHON IS AMAZING'.capitalize()
       'Python is amazing'
-      >>> 'Ǉjubljana starts With a non-English digraph'.capitalize()
-      'ǈjubljana starts with a non-english digraph'
+      >>> 'ǋemačka starts With a non-ASCII digraph'.capitalize()
+      'ǋemačka starts with a non-ascii digraph'
 
    See also :meth:`title`.
 
