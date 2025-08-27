@@ -652,11 +652,6 @@ translate_bytecode_to_trace(
             RESERVE_RAW(2, "_EXIT_TRACE");
             max_length--;
         }
-        if (OPCODE_HAS_ERROR(opcode)) {
-            // Make space for error stub and final _EXIT_TRACE:
-            RESERVE_RAW(2, "_ERROR_POP_N");
-            max_length--;
-        }
         switch (opcode) {
             case POP_JUMP_IF_NONE:
             case POP_JUMP_IF_NOT_NONE:
