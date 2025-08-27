@@ -1,4 +1,0 @@
-Fixed :meth:`tkinter.ttk.Style.map`. The function accepts now the
-representation of the default state as empty sequence (as returned by
-``Style.map()``). The structure of the result is now the same on all platform
-and does not depend on the value of ``wantobjects``.

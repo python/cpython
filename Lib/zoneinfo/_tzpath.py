@@ -2,7 +2,7 @@ import os
 import sysconfig
 
 
-def reset_tzpath(to=None):
+def _reset_tzpath(to=None, stacklevel=4):
     global TZPATH
 
     tzpaths = to
@@ -18,17 +18,22 @@ def reset_tzpath(to=None):
         base_tzpath = tzpaths
     else:
         env_var = os.environ.get("PYTHONTZPATH", None)
-        if env_var is not None:
-            base_tzpath = _parse_python_tzpath(env_var)
-        else:
-            base_tzpath = _parse_python_tzpath(
-                sysconfig.get_config_var("TZPATH")
-            )
+        if env_var is None:
+            env_var = sysconfig.get_config_var("TZPATH")
+        base_tzpath = _parse_python_tzpath(env_var, stacklevel)
 
     TZPATH = tuple(base_tzpath)
 
 
-def _parse_python_tzpath(env_var):
+def reset_tzpath(to=None):
+    """Reset global TZPATH."""
+    # We need `_reset_tzpath` helper function because it produces a warning,
+    # it is used as both a module-level call and a public API.
+    # This is how we equalize the stacklevel for both calls.
+    _reset_tzpath(to)
+
+
+def _parse_python_tzpath(env_var, stacklevel):
     if not env_var:
         return ()
 
@@ -42,9 +47,10 @@ def _parse_python_tzpath(env_var):
         msg = _get_invalid_paths_message(raw_tzpath)
 
         warnings.warn(
-            "Invalid paths specified in PYTHONTZPATH environment variable."
+            "Invalid paths specified in PYTHONTZPATH environment variable. "
             + msg,
             InvalidTZPathWarning,
+            stacklevel=stacklevel,
         )
 
     return new_tzpath
@@ -118,7 +124,8 @@ def available_timezones():
     # Start with loading from the tzdata package if it exists: this has a
     # pre-assembled list of zones that only requires opening one file.
     try:
-        with resources.open_text("tzdata", "zones") as f:
+        zones_file = resources.files("tzdata").joinpath("zones")
+        with zones_file.open("r", encoding="utf-8") as f:
             for zone in f:
                 zone = zone.strip()
                 if zone:
@@ -172,4 +179,4 @@ class InvalidTZPathWarning(RuntimeWarning):
 
 
 TZPATH = ()
-reset_tzpath()
+_reset_tzpath(stacklevel=5)

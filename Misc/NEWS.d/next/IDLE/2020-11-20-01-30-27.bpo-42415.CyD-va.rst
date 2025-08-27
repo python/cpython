@@ -1,1 +1,0 @@
-Get docstrings for IDLE calltips more often by using inspect.getdoc.

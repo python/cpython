@@ -1,5 +1,5 @@
-:mod:`zipimport` --- Import modules from Zip archives
-=====================================================
+:mod:`!zipimport` --- Import modules from Zip archives
+======================================================
 
 .. module:: zipimport
    :synopsis: Support for importing Python modules from ZIP archives.
@@ -23,12 +23,15 @@ and a path within the archive can be specified to only import from a
 subdirectory.  For example, the path :file:`example.zip/lib/` would only
 import from the :file:`lib/` subdirectory within the archive.
 
-Any files may be present in the ZIP archive, but only files :file:`.py` and
-:file:`.pyc` are available for import.  ZIP import of dynamic modules
+Any files may be present in the ZIP archive, but importers are only invoked for
+:file:`.py` and :file:`.pyc` files.  ZIP import of dynamic modules
 (:file:`.pyd`, :file:`.so`) is disallowed. Note that if an archive only contains
 :file:`.py` files, Python will not attempt to modify the archive by adding the
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
 doesn't contain :file:`.pyc` files, importing may be rather slow.
+
+.. versionchanged:: 3.13
+   ZIP64 is supported
 
 .. versionchanged:: 3.8
    Previously, ZIP archives with an archive comment were not supported.
@@ -74,6 +77,11 @@ zipimporter Objects
    :exc:`ZipImportError` is raised if *archivepath* doesn't point to a valid ZIP
    archive.
 
+   .. versionchanged:: 3.12
+
+      Methods ``find_loader()`` and ``find_module()``, deprecated in 3.10 are
+      now removed.  Use :meth:`find_spec` instead.
+
    .. method:: create_module(spec)
 
       Implementation of :meth:`importlib.abc.Loader.create_module` that returns
@@ -89,28 +97,6 @@ zipimporter Objects
       .. versionadded:: 3.10
 
 
-   .. method:: find_loader(fullname, path=None)
-
-      An implementation of :meth:`importlib.abc.PathEntryFinder.find_loader`.
-
-      .. deprecated:: 3.10
-
-         Use :meth:`find_spec` instead.
-
-
-   .. method:: find_module(fullname, path=None)
-
-      Search for a module specified by *fullname*. *fullname* must be the fully
-      qualified (dotted) module name. It returns the zipimporter instance itself
-      if the module was found, or :const:`None` if it wasn't. The optional
-      *path* argument is ignored---it's there for compatibility with the
-      importer protocol.
-
-      .. deprecated:: 3.10
-
-         Use :meth:`find_spec` instead.
-
-
    .. method:: find_spec(fullname, target=None)
 
       An implementation of :meth:`importlib.abc.PathEntryFinder.find_spec`.
@@ -121,7 +107,7 @@ zipimporter Objects
    .. method:: get_code(fullname)
 
       Return the code object for the specified module. Raise
-      :exc:`ZipImportError` if the module couldn't be found.
+      :exc:`ZipImportError` if the module couldn't be imported.
 
 
    .. method:: get_data(pathname)
@@ -130,14 +116,14 @@ zipimporter Objects
       file wasn't found.
 
       .. versionchanged:: 3.3
-         :exc:`IOError` used to be raised instead of :exc:`OSError`.
+         :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
 
 
    .. method:: get_filename(fullname)
 
       Return the value ``__file__`` would be set to if the specified module
       was imported. Raise :exc:`ZipImportError` if the module couldn't be
-      found.
+      imported.
 
       .. versionadded:: 3.1
 
@@ -159,12 +145,20 @@ zipimporter Objects
    .. method:: load_module(fullname)
 
       Load the module specified by *fullname*. *fullname* must be the fully
-      qualified (dotted) module name. It returns the imported module, or raises
-      :exc:`ZipImportError` if it wasn't found.
+      qualified (dotted) module name. Returns the imported module on success,
+      raises :exc:`ZipImportError` on failure.
 
-      .. deprecated:: 3.10
+      .. deprecated-removed:: 3.10 3.15
 
          Use :meth:`exec_module` instead.
+
+
+   .. method:: invalidate_caches()
+
+      Clear out the internal cache of information about files found within
+      the ZIP archive.
+
+      .. versionadded:: 3.10
 
 
    .. attribute:: archive

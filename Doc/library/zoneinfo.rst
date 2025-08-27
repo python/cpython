@@ -1,5 +1,5 @@
-:mod:`zoneinfo` --- IANA time zone support
-==========================================
+:mod:`!zoneinfo` --- IANA time zone support
+===========================================
 
 .. module:: zoneinfo
     :synopsis: IANA time zone support
@@ -9,13 +9,15 @@
 .. moduleauthor:: Paul Ganssle <paul@ganssle.io>
 .. sectionauthor:: Paul Ganssle <paul@ganssle.io>
 
+**Source code:** :source:`Lib/zoneinfo`
+
 --------------
 
 The :mod:`zoneinfo` module provides a concrete time zone implementation to
 support the IANA time zone database as originally specified in :pep:`615`. By
 default, :mod:`zoneinfo` uses the system's time zone data if available; if no
 system time zone data is available, the library will fall back to using the
-first-party `tzdata`_ package available on PyPI.
+first-party :pypi:`tzdata` package available on PyPI.
 
 .. seealso::
 
@@ -23,10 +25,11 @@ first-party `tzdata`_ package available on PyPI.
         Provides the :class:`~datetime.time` and :class:`~datetime.datetime`
         types with which the :class:`ZoneInfo` class is designed to be used.
 
-    Package `tzdata`_
+    Package :pypi:`tzdata`
         First-party package maintained by the CPython core developers to supply
         time zone data via PyPI.
 
+.. include:: ../includes/wasm-notavail.rst
 
 Using ``ZoneInfo``
 ------------------
@@ -90,7 +93,7 @@ Data sources
 
 The ``zoneinfo`` module does not directly provide time zone data, and instead
 pulls time zone information from the system time zone database or the
-first-party PyPI package `tzdata`_, if available. Some systems, including
+first-party PyPI package :pypi:`tzdata`, if available. Some systems, including
 notably Windows systems, do not have an IANA database available, and so for
 projects targeting cross-platform compatibility that require time zone data, it
 is recommended to declare a dependency on tzdata. If neither system data nor
@@ -124,8 +127,9 @@ time zone database (except on Windows, where there are no "well-known"
 locations for time zone data). On POSIX systems, downstream distributors and
 those building Python from source who know where their system
 time zone data is deployed may change the default time zone path by specifying
-the compile-time option ``TZPATH`` (or, more likely, the ``configure`` flag
-``--with-tzpath``), which should be a string delimited by :data:`os.pathsep`.
+the compile-time option ``TZPATH`` (or, more likely, the :option:`configure
+flag --with-tzpath <--with-tzpath>`), which should be a string delimited by
+:data:`os.pathsep`.
 
 On all platforms, the configured value is available as the ``TZPATH`` key in
 :func:`sysconfig.get_config_var`.
@@ -191,7 +195,7 @@ The ``ZoneInfo`` class
 
 The ``ZoneInfo`` class has two alternate constructors:
 
-.. classmethod:: ZoneInfo.from_file(fobj, /, key=None)
+.. classmethod:: ZoneInfo.from_file(file_obj, /, key=None)
 
     Constructs a ``ZoneInfo`` object from a file-like object returning bytes
     (e.g. a file opened in binary mode or an :class:`io.BytesIO` object).
@@ -237,7 +241,7 @@ The following class methods are also available:
     .. warning::
 
         Invoking this function may change the semantics of datetimes using
-        ``ZoneInfo`` in surprising ways; this modifies process-wide global state
+        ``ZoneInfo`` in surprising ways; this modifies module state
         and thus may have wide-ranging effects. Only use it if you know that you
         need to.
 
@@ -321,7 +325,7 @@ The behavior of a ``ZoneInfo`` file depends on how it was constructed:
        >>> a is b
        False
 
-3. ``ZoneInfo.from_file(fobj, /, key=None)``: When constructed from a file, the
+3. ``ZoneInfo.from_file(file_obj, /, key=None)``: When constructed from a file, the
    ``ZoneInfo`` object raises an exception on pickling. If an end user wants to
    pickle a ``ZoneInfo`` constructed from a file, it is recommended that they
    use a wrapper type or a custom serialization function: either serializing by
@@ -409,5 +413,3 @@ Exceptions and warnings
     be filtered out, such as a relative path.
 
 .. Links and references:
-
-.. _tzdata: https://pypi.org/project/tzdata/

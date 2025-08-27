@@ -1,3 +1,10 @@
+import doctest
+import traceback
+import unittest
+
+from test.support import BrokenIter
+
+
 doctests = """
 ########### Tests mostly copied from test_listcomps.py ############
 
@@ -144,24 +151,49 @@ We also repeat each of the above scoping tests inside a function
 
 """
 
+class SetComprehensionTest(unittest.TestCase):
+    def test_exception_locations(self):
+        # The location of an exception raised from __init__ or
+        # __next__ should be the iterator expression
+
+        def init_raises():
+            try:
+                {x for x in BrokenIter(init_raises=True)}
+            except Exception as e:
+                return e
+
+        def next_raises():
+            try:
+                {x for x in BrokenIter(next_raises=True)}
+            except Exception as e:
+                return e
+
+        def iter_raises():
+            try:
+                {x for x in BrokenIter(iter_raises=True)}
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
 
 __test__ = {'doctests' : doctests}
 
-def test_main(verbose=None):
-    import sys
-    from test import support
-    from test import test_setcomps
-    support.run_doctest(test_setcomps, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_doctest(test_setcomps, verbose)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

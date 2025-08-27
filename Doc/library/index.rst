@@ -27,8 +27,8 @@ as a collection of packages, so it may be necessary to use the packaging
 tools provided with the operating system to obtain some or all of the
 optional components.
 
-In addition to the standard library, there is a growing collection of
-several thousand components (from individual programs and modules to
+In addition to the standard library, there is an active collection of
+hundreds of thousands of components (from individual programs and modules to
 packages and entire application development frameworks), available from
 the `Python Package Index <https://pypi.org>`_.
 
@@ -55,15 +55,14 @@ the `Python Package Index <https://pypi.org>`_.
    fileformats.rst
    crypto.rst
    allos.rst
+   cmdlinelibs.rst
    concurrency.rst
-   contextvars.rst
    ipc.rst
    netdata.rst
    markup.rst
    internet.rst
    mm.rst
    i18n.rst
-   frameworks.rst
    tk.rst
    development.rst
    debug.rst
@@ -74,5 +73,7 @@ the `Python Package Index <https://pypi.org>`_.
    language.rst
    windows.rst
    unix.rst
+   cmdline.rst
    superseded.rst
-   undoc.rst
+   removed.rst
+   security_warnings.rst

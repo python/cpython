@@ -1,3 +1,0 @@
-Fixed a bug with the LOAD_ATTR opcode cache that was not respecting
-monkey-patching a class-level attribute to make it a descriptor. Patch by
-Pablo Galindo.

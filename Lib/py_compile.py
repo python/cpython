@@ -177,7 +177,7 @@ def main():
     import argparse
 
     description = 'A simple command-line interface for py_compile module.'
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, color=True)
     parser.add_argument(
         '-q', '--quiet',
         action='store_true',
@@ -190,7 +190,7 @@ def main():
     )
     args = parser.parse_args()
     if args.filenames == ['-']:
-        filenames = sys.stdin.readlines()
+        filenames = [filename.rstrip('\n') for filename in sys.stdin.readlines()]
     else:
         filenames = args.filenames
     for filename in filenames:

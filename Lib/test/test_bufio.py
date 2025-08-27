@@ -1,5 +1,4 @@
 import unittest
-from test import support
 from test.support import os_helper
 
 import io # C implementation.
@@ -29,7 +28,7 @@ class BufferSizeTest:
             f.write(b"\n")
             f.write(s)
             f.close()
-            f = open(os_helper.TESTFN, "rb")
+            f = self.open(os_helper.TESTFN, "rb")
             line = f.readline()
             self.assertEqual(line, s + b"\n")
             line = f.readline()

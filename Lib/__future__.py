@@ -33,7 +33,7 @@ in releases at or after that, modules no longer need
 to use the feature in question, but may continue to use such imports.
 
 MandatoryRelease may also be None, meaning that a planned feature got
-dropped.
+dropped or that the release version is undetermined.
 
 Instances of class _Feature have two corresponding methods,
 .getOptionalRelease() and .getMandatoryRelease().
@@ -42,7 +42,7 @@ CompilerFlag is the (bitfield) flag that should be passed in the fourth
 argument to the builtin function compile() to enable the feature in
 dynamically compiled code.  This flag is stored in the .compiler_flag
 attribute on _Future instances.  These values must match the appropriate
-#defines of CO_xxx flags in Include/compile.h.
+#defines of CO_xxx flags in Include/cpython/compile.h.
 
 No feature line is ever to be deleted from this file.
 """
@@ -96,7 +96,7 @@ class _Feature:
         """Return release in which this feature will become mandatory.
 
         This is a 5-tuple, of the same form as sys.version_info, or, if
-        the feature was dropped, is None.
+        the feature was dropped, or the release date is undetermined, is None.
         """
         return self.mandatory
 
@@ -143,5 +143,5 @@ generator_stop = _Feature((3, 5, 0, "beta", 1),
                           CO_FUTURE_GENERATOR_STOP)
 
 annotations = _Feature((3, 7, 0, "beta", 1),
-                       (3, 10, 0, "alpha", 0),
+                       None,
                        CO_FUTURE_ANNOTATIONS)

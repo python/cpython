@@ -1,1 +1,0 @@
-:class:`types.GenericAlias` objects can now be the targets of weakrefs.

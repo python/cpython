@@ -1,0 +1,3 @@
+:mod:`!_hashlib`: avoid using deprecated functions
+:manpage:`ERR_func_error_string` and :manpage:`EVP_MD_CTX_md` when using
+OpenSSL 3.0 and later. Patch by Bénédikt Tran.
