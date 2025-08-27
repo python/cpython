@@ -15,6 +15,7 @@ from unittest import mock
 from profiling.sampling.pstats_collector import PstatsCollector
 from profiling.sampling.stack_collector import (
     CollapsedStackCollector,
+    FlamegraphCollector,
 )
 
 from test.support.os_helper import unlink
@@ -435,6 +436,77 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
+
+    def test_flamegraph_collector_basic(self):
+        """Test basic FlamegraphCollector functionality."""
+        collector = FlamegraphCollector()
+
+        # Test empty state (inherits from StackTraceCollector)
+        self.assertEqual(len(collector.call_trees), 0)
+        self.assertEqual(len(collector.function_samples), 0)
+
+        # Test collecting sample data
+        test_frames = [
+            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+        ]
+        collector.collect(test_frames)
+
+        # Should store call tree (reversed)
+        self.assertEqual(len(collector.call_trees), 1)
+        expected_tree = [("file.py", 20, "func2"), ("file.py", 10, "func1")]
+        self.assertEqual(collector.call_trees[0], expected_tree)
+
+        # Should count function samples
+        self.assertEqual(
+            collector.function_samples[("file.py", 10, "func1")], 1
+        )
+        self.assertEqual(
+            collector.function_samples[("file.py", 20, "func2")], 1
+        )
+
+    def test_flamegraph_collector_export(self):
+        """Test flamegraph HTML export functionality."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector()
+
+        # Create some test data
+        test_frames1 = [
+            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+        ]
+        test_frames2 = [
+            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+        ]  # Same stack
+        test_frames3 = [(1, [("other.py", 5, "other_func")])]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        # Export flamegraph
+        collector.export(flamegraph_out.name)
+
+        # Verify file was created and contains valid data
+        self.assertTrue(os.path.exists(flamegraph_out.name))
+        self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
+
+        # Check file contains HTML content
+        with open(flamegraph_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Should be valid HTML
+        self.assertIn("<!doctype html>", content.lower())
+        self.assertIn("<html", content)
+        self.assertIn("Python Performance Flamegraph", content)
+        self.assertIn("d3-flame-graph", content)
+
+        # Should contain the data
+        self.assertIn('"name":', content)
+        self.assertIn('"value":', content)
+        self.assertIn('"children":', content)
 
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
@@ -1824,6 +1896,22 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             with self.assertRaises(ProcessLookupError):
                 unwinder.get_stack_trace()
 
+    def test_valid_output_formats(self):
+        """Test that all valid output formats are accepted."""
+        valid_formats = ["pstats", "collapsed", "flamegraph"]
+
+        for fmt in valid_formats:
+            try:
+                # This will likely fail with permissions, but the format should be valid
+                profiling.sampling.sample.sample(
+                    os.getpid(),
+                    duration_sec=0.1,
+                    output_format=fmt,
+                    filename=f"test_{fmt}.out",
+                )
+            except (OSError, RuntimeError, PermissionError):
+                # Expected errors - we just want to test format validation
+                pass
 
 
 class TestSampleProfilerCLI(unittest.TestCase):

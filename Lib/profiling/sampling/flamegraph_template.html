@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python Performance Flamegraph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.css"
+    />
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph-tooltip.min.js"
+    ></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- INLINE_CSS -->
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-content">
+        <div class="python-logo">
+          <img
+            src="https://s3.dualstack.us-east-2.amazonaws.com/pythondotorg-assets/media/files/python-logo-only.svg"
+            alt="Python Logo"
+          />
+        </div>
+        <div class="header-text">
+          <h1>Python Performance Flamegraph</h1>
+          <div class="subtitle">
+            Interactive visualization of function call performance
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="controls-content">
+        <button onclick="resetZoom()">🏠 Reset Zoom</button>
+        <button onclick="exportSVG()" class="secondary">📁 Export SVG</button>
+        <button onclick="toggleLegend()">🔥 Heat Map Legend</button>
+      </div>
+    </div>
+
+    <button id="show-info-btn" title="Show navigation guide">&#8505;</button>
+
+    <div class="info-panel" id="info-panel">
+      <button id="close-info-btn" title="Close">&times;</button>
+      <h3>Navigation Guide</h3>
+      <p><strong>Click:</strong> Zoom into function</p>
+      <p><strong>Hover:</strong> Show detailed information</p>
+      <p><strong>Width:</strong> Time spent in function</p>
+      <p><strong>Height:</strong> Call stack depth</p>
+      <p><strong>Color:</strong> Performance intensity</p>
+    </div>
+
+    <div class="legend-panel" id="legend-panel">
+      <h3>🔥 Performance Heat Map</h3>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #3776ab"></div>
+        <div>
+          <div class="legend-label">Hottest Functions (≥60%)</div>
+          <div class="legend-description">Python blue - most time spent</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #4584bb"></div>
+        <div>
+          <div class="legend-label">Very Hot Functions (35-60%)</div>
+          <div class="legend-description">High performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #5592cc"></div>
+        <div>
+          <div class="legend-label">Hot Functions (18-35%)</div>
+          <div class="legend-description">Notable performance cost</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ffd43b"></div>
+        <div>
+          <div class="legend-label">Warm Functions (12-18%)</div>
+          <div class="legend-description">Python gold - moderate impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ffdc5c"></div>
+        <div>
+          <div class="legend-label">Medium Functions (6-12%)</div>
+          <div class="legend-description">Some performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ffe47d"></div>
+        <div>
+          <div class="legend-label">Cool Functions (3-6%)</div>
+          <div class="legend-description">Low performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #ffec9e"></div>
+        <div>
+          <div class="legend-label">Cold Functions (1-3%)</div>
+          <div class="legend-description">Minimal performance impact</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #fff4bf"></div>
+        <div>
+          <div class="legend-label">Coldest Functions (<1%)</div>
+          <div class="legend-description">Very low performance impact</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div id="chart"></div>
+    </div>
+
+    <!-- INLINE_JS -->
+  </body>
+</html>
