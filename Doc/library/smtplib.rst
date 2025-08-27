@@ -24,12 +24,10 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 .. class:: SMTP(host='', port=0, local_hostname=None[, timeout], source_address=None)
 
    An :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
-   that support a full repertoire of SMTP and ESMTP operations.
-   If *host* is omitted or set to an empty string, no connection is made during initialization; you must
-   call :meth:`connect` manually before using the instance.
-   If *port* is zero,the value of the :attr:`default_port` attribute is used.
-
-   If specified, *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
+   that support a full repertoire of SMTP and ESMTP operations. If the optional
+   *host* and *port* parameters are given, the SMTP :meth:`connect` method is
+   called with those parameters during initialization.  If specified,
+   *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
    command.  Otherwise, the local hostname is found using
    :func:`socket.getfqdn`.  If the :meth:`connect` call returns anything other
    than a success code, an :exc:`SMTPConnectError` is raised. The optional
@@ -83,13 +81,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    An :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
    required from the beginning of the connection and using :meth:`starttls` is
-   not appropriate. If the optional *host* and *port* parameters are given, the
-   SMTP_SSL :meth:`connect` method is called with those parameters during initialization.
-   If *host* is omitted or an empty string, no connection is made during initialization;
-   you must call :meth:`connect` manually before using the instance. If
-   *port* is zero, the standard SMTP-over-SSL port (465) is used.
-
-   The optional arguments *local_hostname*, *timeout* and *source_address* have the same
+   not appropriate. If *host* is not specified, the local host is used. If
+   *port* is zero, the standard SMTP-over-SSL port (465) is used.  The optional
+   arguments *local_hostname*, *timeout* and *source_address* have the same
    meaning as they do in the :class:`SMTP` class.  *context*, also optional,
    can contain a :class:`~ssl.SSLContext` and allows configuring various
    aspects of the secure connection.  Please read :ref:`ssl-security` for
