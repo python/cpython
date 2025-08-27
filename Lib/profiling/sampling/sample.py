@@ -15,8 +15,6 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-_MAX_STARTUP_ATTEMPTS = 5
-_STARTUP_RETRY_DELAY_SECONDS = 0.1
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 Supports the following target modes:
   - -p PID: Profile an existing process by PID
