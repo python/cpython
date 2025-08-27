@@ -1780,7 +1780,7 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     Py_ssize_t pos = 0;
     while (PyDict_Next(dct, &pos, &key, &value)) {
 #ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the lock on dct can get suspended
+        // gh-119438: in the free-threading build the critical section on dct can get suspended
         Py_INCREF(key);
         Py_INCREF(value);
 #endif
@@ -1901,7 +1901,7 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
 #ifdef Py_GIL_DISABLED
-        // gh-119438: in the free-threading build the lock on s_fast can get suspended
+        // gh-119438: in the free-threading build the critical section on s_fast can get suspended
         Py_INCREF(obj);
 #endif
         if (i) {
