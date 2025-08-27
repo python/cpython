@@ -4154,17 +4154,17 @@ class TestSignatureObject(unittest.TestCase):
                             ...))
 
         # TODO: classmethod is not correct
-        # with self.subTest('classmethod'):
-        #     class C:
-        #         @classmethod
-        #         @identity
-        #         def __new__(cls, cls2, a):
-        #             return a
+        with self.subTest('classmethod'):
+            class C:
+                @classmethod
+                @identity
+                def __new__(cls, cls2, a):
+                    return a
 
-        #     self.assertEqual(C(1), 1)
-        #     self.assertEqual(self.signature(C),
-        #                     ((('a', ..., ..., "positional_or_keyword"),),
-        #                     ...))
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
 
         with self.subTest('staticmethod'):
             class C:
@@ -4179,18 +4179,18 @@ class TestSignatureObject(unittest.TestCase):
                             ...))
 
         # TODO: method type is not correct
-        # with self.subTest('MethodType'):
-        #     class A:
-        #         @identity
-        #         def call(self, cls, a):
-        #             return a
-        #     class C:
-        #         __new__ = A().call
+        with self.subTest('MethodType'):
+            class A:
+                @identity
+                def call(self, cls, a):
+                    return a
+            class C:
+                __new__ = A().call
 
-        #     self.assertEqual(C(1), 1)
-        #     self.assertEqual(self.signature(C),
-        #                     ((('a', ..., ..., "positional_or_keyword"),),
-        #                     ...))
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
 
         with self.subTest('partial'):
             class C:
