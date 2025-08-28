@@ -1750,9 +1750,7 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
                             Py_ssize_t indent_level, PyObject *indent_cache,
                             PyObject *separator)
 {
-#ifdef Py_GIL_DISABLED
-    assert(PyMutex_IsLocked(&items->ob_mutex));
-#endif
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(items);
     PyObject *key, *value;
     for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
         PyObject *item = PyList_GET_ITEM(items, i);
@@ -1779,9 +1777,7 @@ _encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
                          bool *first, PyObject *dct, Py_ssize_t indent_level,
                          PyObject *indent_cache, PyObject *separator)
 {
-#ifdef Py_GIL_DISABLED
-    assert(PyMutex_IsLocked(&dct->ob_mutex));
-#endif
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dct);
     PyObject *key, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(dct, &pos, &key, &value)) {
