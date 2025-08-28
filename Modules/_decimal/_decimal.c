@@ -1014,16 +1014,19 @@ context_setemax(PyObject *self, PyObject *value, void *Py_UNUSED(closure))
 }
 
 #ifdef CONFIG_32
+/*[clinic input]
+_decimal.Context._unsafe_setprec
+
+    x: Py_ssize_t
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-context_unsafe_setprec(PyObject *self, PyObject *value)
+_decimal_Context__unsafe_setprec_impl(PyObject *self, Py_ssize_t x)
+/*[clinic end generated code: output=dd838edf08e12dd9 input=23a1b19ceb1569be]*/
 {
     mpd_context_t *ctx = CTX(self);
-    mpd_ssize_t x;
-
-    x = PyLong_AsSsize_t(value);
-    if (x == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
 
     if (x < 1 || x > 1070000000L) {
         return value_error_ptr(
@@ -1034,16 +1037,19 @@ context_unsafe_setprec(PyObject *self, PyObject *value)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_decimal.Context._unsafe_setemin
+
+    x: Py_ssize_t
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-context_unsafe_setemin(PyObject *self, PyObject *value)
+_decimal_Context__unsafe_setemin_impl(PyObject *self, Py_ssize_t x)
+/*[clinic end generated code: output=0c49cafee8a65846 input=652f1ecacca7e0ce]*/
 {
     mpd_context_t *ctx = CTX(self);
-    mpd_ssize_t x;
-
-    x = PyLong_AsSsize_t(value);
-    if (x == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
 
     if (x < -1070000000L || x > 0) {
         return value_error_ptr(
@@ -1054,16 +1060,19 @@ context_unsafe_setemin(PyObject *self, PyObject *value)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_decimal.Context._unsafe_setemax
+
+    x: Py_ssize_t
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-context_unsafe_setemax(PyObject *self, PyObject *value)
+_decimal_Context__unsafe_setemax_impl(PyObject *self, Py_ssize_t x)
+/*[clinic end generated code: output=776563e0377a00e8 input=b2a32a9a2750e7a8]*/
 {
     mpd_context_t *ctx = CTX(self);
-    mpd_ssize_t x;
-
-    x = PyLong_AsSsize_t(value);
-    if (x == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
 
     if (x < 0 || x > 1070000000L) {
         return value_error_ptr(
@@ -7421,12 +7430,10 @@ static PyMethodDef context_methods [] =
   _DECIMAL_CONTEXT_CLEAR_FLAGS_METHODDEF
   _DECIMAL_CONTEXT_CLEAR_TRAPS_METHODDEF
 
-#ifdef CONFIG_32
   /* Unsafe set functions with relaxed range checks */
-  { "_unsafe_setprec", context_unsafe_setprec, METH_O, NULL },
-  { "_unsafe_setemin", context_unsafe_setemin, METH_O, NULL },
-  { "_unsafe_setemax", context_unsafe_setemax, METH_O, NULL },
-#endif
+  _DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF
+  _DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF
+  _DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF
 
   /* Miscellaneous */
   _DECIMAL_CONTEXT___COPY___METHODDEF

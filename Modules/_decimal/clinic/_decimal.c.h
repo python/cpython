@@ -51,6 +51,123 @@ _decimal_Context_Etop(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _decimal_Context_Etop_impl(self);
 }
 
+#if defined(CONFIG_32)
+
+PyDoc_STRVAR(_decimal_Context__unsafe_setprec__doc__,
+"_unsafe_setprec($self, x, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF    \
+    {"_unsafe_setprec", (PyCFunction)_decimal_Context__unsafe_setprec, METH_O, _decimal_Context__unsafe_setprec__doc__},
+
+static PyObject *
+_decimal_Context__unsafe_setprec_impl(PyObject *self, Py_ssize_t x);
+
+static PyObject *
+_decimal_Context__unsafe_setprec(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t x;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        x = ival;
+    }
+    return_value = _decimal_Context__unsafe_setprec_impl(self, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(CONFIG_32) */
+
+#if defined(CONFIG_32)
+
+PyDoc_STRVAR(_decimal_Context__unsafe_setemin__doc__,
+"_unsafe_setemin($self, x, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF    \
+    {"_unsafe_setemin", (PyCFunction)_decimal_Context__unsafe_setemin, METH_O, _decimal_Context__unsafe_setemin__doc__},
+
+static PyObject *
+_decimal_Context__unsafe_setemin_impl(PyObject *self, Py_ssize_t x);
+
+static PyObject *
+_decimal_Context__unsafe_setemin(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t x;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        x = ival;
+    }
+    return_value = _decimal_Context__unsafe_setemin_impl(self, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(CONFIG_32) */
+
+#if defined(CONFIG_32)
+
+PyDoc_STRVAR(_decimal_Context__unsafe_setemax__doc__,
+"_unsafe_setemax($self, x, /)\n"
+"--\n"
+"\n");
+
+#define _DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF    \
+    {"_unsafe_setemax", (PyCFunction)_decimal_Context__unsafe_setemax, METH_O, _decimal_Context__unsafe_setemax__doc__},
+
+static PyObject *
+_decimal_Context__unsafe_setemax_impl(PyObject *self, Py_ssize_t x);
+
+static PyObject *
+_decimal_Context__unsafe_setemax(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t x;
+
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        x = ival;
+    }
+    return_value = _decimal_Context__unsafe_setemax_impl(self, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(CONFIG_32) */
+
 PyDoc_STRVAR(_decimal_Context_clear_traps__doc__,
 "clear_traps($self, /)\n"
 "--\n"
@@ -5842,7 +5959,19 @@ exit:
     return return_value;
 }
 
+#ifndef _DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF
+    #define _DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF
+#endif /* !defined(_DECIMAL_CONTEXT__UNSAFE_SETPREC_METHODDEF) */
+
+#ifndef _DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF
+    #define _DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF
+#endif /* !defined(_DECIMAL_CONTEXT__UNSAFE_SETEMIN_METHODDEF) */
+
+#ifndef _DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF
+    #define _DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF
+#endif /* !defined(_DECIMAL_CONTEXT__UNSAFE_SETEMAX_METHODDEF) */
+
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=f3c76188583986d6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8812700ad3434825 input=a9049054013a1b77]*/
