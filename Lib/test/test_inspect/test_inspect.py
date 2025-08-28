@@ -4114,7 +4114,9 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('descriptor'):
             class C:
-                __init__ = DescWithDeco(lambda self, a: None)
+                @DescWithDeco
+                def __init__(self, a):
+                    pass
 
             C(1)  # does not raise
             self.assertEqual(self.signature(C),
@@ -4212,7 +4214,9 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('descriptor'):
             class C:
-                __new__ = DescWithDeco(lambda cls, a: a)
+                @DescWithDeco
+                def __new__(cls, a):
+                    return a
 
             self.assertEqual(C(1), 1)
             self.assertEqual(self.signature(C),
