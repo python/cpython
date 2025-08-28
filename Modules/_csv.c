@@ -1027,9 +1027,8 @@ Reader_iternext(PyObject *op)
             return NULL;
         }
         ++self->line_num;
-
-        linelen = PyUnicode_GET_LENGTH(lineobj);
         pos = 0;
+        linelen = PyUnicode_GET_LENGTH(lineobj);
 
         while (pos < linelen) {
             /* For IN_FIELD and IN_QUOTED_FIELD states, optimize by finding
