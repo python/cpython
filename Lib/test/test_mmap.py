@@ -546,6 +546,7 @@ class MmapTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 m.resize(PAGESIZE)
 
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
     def test_private_anonymous(self):
         m = mmap.mmap(-1, PAGESIZE, flags=mmap.MAP_PRIVATE)
         for x in range(PAGESIZE):
