@@ -389,8 +389,6 @@ class Sniffer:
                 items = list(counts.items())
                 missed_lines = num_lines - sum(counts.values())
                 if missed_lines:
-                    # charFrequency[char][0] can only be deduced now
-                    # as it cannot be obtained when parsing the lines.
                     # Store the number of lines 'char' was missing from.
                     items.append((0, missed_lines))
                 if len(items) == 1 and items[0][0] == 0:
