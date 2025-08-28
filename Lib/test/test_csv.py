@@ -1462,6 +1462,7 @@ ghi\0jkl
         dialect = sniffer.sniff(sample)
         self.assertEqual(dialect.delimiter, ",")
 
+
 class NUL:
     def write(s, *args):
         pass
