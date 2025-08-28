@@ -423,11 +423,11 @@ zlib
 Optimizations
 =============
 
-module_name
------------
+csv
+---
 
-* TODO
-
+* The :meth:`csv.reader` has been optimized, and is around 1.4x faster.
+  (Contributed by Maurycy Pawłowski-Wieroński in :gh:`XXX`.)
 
 
 Deprecated
