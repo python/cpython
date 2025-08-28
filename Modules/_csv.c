@@ -962,9 +962,9 @@ Reader_iternext(PyObject *op)
     ReaderObj *self = _ReaderObj_CAST(op);
 
     PyObject *fields = NULL;
+    Py_UCS4 c;
     Py_ssize_t pos, linelen, chunk_end, p;
     PyObject *lineobj;
-    Py_UCS4 c;
 
 #define FIND_AND_UPDATE_CHUNK_END(c)                           \
     do                                                         \
