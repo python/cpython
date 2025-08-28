@@ -1,0 +1,1 @@
+Fix infinite loop in email.message.EmailMessage.as_string() when add_attachment() is called with very long parameter keys.
