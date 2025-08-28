@@ -965,6 +965,7 @@ Reader_iternext(PyObject *op)
     Py_ssize_t pos, linelen, chunk_end, p;
     PyObject *lineobj;
     DialectObj *dialect;
+    Py_UCS4 c;
 
     _csvstate *module_state = _csv_state_from_type(Py_TYPE(self),
                                                    "Reader.__next__");
@@ -1051,7 +1052,7 @@ Reader_iternext(PyObject *op)
                 pos = chunk_end;
 
                 if (pos < linelen) {
-                    Py_UCS4 c = PyUnicode_READ_CHAR(lineobj, pos);
+                    c = PyUnicode_READ_CHAR(lineobj, pos);
                     if (parse_process_char(self, module_state, c) < 0) {
                         Py_DECREF(lineobj);
                         goto err;
@@ -1088,7 +1089,7 @@ Reader_iternext(PyObject *op)
                 pos = chunk_end;
 
                 if (pos < linelen) {
-                    Py_UCS4 c = PyUnicode_READ_CHAR(lineobj, pos);
+                    c = PyUnicode_READ_CHAR(lineobj, pos);
                     if (parse_process_char(self, module_state, c) < 0) {
                         Py_DECREF(lineobj);
                         goto err;
@@ -1097,7 +1098,7 @@ Reader_iternext(PyObject *op)
                 }
                 break;
             default:
-                Py_UCS4 c = PyUnicode_READ_CHAR(lineobj, pos);
+                c = PyUnicode_READ_CHAR(lineobj, pos);
                 if (parse_process_char(self, module_state, c) < 0) {
                     Py_DECREF(lineobj);
                     goto err;
