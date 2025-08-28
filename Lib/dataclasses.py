@@ -207,6 +207,8 @@ _FIELD_INITVAR = _FIELD_BASE('_FIELD_INITVAR')
 # The name of an attribute on the class where we store the Field
 # objects.  Also used to check if a class is a Data Class.
 _FIELDS = '__dataclass_fields__'
+# The name of an attribute on the class where we store the field names
+_FIELD_NAMES = '__dataclass_field_names__'
 
 # The name of an attribute on the class that stores the parameters to
 # @dataclass.
@@ -1052,6 +1054,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # Remember all of the fields on our class (including bases).  This
     # also marks this class as being a dataclass.
     setattr(cls, _FIELDS, fields)
+    setattr(cls, _FIELD_NAMES, tuple(f.name for f in fields.values() if f._field_type is _FIELD))
 
     # Was this class defined with an explicit __hash__?  Note that if
     # __eq__ is defined in this class, then python will automatically
@@ -1196,13 +1199,13 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 # the code instead of iterating over fields.  But that can be a project for
 # another day, if performance becomes an issue.
 def _dataclass_getstate(self):
-    return [getattr(self, f.name) for f in fields(self)]
+    return [getattr(self, name) for name in _field_names(self)]
 
 
 def _dataclass_setstate(self, state):
-    for field, value in zip(fields(self), state):
+    for field_name, value in zip(_field_names(self), state):
         # use setattr because dataclass may be frozen
-        object.__setattr__(self, field.name, value)
+        object.__setattr__(self, field_name, value)
 
 
 def _get_slots(cls):
@@ -1285,7 +1288,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
     # Create a new dict for our new class.
     cls_dict = dict(cls.__dict__)
-    field_names = tuple(f.name for f in fields(cls))
+    field_names = _field_names(cls)
     # Make sure slots don't overlap with those in base classes.
     inherited_slots = set(
         itertools.chain.from_iterable(map(_get_slots, cls.__mro__[1:-1]))
@@ -1377,8 +1380,6 @@ def fields(class_or_instance):
     Accepts a dataclass or an instance of one. Tuple elements are of
     type Field.
     """
-
-    # Might it be worth caching this, per class?
     try:
         fields = getattr(class_or_instance, _FIELDS)
     except AttributeError:
@@ -1388,6 +1389,13 @@ def fields(class_or_instance):
     # order, so the order of the tuple is as the fields were defined.
     return tuple(f for f in fields.values() if f._field_type is _FIELD)
 
+def _field_names(class_or_instance):
+    """Return a tuple describing the field names of this dataclass.
+
+    Accepts a dataclass or an instance of one. Excludes pseudo-fields
+    """
+
+    return getattr(class_or_instance, _FIELD_NAMES)
 
 def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
@@ -1433,13 +1441,13 @@ def _asdict_inner(obj, dict_factory):
         # dataclass instance: fast path for the common case
         if dict_factory is dict:
             return {
-                f.name: _asdict_inner(getattr(obj, f.name), dict)
-                for f in fields(obj)
+                name: _asdict_inner(getattr(obj, name), dict)
+                for name in _field_names(obj_type)
             }
         else:
             return dict_factory([
-                (f.name, _asdict_inner(getattr(obj, f.name), dict_factory))
-                for f in fields(obj)
+                (name, _asdict_inner(getattr(obj, name), dict_factory))
+                for name in _field_names(obj_type)
             ])
     # handle the builtin types first for speed; subclasses handled below
     elif obj_type is list:
@@ -1522,8 +1530,8 @@ def _astuple_inner(obj, tuple_factory):
         return obj
     elif _is_dataclass_instance(obj):
         return tuple_factory([
-            _astuple_inner(getattr(obj, f.name), tuple_factory)
-            for f in fields(obj)
+            _astuple_inner(getattr(obj, name), tuple_factory)
+            for name in _field_names(obj)
         ])
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
