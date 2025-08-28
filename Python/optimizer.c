@@ -550,8 +550,7 @@ translate_bytecode_to_trace(
     _Py_CODEUNIT *instr,
     _PyUOpInstruction *trace,
     int buffer_size,
-    _PyBloomFilter *dependencies, bool progress_needed,
-    bool is_noopt)
+    _PyBloomFilter *dependencies, bool progress_needed)
 {
     bool first = true;
     PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -592,12 +591,7 @@ translate_bytecode_to_trace(
 
     for (;;) {
         target = INSTR_IP(instr, code);
-        if (is_noopt) {
-            max_length-=2;
-        }
-        else {
-            max_length--;
-        }
+        max_length-=2;
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
 
@@ -1292,7 +1286,7 @@ uop_optimize(
     if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
         is_noopt = false;
     }
-    int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed, is_noopt);
+    int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed);
     if (length <= 0) {
         // Error or nothing translated
         return length;
