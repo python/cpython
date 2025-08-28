@@ -1032,6 +1032,10 @@ Reader_iternext(PyObject *op)
         pos = 0;
 
         while (pos < linelen) {
+            /* For IN_FIELD and IN_QUOTED_FIELD states, optimize by finding
+             * chunks of characters that can be processed together up to the
+             * next special character (eg: delimiter, quote, escape).
+             */
             switch (self->state) {
             case IN_FIELD:
                 chunk_end = linelen;
