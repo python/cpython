@@ -998,7 +998,6 @@ Reader_iternext(PyObject *op)
 
     if (parse_reset(self) < 0)
         return NULL;
-
     do {
         lineobj = PyIter_Next(self->input_iter);
         if (lineobj == NULL) {
