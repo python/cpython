@@ -527,6 +527,8 @@ class _ValueFormatter:
                     continue
                 break
             else:
+                # No suitable split point found. Handle the case where we have
+                # an extremely long string that can't be split.
                 fws, part = self._current_line.pop()
                 if self._current_line._initial_size > 0:
                     # There will be a header, so leave it on a line by itself.
