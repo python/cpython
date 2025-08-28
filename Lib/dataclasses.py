@@ -207,7 +207,7 @@ _FIELD_INITVAR = _FIELD_BASE('_FIELD_INITVAR')
 # The name of an attribute on the class where we store the Field
 # objects.  Also used to check if a class is a Data Class.
 _FIELDS = '__dataclass_fields__'
-# The name of an attribute on the class where we store the field names
+# The name of an attribute on the class where we store the field names.
 _FIELD_NAMES = '__dataclass_field_names__'
 
 # The name of an attribute on the class that stores the parameters to
@@ -1054,7 +1054,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # Remember all of the fields on our class (including bases).  This
     # also marks this class as being a dataclass.
     setattr(cls, _FIELDS, fields)
-    setattr(cls, _FIELD_NAMES, tuple(f.name for f in fields.values() if f._field_type is _FIELD))
+    setattr(cls, _FIELD_NAMES, tuple(f.name for f in fields.values()
+                                     if f._field_type is _FIELD))
 
     # Was this class defined with an explicit __hash__?  Note that if
     # __eq__ is defined in this class, then python will automatically
