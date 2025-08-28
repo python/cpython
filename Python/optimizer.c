@@ -591,6 +591,7 @@ translate_bytecode_to_trace(
 
     for (;;) {
         target = INSTR_IP(instr, code);
+        // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
         max_length-=2;
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
