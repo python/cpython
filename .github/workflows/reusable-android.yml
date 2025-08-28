@@ -11,23 +11,10 @@ on:
         description: A custom name for the Checks API-reported status
         required: false
         type: string
-      checkout-ref:
-        description: A custom repository committish to fetch from Git
-        required: false
-        type: string
-      checkout-repository:
-        description: A custom repository slug to fetch from Git
-        required: false
-        type: string
       runner-vm-os:
         description: VM OS to use
         required: true
         type: string
-      store-built-artifacts:
-        default: false
-        description: Whether to preserve output as workflow run artifacts
-        required: false
-        type: boolean
       timeout-minutes:
         description: Deadline for the job to complete
         required: true
@@ -63,30 +50,10 @@ jobs:
       steps: ${{ toJSON(steps) }}
 
     steps:
-    - name: >-
-        Fetch CPython source from ${{
-          inputs.checkout-repository
-          && inputs.checkout-repository
-          || 'Git'
-        }}${{
-          inputs.checkout-ref
-          && format(' @ {0}', inputs.checkout-ref)
-          || ''
-        }}
+    - name: Fetch CPython source from Git
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         persist-credentials: false
-        repository: ${{ inputs.checkout-repository }}
-        ref: ${{ inputs.checkout-ref }}
 
     - name: Build and test
       run: ./Android/android.py ci "${ANDROID_CI_SCRIPT_TRIPLET}"
-
-    - name: Upload Built artifacts
-      if: inputs.store-built-artifacts
-      id: artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.ANDROID_CI_SCRIPT_TRIPLET }}
-        path: cross-build/${{ env.ANDROID_CI_SCRIPT_TRIPLET }}/dist/*
-        if-no-files-found: error
