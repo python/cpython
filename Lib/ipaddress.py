@@ -1479,6 +1479,10 @@ class IPv4Interface(IPv4Address):
         return '%s/%s' % (self._string_from_ip_int(self._ip),
                           self.hostmask)
 
+    @property
+    def is_unspecified(self):
+        return self._ip == 0 and self.network.is_unspecified
+
 
 class IPv4Network(_BaseV4, _BaseNetwork):
 

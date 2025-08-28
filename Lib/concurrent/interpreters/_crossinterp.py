@@ -42,16 +42,19 @@ class UnboundItem:
     def singleton(cls, kind, module, name='UNBOUND'):
         doc = cls.__doc__
         if doc:
-            doc = doc.replace('cross-interpreter container', kind)
-            doc = doc.replace('cross-interpreter', kind)
+            doc = doc.replace(
+                'cross-interpreter container', kind,
+            ).replace(
+                'cross-interpreter', kind,
+            )
         subclass = type(
             f'Unbound{kind.capitalize()}Item',
             (cls,),
-            dict(
-                _MODULE=module,
-                _NAME=name,
-                __doc__=doc,
-            ),
+            {
+                "_MODULE": module,
+                "_NAME": name,
+                "__doc__": doc,
+            },
         )
         return object.__new__(subclass)
 

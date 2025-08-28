@@ -509,7 +509,7 @@ Module constants
 
 .. data:: SQLITE_KEYWORDS
 
-   A :class:`tuple` containing all sqlite3 keywords.
+   A :class:`tuple` containing all SQLite keywords.
 
    This constant is only available if Python was compiled with SQLite
    3.24.0 or greater.
