@@ -148,6 +148,21 @@ def meth_self_o(self, object, /): pass
 def meth_type_noargs(type, /): pass
 def meth_type_o(type, object, /): pass
 
+# Simple decorator for test cases that using decorated functions
+def identity(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapped
+
+# Simple descriptor that decorates a function
+class DescWithDeco:
+    def __init__(self, func):
+        self.func = identity(func)
+
+    def __get__(self, instance, owner):
+        return self.func.__get__(instance, owner)
+
 
 class TestPredicates(IsTestBase):
 
@@ -4028,12 +4043,6 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_class_with_decorated_init(self):
-        def identity(func):
-            @functools.wraps(func)
-            def wrapped(*args, **kwargs):
-                return func(*args, **kwargs)
-            return wrapped
-
         class C:
             @identity
             def __init__(self, b):
@@ -4084,7 +4093,7 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('partial'):
             class C:
-                __init__ = identity(functools.partial(lambda x, a, b: None, 2))
+                __init__ = functools.partial(identity(lambda x, a, b: None), 2)
 
             C(1)  # does not raise
             self.assertEqual(self.signature(C),
@@ -4103,16 +4112,9 @@ class TestSignatureObject(unittest.TestCase):
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
 
-        class Desc:
-            def __init__(self, func):
-                self.func = identity(func)
-
-            def __get__(self, instance, owner):
-                return self.func.__get__(instance, owner)
-
         with self.subTest('descriptor'):
             class C:
-                __init__ = Desc(lambda self, a: None)
+                __init__ = DescWithDeco(lambda self, a: None)
 
             C(1)  # does not raise
             self.assertEqual(self.signature(C),
@@ -4192,7 +4194,7 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.subTest('partial'):
             class C:
-                __new__ = identity(functools.partial(lambda x, cls, a: (x, a), 2))
+                __new__ = functools.partial(identity(lambda x, cls, a: (x, a)), 2)
 
             self.assertEqual(C(1), (2, 1))
             self.assertEqual(self.signature(C),
@@ -4208,16 +4210,9 @@ class TestSignatureObject(unittest.TestCase):
                             ((('a', ..., ..., "positional_or_keyword"),),
                             ...))
 
-        class Desc:
-            def __init__(self, func):
-                self.func = identity(func)
-
-            def __get__(self, instance, owner):
-                return self.func.__get__(instance, owner)
-
         with self.subTest('descriptor'):
             class C:
-                __new__ = Desc(lambda cls, a: a)
+                __new__ = DescWithDeco(lambda cls, a: a)
 
             self.assertEqual(C(1), 1)
             self.assertEqual(self.signature(C),
