@@ -1393,7 +1393,7 @@ def fields(class_or_instance):
 def _field_names(class_or_instance):
     """Return a tuple describing the field names of this dataclass.
 
-    Accepts a dataclass or an instance of one. Excludes pseudo-fields
+    Accepts a dataclass or an instance of one. Excludes pseudo-fields.
     """
 
     return getattr(class_or_instance, _FIELD_NAMES)
