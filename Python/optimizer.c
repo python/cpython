@@ -550,7 +550,8 @@ translate_bytecode_to_trace(
     _Py_CODEUNIT *instr,
     _PyUOpInstruction *trace,
     int buffer_size,
-    _PyBloomFilter *dependencies, bool progress_needed)
+    _PyBloomFilter *dependencies, bool progress_needed,
+    bool is_noopt)
 {
     bool first = true;
     PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -591,7 +592,12 @@ translate_bytecode_to_trace(
 
     for (;;) {
         target = INSTR_IP(instr, code);
-
+        if (is_noopt) {
+            max_length-=2;
+        }
+        else {
+            max_length--;
+        }
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
 
@@ -629,8 +635,6 @@ translate_bytecode_to_trace(
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
         RESERVE_RAW(2, "_CHECK_VALIDITY");
         ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
-        // Need to reserve 1 stub in case the _CHECK_VALIDITY results in a _DEOPT_IF
-        max_length--;
         if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
             RESERVE_RAW(2, "_SET_IP");
             ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)instr, target);
@@ -655,10 +659,6 @@ translate_bytecode_to_trace(
         if (OPCODE_HAS_ERROR(opcode)) {
             // Make space for error stub and final _EXIT_TRACE:
             RESERVE_RAW(2, "_ERROR_POP_N");
-            max_length--;
-        }
-        if (OPCODE_HAS_DEOPT(opcode)) {
-            RESERVE_RAW(2, "_DEOPT");
             max_length--;
         }
         switch (opcode) {
@@ -1287,15 +1287,19 @@ uop_optimize(
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
     OPT_STAT_INC(attempts);
-    int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed);
+    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
+    bool is_noopt = true;
+    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+        is_noopt = false;
+    }
+    int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed, is_noopt);
     if (length <= 0) {
         // Error or nothing translated
         return length;
     }
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
-    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+    if (!is_noopt) {
         length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            length,
                                            curr_stackentries, &dependencies);
