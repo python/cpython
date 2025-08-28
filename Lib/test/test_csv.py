@@ -1449,7 +1449,7 @@ ghi\0jkl
         #     0 and 1 per line.
         # "," appears once every row (true delimiter).
         #
-        # Even if the zero-frequency bucket is appended v. inserted, the tie
+        # Even if the zero-frequency bucket is appended vs. inserted, the tie
         # yields an adjusted score of 0, so ":" should not be promoted and
         # "," must be selected.
         sample = (
