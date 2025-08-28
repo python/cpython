@@ -250,7 +250,7 @@ def make_build_python(context):
 
 
 def apple_target(host):
-    """Return the apple platform identifier for a given host triple."""
+    """Return the Apple platform identifier for a given host triple."""
     for _, platform_slices in HOSTS.items():
         for slice_name, slice_parts in platform_slices.items():
             for host_triple, multiarch in slice_parts.items():
@@ -409,7 +409,7 @@ def create_xcframework(context):
     # there's more than architecture, we need to merge the individual built
     # frameworks into a merged "fat" framework.
     for slice_name, slice_parts in HOSTS[context.platform].items():
-        # Some parts are the same across all slices, so we can any of the
+        # Some parts are the same across all slices, so we use can any of the
         # host frameworks as the source for the merged version. Use the first
         # one on the list, as it's as representative as any other.
         first_host_triple, first_multiarch = next(iter(slice_parts.items()))
@@ -788,14 +788,14 @@ def parse_args():
         cmd.add_argument(
             "platform",
             choices=HOSTS.keys(),
-            help="The target platform to build.",
+            help="The target platform to build",
         )
 
     # host triple argument
     for cmd in [configure_host, make_host]:
         cmd.add_argument(
             "host",
-            help="The host triple to build (e.g., arm64-apple-ios-simulator).",
+            help="The host triple to build (e.g., arm64-apple-ios-simulator)",
         )
     # optional host triple argument
     for cmd in [clean, build, test]:

@@ -63,7 +63,7 @@ The ``Apple`` subfolder of the Python repository acts as a build script that
 can be used to coordinate the compilation of a complete iOS XCframework. To use
 it, run::
 
-  $ python Apple iOS build
+  python Apple iOS build
 
 This will:
 
