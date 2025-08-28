@@ -426,7 +426,7 @@ Optimizations
 csv
 ---
 
-* The :func:`csv.reader` has been optimized, and is around 1.4x faster.
+* The :func:`csv.reader` has been optimized, and is around 2x faster.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`138214`.)
 
 
