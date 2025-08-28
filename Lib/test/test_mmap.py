@@ -508,7 +508,7 @@ class MmapTests(unittest.TestCase):
             m[x] = b
             self.assertEqual(m[x], b)
 
-        if sys.platform.startswith('linux'):
+        if sys.platform.startswith(('linux', 'android')):
             # Can't expand a shared anonymous mapping on Linux.
             # See https://bugzilla.kernel.org/show_bug.cgi?id=8691
             with self.assertRaises(ValueError):
@@ -541,7 +541,7 @@ class MmapTests(unittest.TestCase):
             with self.assertRaises(IndexError):
                 m[PAGESIZE // 2]
 
-        if sys.platform.startswith('linux'):
+        if sys.platform.startswith(('linux', 'android')):
             # Can't expand to its original size.
             with self.assertRaises(ValueError):
                 m.resize(PAGESIZE)
