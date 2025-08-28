@@ -426,8 +426,7 @@ Optimizations
 csv
 ---
 
-* The :meth:`csv.Sniffer.sniff` delimiter detection has been optimized,
-  and is now up to 1.6x faster.
+* :meth:`csv.Sniffer.sniff` delimiter detection is now up to 1.6x faster.
   (Contributed by Maurycy Pawłowski-Wieroński in :gh:`137628`.)
 
 
