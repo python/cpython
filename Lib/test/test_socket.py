@@ -1259,6 +1259,38 @@ class GeneralModuleTests(unittest.TestCase):
         # Find one service that exists, then check all the related interfaces.
         # I've ordered this by protocols that have both a tcp and udp
         # protocol, at least for modern Linuxes.
+        def query_available_service(*protocols):
+            services_file = '/etc/services'
+            if not os.path.exists(services_file):
+                return None
+            services_found = dict()
+            with open(services_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('#'):
+                        # Skip comment line.
+                        continue
+                    tokens = line.split()
+                    if len(tokens) < 2:
+                        continue
+                    if '/' not in tokens[1]:
+                        continue
+                    try:
+                        _, entry_protocol = tokens[1].split('/')
+                    except:
+                        continue
+                    entry_name = tokens[0]
+                    if entry_name not in services_found:
+                        services_found[entry_name] = [entry_protocol]
+                    else:
+                        services_found[entry_name].append(entry_protocol)
+                    for protocol in protocols:
+                        if protocol not in services_found[entry_name]:
+                            break
+                    else:
+                        return entry_name
+            return None
+
         if (
             sys.platform.startswith(
                 ('linux', 'android', 'freebsd', 'netbsd', 'gnukfreebsd'))
@@ -1276,7 +1308,12 @@ class GeneralModuleTests(unittest.TestCase):
             except OSError:
                 pass
         else:
-            raise OSError
+            service = query_available_service('tcp', 'udp')
+            if service is None:
+                service = query_available_service('tcp')
+            if service is None:
+                self.skipTest('No available service found.')
+            port = socket.getservbyname(service, 'tcp')
         # Try same call with optional protocol omitted
         # Issue gh-71123: this fails on Android before API level 23.
         if not (support.is_android and platform.android_ver().api_level < 23):
