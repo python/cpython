@@ -1,0 +1,1 @@
+Speed up :class:`~csv.reader` by 1.4x.
