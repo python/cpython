@@ -4140,12 +4140,6 @@ class TestSignatureObject(unittest.TestCase):
 
 
     def test_signature_on_class_with_decorated_new(self):
-        def identity(func):
-            @functools.wraps(func)
-            def wrapped(*args, **kwargs):
-                return func(*args, **kwargs)
-            return wrapped
-
         with self.subTest('FunctionType'):
             class C:
                 @identity
