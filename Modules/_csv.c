@@ -964,7 +964,6 @@ Reader_iternext(PyObject *op)
     PyObject *fields = NULL;
     Py_ssize_t pos, linelen, chunk_end, p;
     PyObject *lineobj;
-    DialectObj *dialect;
     Py_UCS4 c;
 
 #define FIND_AND_UPDATE_CHUNK_END(c)                           \
@@ -1000,15 +999,13 @@ Reader_iternext(PyObject *op)
     if (parse_reset(self) < 0)
         return NULL;
 
-    dialect = self->dialect;
-
     do {
         lineobj = PyIter_Next(self->input_iter);
         if (lineobj == NULL) {
             /* End of input OR exception */
             if (!PyErr_Occurred() && (self->field_len != 0 ||
                                       self->state == IN_QUOTED_FIELD)) {
-                if (dialect->strict)
+                if (self->dialect->strict)
                     PyErr_SetString(module_state->error_obj,
                                     "unexpected end of data");
                 else if (parse_save_field(self) >= 0)
@@ -1039,9 +1036,9 @@ Reader_iternext(PyObject *op)
             case IN_FIELD:
                 chunk_end = linelen;
 
-                FIND_AND_UPDATE_CHUNK_END(dialect->delimiter);
-                if (dialect->escapechar != NOT_SET) {
-                    FIND_AND_UPDATE_CHUNK_END(dialect->escapechar);
+                FIND_AND_UPDATE_CHUNK_END(self->dialect->delimiter);
+                if (self->dialect->escapechar != NOT_SET) {
+                    FIND_AND_UPDATE_CHUNK_END(self->dialect->escapechar);
                 }
                 FIND_AND_UPDATE_CHUNK_END('\n');
                 FIND_AND_UPDATE_CHUNK_END('\r');
@@ -1061,9 +1058,9 @@ Reader_iternext(PyObject *op)
             case IN_QUOTED_FIELD:
                 chunk_end = linelen;
 
-                FIND_AND_UPDATE_CHUNK_END(dialect->quotechar);
-                if (dialect->escapechar != NOT_SET) {
-                    FIND_AND_UPDATE_CHUNK_END(dialect->escapechar);
+                FIND_AND_UPDATE_CHUNK_END(self->dialect->quotechar);
+                if (self->dialect->escapechar != NOT_SET) {
+                    FIND_AND_UPDATE_CHUNK_END(self->dialect->escapechar);
                 }
 
                 if (chunk_end > pos) {
