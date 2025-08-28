@@ -2178,7 +2178,7 @@ class ReTests(unittest.TestCase):
 
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("sunos"),
-                     "test doesn't work on Solaris, bpo-47058")
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_caching(self):
         # Issue #22410
         oldlocale = locale.setlocale(locale.LC_CTYPE)
@@ -2217,7 +2217,7 @@ class ReTests(unittest.TestCase):
 
     @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("sunos"),
-                     "test doesn't work on Solaris, bpo-47058")
+                     "test doesn't work on Solaris, gh-91214")
     def test_locale_compiled(self):
         oldlocale = locale.setlocale(locale.LC_CTYPE)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
