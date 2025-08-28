@@ -500,11 +500,80 @@ class MmapTests(unittest.TestCase):
         for x in range(PAGESIZE):
             self.assertEqual(m[x], 0,
                              "anonymously mmap'ed contents should be zero")
+        with self.assertRaises(IndexError):
+            m[PAGESIZE]
 
         for x in range(PAGESIZE):
             b = x & 0xff
             m[x] = b
             self.assertEqual(m[x], b)
+
+        if sys.platform.startswith('linux'):
+            # Can't expand a shared anonymous mapping on Linux.
+            # See https://bugzilla.kernel.org/show_bug.cgi?id=8691
+            with self.assertRaises(ValueError):
+                m.resize(2 * PAGESIZE)
+        else:
+            try:
+                m.resize(2 * PAGESIZE)
+            except SystemError:
+                pass
+            else:
+                for x in range(PAGESIZE):
+                    self.assertEqual(m[x], x & 0xff)
+                for x in range(PAGESIZE, 2 * PAGESIZE):
+                    self.assertEqual(m[x], 0)
+                with self.assertRaises(IndexError):
+                    m[2 * PAGESIZE]
+
+                for x in range(PAGESIZE, 2 * PAGESIZE):
+                    b = x & 0xff
+                    m[x] = b
+                    self.assertEqual(m[x], b)
+
+        try:
+            m.resize(PAGESIZE // 2)
+        except SystemError:
+            pass
+        else:
+            for x in range(PAGESIZE // 2):
+                self.assertEqual(m[x], x & 0xff)
+            with self.assertRaises(IndexError):
+                m[PAGESIZE // 2]
+
+        if sys.platform.startswith('linux'):
+            # Can't expand to its original size.
+            with self.assertRaises(ValueError):
+                m.resize(PAGESIZE)
+
+    def test_private_anonymous(self):
+        m = mmap.mmap(-1, PAGESIZE, flags=mmap.MAP_PRIVATE)
+        for x in range(PAGESIZE):
+            self.assertEqual(m[x], 0)
+        with self.assertRaises(IndexError):
+            m[PAGESIZE]
+
+        for x in range(PAGESIZE):
+            b = x & 0xff
+            m[x] = b
+            self.assertEqual(m[x], b)
+
+        try:
+            m.resize(2 * PAGESIZE)
+        except SystemError:
+            pass
+        else:
+            for x in range(PAGESIZE):
+                self.assertEqual(m[x], x & 0xff)
+            for x in range(PAGESIZE, 2 * PAGESIZE):
+                self.assertEqual(m[x], 0)
+            with self.assertRaises(IndexError):
+                m[2 * PAGESIZE]
+
+            for x in range(PAGESIZE, 2 * PAGESIZE):
+                b = x & 0xff
+                m[x] = b
+                self.assertEqual(m[x], b)
 
     def test_read_all(self):
         m = mmap.mmap(-1, 16)
