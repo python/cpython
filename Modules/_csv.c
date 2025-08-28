@@ -967,6 +967,30 @@ Reader_iternext(PyObject *op)
     DialectObj *dialect;
     Py_UCS4 c;
 
+#define FIND_AND_UPDATE_CHUNK_END(c)                           \
+    do                                                         \
+    {                                                          \
+        p = PyUnicode_FindChar(lineobj, (c), pos, linelen, 1); \
+        if (p == -2) {                                         \
+            Py_DECREF(lineobj);                                \
+            goto err;                                          \
+        }                                                      \
+        if (p >= 0 && p < chunk_end) {                         \
+            chunk_end = p;                                     \
+        }                                                      \
+    } while (0)
+
+#define PROCESS_CHAR_AND_ADVANCE()                           \
+    do                                                       \
+    {                                                        \
+        c = PyUnicode_READ_CHAR(lineobj, pos);               \
+        if (parse_process_char(self, module_state, c) < 0) { \
+            Py_DECREF(lineobj);                              \
+            goto err;                                        \
+        }                                                    \
+        pos++;                                               \
+    } while (0)
+
     _csvstate *module_state = _csv_state_from_type(Py_TYPE(self),
                                                    "Reader.__next__");
     if (module_state == NULL) {
@@ -1012,36 +1036,12 @@ Reader_iternext(PyObject *op)
             case IN_FIELD:
                 chunk_end = linelen;
 
-                p = PyUnicode_FindChar(lineobj, dialect->delimiter, pos, linelen, 1);
-                if (p >= 0 && p < chunk_end) {
-                    chunk_end = p;
-                } else if (p == -2) {
-                    Py_DECREF(lineobj);
-                    goto err;
-                }
+                FIND_AND_UPDATE_CHUNK_END(dialect->delimiter);
                 if (dialect->escapechar != NOT_SET) {
-                    p = PyUnicode_FindChar(lineobj, dialect->escapechar, pos, linelen, 1);
-                    if (p >= 0 && p < chunk_end) {
-                        chunk_end = p;
-                    } else if (p == -2) {
-                        Py_DECREF(lineobj);
-                        goto err;
-                    }
+                    FIND_AND_UPDATE_CHUNK_END(dialect->escapechar);
                 }
-                p = PyUnicode_FindChar(lineobj, '\n', pos, linelen, 1);
-                if (p >= 0 && p < chunk_end) {
-                    chunk_end = p;
-                } else if (p == -2) {
-                    Py_DECREF(lineobj);
-                    goto err;
-                }
-                p = PyUnicode_FindChar(lineobj, '\r', pos, linelen, 1);
-                if (p >= 0 && p < chunk_end) {
-                    chunk_end = p;
-                } else if (p == -2) {
-                    Py_DECREF(lineobj);
-                    goto err;
-                }
+                FIND_AND_UPDATE_CHUNK_END('\n');
+                FIND_AND_UPDATE_CHUNK_END('\r');
 
                 if (chunk_end > pos) {
                     if (parse_add_substring(self, module_state, lineobj, pos, chunk_end) < 0) {
@@ -1052,32 +1052,15 @@ Reader_iternext(PyObject *op)
                 pos = chunk_end;
 
                 if (pos < linelen) {
-                    c = PyUnicode_READ_CHAR(lineobj, pos);
-                    if (parse_process_char(self, module_state, c) < 0) {
-                        Py_DECREF(lineobj);
-                        goto err;
-                    }
-                    pos++;
+                    PROCESS_CHAR_AND_ADVANCE();
                 }
                 break;
             case IN_QUOTED_FIELD:
                 chunk_end = linelen;
 
-                p = PyUnicode_FindChar(lineobj, dialect->quotechar, pos, linelen, 1);
-                if (p >= 0 && p < chunk_end) {
-                    chunk_end = p;
-                } else if (p == -2) {
-                    Py_DECREF(lineobj);
-                    goto err;
-                }
+                FIND_AND_UPDATE_CHUNK_END(dialect->quotechar);
                 if (dialect->escapechar != NOT_SET) {
-                    p = PyUnicode_FindChar(lineobj, dialect->escapechar, pos, linelen, 1);
-                    if (p >= 0 && p < chunk_end) {
-                        chunk_end = p;
-                    } else if (p == -2) {
-                        Py_DECREF(lineobj);
-                        goto err;
-                    }
+                    FIND_AND_UPDATE_CHUNK_END(dialect->escapechar);
                 }
 
                 if (chunk_end > pos) {
@@ -1089,21 +1072,11 @@ Reader_iternext(PyObject *op)
                 pos = chunk_end;
 
                 if (pos < linelen) {
-                    c = PyUnicode_READ_CHAR(lineobj, pos);
-                    if (parse_process_char(self, module_state, c) < 0) {
-                        Py_DECREF(lineobj);
-                        goto err;
-                    }
-                    pos++;
+                    PROCESS_CHAR_AND_ADVANCE();
                 }
                 break;
             default:
-                c = PyUnicode_READ_CHAR(lineobj, pos);
-                if (parse_process_char(self, module_state, c) < 0) {
-                    Py_DECREF(lineobj);
-                    goto err;
-                }
-                pos++;
+                PROCESS_CHAR_AND_ADVANCE();
                 break;
             }
         }
@@ -1116,6 +1089,8 @@ Reader_iternext(PyObject *op)
     self->fields = NULL;
 err:
     return fields;
+#undef PROCESS_CHAR_AND_ADVANCE
+#undef FIND_AND_UPDATE_CHUNK_END
 }
 
 static void
