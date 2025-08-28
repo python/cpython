@@ -965,16 +965,16 @@ want one of them to be the value::
 
 
 Finer Points
-^^^^^^^^^^^^
+------------
 
 Supported ``__dunder__`` and ``_sunder_`` names
-"""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The supported ``__dunder__`` and ``_sunder_`` names can be found in the :ref:`Enum API documentation <enum-dunder-sunder>`.
 
 
 _Private__names
-"""""""""""""""
+^^^^^^^^^^^^^^^
 
 :ref:`Private names <private-name-mangling>` are not converted to enum members,
 but remain normal attributes.
@@ -983,7 +983,7 @@ but remain normal attributes.
 
 
 ``Enum`` member type
-""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^
 
 Enum members are instances of their enum class, and are normally accessed as
 ``EnumClass.member``.  In certain situations, such as writing custom enum
@@ -996,7 +996,7 @@ recommended.
 
 
 Creating members that are mixed with other data types
-"""""""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When subclassing other data types, such as :class:`int` or :class:`str`, with
 an :class:`Enum`, all values after the ``=`` are passed to that data type's
@@ -1010,7 +1010,7 @@ constructor.  For example::
 
 
 Boolean value of ``Enum`` classes and members
-"""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Enum classes that are mixed with non-:class:`Enum` types (such as
 :class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
@@ -1025,7 +1025,7 @@ Plain :class:`Enum` classes always evaluate as :data:`True`.
 
 
 ``Enum`` classes with methods
-"""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you give your enum subclass extra methods, like the `Planet`_
 class below, those methods will show up in a :func:`dir` of the member,
@@ -1038,7 +1038,7 @@ but not of the class::
 
 
 Combining members of ``Flag``
-"""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Iterating over a combination of :class:`Flag` members will only return the members that
 are comprised of a single bit::
@@ -1058,7 +1058,7 @@ are comprised of a single bit::
 
 
 ``Flag`` and ``IntFlag`` minutia
-""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using the following snippet for our examples::
 
