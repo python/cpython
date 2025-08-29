@@ -643,7 +643,7 @@ doctest decides whether actual output matches an example's expected output:
       to split'
 
    Note that any leading whitespaces on each expected output line are retained.
-   In other words, the following expected outputs are equivalent under the
+   In other words, the following expected outputs are equivalent under
    :data:`!IGNORE_LINEBREAK`:
 
    .. code-block::
@@ -659,7 +659,8 @@ doctest decides whether actual output matches an example's expected output:
    leading whitespaces for visual indentation purposes should
    be avoided, for instance:
 
-   .. code-block:: pycon
+   .. doctest::
+      :no-trim-doctest-flags:
 
       >>> list("abc123")            # doctest: +IGNORE_LINEBREAK
       ['a', 'b', 'c',
