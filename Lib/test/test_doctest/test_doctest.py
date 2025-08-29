@@ -1396,17 +1396,23 @@ treated as equal:
     [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
     10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
 
-The IGNORE_LINEBREAK flag causes all sequences of newlines to be removed:
+The IGNORE_LINEBREAK flag causes all sequences of newlines to be removed,
+but retains the leading whitespaces as they cannot be distinguished from
+real textual whitespaces:
 
-    >>> def f(x):
-    ...     '\n>>> "foobar"\n\'foo\nbar\''
+    >>> def f(x): pass
+    >>> f.__doc__ = '''
+    ... >>> "foobar"
+    ... 'foo
+    ... bar'
+    ... '''.strip()
 
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    File ..., line 3, in f
+    File ..., line ?, in f
     Failed example:
         "foobar"
     Expected:
@@ -1454,12 +1460,50 @@ The IGNORE_LINEBREAK flag causes all sequences of newlines to be removed:
 
     ... mixing flags:
 
-    >>> import string
-    >>> print(list(string.ascii_letters))  # doctest: +IGNORE_LINEBREAK
-    ...                                    # doctest: +ELLIPSIS
-    ...                                    # doctest: +NORMALIZE_WHITESPACE
-    ['a', ..., 'z',
-     'A', ..., 'Z']
+    >>> print(list("abc123"))  # doctest: +IGNORE_LINEBREAK
+    ...                        # doctest: +ELLIPSIS
+    ...                        # doctest: +NORMALIZE_WHITESPACE
+    ['a', ..., 'c',
+     '1', ..., '3']
+
+    >>> prelude = r'''
+    ... >>> print(list("abc123"))  # doctest: +IGNORE_LINEBREAK
+    ... ...                        # doctest: +ELLIPSIS
+    ... ...                        # doctest: +NORMALIZE_WHITESPACE
+    ... '''.strip()
+
+    >>> def good(x): pass
+    >>> good.__doc__ = '\n'.join([prelude, r'''
+    ... ['a', ..., 'c',
+    ...  '1', ..., '3']
+    ... '''.lstrip()]).lstrip()
+    >>> test = doctest.DocTestFinder().find(good)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=1)
+
+    >>> def fail(x): pass
+    >>> fail.__doc__ = '\n'.join([prelude, '''
+    ... [
+    ...     'a', ..., 'c',
+    ...     '1', ..., '3'
+    ... ]\n'''.lstrip()])
+    >>> test = doctest.DocTestFinder().find(fail)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line ?, in fail
+    Failed example:
+        print(list("abc123"))  # doctest: +IGNORE_LINEBREAK
+                               # doctest: +ELLIPSIS
+                               # doctest: +NORMALIZE_WHITESPACE
+    Expected:
+        [
+            'a', ..., 'c',
+            '1', ..., '3'
+        ]
+    Got:
+        ['a', 'b', 'c', '1', '2', '3']
+    TestResults(failed=1, attempted=1)
 
 The ELLIPSIS flag causes ellipsis marker ("...") in the expected
 output to match any substring in the actual output:

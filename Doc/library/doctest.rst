@@ -689,6 +689,29 @@ doctest decides whether actual output matches an example's expected output:
       'the string
       to split'
 
+   Note that any leading whitespaces on each expected output line are retained.
+   In other words, the following expected outputs are equivalent under the
+   :data:`!IGNORE_LINEBREAK`:
+
+      [
+         'a', 'b', 'c',
+         '1', '2', '3'
+      ]
+
+      [    'a', 'b', 'c',    '1', '2', '3']
+
+   To break a list-like output with :data:`!IGNORE_LINEBREAK`,
+   leading whitespaces for visual indentation purposes should
+   be avoided, for instance:
+
+   .. code-block:: pycon
+
+      >>> list("abc123")            # doctest: +IGNORE_LINEBREAK
+      ['a', 'b', 'c',
+       '1', '2', '3']
+
+   For more complex outputs, consider using :func:`pprint.pprint` instead.
+
    .. versionadded:: next
 
 
