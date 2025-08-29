@@ -4468,18 +4468,20 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 }
 
 /* Boolean function with an optional context arg.
-   Argument Clinic provides PyObject *self, PyObject *context
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *context
 */
 #define Dec_BoolFuncVA(MPDFUNC) \
 {                                                                         \
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));        \
+    decimal_state *state = PyType_GetModuleState(cls);                    \
     CONTEXT_CHECK_VA(state, context);                                     \
                                                                           \
     return MPDFUNC(MPD(self), CTX(context)) ? incr_true() : incr_false(); \
 }
 
 /* Unary function with an optional context arg.
-   Argument Clinic provides PyObject *self, PyObject *context
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *context
 */
 #define Dec_UnaryFuncVA(MPDFUNC) \
 {                                                              \
@@ -4502,7 +4504,8 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 }
 
 /* Binary function with an optional context arg.
-   Argument Clinic provides PyObject *self, PyObject *other, PyObject *context
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *other, PyObject *context
 */
 #define Dec_BinaryFuncVA(MPDFUNC) \
 {                                                                \
@@ -4534,7 +4537,8 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
    NOT take a context. The context is used to record InvalidOperation
    if the second operand cannot be converted exactly.
 
-   Argument Clinic provides PyObject *self, PyObject *other, PyObject *context
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *other, PyObject *context
 */
 #define Dec_BinaryFuncVA_NO_CTX(MPDFUNC) \
 {                                                               \
@@ -4559,7 +4563,8 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
 }
 
 /* Ternary function with an optional context arg.
-   Argument Clinic provides PyObject *self, PyObject *other, PyObject *third,
+   Argument Clinic provides PyObject *self, PyTypeObject *cls,
+                            PyObject *other, PyObject *third,
                             PyObject *context
 */
 #define Dec_TernaryFuncVA(MPDFUNC) \
@@ -6194,7 +6199,8 @@ static PyType_Spec dec_spec = {
 }
 
 /* Unary context method.
-   Argument Clinic provides PyObject *context, PyObject *x
+   Argument Clinic provides PyObject *context,
+                            PyTypeObject *cls, PyObject *x
 */
 #define DecCtx_UnaryFunc(MPDFUNC) \
 {                                                        \
@@ -6219,7 +6225,8 @@ static PyType_Spec dec_spec = {
 }
 
 /* Binary context method.
-   Argument Clinic provides PyObject *context, PyObject *x, PyObject *y
+   Argument Clinic provides PyObject *context, PyTypeObject *cls,
+                            PyObject *x, PyObject *y
 */
 #define DecCtx_BinaryFunc(MPDFUNC) \
 {                                                                \
@@ -6249,7 +6256,8 @@ static PyType_Spec dec_spec = {
 /*
  * Binary context method. The context is only used for conversion.
  * The actual MPDFUNC does NOT take a context arg.
- * Argument Clinic provides PyObject *context, PyObject *x, PyObject *y
+ * Argument Clinic provides PyObject *context, PyTypeObject *cls,
+ *                          PyObject *x, PyObject *y
  */
 #define DecCtx_BinaryFunc_NO_CTX(MPDFUNC) \
 {                                                \
@@ -6273,8 +6281,8 @@ static PyType_Spec dec_spec = {
 }
 
 /* Ternary context method.
-   Argument Clinic provides PyObject *context, PyObject *x, PyObject *y,
-                            PyObject *z
+   Argument Clinic provides PyObject *context, PyTypeObject *cls,
+                            PyObject *x, PyObject *y, PyObject *z
 */
 #define DecCtx_TernaryFunc(MPDFUNC) \
 {                                                                        \
