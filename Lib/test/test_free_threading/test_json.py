@@ -1,4 +1,3 @@
-import unittest
 from threading import Barrier, Thread
 from test.test_json import CTest
 from test.support import threading_helper
@@ -78,11 +77,3 @@ class TestJsonEncoding(CTest):
 
         data = [MyMapping(), MyMapping()]
         encode_json_helper(self.json, worker, data)
-
-
-if __name__ == "__main__":
-    import time
-    t0 = time.time()
-    unittest.main()
-    dt = time.time() - t0
-    print(f"Done: {dt:.2f}")
