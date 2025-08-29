@@ -358,6 +358,15 @@ math
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
+mmap
+----
+
+* :class:`mmap.mmap` now has a *trackfd* parameter on Windows;
+  if it is ``False``, the file handle corresponding to *fileno* will
+  not be duplicated.
+  (Contributed by Serhiy Storchaka in :gh:`78502`.)
+
+
 os.path
 -------
 
