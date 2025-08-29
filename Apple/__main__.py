@@ -33,6 +33,7 @@
 # make steps for the build Python, an individual host, all hosts, or all
 # builds.
 ##########################################################################
+from __future__ import annotations
 
 import argparse
 import os
@@ -45,19 +46,23 @@ import subprocess
 import sys
 import sysconfig
 import time
+from collections.abc import Sequence
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from os.path import basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
+from typing import Callable
 
+EnvironmentT = dict[str, str]
+ArgsT = Sequence[str | Path]
 
 SCRIPT_NAME = Path(__file__).name
 PYTHON_DIR = Path(__file__).resolve().parent.parent
 
 CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
-HOSTS = {
+HOSTS: dict[str, dict[str, dict[str, str]]] = {
     # Structure of this data:
     # * Platform identifier
     #   * an XCframework slice that must exist for that platform
@@ -74,17 +79,9 @@ HOSTS = {
 }
 
 
-# Handle SIGTERM the same way as SIGINT. This ensures that if we're terminated
-# by the buildbot worker, we'll make an attempt to clean up our subprocesses.
-def install_signal_handler():
-    def signal_handler(*args):
-        os.kill(os.getpid(), signal.SIGINT)
-
-    signal.signal(signal.SIGTERM, signal_handler)
-
-
-def subdir(host, create=False):
-    path = CROSS_BUILD_DIR / host
+def subdir(name: str, create: bool = False) -> Path:
+    """Ensure that a cross-build directory for the given name exists."""
+    path = CROSS_BUILD_DIR / name
     if not path.exists():
         if not create:
             sys.exit(
@@ -96,7 +93,18 @@ def subdir(host, create=False):
     return path
 
 
-def run(command, *, host=None, env=None, log=True, **kwargs):
+def run(
+    command: ArgsT,
+    *,
+    host: str | None = None,
+    env: EnvironmentT | None = None,
+    log: bool | None = True,
+    **kwargs,
+) -> subprocess.CompletedProcess:
+    """Run a command in an Apple development environment.
+
+    Optionally logs the executed command to the console.
+    """
     kwargs.setdefault("check", True)
     if env is None:
         env = os.environ.copy()
@@ -111,22 +119,26 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
     return subprocess.run(command, env=env, **kwargs)
 
 
-# Format a command so it can be copied into a shell. Like shlex.join, but also
-# accepts arguments which are Paths, or a single string/Path outside of a list.
-def join_command(args):
+def join_command(args: str | Path | ArgsT) -> str:
+    """Format a command so it can be copied into a shell.
+
+    Similar to `shlex.join`, but also accepts arguments which are Paths, or a
+    single string/Path outside of a list.
+    """
     if isinstance(args, (str, Path)):
         return str(args)
     else:
         return shlex.join(map(str, args))
 
 
-# Format the environment so it can be pasted into a shell.
-def print_env(env):
+def print_env(env: EnvironmentT) -> None:
+    """Format the environment so it can be pasted into a shell."""
     for key, value in sorted(env.items()):
         print(f"export {key}={shlex.quote(value)}")
 
 
-def apple_env(host):
+def apple_env(host: str) -> EnvironmentT:
+    """Construct an Apple development environment for the given host."""
     env = {
         "PATH": ":".join(
             [
@@ -144,21 +156,28 @@ def apple_env(host):
     return env
 
 
-def delete_path(name):
+def delete_path(name: str) -> None:
+    """Delete the named cross-build directory, if it exists."""
     path = CROSS_BUILD_DIR / name
     if path.exists():
         print(f"Deleting {path} ...")
         shutil.rmtree(path)
 
 
-def all_host_triples(platform):
+def all_host_triples(platform: str) -> list[str]:
+    """Return all host triples for the given platform.
+
+    The host triples are the platform definitions used as input to configure
+    (e.g., "arm64-apple-ios-simulator").
+    """
     triples = []
     for slice_name, slice_parts in HOSTS[platform].items():
         triples.extend(list(slice_parts))
     return triples
 
 
-def clean(context, target="all"):
+def clean(context: argparse.Namespace, target: str = "all") -> None:
+    """The implementation of the "clean" command."""
     # If we're explicitly targeting the build, there's no platform or
     # distribution artefacts. If we're cleaning tests, we keep all built
     # artefacts. Otherwise, the built artefacts must be dirty, so we remove
@@ -190,7 +209,7 @@ def clean(context, target="all"):
         delete_path(path)
 
 
-def build_python_path():
+def build_python_path() -> Path:
     """The path to the build Python binary."""
     build_dir = subdir("build")
     binary = build_dir / "python"
@@ -205,7 +224,12 @@ def build_python_path():
 
 
 @contextmanager
-def group(text, subdir=None):
+def group(text: str):
+    """A context manager that ouptut a log marker around a section of a build.
+
+    If running in a GitHub Actions environment, the GitHub syntax for
+    collapsible log sections is used.
+    """
     if "GITHUB_ACTIONS" in os.environ:
         print(f"::group::{text}")
     else:
@@ -220,14 +244,16 @@ def group(text, subdir=None):
 
 
 @contextmanager
-def cwd(subdir):
+def cwd(subdir: Path):
+    """A context manager that sets the current working directory."""
     orig = os.getcwd()
     os.chdir(subdir)
     yield
     os.chdir(orig)
 
 
-def configure_build_python(context):
+def configure_build_python(context: argparse.Namespace) -> None:
+    """The implementation of the "configure-build" command."""
     if context.clean:
         clean(context, "build")
 
@@ -241,7 +267,8 @@ def configure_build_python(context):
         run(command)
 
 
-def make_build_python(context):
+def make_build_python(context: argparse.Namespace) -> None:
+    """The implementation of the "make-build" command."""
     with (
         group("Compiling build Python"),
         cwd(subdir("build")),
@@ -249,7 +276,7 @@ def make_build_python(context):
         run(["make", "-j", str(os.cpu_count())])
 
 
-def apple_target(host):
+def apple_target(host: str) -> str:
     """Return the Apple platform identifier for a given host triple."""
     for _, platform_slices in HOSTS.items():
         for slice_name, slice_parts in platform_slices.items():
@@ -260,7 +287,7 @@ def apple_target(host):
     raise KeyError(host)
 
 
-def apple_multiarch(host):
+def apple_multiarch(host: str) -> str:
     """Return the multiarch descriptor for a given host triple."""
     for _, platform_slices in HOSTS.items():
         for slice_name, slice_parts in platform_slices.items():
@@ -271,7 +298,20 @@ def apple_multiarch(host):
     raise KeyError(host)
 
 
-def unpack_deps(host, prefix_dir, cache_dir=None):
+def unpack_deps(
+    platform: str,
+    host: str,
+    prefix_dir: Path,
+    cache_dir: Path,
+) -> None:
+    """Unpack binary dependencies into a provided directory.
+
+    Downloads binaries if they aren't already present. Downloads will be stored
+    in provided cache directory.
+
+    On iOS, as a safety mechanism, any dynamic libraries will be purged from
+    the unpacked dependencies.
+    """
     deps_url = "https://github.com/beeware/cpython-apple-source-deps/releases/download"
     for name_ver in [
         "BZip2-1.0.8-2",
@@ -284,19 +324,22 @@ def unpack_deps(host, prefix_dir, cache_dir=None):
         filename = f"{name_ver.lower()}-{apple_target(host)}.tar.gz"
         archive_path = download(
             f"{deps_url}/{name_ver}/{filename}",
-            target_dir=cache_dir if cache_dir else prefix_dir,
+            target_dir=cache_dir,
         )
         shutil.unpack_archive(archive_path, prefix_dir)
-        if cache_dir is None:
-            os.remove(archive_path)
 
     # Dynamic libraries will be preferentially linked over static;
-    # ensure that no dylibs are available in the prefix folder.
-    for dylib in prefix_dir.glob("**/*.dylib"):
-        dylib.unlink()
+    # On iOS, ensure that no dylibs are available in the prefix folder.
+    if platform == "iOS":
+        for dylib in prefix_dir.glob("**/*.dylib"):
+            dylib.unlink()
 
 
-def download(url, target_dir):
+def download(url: str, target_dir: Path) -> Path:
+    """Download the specified URL into the given directory.
+
+    :return: The path to the downloaded archive.
+    """
     target_path = Path(target_dir).resolve()
     target_path.mkdir(exist_ok=True, parents=True)
 
@@ -319,7 +362,11 @@ def download(url, target_dir):
     return out_path
 
 
-def configure_host_python(context, host=None):
+def configure_host_python(
+    context: argparse.Namespace,
+    host: str | None = None,
+) -> None:
+    """The implementation of the "configure-host" command."""
     if host is None:
         host = context.host
 
@@ -332,7 +379,7 @@ def configure_host_python(context, host=None):
     with group(f"Downloading dependencies ({host})"):
         if not prefix_dir.exists():
             prefix_dir.mkdir()
-            unpack_deps(host, prefix_dir, context.cache_dir)
+            unpack_deps(context.platform, host, prefix_dir, context.cache_dir)
         else:
             print("Dependencies already installed")
 
@@ -365,7 +412,11 @@ def configure_host_python(context, host=None):
         run(command, host=host)
 
 
-def make_host_python(context, host=None):
+def make_host_python(
+    context: argparse.Namespace,
+    host: str | None = None,
+) -> None:
+    """The implementation of the "make-host" command."""
     if host is None:
         host = context.host
 
@@ -377,11 +428,17 @@ def make_host_python(context, host=None):
         run(["make", "install"], host=host)
 
 
-def multiarch_path(host_triple, multiarch):
+def framework_path(host_triple: str, multiarch: str) -> Path:
+    """The path to a built single-architecture framework product.
+
+    :param host_triple: The host triple (e.g., arm64-apple-ios-simulator)
+    :param multiarch: The multiarch identifier (e.g., arm64-simulator)
+    """
     return CROSS_BUILD_DIR / f"{host_triple}/Apple/iOS/Frameworks/{multiarch}"
 
 
-def package_version(prefix_path):
+def package_version(prefix_path: Path) -> str:
+    """Extract the Python version being build from patchlevel.h."""
     for path in prefix_path.glob("**/patchlevel.h"):
         text = path.read_text(encoding="utf-8")
         if match := re.search(
@@ -399,22 +456,31 @@ def package_version(prefix_path):
     sys.exit("Unable to determine Python version being packaged.")
 
 
-def create_xcframework(context):
-    package_path = CROSS_BUILD_DIR / context.platform
-    package_path.mkdir(exist_ok=True)
+def create_xcframework(platform: str) -> str:
+    """Build an XCframework from the component parts for the platform.
+
+    :return: The version number of the Python verion that was packaged.
+    """
+    package_path = CROSS_BUILD_DIR / platform
+    try:
+        package_path.mkdir()
+    except FileExistsError:
+        raise RuntimeError(
+            f"{platform} XCframework already exists; do you need to run with --clean?"
+        ) from None
 
     frameworks = []
     # Merge Frameworks for each component SDK. If there's only one architecture
     # for the SDK, we can use the compiled Python.framework as-is. However, if
     # there's more than architecture, we need to merge the individual built
     # frameworks into a merged "fat" framework.
-    for slice_name, slice_parts in HOSTS[context.platform].items():
+    for slice_name, slice_parts in HOSTS[platform].items():
         # Some parts are the same across all slices, so we use can any of the
         # host frameworks as the source for the merged version. Use the first
         # one on the list, as it's as representative as any other.
         first_host_triple, first_multiarch = next(iter(slice_parts.items()))
         first_framework = (
-            multiarch_path(first_host_triple, first_multiarch)
+            framework_path(first_host_triple, first_multiarch)
             / "Python.framework"
         )
 
@@ -445,7 +511,7 @@ def create_xcframework(context):
                 ["lipo", "-create", "-output", slice_framework / "Python"]
                 + [
                     (
-                        multiarch_path(host_triple, multiarch)
+                        framework_path(host_triple, multiarch)
                         / "Python.framework/Python"
                     )
                     for host_triple, multiarch in slice_parts.items()
@@ -477,11 +543,11 @@ def create_xcframework(context):
     # to be copied in separately.
     print()
     print("Copy additional resources...")
-    for slice_name, slice_parts in HOSTS[context.platform].items():
+    for slice_name, slice_parts in HOSTS[platform].items():
         # Some parts are the same across all slices, so we can any of the
         # host frameworks as the source for the merged version.
         first_host_triple, first_multiarch = next(iter(slice_parts.items()))
-        first_path = multiarch_path(first_host_triple, first_multiarch)
+        first_path = framework_path(first_host_triple, first_multiarch)
         first_framework = first_path / "Python.framework"
 
         slice_path = package_path / f"Python.xcframework/{slice_name}"
@@ -501,7 +567,7 @@ def create_xcframework(context):
 
         # Copy in the cross-architecture pyconfig.h
         shutil.copy(
-            PYTHON_DIR / f"Apple/{context.platform}/Resources/pyconfig.h",
+            PYTHON_DIR / f"Apple/{platform}/Resources/pyconfig.h",
             slice_framework / "Headers/pyconfig.h",
         )
 
@@ -547,7 +613,7 @@ def create_xcframework(context):
                 if len(relative_libs) != 1:
                     raise RuntimeError(
                         f"Cannot merge non-matching libraries: {relative_libs}"
-                    )
+                    ) from None
 
                 # Merge the per-arch .so files into a single "fat" binary.
                 relative_lib = next(iter(relative_libs))
@@ -594,13 +660,14 @@ def create_xcframework(context):
     return version
 
 
-def package(context):
+def package(context: argparse.Namespace) -> None:
+    """The implementation of the "package" command."""
     if context.clean:
         clean(context, "package")
 
     with group("Building package"):
         # Create an XCframework
-        version = create_xcframework(context)
+        version = create_xcframework(context.platform)
 
         # Clone testbed
         print()
@@ -627,7 +694,7 @@ def package(context):
         print()
         print("Create package archive...")
         shutil.make_archive(
-            CROSS_BUILD_DIR / archive_name,
+            str(CROSS_BUILD_DIR / archive_name),
             format="gztar",
             root_dir=CROSS_BUILD_DIR / context.platform,
             base_dir=".",
@@ -636,7 +703,8 @@ def package(context):
         print(f"{archive_name.relative_to(PYTHON_DIR)}.tar.gz created.")
 
 
-def build(context, host=None):
+def build(context: argparse.Namespace, host: str | None = None) -> None:
+    """The implementation of the "build" command."""
     if host is None:
         host = context.host
 
@@ -668,7 +736,8 @@ def build(context, host=None):
         package(context)
 
 
-def test(context, host=None):
+def test(context: argparse.Namespace, host: str | None = None) -> None:
+    """The implementation of the "test" command."""
     if host is None:
         host = context.host
 
@@ -725,7 +794,11 @@ def test(context, host=None):
                 "run",
                 "--verbose",
             ]
-            + (["--simulator", context.simulator] if context.simulator else [])
+            + (
+                ["--simulator", str(context.simulator)]
+                if context.simulator
+                else []
+            )
             + [
                 "--",
                 "test",
@@ -737,14 +810,21 @@ def test(context, host=None):
         )
 
 
-def ci(context):
+def ci(context: argparse.Namespace) -> None:
+    """The implementation of the "ci" command."""
     clean(context, "all")
     build(context, host="all")
     test(context, host="all")
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "A tool for managing the build, package and test process of "
+            "CPython on Apple platforms."
+        ),
+        suggest_on_error=True,
+    )
     subcommands = parser.add_subparsers(dest="subcommand", required=True)
 
     clean = subcommands.add_parser(
@@ -850,7 +930,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def print_called_process_error(e):
+def print_called_process_error(e: subprocess.CalledProcessError) -> None:
     for stream_name in ["stdout", "stderr"]:
         content = getattr(e, stream_name)
         stream = getattr(sys, stream_name)
@@ -865,11 +945,18 @@ def print_called_process_error(e):
     )
 
 
-def main():
-    install_signal_handler()
+def main() -> None:
+    # Handle SIGTERM the same way as SIGINT. This ensures that if we're
+    # terminated by the buildbot worker, we'll make an attempt to clean up our
+    # subprocesses.
+    def signal_handler(*args):
+        os.kill(os.getpid(), signal.SIGINT)
 
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    # Process command line arguments
     context = parse_args()
-    dispatch = {
+    dispatch: dict[str, Callable] = {
         "clean": clean,
         "configure-build": configure_build_python,
         "make-build": make_build_python,
@@ -884,8 +971,13 @@ def main():
     try:
         dispatch[context.subcommand](context)
     except CalledProcessError as e:
+        print()
         print_called_process_error(e)
         sys.exit(1)
+    except RuntimeError as e:
+        print()
+        print(e)
+        sys.exit(2)
 
 
 if __name__ == "__main__":
