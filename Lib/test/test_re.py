@@ -5,6 +5,7 @@ from test.support import (gc_collect, bigmemtest, _2G,
 import locale
 import re
 import string
+import sys
 import unittest
 import warnings
 from re import Scanner
