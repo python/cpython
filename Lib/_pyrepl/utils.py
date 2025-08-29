@@ -257,6 +257,14 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             return True
         case (TI(string="case"), TI(string="_"), TI(string=":")):
             return True
+        case (
+            None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
+            TI(string="type"),
+            TI(T.NAME, string=s)
+        ):
+            if keyword.iskeyword(s):
+                return False
+            return True
         case _:
             return False
 
