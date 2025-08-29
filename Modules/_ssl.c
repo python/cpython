@@ -3618,8 +3618,7 @@ _ssl__SSLContext_set_ciphersuites_impl(PySSLContext *self,
                                        const char *ciphersuites)
 /*[clinic end generated code: output=9915bec58e54d76d input=2afcc3693392be41]*/
 {
-    int ret = SSL_CTX_set_ciphersuites(self->ctx, ciphersuites);
-    if (ret == 0) {
+    if (!SSL_CTX_set_ciphersuites(self->ctx, ciphersuites)) {
         _setSSLError(get_state_ctx(self), "No cipher suite can be selected.", 0, __FILE__, __LINE__);
         return NULL;
     }

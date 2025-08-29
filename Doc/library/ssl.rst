@@ -2860,7 +2860,7 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
 
 - TLS 1.3 uses a disjunct set of cipher suites.  All AES-GCM and ChaCha20
   cipher suites are enabled by default.  To restrict which TLS 1.3 ciphers
-  are allowed, the method :meth:`SSLContext.set_ciphersuites` should be
+  are allowed, the :meth:`SSLContext.set_ciphersuites` method should be
   called instead of :meth:`SSLContext.set_ciphers`, which only affects
   ciphers in older TLS versions.  The :meth:`SSLContext.get_ciphers` method
   returns information about ciphers for both TLS 1.3 and earlier versions

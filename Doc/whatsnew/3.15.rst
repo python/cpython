@@ -337,7 +337,7 @@ ssl
   continue to be used. Both calls can be made on the same context and the
   selected cipher suite will depend on the TLS version negotiated when a
   connection is made.
-  (Contributed by Ron Frederick in :gh:`137197`)
+  (Contributed by Ron Frederick in :gh:`137197`.)
 
 
 tarfile
