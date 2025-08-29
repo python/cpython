@@ -170,7 +170,7 @@ helpful.
 To add Python to an iOS Xcode project:
 
 1. Build or obtain a Python ``XCFramework``. See the instructions in
-   :source:`Apple/iOS/README.rst` (in the CPython source distribution) for details on
+   :source:`Apple/iOS/README.md` (in the CPython source distribution) for details on
    how to build a Python ``XCFramework``. At a minimum, you will need a build
    that supports ``arm64-apple-ios``, plus one of either
    ``arm64-apple-ios-simulator`` or ``x86_64-apple-ios-simulator``.
@@ -339,7 +339,7 @@ The CPython source tree contains :source:`a testbed project <Apple/iOS/testbed>`
 is used to run the CPython test suite on the iOS simulator. This testbed can also
 be used as a testbed project for running your Python library's test suite on iOS.
 
-After building or obtaining an iOS XCFramework (see :source:`Apple/iOS/README.rst`
+After building or obtaining an iOS XCFramework (see :source:`Apple/iOS/README.md`
 for details), create a clone of the Python iOS testbed project. If you used the
 ``Apple`` build script to build the XCframework, you can run:
 
