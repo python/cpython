@@ -620,53 +620,6 @@ doctest decides whether actual output matches an example's expected output:
    using :data:`IGNORE_LINEBREAK` or :data:`ELLIPSIS`.
 
 
-.. index:: single: ...; in doctests
-.. data:: ELLIPSIS
-
-   When specified, an ellipsis marker (``...``) in the expected output can match
-   any substring in the actual output.  This includes substrings that span line
-   boundaries, and empty substrings, so it's best to keep usage of this simple.
-   Complicated uses can lead to the same kinds of "oops, it matched too much!"
-   surprises that ``.*`` is prone to in regular expressions.
-
-
-.. data:: IGNORE_EXCEPTION_DETAIL
-
-   When specified, doctests expecting exceptions pass so long as an exception
-   of the expected type is raised, even if the details
-   (message and fully qualified exception name) don't match.
-
-   For example, an example expecting ``ValueError: 42`` will pass if the actual
-   exception raised is ``ValueError: 3*14``, but will fail if, say, a
-   :exc:`TypeError` is raised instead.
-   It will also ignore any fully qualified name included before the
-   exception class, which can vary between implementations and versions
-   of Python and the code/libraries in use.
-   Hence, all three of these variations will work with the flag specified:
-
-   .. code-block:: pycon
-
-      >>> raise Exception('message')
-      Traceback (most recent call last):
-      Exception: message
-
-      >>> raise Exception('message')
-      Traceback (most recent call last):
-      builtins.Exception: message
-
-      >>> raise Exception('message')
-      Traceback (most recent call last):
-      __main__.Exception: message
-
-   Note that :const:`ELLIPSIS` can also be used to ignore the
-   details of the exception message, but such a test may still fail based
-   on whether the module name is present or matches exactly.
-
-   .. versionchanged:: 3.2
-      :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information relating
-      to the module containing the exception under test.
-
-
 .. data:: IGNORE_LINEBREAK
 
    When specified, single line breaks in the expected output are eliminated,
@@ -715,6 +668,53 @@ doctest decides whether actual output matches an example's expected output:
    For more complex outputs, consider using :func:`pprint.pprint` instead.
 
    .. versionadded:: next
+
+
+.. index:: single: ...; in doctests
+.. data:: ELLIPSIS
+
+   When specified, an ellipsis marker (``...``) in the expected output can match
+   any substring in the actual output.  This includes substrings that span line
+   boundaries, and empty substrings, so it's best to keep usage of this simple.
+   Complicated uses can lead to the same kinds of "oops, it matched too much!"
+   surprises that ``.*`` is prone to in regular expressions.
+
+
+.. data:: IGNORE_EXCEPTION_DETAIL
+
+   When specified, doctests expecting exceptions pass so long as an exception
+   of the expected type is raised, even if the details
+   (message and fully qualified exception name) don't match.
+
+   For example, an example expecting ``ValueError: 42`` will pass if the actual
+   exception raised is ``ValueError: 3*14``, but will fail if, say, a
+   :exc:`TypeError` is raised instead.
+   It will also ignore any fully qualified name included before the
+   exception class, which can vary between implementations and versions
+   of Python and the code/libraries in use.
+   Hence, all three of these variations will work with the flag specified:
+
+   .. code-block:: pycon
+
+      >>> raise Exception('message')
+      Traceback (most recent call last):
+      Exception: message
+
+      >>> raise Exception('message')
+      Traceback (most recent call last):
+      builtins.Exception: message
+
+      >>> raise Exception('message')
+      Traceback (most recent call last):
+      __main__.Exception: message
+
+   Note that :const:`ELLIPSIS` can also be used to ignore the
+   details of the exception message, but such a test may still fail based
+   on whether the module name is present or matches exactly.
+
+   .. versionchanged:: 3.2
+      :const:`IGNORE_EXCEPTION_DETAIL` now also ignores any information relating
+      to the module containing the exception under test.
 
 
 .. data:: SKIP
