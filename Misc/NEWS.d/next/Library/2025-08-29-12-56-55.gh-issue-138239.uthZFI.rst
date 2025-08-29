@@ -1,0 +1,1 @@
+The REPL now highlights "type" as a soft keyword in type statements.
