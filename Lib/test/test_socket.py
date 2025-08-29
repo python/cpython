@@ -202,7 +202,8 @@ def _have_socket_hyperv():
         s.close()
     return True
 
-def _query_available_service(expected_protocols, services_file = '/etc/services'):
+def _find_service(expected_protocols,
+                  services_file = '/etc/services'):
     if not os.path.exists(services_file):
         return None
     services_found = dict()
@@ -1307,7 +1308,7 @@ class GeneralModuleTests(unittest.TestCase):
             except OSError:
                 pass
         else:
-            service = _query_available_service(['tcp'])
+            service = _find_service(['tcp'])
             if service is None:
                 self.skipTest('No available TCP service found.')
             port = socket.getservbyname(service, 'tcp')
