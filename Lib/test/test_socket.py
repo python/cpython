@@ -202,6 +202,7 @@ def _have_socket_hyperv():
         s.close()
     return True
 
+
 def _find_service(expected_protocols,
                   services_file='/etc/services'):
     if not os.path.exists(services_file):
@@ -222,6 +223,7 @@ def _find_service(expected_protocols,
             if service_protocols <= expected_protocols:
                 return service_name
     return None
+
 
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
