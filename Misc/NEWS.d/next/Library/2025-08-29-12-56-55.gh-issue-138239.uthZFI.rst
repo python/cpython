@@ -1,1 +1,2 @@
-The REPL now highlights "type" as a soft keyword in type statements.
+The REPL now highlights :keyword:`type` as a soft keyword
+in :ref:`type statements <type>`.
