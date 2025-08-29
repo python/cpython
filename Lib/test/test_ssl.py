@@ -2246,10 +2246,10 @@ class SimpleBackgroundTests(unittest.TestCase):
             self.assertRaises(ssl.SSLEOFError, sslobj.read)
 
 
+@unittest.skipUnless(has_tls_version('TLSv1_3'), "TLS 1.3 is not available")
 class SimpleBackgroundTestsTLS_1_3(unittest.TestCase):
     """Tests that connect to a simple server running in the background."""
 
-    @requires_tls_version('TLSv1_3')
     def setUp(self):
         server_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ciphers = [cipher['name'] for cipher in server_ctx.get_ciphers()
