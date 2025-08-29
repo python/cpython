@@ -203,7 +203,7 @@ def _have_socket_hyperv():
     return True
 
 def _find_service(expected_protocols,
-                  services_file = '/etc/services'):
+                  services_file='/etc/services'):
     if not os.path.exists(services_file):
         return None
     expected_protocols = set(expected_protocols)
