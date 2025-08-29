@@ -89,6 +89,7 @@ def skipForRefleakHuntinIf(condition, issueref):
 
     return decorator
 
+
 def get_cid():
     if fcntl is None:
         return None
@@ -102,6 +103,7 @@ def get_cid():
     else:
         return struct.unpack("I", r)[0]
 
+
 def _have_socket_can():
     """Check whether CAN sockets are supported on this host."""
     try:
@@ -111,6 +113,7 @@ def _have_socket_can():
     else:
         s.close()
     return True
+
 
 def _have_socket_can_isotp():
     """Check whether CAN ISOTP sockets are supported on this host."""
@@ -122,6 +125,7 @@ def _have_socket_can_isotp():
         s.close()
     return True
 
+
 def _have_socket_can_j1939():
     """Check whether CAN J1939 sockets are supported on this host."""
     try:
@@ -131,6 +135,7 @@ def _have_socket_can_j1939():
     else:
         s.close()
     return True
+
 
 def _have_socket_rds():
     """Check whether RDS sockets are supported on this host."""
@@ -142,6 +147,7 @@ def _have_socket_rds():
         s.close()
     return True
 
+
 def _have_socket_alg():
     """Check whether AF_ALG sockets are supported on this host."""
     try:
@@ -152,6 +158,7 @@ def _have_socket_alg():
         s.close()
     return True
 
+
 def _have_socket_qipcrtr():
     """Check whether AF_QIPCRTR sockets are supported on this host."""
     try:
@@ -161,6 +168,7 @@ def _have_socket_qipcrtr():
     else:
         s.close()
     return True
+
 
 def _have_socket_vsock():
     """Check whether AF_VSOCK sockets are supported on this host."""
@@ -202,6 +210,7 @@ def _have_socket_hyperv():
         s.close()
     return True
 
+
 def _find_service(expected_protocols,
                   services_file='/etc/services'):
     if not os.path.exists(services_file):
@@ -222,6 +231,7 @@ def _find_service(expected_protocols,
             if service_protocols <= expected_protocols:
                 return service_name
     return None
+
 
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
