@@ -693,12 +693,14 @@ doctest decides whether actual output matches an example's expected output:
    In other words, the following expected outputs are equivalent under the
    :data:`!IGNORE_LINEBREAK`:
 
+   .. code-block::
+
       [
-         'a', 'b', 'c',
-         '1', '2', '3'
+          'a', 'b', 'c',
+        '1', '2', '3'
       ]
 
-      [    'a', 'b', 'c',    '1', '2', '3']
+      [    'a', 'b', 'c',  '1', '2', '3']
 
    To break a list-like output with :data:`!IGNORE_LINEBREAK`,
    leading whitespaces for visual indentation purposes should
