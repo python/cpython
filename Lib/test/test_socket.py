@@ -1308,7 +1308,7 @@ class GeneralModuleTests(unittest.TestCase):
         else:
             service = _query_available_service(['tcp'])
             if service is None:
-                self.skipTest('No available service found.')
+                self.skipTest('No available TCP service found.')
             port = socket.getservbyname(service, 'tcp')
         # Try same call with optional protocol omitted
         # Issue gh-71123: this fails on Android before API level 23.
