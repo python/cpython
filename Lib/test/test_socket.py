@@ -206,32 +206,21 @@ def _find_service(expected_protocols,
                   services_file = '/etc/services'):
     if not os.path.exists(services_file):
         return None
-    services_found = dict()
+    expected_protocols = set(expected_protocols)
+    services = collections.defaultdict(set)
     with open(services_file, 'r') as f:
-        for line in f:
-            line = line.strip()
+        for line in map(str.strip, f):
             if line.startswith('#'):
-                # Skip comment line.
                 continue
             tokens = line.split()
-            if len(tokens) < 2:
+            if len(tokens) < 2 or '/' not in tokens[1]:
                 continue
-            if '/' not in tokens[1]:
-                continue
-            try:
-                _, entry_protocol = tokens[1].split('/')
-            except:
-                continue
-            entry_name = tokens[0]
-            if entry_name not in services_found:
-                services_found[entry_name] = [entry_protocol]
-            else:
-                services_found[entry_name].append(entry_protocol)
-            for protocol in expected_protocols:
-                if protocol not in services_found[entry_name]:
-                    break
-            else:
-                return entry_name
+            service_name = tokens[0]
+            _, service_protocol = tokens[1].split('/', maxsplit=1)
+            service_protocols = services[service_name]
+            service_protocols.add(service_protocol)
+            if service_protocols <= expected_protocols:
+                return service_name
     return None
 
 @contextlib.contextmanager
