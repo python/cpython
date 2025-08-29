@@ -174,7 +174,7 @@ class TestCase(unittest.TestCase):
             if isinstance(obj, (bytes, bytearray, str)):
                 if protocol == 5:
                     if isinstance(obj, bytearray):
-                        return bytes(obj)
+                        return bytes(obj)  # DBM backends expect bytes
                     return obj
                 return type(obj).__name__
             elif isinstance(obj, array.array):
@@ -234,6 +234,8 @@ class TestCase(unittest.TestCase):
         def deserializer(data):
             return data.decode("utf-8")
 
+        # Since the serializer returns None, dbm.error is raised
+        # by dbm.sqlite3 and TypeError is raised by other backends.
         with self.assertRaises((TypeError, dbm.error)):
             with shelve.open(self.fn, serializer=serializer,
                              deserializer=deserializer) as s:
@@ -427,7 +429,8 @@ class TestCase(unittest.TestCase):
                 serializer=serializer,
                 deserializer=deserializer
             ) as s:
-                # Serializer returns None for the value, but dbm expects bytes
+                # Since the serializer returns None, dbm.error is raised
+                # by dbm.sqlite3 and TypeError is raised by other backends.
                 with self.assertRaises((TypeError, dbm.error)):
                     s["foo"] = "bar"
 
