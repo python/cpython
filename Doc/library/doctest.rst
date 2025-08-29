@@ -666,7 +666,8 @@ doctest decides whether actual output matches an example's expected output:
       ['a', 'b', 'c',
        '1', '2', '3']
 
-   For more complex outputs, consider using :func:`pprint.pprint` instead.
+   For more complex outputs, consider using :func:`pprint.pp` and matching
+   its output directly.
 
    .. versionadded:: next
 
