@@ -1306,7 +1306,7 @@ class GeneralModuleTests(unittest.TestCase):
             except OSError:
                 pass
         else:
-            service = _query_available_service(('tcp'))
+            service = _query_available_service(['tcp'])
             if service is None:
                 self.skipTest('No available service found.')
             port = socket.getservbyname(service, 'tcp')
