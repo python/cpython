@@ -7,6 +7,7 @@ from test.support import (
 from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
+import collections
 import contextlib
 import errno
 import gc
