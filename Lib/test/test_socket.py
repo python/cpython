@@ -3923,7 +3923,11 @@ class CmsgMacroTests(unittest.TestCase):
         # Test CMSG_SPACE() with various valid and invalid values,
         # checking the assumptions used by sendmsg().
         toobig = self.socklen_t_limit - socket.CMSG_SPACE(1) + 1
-        values = list(range(257)) + list(range(toobig - 257, toobig - 8))
+        if SOLARIS and platform.processor() == "sparc":
+            # On Solaris SPARC, number of bytes returned by socket.CMSG_SPACE
+            # increases at different lengths; see gh-91214.
+            toobig -= 3
+        values = list(range(257)) + list(range(toobig - 257, toobig))
 
         last = socket.CMSG_SPACE(0)
         # struct cmsghdr has at least three members, two of which are ints
