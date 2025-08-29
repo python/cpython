@@ -11,7 +11,6 @@
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_backoff.h"
 #include "pycore_cell.h"          // PyCell_GetRef()
-#include "pycore_ceval.h"
 #include "pycore_code.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
@@ -5367,10 +5366,6 @@ dummy_func(
 
         tier2 op(_MAKE_WARM, (--)) {
             current_executor->vm_data.warm = true;
-            // It's okay if this ends up going negative.
-            if (--tstate->interp->trace_run_counter == 0) {
-                _Py_set_eval_breaker_bit(tstate, _PY_EVAL_JIT_INVALIDATE_COLD_BIT);
-            }
         }
 
         tier2 op(_FATAL_ERROR, (--)) {
