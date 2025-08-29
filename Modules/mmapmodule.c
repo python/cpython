@@ -26,6 +26,7 @@
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
@@ -164,8 +165,7 @@ mmap_object_dealloc(PyObject *op)
     Py_END_ALLOW_THREADS
 #endif /* UNIX */
 
-    if (m_obj->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, m_obj->weakreflist);
 
     tp->tp_free(m_obj);
     Py_DECREF(tp);
@@ -291,6 +291,24 @@ filter_page_exception_method(mmap_object *self, EXCEPTION_POINTERS *ptrs,
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
+
+static void
+_PyErr_SetFromNTSTATUS(ULONG status)
+{
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+    PyErr_SetFromWindowsErr(LsaNtStatusToWinError((NTSTATUS)status));
+#else
+    if (status & 0x80000000) {
+        // HRESULT-shaped codes are supported by PyErr_SetFromWindowsErr
+        PyErr_SetFromWindowsErr((int)status);
+    }
+    else {
+        // No mapping for NTSTATUS values, so just return it for diagnostic purposes
+        // If we provide it as winerror it could incorrectly change the type of the exception.
+        PyErr_Format(PyExc_OSError, "Operating system error NTSTATUS=0x%08lX", status);
+    }
+#endif
+}
 #endif
 
 #if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
@@ -304,9 +322,7 @@ do {                                                                       \
         assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR ||          \
                record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);        \
         if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {             \
-            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];   \
-            ULONG code = LsaNtStatusToWinError(status);                    \
-            PyErr_SetFromWindowsErr(code);                                 \
+            _PyErr_SetFromNTSTATUS((ULONG)record.ExceptionInformation[2]); \
         }                                                                  \
         else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {     \
             PyErr_SetFromWindowsErr(ERROR_NOACCESS);                       \
@@ -333,9 +349,7 @@ do {                                                                          \
         assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR ||             \
                record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);           \
         if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {                \
-            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];      \
-            ULONG code = LsaNtStatusToWinError(status);                       \
-            PyErr_SetFromWindowsErr(code);                                    \
+            _PyErr_SetFromNTSTATUS((ULONG)record.ExceptionInformation[2]);    \
         }                                                                     \
         else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {        \
             PyErr_SetFromWindowsErr(ERROR_NOACCESS);                          \

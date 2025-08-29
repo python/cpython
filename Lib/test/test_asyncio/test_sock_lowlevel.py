@@ -15,7 +15,7 @@ if socket_helper.tcp_blackhole():
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MyProto(asyncio.Protocol):

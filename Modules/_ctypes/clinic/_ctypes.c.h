@@ -31,6 +31,48 @@ _ctypes_CType_Type___sizeof__(PyObject *self, PyTypeObject *cls, PyObject *const
     return _ctypes_CType_Type___sizeof___impl(self, cls);
 }
 
+#if !defined(_ctypes_CType_Type___pointer_type___DOCSTR)
+#  define _ctypes_CType_Type___pointer_type___DOCSTR NULL
+#endif
+#if defined(_CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF)
+#  undef _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF
+#  define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, _ctypes_CType_Type___pointer_type___DOCSTR},
+#else
+#  define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, NULL, _ctypes_CType_Type___pointer_type___DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_CType_Type___pointer_type___get_impl(PyObject *self);
+
+static PyObject *
+_ctypes_CType_Type___pointer_type___get(PyObject *self, void *Py_UNUSED(context))
+{
+    return _ctypes_CType_Type___pointer_type___get_impl(self);
+}
+
+#if !defined(_ctypes_CType_Type___pointer_type___DOCSTR)
+#  define _ctypes_CType_Type___pointer_type___DOCSTR NULL
+#endif
+#if defined(_CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF)
+#  undef _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF
+#  define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", (getter)_ctypes_CType_Type___pointer_type___get, (setter)_ctypes_CType_Type___pointer_type___set, _ctypes_CType_Type___pointer_type___DOCSTR},
+#else
+#  define _CTYPES_CTYPE_TYPE___POINTER_TYPE___GETSETDEF {"__pointer_type__", NULL, (setter)_ctypes_CType_Type___pointer_type___set, NULL},
+#endif
+
+static int
+_ctypes_CType_Type___pointer_type___set_impl(PyObject *self, PyObject *value);
+
+static int
+_ctypes_CType_Type___pointer_type___set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = _ctypes_CType_Type___pointer_type___set_impl(self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(CDataType_from_address__doc__,
 "from_address($self, value, /)\n"
 "--\n"
@@ -404,6 +446,106 @@ PyCPointerType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *ar
     return_value = PyCPointerType_from_param_impl(type, cls, value);
 
 exit:
+    return return_value;
+}
+
+#if !defined(_ctypes_PyCArrayType_Type_raw_DOCSTR)
+#  define _ctypes_PyCArrayType_Type_raw_DOCSTR NULL
+#endif
+#if defined(_CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF)
+#  undef _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF
+#  define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, _ctypes_PyCArrayType_Type_raw_DOCSTR},
+#else
+#  define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", NULL, (setter)_ctypes_PyCArrayType_Type_raw_set, NULL},
+#endif
+
+static int
+_ctypes_PyCArrayType_Type_raw_set_impl(CDataObject *self, PyObject *value);
+
+static int
+_ctypes_PyCArrayType_Type_raw_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_PyCArrayType_Type_raw_set_impl((CDataObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_ctypes_PyCArrayType_Type_raw_DOCSTR)
+#  define _ctypes_PyCArrayType_Type_raw_DOCSTR NULL
+#endif
+#if defined(_CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF)
+#  undef _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF
+#  define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, _ctypes_PyCArrayType_Type_raw_DOCSTR},
+#else
+#  define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, NULL, _ctypes_PyCArrayType_Type_raw_DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_PyCArrayType_Type_raw_get_impl(CDataObject *self);
+
+static PyObject *
+_ctypes_PyCArrayType_Type_raw_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_PyCArrayType_Type_raw_get_impl((CDataObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_ctypes_PyCArrayType_Type_value_DOCSTR)
+#  define _ctypes_PyCArrayType_Type_value_DOCSTR NULL
+#endif
+#if defined(_CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF)
+#  undef _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF
+#  define _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF {"value", (getter)_ctypes_PyCArrayType_Type_value_get, (setter)_ctypes_PyCArrayType_Type_value_set, _ctypes_PyCArrayType_Type_value_DOCSTR},
+#else
+#  define _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF {"value", (getter)_ctypes_PyCArrayType_Type_value_get, NULL, _ctypes_PyCArrayType_Type_value_DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_PyCArrayType_Type_value_get_impl(CDataObject *self);
+
+static PyObject *
+_ctypes_PyCArrayType_Type_value_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_PyCArrayType_Type_value_get_impl((CDataObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_ctypes_PyCArrayType_Type_value_DOCSTR)
+#  define _ctypes_PyCArrayType_Type_value_DOCSTR NULL
+#endif
+#if defined(_CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF)
+#  undef _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF
+#  define _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF {"value", (getter)_ctypes_PyCArrayType_Type_value_get, (setter)_ctypes_PyCArrayType_Type_value_set, _ctypes_PyCArrayType_Type_value_DOCSTR},
+#else
+#  define _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF {"value", NULL, (setter)_ctypes_PyCArrayType_Type_value_set, NULL},
+#endif
+
+static int
+_ctypes_PyCArrayType_Type_value_set_impl(CDataObject *self, PyObject *value);
+
+static int
+_ctypes_PyCArrayType_Type_value_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_PyCArrayType_Type_value_set_impl((CDataObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
     return return_value;
 }
 
@@ -900,4 +1042,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=bc7e53010b10b558 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=536c9bcf4e05913e input=a9049054013a1b77]*/

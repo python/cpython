@@ -28,8 +28,9 @@ except ImportError:
 
 from pathlib._os import (
     PathInfo, DirEntryInfo,
+    magic_open, vfspath,
     ensure_different_files, ensure_distinct_paths,
-    copyfile2, copyfileobj, magic_open, copy_info,
+    copyfile2, copyfileobj, copy_info,
 )
 
 
@@ -187,9 +188,6 @@ class PurePath:
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
-    def __fspath__(self):
-        return str(self)
-
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
@@ -257,6 +255,9 @@ class PurePath:
             self._str = self._format_parsed_parts(self.drive, self.root,
                                                   self._tail) or '.'
             return self._str
+
+    __fspath__ = __str__
+    __vfspath__ = __str__
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
@@ -517,18 +518,6 @@ class PurePath:
                     return True
             return False
         return self.parser.isabs(self)
-
-    def is_reserved(self):
-        """Return True if the path contains one of the special names reserved
-        by the system, if any."""
-        import warnings
-        msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
-               "for removal in Python 3.15. Use os.path.isreserved() to "
-               "detect reserved paths on Windows.")
-        warnings._deprecated("pathlib.PurePath.is_reserved", msg, remove=(3, 15))
-        if self.parser is ntpath:
-            return self.parser.isreserved(self)
-        return False
 
     def as_uri(self):
         """Return the path as a URI."""
@@ -1164,12 +1153,12 @@ class Path(PurePath):
         # os.symlink() incorrectly creates a file-symlink on Windows. Avoid
         # this by passing *target_is_dir* to os.symlink() on Windows.
         def _copy_from_symlink(self, source, preserve_metadata=False):
-            os.symlink(str(source.readlink()), self, source.info.is_dir())
+            os.symlink(vfspath(source.readlink()), self, source.info.is_dir())
             if preserve_metadata:
                 copy_info(source.info, self, follow_symlinks=False)
     else:
         def _copy_from_symlink(self, source, preserve_metadata=False):
-            os.symlink(str(source.readlink()), self)
+            os.symlink(vfspath(source.readlink()), self)
             if preserve_metadata:
                 copy_info(source.info, self, follow_symlinks=False)
 
@@ -1271,15 +1260,17 @@ class Path(PurePath):
         if not self.is_absolute():
             raise ValueError("relative paths can't be expressed as file URIs")
         from urllib.request import pathname2url
-        return f'file:{pathname2url(str(self))}'
+        return pathname2url(str(self), add_scheme=True)
 
     @classmethod
     def from_uri(cls, uri):
         """Return a new path from the given 'file' URI."""
-        if not uri.startswith('file:'):
-            raise ValueError(f"URI does not start with 'file:': {uri!r}")
+        from urllib.error import URLError
         from urllib.request import url2pathname
-        path = cls(url2pathname(uri.removeprefix('file:')))
+        try:
+            path = cls(url2pathname(uri, require_scheme=True))
+        except URLError as exc:
+            raise ValueError(exc.reason) from None
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
         return path

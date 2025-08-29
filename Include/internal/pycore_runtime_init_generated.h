@@ -564,6 +564,8 @@ extern "C" {
 
 #define _Py_str_identifiers_INIT { \
     INIT_ID(CANCELLED), \
+    INIT_ID(Emax), \
+    INIT_ID(Emin), \
     INIT_ID(FINISHED), \
     INIT_ID(False), \
     INIT_ID(JSONDecodeError), \
@@ -585,7 +587,9 @@ extern "C" {
     INIT_ID(__and__), \
     INIT_ID(__anext__), \
     INIT_ID(__annotate__), \
+    INIT_ID(__annotate_func__), \
     INIT_ID(__annotations__), \
+    INIT_ID(__annotations_cache__), \
     INIT_ID(__args__), \
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
@@ -751,6 +755,7 @@ extern "C" {
     INIT_ID(_feature_version), \
     INIT_ID(_field_types), \
     INIT_ID(_fields_), \
+    INIT_ID(_filters), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
     INIT_ID(_fix_up_module), \
@@ -787,10 +792,10 @@ extern "C" {
     INIT_ID(add_done_callback), \
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
-    INIT_ID(aggregate_class), \
     INIT_ID(alias), \
     INIT_ID(align), \
     INIT_ID(all), \
+    INIT_ID(all_threads), \
     INIT_ID(allow_code), \
     INIT_ID(any), \
     INIT_ID(append), \
@@ -804,7 +809,6 @@ extern "C" {
     INIT_ID(ast), \
     INIT_ID(athrow), \
     INIT_ID(attribute), \
-    INIT_ID(authorizer_callback), \
     INIT_ID(autocommit), \
     INIT_ID(backtick), \
     INIT_ID(base), \
@@ -814,6 +818,7 @@ extern "C" {
     INIT_ID(bit_offset), \
     INIT_ID(bit_size), \
     INIT_ID(block), \
+    INIT_ID(blocking), \
     INIT_ID(bound), \
     INIT_ID(buffer), \
     INIT_ID(buffer_callback), \
@@ -829,7 +834,9 @@ extern "C" {
     INIT_ID(bytes_per_sep), \
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
+    INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
+    INIT_ID(c_stack), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
     INIT_ID(cadata), \
@@ -837,13 +844,17 @@ extern "C" {
     INIT_ID(call), \
     INIT_ID(call_exception_handler), \
     INIT_ID(call_soon), \
+    INIT_ID(callable), \
     INIT_ID(callback), \
     INIT_ID(cancel), \
     INIT_ID(capath), \
+    INIT_ID(capitals), \
     INIT_ID(category), \
     INIT_ID(cb_type), \
     INIT_ID(certfile), \
+    INIT_ID(chain), \
     INIT_ID(check_same_thread), \
+    INIT_ID(clamp), \
     INIT_ID(clear), \
     INIT_ID(close), \
     INIT_ID(closed), \
@@ -872,19 +883,26 @@ extern "C" {
     INIT_ID(command), \
     INIT_ID(comment_factory), \
     INIT_ID(compile_mode), \
+    INIT_ID(config), \
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(contravariant), \
+    INIT_ID(conversion), \
     INIT_ID(cookie), \
     INIT_ID(copy), \
     INIT_ID(copyreg), \
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(covariant), \
+    INIT_ID(ctx), \
     INIT_ID(cwd), \
+    INIT_ID(d_parameter_type), \
     INIT_ID(data), \
     INIT_ID(database), \
+    INIT_ID(date), \
     INIT_ID(day), \
+    INIT_ID(days), \
+    INIT_ID(debug), \
     INIT_ID(decode), \
     INIT_ID(decoder), \
     INIT_ID(default), \
@@ -896,7 +914,6 @@ extern "C" {
     INIT_ID(deterministic), \
     INIT_ID(device), \
     INIT_ID(dict), \
-    INIT_ID(dictcomp), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \
     INIT_ID(digest_size), \
@@ -926,12 +943,15 @@ extern "C" {
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
+    INIT_ID(exc), \
     INIT_ID(exc_type), \
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
+    INIT_ID(exit), \
     INIT_ID(exp), \
+    INIT_ID(expression), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
     INIT_ID(facility), \
@@ -961,6 +981,7 @@ extern "C" {
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
+    INIT_ID(frame_buffer), \
     INIT_ID(from_param), \
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
@@ -969,7 +990,6 @@ extern "C" {
     INIT_ID(func), \
     INIT_ID(future), \
     INIT_ID(generation), \
-    INIT_ID(genexpr), \
     INIT_ID(get), \
     INIT_ID(get_debug), \
     INIT_ID(get_event_loop), \
@@ -990,13 +1010,16 @@ extern "C" {
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
+    INIT_ID(hours), \
     INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
     INIT_ID(imag), \
+    INIT_ID(implieslink), \
     INIT_ID(importlib), \
     INIT_ID(in_fd), \
+    INIT_ID(include_aliases), \
     INIT_ID(incoming), \
     INIT_ID(index), \
     INIT_ID(indexgroup), \
@@ -1018,6 +1041,9 @@ extern "C" {
     INIT_ID(intern), \
     INIT_ID(intersection), \
     INIT_ID(interval), \
+    INIT_ID(io), \
+    INIT_ID(is_compress), \
+    INIT_ID(is_raw), \
     INIT_ID(is_running), \
     INIT_ID(is_struct), \
     INIT_ID(isatty), \
@@ -1040,9 +1066,9 @@ extern "C" {
     INIT_ID(kw), \
     INIT_ID(kw1), \
     INIT_ID(kw2), \
+    INIT_ID(kwargs), \
     INIT_ID(kwdefaults), \
     INIT_ID(label), \
-    INIT_ID(lambda), \
     INIT_ID(last), \
     INIT_ID(last_exc), \
     INIT_ID(last_node), \
@@ -1058,7 +1084,6 @@ extern "C" {
     INIT_ID(line), \
     INIT_ID(line_buffering), \
     INIT_ID(lineno), \
-    INIT_ID(listcomp), \
     INIT_ID(little), \
     INIT_ID(lo), \
     INIT_ID(locale), \
@@ -1082,19 +1107,21 @@ extern "C" {
     INIT_ID(metadata), \
     INIT_ID(method), \
     INIT_ID(microsecond), \
+    INIT_ID(microseconds), \
     INIT_ID(milliseconds), \
     INIT_ID(minute), \
+    INIT_ID(minutes), \
     INIT_ID(mod), \
     INIT_ID(mode), \
     INIT_ID(module), \
     INIT_ID(module_globals), \
     INIT_ID(modules), \
+    INIT_ID(modulo), \
     INIT_ID(month), \
     INIT_ID(mro), \
     INIT_ID(msg), \
     INIT_ID(mutex), \
     INIT_ID(mycmp), \
-    INIT_ID(n_arg), \
     INIT_ID(n_fields), \
     INIT_ID(n_sequence_fields), \
     INIT_ID(n_unnamed_fields), \
@@ -1102,7 +1129,6 @@ extern "C" {
     INIT_ID(name_from), \
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
-    INIT_ID(narg), \
     INIT_ID(ndigits), \
     INIT_ID(nested), \
     INIT_ID(new_file_name), \
@@ -1125,6 +1151,7 @@ extern "C" {
     INIT_ID(offset_src), \
     INIT_ID(on_type_read), \
     INIT_ID(onceregistry), \
+    INIT_ID(only_active_thread), \
     INIT_ID(only_keys), \
     INIT_ID(oparg), \
     INIT_ID(opcode), \
@@ -1135,12 +1162,14 @@ extern "C" {
     INIT_ID(options), \
     INIT_ID(order), \
     INIT_ID(origin), \
+    INIT_ID(other), \
     INIT_ID(out_fd), \
     INIT_ID(outgoing), \
     INIT_ID(outpath), \
     INIT_ID(overlapped), \
     INIT_ID(owner), \
     INIT_ID(pages), \
+    INIT_ID(parameter), \
     INIT_ID(parent), \
     INIT_ID(password), \
     INIT_ID(path), \
@@ -1156,10 +1185,11 @@ extern "C" {
     INIT_ID(pos1), \
     INIT_ID(pos2), \
     INIT_ID(posix), \
+    INIT_ID(prec), \
+    INIT_ID(preserve_exc), \
     INIT_ID(print_file_and_line), \
     INIT_ID(priority), \
     INIT_ID(progress), \
-    INIT_ID(progress_handler), \
     INIT_ID(progress_routine), \
     INIT_ID(proto), \
     INIT_ID(protocol), \
@@ -1182,19 +1212,25 @@ extern "C" {
     INIT_ID(rel_tol), \
     INIT_ID(release), \
     INIT_ID(reload), \
+    INIT_ID(repeat), \
     INIT_ID(repl), \
     INIT_ID(replace), \
+    INIT_ID(reqrefs), \
+    INIT_ID(require_ready), \
     INIT_ID(reserved), \
     INIT_ID(reset), \
     INIT_ID(resetids), \
+    INIT_ID(restrict), \
     INIT_ID(return), \
     INIT_ID(reverse), \
     INIT_ID(reversed), \
+    INIT_ID(rounding), \
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
     INIT_ID(script), \
     INIT_ID(second), \
+    INIT_ID(seconds), \
     INIT_ID(security_attributes), \
     INIT_ID(seek), \
     INIT_ID(seekable), \
@@ -1206,15 +1242,16 @@ extern "C" {
     INIT_ID(server_hostname), \
     INIT_ID(server_side), \
     INIT_ID(session), \
-    INIT_ID(setcomp), \
     INIT_ID(setpgroup), \
     INIT_ID(setsid), \
     INIT_ID(setsigdef), \
     INIT_ID(setsigmask), \
     INIT_ID(setstate), \
     INIT_ID(shape), \
+    INIT_ID(shared), \
     INIT_ID(show_cmd), \
     INIT_ID(signed), \
+    INIT_ID(signum), \
     INIT_ID(size), \
     INIT_ID(sizehint), \
     INIT_ID(skip_file_prefixes), \
@@ -1257,18 +1294,22 @@ extern "C" {
     INIT_ID(template), \
     INIT_ID(term), \
     INIT_ID(text), \
+    INIT_ID(third), \
     INIT_ID(threading), \
     INIT_ID(throw), \
+    INIT_ID(time), \
     INIT_ID(timeout), \
     INIT_ID(timer), \
     INIT_ID(times), \
+    INIT_ID(timespec), \
+    INIT_ID(timestamp), \
     INIT_ID(timetuple), \
     INIT_ID(timeunit), \
     INIT_ID(top), \
-    INIT_ID(trace_callback), \
     INIT_ID(traceback), \
     INIT_ID(trailers), \
     INIT_ID(translate), \
+    INIT_ID(traps), \
     INIT_ID(true), \
     INIT_ID(truncate), \
     INIT_ID(twice), \
@@ -1281,6 +1322,7 @@ extern "C" {
     INIT_ID(uid), \
     INIT_ID(unlink), \
     INIT_ID(unraisablehook), \
+    INIT_ID(updates), \
     INIT_ID(uri), \
     INIT_ID(usedforsecurity), \
     INIT_ID(value), \
@@ -1294,6 +1336,7 @@ extern "C" {
     INIT_ID(wbits), \
     INIT_ID(week), \
     INIT_ID(weekday), \
+    INIT_ID(weeks), \
     INIT_ID(which), \
     INIT_ID(who), \
     INIT_ID(withdata), \
@@ -1302,6 +1345,7 @@ extern "C" {
     INIT_ID(write_through), \
     INIT_ID(year), \
     INIT_ID(zdict), \
+    INIT_ID(zstd_dict), \
 }
 
 #define _Py_str_ascii_INIT { \

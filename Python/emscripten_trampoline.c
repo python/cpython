@@ -35,7 +35,7 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 //     (type $type1 (func (param i32) (result i32)))
 //     (type $type2 (func (param i32 i32) (result i32)))
 //     (type $type3 (func (param i32 i32 i32) (result i32)))
-//     (type $blocktype (func (param i32) (result)))
+//     (type $blocktype (func (param) (result)))
 //     (table $funcs (import "e" "t") 0 funcref)
 //     (export "f" (func $f))
 //     (func $f (param $fptr i32) (result i32)
@@ -44,42 +44,43 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 //         table.get $funcs
 //         local.tee $fref
 //         ref.test $type3
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
+//         if $blocktype
 //             i32.const 3
 //             return
-//         )
+//         end
 //         local.get $fref
 //         ref.test $type2
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
+//         if $blocktype
 //             i32.const 2
 //             return
-//         )
+//         end
 //         local.get $fref
 //         ref.test $type1
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
+//         if $blocktype
 //             i32.const 1
 //             return
-//         )
+//         end
 //         local.get $fref
 //         ref.test $type0
-//         (block $b (type $blocktype)
-//             i32.eqz
-//             br_if $b
+//         if $blocktype
 //             i32.const 0
 //             return
-//         )
+//         end
 //         i32.const -1
 //     )
 // )
 
 function getPyEMCountArgsPtr() {
-    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
+    // Starting with iOS 18.3.1, WebKit on iOS has an issue with the garbage
+    // collector that breaks the call trampoline. See #130418 and
+    // https://bugs.webkit.org/show_bug.cgi?id=293113 for details.
+    let isIOS = globalThis.navigator && (
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
+        // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
+        // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
+        (navigator.platform === 'MacIntel' && typeof navigator.maxTouchPoints !== 'undefined' && navigator.maxTouchPoints > 1)
+    );
     if (isIOS) {
         return 0;
     }
@@ -88,13 +89,13 @@ function getPyEMCountArgsPtr() {
     const code = new Uint8Array([
         0x00, 0x61, 0x73, 0x6d, // \0asm magic number
         0x01, 0x00, 0x00, 0x00, // version 1
-        0x01, 0x1b, // Type section, body is 0x1b bytes
+        0x01, 0x1a, // Type section, body is 0x1a bytes
             0x05, // 6 entries
-            0x60, 0x00, 0x01, 0x7f,                         // (type $type0 (func (param) (result i32)))
-            0x60, 0x01, 0x7f, 0x01, 0x7f,                   // (type $type1 (func (param i32) (result i32)))
-            0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f,             // (type $type2 (func (param i32 i32) (result i32)))
-            0x60, 0x03, 0x7f, 0x7f, 0x7f, 0x01, 0x7f,       // (type $type3 (func (param i32 i32 i32) (result i32)))
-            0x60, 0x01, 0x7f, 0x00,                         // (type $blocktype (func (param i32) (result)))
+            0x60, 0x00, 0x01, 0x7f,                      // (type $type0 (func (param) (result i32)))
+            0x60, 0x01, 0x7f, 0x01, 0x7f,                // (type $type1 (func (param i32) (result i32)))
+            0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f,          // (type $type2 (func (param i32 i32) (result i32)))
+            0x60, 0x03, 0x7f, 0x7f, 0x7f, 0x01, 0x7f,    // (type $type3 (func (param i32 i32 i32) (result i32)))
+            0x60, 0x00, 0x00,                            // (type $blocktype (func (param) (result)))
         0x02, 0x09, // Import section, 0x9 byte body
             0x01, // 1 import (table $funcs (import "e" "t") 0 funcref)
             0x01, 0x65, // "e"
@@ -110,44 +111,36 @@ function getPyEMCountArgsPtr() {
             0x00, // a function
             0x00, // at index 0
 
-        0x0a, 0x44,  // Code section,
-            0x01, 0x42, // one entry of length 50
+        0x0a, 56,  // Code section,
+            0x01, 54, // one entry of length 54
             0x01, 0x01, 0x70, // one local of type funcref
             // Body of the function
             0x20, 0x00,       // local.get $fptr
             0x25, 0x00,       // table.get $funcs
             0x22, 0x01,       // local.tee $fref
             0xfb, 0x14, 0x03, // ref.test $type3
-            0x02, 0x04,       // block $b (type $blocktype)
-                0x45,         //   i32.eqz
-                0x0d, 0x00,   //   br_if $b
+            0x04, 0x04,       // if (type $blocktype)
                 0x41, 0x03,   //   i32.const 3
                 0x0f,         //   return
             0x0b,             // end block
 
             0x20, 0x01,       // local.get $fref
             0xfb, 0x14, 0x02, // ref.test $type2
-            0x02, 0x04,       // block $b (type $blocktype)
-                0x45,         //   i32.eqz
-                0x0d, 0x00,   //   br_if $b
+            0x04, 0x04,       // if (type $blocktype)
                 0x41, 0x02,   //   i32.const 2
                 0x0f,         //   return
             0x0b,             // end block
 
             0x20, 0x01,       // local.get $fref
             0xfb, 0x14, 0x01, // ref.test $type1
-            0x02, 0x04,       // block $b (type $blocktype)
-                0x45,         //   i32.eqz
-                0x0d, 0x00,   //   br_if $b
+            0x04, 0x04,       // if (type $blocktype)
                 0x41, 0x01,   //   i32.const 1
                 0x0f,         //   return
             0x0b,             // end block
 
             0x20, 0x01,       // local.get $fref
             0xfb, 0x14, 0x00, // ref.test $type0
-            0x02, 0x04,       // block $b (type $blocktype)
-                0x45,         //   i32.eqz
-                0x0d, 0x00,   //   br_if $b
+            0x04, 0x04,       // if (type $blocktype)
                 0x41, 0x00,   //   i32.const 0
                 0x0f,         //   return
             0x0b,             // end block

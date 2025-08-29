@@ -132,7 +132,7 @@ def uses_this(inst: Instruction) -> bool:
             continue
         for tkn in uop.body.tokens():
             if (tkn.kind == "IDENTIFIER"
-                    and (tkn.text in {"DEOPT_IF", "EXIT_IF"})):
+                    and (tkn.text in {"DEOPT_IF", "EXIT_IF", "AT_END_EXIT_IF"})):
                 return True
     return False
 
@@ -204,7 +204,7 @@ def generate_tier1_labels(
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
-        storage = Storage(Stack(), [], [], False)
+        storage = Storage(Stack(), [], [], 0, False)
         if label.spilled:
             storage.spilled = 1
         emitter.emit_tokens(label, storage, None)

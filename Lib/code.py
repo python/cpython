@@ -224,7 +224,7 @@ class InteractiveConsole(InteractiveInterpreter):
             sys.ps1 = ">>> "
             delete_ps1_after = True
         try:
-            _ps2 = sys.ps2
+            sys.ps2
             delete_ps2_after = False
         except AttributeError:
             sys.ps2 = "... "
@@ -385,7 +385,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('-q', action='store_true',
                        help="don't print version and copyright messages")
     args = parser.parse_args()

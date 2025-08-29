@@ -241,6 +241,7 @@ set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 #endif /* FD_SETSIZE > 1024 */
 
 /*[clinic input]
+@permit_long_docstring_body
 select.select
 
     rlist: object
@@ -276,7 +277,7 @@ descriptors can be used.
 static PyObject *
 select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
                    PyObject *xlist, PyObject *timeout_obj)
-/*[clinic end generated code: output=2b3cfa824f7ae4cf input=1199d5e101abca4a]*/
+/*[clinic end generated code: output=2b3cfa824f7ae4cf input=df20779a9c2f5c1e]*/
 {
 #ifdef SELECT_USES_HEAP
     pylist *rfd2obj, *wfd2obj, *efd2obj;
@@ -1199,6 +1200,7 @@ static PyType_Spec devpoll_Type_spec = {
 
 
 /*[clinic input]
+@permit_long_docstring_body
 select.poll
 
 Returns a polling object.
@@ -1209,7 +1211,7 @@ polling them for I/O events.
 
 static PyObject *
 select_poll_impl(PyObject *module)
-/*[clinic end generated code: output=16a665a4e1d228c5 input=3f877909d5696bbf]*/
+/*[clinic end generated code: output=16a665a4e1d228c5 input=5e07eea8ad564e7f]*/
 {
     return (PyObject *)newPollObject(module);
 }
@@ -1217,6 +1219,7 @@ select_poll_impl(PyObject *module)
 #ifdef HAVE_SYS_DEVPOLL_H
 
 /*[clinic input]
+@permit_long_docstring_body
 select.devpoll
 
 Returns a polling object.
@@ -1227,7 +1230,7 @@ polling them for I/O events.
 
 static PyObject *
 select_devpoll_impl(PyObject *module)
-/*[clinic end generated code: output=ea9213cc87fd9581 input=53a1af94564f00a3]*/
+/*[clinic end generated code: output=ea9213cc87fd9581 input=048506faef19d947]*/
 {
     return (PyObject *)newDevPollObject(module);
 }
@@ -1922,14 +1925,27 @@ kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
         return -1;
     }
 
-    if (PyLong_Check(pfd)) {
-        self->e.ident = PyLong_AsSize_t(pfd);
+    if (PyIndex_Check(pfd)) {
+        Py_ssize_t bytes = PyLong_AsNativeBytes(pfd,
+                &self->e.ident, sizeof(self->e.ident),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_REJECT_NEGATIVE |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (bytes < 0) {
+            return -1;
+        }
+        if ((size_t)bytes > sizeof(self->e.ident)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "Python int too large for C kqueue event identifier");
+            return -1;
+        }
     }
     else {
         self->e.ident = PyObject_AsFileDescriptor(pfd);
-    }
-    if (PyErr_Occurred()) {
-        return -1;
+        if (PyErr_Occurred()) {
+            return -1;
+        }
     }
     return 0;
 }

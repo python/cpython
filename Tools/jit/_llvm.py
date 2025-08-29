@@ -8,8 +8,11 @@ import shlex
 import subprocess
 import typing
 
+import _targets
+
 _LLVM_VERSION = 19
 _LLVM_VERSION_PATTERN = re.compile(rf"version\s+{_LLVM_VERSION}\.\d+\.\d+\S*\s+")
+_EXTERNALS_LLVM_TAG = "llvm-19.1.7.0"
 
 _P = typing.ParamSpec("_P")
 _R = typing.TypeVar("_R")
@@ -72,6 +75,11 @@ async def _find_tool(tool: str, *, echo: bool = False) -> str | None:
         return path
     # Versioned executables:
     path = f"{tool}-{_LLVM_VERSION}"
+    if await _check_tool_version(path, echo=echo):
+        return path
+    # PCbuild externals:
+    externals = os.environ.get("EXTERNALS_DIR", _targets.EXTERNALS)
+    path = os.path.join(externals, _EXTERNALS_LLVM_TAG, "bin", tool)
     if await _check_tool_version(path, echo=echo):
         return path
     # Homebrew-installed executables:

@@ -1,2 +1,0 @@
-Mention :class:`asyncio.Future` and :class:`asyncio.Task` in generic classes
-list.
