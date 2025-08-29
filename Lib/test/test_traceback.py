@@ -4263,28 +4263,6 @@ class SuggestionFormattingTestBase(SuggestionFormattingTestMixin):
         )
         self.assertNotIn("?", result_lines[-1])
 
-    def test_exception_punctuation_handling_with_suggestions(self):
-        def raise_with_period(): raise NameError("Error.", name='time')
-        def raise_with_exclamation(): raise NameError("Error!", name='time')
-        def raise_with_question(): raise NameError("Error?", name='time')
-        def raise_without_punctuation(): raise NameError("Error", name='time')
-
-        test_cases = [
-            (raise_with_period, "."),
-            (raise_with_exclamation, "!"),
-            (raise_with_question, "?"),
-            (raise_without_punctuation, "."),
-        ]
-
-        for raise_function, punctuation in test_cases:
-            with self.subTest(raise_func=raise_function.__name__):
-                result_lines = self.get_exception(
-                    raise_function, slice_start=-1, slice_end=None
-                )
-                expected = f"NameError: Error{punctuation} Did you forget to import 'time'?"
-                self.assertEqual(result_lines[0], expected)
-
-
     def test_attribute_error_inside_nested_getattr(self):
         class A:
             bluch = 1
@@ -4899,6 +4877,28 @@ class PurePythonSuggestionFormattingTests(
     Same set of tests as above using the pure Python implementation of
     traceback printing in traceback.py.
     """
+
+    def test_exception_punctuation_handling_with_suggestions(self):
+        def raise_with_period(): raise NameError("Error.", name='time')
+        def raise_with_exclamation(): raise NameError("Error!", name='time')
+        def raise_with_question(): raise NameError("Error?", name='time')
+        def raise_without_punctuation(): raise NameError("Error", name='time')
+
+        test_cases = [
+            (raise_with_period, "."),
+            (raise_with_exclamation, "!"),
+            (raise_with_question, "?"),
+            (raise_without_punctuation, "."),
+        ]
+
+        for raise_function, punctuation in test_cases:
+            with self.subTest(raise_func=raise_function.__name__):
+                result_lines = self.get_exception(
+                    raise_function, slice_start=-1, slice_end=None
+                )
+                expected = f"NameError: Error{punctuation} Did you forget to import 'time'?"
+                self.assertEqual(result_lines[0], expected)
+
 
 
 @cpython_only
