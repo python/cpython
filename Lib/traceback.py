@@ -1601,6 +1601,34 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
+def _check_for_nested_attribute(obj, wrong_name, attrs):
+    """Check if any attribute of obj has the wrong_name as a nested attribute.
+
+    Returns the first nested attribute suggestion found, or None.
+    Limited to checking 20 attributes.
+    Only considers non-descriptor attributes to avoid executing arbitrary code.
+    """
+    # Check for nested attributes (only one level deep)
+    attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
+    for attr_name in attrs_to_check:
+        with suppress(Exception):
+            # Check if attr_name is a descriptor - if so, skip it
+            attr_from_class = getattr(type(obj), attr_name, None)
+            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
+                continue  # Skip descriptors to avoid executing arbitrary code
+
+            # Safe to get the attribute since it's not a descriptor
+            attr_obj = getattr(obj, attr_name)
+
+            # Check if the nested attribute exists and is not a descriptor
+            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
+
+            if hasattr(attr_obj, wrong_name):
+                return f"{attr_name}.{wrong_name}"
+
+    return None
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
@@ -1666,7 +1694,9 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     except ImportError:
         pass
     else:
-        return _suggestions._generate_suggestions(d, wrong_name)
+        suggestion = _suggestions._generate_suggestions(d, wrong_name)
+        if suggestion:
+            return suggestion
 
     # Compute closest match
 
@@ -1691,6 +1721,14 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         if not suggestion or current_distance < best_distance:
             suggestion = possible_name
             best_distance = current_distance
+
+    # If no direct attribute match found, check for nested attributes
+    if not suggestion and isinstance(exc_value, AttributeError):
+        with suppress(Exception):
+            nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
+            if nested_suggestion:
+                return nested_suggestion
+
     return suggestion
 
 
