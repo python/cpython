@@ -97,7 +97,7 @@ Python build for a single framework, the following options are available.
 
   Specify the name for the Python framework; defaults to `Python`.
 
-  > [!Note]
+  > [!NOTE]
   > Unless you know what you're doing, changing the name of the Python
   > framework on iOS is not advised. If you use this option, you won't be able
   > to run the `Apple` build script without making significant manual
@@ -119,14 +119,14 @@ provide the `--enable-framework` flag when configuring the build. The build
 also requires the use of cross-compilation. The minimal commands for building
 Python for the ARM64 iOS simulator will look something like:
 ```
-    export PATH="$(pwd)/Apple/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
-    ./configure \
-        --enable-framework \
-        --host=arm64-apple-ios-simulator \
-        --build=arm64-apple-darwin \
-        --with-build-python=/path/to/python.exe
-    make
-    make install
+export PATH="$(pwd)/Apple/iOS/Resources/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+./configure \
+    --enable-framework \
+    --host=arm64-apple-ios-simulator \
+    --build=arm64-apple-darwin \
+    --with-build-python=/path/to/python.exe
+make
+make install
 ```
 
 In this invocation:
@@ -237,9 +237,9 @@ To run the test suite, configure a Python build for an iOS simulator (i.e.,
 `PATH` has been configured to include the `Apple/iOS/Resources/bin` folder and
 exclude any non-iOS tools, then run:
 ```
-    make all
-    make install
-    make testios
+make all
+make install
+make testios
 ```
 
 This will:
@@ -267,7 +267,7 @@ testbed will be created in a directory named
 
 You can generate your own standalone testbed instance by running:
 ```
-    python cross-build/iOS/testbed clone my-testbed
+python cross-build/iOS/testbed clone my-testbed
 ```
 
 In this invocation, `my-testbed` is the name of the folder for the new
@@ -276,7 +276,7 @@ testbed clone.
 If you've built your own XCframework, or you only want to test a single architecture,
 you can construct a standalone testbed instance by running:
 ```
-    python Apple/testbed clone --platform iOS --framework <path/to/framework> my-testbed
+python Apple/testbed clone --platform iOS --framework <path/to/framework> my-testbed
 ```
 
 The framework path can be the path path to a `Python.xcframework`, or the
@@ -286,7 +286,7 @@ You can then use the `my-testbed` folder to run the Python test suite,
 passing in any command line arguments you may require. For example, if you're
 trying to diagnose a failure in the `os` module, you might run:
 ```
-    python my-testbed run -- test -W test_os
+python my-testbed run -- test -W test_os
 ```
 
 This is the equivalent of running `python -m test -W test_os` on a desktop
@@ -297,7 +297,7 @@ they were arguments to `python -m` on a desktop machine.
 
 You can also open the testbed project in Xcode by running:
 ```
-    open my-testbed/iOSTestbed.xcodeproj
+open my-testbed/iOSTestbed.xcodeproj
 ```
 
 This will allow you to use the full Xcode suite of tools for debugging.
