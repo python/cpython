@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 HARDCODED_SUBMODULES = {
     # Standard library submodules that are not detected by pkgutil.iter_modules
     # but can be imported, so should be proposed in completion
-    "collections": ["abc"],
-    "os": ["path"],
-    "xml.parsers.expat": ["errors", "model"],
+    "collections": ("abc",),
+    "os": ("path",),
+    "xml.parsers.expat": ("errors", "model"),
 }
 
 
@@ -109,11 +109,8 @@ class ModuleCompleter:
                        if mod_info.ispkg and mod_info.name == segment]
             modules = self.iter_submodules(modules)
 
-        module_names = [module.name for module in modules]
-        try:
-            module_names += HARDCODED_SUBMODULES[path]
-        except KeyError:
-            pass
+        module_names = ([module.name for module in modules]
+                        + HARDCODED_SUBMODULES.get(path, []))
         return [module_name for module_name in module_names
                 if self.is_suggestion_match(module_name, prefix)]
 
