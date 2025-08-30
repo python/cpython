@@ -2489,6 +2489,87 @@ class PathTest(PurePathTest):
                 self.assertNotIn(str(p12), concurrently_created)
             self.assertTrue(p.exists())
 
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    def test_mkdir_parents_umask(self):
+        # Test that parent directories respect umask when parent_mode is not set
+        p = self.cls(self.base, 'umasktest', 'child')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            old_mask = os.umask(0o002)
+            try:
+                p.mkdir(0o755, parents=True)
+                self.assertTrue(p.exists())
+                # Leaf directory gets the specified mode
+                self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o755)
+                # Parent directory respects umask (0o777 & ~0o002 = 0o775)
+                self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), 0o775)
+            finally:
+                os.umask(old_mask)
+
+    def test_mkdir_with_parent_mode(self):
+        # Test the parent_mode parameter
+        p = self.cls(self.base, 'newdirPM', 'subdirPM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            # Specify different modes for parent and leaf directories
+            p.mkdir(0o755, parents=True, parent_mode=0o750)
+            self.assertTrue(p.exists())
+            self.assertTrue(p.is_dir())
+            # Leaf directory gets the mode parameter
+            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o755)
+            # Parent directory gets the parent_mode parameter
+            self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), 0o750)
+
+    def test_mkdir_parent_mode_deep_hierarchy(self):
+        # Test parent_mode with deep directory hierarchy
+        p = self.cls(self.base, 'level1PM', 'level2PM', 'level3PM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            p.mkdir(0o755, parents=True, parent_mode=0o700)
+            self.assertTrue(p.exists())
+            # Check that all parent directories have parent_mode
+            level1 = self.cls(self.base, 'level1PM')
+            level2 = level1 / 'level2PM'
+            self.assertEqual(stat.S_IMODE(level1.stat().st_mode), 0o700)
+            self.assertEqual(stat.S_IMODE(level2.stat().st_mode), 0o700)
+            # Leaf directory has the regular mode
+            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o755)
+
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    def test_mkdir_parent_mode_overrides_umask(self):
+        # Test that parent_mode overrides umask for parent directories
+        p = self.cls(self.base, 'overridetest', 'child')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            old_mask = os.umask(0o022)  # Restrictive umask
+            try:
+                # parent_mode should override umask for parents
+                p.mkdir(0o755, parents=True, parent_mode=0o700)
+                self.assertTrue(p.exists())
+                # Leaf directory gets the specified mode
+                self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o755)
+                # Parent directory gets parent_mode, not affected by umask
+                self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), 0o700)
+            finally:
+                os.umask(old_mask)
+
+    def test_mkdir_parent_mode_same_as_mode(self):
+        # Test setting parent_mode same as mode
+        p = self.cls(self.base, 'samedirPM', 'subdirPM')
+        self.assertFalse(p.exists())
+        if os.name != 'nt':
+            p.mkdir(0o705, parents=True, parent_mode=0o705)
+            self.assertTrue(p.exists())
+            # Both directories should have the same mode
+            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o705)
+            self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), 0o705)
+
     @needs_symlinks
     def test_symlink_to(self):
         P = self.cls(self.base)

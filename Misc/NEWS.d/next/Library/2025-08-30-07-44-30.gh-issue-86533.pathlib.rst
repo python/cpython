@@ -1,0 +1,3 @@
+The :meth:`pathlib.Path.mkdir` method now has a *parent_mode* parameter to
+specify the mode for intermediate directories when creating parent directories,
+providing consistency with the new :func:`os.makedirs` *parent_mode* parameter.

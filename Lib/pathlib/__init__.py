@@ -997,7 +997,7 @@ class Path(PurePath):
         fd = os.open(self, flags, mode)
         os.close(fd)
 
-    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+    def mkdir(self, mode=0o777, parents=False, exist_ok=False, *, parent_mode=None):
         """
         Create a new directory at this given path.
         """
@@ -1006,7 +1006,10 @@ class Path(PurePath):
         except FileNotFoundError:
             if not parents or self.parent == self:
                 raise
-            self.parent.mkdir(parents=True, exist_ok=True)
+            if parent_mode is not None:
+                self.parent.mkdir(mode=parent_mode, parents=True, exist_ok=True, parent_mode=parent_mode)
+            else:
+                self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
         except OSError:
             # Cannot rely on checking for EEXIST, since the operating system

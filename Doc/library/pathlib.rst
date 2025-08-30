@@ -1492,7 +1492,7 @@ Creating files and directories
       :meth:`~Path.write_bytes` methods are often used to create files.
 
 
-.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False)
+.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False, *, parent_mode=None)
 
    Create a new directory at this given path.  If *mode* is given, it is
    combined with the process's ``umask`` value to determine the file mode
@@ -1502,6 +1502,11 @@ Creating files and directories
    If *parents* is true, any missing parents of this path are created
    as needed; they are created with the default permissions without taking
    *mode* into account (mimicking the POSIX ``mkdir -p`` command).
+
+   If *parent_mode* is not ``None``, it will be used as the mode for any
+   newly-created intermediate-level directories when *parents* is true.
+   Otherwise, intermediate directories are created with the default
+   permissions (respecting umask).
 
    If *parents* is false (the default), a missing parent raises
    :exc:`FileNotFoundError`.
@@ -1515,6 +1520,9 @@ Creating files and directories
 
    .. versionchanged:: 3.5
       The *exist_ok* parameter was added.
+
+   .. versionadded:: next
+      The *parent_mode* parameter.
 
 
 .. method:: Path.symlink_to(target, target_is_directory=False)
