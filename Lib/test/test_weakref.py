@@ -432,7 +432,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(proxy.foo, 2,
                      "proxy does not reflect attribute modification")
         del o.foo
-        self.assertFalse(hasattr(proxy, 'foo'),
+        self.assertNotHasAttr(proxy, 'foo',
                      "proxy does not reflect attribute removal")
 
         proxy.foo = 1
@@ -442,7 +442,7 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(o.foo, 2,
             "object does not reflect attribute modification via proxy")
         del proxy.foo
-        self.assertFalse(hasattr(o, 'foo'),
+        self.assertNotHasAttr(o, 'foo',
                      "object does not reflect attribute removal via proxy")
 
     def test_proxy_deletion(self):
@@ -1044,6 +1044,32 @@ class ReferencesTestCase(TestBase):
         stderr = res.err.decode("ascii", "backslashreplace")
         self.assertNotRegex(stderr, "_Py_Dealloc: Deallocator of type 'TestObj'")
 
+    def test_clearing_weakrefs_in_gc(self):
+        # This test checks that when finalizers are called:
+        # 1. weakrefs with callbacks have been cleared
+        # 2. weakrefs without callbacks have not been cleared
+        errors = []
+        def test():
+            class Class:
+                def __init__(self):
+                    self._self = self
+                    self.wr1 = weakref.ref(Class, lambda x: None)
+                    self.wr2 = weakref.ref(Class)
+
+                def __del__(self):
+                    # we can't use assert* here, because gc will swallow
+                    # exceptions
+                    if self.wr1() is not None:
+                        errors.append("weakref with callback as cleared")
+                    if self.wr2() is not Class:
+                        errors.append("weakref without callback was cleared")
+
+            Class()
+
+        test()
+        gc.collect()
+        self.assertEqual(errors, [])
+
 
 class SubclassableWeakrefTestCase(TestBase):
 
@@ -1108,7 +1134,7 @@ class SubclassableWeakrefTestCase(TestBase):
         self.assertEqual(r.slot1, "abc")
         self.assertEqual(r.slot2, "def")
         self.assertEqual(r.meth(), "abcdef")
-        self.assertFalse(hasattr(r, "__dict__"))
+        self.assertNotHasAttr(r, "__dict__")
 
     def test_subclass_refs_with_cycle(self):
         """Confirm https://bugs.python.org/issue3100 is fixed."""

@@ -1,1 +1,0 @@
-Make concurrent iterations over :class:`itertools.repeat` safe under free-threading.

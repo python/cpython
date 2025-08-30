@@ -22,8 +22,10 @@ struct _ceval_runtime_state;
 
 // Export for '_lsprof' shared extension
 PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+extern int _PyEval_SetProfileAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObject *arg);
 
 extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+extern int _PyEval_SetTraceAllThreads(PyInterpreterState *interp, Py_tracefunc func, PyObject *arg);
 
 extern int _PyEval_SetOpcodeTrace(PyFrameObject *f, bool enable);
 
@@ -121,6 +123,22 @@ _PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwfl
     return tstate->interp->eval_frame(tstate, frame, throwflag);
 }
 
+#ifdef _Py_TIER2
+#ifdef _Py_JIT
+_Py_CODEUNIT *_Py_LazyJitTrampoline(
+    struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
+    _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+#else
+_Py_CODEUNIT *_PyTier2Interpreter(
+    struct _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
+    _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+#endif
+#endif
+
+extern _PyJitEntryFuncPtr _Py_jit_entry;
+
 extern PyObject*
 _PyEval_Vector(PyThreadState *tstate,
             PyFunctionObject *func, PyObject *locals,
@@ -196,25 +214,6 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#if !_Py__has_builtin(__builtin_frame_address) && !defined(_MSC_VER)
-static uintptr_t return_pointer_as_int(char* p) {
-    return (uintptr_t)p;
-}
-#endif
-
-static inline uintptr_t
-_Py_get_machine_stack_pointer(void) {
-#if _Py__has_builtin(__builtin_frame_address)
-    return (uintptr_t)__builtin_frame_address(0);
-#elif defined(_MSC_VER)
-    return (uintptr_t)_AddressOfReturnAddress();
-#else
-    char here;
-    /* Avoid compiler warning about returning stack address */
-    return return_pointer_as_int(&here);
-#endif
-}
-
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
@@ -249,12 +248,7 @@ PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
 static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (here_addr > _tstate->c_stack_soft_limit) {
-        return 0;
-    }
-    if (_tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionLimits(tstate);
-    }
+    assert(_tstate->c_stack_hard_limit != 0);
     return here_addr <= _tstate->c_stack_soft_limit;
 }
 
@@ -262,6 +256,16 @@ static inline void _Py_LeaveRecursiveCall(void)  {
 }
 
 extern _PyInterpreterFrame* _PyEval_GetFrame(void);
+
+extern PyObject * _PyEval_GetGlobalsFromRunningMain(PyThreadState *);
+extern int _PyEval_EnsureBuiltins(
+    PyThreadState *,
+    PyObject *,
+    PyObject **p_builtins);
+extern int _PyEval_EnsureBuiltinsWithModule(
+    PyThreadState *,
+    PyObject *,
+    PyObject **p_builtins);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
@@ -279,6 +283,7 @@ PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
 typedef struct _special_method {
     PyObject *name;
     const char *error;
+    const char *error_suggestion;  // improved optional suggestion
 } _Py_SpecialMethod;
 
 PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
@@ -308,6 +313,16 @@ PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
+
+/*
+ * Indicate whether a special method of given 'oparg' can use the (improved)
+ * alternative error message instead. Only methods loaded by LOAD_SPECIAL
+ * support alternative error messages.
+ *
+ * Symbol is exported for the JIT (see discussion on GH-132218).
+ */
+PyAPI_FUNC(int)
+_PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg);
 
 /* Bits that can be set in PyThreadState.eval_breaker */
 #define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
@@ -361,6 +376,20 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
     #    define Py_SUPPORTS_REMOTE_DEBUG 1
     #endif
 #endif
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+extern int _PyRunRemoteDebugger(PyThreadState *tstate);
+#endif
+
+PyAPI_FUNC(_PyStackRef)
+_PyForIter_VirtualIteratorNext(PyThreadState* tstate, struct _PyInterpreterFrame* frame, _PyStackRef iter, _PyStackRef *index_ptr);
+
+/* Special methods used by LOAD_SPECIAL */
+#define SPECIAL___ENTER__   0
+#define SPECIAL___EXIT__    1
+#define SPECIAL___AENTER__  2
+#define SPECIAL___AEXIT__   3
+#define SPECIAL_MAX   3
 
 #ifdef __cplusplus
 }

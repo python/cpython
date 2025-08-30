@@ -9,18 +9,21 @@ from pathlib import Path
 
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
-from test.test_tools import skip_if_missing, toolsdir
+from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 
 
 skip_if_missing('i18n')
 
 data_dir = (Path(__file__).parent / 'msgfmt_data').resolve()
 script_dir = Path(toolsdir) / 'i18n'
-msgfmt = script_dir / 'msgfmt.py'
+msgfmt_py = script_dir / 'msgfmt.py'
+
+with imports_under_tool("i18n"):
+    import msgfmt
 
 
 def compile_messages(po_file, mo_file):
-    assert_python_ok(msgfmt, '-o', mo_file, po_file)
+    assert_python_ok(msgfmt_py, '-o', mo_file, po_file)
 
 
 class CompilationTest(unittest.TestCase):
@@ -92,7 +95,7 @@ class CompilationTest(unittest.TestCase):
         with temp_cwd():
             Path('bom.po').write_bytes(b'\xef\xbb\xbfmsgid "Python"\nmsgstr "Pioton"\n')
 
-            res = assert_python_failure(msgfmt, 'bom.po')
+            res = assert_python_failure(msgfmt_py, 'bom.po')
             err = res.err.decode('utf-8')
             self.assertIn('The file bom.po starts with a UTF-8 BOM', err)
 
@@ -103,7 +106,7 @@ msgid_plural "plural"
 msgstr[0] "singular"
 ''')
 
-            res = assert_python_failure(msgfmt, 'invalid.po')
+            res = assert_python_failure(msgfmt_py, 'invalid.po')
             err = res.err.decode('utf-8')
             self.assertIn('msgid_plural not preceded by msgid', err)
 
@@ -114,7 +117,7 @@ msgid "foo"
 msgstr[0] "bar"
 ''')
 
-            res = assert_python_failure(msgfmt, 'invalid.po')
+            res = assert_python_failure(msgfmt_py, 'invalid.po')
             err = res.err.decode('utf-8')
             self.assertIn('plural without msgid_plural', err)
 
@@ -126,7 +129,7 @@ msgid_plural "foos"
 msgstr "bar"
 ''')
 
-            res = assert_python_failure(msgfmt, 'invalid.po')
+            res = assert_python_failure(msgfmt_py, 'invalid.po')
             err = res.err.decode('utf-8')
             self.assertIn('indexed msgstr required for plural', err)
 
@@ -136,38 +139,136 @@ msgstr "bar"
 "foo"
 ''')
 
-            res = assert_python_failure(msgfmt, 'invalid.po')
+            res = assert_python_failure(msgfmt_py, 'invalid.po')
             err = res.err.decode('utf-8')
             self.assertIn('Syntax error', err)
+
+
+class POParserTest(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        # msgfmt uses a global variable to store messages,
+        # clear it after the tests.
+        msgfmt.MESSAGES.clear()
+
+    def test_strings(self):
+        # Test that the PO parser correctly handles and unescape
+        # strings in the PO file.
+        # The PO file format allows for a variety of escape sequences,
+        # octal and hex escapes.
+        valid_strings = (
+            # empty strings
+            ('""', ''),
+            ('"" "" ""', ''),
+            # allowed escape sequences
+            (r'"\\"', '\\'),
+            (r'"\""', '"'),
+            (r'"\t"', '\t'),
+            (r'"\n"', '\n'),
+            (r'"\r"', '\r'),
+            (r'"\f"', '\f'),
+            (r'"\a"', '\a'),
+            (r'"\b"', '\b'),
+            (r'"\v"', '\v'),
+            # non-empty strings
+            ('"foo"', 'foo'),
+            ('"foo" "bar"', 'foobar'),
+            ('"foo""bar"', 'foobar'),
+            ('"" "foo" ""', 'foo'),
+            # newlines and tabs
+            (r'"foo\nbar"', 'foo\nbar'),
+            (r'"foo\n" "bar"', 'foo\nbar'),
+            (r'"foo\tbar"', 'foo\tbar'),
+            (r'"foo\t" "bar"', 'foo\tbar'),
+            # escaped quotes
+            (r'"foo\"bar"', 'foo"bar'),
+            (r'"foo\"" "bar"', 'foo"bar'),
+            (r'"foo\\" "bar"', 'foo\\bar'),
+            # octal escapes
+            (r'"\120\171\164\150\157\156"', 'Python'),
+            (r'"\120\171\164" "\150\157\156"', 'Python'),
+            (r'"\"\120\171\164" "\150\157\156\""', '"Python"'),
+            # hex escapes
+            (r'"\x50\x79\x74\x68\x6f\x6e"', 'Python'),
+            (r'"\x50\x79\x74" "\x68\x6f\x6e"', 'Python'),
+            (r'"\"\x50\x79\x74" "\x68\x6f\x6e\""', '"Python"'),
+        )
+
+        with temp_cwd():
+            for po_string, expected in valid_strings:
+                with self.subTest(po_string=po_string):
+                    # Construct a PO file with a single entry,
+                    # compile it, read it into a catalog and
+                    # check the result.
+                    po = f'msgid {po_string}\nmsgstr "translation"'
+                    Path('messages.po').write_text(po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    msgfmt.make('messages.po', 'messages.mo')
+
+                    with open('messages.mo', 'rb') as f:
+                        actual = GNUTranslations(f)
+
+                    self.assertDictEqual(actual._catalog, {expected: 'translation'})
+
+        invalid_strings = (
+            # "''",  # invalid but currently accepted
+            '"',
+            '"""',
+            '"" "',
+            'foo',
+            '"" "foo',
+            '"foo" foo',
+            '42',
+            '"" 42 ""',
+            # disallowed escape sequences
+            # r'"\'"',  # invalid but currently accepted
+            # r'"\e"',  # invalid but currently accepted
+            # r'"\8"',  # invalid but currently accepted
+            # r'"\9"',  # invalid but currently accepted
+            r'"\x"',
+            r'"\u1234"',
+            r'"\N{ROMAN NUMERAL NINE}"'
+        )
+        with temp_cwd():
+            for invalid_string in invalid_strings:
+                with self.subTest(string=invalid_string):
+                    po = f'msgid {invalid_string}\nmsgstr "translation"'
+                    Path('messages.po').write_text(po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with self.assertRaises(Exception):
+                        msgfmt.make('messages.po', 'messages.mo')
+
 
 class CLITest(unittest.TestCase):
 
     def test_help(self):
         for option in ('--help', '-h'):
-            res = assert_python_ok(msgfmt, option)
+            res = assert_python_ok(msgfmt_py, option)
             err = res.err.decode('utf-8')
             self.assertIn('Generate binary message catalog from textual translation description.', err)
 
     def test_version(self):
         for option in ('--version', '-V'):
-            res = assert_python_ok(msgfmt, option)
+            res = assert_python_ok(msgfmt_py, option)
             out = res.out.decode('utf-8').strip()
             self.assertEqual('msgfmt.py 1.2', out)
 
     def test_invalid_option(self):
-        res = assert_python_failure(msgfmt, '--invalid-option')
+        res = assert_python_failure(msgfmt_py, '--invalid-option')
         err = res.err.decode('utf-8')
         self.assertIn('Generate binary message catalog from textual translation description.', err)
         self.assertIn('option --invalid-option not recognized', err)
 
     def test_no_input_file(self):
-        res = assert_python_ok(msgfmt)
+        res = assert_python_ok(msgfmt_py)
         err = res.err.decode('utf-8').replace('\r\n', '\n')
         self.assertIn('No input file given\n'
                       "Try `msgfmt --help' for more information.", err)
 
     def test_nonexistent_file(self):
-        assert_python_failure(msgfmt, 'nonexistent.po')
+        assert_python_failure(msgfmt_py, 'nonexistent.po')
 
 
 def update_catalog_snapshots():

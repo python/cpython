@@ -27,14 +27,16 @@ called :file:`fibo.py` in the current directory with the following contents::
 
    # Fibonacci numbers module
 
-   def fib(n):    # write Fibonacci series up to n
+   def fib(n):
+       """Write Fibonacci series up to n."""
        a, b = 0, 1
        while a < n:
            print(a, end=' ')
            a, b = b, a+b
        print()
 
-   def fib2(n):   # return Fibonacci series up to n
+   def fib2(n):
+       """Return Fibonacci series up to n."""
        result = []
        a, b = 0, 1
        while a < n:
@@ -577,8 +579,8 @@ module for example, you might use::
    from .. import formats
    from ..filters import equalizer
 
-Note that relative imports are based on the name of the current module.  Since
-the name of the main module is always ``"__main__"``, modules intended for use
+Note that relative imports are based on the name of the current module's package.
+Since the main module does not have a package, modules intended for use
 as the main module of a Python application must always use absolute imports.
 
 

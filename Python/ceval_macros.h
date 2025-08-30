@@ -70,8 +70,13 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
-#define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg
-#define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg
+#ifdef Py_STATS
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, int lastopcode
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, lastopcode
+#else
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg
+#endif
 
 #if Py_TAIL_CALL_INTERP
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
@@ -88,10 +93,17 @@
         do { \
             Py_MUSTTAIL return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
         } while (0)
-#   define JUMP_TO_PREDICTED(name) \
-        do { \
-            Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg); \
-        } while (0)
+#   ifdef Py_STATS
+#       define JUMP_TO_PREDICTED(name) \
+            do { \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg, lastopcode); \
+            } while (0)
+#   else
+#       define JUMP_TO_PREDICTED(name) \
+            do { \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg); \
+            } while (0)
+#   endif
 #    define LABEL(name) TARGET(name)
 #elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
@@ -121,9 +133,6 @@ do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     int lltrace = maybe_lltrace_resume_frame(frame, GLOBALS()); \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
-    if (lltrace < 0) { \
-        JUMP_TO_LABEL(exit_unwind); \
-    } \
     frame->lltrace = lltrace; \
 } while (0)
 #else
@@ -342,17 +351,10 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
-#ifdef _Py_JIT
-#define GOTO_TIER_TWO(EXECUTOR)                        \
+#define TIER1_TO_TIER2(EXECUTOR)                        \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
-    _PyExecutorObject *_executor = (EXECUTOR);         \
-    jit_func jitted = _executor->jit_code;             \
-    /* Keep the shim frame alive via the executor: */  \
-    Py_INCREF(_executor);                              \
-    next_instr = jitted(frame, stack_pointer, tstate); \
-    Py_DECREF(_executor);                              \
-    Py_CLEAR(tstate->previous_executor);               \
+    next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
@@ -361,30 +363,21 @@ do {                                                   \
     }                                                  \
     DISPATCH();                                        \
 } while (0)
-#else
-#define GOTO_TIER_TWO(EXECUTOR) \
-do { \
-    OPT_STAT_INC(traces_executed); \
-    next_uop = (EXECUTOR)->trace; \
-    assert(next_uop->opcode == _START_EXECUTOR); \
-    goto enter_tier_two; \
+
+#define TIER2_TO_TIER2(EXECUTOR) \
+do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
+    current_executor = (EXECUTOR);                     \
+    goto tier2_start;                                  \
 } while (0)
-#endif
 
 #define GOTO_TIER_ONE(TARGET)                                         \
     do                                                                \
     {                                                                 \
-        next_instr = (TARGET);                                        \
+        tstate->current_executor = NULL;                              \
         OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
         _PyFrame_SetStackPointer(frame, stack_pointer);               \
-        Py_CLEAR(tstate->previous_executor);                          \
-        stack_pointer = _PyFrame_GetStackPointer(frame);              \
-        if (next_instr == NULL)                                       \
-        {                                                             \
-            next_instr = frame->instr_ptr;                            \
-            goto error;                                               \
-        }                                                             \
-        DISPATCH();                                                   \
+        return TARGET;                                                \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)
@@ -410,3 +403,14 @@ do { \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
 
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
+
+static inline int
+check_periodics(PyThreadState *tstate) {
+    _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
+    QSBR_QUIESCENT_STATE(tstate);
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+        return _Py_HandlePending(tstate);
+    }
+    return 0;
+}
+

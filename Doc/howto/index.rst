@@ -1,3 +1,5 @@
+.. _how-tos:
+
 ***************
  Python HOWTOs
 ***************
@@ -11,6 +13,7 @@ Python Library Reference.
    :maxdepth: 1
    :hidden:
 
+   a-conceptual-overview-of-asyncio.rst
    cporting.rst
    curses.rst
    descriptor.rst
@@ -34,9 +37,11 @@ Python Library Reference.
    mro.rst
    free-threading-python.rst
    free-threading-extensions.rst
+   remote_debugging.rst
 
 General:
 
+* :ref:`a-conceptual-overview-of-asyncio`
 * :ref:`annotations-howto`
 * :ref:`argparse-tutorial`
 * :ref:`descriptorhowto`
@@ -66,3 +71,4 @@ Debugging and profiling:
 * :ref:`gdb`
 * :ref:`instrumentation`
 * :ref:`perf_profiling`
+* :ref:`remote-debugging`
