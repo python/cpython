@@ -66,7 +66,7 @@
 #    ifdef __cplusplus
 #        if __cplusplus >= 201103L
 #            define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
-#        elif defined(__GNUC__) || defined(__clang__)
+#        elif defined(__GNUC__) || defined(__clang__) || defined(__xlC__)
 #            define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
 #        elif defined(_MSC_VER)
 #            define _Py_ALIGNED_DEF(N, T) __declspec(align(N)) T
@@ -79,7 +79,7 @@
 #        define _Py_ALIGNED_DEF(N, T) alignas(N) alignas(T) T
 #    elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #        define _Py_ALIGNED_DEF(N, T)  _Alignas(N) _Alignas(T) T
-#    elif (defined(__GNUC__) || defined(__clang__))
+#    elif defined(__GNUC__) || defined(__clang__) || defined(__xlC__)
 #        define _Py_ALIGNED_DEF(N, T) __attribute__((aligned(N))) T
 #    else
 #        define _Py_ALIGNED_DEF(N, T) _Alignas(N) _Alignas(T) T
