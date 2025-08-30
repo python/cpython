@@ -2259,7 +2259,8 @@ class SimpleBackgroundTestsTLS_1_3(unittest.TestCase):
             self.skipTest("No cipher supports TLSv1.3")
 
         self.matching_cipher = ciphers[0]
-        # Some tests need at least two ciphers.
+        # Some tests need at least two ciphers, and are responsible
+        # to skip themselves if matching_cipher == mismatched_cipher.
         self.mismatched_cipher = ciphers[-1]
 
         server_ctx.set_ciphersuites(self.matching_cipher)
