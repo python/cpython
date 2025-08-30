@@ -294,7 +294,7 @@ class AbstractBuilder(object):
                 raise ValueError(member.name, base)
             member.name = member.name[len(base):].lstrip('/')
         log.info("Unpacking files to {}".format(self.build_dir))
-        tf.extractall(self.build_dir, members)
+        tf.extractall(self.build_dir, members, filter='data')
 
     def _build_src(self, config_args=()):
         """Now build openssl"""
