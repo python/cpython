@@ -3802,25 +3802,44 @@ class TestTracebackException(unittest.TestCase):
         exc = traceback.TracebackException(Exception, Exception("haven"), None)
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
 
-    def test_exception_punctuation_handling_with_suggestions(self):
+    def test_name_error_punctuation_with_suggestions(self):
         def raise_mssage(message, name):
             try:
                 raise NameError(message, name=name)
-            except Exception as e:
-                return traceback.TracebackException.from_exception(e)._str
+            except NameError as e:
+                exc = traceback.TracebackException.from_exception(e)
+                return list(exc.format())[-1]
 
         test_cases = [
-            ("Error.", "time", "Error. Did you forget to import 'time'?"),
-            ("Error?", "time", "Error? Did you forget to import 'time'?"),
-            ("Error!", "time", "Error! Did you forget to import 'time'?"),
-            ("Error", "time", "Error. Did you forget to import 'time'?"),
-            ("Error", "foo123", "Error"),
+            ("a.", "time", "NameError: a. Did you forget to import 'time'?\n"),
+            ("b?", "time", "NameError: b? Did you forget to import 'time'?\n"),
+            ("c!", "time", "NameError: c! Did you forget to import 'time'?\n"),
+            ("d", "time", "NameError: d. Did you forget to import 'time'?\n"),
+            ("e", "foo123", "NameError: e\n"),
         ]
-        for puctuation, name, expected in test_cases:
-            with self.subTest(puctuation=puctuation):
-                messsage = raise_mssage(puctuation, name)
+        for message, name, expected in test_cases:
+            with self.subTest(message=message):
+                messsage = raise_mssage(message, name)
                 self.assertEqual(messsage, expected)
 
+    def test_import_error_punctuation_handling_with_suggestions(self):
+        def raise_mssage(message):
+            try:
+                raise ImportError(message, name="math", name_from="sinq")
+            except ImportError as e:
+                exc = traceback.TracebackException.from_exception(e)
+                return list(exc.format())[-1]
+
+        test_cases = [
+            ("a.", "ImportError: a. Did you mean: 'sin'?\n"),
+            ("b?", "ImportError: b? Did you mean: 'sin'?\n"),
+            ("c!", "ImportError: c! Did you mean: 'sin'?\n"),
+            ("d", "ImportError: d. Did you mean: 'sin'?\n"),
+        ]
+        for message, expected in test_cases:
+            with self.subTest(message=message):
+                messsage = raise_mssage(message)
+                self.assertEqual(messsage, expected)
 
     @requires_debug_ranges()
     def test_print(self):
