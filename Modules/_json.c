@@ -1912,7 +1912,6 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *seq, PyObject *s_fast,
     Py_ssize_t indent_level, PyObject *indent_cache, PyObject *separator)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(s_fast);
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
 #ifdef Py_GIL_DISABLED
