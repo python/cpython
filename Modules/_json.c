@@ -1756,7 +1756,7 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         PyObject *item = PyList_GET_ITEM(items, i);
 #ifdef Py_GIL_DISABLED
         // gh-119438: in the free-threading build the critical section on items can get suspended
-        Py_DECREF(item);
+        Py_INCREF(item);
 #endif
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
