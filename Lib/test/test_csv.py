@@ -1471,7 +1471,7 @@ ghi\0jkl
             "g:h\n"
         )
         sample = pattern * 10
-        with self.assertRaises(csv.Error):
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
             sniffer.sniff(sample)
 
     def test_zero_mode_tie_order_colon_first(self):
@@ -1483,7 +1483,7 @@ ghi\0jkl
             "g,h\n"
         )
         sample = pattern * 10
-        with self.assertRaises(csv.Error):
+        with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
             sniffer.sniff(sample)
 
 class NUL:
