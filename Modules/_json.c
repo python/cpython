@@ -1754,7 +1754,10 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *key, *value;
     for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
         PyObject *item = PyList_GET_ITEM(items, i);
-
+#ifdef Py_GIL_DISABLED
+        // gh-119438: in the free-threading build the critical section on items can get suspended
+        Py_DECREF(item);
+#endif
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
             return -1;
@@ -1765,8 +1768,14 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
         if (encoder_encode_key_value(s, writer, first, dct, key, value,
                                      indent_level, indent_cache,
                                      separator) < 0) {
+#ifdef Py_GIL_DISABLED
+            Py_DECREF(item);
+#endif
             return -1;
         }
+#ifdef Py_GIL_DISABLED
+        Py_DECREF(item);
+#endif
     }
 
     return 0;
@@ -1900,6 +1909,7 @@ _encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
     PyObject *seq, PyObject *s_fast,
     Py_ssize_t indent_level, PyObject *indent_cache, PyObject *separator)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(s_fast);
     for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
         PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
 #ifdef Py_GIL_DISABLED
