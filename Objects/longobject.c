@@ -5081,8 +5081,9 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 #define REDUCE(X)                                       \
     do {                                                \
         if (c != NULL) {                                \
-            if (l_mod(X, c, &temp) < 0)                 \
+            if (l_mod(X, c, &temp) < 0) {               \
                 goto Error;                             \
+            }                                           \
             Py_XDECREF(X);                              \
             X = temp;                                   \
             temp = NULL;                                \
