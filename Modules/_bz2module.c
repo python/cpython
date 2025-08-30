@@ -352,7 +352,7 @@ _bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
     }
 
     assert(type != NULL && type->tp_alloc != NULL);
-    self = (BZ2Compressor *)type->tp_alloc(type, 0);
+    self = PyObject_GC_New(BZ2Compressor, type);
     if (self == NULL) {
         return NULL;
     }
@@ -364,6 +364,8 @@ _bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
         return NULL;
     }
 
+    // explicit fields initialization as PyObject_GC_New() does not change them
+    self->flushed = 0;
     self->bzs.opaque = NULL;
     self->bzs.bzalloc = BZ2_Malloc;
     self->bzs.bzfree = BZ2_Free;
@@ -371,6 +373,7 @@ _bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
     if (catch_bz2_error(bzerror))
         goto error;
 
+    PyObject_GC_Track((PyObject *)self);
     return (PyObject *)self;
 
 error:
@@ -381,12 +384,13 @@ error:
 static void
 BZ2Compressor_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     BZ2Compressor *self = _BZ2Compressor_CAST(op);
     BZ2_bzCompressEnd(&self->bzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
@@ -420,7 +424,7 @@ static PyType_Spec bz2_compressor_type_spec = {
     // bz2_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = bz2_compressor_type_slots,
 };
 
@@ -653,7 +657,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     int bzerror;
 
     assert(type != NULL && type->tp_alloc != NULL);
-    self = (BZ2Decompressor *)type->tp_alloc(type, 0);
+    self = PyObject_GC_New(BZ2Decompressor, type);
     if (self == NULL) {
         return NULL;
     }
@@ -665,6 +669,8 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
         return NULL;
     }
 
+    // explicit fields initialization as PyObject_GC_New() does not change them
+    self->eof = 0;
     self->needs_input = 1;
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
@@ -673,10 +679,12 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     if (self->unused_data == NULL)
         goto error;
 
+    self->bzs = (bz_stream){.opaque = NULL, .bzalloc = NULL, .bzfree = NULL};
     bzerror = BZ2_bzDecompressInit(&self->bzs, 0, 0);
     if (catch_bz2_error(bzerror))
         goto error;
 
+    PyObject_GC_Track((PyObject *)self);
     return (PyObject *)self;
 
 error:
@@ -687,8 +695,9 @@ error:
 static void
 BZ2Decompressor_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
-
     if(self->input_buffer != NULL) {
         PyMem_Free(self->input_buffer);
     }
@@ -697,8 +706,6 @@ BZ2Decompressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-
-    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject *)self);
     Py_DECREF(tp);
 }
@@ -751,7 +758,7 @@ static PyType_Spec bz2_decompressor_type_spec = {
     // bz2_decompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = bz2_decompressor_type_slots,
 };
 
