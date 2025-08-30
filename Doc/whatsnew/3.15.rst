@@ -439,12 +439,12 @@ ssl
     allowed for certificate-based client authentication.
   * :meth:`ssl.SSLContext.set_server_sigalgs` sets the signature algorithms
     allowed for the server to complete the TLS handshake.
-   * :meth:`ssl.SSLSocket.client_sigalg` returns the signature algorithm
-     selected for client authentication on the current connection. This call
-     requires OpenSSL 3.5 or later.
-   * :meth:`ssl.SSLSocket.server_sigalg` returns the signature algorithm
-     selected for the server to complete the TLS handshake on the current
-     connection. This call requires OpenSSL 3.5 or later.
+  * :meth:`ssl.SSLSocket.client_sigalg` returns the signature algorithm
+    selected for client authentication on the current connection. This call
+    requires OpenSSL 3.5 or later.
+  * :meth:`ssl.SSLSocket.server_sigalg` returns the signature algorithm
+    selected for the server to complete the TLS handshake on the current
+    connection. This call requires OpenSSL 3.5 or later.
 
    (Contributed by Ron Frederick in :gh:`138252`.)
 

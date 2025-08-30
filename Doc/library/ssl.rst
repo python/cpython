@@ -1744,7 +1744,8 @@ to speed up repeated connections from the same clients.
 .. method:: SSLContext.set_client_sigalgs(sigalgs)
 
    Set the signature algorithms allowed for certificate-based client
-   authentication. It should be a string in the `OpenSSL sigalgs list format
+   authentication. It should be a string in the `OpenSSL client sigalgs
+   list format
    <https://docs.openssl.org/master/man3/SSL_CTX_set1_client_sigalgs_list/>`_.
 
    .. note::
