@@ -72,7 +72,7 @@ class _thread.lock "lockobject *" "clinic_state()->lock_type"
 class _thread.RLock "rlockobject *" "clinic_state()->rlock_type"
 
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1a4bf65233f83eae]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=dae457a21e11ed0f]*/
 
 #define clinic_state() get_thread_state_by_cls(type)
 #include "clinic/_threadmodule.c.h"
@@ -751,7 +751,6 @@ static PyType_Spec ThreadHandle_Type_spec = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC,
     ThreadHandle_Type_slots,
 };
-
 
 /* Lock objects */
 
