@@ -1,1 +1,0 @@
-Add links to glossary terms in ``dis.rst``.
