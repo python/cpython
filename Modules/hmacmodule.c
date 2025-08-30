@@ -943,6 +943,8 @@ _hmac_HMAC_digest_impl(HMACObject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _hmac.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
@@ -955,7 +957,7 @@ This method may raise a MemoryError.
 
 static PyObject *
 _hmac_HMAC_hexdigest_impl(HMACObject *self)
-/*[clinic end generated code: output=6659807a09ae14ec input=493b2db8013982b9]*/
+/*[clinic end generated code: output=6659807a09ae14ec input=6e0e796e38d82fc8]*/
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
