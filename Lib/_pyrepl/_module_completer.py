@@ -16,6 +16,15 @@ if TYPE_CHECKING:
     from typing import Any, Iterable, Iterator, Mapping
 
 
+HARDCODED_SUBMODULES = {
+    # Standard library submodules that are not detected by pkgutil.iter_modules
+    # but can be imported, so should be proposed in completion
+    "collections": ["abc"],
+    "os": ["path"],
+    "xml.parsers.expat": ["errors", "model"],
+}
+
+
 def make_default_module_completer() -> ModuleCompleter:
     # Inside pyrepl, __package__ is set to None by default
     return ModuleCompleter(namespace={'__package__': None})
@@ -99,8 +108,14 @@ class ModuleCompleter:
             modules = [mod_info for mod_info in modules
                        if mod_info.ispkg and mod_info.name == segment]
             modules = self.iter_submodules(modules)
-        return [module.name for module in modules
-                if self.is_suggestion_match(module.name, prefix)]
+
+        module_names = [module.name for module in modules]
+        try:
+            module_names += HARDCODED_SUBMODULES[path]
+        except KeyError:
+            pass
+        return [module_name for module_name in module_names
+                if self.is_suggestion_match(module_name, prefix)]
 
     def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         if prefix:

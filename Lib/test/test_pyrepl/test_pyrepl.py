@@ -1,3 +1,4 @@
+import importlib
 import io
 import itertools
 import os
@@ -26,7 +27,8 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
-from _pyrepl._module_completer import ImportParser, ModuleCompleter
+from _pyrepl._module_completer import (ImportParser, ModuleCompleter,
+                                       HARDCODED_SUBMODULES)
 from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
                               _ReadlineWrapper)
 from _pyrepl.readline import multiline_input as readline_multiline_input
@@ -930,7 +932,6 @@ class TestPyReplCompleter(TestCase):
 
 class TestPyReplModuleCompleter(TestCase):
     def setUp(self):
-        import importlib
         # Make iter_modules() search only the standard library.
         # This makes the test more reliable in case there are
         # other user packages/scripts on PYTHONPATH which can
@@ -1013,14 +1014,6 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(output, expected)
 
     def test_builtin_completion_top_level(self):
-        import importlib
-        # Make iter_modules() search only the standard library.
-        # This makes the test more reliable in case there are
-        # other user packages/scripts on PYTHONPATH which can
-        # intefere with the completions.
-        lib_path = os.path.dirname(importlib.__path__[0])
-        sys.path = [lib_path]
-
         cases = (
             ("import bui\t\n", "import builtins"),
             ("from bui\t\n", "from builtins"),
@@ -1068,6 +1061,20 @@ class TestPyReplModuleCompleter(TestCase):
             ("import pri\t\n", "import pri"),
             ("from pri\t\n", "from pri"),
             ("from typing import Na\t\n", "from typing import Na"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_hardcoded_stdlib_submodules(self):
+        cases = (
+            ("import collections.\t\n", "import collections.abc"),
+            ("from os import \t\n", "from os import path"),
+            ("import xml.parsers.expat.\t\te\t\n\n", "import xml.parsers.expat.errors"),
+            ("from xml.parsers.expat import \t\tm\t\n\n", "from xml.parsers.expat import model"),
         )
         for code, expected in cases:
             with self.subTest(code=code):
@@ -1203,6 +1210,19 @@ class TestPyReplModuleCompleter(TestCase):
             actual = parser.parse()
             with self.subTest(code=code):
                 self.assertEqual(actual, None)
+
+
+class TestHardcodedSubmodules(TestCase):
+    def test_hardcoded_stdlib_submodules_are_importable(self):
+        for parent_path, submodules in HARDCODED_SUBMODULES.items():
+            for module_name in submodules:
+                path = f"{parent_path}.{module_name}"
+                with self.subTest(path=path):
+                    # We can't use importlib.util.find_spec here,
+                    # since some hardcoded submodules parents are
+                    # not proper packages
+                    importlib.import_module(path)
+
 
 class TestPasteEvent(TestCase):
     def prepare_reader(self, events):
