@@ -3803,7 +3803,7 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(list(exc.format()), ["Exception: haven\n"])
 
     def test_name_error_punctuation_with_suggestions(self):
-        def raise_mssage(message, name):
+        def raise_mssage(message, name, name_from=None):
             try:
                 raise NameError(message, name=name)
             except NameError as e:
@@ -3821,6 +3821,19 @@ class TestTracebackException(unittest.TestCase):
             with self.subTest(message=message):
                 messsage = raise_mssage(message, name)
                 self.assertEqual(messsage, expected)
+
+        with self.subTest("combined suggestion"):
+            messsage = raise_mssage("foo", "abc")
+            expected_message = (
+                "NameError: foo. Did you mean: 'abs'? "
+                "Or did you forget to import 'abc'?\n"
+            )
+            self.assertEqual(messsage, expected_message)
+
+        with self.subTest("'did you mean' suggestion"):
+            messsage = raise_mssage("bar", "flaot")
+            expected_message = "NameError: bar. Did you mean: 'float'?\n"
+            self.assertEqual(messsage, expected_message)
 
     def test_import_error_punctuation_handling_with_suggestions(self):
         def raise_mssage(message):
