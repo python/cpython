@@ -2524,7 +2524,7 @@ features:
 
 
 .. function:: makedirs(name, mode=0o777, exist_ok=False, *, \
-                       recursive_mode=False)
+                       parent_mode=None)
 
    .. index::
       single: directory; creating
@@ -2542,8 +2542,9 @@ features:
    If *exist_ok* is ``False`` (the default), a :exc:`FileExistsError` is
    raised if the target directory already exists.
 
-   If *recursive_mode* is ``True``, the *mode* argument will affect the file
-   permission bits of any newly-created, intermediate-level directories.
+   If *parent_mode* is not ``None``, it will be used as the mode for any
+   newly-created intermediate-level directories. Otherwise, intermediate
+   directories are created with the default permissions (respecting umask).
 
    .. note::
 
@@ -2571,8 +2572,10 @@ features:
       The *mode* argument no longer affects the file permission bits of
       newly created intermediate-level directories.
 
-   .. versionadded:: 3.10
-      The *recursive_mode* parameter.
+   .. versionadded:: next
+      The *parent_mode* parameter. To match the behavior from Python 3.6 and
+      earlier (where *mode* was applied to all created directories), pass
+      ``parent_mode=mode``.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)

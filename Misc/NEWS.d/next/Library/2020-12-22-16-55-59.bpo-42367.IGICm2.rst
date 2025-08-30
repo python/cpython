@@ -1,1 +1,3 @@
-The :func:`os.makedirs` function now has a *recursive_mode* parameter.
+The :func:`os.makedirs` function now has a *parent_mode* parameter to specify
+the mode for intermediate directories, allowing one to match the behavior from
+Python 3.6 and earlier.
