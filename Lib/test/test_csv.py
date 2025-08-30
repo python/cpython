@@ -1486,6 +1486,7 @@ ghi\0jkl
         with self.assertRaisesRegex(csv.Error, "Could not determine delimiter"):
             sniffer.sniff(sample)
 
+
 class NUL:
     def write(s, *args):
         pass
