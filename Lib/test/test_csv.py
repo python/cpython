@@ -1462,6 +1462,29 @@ ghi\0jkl
         dialect = sniffer.sniff(sample)
         self.assertEqual(dialect.delimiter, ",")
 
+    def test_zero_mode_tie_order_comma_first(self):
+        sniffer = csv.Sniffer()
+        pattern = (
+            "a,b\n"
+            "c:d\n"
+            "e,f\n"
+            "g:h\n"
+        )
+        sample = pattern * 10
+        with self.assertRaises(csv.Error):
+            sniffer.sniff(sample)
+
+    def test_zero_mode_tie_order_colon_first(self):
+        sniffer = csv.Sniffer()
+        pattern = (
+            "a:b\n"
+            "c,d\n"
+            "e:f\n"
+            "g,h\n"
+        )
+        sample = pattern * 10
+        with self.assertRaises(csv.Error):
+            sniffer.sniff(sample)
 
 class NUL:
     def write(s, *args):
