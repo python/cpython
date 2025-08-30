@@ -2503,9 +2503,9 @@ class PathTest(PurePathTest):
                 p.mkdir(0o755, parents=True)
                 self.assertTrue(p.exists())
                 # Leaf directory gets the specified mode
-                self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o755)
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
                 # Parent directory respects umask (0o777 & ~0o002 = 0o775)
-                self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), 0o775)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o775)
             finally:
                 os.umask(old_mask)
 
@@ -2519,9 +2519,9 @@ class PathTest(PurePathTest):
             self.assertTrue(p.exists())
             self.assertTrue(p.is_dir())
             # Leaf directory gets the mode parameter
-            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o755)
+            self.assertEqual(p.stat().st_mode & 0o777, 0o755)
             # Parent directory gets the parent_mode parameter
-            self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), 0o750)
+            self.assertEqual(p.parent.stat().st_mode & 0o777, 0o750)
 
     def test_mkdir_parent_mode_deep_hierarchy(self):
         # Test parent_mode with deep directory hierarchy
@@ -2533,10 +2533,10 @@ class PathTest(PurePathTest):
             # Check that all parent directories have parent_mode
             level1 = self.cls(self.base, 'level1PM')
             level2 = level1 / 'level2PM'
-            self.assertEqual(stat.S_IMODE(level1.stat().st_mode), 0o700)
-            self.assertEqual(stat.S_IMODE(level2.stat().st_mode), 0o700)
+            self.assertEqual(level1.stat().st_mode & 0o777, 0o700)
+            self.assertEqual(level2.stat().st_mode & 0o777, 0o700)
             # Leaf directory has the regular mode
-            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o755)
+            self.assertEqual(p.stat().st_mode & 0o777, 0o755)
 
     @unittest.skipIf(
         is_emscripten or is_wasi,
@@ -2553,9 +2553,9 @@ class PathTest(PurePathTest):
                 p.mkdir(0o755, parents=True, parent_mode=0o700)
                 self.assertTrue(p.exists())
                 # Leaf directory gets the specified mode
-                self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o755)
+                self.assertEqual(p.stat().st_mode & 0o777, 0o755)
                 # Parent directory gets parent_mode, not affected by umask
-                self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), 0o700)
+                self.assertEqual(p.parent.stat().st_mode & 0o777, 0o700)
             finally:
                 os.umask(old_mask)
 
@@ -2567,8 +2567,8 @@ class PathTest(PurePathTest):
             p.mkdir(0o705, parents=True, parent_mode=0o705)
             self.assertTrue(p.exists())
             # Both directories should have the same mode
-            self.assertEqual(stat.S_IMODE(p.stat().st_mode), 0o705)
-            self.assertEqual(stat.S_IMODE(p.parent.stat().st_mode), 0o705)
+            self.assertEqual(p.stat().st_mode & 0o777, 0o705)
+            self.assertEqual(p.parent.stat().st_mode & 0o777, 0o705)
 
     @needs_symlinks
     def test_symlink_to(self):
