@@ -70,9 +70,8 @@ static PF_SET_THREAD_DESCRIPTION pSetThreadDescription = NULL;
 module _thread
 class _thread.lock "lockobject *" "clinic_state()->lock_type"
 class _thread.RLock "rlockobject *" "clinic_state()->rlock_type"
-
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=dae457a21e11ed0f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c5a0f8c492a0c263]*/
 
 #define clinic_state() get_thread_state_by_cls(type)
 #include "clinic/_threadmodule.c.h"
