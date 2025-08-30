@@ -360,6 +360,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 binascii.a2b_base64
 
     data: ascii_buffer
@@ -376,7 +377,7 @@ Decode a line of base64 data.
 
 static PyObject *
 binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
-/*[clinic end generated code: output=5409557788d4f975 input=c0c15fd0f8f9a62d]*/
+/*[clinic end generated code: output=5409557788d4f975 input=13c797187acc9c40]*/
 {
     assert(data->len >= 0);
 
@@ -414,6 +415,13 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
         if (this_ch == BASE64_PAD) {
             padding_started = 1;
 
+            if (strict_mode && quad_pos == 0) {
+                state = get_binascii_state(module);
+                if (state) {
+                    PyErr_SetString(state->Error, "Excess padding not allowed");
+                }
+                goto error_end;
+            }
             if (quad_pos >= 2 && quad_pos + ++pads >= 4) {
                 /* A pad sequence means we should not parse more input.
                 ** We've already interpreted the data from the quad at this point.
@@ -1278,6 +1286,7 @@ binascii_exec(PyObject *module)
 static PyModuleDef_Slot binascii_slots[] = {
     {Py_mod_exec, binascii_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

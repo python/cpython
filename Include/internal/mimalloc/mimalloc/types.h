@@ -21,7 +21,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 #include <stddef.h>   // ptrdiff_t
 #include <stdint.h>   // uintptr_t, uint16_t, etc
-#include "mimalloc/atomic.h"  // _Atomic
+#include "atomic.h"   // _Atomic
 
 #ifdef _MSC_VER
 #pragma warning(disable:4214) // bitfield is not int
@@ -48,6 +48,32 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_noinline
 #define mi_decl_thread          __thread        // hope for the best :-)
 #define mi_decl_cache_align
+#endif
+
+#if (MI_DEBUG)
+#if defined(_MSC_VER)
+#define mi_decl_noreturn        __declspec(noreturn)
+#elif (defined(__GNUC__) && (__GNUC__ >= 3)) || defined(__clang__)
+#define mi_decl_noreturn        __attribute__((__noreturn__))
+#else
+#define mi_decl_noreturn
+#endif
+
+/*
+ * 'cold' attribute seems to have been fully supported since GCC 4.x.
+ * See https://github.com/gcc-mirror/gcc/commit/52bf96d2f299e9e6.
+ */
+#if (defined(__GNUC__) && (__GNUC__ >= 4)) || defined(__clang__)
+#define mi_decl_cold            __attribute__((cold))
+#else
+#define mi_decl_cold
+#endif
+
+#if (defined(__GNUC__) && defined(__THROW))
+#define mi_decl_throw           __THROW
+#else
+#define mi_decl_throw
+#endif
 #endif
 
 // ------------------------------------------------------
@@ -235,7 +261,7 @@ typedef size_t     mi_threadid_t;
 
 // free lists contain blocks
 typedef struct mi_block_s {
-  mi_encoded_t next;
+  _Atomic(mi_encoded_t) next;
 } mi_block_t;
 
 
@@ -311,6 +337,9 @@ typedef struct mi_page_s {
   uint32_t              slice_offset;      // distance from the actual page data slice (0 if a page)
   uint8_t               is_committed : 1;  // `true` if the page virtual memory is committed
   uint8_t               is_zero_init : 1;  // `true` if the page was initially zero initialized
+  uint8_t               use_qsbr : 1;      // delay page freeing using qsbr
+  uint8_t               tag : 4;           // tag from the owning heap
+  uint8_t               debug_offset;      // number of bytes to preserve when filling freed or uninitialized memory
 
   // layout like this to optimize access in `mi_malloc` and `mi_free`
   uint16_t              capacity;          // number of blocks committed, must be the first field, see `segment.c:page_clear`
@@ -334,8 +363,13 @@ typedef struct mi_page_s {
   struct mi_page_s*     next;              // next page owned by this thread with the same `block_size`
   struct mi_page_s*     prev;              // previous page owned by this thread with the same `block_size`
 
+#ifdef Py_GIL_DISABLED
+  struct llist_node     qsbr_node;
+  uint64_t              qsbr_goal;
+#endif
+
   // 64-bit 9 words, 32-bit 12 words, (+2 for secure)
-  #if MI_INTPTR_SIZE==8
+  #if MI_INTPTR_SIZE==8 && !defined(Py_GIL_DISABLED)
   uintptr_t padding[1];
   #endif
 } mi_page_t;
@@ -447,7 +481,7 @@ typedef struct mi_segment_s {
   struct mi_segment_s* next;            // the list of freed segments in the cache (must be first field, see `segment.c:mi_segment_init`)
 
   size_t            abandoned;          // abandoned pages (i.e. the original owning thread stopped) (`abandoned <= used`)
-  size_t            abandoned_visits;   // count how often this segment is visited in the abandoned list (to force reclaim it it is too long)
+  size_t            abandoned_visits;   // count how often this segment is visited in the abandoned list (to force reclaim if it is too long)
   size_t            used;               // count of pages in use
   uintptr_t         cookie;             // verify addresses in debug mode: `mi_ptr_cookie(segment) == segment->cookie`
 
@@ -551,6 +585,9 @@ struct mi_heap_s {
   size_t                page_retired_max;                    // largest retired index into the `pages` array.
   mi_heap_t*            next;                                // list of heaps per thread
   bool                  no_reclaim;                          // `true` if this heap should not reclaim abandoned pages
+  uint8_t               tag;                                 // custom identifier for this heap
+  uint8_t               debug_offset;                        // number of bytes to preserve when filling freed or uninitialized memory
+  bool                  page_use_qsbr;                       // should freeing pages be delayed using QSBR
 };
 
 
@@ -571,7 +608,8 @@ struct mi_heap_s {
 
 #if (MI_DEBUG)
 // use our own assertion to print without memory allocation
-void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func );
+mi_decl_noreturn mi_decl_cold mi_decl_throw
+void _mi_assert_fail(const char* assertion, const char* fname, unsigned int line, const char* func);
 #define mi_assert(expr)     ((expr) ? (void)0 : _mi_assert_fail(#expr,__FILE__,__LINE__,__func__))
 #else
 #define mi_assert(x)
@@ -667,7 +705,7 @@ void _mi_stat_counter_increase(mi_stat_counter_t* stat, size_t amount);
 // Thread Local data
 // ------------------------------------------------------
 
-// A "span" is is an available range of slices. The span queues keep
+// A "span" is an available range of slices. The span queues keep
 // track of slice spans of at most the given `slice_count` (but more than the previous size class).
 typedef struct mi_span_queue_s {
   mi_slice_t* first;

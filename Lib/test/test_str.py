@@ -7,6 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 import _string
 import codecs
+import datetime
 import itertools
 import operator
 import pickle
@@ -852,6 +853,15 @@ class StrTest(string_tests.StringLikeTest,
         self.assertTrue('\U0001F46F'.isprintable())
         self.assertFalse('\U000E0020'.isprintable())
 
+    @support.requires_resource('cpu')
+    def test_isprintable_invariant(self):
+        for codepoint in range(sys.maxunicode + 1):
+            char = chr(codepoint)
+            category = unicodedata.category(char)
+            self.assertEqual(char.isprintable(),
+                             category[0] not in ('C', 'Z')
+                             or char == ' ')
+
     def test_surrogates(self):
         for s in ('a\uD800b\uDFFF', 'a\uDFFFb\uD800',
                   'a\uD800b\uDFFFa', 'a\uDFFFb\uD800a'):
@@ -1221,10 +1231,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('{0:\x00^6}'.format(3), '\x00\x003\x00\x00\x00')
         self.assertEqual('{0:<6}'.format(3), '3     ')
 
-        self.assertEqual('{0:\x00<6}'.format(3.14), '3.14\x00\x00')
-        self.assertEqual('{0:\x01<6}'.format(3.14), '3.14\x01\x01')
-        self.assertEqual('{0:\x00^6}'.format(3.14), '\x003.14\x00')
-        self.assertEqual('{0:^6}'.format(3.14), ' 3.14 ')
+        self.assertEqual('{0:\x00<6}'.format(3.25), '3.25\x00\x00')
+        self.assertEqual('{0:\x01<6}'.format(3.25), '3.25\x01\x01')
+        self.assertEqual('{0:\x00^6}'.format(3.25), '\x003.25\x00')
+        self.assertEqual('{0:^6}'.format(3.25), ' 3.25 ')
 
         self.assertEqual('{0:\x00<12}'.format(3+2.0j), '(3+2j)\x00\x00\x00\x00\x00\x00')
         self.assertEqual('{0:\x01<12}'.format(3+2.0j), '(3+2j)\x01\x01\x01\x01\x01\x01')
@@ -1578,7 +1588,7 @@ class StrTest(string_tests.StringLikeTest,
         self.assertRaisesRegex(TypeError, '%u format: a real number is required, not complex', operator.mod, '%u', 3j)
         self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
         self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 1j)
-        self.assertRaisesRegex(TypeError, '%c requires int or char', operator.mod, '%c', pi)
+        self.assertRaisesRegex(TypeError, r'%c requires an int or a unicode character, not .*\.PseudoFloat', operator.mod, '%c', pi)
 
         class RaisingNumber:
             def __int__(self):
@@ -1665,7 +1675,7 @@ class StrTest(string_tests.StringLikeTest,
             self.assertIn('str', exc)
             self.assertIn('tuple', exc)
 
-    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
+    @support.run_with_locale('LC_ALL', 'de_DE', 'fr_FR', '')
     def test_format_float(self):
         # should not format with a comma, but always with C locale
         self.assertEqual('1.0', '%.1f' % 1.0)
@@ -1735,8 +1745,6 @@ class StrTest(string_tests.StringLikeTest,
             ),
             'character buffers are decoded to unicode'
         )
-
-        self.assertRaises(TypeError, str, 42, 42, 42)
 
     def test_constructor_keyword_args(self):
         """Pass various keyword argument combinations to the constructor."""
@@ -1909,6 +1917,12 @@ class StrTest(string_tests.StringLikeTest,
                               (b'\xF4'+cb+b'\x80\x80').decode, 'utf-8')
             self.assertRaises(UnicodeDecodeError,
                               (b'\xF4'+cb+b'\xBF\xBF').decode, 'utf-8')
+
+    def test_issue127903(self):
+        # gh-127903: ``_copy_characters`` crashes on DEBUG builds when
+        # there is nothing to copy.
+        d = datetime.datetime(2013, 11, 10, 14, 20, 59)
+        self.assertEqual(d.strftime('%z'), '')
 
     def test_issue8271(self):
         # Issue #8271: during the decoding of an invalid UTF-8 byte sequence,
@@ -2432,8 +2446,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual(repr(s1()), '\\n')
 
     def test_printable_repr(self):
-        self.assertEqual(repr('\U00010000'), "'%c'" % (0x10000,)) # printable
-        self.assertEqual(repr('\U00014000'), "'\\U00014000'")     # nonprintable
+        # printable
+        self.assertEqual(repr('\U00010000'), "'%c'" % (0x10000,))
+        # nonprintable (private use area)
+        self.assertEqual(repr('\U00100001'), "'\\U00100001'")
 
     # This test only affects 32-bit platforms because expandtabs can only take
     # an int as the max value, not a 64-bit C long.  If expandtabs is changed
@@ -2589,7 +2605,8 @@ class StrTest(string_tests.StringLikeTest,
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, str)
-        support.check_free_after_iterating(self, reversed, str)
+        if not support.Py_GIL_DISABLED:
+            support.check_free_after_iterating(self, reversed, str)
 
     def test_check_encoding_errors(self):
         # bpo-37388: str(bytes) and str.decode() must check encoding and errors
@@ -2650,6 +2667,47 @@ class StrTest(string_tests.StringLikeTest,
         ''')
         proc = assert_python_failure('-X', 'dev', '-c', code)
         self.assertEqual(proc.rc, 10, proc)
+
+    def test_str_invalid_call(self):
+        # too many args
+        with self.assertRaisesRegex(TypeError, r"str expected at most 3 arguments, got 4"):
+            str("too", "many", "argu", "ments")
+        with self.assertRaisesRegex(TypeError, r"str expected at most 3 arguments, got 4"):
+            str(1, "", "", 1)
+
+        # no such kw arg
+        with self.assertRaisesRegex(TypeError, r"str\(\) got an unexpected keyword argument 'test'"):
+            str(test=1)
+
+        # 'encoding' must be str
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, 1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, encoding=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not bytes"):
+            str(b"x", b"ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not bytes"):
+            str(b"x", encoding=b"ascii")
+
+        # 'errors' must be str
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'encoding' must be str, not int"):
+            str(1, 1, 1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not int"):
+            str(1, errors=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not int"):
+            str(1, "", errors=1)
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not bytes"):
+            str(b"x", "ascii", b"strict")
+        with self.assertRaisesRegex(TypeError, r"str\(\) argument 'errors' must be str, not bytes"):
+            str(b"x", "ascii", errors=b"strict")
+
+        # both positional and kwarg
+        with self.assertRaisesRegex(TypeError, r"argument for str\(\) given by name \('encoding'\) and position \(2\)"):
+            str(b"x", "utf-8", encoding="ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) takes at most 3 arguments \(4 given\)"):
+            str(b"x", "utf-8", "ignore", encoding="ascii")
+        with self.assertRaisesRegex(TypeError, r"str\(\) takes at most 3 arguments \(4 given\)"):
+            str(b"x", "utf-8", "strict", errors="ignore")
 
 
 class StringModuleTest(unittest.TestCase):

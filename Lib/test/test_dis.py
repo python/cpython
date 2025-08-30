@@ -1,18 +1,23 @@
 # Minimal tests for dis module
 
+import ast
 import contextlib
 import dis
 import functools
 import io
+import itertools
+import opcode
 import re
 import sys
+import tempfile
+import textwrap
 import types
 import unittest
 from test.support import (captured_stdout, requires_debug_ranges,
-                          requires_specialization, cpython_only)
+                          requires_specialization, cpython_only,
+                          os_helper, import_helper, reset_code)
 from test.support.bytecode_helper import BytecodeTestCase
 
-import opcode
 
 CACHE = dis.opmap["CACHE"]
 
@@ -46,43 +51,47 @@ class _C:
 dis_c_instance_method = """\
 %3d           RESUME                   0
 
-%3d           LOAD_FAST                1 (x)
-              LOAD_CONST               1 (1)
+%3d           LOAD_FAST_BORROW         1 (x)
+              LOAD_SMALL_INT           1
               COMPARE_OP              72 (==)
-              LOAD_FAST                0 (self)
+              LOAD_FAST_BORROW         0 (self)
               STORE_ATTR               0 (x)
-              RETURN_CONST             0 (None)
+              LOAD_CONST               1 (None)
+              RETURN_VALUE
 """ % (_C.__init__.__code__.co_firstlineno, _C.__init__.__code__.co_firstlineno + 1,)
 
 dis_c_instance_method_bytes = """\
           RESUME                   0
-          LOAD_FAST                1
-          LOAD_CONST               1
+          LOAD_FAST_BORROW         1
+          LOAD_SMALL_INT           1
           COMPARE_OP              72 (==)
-          LOAD_FAST                0
+          LOAD_FAST_BORROW         0
           STORE_ATTR               0
-          RETURN_CONST             0
+          LOAD_CONST               1
+          RETURN_VALUE
 """
 
 dis_c_class_method = """\
 %3d           RESUME                   0
 
-%3d           LOAD_FAST                1 (x)
-              LOAD_CONST               1 (1)
+%3d           LOAD_FAST_BORROW         1 (x)
+              LOAD_SMALL_INT           1
               COMPARE_OP              72 (==)
-              LOAD_FAST                0 (cls)
+              LOAD_FAST_BORROW         0 (cls)
               STORE_ATTR               0 (x)
-              RETURN_CONST             0 (None)
+              LOAD_CONST               1 (None)
+              RETURN_VALUE
 """ % (_C.cm.__code__.co_firstlineno, _C.cm.__code__.co_firstlineno + 2,)
 
 dis_c_static_method = """\
 %3d           RESUME                   0
 
-%3d           LOAD_FAST                0 (x)
-              LOAD_CONST               1 (1)
+%3d           LOAD_FAST_BORROW         0 (x)
+              LOAD_SMALL_INT           1
               COMPARE_OP              72 (==)
               STORE_FAST               0 (x)
-              RETURN_CONST             0 (None)
+              LOAD_CONST               1 (None)
+              RETURN_VALUE
 """ % (_C.sm.__code__.co_firstlineno, _C.sm.__code__.co_firstlineno + 2,)
 
 # Class disassembling info has an extra newline at end.
@@ -105,11 +114,12 @@ dis_f = """\
 %3d           RESUME                   0
 
 %3d           LOAD_GLOBAL              1 (print + NULL)
-              LOAD_FAST                0 (a)
+              LOAD_FAST_BORROW         0 (a)
               CALL                     1
               POP_TOP
 
-%3d           RETURN_CONST             1 (1)
+%3d           LOAD_SMALL_INT           1
+              RETURN_VALUE
 """ % (_f.__code__.co_firstlineno,
        _f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
@@ -118,23 +128,36 @@ dis_f_with_offsets = """\
 %3d          0       RESUME                   0
 
 %3d          2       LOAD_GLOBAL              1 (print + NULL)
-            12       LOAD_FAST                0 (a)
+            12       LOAD_FAST_BORROW         0 (a)
             14       CALL                     1
             22       POP_TOP
 
-%3d         24       RETURN_CONST             1 (1)
+%3d         24       LOAD_SMALL_INT           1
+            26       RETURN_VALUE
 """ % (_f.__code__.co_firstlineno,
        _f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
 
+dis_f_with_positions_format = f"""\
+%-14s           RESUME                   0
+
+%-14s           LOAD_GLOBAL              1 (print + NULL)
+%-14s           LOAD_FAST_BORROW         0 (a)
+%-14s           CALL                     1
+%-14s           POP_TOP
+
+%-14s           LOAD_SMALL_INT           1
+%-14s           RETURN_VALUE
+"""
 
 dis_f_co_code = """\
           RESUME                   0
           LOAD_GLOBAL              1
-          LOAD_FAST                0
+          LOAD_FAST_BORROW         0
           CALL                     1
           POP_TOP
-          RETURN_CONST             1
+          LOAD_SMALL_INT           1
+          RETURN_VALUE
 """
 
 def bug708901():
@@ -146,9 +169,9 @@ dis_bug708901 = """\
 %3d           RESUME                   0
 
 %3d           LOAD_GLOBAL              1 (range + NULL)
-              LOAD_CONST               1 (1)
+              LOAD_SMALL_INT           1
 
-%3d           LOAD_CONST               2 (10)
+%3d           LOAD_SMALL_INT          10
 
 %3d           CALL                     2
               GET_ITER
@@ -158,7 +181,9 @@ dis_bug708901 = """\
 %3d           JUMP_BACKWARD            5 (to L1)
 
 %3d   L2:     END_FOR
-              RETURN_CONST             0 (None)
+              POP_ITER
+              LOAD_CONST               1 (None)
+              RETURN_VALUE
 """ % (bug708901.__code__.co_firstlineno,
        bug708901.__code__.co_firstlineno + 1,
        bug708901.__code__.co_firstlineno + 2,
@@ -175,14 +200,13 @@ def bug1333982(x=[]):
 dis_bug1333982 = """\
 %3d           RESUME                   0
 
-%3d           LOAD_ASSERTION_ERROR
+%3d           LOAD_COMMON_CONSTANT     0 (AssertionError)
               LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
               MAKE_FUNCTION
-              LOAD_FAST                0 (x)
-              GET_ITER
+              LOAD_FAST_BORROW         0 (x)
               CALL                     0
 
-%3d           LOAD_CONST               2 (1)
+%3d           LOAD_SMALL_INT           1
 
 %3d           BINARY_OP                0 (+)
               CALL                     0
@@ -205,16 +229,17 @@ bug42562.__code__ = bug42562.__code__.replace(co_linetable=b'\xf8')
 
 dis_bug42562 = """\
           RESUME                   0
-          RETURN_CONST             0 (None)
+          LOAD_CONST               0 (None)
+          RETURN_VALUE
 """
 
 # Extended arg followed by NOP
 code_bug_45757 = bytes([
-        opcode.opmap['EXTENDED_ARG'], 0x01,  # EXTENDED_ARG 0x01
-        opcode.opmap['NOP'],          0xFF,  # NOP 0xFF
-        opcode.opmap['EXTENDED_ARG'], 0x01,  # EXTENDED_ARG 0x01
-        opcode.opmap['LOAD_CONST'],   0x29,  # LOAD_CONST 0x29
-        opcode.opmap['RETURN_VALUE'], 0x00,  # RETURN_VALUE 0x00
+        opcode.opmap['EXTENDED_ARG'], 0x01,
+        opcode.opmap['NOP'],          0xFF,
+        opcode.opmap['EXTENDED_ARG'], 0x01,
+        opcode.opmap['LOAD_CONST'],   0x29,
+        opcode.opmap['RETURN_VALUE'], 0x00,
     ])
 
 dis_bug_45757 = """\
@@ -251,25 +276,27 @@ dis_kw_names = """\
 %3d           RESUME                   0
 
 %3d           LOAD_GLOBAL              1 (func_w_kwargs + NULL)
-              LOAD_CONST               1 (1)
-              LOAD_CONST               2 (2)
-              LOAD_CONST               3 (5)
-              LOAD_CONST               4 (('c',))
+              LOAD_SMALL_INT           1
+              LOAD_SMALL_INT           2
+              LOAD_SMALL_INT           5
+              LOAD_CONST               1 (('c',))
               CALL_KW                  3
               POP_TOP
-              RETURN_CONST             0 (None)
+              LOAD_CONST               2 (None)
+              RETURN_VALUE
 """ % (wrap_func_w_kwargs.__code__.co_firstlineno,
        wrap_func_w_kwargs.__code__.co_firstlineno + 1)
 
 dis_intrinsic_1_2 = """\
   0           RESUME                   0
 
-  1           LOAD_CONST               0 (0)
+  1           LOAD_SMALL_INT           0
               LOAD_CONST               1 (('*',))
               IMPORT_NAME              0 (math)
               CALL_INTRINSIC_1         2 (INTRINSIC_IMPORT_STAR)
               POP_TOP
-              RETURN_CONST             2 (None)
+              LOAD_CONST               2 (None)
+              RETURN_VALUE
 """
 
 dis_intrinsic_1_5 = """\
@@ -295,7 +322,8 @@ _BIG_LINENO_FORMAT = """\
 
 %3d           LOAD_GLOBAL              0 (spam)
               POP_TOP
-              RETURN_CONST             0 (None)
+              LOAD_CONST               0 (None)
+              RETURN_VALUE
 """
 
 _BIG_LINENO_FORMAT2 = """\
@@ -303,17 +331,20 @@ _BIG_LINENO_FORMAT2 = """\
 
 %4d           LOAD_GLOBAL              0 (spam)
                POP_TOP
-               RETURN_CONST             0 (None)
+               LOAD_CONST               0 (None)
+               RETURN_VALUE
 """
 
 dis_module_expected_results = """\
 Disassembly of f:
   4           RESUME                   0
-              RETURN_CONST             0 (None)
+              LOAD_CONST               0 (None)
+              RETURN_VALUE
 
 Disassembly of g:
   5           RESUME                   0
-              RETURN_CONST             0 (None)
+              LOAD_CONST               0 (None)
+              RETURN_VALUE
 
 """
 
@@ -323,7 +354,7 @@ dis_expr_str = """\
   0           RESUME                   0
 
   1           LOAD_NAME                0 (x)
-              LOAD_CONST               0 (1)
+              LOAD_SMALL_INT           1
               BINARY_OP                0 (+)
               RETURN_VALUE
 """
@@ -334,10 +365,11 @@ dis_simple_stmt_str = """\
   0           RESUME                   0
 
   1           LOAD_NAME                0 (x)
-              LOAD_CONST               0 (1)
+              LOAD_SMALL_INT           1
               BINARY_OP                0 (+)
               STORE_NAME               0 (x)
-              RETURN_CONST             1 (None)
+              LOAD_CONST               1 (None)
+              RETURN_VALUE
 """
 
 annot_stmt_str = """\
@@ -349,34 +381,54 @@ lst[fun(0)]: int = 1
 # leading newline is for a reason (tests lineno)
 
 dis_annot_stmt_str = """\
+  --           MAKE_CELL                0 (__conditional_annotations__)
+
+   0           RESUME                   0
+
+   2           LOAD_CONST               1 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+               MAKE_FUNCTION
+               STORE_NAME               4 (__annotate__)
+               BUILD_SET                0
+               STORE_NAME               0 (__conditional_annotations__)
+               LOAD_SMALL_INT           1
+               STORE_NAME               1 (x)
+               LOAD_NAME                0 (__conditional_annotations__)
+               LOAD_SMALL_INT           0
+               SET_ADD                  1
+               POP_TOP
+
+   3           LOAD_NAME                0 (__conditional_annotations__)
+               LOAD_SMALL_INT           1
+               SET_ADD                  1
+               POP_TOP
+
+   4           LOAD_SMALL_INT           1
+               LOAD_NAME                2 (lst)
+               LOAD_NAME                3 (fun)
+               PUSH_NULL
+               LOAD_SMALL_INT           0
+               CALL                     1
+               STORE_SUBSCR
+               LOAD_CONST               2 (None)
+               RETURN_VALUE
+"""
+
+fn_with_annotate_str = """
+def foo(a: int, b: str) -> str:
+    return a * b
+"""
+
+dis_fn_with_annotate_str = """\
   0           RESUME                   0
 
-  2           SETUP_ANNOTATIONS
-              LOAD_CONST               0 (1)
-              STORE_NAME               0 (x)
-              LOAD_NAME                1 (int)
-              LOAD_NAME                2 (__annotations__)
-              LOAD_CONST               1 ('x')
-              STORE_SUBSCR
-
-  3           LOAD_NAME                3 (fun)
-              PUSH_NULL
-              LOAD_CONST               0 (1)
-              CALL                     1
-              LOAD_NAME                2 (__annotations__)
-              LOAD_CONST               2 ('y')
-              STORE_SUBSCR
-
-  4           LOAD_CONST               0 (1)
-              LOAD_NAME                4 (lst)
-              LOAD_NAME                3 (fun)
-              PUSH_NULL
-              LOAD_CONST               3 (0)
-              CALL                     1
-              STORE_SUBSCR
-              LOAD_NAME                1 (int)
-              POP_TOP
-              RETURN_CONST             4 (None)
+  2           LOAD_CONST               0 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              LOAD_CONST               1 (<code object foo at 0x..., file "<dis>", line 2>)
+              MAKE_FUNCTION
+              SET_FUNCTION_ATTRIBUTE  16 (annotate)
+              STORE_NAME               0 (foo)
+              LOAD_CONST               2 (None)
+              RETURN_VALUE
 """
 
 compound_stmt_str = """\
@@ -388,65 +440,66 @@ while 1:
 dis_compound_stmt_str = """\
   0           RESUME                   0
 
-  1           LOAD_CONST               0 (0)
+  1           LOAD_SMALL_INT           0
               STORE_NAME               0 (x)
 
-  2           NOP
+  2   L1:     NOP
 
-  3   L1:     LOAD_NAME                0 (x)
-              LOAD_CONST               1 (1)
+  3           LOAD_NAME                0 (x)
+              LOAD_SMALL_INT           1
               BINARY_OP               13 (+=)
               STORE_NAME               0 (x)
-
-  2           JUMP_BACKWARD            7 (to L1)
+              JUMP_BACKWARD           12 (to L1)
 """
 
 dis_traceback = """\
-%4d           RESUME                   0
+%4d            RESUME                   0
 
-%4d           NOP
+%4d            NOP
 
-%4d   L1:     LOAD_CONST               1 (1)
-               LOAD_CONST               2 (0)
-           --> BINARY_OP               11 (/)
-               POP_TOP
+%4d    L1:     LOAD_SMALL_INT           1
+                LOAD_SMALL_INT           0
+            --> BINARY_OP               11 (/)
+                POP_TOP
 
-%4d   L2:     LOAD_FAST_CHECK          1 (tb)
-               RETURN_VALUE
+%4d    L2:     LOAD_FAST_CHECK          1 (tb)
+                RETURN_VALUE
 
-  --   L3:     PUSH_EXC_INFO
+  --    L3:     PUSH_EXC_INFO
 
-%4d           LOAD_GLOBAL              0 (Exception)
-               CHECK_EXC_MATCH
-               POP_JUMP_IF_FALSE       23 (to L7)
-               STORE_FAST               0 (e)
+%4d            LOAD_GLOBAL              0 (Exception)
+                CHECK_EXC_MATCH
+                POP_JUMP_IF_FALSE       24 (to L9)
+        L4:     NOT_TAKEN
+        L5:     STORE_FAST               0 (e)
 
-%4d   L4:     LOAD_FAST                0 (e)
-               LOAD_ATTR                2 (__traceback__)
-               STORE_FAST               1 (tb)
-       L5:     POP_EXCEPT
-               LOAD_CONST               0 (None)
-               STORE_FAST               0 (e)
-               DELETE_FAST              0 (e)
+%4d    L6:     LOAD_FAST                0 (e)
+                LOAD_ATTR                2 (__traceback__)
+                STORE_FAST               1 (tb)
+        L7:     POP_EXCEPT
+                LOAD_CONST               1 (None)
+                STORE_FAST               0 (e)
+                DELETE_FAST              0 (e)
 
-%4d           LOAD_FAST                1 (tb)
-               RETURN_VALUE
+%4d            LOAD_FAST                1 (tb)
+                RETURN_VALUE
 
-  --   L6:     LOAD_CONST               0 (None)
-               STORE_FAST               0 (e)
-               DELETE_FAST              0 (e)
-               RERAISE                  1
+  --    L8:     LOAD_CONST               1 (None)
+                STORE_FAST               0 (e)
+                DELETE_FAST              0 (e)
+                RERAISE                  1
 
-%4d   L7:     RERAISE                  0
+%4d    L9:     RERAISE                  0
 
-  --   L8:     COPY                     3
-               POP_EXCEPT
-               RERAISE                  1
+  --   L10:     COPY                     3
+                POP_EXCEPT
+                RERAISE                  1
 ExceptionTable:
   L1 to L2 -> L3 [0]
-  L3 to L4 -> L8 [1] lasti
-  L4 to L5 -> L6 [1] lasti
-  L6 to L8 -> L8 [1] lasti
+  L3 to L4 -> L10 [1] lasti
+  L5 to L6 -> L10 [1] lasti
+  L6 to L7 -> L8 [1] lasti
+  L8 to L10 -> L10 [1] lasti
 """ % (TRACEBACK_CODE.co_firstlineno,
        TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
@@ -462,20 +515,20 @@ def _fstring(a, b, c, d):
 dis_fstring = """\
 %3d           RESUME                   0
 
-%3d           LOAD_FAST                0 (a)
+%3d           LOAD_FAST_BORROW         0 (a)
               FORMAT_SIMPLE
-              LOAD_CONST               1 (' ')
-              LOAD_FAST                1 (b)
-              LOAD_CONST               2 ('4')
+              LOAD_CONST               0 (' ')
+              LOAD_FAST_BORROW         1 (b)
+              LOAD_CONST               1 ('4')
               FORMAT_WITH_SPEC
-              LOAD_CONST               1 (' ')
-              LOAD_FAST                2 (c)
+              LOAD_CONST               0 (' ')
+              LOAD_FAST_BORROW         2 (c)
               CONVERT_VALUE            2 (repr)
               FORMAT_SIMPLE
-              LOAD_CONST               1 (' ')
-              LOAD_FAST                3 (d)
+              LOAD_CONST               0 (' ')
+              LOAD_FAST_BORROW         3 (d)
               CONVERT_VALUE            2 (repr)
-              LOAD_CONST               2 ('4')
+              LOAD_CONST               1 ('4')
               FORMAT_WITH_SPEC
               BUILD_STRING             7
               RETURN_VALUE
@@ -489,43 +542,53 @@ def _with(c):
 dis_with = """\
 %4d           RESUME                   0
 
-%4d           LOAD_FAST                0 (c)
-               BEFORE_WITH
+%4d           LOAD_FAST_BORROW         0 (c)
+               COPY                     1
+               LOAD_SPECIAL             1 (__exit__)
+               SWAP                     2
+               SWAP                     3
+               LOAD_SPECIAL             0 (__enter__)
+               CALL                     0
        L1:     POP_TOP
 
-%4d           LOAD_CONST               1 (1)
+%4d           LOAD_SMALL_INT           1
                STORE_FAST               1 (x)
 
-%4d   L2:     LOAD_CONST               0 (None)
-               LOAD_CONST               0 (None)
-               LOAD_CONST               0 (None)
-               CALL                     2
+%4d   L2:     LOAD_CONST               1 (None)
+               LOAD_CONST               1 (None)
+               LOAD_CONST               1 (None)
+               CALL                     3
                POP_TOP
 
-%4d           LOAD_CONST               2 (2)
+%4d           LOAD_SMALL_INT           2
                STORE_FAST               2 (y)
-               RETURN_CONST             0 (None)
+               LOAD_CONST               1 (None)
+               RETURN_VALUE
 
 %4d   L3:     PUSH_EXC_INFO
                WITH_EXCEPT_START
                TO_BOOL
-               POP_JUMP_IF_TRUE         1 (to L4)
-               RERAISE                  2
-       L4:     POP_TOP
-       L5:     POP_EXCEPT
+               POP_JUMP_IF_TRUE         2 (to L6)
+       L4:     NOT_TAKEN
+       L5:     RERAISE                  2
+       L6:     POP_TOP
+       L7:     POP_EXCEPT
+               POP_TOP
                POP_TOP
                POP_TOP
 
-%4d           LOAD_CONST               2 (2)
+%4d           LOAD_SMALL_INT           2
                STORE_FAST               2 (y)
-               RETURN_CONST             0 (None)
+               LOAD_CONST               1 (None)
+               RETURN_VALUE
 
-  --   L6:     COPY                     3
+  --   L8:     COPY                     3
                POP_EXCEPT
                RERAISE                  1
 ExceptionTable:
-  L1 to L2 -> L3 [1] lasti
-  L3 to L5 -> L6 [3] lasti
+  L1 to L2 -> L3 [2] lasti
+  L3 to L4 -> L8 [4] lasti
+  L5 to L7 -> L8 [4] lasti
 """ % (_with.__code__.co_firstlineno,
        _with.__code__.co_firstlineno + 1,
        _with.__code__.co_firstlineno + 2,
@@ -546,7 +609,12 @@ dis_asyncwith = """\
         L1:     RESUME                   0
 
 %4d            LOAD_FAST                0 (c)
-                BEFORE_ASYNC_WITH
+                COPY                     1
+                LOAD_SPECIAL             3 (__aexit__)
+                SWAP                     2
+                SWAP                     3
+                LOAD_SPECIAL             2 (__aenter__)
+                CALL                     0
                 GET_AWAITABLE            1
                 LOAD_CONST               0 (None)
         L2:     SEND                     3 (to L5)
@@ -556,13 +624,13 @@ dis_asyncwith = """\
         L5:     END_SEND
         L6:     POP_TOP
 
-%4d            LOAD_CONST               1 (1)
+%4d            LOAD_SMALL_INT           1
                 STORE_FAST               1 (x)
 
 %4d    L7:     LOAD_CONST               0 (None)
                 LOAD_CONST               0 (None)
                 LOAD_CONST               0 (None)
-                CALL                     2
+                CALL                     3
                 GET_AWAITABLE            2
                 LOAD_CONST               0 (None)
         L8:     SEND                     3 (to L11)
@@ -572,19 +640,16 @@ dis_asyncwith = """\
        L11:     END_SEND
                 POP_TOP
 
-%4d            LOAD_CONST               2 (2)
+%4d            LOAD_SMALL_INT           2
                 STORE_FAST               2 (y)
-                RETURN_CONST             0 (None)
+                LOAD_CONST               0 (None)
+                RETURN_VALUE
 
 %4d   L12:     CLEANUP_THROW
-
-  --   L13:     JUMP_BACKWARD           26 (to L5)
-
-%4d   L14:     CLEANUP_THROW
-
-  --   L15:     JUMP_BACKWARD           11 (to L11)
-
-%4d   L16:     PUSH_EXC_INFO
+       L13:     JUMP_BACKWARD_NO_INTERRUPT 26 (to L5)
+       L14:     CLEANUP_THROW
+       L15:     JUMP_BACKWARD_NO_INTERRUPT 10 (to L11)
+       L16:     PUSH_EXC_INFO
                 WITH_EXCEPT_START
                 GET_AWAITABLE            2
                 LOAD_CONST               0 (None)
@@ -595,42 +660,44 @@ dis_asyncwith = """\
        L20:     CLEANUP_THROW
        L21:     END_SEND
                 TO_BOOL
-                POP_JUMP_IF_TRUE         1 (to L22)
-                RERAISE                  2
-       L22:     POP_TOP
-       L23:     POP_EXCEPT
+                POP_JUMP_IF_TRUE         2 (to L24)
+       L22:     NOT_TAKEN
+       L23:     RERAISE                  2
+       L24:     POP_TOP
+       L25:     POP_EXCEPT
+                POP_TOP
                 POP_TOP
                 POP_TOP
 
-%4d            LOAD_CONST               2 (2)
+%4d            LOAD_SMALL_INT           2
                 STORE_FAST               2 (y)
-                RETURN_CONST             0 (None)
+                LOAD_CONST               0 (None)
+                RETURN_VALUE
 
-  --   L24:     COPY                     3
+  --   L26:     COPY                     3
                 POP_EXCEPT
                 RERAISE                  1
-       L25:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
+       L27:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
                 RERAISE                  1
 ExceptionTable:
-  L1 to L3 -> L25 [0] lasti
-  L3 to L4 -> L12 [3]
-  L4 to L6 -> L25 [0] lasti
-  L6 to L7 -> L16 [1] lasti
-  L7 to L9 -> L25 [0] lasti
+  L1 to L3 -> L27 [0] lasti
+  L3 to L4 -> L12 [4]
+  L4 to L6 -> L27 [0] lasti
+  L6 to L7 -> L16 [2] lasti
+  L7 to L9 -> L27 [0] lasti
   L9 to L10 -> L14 [2]
-  L10 to L13 -> L25 [0] lasti
-  L14 to L15 -> L25 [0] lasti
-  L16 to L18 -> L24 [3] lasti
-  L18 to L19 -> L20 [6]
-  L19 to L23 -> L24 [3] lasti
-  L23 to L25 -> L25 [0] lasti
+  L10 to L13 -> L27 [0] lasti
+  L14 to L15 -> L27 [0] lasti
+  L16 to L18 -> L26 [4] lasti
+  L18 to L19 -> L20 [7]
+  L19 to L22 -> L26 [4] lasti
+  L23 to L25 -> L26 [4] lasti
+  L25 to L27 -> L27 [0] lasti
 """ % (_asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 3,
-       _asyncwith.__code__.co_firstlineno + 1,
-       _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 3,
        )
@@ -653,9 +720,9 @@ dis_tryfinally = """\
 
 %4d           NOP
 
-%4d   L1:     LOAD_FAST                0 (a)
+%4d   L1:     LOAD_FAST_BORROW         0 (a)
 
-%4d   L2:     LOAD_FAST                1 (b)
+%4d   L2:     LOAD_FAST_BORROW         1 (b)
                PUSH_NULL
                CALL                     0
                POP_TOP
@@ -689,11 +756,12 @@ dis_tryfinallyconst = """\
 
 %4d           NOP
 
-%4d           LOAD_FAST                0 (b)
+%4d           LOAD_FAST_BORROW         0 (b)
                PUSH_NULL
                CALL                     0
                POP_TOP
-               RETURN_CONST             1 (1)
+               LOAD_SMALL_INT           1
+               RETURN_VALUE
 
   --   L1:     PUSH_EXC_INFO
 
@@ -736,14 +804,14 @@ dis_nested_0 = """\
 
 %4d           RESUME                   0
 
-%4d           LOAD_FAST                0 (y)
+%4d           LOAD_FAST_BORROW         0 (y)
                BUILD_TUPLE              1
-               LOAD_CONST               1 (<code object foo at 0x..., file "%s", line %d>)
+               LOAD_CONST               0 (<code object foo at 0x..., file "%s", line %d>)
                MAKE_FUNCTION
                SET_FUNCTION_ATTRIBUTE   8 (closure)
                STORE_FAST               1 (foo)
 
-%4d           LOAD_FAST                1 (foo)
+%4d           LOAD_FAST_BORROW         1 (foo)
                RETURN_VALUE
 """ % (_h.__code__.co_firstlineno,
        _h.__code__.co_firstlineno + 1,
@@ -760,13 +828,12 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 %4d           RESUME                   0
 
 %4d           LOAD_GLOBAL              1 (list + NULL)
-               LOAD_FAST                0 (x)
+               LOAD_FAST_BORROW         0 (x)
                BUILD_TUPLE              1
-               LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
+               LOAD_CONST               %d (<code object <genexpr> at 0x..., file "%s", line %d>)
                MAKE_FUNCTION
                SET_FUNCTION_ATTRIBUTE   8 (closure)
                LOAD_DEREF               1 (y)
-               GET_ITER
                CALL                     0
                CALL                     1
                RETURN_VALUE
@@ -775,6 +842,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
        _h.__code__.co_firstlineno + 1,
        _h.__code__.co_firstlineno + 1,
        _h.__code__.co_firstlineno + 3,
+       1 if __debug__ else 0,
        __file__,
        _h.__code__.co_firstlineno + 3,
 )
@@ -787,17 +855,20 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
                POP_TOP
        L1:     RESUME                   0
                LOAD_FAST                0 (.0)
-       L2:     FOR_ITER                10 (to L3)
+               GET_ITER
+       L2:     FOR_ITER                14 (to L3)
                STORE_FAST               1 (z)
                LOAD_DEREF               2 (x)
-               LOAD_FAST                1 (z)
+               LOAD_FAST_BORROW         1 (z)
                BINARY_OP                0 (+)
                YIELD_VALUE              0
                RESUME                   5
                POP_TOP
-               JUMP_BACKWARD           12 (to L2)
+               JUMP_BACKWARD           16 (to L2)
        L3:     END_FOR
-               RETURN_CONST             0 (None)
+               POP_ITER
+               LOAD_CONST               0 (None)
+               RETURN_VALUE
 
   --   L4:     CALL_INTRINSIC_1         3 (INTRINSIC_STOPITERATION_ERROR)
                RERAISE                  1
@@ -819,7 +890,7 @@ dis_load_test_quickened_code = """\
 %3d           LOAD_FAST_LOAD_FAST      1 (x, y)
               STORE_FAST_STORE_FAST   50 (b, a)
 
-%3d           LOAD_FAST_LOAD_FAST     35 (a, b)
+%3d           LOAD_FAST_BORROW_LOAD_FAST_BORROW 35 (a, b)
               BUILD_TUPLE              2
               RETURN_VALUE
 """ % (load_test.__code__.co_firstlineno,
@@ -834,22 +905,24 @@ dis_loop_test_quickened_code = """\
 %3d           RESUME_CHECK             0
 
 %3d           BUILD_LIST               0
-              LOAD_CONST               1 ((1, 2, 3))
+              LOAD_CONST               2 ((1, 2, 3))
               LIST_EXTEND              1
-              LOAD_CONST               2 (3)
+              LOAD_SMALL_INT           3
               BINARY_OP                5 (*)
               GET_ITER
       L1:     FOR_ITER_LIST           14 (to L2)
               STORE_FAST               0 (i)
 
 %3d           LOAD_GLOBAL_MODULE       1 (load_test + NULL)
-              LOAD_FAST                0 (i)
-              CALL_PY_WITH_DEFAULTS    1
+              LOAD_FAST_BORROW         0 (i)
+              CALL_PY_GENERAL          1
               POP_TOP
-              JUMP_BACKWARD           16 (to L1)
+              JUMP_BACKWARD_{: <6}    16 (to L1)
 
 %3d   L2:     END_FOR
-              RETURN_CONST             0 (None)
+              POP_ITER
+              LOAD_CONST               1 (None)
+              RETURN_VALUE
 """ % (loop_test.__code__.co_firstlineno,
        loop_test.__code__.co_firstlineno + 1,
        loop_test.__code__.co_firstlineno + 2,
@@ -861,16 +934,15 @@ def extended_arg_quick():
 dis_extended_arg_quick_code = """\
 %3d           RESUME                   0
 
-%3d           LOAD_CONST               1 (Ellipsis)
+%3d           LOAD_CONST               0 (Ellipsis)
               EXTENDED_ARG             1
               UNPACK_EX              256
               POP_TOP
               STORE_FAST               0 (_)
-              RETURN_CONST             0 (None)
+              LOAD_CONST               1 (None)
+              RETURN_VALUE
 """% (extended_arg_quick.__code__.co_firstlineno,
       extended_arg_quick.__code__.co_firstlineno + 1,)
-
-ADAPTIVE_WARMUP_DELAY = 2
 
 class DisTestBase(unittest.TestCase):
     "Common utilities for DisTests and TestDisTraceback"
@@ -937,13 +1009,17 @@ class DisTests(DisTestBase):
 
     def test_widths(self):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
-                            'INSTRUMENTED_CALL_FUNCTION_EX'])
-        for opcode, opname in enumerate(dis.opname):
+                            'LOAD_FAST_BORROW_LOAD_FAST_BORROW',
+                            'INSTRUMENTED_CALL_FUNCTION_EX',
+                            'ANNOTATIONS_PLACEHOLDER'])
+        for op, opname in enumerate(dis.opname):
             if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
+                continue
+            if opname in opcode._specialized_opmap:
                 continue
             with self.subTest(opname=opname):
                 width = dis._OPNAME_WIDTH
-                if opcode in dis.hasarg:
+                if op in dis.hasarg:
                     width += 1 + dis._OPARG_WIDTH
                 self.assertLessEqual(len(opname), width)
 
@@ -952,6 +1028,82 @@ class DisTests(DisTestBase):
 
     def test_dis_with_offsets(self):
         self.do_disassembly_test(_f, dis_f_with_offsets, show_offsets=True)
+
+    @requires_debug_ranges()
+    def test_dis_with_all_positions(self):
+        def format_instr_positions(instr):
+            values = tuple('?' if p is None else p for p in instr.positions)
+            return '%s:%s-%s:%s' % (values[0], values[2], values[1], values[3])
+
+        instrs = list(dis.get_instructions(_f))
+        for instr in instrs:
+            with self.subTest(instr=instr):
+                self.assertTrue(all(p is not None for p in instr.positions))
+        positions = tuple(map(format_instr_positions, instrs))
+        expected = dis_f_with_positions_format % positions
+        self.do_disassembly_test(_f, expected, show_positions=True)
+
+    @requires_debug_ranges()
+    def test_dis_with_some_positions(self):
+        code = ("def f():\n"
+                "   try: pass\n"
+                "   finally:pass")
+        f = compile(ast.parse(code), "?", "exec").co_consts[0]
+
+        expect = '\n'.join([
+            '1:0-1:0              RESUME                   0',
+            '',
+            '2:3-3:15             NOP',
+            '',
+            '3:11-3:15            LOAD_CONST               0 (None)',
+            '3:11-3:15            RETURN_VALUE',
+            '',
+            '  --         L1:     PUSH_EXC_INFO',
+            '',
+            '3:11-3:15            RERAISE                  0',
+            '',
+            '  --         L2:     COPY                     3',
+            '  --                 POP_EXCEPT',
+            '  --                 RERAISE                  1',
+            'ExceptionTable:',
+            '  L1 to L2 -> L2 [1] lasti',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
+
+    @requires_debug_ranges()
+    def test_dis_with_linenos_but_no_columns(self):
+        code = "def f():\n\tx = 1"
+        tree = ast.parse(code)
+        func = tree.body[0]
+        ass_x = func.body[0].targets[0]
+        # remove columns information but keep line information
+        ass_x.col_offset = ass_x.end_col_offset = -1
+        f = compile(tree, "?", "exec").co_consts[0]
+
+        expect = '\n'.join([
+            '1:0-1:0            RESUME                   0',
+            '',
+            '2:5-2:6            LOAD_SMALL_INT           1',
+            '2:?-2:?            STORE_FAST               0 (x)',
+            '2:?-2:?            LOAD_CONST               1 (None)',
+            '2:?-2:?            RETURN_VALUE',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
+
+    def test_dis_with_no_positions(self):
+        def f():
+            pass
+
+        f.__code__ = f.__code__.replace(co_linetable=b'')
+        expect = '\n'.join([
+            '          RESUME                   0',
+            '          LOAD_CONST               0 (None)',
+            '          RETURN_VALUE',
+            '',
+        ])
+        self.do_disassembly_test(f, expect, show_positions=True)
 
     def test_bug_708901(self):
         self.do_disassembly_test(bug708901, dis_bug708901)
@@ -1017,6 +1169,7 @@ class DisTests(DisTestBase):
         self.do_disassembly_test(expr_str, dis_expr_str)
         self.do_disassembly_test(simple_stmt_str, dis_simple_stmt_str)
         self.do_disassembly_test(annot_stmt_str, dis_annot_stmt_str)
+        self.do_disassembly_test(fn_with_annotate_str, dis_fn_with_annotate_str)
         self.do_disassembly_test(compound_stmt_str, dis_compound_stmt_str)
 
     def test_disassemble_bytes(self):
@@ -1118,9 +1271,27 @@ class DisTests(DisTestBase):
         except Exception as e:
             self.assertIsNone(e.__context__)
 
+    def test_async_for_presentation(self):
+
+        async def afunc():
+            async for letter in async_iter1:
+                l2
+            l3
+
+        disassembly =  self.get_disassembly(afunc)
+        for line in disassembly.split("\n"):
+            if "END_ASYNC_FOR" in line:
+                break
+        else:
+            self.fail("No END_ASYNC_FOR in disassembly of async for")
+        self.assertNotIn("to", line)
+        self.assertIn("from", line)
+
+
     @staticmethod
-    def code_quicken(f, times=ADAPTIVE_WARMUP_DELAY):
-        for _ in range(times):
+    def code_quicken(f):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             f()
 
     @cpython_only
@@ -1129,45 +1300,6 @@ class DisTests(DisTestBase):
         self.code_quicken(lambda: load_test(0, 0))
         got = self.get_disassembly(load_test, adaptive=True)
         self.do_disassembly_compare(got, dis_load_test_quickened_code)
-
-    @cpython_only
-    @requires_specialization
-    def test_binary_specialize(self):
-        binary_op_quicken = """\
-  0           RESUME_CHECK             0
-
-  1           LOAD_NAME                0 (a)
-              LOAD_NAME                1 (b)
-              %s
-              RETURN_VALUE
-"""
-        co_int = compile('a + b', "<int>", "eval")
-        self.code_quicken(lambda: exec(co_int, {}, {'a': 1, 'b': 2}))
-        got = self.get_disassembly(co_int, adaptive=True)
-        self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_INT        0 (+)")
-
-        co_unicode = compile('a + b', "<unicode>", "eval")
-        self.code_quicken(lambda: exec(co_unicode, {}, {'a': 'a', 'b': 'b'}))
-        got = self.get_disassembly(co_unicode, adaptive=True)
-        self.do_disassembly_compare(got, binary_op_quicken % "BINARY_OP_ADD_UNICODE    0 (+)")
-
-        binary_subscr_quicken = """\
-  0           RESUME_CHECK             0
-
-  1           LOAD_NAME                0 (a)
-              LOAD_CONST               0 (0)
-              %s
-              RETURN_VALUE
-"""
-        co_list = compile('a[0]', "<list>", "eval")
-        self.code_quicken(lambda: exec(co_list, {}, {'a': [0]}))
-        got = self.get_disassembly(co_list, adaptive=True)
-        self.do_disassembly_compare(got, binary_subscr_quicken % "BINARY_SUBSCR_LIST_INT")
-
-        co_dict = compile('a[0]', "<dict>", "eval")
-        self.code_quicken(lambda: exec(co_dict, {}, {'a': {0: '1'}}))
-        got = self.get_disassembly(co_dict, adaptive=True)
-        self.do_disassembly_compare(got, binary_subscr_quicken % "BINARY_SUBSCR_DICT")
 
     @cpython_only
     @requires_specialization
@@ -1192,7 +1324,7 @@ class DisTests(DisTestBase):
 
   1           LOAD_NAME                0 (str)
               PUSH_NULL
-              LOAD_CONST               0 (1)
+              LOAD_SMALL_INT           1
               CALL_STR_1               1
               RETURN_VALUE
 """
@@ -1204,20 +1336,43 @@ class DisTests(DisTestBase):
     @cpython_only
     @requires_specialization
     def test_loop_quicken(self):
-        import _testinternalcapi
         # Loop can trigger a quicken where the loop is located
-        self.code_quicken(loop_test, 1)
+        self.code_quicken(loop_test)
         got = self.get_disassembly(loop_test, adaptive=True)
-        expected = dis_loop_test_quickened_code
-        if _testinternalcapi.get_optimizer():
-            # We *may* see ENTER_EXECUTOR in the disassembly. This is a
-            # temporary hack to keep the test working until dis is able to
-            # handle the instruction correctly (GH-112383):
-            got = got.replace(
-                "ENTER_EXECUTOR          16",
-                "JUMP_BACKWARD           16 (to L1)",
-            )
+        jit = sys._jit.is_enabled()
+        expected = dis_loop_test_quickened_code.format("JIT" if jit else "NO_JIT")
         self.do_disassembly_compare(got, expected)
+
+    @cpython_only
+    @requires_specialization
+    def test_loop_with_conditional_at_end_is_quickened(self):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        def for_loop_true(x):
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                if x:
+                    pass
+
+        for_loop_true(True)
+        self.assertIn('FOR_ITER_RANGE',
+                      self.get_disassembly(for_loop_true, adaptive=True))
+
+        def for_loop_false(x):
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                if x:
+                    pass
+
+        for_loop_false(False)
+        self.assertIn('FOR_ITER_RANGE',
+                      self.get_disassembly(for_loop_false, adaptive=True))
+
+        def while_loop():
+            i = 0
+            while i < _testinternalcapi.SPECIALIZATION_THRESHOLD:
+                i += 1
+
+        while_loop()
+        self.assertIn('COMPARE_OP_INT',
+                      self.get_disassembly(while_loop, adaptive=True))
 
     @cpython_only
     def test_extended_arg_quick(self):
@@ -1233,7 +1388,7 @@ class DisTests(DisTestBase):
             self.code_quicken(f)
         else:
             # "copy" the code to un-quicken it:
-            f.__code__ = f.__code__.replace()
+            reset_code(f)
         for instruction in _unroll_caches_as_Instructions(dis.get_instructions(
             f, show_caches=True, adaptive=adaptive
         ), show_caches=True):
@@ -1314,7 +1469,7 @@ Positional-only arguments: 0
 Kw-only arguments: 0
 Number of locals:  1
 Stack size:        \\d+
-Flags:             OPTIMIZED, NEWLOCALS
+Flags:             OPTIMIZED, NEWLOCALS(, HAS_DOCSTRING)?
 Constants:
    {code_info_consts}
 Names:
@@ -1340,8 +1495,8 @@ Number of locals:  10
 Stack size:        \\d+
 Flags:             OPTIMIZED, NEWLOCALS, VARARGS, VARKEYWORDS, GENERATOR
 Constants:
-   0: None
-   1: <code object f at (.*), file "(.*)", line (.*)>
+   0: <code object f at (.*), file "(.*)", line (.*)>
+   1: None
 Variable names:
    0: a
    1: b
@@ -1359,10 +1514,12 @@ Cell variables:
    2: [abedfxyz]
    3: [abedfxyz]
    4: [abedfxyz]
-   5: [abedfxyz]"""
+   5: [abedfxyz]
+   6: [abedfxyz]
+   7: [abedfxyz]"""
 # NOTE: the order of the cell variables above depends on dictionary order!
 
-co_tricky_nested_f = tricky.__func__.__code__.co_consts[1]
+co_tricky_nested_f = tricky.__func__.__code__.co_consts[0]
 
 code_info_tricky_nested_f = """\
 Filename:          (.*)
@@ -1426,7 +1583,6 @@ Stack size:        \\d+
 Flags:             0x0
 Constants:
    0: 0
-   1: 1
 Names:
    0: x"""
 
@@ -1446,8 +1602,8 @@ Number of locals:  2
 Stack size:        \\d+
 Flags:             OPTIMIZED, NEWLOCALS, COROUTINE
 Constants:
-   0: None
-   1: 1
+   0: 1
+   1: None
 Names:
    0: b
    1: c
@@ -1543,9 +1699,17 @@ expected_jumpy_line = 1
 # code_object_inner before rerunning the tests
 
 def _stringify_instruction(instr):
-    # Since line numbers and other offsets change a lot for these
-    # test cases, ignore them.
-    return f"  {instr._replace(positions=None)!r},"
+    # Since postions offsets change a lot for these test cases, ignore them.
+    base = (
+        f"  make_inst(opname={instr.opname!r}, arg={instr.arg!r}, argval={instr.argval!r}, " +
+        f"argrepr={instr.argrepr!r}, offset={instr.offset}, start_offset={instr.start_offset}, " +
+        f"starts_line={instr.starts_line!r}, line_number={instr.line_number}"
+    )
+    if instr.label is not None:
+        base += f", label={instr.label!r}"
+    if instr.cache_info:
+        base += f", cache_info={instr.cache_info!r}"
+    return base + "),"
 
 def _prepare_test_cases():
     ignore = io.StringIO()
@@ -1583,200 +1747,215 @@ def _prepare_test_cases():
 
 # from test.test_dis import _prepare_test_cases; _prepare_test_cases()
 
-Instruction = dis.Instruction
+make_inst = dis.Instruction.make
 
 expected_opinfo_outer = [
-  Instruction(opname='MAKE_CELL', opcode=94, arg=0, argval='a', argrepr='a', offset=0, start_offset=0, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='MAKE_CELL', opcode=94, arg=1, argval='b', argrepr='b', offset=2, start_offset=2, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=4, start_offset=4, starts_line=True, line_number=1, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=5, argval=(3, 4), argrepr='(3, 4)', offset=6, start_offset=6, starts_line=True, line_number=2, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='a', argrepr='a', offset=8, start_offset=8, starts_line=False, line_number=2, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=1, argval='b', argrepr='b', offset=10, start_offset=10, starts_line=False, line_number=2, label=None, positions=None),
-  Instruction(opname='BUILD_TUPLE', opcode=52, arg=2, argval=2, argrepr='', offset=12, start_offset=12, starts_line=False, line_number=2, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=1, argval=code_object_f, argrepr=repr(code_object_f), offset=14, start_offset=14, starts_line=False, line_number=2, label=None, positions=None),
-  Instruction(opname='MAKE_FUNCTION', opcode=26, arg=None, argval=None, argrepr='', offset=16, start_offset=16, starts_line=False, line_number=2, label=None, positions=None),
-  Instruction(opname='SET_FUNCTION_ATTRIBUTE', opcode=106, arg=8, argval=8, argrepr='closure', offset=18, start_offset=18, starts_line=False, line_number=2, label=None, positions=None),
-  Instruction(opname='SET_FUNCTION_ATTRIBUTE', opcode=106, arg=1, argval=1, argrepr='defaults', offset=20, start_offset=20, starts_line=False, line_number=2, label=None, positions=None),
-  Instruction(opname='STORE_FAST', opcode=110, arg=2, argval='f', argrepr='f', offset=22, start_offset=22, starts_line=False, line_number=2, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=1, argval='print', argrepr='print + NULL', offset=24, start_offset=24, starts_line=True, line_number=7, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=0, argval='a', argrepr='a', offset=34, start_offset=34, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=1, argval='b', argrepr='b', offset=36, start_offset=36, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=2, argval='', argrepr="''", offset=38, start_offset=38, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=3, argval=1, argrepr='1', offset=40, start_offset=40, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='BUILD_LIST', opcode=47, arg=0, argval=0, argrepr='', offset=42, start_offset=42, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='BUILD_MAP', opcode=48, arg=0, argval=0, argrepr='', offset=44, start_offset=44, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=4, argval='Hello world!', argrepr="'Hello world!'", offset=46, start_offset=46, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=7, argval=7, argrepr='', offset=48, start_offset=48, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=56, start_offset=56, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=2, argval='f', argrepr='f', offset=58, start_offset=58, starts_line=True, line_number=8, label=None, positions=None),
-  Instruction(opname='RETURN_VALUE', opcode=36, arg=None, argval=None, argrepr='', offset=60, start_offset=60, starts_line=False, line_number=8, label=None, positions=None),
+  make_inst(opname='MAKE_CELL', arg=0, argval='a', argrepr='a', offset=0, start_offset=0, starts_line=True, line_number=None),
+  make_inst(opname='MAKE_CELL', arg=1, argval='b', argrepr='b', offset=2, start_offset=2, starts_line=False, line_number=None),
+  make_inst(opname='RESUME', arg=0, argval=0, argrepr='', offset=4, start_offset=4, starts_line=True, line_number=1),
+  make_inst(opname='LOAD_CONST', arg=4, argval=(3, 4), argrepr='(3, 4)', offset=6, start_offset=6, starts_line=True, line_number=2),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='a', argrepr='a', offset=8, start_offset=8, starts_line=False, line_number=2),
+  make_inst(opname='LOAD_FAST_BORROW', arg=1, argval='b', argrepr='b', offset=10, start_offset=10, starts_line=False, line_number=2),
+  make_inst(opname='BUILD_TUPLE', arg=2, argval=2, argrepr='', offset=12, start_offset=12, starts_line=False, line_number=2),
+  make_inst(opname='LOAD_CONST', arg=1, argval=code_object_f, argrepr=repr(code_object_f), offset=14, start_offset=14, starts_line=False, line_number=2),
+  make_inst(opname='MAKE_FUNCTION', arg=None, argval=None, argrepr='', offset=16, start_offset=16, starts_line=False, line_number=2),
+  make_inst(opname='SET_FUNCTION_ATTRIBUTE', arg=8, argval=8, argrepr='closure', offset=18, start_offset=18, starts_line=False, line_number=2),
+  make_inst(opname='SET_FUNCTION_ATTRIBUTE', arg=1, argval=1, argrepr='defaults', offset=20, start_offset=20, starts_line=False, line_number=2),
+  make_inst(opname='STORE_FAST', arg=2, argval='f', argrepr='f', offset=22, start_offset=22, starts_line=False, line_number=2),
+  make_inst(opname='LOAD_GLOBAL', arg=1, argval='print', argrepr='print + NULL', offset=24, start_offset=24, starts_line=True, line_number=7, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_DEREF', arg=0, argval='a', argrepr='a', offset=34, start_offset=34, starts_line=False, line_number=7),
+  make_inst(opname='LOAD_DEREF', arg=1, argval='b', argrepr='b', offset=36, start_offset=36, starts_line=False, line_number=7),
+  make_inst(opname='LOAD_CONST', arg=2, argval='', argrepr="''", offset=38, start_offset=38, starts_line=False, line_number=7),
+  make_inst(opname='LOAD_SMALL_INT', arg=1, argval=1, argrepr='', offset=40, start_offset=40, starts_line=False, line_number=7),
+  make_inst(opname='BUILD_LIST', arg=0, argval=0, argrepr='', offset=42, start_offset=42, starts_line=False, line_number=7),
+  make_inst(opname='BUILD_MAP', arg=0, argval=0, argrepr='', offset=44, start_offset=44, starts_line=False, line_number=7),
+  make_inst(opname='LOAD_CONST', arg=3, argval='Hello world!', argrepr="'Hello world!'", offset=46, start_offset=46, starts_line=False, line_number=7),
+  make_inst(opname='CALL', arg=7, argval=7, argrepr='', offset=48, start_offset=48, starts_line=False, line_number=7, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=56, start_offset=56, starts_line=False, line_number=7),
+  make_inst(opname='LOAD_FAST_BORROW', arg=2, argval='f', argrepr='f', offset=58, start_offset=58, starts_line=True, line_number=8),
+  make_inst(opname='RETURN_VALUE', arg=None, argval=None, argrepr='', offset=60, start_offset=60, starts_line=False, line_number=8),
 ]
 
 expected_opinfo_f = [
-  Instruction(opname='COPY_FREE_VARS', opcode=62, arg=2, argval=2, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='MAKE_CELL', opcode=94, arg=0, argval='c', argrepr='c', offset=2, start_offset=2, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='MAKE_CELL', opcode=94, arg=1, argval='d', argrepr='d', offset=4, start_offset=4, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=6, start_offset=6, starts_line=True, line_number=2, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=2, argval=(5, 6), argrepr='(5, 6)', offset=8, start_offset=8, starts_line=True, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=3, argval='a', argrepr='a', offset=10, start_offset=10, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=4, argval='b', argrepr='b', offset=12, start_offset=12, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='c', argrepr='c', offset=14, start_offset=14, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=1, argval='d', argrepr='d', offset=16, start_offset=16, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='BUILD_TUPLE', opcode=52, arg=4, argval=4, argrepr='', offset=18, start_offset=18, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=1, argval=code_object_inner, argrepr=repr(code_object_inner), offset=20, start_offset=20, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='MAKE_FUNCTION', opcode=26, arg=None, argval=None, argrepr='', offset=22, start_offset=22, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='SET_FUNCTION_ATTRIBUTE', opcode=106, arg=8, argval=8, argrepr='closure', offset=24, start_offset=24, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='SET_FUNCTION_ATTRIBUTE', opcode=106, arg=1, argval=1, argrepr='defaults', offset=26, start_offset=26, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='STORE_FAST', opcode=110, arg=2, argval='inner', argrepr='inner', offset=28, start_offset=28, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=1, argval='print', argrepr='print + NULL', offset=30, start_offset=30, starts_line=True, line_number=5, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=3, argval='a', argrepr='a', offset=40, start_offset=40, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=4, argval='b', argrepr='b', offset=42, start_offset=42, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=0, argval='c', argrepr='c', offset=44, start_offset=44, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=1, argval='d', argrepr='d', offset=46, start_offset=46, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=4, argval=4, argrepr='', offset=48, start_offset=48, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=56, start_offset=56, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=2, argval='inner', argrepr='inner', offset=58, start_offset=58, starts_line=True, line_number=6, label=None, positions=None),
-  Instruction(opname='RETURN_VALUE', opcode=36, arg=None, argval=None, argrepr='', offset=60, start_offset=60, starts_line=False, line_number=6, label=None, positions=None),
+  make_inst(opname='COPY_FREE_VARS', arg=2, argval=2, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=None),
+  make_inst(opname='MAKE_CELL', arg=0, argval='c', argrepr='c', offset=2, start_offset=2, starts_line=False, line_number=None),
+  make_inst(opname='MAKE_CELL', arg=1, argval='d', argrepr='d', offset=4, start_offset=4, starts_line=False, line_number=None),
+  make_inst(opname='RESUME', arg=0, argval=0, argrepr='', offset=6, start_offset=6, starts_line=True, line_number=2),
+  make_inst(opname='LOAD_CONST', arg=2, argval=(5, 6), argrepr='(5, 6)', offset=8, start_offset=8, starts_line=True, line_number=3),
+  make_inst(opname='LOAD_FAST_BORROW', arg=3, argval='a', argrepr='a', offset=10, start_offset=10, starts_line=False, line_number=3),
+  make_inst(opname='LOAD_FAST_BORROW', arg=4, argval='b', argrepr='b', offset=12, start_offset=12, starts_line=False, line_number=3),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='c', argrepr='c', offset=14, start_offset=14, starts_line=False, line_number=3),
+  make_inst(opname='LOAD_FAST_BORROW', arg=1, argval='d', argrepr='d', offset=16, start_offset=16, starts_line=False, line_number=3),
+  make_inst(opname='BUILD_TUPLE', arg=4, argval=4, argrepr='', offset=18, start_offset=18, starts_line=False, line_number=3),
+  make_inst(opname='LOAD_CONST', arg=1, argval=code_object_inner, argrepr=repr(code_object_inner), offset=20, start_offset=20, starts_line=False, line_number=3),
+  make_inst(opname='MAKE_FUNCTION', arg=None, argval=None, argrepr='', offset=22, start_offset=22, starts_line=False, line_number=3),
+  make_inst(opname='SET_FUNCTION_ATTRIBUTE', arg=8, argval=8, argrepr='closure', offset=24, start_offset=24, starts_line=False, line_number=3),
+  make_inst(opname='SET_FUNCTION_ATTRIBUTE', arg=1, argval=1, argrepr='defaults', offset=26, start_offset=26, starts_line=False, line_number=3),
+  make_inst(opname='STORE_FAST', arg=2, argval='inner', argrepr='inner', offset=28, start_offset=28, starts_line=False, line_number=3),
+  make_inst(opname='LOAD_GLOBAL', arg=1, argval='print', argrepr='print + NULL', offset=30, start_offset=30, starts_line=True, line_number=5, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_DEREF', arg=3, argval='a', argrepr='a', offset=40, start_offset=40, starts_line=False, line_number=5),
+  make_inst(opname='LOAD_DEREF', arg=4, argval='b', argrepr='b', offset=42, start_offset=42, starts_line=False, line_number=5),
+  make_inst(opname='LOAD_DEREF', arg=0, argval='c', argrepr='c', offset=44, start_offset=44, starts_line=False, line_number=5),
+  make_inst(opname='LOAD_DEREF', arg=1, argval='d', argrepr='d', offset=46, start_offset=46, starts_line=False, line_number=5),
+  make_inst(opname='CALL', arg=4, argval=4, argrepr='', offset=48, start_offset=48, starts_line=False, line_number=5, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=56, start_offset=56, starts_line=False, line_number=5),
+  make_inst(opname='LOAD_FAST_BORROW', arg=2, argval='inner', argrepr='inner', offset=58, start_offset=58, starts_line=True, line_number=6),
+  make_inst(opname='RETURN_VALUE', arg=None, argval=None, argrepr='', offset=60, start_offset=60, starts_line=False, line_number=6),
 ]
 
 expected_opinfo_inner = [
-  Instruction(opname='COPY_FREE_VARS', opcode=62, arg=4, argval=4, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=2, start_offset=2, starts_line=True, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=1, argval='print', argrepr='print + NULL', offset=4, start_offset=4, starts_line=True, line_number=4, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=2, argval='a', argrepr='a', offset=14, start_offset=14, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=3, argval='b', argrepr='b', offset=16, start_offset=16, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=4, argval='c', argrepr='c', offset=18, start_offset=18, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='LOAD_DEREF', opcode=84, arg=5, argval='d', argrepr='d', offset=20, start_offset=20, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='LOAD_FAST_LOAD_FAST', opcode=88, arg=1, argval=('e', 'f'), argrepr='e, f', offset=22, start_offset=22, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=6, argval=6, argrepr='', offset=24, start_offset=24, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=32, start_offset=32, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='RETURN_CONST', opcode=103, arg=0, argval=None, argrepr='None', offset=34, start_offset=34, starts_line=False, line_number=4, label=None, positions=None),
+  make_inst(opname='COPY_FREE_VARS', arg=4, argval=4, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=None),
+  make_inst(opname='RESUME', arg=0, argval=0, argrepr='', offset=2, start_offset=2, starts_line=True, line_number=3),
+  make_inst(opname='LOAD_GLOBAL', arg=1, argval='print', argrepr='print + NULL', offset=4, start_offset=4, starts_line=True, line_number=4, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_DEREF', arg=2, argval='a', argrepr='a', offset=14, start_offset=14, starts_line=False, line_number=4),
+  make_inst(opname='LOAD_DEREF', arg=3, argval='b', argrepr='b', offset=16, start_offset=16, starts_line=False, line_number=4),
+  make_inst(opname='LOAD_DEREF', arg=4, argval='c', argrepr='c', offset=18, start_offset=18, starts_line=False, line_number=4),
+  make_inst(opname='LOAD_DEREF', arg=5, argval='d', argrepr='d', offset=20, start_offset=20, starts_line=False, line_number=4),
+  make_inst(opname='LOAD_FAST_BORROW_LOAD_FAST_BORROW', arg=1, argval=('e', 'f'), argrepr='e, f', offset=22, start_offset=22, starts_line=False, line_number=4),
+  make_inst(opname='CALL', arg=6, argval=6, argrepr='', offset=24, start_offset=24, starts_line=False, line_number=4, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=32, start_offset=32, starts_line=False, line_number=4),
+  make_inst(opname='LOAD_CONST', arg=0, argval=None, argrepr='None', offset=34, start_offset=34, starts_line=False, line_number=4),
+  make_inst(opname='RETURN_VALUE', arg=None, argval=None, argrepr='', offset=36, start_offset=36, starts_line=False, line_number=4),
 ]
 
 expected_opinfo_jumpy = [
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=1, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=1, argval='range', argrepr='range + NULL', offset=2, start_offset=2, starts_line=True, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=1, argval=10, argrepr='10', offset=12, start_offset=12, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=14, start_offset=14, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='GET_ITER', opcode=19, arg=None, argval=None, argrepr='', offset=22, start_offset=22, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='FOR_ITER', opcode=72, arg=30, argval=88, argrepr='to L4', offset=24, start_offset=24, starts_line=False, line_number=3, label=1, positions=None),
-  Instruction(opname='STORE_FAST', opcode=110, arg=0, argval='i', argrepr='i', offset=28, start_offset=28, starts_line=False, line_number=3, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=30, start_offset=30, starts_line=True, line_number=4, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=40, start_offset=40, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=42, start_offset=42, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=50, start_offset=50, starts_line=False, line_number=4, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=52, start_offset=52, starts_line=True, line_number=5, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=2, argval=4, argrepr='4', offset=54, start_offset=54, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='COMPARE_OP', opcode=58, arg=18, argval='<', argrepr='bool(<)', offset=56, start_offset=56, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_FALSE', opcode=97, arg=2, argval=68, argrepr='to L2', offset=60, start_offset=60, starts_line=False, line_number=5, label=None, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=77, arg=22, argval=24, argrepr='to L1', offset=64, start_offset=64, starts_line=True, line_number=6, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=68, start_offset=68, starts_line=True, line_number=7, label=2, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=3, argval=6, argrepr='6', offset=70, start_offset=70, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='COMPARE_OP', opcode=58, arg=148, argval='>', argrepr='bool(>)', offset=72, start_offset=72, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_TRUE', opcode=100, arg=2, argval=84, argrepr='to L3', offset=76, start_offset=76, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=77, arg=30, argval=24, argrepr='to L1', offset=80, start_offset=80, starts_line=False, line_number=7, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=84, start_offset=84, starts_line=True, line_number=8, label=3, positions=None),
-  Instruction(opname='JUMP_FORWARD', opcode=79, arg=12, argval=112, argrepr='to L5', offset=86, start_offset=86, starts_line=False, line_number=8, label=None, positions=None),
-  Instruction(opname='END_FOR', opcode=11, arg=None, argval=None, argrepr='', offset=88, start_offset=88, starts_line=True, line_number=3, label=4, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=90, start_offset=90, starts_line=True, line_number=10, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=4, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=100, start_offset=100, starts_line=False, line_number=10, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=102, start_offset=102, starts_line=False, line_number=10, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=110, start_offset=110, starts_line=False, line_number=10, label=None, positions=None),
-  Instruction(opname='LOAD_FAST_CHECK', opcode=87, arg=0, argval='i', argrepr='i', offset=112, start_offset=112, starts_line=True, line_number=11, label=5, positions=None),
-  Instruction(opname='TO_BOOL', opcode=40, arg=None, argval=None, argrepr='', offset=114, start_offset=114, starts_line=False, line_number=11, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_FALSE', opcode=97, arg=40, argval=206, argrepr='to L9', offset=122, start_offset=122, starts_line=False, line_number=11, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=126, start_offset=126, starts_line=True, line_number=12, label=6, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=136, start_offset=136, starts_line=False, line_number=12, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=138, start_offset=138, starts_line=False, line_number=12, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=146, start_offset=146, starts_line=False, line_number=12, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=148, start_offset=148, starts_line=True, line_number=13, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=5, argval=1, argrepr='1', offset=150, start_offset=150, starts_line=False, line_number=13, label=None, positions=None),
-  Instruction(opname='BINARY_OP', opcode=45, arg=23, argval=23, argrepr='-=', offset=152, start_offset=152, starts_line=False, line_number=13, label=None, positions=None),
-  Instruction(opname='STORE_FAST', opcode=110, arg=0, argval='i', argrepr='i', offset=156, start_offset=156, starts_line=False, line_number=13, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=158, start_offset=158, starts_line=True, line_number=14, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=3, argval=6, argrepr='6', offset=160, start_offset=160, starts_line=False, line_number=14, label=None, positions=None),
-  Instruction(opname='COMPARE_OP', opcode=58, arg=148, argval='>', argrepr='bool(>)', offset=162, start_offset=162, starts_line=False, line_number=14, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_FALSE', opcode=97, arg=2, argval=174, argrepr='to L7', offset=166, start_offset=166, starts_line=False, line_number=14, label=None, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=77, arg=31, argval=112, argrepr='to L5', offset=170, start_offset=170, starts_line=True, line_number=15, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=174, start_offset=174, starts_line=True, line_number=16, label=7, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=2, argval=4, argrepr='4', offset=176, start_offset=176, starts_line=False, line_number=16, label=None, positions=None),
-  Instruction(opname='COMPARE_OP', opcode=58, arg=18, argval='<', argrepr='bool(<)', offset=178, start_offset=178, starts_line=False, line_number=16, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_FALSE', opcode=97, arg=1, argval=188, argrepr='to L8', offset=182, start_offset=182, starts_line=False, line_number=16, label=None, positions=None),
-  Instruction(opname='JUMP_FORWARD', opcode=79, arg=20, argval=228, argrepr='to L10', offset=186, start_offset=186, starts_line=True, line_number=17, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=188, start_offset=188, starts_line=True, line_number=11, label=8, positions=None),
-  Instruction(opname='TO_BOOL', opcode=40, arg=None, argval=None, argrepr='', offset=190, start_offset=190, starts_line=False, line_number=11, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_FALSE', opcode=97, arg=2, argval=206, argrepr='to L9', offset=198, start_offset=198, starts_line=False, line_number=11, label=None, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=77, arg=40, argval=126, argrepr='to L6', offset=202, start_offset=202, starts_line=False, line_number=11, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=206, start_offset=206, starts_line=True, line_number=19, label=9, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=6, argval='Who let lolcatz into this test suite?', argrepr="'Who let lolcatz into this test suite?'", offset=216, start_offset=216, starts_line=False, line_number=19, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=218, start_offset=218, starts_line=False, line_number=19, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=226, start_offset=226, starts_line=False, line_number=19, label=None, positions=None),
-  Instruction(opname='NOP', opcode=30, arg=None, argval=None, argrepr='', offset=228, start_offset=228, starts_line=True, line_number=20, label=10, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=5, argval=1, argrepr='1', offset=230, start_offset=230, starts_line=True, line_number=21, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=7, argval=0, argrepr='0', offset=232, start_offset=232, starts_line=False, line_number=21, label=None, positions=None),
-  Instruction(opname='BINARY_OP', opcode=45, arg=11, argval=11, argrepr='/', offset=234, start_offset=234, starts_line=False, line_number=21, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=238, start_offset=238, starts_line=False, line_number=21, label=None, positions=None),
-  Instruction(opname='LOAD_FAST', opcode=85, arg=0, argval='i', argrepr='i', offset=240, start_offset=240, starts_line=True, line_number=25, label=None, positions=None),
-  Instruction(opname='BEFORE_WITH', opcode=2, arg=None, argval=None, argrepr='', offset=242, start_offset=242, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='STORE_FAST', opcode=110, arg=1, argval='dodgy', argrepr='dodgy', offset=244, start_offset=244, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=246, start_offset=246, starts_line=True, line_number=26, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=8, argval='Never reach this', argrepr="'Never reach this'", offset=256, start_offset=256, starts_line=False, line_number=26, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=258, start_offset=258, starts_line=False, line_number=26, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=266, start_offset=266, starts_line=False, line_number=26, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=0, argval=None, argrepr='None', offset=268, start_offset=268, starts_line=True, line_number=25, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=0, argval=None, argrepr='None', offset=270, start_offset=270, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=0, argval=None, argrepr='None', offset=272, start_offset=272, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=2, argval=2, argrepr='', offset=274, start_offset=274, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=282, start_offset=282, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=284, start_offset=284, starts_line=True, line_number=28, label=11, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=10, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=294, start_offset=294, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=296, start_offset=296, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=304, start_offset=304, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='RETURN_CONST', opcode=103, arg=0, argval=None, argrepr='None', offset=306, start_offset=306, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=33, arg=None, argval=None, argrepr='', offset=308, start_offset=308, starts_line=True, line_number=25, label=None, positions=None),
-  Instruction(opname='WITH_EXCEPT_START', opcode=44, arg=None, argval=None, argrepr='', offset=310, start_offset=310, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='TO_BOOL', opcode=40, arg=None, argval=None, argrepr='', offset=312, start_offset=312, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_TRUE', opcode=100, arg=1, argval=326, argrepr='to L12', offset=320, start_offset=320, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=2, argval=2, argrepr='', offset=324, start_offset=324, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=326, start_offset=326, starts_line=False, line_number=25, label=12, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=328, start_offset=328, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=330, start_offset=330, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=332, start_offset=332, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=77, arg=27, argval=284, argrepr='to L11', offset=334, start_offset=334, starts_line=False, line_number=25, label=None, positions=None),
-  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=338, start_offset=338, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=340, start_offset=340, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=342, start_offset=342, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=33, arg=None, argval=None, argrepr='', offset=344, start_offset=344, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=346, start_offset=346, starts_line=True, line_number=22, label=None, positions=None),
-  Instruction(opname='CHECK_EXC_MATCH', opcode=7, arg=None, argval=None, argrepr='', offset=356, start_offset=356, starts_line=False, line_number=22, label=None, positions=None),
-  Instruction(opname='POP_JUMP_IF_FALSE', opcode=97, arg=15, argval=392, argrepr='to L13', offset=358, start_offset=358, starts_line=False, line_number=22, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=362, start_offset=362, starts_line=False, line_number=22, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=364, start_offset=364, starts_line=True, line_number=23, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=9, argval='Here we go, here we go, here we go...', argrepr="'Here we go, here we go, here we go...'", offset=374, start_offset=374, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=376, start_offset=376, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=384, start_offset=384, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=386, start_offset=386, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='JUMP_BACKWARD', opcode=77, arg=54, argval=284, argrepr='to L11', offset=388, start_offset=388, starts_line=False, line_number=23, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=0, argval=0, argrepr='', offset=392, start_offset=392, starts_line=True, line_number=22, label=13, positions=None),
-  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=394, start_offset=394, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=396, start_offset=396, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=398, start_offset=398, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='PUSH_EXC_INFO', opcode=33, arg=None, argval=None, argrepr='', offset=400, start_offset=400, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='LOAD_GLOBAL', opcode=91, arg=3, argval='print', argrepr='print + NULL', offset=402, start_offset=402, starts_line=True, line_number=28, label=None, positions=None),
-  Instruction(opname='LOAD_CONST', opcode=83, arg=10, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=412, start_offset=412, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=414, start_offset=414, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=422, start_offset=422, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=0, argval=0, argrepr='', offset=424, start_offset=424, starts_line=False, line_number=28, label=None, positions=None),
-  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=426, start_offset=426, starts_line=True, line_number=None, label=None, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=428, start_offset=428, starts_line=False, line_number=None, label=None, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=430, start_offset=430, starts_line=False, line_number=None, label=None, positions=None),
+  make_inst(opname='RESUME', arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=1),
+  make_inst(opname='LOAD_GLOBAL', arg=1, argval='range', argrepr='range + NULL', offset=2, start_offset=2, starts_line=True, line_number=3, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_SMALL_INT', arg=10, argval=10, argrepr='', offset=12, start_offset=12, starts_line=False, line_number=3),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=14, start_offset=14, starts_line=False, line_number=3, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='GET_ITER', arg=None, argval=None, argrepr='', offset=22, start_offset=22, starts_line=False, line_number=3),
+  make_inst(opname='FOR_ITER', arg=33, argval=94, argrepr='to L4', offset=24, start_offset=24, starts_line=False, line_number=3, label=1, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='STORE_FAST', arg=0, argval='i', argrepr='i', offset=28, start_offset=28, starts_line=False, line_number=3),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=30, start_offset=30, starts_line=True, line_number=4, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=40, start_offset=40, starts_line=False, line_number=4),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=42, start_offset=42, starts_line=False, line_number=4, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=50, start_offset=50, starts_line=False, line_number=4),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=52, start_offset=52, starts_line=True, line_number=5),
+  make_inst(opname='LOAD_SMALL_INT', arg=4, argval=4, argrepr='', offset=54, start_offset=54, starts_line=False, line_number=5),
+  make_inst(opname='COMPARE_OP', arg=18, argval='<', argrepr='bool(<)', offset=56, start_offset=56, starts_line=False, line_number=5, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='POP_JUMP_IF_FALSE', arg=3, argval=70, argrepr='to L2', offset=60, start_offset=60, starts_line=False, line_number=5, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=64, start_offset=64, starts_line=False, line_number=5),
+  make_inst(opname='JUMP_BACKWARD', arg=23, argval=24, argrepr='to L1', offset=66, start_offset=66, starts_line=True, line_number=6, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=70, start_offset=70, starts_line=True, line_number=7, label=2),
+  make_inst(opname='LOAD_SMALL_INT', arg=6, argval=6, argrepr='', offset=72, start_offset=72, starts_line=False, line_number=7),
+  make_inst(opname='COMPARE_OP', arg=148, argval='>', argrepr='bool(>)', offset=74, start_offset=74, starts_line=False, line_number=7, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='POP_JUMP_IF_TRUE', arg=3, argval=88, argrepr='to L3', offset=78, start_offset=78, starts_line=False, line_number=7, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=82, start_offset=82, starts_line=False, line_number=7),
+  make_inst(opname='JUMP_BACKWARD', arg=32, argval=24, argrepr='to L1', offset=84, start_offset=84, starts_line=False, line_number=7, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=88, start_offset=88, starts_line=True, line_number=8, label=3),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=90, start_offset=90, starts_line=False, line_number=8),
+  make_inst(opname='JUMP_FORWARD', arg=13, argval=120, argrepr='to L5', offset=92, start_offset=92, starts_line=False, line_number=8),
+  make_inst(opname='END_FOR', arg=None, argval=None, argrepr='', offset=94, start_offset=94, starts_line=True, line_number=3, label=4),
+  make_inst(opname='POP_ITER', arg=None, argval=None, argrepr='', offset=96, start_offset=96, starts_line=False, line_number=3),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=98, start_offset=98, starts_line=True, line_number=10, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=1, argval='I can haz else clause?', argrepr="'I can haz else clause?'", offset=108, start_offset=108, starts_line=False, line_number=10),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=110, start_offset=110, starts_line=False, line_number=10, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=118, start_offset=118, starts_line=False, line_number=10),
+  make_inst(opname='LOAD_FAST_CHECK', arg=0, argval='i', argrepr='i', offset=120, start_offset=120, starts_line=True, line_number=11, label=5),
+  make_inst(opname='TO_BOOL', arg=None, argval=None, argrepr='', offset=122, start_offset=122, starts_line=False, line_number=11, cache_info=[('counter', 1, b'\x00\x00'), ('version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_JUMP_IF_FALSE', arg=40, argval=214, argrepr='to L8', offset=130, start_offset=130, starts_line=False, line_number=11, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=134, start_offset=134, starts_line=False, line_number=11),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=136, start_offset=136, starts_line=True, line_number=12, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=146, start_offset=146, starts_line=False, line_number=12),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=148, start_offset=148, starts_line=False, line_number=12, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=156, start_offset=156, starts_line=False, line_number=12),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=158, start_offset=158, starts_line=True, line_number=13),
+  make_inst(opname='LOAD_SMALL_INT', arg=1, argval=1, argrepr='', offset=160, start_offset=160, starts_line=False, line_number=13),
+  make_inst(opname='BINARY_OP', arg=23, argval=23, argrepr='-=', offset=162, start_offset=162, starts_line=False, line_number=13, cache_info=[('counter', 1, b'\x00\x00'), ('descr', 4, b'\x00\x00\x00\x00\x00\x00\x00\x00')]),
+  make_inst(opname='STORE_FAST', arg=0, argval='i', argrepr='i', offset=174, start_offset=174, starts_line=False, line_number=13),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=176, start_offset=176, starts_line=True, line_number=14),
+  make_inst(opname='LOAD_SMALL_INT', arg=6, argval=6, argrepr='', offset=178, start_offset=178, starts_line=False, line_number=14),
+  make_inst(opname='COMPARE_OP', arg=148, argval='>', argrepr='bool(>)', offset=180, start_offset=180, starts_line=False, line_number=14, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='POP_JUMP_IF_FALSE', arg=3, argval=194, argrepr='to L6', offset=184, start_offset=184, starts_line=False, line_number=14, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=188, start_offset=188, starts_line=False, line_number=14),
+  make_inst(opname='JUMP_BACKWARD', arg=37, argval=120, argrepr='to L5', offset=190, start_offset=190, starts_line=True, line_number=15, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=194, start_offset=194, starts_line=True, line_number=16, label=6),
+  make_inst(opname='LOAD_SMALL_INT', arg=4, argval=4, argrepr='', offset=196, start_offset=196, starts_line=False, line_number=16),
+  make_inst(opname='COMPARE_OP', arg=18, argval='<', argrepr='bool(<)', offset=198, start_offset=198, starts_line=False, line_number=16, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='POP_JUMP_IF_TRUE', arg=3, argval=212, argrepr='to L7', offset=202, start_offset=202, starts_line=False, line_number=16, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=206, start_offset=206, starts_line=False, line_number=16),
+  make_inst(opname='JUMP_BACKWARD', arg=46, argval=120, argrepr='to L5', offset=208, start_offset=208, starts_line=False, line_number=16, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='JUMP_FORWARD', arg=11, argval=236, argrepr='to L9', offset=212, start_offset=212, starts_line=True, line_number=17, label=7),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=214, start_offset=214, starts_line=True, line_number=19, label=8, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=2, argval='Who let lolcatz into this test suite?', argrepr="'Who let lolcatz into this test suite?'", offset=224, start_offset=224, starts_line=False, line_number=19),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=226, start_offset=226, starts_line=False, line_number=19, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=234, start_offset=234, starts_line=False, line_number=19),
+  make_inst(opname='NOP', arg=None, argval=None, argrepr='', offset=236, start_offset=236, starts_line=True, line_number=20, label=9),
+  make_inst(opname='LOAD_SMALL_INT', arg=1, argval=1, argrepr='', offset=238, start_offset=238, starts_line=True, line_number=21),
+  make_inst(opname='LOAD_SMALL_INT', arg=0, argval=0, argrepr='', offset=240, start_offset=240, starts_line=False, line_number=21),
+  make_inst(opname='BINARY_OP', arg=11, argval=11, argrepr='/', offset=242, start_offset=242, starts_line=False, line_number=21, cache_info=[('counter', 1, b'\x00\x00'), ('descr', 4, b'\x00\x00\x00\x00\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=254, start_offset=254, starts_line=False, line_number=21),
+  make_inst(opname='LOAD_FAST_BORROW', arg=0, argval='i', argrepr='i', offset=256, start_offset=256, starts_line=True, line_number=25),
+  make_inst(opname='COPY', arg=1, argval=1, argrepr='', offset=258, start_offset=258, starts_line=False, line_number=25),
+  make_inst(opname='LOAD_SPECIAL', arg=1, argval=1, argrepr='__exit__', offset=260, start_offset=260, starts_line=False, line_number=25),
+  make_inst(opname='SWAP', arg=2, argval=2, argrepr='', offset=262, start_offset=262, starts_line=False, line_number=25),
+  make_inst(opname='SWAP', arg=3, argval=3, argrepr='', offset=264, start_offset=264, starts_line=False, line_number=25),
+  make_inst(opname='LOAD_SPECIAL', arg=0, argval=0, argrepr='__enter__', offset=266, start_offset=266, starts_line=False, line_number=25),
+  make_inst(opname='CALL', arg=0, argval=0, argrepr='', offset=268, start_offset=268, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='STORE_FAST', arg=1, argval='dodgy', argrepr='dodgy', offset=276, start_offset=276, starts_line=False, line_number=25),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=278, start_offset=278, starts_line=True, line_number=26, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=3, argval='Never reach this', argrepr="'Never reach this'", offset=288, start_offset=288, starts_line=False, line_number=26),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=290, start_offset=290, starts_line=False, line_number=26, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=298, start_offset=298, starts_line=False, line_number=26),
+  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=300, start_offset=300, starts_line=True, line_number=25),
+  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=302, start_offset=302, starts_line=False, line_number=25),
+  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=304, start_offset=304, starts_line=False, line_number=25),
+  make_inst(opname='CALL', arg=3, argval=3, argrepr='', offset=306, start_offset=306, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=314, start_offset=314, starts_line=False, line_number=25),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=316, start_offset=316, starts_line=True, line_number=28, label=10, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=6, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=326, start_offset=326, starts_line=False, line_number=28),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=328, start_offset=328, starts_line=False, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=336, start_offset=336, starts_line=False, line_number=28),
+  make_inst(opname='LOAD_CONST', arg=4, argval=None, argrepr='None', offset=338, start_offset=338, starts_line=False, line_number=28),
+  make_inst(opname='RETURN_VALUE', arg=None, argval=None, argrepr='', offset=340, start_offset=340, starts_line=False, line_number=28),
+  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=342, start_offset=342, starts_line=True, line_number=25),
+  make_inst(opname='WITH_EXCEPT_START', arg=None, argval=None, argrepr='', offset=344, start_offset=344, starts_line=False, line_number=25),
+  make_inst(opname='TO_BOOL', arg=None, argval=None, argrepr='', offset=346, start_offset=346, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00'), ('version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_JUMP_IF_TRUE', arg=2, argval=362, argrepr='to L11', offset=354, start_offset=354, starts_line=False, line_number=25, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=358, start_offset=358, starts_line=False, line_number=25),
+  make_inst(opname='RERAISE', arg=2, argval=2, argrepr='', offset=360, start_offset=360, starts_line=False, line_number=25),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=362, start_offset=362, starts_line=False, line_number=25, label=11),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=364, start_offset=364, starts_line=False, line_number=25),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=366, start_offset=366, starts_line=False, line_number=25),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=368, start_offset=368, starts_line=False, line_number=25),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=370, start_offset=370, starts_line=False, line_number=25),
+  make_inst(opname='JUMP_BACKWARD_NO_INTERRUPT', arg=29, argval=316, argrepr='to L10', offset=372, start_offset=372, starts_line=False, line_number=25),
+  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=374, start_offset=374, starts_line=True, line_number=None),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=376, start_offset=376, starts_line=False, line_number=None),
+  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=378, start_offset=378, starts_line=False, line_number=None),
+  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=380, start_offset=380, starts_line=False, line_number=None),
+  make_inst(opname='LOAD_GLOBAL', arg=4, argval='ZeroDivisionError', argrepr='ZeroDivisionError', offset=382, start_offset=382, starts_line=True, line_number=22, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='CHECK_EXC_MATCH', arg=None, argval=None, argrepr='', offset=392, start_offset=392, starts_line=False, line_number=22),
+  make_inst(opname='POP_JUMP_IF_FALSE', arg=15, argval=428, argrepr='to L12', offset=394, start_offset=394, starts_line=False, line_number=22, cache_info=[('counter', 1, b'\x00\x00')]),
+  make_inst(opname='NOT_TAKEN', arg=None, argval=None, argrepr='', offset=398, start_offset=398, starts_line=False, line_number=22),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=400, start_offset=400, starts_line=False, line_number=22),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=402, start_offset=402, starts_line=True, line_number=23, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=5, argval='Here we go, here we go, here we go...', argrepr="'Here we go, here we go, here we go...'", offset=412, start_offset=412, starts_line=False, line_number=23),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=414, start_offset=414, starts_line=False, line_number=23, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=422, start_offset=422, starts_line=False, line_number=23),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=424, start_offset=424, starts_line=False, line_number=23),
+  make_inst(opname='JUMP_BACKWARD_NO_INTERRUPT', arg=56, argval=316, argrepr='to L10', offset=426, start_offset=426, starts_line=False, line_number=23),
+  make_inst(opname='RERAISE', arg=0, argval=0, argrepr='', offset=428, start_offset=428, starts_line=True, line_number=22, label=12),
+  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=430, start_offset=430, starts_line=True, line_number=None),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=432, start_offset=432, starts_line=False, line_number=None),
+  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=434, start_offset=434, starts_line=False, line_number=None),
+  make_inst(opname='PUSH_EXC_INFO', arg=None, argval=None, argrepr='', offset=436, start_offset=436, starts_line=False, line_number=None),
+  make_inst(opname='LOAD_GLOBAL', arg=3, argval='print', argrepr='print + NULL', offset=438, start_offset=438, starts_line=True, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
+  make_inst(opname='LOAD_CONST', arg=6, argval="OK, now we're done", argrepr='"OK, now we\'re done"', offset=448, start_offset=448, starts_line=False, line_number=28),
+  make_inst(opname='CALL', arg=1, argval=1, argrepr='', offset=450, start_offset=450, starts_line=False, line_number=28, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
+  make_inst(opname='POP_TOP', arg=None, argval=None, argrepr='', offset=458, start_offset=458, starts_line=False, line_number=28),
+  make_inst(opname='RERAISE', arg=0, argval=0, argrepr='', offset=460, start_offset=460, starts_line=False, line_number=28),
+  make_inst(opname='COPY', arg=3, argval=3, argrepr='', offset=462, start_offset=462, starts_line=True, line_number=None),
+  make_inst(opname='POP_EXCEPT', arg=None, argval=None, argrepr='', offset=464, start_offset=464, starts_line=False, line_number=None),
+  make_inst(opname='RERAISE', arg=1, argval=1, argrepr='', offset=466, start_offset=466, starts_line=False, line_number=None),
 ]
 
 # One last piece of inspect fodder to check the default line number handling
 def simple(): pass
 expected_opinfo_simple = [
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=simple.__code__.co_firstlineno, label=None, positions=None),
-  Instruction(opname='RETURN_CONST', opcode=103, arg=0, argval=None, argrepr='None', offset=2, start_offset=2, starts_line=False, line_number=simple.__code__.co_firstlineno, label=None),
+  make_inst(opname='RESUME', arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=simple.__code__.co_firstlineno),
+  make_inst(opname='LOAD_CONST', arg=0, argval=None, argrepr='None', offset=2, start_offset=2, starts_line=False, line_number=simple.__code__.co_firstlineno),
+  make_inst(opname='RETURN_VALUE', arg=None, argval=None, argrepr='', offset=4, start_offset=4, starts_line=False, line_number=simple.__code__.co_firstlineno),
 ]
 
 
@@ -1843,6 +2022,7 @@ class InstructionTests(InstructionTestCase):
             (2, 2, 8, 9),
             (1, 3, 0, 1),
             (1, 3, 0, 1),
+            (1, 3, 0, 1),
             (1, 3, 0, 1)
         ]
         self.assertEqual(positions, expected)
@@ -1905,7 +2085,7 @@ class InstructionTests(InstructionTestCase):
                     self.assertEqual(co_positions, dis_positions)
 
     def test_oparg_alias(self):
-        instruction = Instruction(opname="NOP", opcode=dis.opmap["NOP"], arg=None, argval=None,
+        instruction = make_inst(opname="NOP", arg=None, argval=None,
                                   argrepr='', offset=10, start_offset=10, starts_line=True, line_number=1, label=None,
                                   positions=None)
         self.assertEqual(instruction.arg, instruction.oparg)
@@ -1922,22 +2102,40 @@ class InstructionTests(InstructionTestCase):
         dis.dis(f.__code__, file=output, show_caches=True)
         self.assertIn("L1:", output.getvalue())
 
+    def test_is_op_format(self):
+        output = io.StringIO()
+        dis.dis("a is b", file=output, show_caches=True)
+        self.assertIn("IS_OP                    0 (is)", output.getvalue())
+
+        output = io.StringIO()
+        dis.dis("a is not b", file=output, show_caches=True)
+        self.assertIn("IS_OP                    1 (is not)", output.getvalue())
+
+    def test_contains_op_format(self):
+        output = io.StringIO()
+        dis.dis("a in b", file=output, show_caches=True)
+        self.assertIn("CONTAINS_OP              0 (in)", output.getvalue())
+
+        output = io.StringIO()
+        dis.dis("a not in b", file=output, show_caches=True)
+        self.assertIn("CONTAINS_OP              1 (not in)", output.getvalue())
+
     def test_baseopname_and_baseopcode(self):
         # Standard instructions
-        for name, code in dis.opmap.items():
-            instruction = Instruction(opname=name, opcode=code, arg=None, argval=None, argrepr='', offset=0,
-                                      start_offset=0, starts_line=True, line_number=1, label=None, positions=None)
+        for name in dis.opmap:
+            instruction = make_inst(opname=name, arg=None, argval=None, argrepr='', offset=0,
+                                    start_offset=0, starts_line=True, line_number=1, label=None, positions=None)
             baseopname = instruction.baseopname
             baseopcode = instruction.baseopcode
             self.assertIsNotNone(baseopname)
             self.assertIsNotNone(baseopcode)
             self.assertEqual(name, baseopname)
-            self.assertEqual(code, baseopcode)
+            self.assertEqual(instruction.opcode, baseopcode)
 
         # Specialized instructions
         for name in opcode._specialized_opmap:
-            instruction = Instruction(opname=name, opcode=dis._all_opmap[name], arg=None, argval=None, argrepr='',
-                                      offset=0, start_offset=0, starts_line=True, line_number=1, label=None, positions=None)
+            instruction = make_inst(opname=name, arg=None, argval=None, argrepr='',
+                                    offset=0, start_offset=0, starts_line=True, line_number=1, label=None, positions=None)
             baseopname = instruction.baseopname
             baseopcode = instruction.baseopcode
             self.assertIn(name, opcode._specializations[baseopname])
@@ -1945,25 +2143,25 @@ class InstructionTests(InstructionTestCase):
 
     def test_jump_target(self):
         # Non-jump instructions should return None
-        instruction = Instruction(opname="NOP", opcode=dis.opmap["NOP"], arg=None, argval=None,
+        instruction = make_inst(opname="NOP", arg=None, argval=None,
                                   argrepr='', offset=10, start_offset=10, starts_line=True, line_number=1, label=None,
                                   positions=None)
         self.assertIsNone(instruction.jump_target)
 
         delta = 100
-        instruction = Instruction(opname="JUMP_FORWARD", opcode=dis.opmap["JUMP_FORWARD"], arg=delta, argval=delta,
+        instruction = make_inst(opname="JUMP_FORWARD", arg=delta, argval=delta,
                                   argrepr='', offset=10, start_offset=10, starts_line=True, line_number=1, label=None,
                                   positions=None)
         self.assertEqual(10 + 2 + 100*2, instruction.jump_target)
 
         # Test negative deltas
-        instruction = Instruction(opname="JUMP_BACKWARD", opcode=dis.opmap["JUMP_BACKWARD"], arg=delta, argval=delta,
+        instruction = make_inst(opname="JUMP_BACKWARD", arg=delta, argval=delta,
                                   argrepr='', offset=200, start_offset=200, starts_line=True, line_number=1, label=None,
                                   positions=None)
         self.assertEqual(200 + 2 - 100*2 + 2*1, instruction.jump_target)
 
         # Make sure cache entries are handled
-        instruction = Instruction(opname="SEND", opcode=dis.opmap["SEND"], arg=delta, argval=delta,
+        instruction = make_inst(opname="SEND", arg=delta, argval=delta,
                                   argrepr='', offset=10, start_offset=10, starts_line=True, line_number=1, label=None,
                                   positions=None)
         self.assertEqual(10 + 2 + 1*2 + 100*2, instruction.jump_target)
@@ -1987,6 +2185,22 @@ class InstructionTests(InstructionTestCase):
         self.assertEqual(f(opcode.opmap["SET_FUNCTION_ATTRIBUTE"], 2, *args), (2, 'kwdefaults'))
         self.assertEqual(f(opcode.opmap["BINARY_OP"], 3, *args), (3, '<<'))
         self.assertEqual(f(opcode.opmap["CALL_INTRINSIC_1"], 2, *args), (2, 'INTRINSIC_IMPORT_STAR'))
+
+    def test_custom_arg_resolver(self):
+        class MyArgResolver(dis.ArgResolver):
+            def offset_from_jump_arg(self, op, arg, offset):
+                return arg + 1
+
+            def get_label_for_offset(self, offset):
+                return 2 * offset
+
+        def f(opcode, oparg, offset, *init_args):
+            arg_resolver = MyArgResolver(*init_args)
+            return arg_resolver.get_argval_argrepr(opcode, oparg, offset)
+        offset = 42
+        self.assertEqual(f(opcode.opmap["JUMP_BACKWARD"], 1, offset), (2, 'to L4'))
+        self.assertEqual(f(opcode.opmap["SETUP_FINALLY"], 2, offset), (3, 'to L6'))
+
 
     def get_instructions(self, code):
         return dis._get_instructions_bytes(code)
@@ -2138,20 +2352,20 @@ class BytecodeTests(InstructionTestCase, DisTestBase):
 class TestBytecodeTestCase(BytecodeTestCase):
     def test_assert_not_in_with_op_not_in_bytecode(self):
         code = compile("a = 1", "<string>", "exec")
-        self.assertInBytecode(code, "LOAD_CONST", 1)
+        self.assertInBytecode(code, "LOAD_SMALL_INT", 1)
         self.assertNotInBytecode(code, "LOAD_NAME")
         self.assertNotInBytecode(code, "LOAD_NAME", "a")
 
     def test_assert_not_in_with_arg_not_in_bytecode(self):
         code = compile("a = 1", "<string>", "exec")
-        self.assertInBytecode(code, "LOAD_CONST")
-        self.assertInBytecode(code, "LOAD_CONST", 1)
+        self.assertInBytecode(code, "LOAD_SMALL_INT")
+        self.assertInBytecode(code, "LOAD_SMALL_INT", 1)
         self.assertNotInBytecode(code, "LOAD_CONST", 2)
 
     def test_assert_not_in_with_arg_in_bytecode(self):
         code = compile("a = 1", "<string>", "exec")
         with self.assertRaises(AssertionError):
-            self.assertNotInBytecode(code, "LOAD_CONST", 1)
+            self.assertNotInBytecode(code, "LOAD_SMALL_INT", 1)
 
 class TestFinderMethods(unittest.TestCase):
     def test__find_imports(self):
@@ -2271,8 +2485,122 @@ def _unroll_caches_as_Instructions(instrs, show_caches=False):
                 else:
                     argrepr = ""
 
-                yield Instruction("CACHE", CACHE, 0, None, argrepr, offset, offset,
-                                  False, None, None, instr.positions)
+                yield make_inst("CACHE", 0, None, argrepr, offset, offset,
+                                False, None, None, instr.positions)
+
+
+class TestDisCLI(unittest.TestCase):
+
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
+
+    @staticmethod
+    def text_normalize(string):
+        """Dedent *string* and strip it from its surrounding whitespaces.
+
+        This method is used by the other utility functions so that any
+        string to write or to match against can be freely indented.
+        """
+        return textwrap.dedent(string).strip()
+
+    def set_source(self, content):
+        with open(self.filename, 'w') as fp:
+            fp.write(self.text_normalize(content))
+
+    def invoke_dis(self, *flags):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            dis.main(args=[*flags, self.filename])
+        return self.text_normalize(output.getvalue())
+
+    def check_output(self, source, expect, *flags):
+        with self.subTest(source=source, flags=flags):
+            self.set_source(source)
+            res = self.invoke_dis(*flags)
+            expect = self.text_normalize(expect)
+            self.assertListEqual(res.splitlines(), expect.splitlines())
+
+    def test_invocation(self):
+        # test various combinations of parameters
+        base_flags = [
+            ('-C', '--show-caches'),
+            ('-O', '--show-offsets'),
+            ('-P', '--show-positions'),
+            ('-S', '--specialized'),
+        ]
+
+        self.set_source('''
+            def f():
+                print(x)
+                return None
+        ''')
+
+        for r in range(1, len(base_flags) + 1):
+            for choices in itertools.combinations(base_flags, r=r):
+                for args in itertools.product(*choices):
+                    with self.subTest(args=args[1:]):
+                        _ = self.invoke_dis(*args)
+
+        with self.assertRaises(SystemExit):
+            # suppress argparse error message
+            with contextlib.redirect_stderr(io.StringIO()):
+                _ = self.invoke_dis('--unknown')
+
+    def test_show_cache(self):
+        # test 'python -m dis -C/--show-caches'
+        source = 'print()'
+        expect = '''
+            0           RESUME                   0
+
+            1           LOAD_NAME                0 (print)
+                        PUSH_NULL
+                        CALL                     0
+                        CACHE                    0 (counter: 0)
+                        CACHE                    0 (func_version: 0)
+                        CACHE                    0
+                        POP_TOP
+                        LOAD_CONST               0 (None)
+                        RETURN_VALUE
+        '''
+        for flag in ['-C', '--show-caches']:
+            self.check_output(source, expect, flag)
+
+    def test_show_offsets(self):
+        # test 'python -m dis -O/--show-offsets'
+        source = 'pass'
+        expect = '''
+            0          0       RESUME                   0
+
+            1          2       LOAD_CONST               0 (None)
+                       4       RETURN_VALUE
+        '''
+        for flag in ['-O', '--show-offsets']:
+            self.check_output(source, expect, flag)
+
+    def test_show_positions(self):
+        # test 'python -m dis -P/--show-positions'
+        source = 'pass'
+        expect = '''
+            0:0-1:0            RESUME                   0
+
+            1:0-1:4            LOAD_CONST               0 (None)
+            1:0-1:4            RETURN_VALUE
+        '''
+        for flag in ['-P', '--show-positions']:
+            self.check_output(source, expect, flag)
+
+    def test_specialized_code(self):
+        # test 'python -m dis -S/--specialized'
+        source = 'pass'
+        expect = '''
+            0           RESUME                   0
+
+            1           LOAD_CONST               0 (None)
+                        RETURN_VALUE
+        '''
+        for flag in ['-S', '--specialized']:
+            self.check_output(source, expect, flag)
 
 
 if __name__ == "__main__":

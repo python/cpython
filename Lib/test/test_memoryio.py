@@ -265,8 +265,8 @@ class MemoryTestMixin:
         memio = self.ioclass(buf * 10)
 
         self.assertEqual(iter(memio), memio)
-        self.assertTrue(hasattr(memio, '__iter__'))
-        self.assertTrue(hasattr(memio, '__next__'))
+        self.assertHasAttr(memio, '__iter__')
+        self.assertHasAttr(memio, '__next__')
         i = 0
         for line in memio:
             self.assertEqual(line, buf)
@@ -801,7 +801,7 @@ class CBytesIOTest(PyBytesIOTest):
 
     def _test_cow_mutation(self, mutation):
         # Common code for all BytesIO copy-on-write mutation tests.
-        imm = b' ' * 1024
+        imm = (' ' * 1024).encode("ascii")
         old_rc = sys.getrefcount(imm)
         memio = self.ioclass(imm)
         self.assertEqual(sys.getrefcount(imm), old_rc + 1)

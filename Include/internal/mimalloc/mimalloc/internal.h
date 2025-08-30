@@ -10,12 +10,12 @@ terms of the MIT license. A copy of the license can be found in the file
 
 
 // --------------------------------------------------------------------------
-// This file contains the interal API's of mimalloc and various utility
+// This file contains the internal API's of mimalloc and various utility
 // functions and macros.
 // --------------------------------------------------------------------------
 
-#include "mimalloc/types.h"
-#include "mimalloc/track.h"
+#include "types.h"
+#include "track.h"
 
 #if (MI_DEBUG>0)
 #define mi_trace_message(...)  _mi_trace_message(__VA_ARGS__)
@@ -120,6 +120,8 @@ void       _mi_segment_page_free(mi_page_t* page, bool force, mi_segments_tld_t*
 void       _mi_segment_page_abandon(mi_page_t* page, mi_segments_tld_t* tld);
 bool       _mi_segment_try_reclaim_abandoned( mi_heap_t* heap, bool try_all, mi_segments_tld_t* tld);
 void       _mi_segment_thread_collect(mi_segments_tld_t* tld);
+bool       _mi_abandoned_pool_visit_blocks(mi_abandoned_pool_t* pool, uint8_t page_tag, bool visit_blocks, mi_block_visit_fun* visitor, void* arg);
+
 
 #if MI_HUGE_PAGE_ABANDON
 void       _mi_segment_huge_page_free(mi_segment_t* segment, mi_page_t* page, mi_block_t* block);
@@ -155,12 +157,14 @@ size_t     _mi_bin_size(uint8_t bin);           // for stats
 uint8_t    _mi_bin(size_t size);                // for stats
 
 // "heap.c"
-void       _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id);
+void       _mi_heap_init_ex(mi_heap_t* heap, mi_tld_t* tld, mi_arena_id_t arena_id, bool no_reclaim, uint8_t tag);
 void       _mi_heap_destroy_pages(mi_heap_t* heap);
 void       _mi_heap_collect_abandon(mi_heap_t* heap);
 void       _mi_heap_set_default_direct(mi_heap_t* heap);
 bool       _mi_heap_memid_is_suitable(mi_heap_t* heap, mi_memid_t memid);
 void       _mi_heap_unsafe_destroy_all(void);
+void       _mi_heap_area_init(mi_heap_area_t* area, mi_page_t* page);
+bool       _mi_heap_area_visit_blocks(const mi_heap_area_t* area, mi_page_t *page, mi_block_visit_fun* visitor, void* arg);
 
 // "stats.c"
 void       _mi_stats_done(mi_stats_t* stats);
@@ -630,10 +634,10 @@ static inline mi_block_t* mi_block_nextx( const void* null, const mi_block_t* bl
   mi_track_mem_defined(block,sizeof(mi_block_t));
   mi_block_t* next;
   #ifdef MI_ENCODE_FREELIST
-  next = (mi_block_t*)mi_ptr_decode(null, block->next, keys);
+  next = (mi_block_t*)mi_ptr_decode(null, mi_atomic_load_relaxed((_Atomic(mi_encoded_t)*)&block->next), keys);
   #else
   MI_UNUSED(keys); MI_UNUSED(null);
-  next = (mi_block_t*)block->next;
+  next = (mi_block_t*)mi_atomic_load_relaxed((_Atomic(mi_encoded_t)*)&block->next);
   #endif
   mi_track_mem_noaccess(block,sizeof(mi_block_t));
   return next;
@@ -642,10 +646,10 @@ static inline mi_block_t* mi_block_nextx( const void* null, const mi_block_t* bl
 static inline void mi_block_set_nextx(const void* null, mi_block_t* block, const mi_block_t* next, const uintptr_t* keys) {
   mi_track_mem_undefined(block,sizeof(mi_block_t));
   #ifdef MI_ENCODE_FREELIST
-  block->next = mi_ptr_encode(null, next, keys);
+  mi_atomic_store_relaxed(&block->next, mi_ptr_encode(null, next, keys));
   #else
   MI_UNUSED(keys); MI_UNUSED(null);
-  block->next = (mi_encoded_t)next;
+  mi_atomic_store_relaxed(&block->next, (mi_encoded_t)next);
   #endif
   mi_track_mem_noaccess(block,sizeof(mi_block_t));
 }

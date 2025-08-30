@@ -1,1 +1,0 @@
-Introduce ``Tools/wasm/wasi.py`` to simplify doing a WASI build.

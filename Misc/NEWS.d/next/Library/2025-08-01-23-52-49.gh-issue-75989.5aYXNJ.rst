@@ -1,0 +1,3 @@
+:func:`tarfile.TarFile.extractall` and :func:`tarfile.TarFile.extract` now
+overwrite symlinks when extracting hardlinks.
+(Contributed by Alexander Enrique Urieles Nieto in :gh:`75989`.)
