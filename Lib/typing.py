@@ -256,9 +256,17 @@ def _type_repr(obj):
     return _lazy_annotationlib.type_repr(obj)
 
 
-def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
+def _collect_type_parameters(
+    args,
+    *,
+    enforce_default_ordering: bool = True,
+    validate_all: bool = False,
+):
     """Collect all type parameters in args
     in order of first appearance (lexicographic order).
+
+    Having an explicit `Generic` or `Protocol` base class determines
+    the exact parameter order.
 
     For example::
 
@@ -266,6 +274,9 @@ def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
         >>> T = TypeVar('T')
         >>> _collect_type_parameters((T, Callable[P, T]))
         (~T, ~P)
+        >>> _collect_type_parameters((list[T], Generic[P, T]))
+        (~P, ~T)
+
     """
     # required type parameter cannot appear after parameter with default
     default_encountered = False
@@ -297,6 +308,17 @@ def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
                                         ' follows type parameter with a default')
 
                 parameters.append(t)
+        elif (
+            not validate_all
+            and isinstance(t, _GenericAlias)
+            and t.__origin__ in (Generic, Protocol)
+        ):
+            # If we see explicit `Generic[...]` or `Protocol[...]` base classes,
+            # we need to just copy them as-is.
+            # Unless `validate_all` is passed, in this case it means that
+            # we are doing a validation of `Generic` subclasses,
+            # then we collect all unique parameters to be able to inspect them.
+            parameters = t.__parameters__
         else:
             if _is_unpacked_typevartuple(t):
                 type_var_tuple_encountered = True
@@ -431,26 +453,14 @@ def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
     warnings.warn(depr_message, category=DeprecationWarning, stacklevel=3)
 
 
-class _Sentinel:
-    __slots__ = ()
-    def __repr__(self):
-        return '<sentinel>'
-
-
-_sentinel = _Sentinel()
-
-
-def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=frozenset(),
-               format=None, owner=None):
+def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
+               format=None, owner=None, parent_fwdref=None):
     """Evaluate all forward references in the given type t.
 
     For use of globalns and localns see the docstring for get_type_hints().
     recursive_guard is used to prevent infinite recursion with a recursive
     ForwardRef.
     """
-    if type_params is _sentinel:
-        _deprecation_warning_for_no_type_params_passed("typing._eval_type")
-        type_params = ()
     if isinstance(t, _lazy_annotationlib.ForwardRef):
         # If the forward_ref has __forward_module__ set, evaluate() infers the globals
         # from the module, and it will probably pick better than the globals we have here.
@@ -462,7 +472,7 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
     if isinstance(t, (_GenericAlias, GenericAlias, Union)):
         if isinstance(t, GenericAlias):
             args = tuple(
-                _make_forward_ref(arg) if isinstance(arg, str) else arg
+                _make_forward_ref(arg, parent_fwdref=parent_fwdref) if isinstance(arg, str) else arg
                 for arg in t.__args__
             )
         else:
@@ -942,7 +952,12 @@ def TypeIs(self, parameters):
     return _GenericAlias(self, (item,))
 
 
-def _make_forward_ref(code, **kwargs):
+def _make_forward_ref(code, *, parent_fwdref=None, **kwargs):
+    if parent_fwdref is not None:
+        if parent_fwdref.__forward_module__ is not None:
+            kwargs['module'] = parent_fwdref.__forward_module__
+        if parent_fwdref.__owner__ is not None:
+            kwargs['owner'] = parent_fwdref.__owner__
     forward_ref = _lazy_annotationlib.ForwardRef(code, **kwargs)
     # For compatibility, eagerly compile the forwardref's code.
     forward_ref.__forward_code__
@@ -1007,6 +1022,7 @@ def evaluate_forward_ref(
         recursive_guard=_recursive_guard | {forward_ref.__forward_arg__},
         format=format,
         owner=owner,
+        parent_fwdref=forward_ref,
     )
 
 
@@ -1156,20 +1172,22 @@ def _generic_init_subclass(cls, *args, **kwargs):
     if error:
         raise TypeError("Cannot inherit from plain Generic")
     if '__orig_bases__' in cls.__dict__:
-        tvars = _collect_type_parameters(cls.__orig_bases__)
+        tvars = _collect_type_parameters(cls.__orig_bases__, validate_all=True)
         # Look for Generic[T1, ..., Tn].
         # If found, tvars must be a subset of it.
         # If not found, tvars is it.
         # Also check for and reject plain Generic,
         # and reject multiple Generic[...].
         gvars = None
+        basename = None
         for base in cls.__orig_bases__:
             if (isinstance(base, _GenericAlias) and
-                    base.__origin__ is Generic):
+                    base.__origin__ in (Generic, Protocol)):
                 if gvars is not None:
                     raise TypeError(
                         "Cannot inherit from Generic[...] multiple times.")
                 gvars = base.__parameters__
+                basename = base.__origin__.__name__
         if gvars is not None:
             tvarset = set(tvars)
             gvarset = set(gvars)
@@ -1177,7 +1195,7 @@ def _generic_init_subclass(cls, *args, **kwargs):
                 s_vars = ', '.join(str(t) for t in tvars if t not in gvarset)
                 s_args = ', '.join(str(g) for g in gvars)
                 raise TypeError(f"Some type variables ({s_vars}) are"
-                                f" not listed in Generic[{s_args}]")
+                                f" not listed in {basename}[{s_args}]")
             tvars = gvars
     cls.__parameters__ = tuple(tvars)
 
@@ -2342,10 +2360,13 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 # *base_globals* first rather than *base_locals*.
                 # This only affects ForwardRefs.
                 base_globals, base_locals = base_locals, base_globals
+            type_params = base.__type_params__
+            base_globals, base_locals = _add_type_params_to_scope(
+                type_params, base_globals, base_locals, True)
             for name, value in ann.items():
                 if isinstance(value, str):
                     value = _make_forward_ref(value, is_argument=False, is_class=True)
-                value = _eval_type(value, base_globals, base_locals, base.__type_params__,
+                value = _eval_type(value, base_globals, base_locals, (),
                                    format=format, owner=obj)
                 if value is None:
                     value = type(None)
@@ -2381,6 +2402,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
     elif localns is None:
         localns = globalns
     type_params = getattr(obj, "__type_params__", ())
+    globalns, localns = _add_type_params_to_scope(type_params, globalns, localns, False)
     for name, value in hints.items():
         if isinstance(value, str):
             # class-level forward refs were handled above, this must be either
@@ -2390,11 +2412,25 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        value = _eval_type(value, globalns, localns, type_params, format=format, owner=obj)
+        value = _eval_type(value, globalns, localns, (), format=format, owner=obj)
         if value is None:
             value = type(None)
         hints[name] = value
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
+
+
+# Add type parameters to the globals and locals scope. This is needed for
+# compatibility.
+def _add_type_params_to_scope(type_params, globalns, localns, is_class):
+    if not type_params:
+        return globalns, localns
+    globalns = dict(globalns)
+    localns = dict(localns)
+    for param in type_params:
+        if not is_class or param.__name__ not in globalns:
+            globalns[param.__name__] = param
+            localns.pop(param.__name__, None)
+    return globalns, localns
 
 
 def _strip_annotations(t):

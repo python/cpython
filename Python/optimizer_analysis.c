@@ -28,6 +28,7 @@
 #include "pycore_range.h"
 #include "pycore_unicodeobject.h"
 #include "pycore_ceval.h"
+#include "pycore_floatobject.h"
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -483,13 +484,10 @@ optimize_uops(
     _Py_uop_abstractcontext_init(ctx);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
-        return -1;
+        return 0;
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
-    ctx->done = false;
-    ctx->out_of_space = false;
-    ctx->contradiction = false;
 
     _PyUOpInstruction *this_instr = NULL;
     for (int i = 0; !ctx->done; i++) {
