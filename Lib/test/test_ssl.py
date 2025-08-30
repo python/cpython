@@ -51,6 +51,8 @@ IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
 CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
+CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
+CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
 
 PROTOCOL_TO_TLS_VERSION = {}
@@ -294,7 +296,8 @@ def test_wrap_socket(sock, *,
 USE_SAME_TEST_CONTEXT = False
 _TEST_CONTEXT = None
 
-def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
+def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True,
+                    client_cert=None):
     """Create context
 
     client_context, server_context, hostname = testing_context()
@@ -320,6 +323,10 @@ def testing_context(server_cert=SIGNED_CERTFILE, *, server_chain=True):
     server_context.load_cert_chain(server_cert)
     if server_chain:
         server_context.load_verify_locations(SIGNING_CA)
+
+    if client_cert:
+        client_context.load_cert_chain(client_cert)
+        server_context.verify_mode = ssl.CERT_REQUIRED
 
     if USE_SAME_TEST_CONTEXT:
         if _TEST_CONTEXT is not None:
@@ -989,6 +996,22 @@ class ContextTests(unittest.TestCase):
         # By default, only return official IANA names.
         self.assertNotIn('P-256', ctx.get_groups())
         self.assertIn('P-256', ctx.get_groups(include_aliases=True))
+
+    def test_set_sigalgs(self):
+        ctx = ssl.create_default_context()
+
+        self.assertIsNone(ctx.set_client_sigalgs('rsa_pss_rsae_sha256'))
+        self.assertIsNone(ctx.set_server_sigalgs('rsa_pss_rsae_sha256'))
+
+        self.assertRaises(ssl.SSLError, ctx.set_client_sigalgs,
+                          'rsa_pss_rsae_sha256:foo')
+        self.assertRaises(ssl.SSLError, ctx.set_server_sigalgs,
+                          'rsa_pss_rsae_sha256:foo')
+
+        # Ignoring unknown sigalgs is only supported since OpenSSL 3.3.
+        if CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS:
+            self.assertIsNone(ctx.set_client_sigalgs('rsa_pss_rsae_sha256:?foo'))
+            self.assertIsNone(ctx.set_server_sigalgs('rsa_pss_rsae_sha256:?foo'))
 
     def test_options(self):
         # Test default SSLContext options
@@ -2814,6 +2837,9 @@ def server_params_test(client_context, server_context, indata=b"FOO\n",
             })
             if CAN_GET_SELECTED_OPENSSL_GROUP:
                 stats.update({'group': s.group()})
+            if CAN_GET_SELECTED_OPENSSL_SIGALG:
+                stats.update({'client_sigalg': s.client_sigalg()})
+                stats.update({'server_sigalg': s.server_sigalg()})
             s.close()
         stats['server_alpn_protocols'] = server.selected_alpn_protocols
         stats['server_shared_ciphers'] = server.shared_ciphers
@@ -4268,6 +4294,63 @@ class ThreadedTests(unittest.TestCase):
         client_context.set_groups("prime256v1")
         server_context.set_groups("secp384r1")
         server_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        with self.assertRaises(ssl.SSLError):
+            server_params_test(client_context, server_context,
+                               chatty=True, connectionchatty=True,
+                               sni_name=hostname)
+
+    def test_client_sigalgs(self):
+        # no mutual auth, so cient_sigalg should be None
+        client_context, server_context, hostname = testing_context()
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+        if CAN_GET_SELECTED_OPENSSL_SIGALG:
+            self.assertIsNone(stats['client_sigalg'])
+
+        # server auto, client rsa_pss_rsae_sha384
+        client_context, server_context, hostname = \
+            testing_context(client_cert=SIGNED_CERTFILE)
+        client_context.set_client_sigalgs("rsa_pss_rsae_sha384")
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+        if CAN_GET_SELECTED_OPENSSL_SIGALG:
+            self.assertEqual(stats['client_sigalg'], "rsa_pss_rsae_sha384")
+
+        # server / client sigalg mismatch
+        client_context, server_context, hostname = \
+            testing_context(client_cert=SIGNED_CERTFILE)
+        client_context.set_client_sigalgs("rsa_pss_rsae_sha256")
+        server_context.set_client_sigalgs("rsa_pss_rsae_sha384")
+        with self.assertRaises(ssl.SSLError):
+            server_params_test(client_context, server_context,
+                               chatty=True, connectionchatty=True,
+                               sni_name=hostname)
+
+    def test_server_sigalgs(self):
+        # server rsa_pss_rsae_sha384, client auto
+        client_context, server_context, hostname = testing_context()
+        server_context.set_server_sigalgs("rsa_pss_rsae_sha384")
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+        if CAN_GET_SELECTED_OPENSSL_SIGALG:
+            self.assertEqual(stats['server_sigalg'], "rsa_pss_rsae_sha384")
+
+        # server auto, client rsa_pss_rsae_sha384
+        client_context, server_context, hostname = testing_context()
+        client_context.set_server_sigalgs("rsa_pss_rsae_sha384")
+        stats = server_params_test(client_context, server_context,
+                                   chatty=True, connectionchatty=True,
+                                   sni_name=hostname)
+        if CAN_GET_SELECTED_OPENSSL_SIGALG:
+            self.assertEqual(stats['server_sigalg'], "rsa_pss_rsae_sha384")
+
+        # server / client sigalg mismatch
+        client_context, server_context, hostname = testing_context()
+        client_context.set_server_sigalgs("rsa_pss_rsae_sha256")
+        server_context.set_server_sigalgs("rsa_pss_rsae_sha384")
         with self.assertRaises(ssl.SSLError):
             server_params_test(client_context, server_context,
                                chatty=True, connectionchatty=True,

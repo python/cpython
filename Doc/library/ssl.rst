@@ -1297,6 +1297,22 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: next
 
+.. method:: SSLSocket.client_sigalg()
+
+   Return the signature algorithm used for performing certificate-based client
+   authentication on this connection. If no connection has been established
+   or client authentication didn't occur, this method returns ``None``.
+
+   .. versionadded:: next
+
+.. method:: SSLSocket.server_sigalg()
+
+   Return the signature algorithm used by the server to complete the TLS
+   handshake on this connection. If no connection has been established
+   or the cipher suite has no signature, this method returns ``None``.
+
+   .. versionadded:: next
+
 .. method:: SSLSocket.compression()
 
    Return the compression algorithm being used as a string, or ``None``
@@ -1722,6 +1738,34 @@ to speed up repeated connections from the same clients.
 
       When connected, the :meth:`SSLSocket.group` method of SSL sockets will
       return the group used for key agreement on that connection.
+
+   .. versionadded:: next
+
+.. method:: SSLContext.set_client_sigalgs(sigalgs)
+
+   Set the signature algorithms allowed for certificate-based client
+   authentication. It should be a string in the `OpenSSL sigalgs list format
+   <https://docs.openssl.org/master/man3/SSL_CTX_set1_client_sigalgs_list/>`_.
+
+   .. note::
+
+      When connected, the :meth:`SSLSocket.client_sigalg` method of SSL
+      sockets will return the signature algorithm used for performing
+      certificate-based client authentication on that connection.
+
+   .. versionadded:: next
+
+.. method:: SSLContext.set_server_sigalgs(sigalgs)
+
+   Set the signature algorithms allowed for the server to complete the TLS
+   handshake. It should be a string in the `OpenSSL sigalgs list format
+   <https://docs.openssl.org/master/man3/SSL_CTX_set1_sigalgs_list/>`_.
+
+   .. note::
+
+      When connected, the :meth:`SSLSocket.server_sigalg` method of SSL
+      sockets will return the signature algorithm used by the server to
+      complete the TLS handshake on that connection.
 
    .. versionadded:: next
 

@@ -2202,6 +2202,70 @@ _ssl__SSLSocket_group_impl(PySSLSocket *self)
 
 /*[clinic input]
 @critical_section
+_ssl._SSLSocket.client_sigalg
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_client_sigalg_impl(PySSLSocket *self)
+/*[clinic end generated code: output=499dd7fbf021a47b input=a0d9696b5414c627]*/
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30500000L
+    int ret;
+    const char *sigalg;
+
+    if (self->ssl == NULL) {
+        Py_RETURN_NONE;
+    }
+    if (self->socket_type == PY_SSL_CLIENT) {
+        ret = SSL_get0_signature_name(self->ssl, &sigalg);
+    } else {
+        ret = SSL_get0_peer_signature_name(self->ssl, &sigalg);
+    }
+    if (ret == 0) {
+        Py_RETURN_NONE;
+    }
+    return PyUnicode_DecodeFSDefault(sigalg);
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting sig algorithms requires OpenSSL 3.5 or later.");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLSocket.server_sigalg
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_server_sigalg_impl(PySSLSocket *self)
+/*[clinic end generated code: output=c508a766a8e275dc input=9063e562a1e6b946]*/
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30500000L
+    int ret;
+    const char *sigalg;
+
+    if (self->ssl == NULL) {
+        Py_RETURN_NONE;
+    }
+    if (self->socket_type == PY_SSL_CLIENT) {
+        ret = SSL_get0_peer_signature_name(self->ssl, &sigalg);
+    } else {
+        ret = SSL_get0_signature_name(self->ssl, &sigalg);
+    }
+    if (ret == 0) {
+        Py_RETURN_NONE;
+    }
+    return PyUnicode_DecodeFSDefault(sigalg);
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting sig algorithms requires OpenSSL 3.5 or later.");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+@critical_section
 _ssl._SSLSocket.version
 [clinic start generated code]*/
 
@@ -3276,6 +3340,8 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_GROUP_METHODDEF
+    _SSL__SSLSOCKET_CLIENT_SIGALG_METHODDEF
+    _SSL__SSLSOCKET_SERVER_SIGALG_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
     _SSL__SSLSOCKET_VERSION_METHODDEF
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
@@ -3759,6 +3825,44 @@ error:
                     "Getting implemented groups requires OpenSSL 3.5 or later.");
     return NULL;
 #endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.set_client_sigalgs
+    sigalgslist: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist)
+/*[clinic end generated code: output=f4f5be160a29c7d6 input=500d853ce9fd94ff]*/
+{
+    if (!SSL_CTX_set1_client_sigalgs_list(self->ctx, sigalgslist)) {
+        _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.set_server_sigalgs
+    sigalgslist: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_server_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist)
+/*[clinic end generated code: output=31ecb1d310285644 input=653b752e4f8d801b]*/
+{
+    if (!SSL_CTX_set1_sigalgs_list(self->ctx, sigalgslist)) {
+        _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static int
@@ -5616,6 +5720,8 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT_SET_CIPHERS_METHODDEF
     _SSL__SSLCONTEXT_SET_CIPHERSUITES_METHODDEF
     _SSL__SSLCONTEXT_SET_GROUPS_METHODDEF
+    _SSL__SSLCONTEXT_SET_CLIENT_SIGALGS_METHODDEF
+    _SSL__SSLCONTEXT_SET_SERVER_SIGALGS_METHODDEF
     _SSL__SSLCONTEXT__SET_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF
     _SSL__SSLCONTEXT_LOAD_DH_PARAMS_METHODDEF
