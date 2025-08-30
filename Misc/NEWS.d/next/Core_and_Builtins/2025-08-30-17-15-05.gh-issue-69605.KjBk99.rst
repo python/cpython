@@ -1,0 +1,1 @@
+Fix some standard library sumbodules missing from the :term:`REPL` auto-completion of imports.
