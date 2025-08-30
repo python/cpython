@@ -8,6 +8,7 @@ import _contextvars
 from time import monotonic as _time
 from _weakrefset import WeakSet
 from itertools import count as _count
+from collections.abc import Iterator
 try:
     from _collections import deque as _deque
 except ImportError:
@@ -42,7 +43,6 @@ _ThreadHandle = _thread._ThreadHandle
 get_ident = _thread.get_ident
 _get_main_thread_ident = _thread._get_main_thread_ident
 _is_main_interpreter = _thread._is_main_interpreter
-iter_locked = _thread.iter_locked
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -1633,3 +1633,13 @@ def _after_fork():
 
 if hasattr(_os, "register_at_fork"):
     _os.register_at_fork(after_in_child=_after_fork)
+
+class iter_locked(Iterator):
+    def __init__(self, it):
+        """Convert an iterable into an iterator that performs iteration using locks """
+        self._it = iter(it)
+        self._lock = RLock()
+
+    def __next__(self):
+        with self._lock:
+            return next(self._it)
