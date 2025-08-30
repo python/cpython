@@ -53,6 +53,9 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
+            # Exclude cache files from digest computation to ensure reproducible builds.
+            if dirpath.endswith("__pycache__"):
+                continue
             for filename in filenames:
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
