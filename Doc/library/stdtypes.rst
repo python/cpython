@@ -3306,7 +3306,7 @@ arbitrary binary data.
 .. staticmethod:: bytes.maketrans(from, to, /)
                   bytearray.maketrans(from, to, /)
 
-   This static method returns a translation table usable for
+   This static method returns a translation table usable for bytearray or
    :meth:`bytes.translate` that will map each character in *from* into the
    character at the same position in *to*; *from* and *to* must both be
    :term:`bytes-like objects <bytes-like object>` and have the same length.
