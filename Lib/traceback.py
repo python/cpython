@@ -1732,16 +1732,16 @@ def _suggestion_message(exc_type, exc_value, exc_traceback):
             other_name = _compute_suggestion_error(
                 exc_value, exc_traceback, wrong_name
             )
-            maybe_builtin_import = (
+            maybe_stdlib_import = (
                 issubclass(exc_type, NameError)
                 and wrong_name in sys.stdlib_module_names
             )
             if not other_name:
-                if maybe_builtin_import:
+                if maybe_stdlib_import:
                     return f"Did you forget to import '{wrong_name}'?"
                 return None
             text = f"Did you mean: '{other_name}'?"
-            if maybe_builtin_import:
+            if maybe_stdlib_import:
                 return f"{text} Or did you forget to import '{wrong_name}'?"
             return text
     return None
