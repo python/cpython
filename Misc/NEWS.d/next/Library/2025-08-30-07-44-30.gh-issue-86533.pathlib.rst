@@ -1,3 +1,4 @@
-The :meth:`pathlib.Path.mkdir` method now has a *parent_mode* parameter to
-specify the mode for intermediate directories when creating parent directories,
-providing consistency with the new :func:`os.makedirs` *parent_mode* parameter.
+The :func:`os.makedirs` function and :meth:`pathlib.Path.mkdir` method now have
+a *parent_mode* parameter to specify the mode for intermediate directories when
+creating parent directories. This allows one to match the behavior from Python
+3.6 and earlier for :func:`os.makedirs`.
