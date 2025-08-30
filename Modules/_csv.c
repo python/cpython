@@ -1274,21 +1274,21 @@ csv_writerow(PyObject *op, PyObject *seq)
         }
 
         switch (dialect->quoting) {
-            case QUOTE_NONNUMERIC:
-                quoted = !PyNumber_Check(field);
-                break;
-            case QUOTE_ALL:
-                quoted = 1;
-                break;
-            case QUOTE_STRINGS:
-                quoted = !is_none && PyUnicode_Check(field);
-                break;
-            case QUOTE_NOTNULL:
-                quoted = !is_none;
-                break;
-            default: /* Default QUOTE_MINIMAL or other to minimal behavior */
-                quoted = 0;
-                break;
+        case QUOTE_NONNUMERIC:
+            quoted = !PyNumber_Check(field);
+            break;
+        case QUOTE_ALL:
+            quoted = 1;
+            break;
+        case QUOTE_STRINGS:
+            quoted = !is_none && PyUnicode_Check(field);
+            break;
+        case QUOTE_NOTNULL:
+            quoted = !is_none;
+            break;
+        default: /* Default QUOTE_MINIMAL or other to minimal behavior */
+            quoted = 0;
+            break;
         }
 
         if (is_none) {
