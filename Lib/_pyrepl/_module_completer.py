@@ -109,8 +109,8 @@ class ModuleCompleter:
                        if mod_info.ispkg and mod_info.name == segment]
             modules = self.iter_submodules(modules)
 
-        module_names = ([module.name for module in modules]
-                        + HARDCODED_SUBMODULES.get(path, []))
+        module_names = [module.name for module in modules]
+        module_names.extend(HARDCODED_SUBMODULES.get(path, ()))
         return [module_name for module_name in module_names
                 if self.is_suggestion_match(module_name, prefix)]
 
