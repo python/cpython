@@ -1760,6 +1760,9 @@ _encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
 #endif
         if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
             PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+#ifdef Py_GIL_DISABLED
+            Py_DECREF(item);
+#endif
             return -1;
         }
 
