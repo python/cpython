@@ -3616,6 +3616,25 @@ _ssl__SSLContext_set_ciphers_impl(PySSLContext *self, const char *cipherlist)
 
 /*[clinic input]
 @critical_section
+_ssl._SSLContext.set_ciphersuites
+    ciphersuites: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_ciphersuites_impl(PySSLContext *self,
+                                       const char *ciphersuites)
+/*[clinic end generated code: output=9915bec58e54d76d input=2afcc3693392be41]*/
+{
+    if (!SSL_CTX_set_ciphersuites(self->ctx, ciphersuites)) {
+        _setSSLError(get_state_ctx(self), "No cipher suite can be selected.", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+@critical_section
 _ssl._SSLContext.get_ciphers
 [clinic start generated code]*/
 
@@ -5595,6 +5614,7 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT__WRAP_SOCKET_METHODDEF
     _SSL__SSLCONTEXT__WRAP_BIO_METHODDEF
     _SSL__SSLCONTEXT_SET_CIPHERS_METHODDEF
+    _SSL__SSLCONTEXT_SET_CIPHERSUITES_METHODDEF
     _SSL__SSLCONTEXT_SET_GROUPS_METHODDEF
     _SSL__SSLCONTEXT__SET_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF
