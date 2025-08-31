@@ -392,7 +392,7 @@ BZ2Compressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    tp->tp_free((PyObject *)self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
@@ -704,7 +704,7 @@ BZ2Decompressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    tp->tp_free((PyObject *)self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
