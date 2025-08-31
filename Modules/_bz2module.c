@@ -352,13 +352,10 @@ _bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
     }
 
     assert(type != NULL && type->tp_alloc != NULL);
-    self = PyObject_GC_New(BZ2Compressor, type);
+    self = (BZ2Compressor *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-    /* Initialize the remaining fields (untouched by PyObject_GC_New()). */
-    const size_t offset = sizeof(struct { PyObject_HEAD });
-    memset((char *)self + offset, 0, sizeof(*self) - offset);
 
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
@@ -657,14 +654,11 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     BZ2Decompressor *self;
     int bzerror;
 
-    assert(type != NULL);
-    self = PyObject_GC_New(BZ2Decompressor, type);
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = (BZ2Decompressor *)type->tp_alloc(type, 0);
     if (self == NULL) {
         return NULL;
     }
-    /* Initialize the remaining fields (untouched by PyObject_GC_New()). */
-    const size_t offset = sizeof(struct { PyObject_HEAD });
-    memset((char *)self + offset, 0, sizeof(*self) - offset);
 
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
@@ -674,6 +668,9 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     }
 
     self->needs_input = 1;
+    self->bzs_avail_in_real = 0;
+    self->input_buffer = NULL;
+    self->input_buffer_size = 0;
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL)
         goto error;
