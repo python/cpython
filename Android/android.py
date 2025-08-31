@@ -739,10 +739,7 @@ def ci(context):
 
             # Arguments are similar to --fast-ci, but in single-process mode.
             launcher_args = ["--managed", "maxVersion", "-v"]
-            test_args = [
-                "--single-process", "--fail-env-changed", "--rerun", "--slowest",
-                "--verbose3", "-u", "all,-cpu", "--timeout=600"
-            ]
+            test_args = ["--fast-ci", "--single-process"]
             run(
                 ["./android.py", "test", *launcher_args, "--", *test_args],
                 cwd=temp_dir
