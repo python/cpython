@@ -2493,6 +2493,10 @@ class PathTest(PurePathTest):
         is_emscripten or is_wasi,
         "umask is not implemented on Emscripten/WASI."
     )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
     def test_mkdir_parents_umask(self):
         # Test that parent directories respect umask when parent_mode is not set
         p = self.cls(self.base, 'umasktest', 'child')
@@ -2509,6 +2513,14 @@ class PathTest(PurePathTest):
             finally:
                 os.umask(old_mask)
 
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
     def test_mkdir_with_parent_mode(self):
         # Test the parent_mode parameter
         p = self.cls(self.base, 'newdirPM', 'subdirPM')
@@ -2523,6 +2535,14 @@ class PathTest(PurePathTest):
             # Parent directory gets the parent_mode parameter
             self.assertEqual(p.parent.stat().st_mode & 0o777, 0o750)
 
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
     def test_mkdir_parent_mode_deep_hierarchy(self):
         # Test parent_mode with deep directory hierarchy
         p = self.cls(self.base, 'level1PM', 'level2PM', 'level3PM')
@@ -2542,6 +2562,10 @@ class PathTest(PurePathTest):
         is_emscripten or is_wasi,
         "umask is not implemented on Emscripten/WASI."
     )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
     def test_mkdir_parent_mode_overrides_umask(self):
         # Test that parent_mode overrides umask for parent directories
         p = self.cls(self.base, 'overridetest', 'child')
@@ -2559,6 +2583,14 @@ class PathTest(PurePathTest):
             finally:
                 os.umask(old_mask)
 
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "umask is not implemented on Emscripten/WASI."
+    )
+    @unittest.skipIf(
+        sys.platform == "android",
+        "Android filesystem may not honor requested permissions."
+    )
     def test_mkdir_parent_mode_same_as_mode(self):
         # Test setting parent_mode same as mode
         p = self.cls(self.base, 'samedirPM', 'subdirPM')
