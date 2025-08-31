@@ -2543,7 +2543,7 @@ features:
    raised if the target directory already exists.
 
    If *parent_mode* is not ``None``, it will be used as the mode for any
-   newly-created intermediate-level directories. Otherwise, intermediate
+   newly-created, intermediate-level directories. Otherwise, intermediate
    directories are created with the default permissions (respecting umask).
 
    .. note::
