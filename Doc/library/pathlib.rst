@@ -1505,7 +1505,7 @@ Creating files and directories
    *mode* into account (mimicking the POSIX ``mkdir -p`` command).
 
    If *parent_mode* is not ``None``, it will be used as the mode for any
-   newly-created intermediate-level directories when *parents* is true.
+   newly-created, intermediate-level directories when *parents* is true.
    Otherwise, intermediate directories are created with the default
    permissions (respecting umask).
 
