@@ -600,7 +600,7 @@ static inline Py_ssize_t
 _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
 { return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
-z// --- _Py_atomic_fence ------------------------------------------------------
+// --- _Py_atomic_fence ------------------------------------------------------
 
 static inline void
 _Py_atomic_fence_seq_cst(void)
