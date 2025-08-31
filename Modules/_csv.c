@@ -1350,8 +1350,12 @@ csv_writerow(PyObject *op, PyObject *seq)
             PyUnicodeWriter_Discard(writer);
             return NULL;
         }
-        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) goto error_after_iter;
-        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) goto error_after_iter;
+        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) {
+            goto error_after_iter;
+        }
+        if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) {
+            goto error_after_iter;
+        }
     }
 
     if (PyUnicodeWriter_WriteStr(writer, self->dialect->lineterminator) < 0) {
