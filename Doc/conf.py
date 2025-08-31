@@ -579,4 +579,4 @@ if 'create-social-cards' not in tags:  # noqa: F821
 # Options to adjust search results sorting
 # ----------------------------------------
 
-html_search_scorer = "search_scorer.js"
+html_search_scorer = "tools/static/search_scorer.js"
