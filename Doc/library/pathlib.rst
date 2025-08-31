@@ -1492,7 +1492,8 @@ Creating files and directories
       :meth:`~Path.write_bytes` methods are often used to create files.
 
 
-.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False, *, parent_mode=None)
+.. method:: Path.mkdir(mode=0o777, parents=False, exist_ok=False, *, \
+                       parent_mode=None)
 
    Create a new directory at this given path.  If *mode* is given, it is
    combined with the process's ``umask`` value to determine the file mode
