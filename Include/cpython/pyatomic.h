@@ -553,8 +553,6 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
     // XXX: The assertions below currently fail on Android ARM build.
     // In fact, assert(1 == 1) fails on that build.
 
-    assert(1 == 1);
-
     // assert(((uintptr_t)dest & (uintptr_t)(sizeof (void *) - 1)) == 0);
     // assert(((uintptr_t)src & (uintptr_t)(sizeof (void *) - 1)) == 0);
     // assert(n % (size_t)sizeof(void *) == 0);
