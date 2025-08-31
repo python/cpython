@@ -273,15 +273,13 @@ static compobject *
 newcompobject(PyTypeObject *type)
 {
     compobject *self;
-    self = PyObject_GC_New(compobject, type);
-    if (self == NULL) {
+    assert(type != NULL && type->tp_alloc != NULL);
+    self = _compobject_CAST(type->tp_alloc(type, 0));
+    if (self == NULL)
         return NULL;
-    }
-
-    /* Initialize the remaining fields (untouched by PyObject_GC_New()). */
-    const size_t offset = sizeof(struct { PyObject_HEAD });
-    memset((char *)self + offset, 0, sizeof(*self) - offset);
-
+    self->eof = 0;
+    self->is_initialised = 0;
+    self->zdict = NULL;
     self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unused_data == NULL) {
         goto error;
@@ -734,7 +732,7 @@ compobject_dealloc_impl(PyObject *op, int (*dealloc)(z_streamp))
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     Py_XDECREF(self->zdict);
-    PyObject_GC_Del(self);
+    type->tp_free(self);
     Py_DECREF(type);
 }
 
@@ -1404,7 +1402,7 @@ ZlibDecompressor_dealloc(PyObject *op)
     PyMem_Free(self->input_buffer);
     Py_CLEAR(self->unused_data);
     Py_CLEAR(self->zdict);
-    PyObject_GC_Del(self);
+    type->tp_free(self);
     Py_DECREF(type);
 }
 
@@ -1759,25 +1757,23 @@ static PyObject *
 zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
 /*[clinic end generated code: output=1065607df0d33baa input=9ebad0be6de226e2]*/
 {
+    assert(type != NULL && type->tp_alloc != NULL);
     zlibstate *state = PyType_GetModuleState(type);
-    ZlibDecompressor *self = PyObject_GC_New(ZlibDecompressor, type);
+    ZlibDecompressor *self = ZlibDecompressor_CAST(type->tp_alloc(type, 0));
     if (self == NULL) {
         return NULL;
     }
-
-    /* Initialize the remaining fields (untouched by PyObject_GC_New()). */
-    const size_t offset = sizeof(struct { PyObject_HEAD });
-    memset((char *)self + offset, 0, sizeof(*self) - offset);
-
+    self->eof = 0;
     self->needs_input = 1;
+    self->avail_in_real = 0;
+    self->input_buffer = NULL;
+    self->input_buffer_size = 0;
     self->zdict = Py_XNewRef(zdict);
-
     self->zst.opaque = NULL;
     self->zst.zalloc = PyZlib_Malloc;
     self->zst.zfree = PyZlib_Free;
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
-
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL) {
         goto error;
