@@ -371,7 +371,6 @@ _bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
     if (catch_bz2_error(bzerror))
         goto error;
 
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error:
@@ -389,7 +388,7 @@ BZ2Compressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -679,7 +678,6 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     if (catch_bz2_error(bzerror))
         goto error;
 
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error:
@@ -693,7 +691,8 @@ BZ2Decompressor_dealloc(PyObject *op)
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(op);
     BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
-    if(self->input_buffer != NULL) {
+
+    if (self->input_buffer != NULL) {
         PyMem_Free(self->input_buffer);
     }
     BZ2_bzDecompressEnd(&self->bzs);
@@ -701,7 +700,7 @@ BZ2Decompressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
