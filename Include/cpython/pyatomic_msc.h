@@ -1174,8 +1174,8 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
         void **end = dest_ + n / sizeof(void *);
 
         for (; dest_ != end; dest_++, src_++) {
-            *dest_ = *src_;
-            // *(void * volatile *)dest_ = *src_;
+            // *dest_ = *src_;
+            *(void * volatile *)dest_ = *src_;
         }
     }
 
@@ -1197,8 +1197,8 @@ _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
         void **end = dest_ + n / sizeof(void *);
 
         for (; dest_ != end; dest_++, src_++) {
-            *dest_ = *src_;
-            // *(void * volatile *)dest_ = *src_;
+            // *dest_ = *src_;
+            *(void * volatile *)dest_ = *src_;
         }
     }
     else if (dest > src) {
@@ -1208,8 +1208,8 @@ _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
         void **end = (void **)dest - 1;
 
         for (; dest_ != end; dest_--, src_--) {
-            *dest_ = *src_;
-            // *(void * volatile *)dest_ = *src_;
+            // *dest_ = *src_;
+            *(void * volatile *)dest_ = *src_;
         }
     }
 
