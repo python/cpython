@@ -1900,18 +1900,23 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
         """Test that all valid output formats are accepted."""
         valid_formats = ["pstats", "collapsed", "flamegraph"]
 
-        for fmt in valid_formats:
-            try:
-                # This will likely fail with permissions, but the format should be valid
-                profiling.sampling.sample.sample(
-                    os.getpid(),
-                    duration_sec=0.1,
-                    output_format=fmt,
-                    filename=f"test_{fmt}.out",
-                )
-            except (OSError, RuntimeError, PermissionError):
-                # Expected errors - we just want to test format validation
-                pass
+        tempdir = tempfile.TemporaryDirectory(delete=False)
+        self.addCleanup(lambda x: shutil.rmtree(x), tempdir.name)
+
+
+        with contextlib.chdir(tempdir.name):
+            for fmt in valid_formats:
+                try:
+                    # This will likely fail with permissions, but the format should be valid
+                    profiling.sampling.sample.sample(
+                        os.getpid(),
+                        duration_sec=0.1,
+                        output_format=fmt,
+                        filename=f"test_{fmt}.out",
+                    )
+                except (OSError, RuntimeError, PermissionError):
+                    # Expected errors - we just want to test format validation
+                    pass
 
 
 class TestSampleProfilerCLI(unittest.TestCase):
