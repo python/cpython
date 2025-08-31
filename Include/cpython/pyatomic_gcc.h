@@ -600,69 +600,6 @@ static inline Py_ssize_t
 _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
 { return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
-
-// // --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
-
-// // #include <string.h>
-
-// static inline void *
-// _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
-// {
-//     // assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
-//     // assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-//     // assert(n % sizeof(void *) == 0);
-
-//     // memcpy(dest, src, n);
-
-//     if (dest != src) {
-//         void **dest_ = (void **)dest;
-//         void **src_ = (void **)src;
-//         void **end = dest_ + n / sizeof(void *);
-
-//         for (; dest_ != end; dest_++, src_++) {
-//             // *dest_ = *src_;
-//             __atomic_store_n((void **)dest_, *src_, __ATOMIC_RELAXED);
-//         }
-//     }
-
-//     return dest;
-// }
-
-// static inline void *
-// _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
-// {
-//     // assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
-//     // assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-//     // assert(n % sizeof(void *) == 0);
-
-//     // memmove(dest, src, n);
-
-//     if (dest < src || dest >= (void *)((char *)src + n)) {
-//         void **dest_ = (void **)dest;
-//         void **src_ = (void **)src;
-//         void **end = dest_ + n / sizeof(void *);
-
-//         for (; dest_ != end; dest_++, src_++) {
-//             // *dest_ = *src_;
-//             __atomic_store_n((void **)dest_, *src_, __ATOMIC_RELAXED);
-//         }
-//     }
-//     else if (dest > src) {
-//         n = n / sizeof(void *) - 1;
-//         void **dest_ = (void **)dest + n;
-//         void **src_ = (void **)src + n;
-//         void **end = (void **)dest - 1;
-
-//         for (; dest_ != end; dest_--, src_--) {
-//             // *dest_ = *src_;
-//             __atomic_store_n((void **)dest_, *src_, __ATOMIC_RELAXED);
-//         }
-//     }
-
-//     return dest;
-// }
-
-
 // --- _Py_atomic_fence ------------------------------------------------------
 
 static inline void
