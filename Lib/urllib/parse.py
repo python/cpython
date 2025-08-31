@@ -92,7 +92,7 @@ _WHATWG_C0_CONTROL_OR_SPACE = '\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\
 _UNSAFE_URL_BYTES_TO_REMOVE = ['\t', '\r', '\n']
 
 # Allowed valid characters in parse_qsl
-_VALID_QUERY_CHARS = re.compile(r"^[A-Za-z0-9\-._~!$&'()*+,;=:@/?%]*$") 
+_VALID_QUERY_CHARS = re.compile(r"^[A-Za-z0-9\-._~!$&'()*+,;=:@/?%]*$")
 
 def clear_cache():
     """Clear internal performance caches. Undocumented; some tests want it."""
