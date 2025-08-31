@@ -169,9 +169,9 @@ PyDoc_STRVAR(_interpqueues_list_all__doc__,
 "list_all($module, /)\n"
 "--\n"
 "\n"
-"Return the list of IDs for all queues.\n"
+"Return the list of ID triples for all queues.\n"
 "\n"
-"Each corresponding default unbound op and fallback is also included.");
+"Each ID triple consists of (ID, default unbound op, default fallback).");
 
 #define _INTERPQUEUES_LIST_ALL_METHODDEF    \
     {"list_all", (PyCFunction)_interpqueues_list_all, METH_NOARGS, _interpqueues_list_all__doc__},
@@ -272,9 +272,8 @@ PyDoc_STRVAR(_interpqueues_get__doc__,
 "get($module, /, qid)\n"
 "--\n"
 "\n"
-"Return a new object from the data at the front of the queue.\n"
+"Return the (object, unbound op) from the front of the queue.\n"
 "\n"
-"The unbound op is also returned.\n"
 "If there is nothing to receive then raise QueueEmpty.");
 
 #define _INTERPQUEUES_GET_METHODDEF    \
@@ -759,4 +758,4 @@ _interpqueues__register_heap_types(PyObject *module, PyObject *const *args, Py_s
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=290f9d6c610289e2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=52face6bdf794fe1 input=a9049054013a1b77]*/

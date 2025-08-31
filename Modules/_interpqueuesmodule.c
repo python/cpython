@@ -1569,14 +1569,14 @@ _interpqueues_destroy_impl(PyObject *module, int64_t qid)
 /*[clinic input]
 _interpqueues.list_all
 
-Return the list of IDs for all queues.
+Return the list of ID triples for all queues.
 
-Each corresponding default unbound op and fallback is also included.
+Each ID triple consists of (ID, default unbound op, default fallback).
 [clinic start generated code]*/
 
 static PyObject *
 _interpqueues_list_all_impl(PyObject *module)
-/*[clinic end generated code: output=974280cb6442afdb input=ff9339d6385ed8ef]*/
+/*[clinic end generated code: output=974280cb6442afdb input=19495f02cbb38b33]*/
 {
     int64_t count = 0;
     struct queue_id_and_info *qids = _queues_list_all(&_globals.queues, &count);
@@ -1652,15 +1652,14 @@ _interpqueues_put_impl(PyObject *module, int64_t qid, PyObject *obj,
 _interpqueues.get
     qid: qidarg
 
-Return a new object from the data at the front of the queue.
+Return the (object, unbound op) from the front of the queue.
 
-The unbound op is also returned.
 If there is nothing to receive then raise QueueEmpty.
 [clinic start generated code]*/
 
 static PyObject *
 _interpqueues_get_impl(PyObject *module, int64_t qid)
-/*[clinic end generated code: output=b0988a0e29194f05 input=73a70333af3b1c31]*/
+/*[clinic end generated code: output=b0988a0e29194f05 input=c5bccbc409ad0190]*/
 {
     PyObject *obj = NULL;
     int unboundop = 0;
