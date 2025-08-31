@@ -1,4 +1,4 @@
-"""Tests for the sampling profiler (profile.sample)."""
+"""Tests for the sampling profiler (profiling.sampling)."""
 
 import contextlib
 import io
@@ -12,15 +12,15 @@ import tempfile
 import unittest
 from unittest import mock
 
-from profile.pstats_collector import PstatsCollector
-from profile.stack_collector import (
+from profiling.sampling.pstats_collector import PstatsCollector
+from profiling.sampling.stack_collector import (
     CollapsedStackCollector,
 )
 
 from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
-from test.support import requires_subprocess
+from test.support import requires_subprocess, is_emscripten
 
 PROCESS_VM_READV_SUPPORTED = False
 
@@ -32,8 +32,8 @@ except ImportError:
         "Test only runs when _remote_debugging is available"
     )
 else:
-    import profile.sample
-    from profile.sample import SampleProfiler
+    import profiling.sampling
+    from profiling.sampling.sample import SampleProfiler
 
 
 
@@ -472,7 +472,7 @@ class TestSampleProfiler(unittest.TestCase):
 
     def test_sample_profiler_initialization(self):
         """Test SampleProfiler initialization with various parameters."""
-        from profile.sample import SampleProfiler
+        from profiling.sampling.sample import SampleProfiler
 
         # Mock RemoteUnwinder to avoid permission issues
         with mock.patch(
@@ -498,7 +498,7 @@ class TestSampleProfiler(unittest.TestCase):
 
     def test_sample_profiler_sample_method_timing(self):
         """Test that the sample method respects duration and handles timing correctly."""
-        from profile.sample import SampleProfiler
+        from profiling.sampling.sample import SampleProfiler
 
         # Mock the unwinder to avoid needing a real process
         mock_unwinder = mock.MagicMock()
@@ -548,7 +548,7 @@ class TestSampleProfiler(unittest.TestCase):
 
     def test_sample_profiler_error_handling(self):
         """Test that the sample method handles errors gracefully."""
-        from profile.sample import SampleProfiler
+        from profiling.sampling.sample import SampleProfiler
 
         # Mock unwinder that raises errors
         mock_unwinder = mock.MagicMock()
@@ -612,7 +612,7 @@ class TestSampleProfiler(unittest.TestCase):
 
     def test_sample_profiler_missed_samples_warning(self):
         """Test that the profiler warns about missed samples when sampling is too slow."""
-        from profile.sample import SampleProfiler
+        from profiling.sampling.sample import SampleProfiler
 
         mock_unwinder = mock.MagicMock()
         mock_unwinder.get_stack_trace.return_value = [
@@ -698,7 +698,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_basic(self):
         """Test basic print_sampled_stats functionality."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         # Capture output
         with io.StringIO() as output:
@@ -720,7 +720,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_sorting(self):
         """Test different sorting options."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         # Test sort by calls
         with io.StringIO() as output:
@@ -753,7 +753,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_limit(self):
         """Test limiting output rows."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
@@ -782,7 +782,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_time_units(self):
         """Test proper time unit selection."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
@@ -812,7 +812,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_summary(self):
         """Test summary section generation."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
@@ -840,7 +840,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_no_summary(self):
         """Test disabling summary output."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
@@ -857,7 +857,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_empty_stats(self):
         """Test with empty stats."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         empty_stats = mock.MagicMock()
         empty_stats.stats = {}
@@ -873,7 +873,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_sample_percentage_sorting(self):
         """Test sample percentage sorting options."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         # Add a function with high sample percentage (more direct calls than func3's 200)
         self.mock_stats.stats[("expensive.py", 60, "expensive_func")] = (
@@ -900,7 +900,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_with_recursive_calls(self):
         """Test print_sampled_stats with recursive calls where nc != cc."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         # Create stats with recursive calls (nc != cc)
         recursive_stats = mock.MagicMock()
@@ -936,7 +936,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_with_zero_call_counts(self):
         """Test print_sampled_stats with zero call counts to trigger division protection."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         # Create stats with zero call counts
         zero_stats = mock.MagicMock()
@@ -964,7 +964,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_sort_by_name(self):
         """Test sort by function name option."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         with io.StringIO() as output:
             with mock.patch("sys.stdout", output):
@@ -1022,7 +1022,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_with_zero_time_functions(self):
         """Test summary sections with functions that have zero time."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         # Create stats with zero-time functions
         zero_time_stats = mock.MagicMock()
@@ -1060,7 +1060,7 @@ class TestPrintSampledStats(unittest.TestCase):
 
     def test_print_sampled_stats_with_malformed_qualified_names(self):
         """Test summary generation with function names that don't contain colons."""
-        from profile.sample import print_sampled_stats
+        from profiling.sampling.sample import print_sampled_stats
 
         # Create stats with function names that would create malformed qualified names
         malformed_stats = mock.MagicMock()
@@ -1451,7 +1451,7 @@ if __name__ == "__main__":
             mock.patch("sys.stdout", captured_output),
         ):
             try:
-                profile.sample.sample(
+                profiling.sampling.sample.sample(
                     proc.pid,
                     duration_sec=2,
                     sample_interval_usec=1000,  # 1ms
@@ -1483,7 +1483,7 @@ if __name__ == "__main__":
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
-                    profile.sample.sample(
+                    profiling.sampling.sample.sample(
                         proc.pid,
                         duration_sec=1,
                         filename=pstats_out.name,
@@ -1528,7 +1528,7 @@ if __name__ == "__main__":
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
-                    profile.sample.sample(
+                    profiling.sampling.sample.sample(
                         proc.pid,
                         duration_sec=1,
                         filename=collapsed_file.name,
@@ -1576,7 +1576,7 @@ if __name__ == "__main__":
             mock.patch("sys.stdout", captured_output),
         ):
             try:
-                profile.sample.sample(
+                profiling.sampling.sample.sample(
                     proc.pid,
                     duration_sec=1,
                     all_threads=True,
@@ -1595,7 +1595,7 @@ if __name__ == "__main__":
         script_file.flush()
         self.addCleanup(close_and_unlink, script_file)
 
-        test_args = ["profile.sample", "-d", "1", script_file.name]
+        test_args = ["profiling.sampling.sample", "-d", "1", script_file.name]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -1603,7 +1603,7 @@ if __name__ == "__main__":
             mock.patch("sys.stdout", captured_output),
         ):
             try:
-                profile.sample.main()
+                profiling.sampling.sample.main()
             except PermissionError:
                 self.skipTest("Insufficient permissions for remote profiling")
 
@@ -1627,7 +1627,7 @@ if __name__ == "__main__":
         with open(module_path, "w") as f:
             f.write(self.test_script)
 
-        test_args = ["profile.sample", "-d", "1", "-m", "test_module"]
+        test_args = ["profiling.sampling.sample", "-d", "1", "-m", "test_module"]
 
         with (
             mock.patch("sys.argv", test_args),
@@ -1637,7 +1637,7 @@ if __name__ == "__main__":
             contextlib.chdir(tempdir.name),
         ):
             try:
-                profile.sample.main()
+                profiling.sampling.sample.main()
             except PermissionError:
                 self.skipTest("Insufficient permissions for remote profiling")
 
@@ -1660,7 +1660,7 @@ if __name__ == "__main__":
 class TestSampleProfilerErrorHandling(unittest.TestCase):
     def test_invalid_pid(self):
         with self.assertRaises((OSError, RuntimeError)):
-            profile.sample.sample(-1, duration_sec=1)
+            profiling.sampling.sample.sample(-1, duration_sec=1)
 
     def test_process_dies_during_sampling(self):
         with test_subprocess("import time; time.sleep(0.5); exit()") as proc:
@@ -1669,7 +1669,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
                 mock.patch("sys.stdout", captured_output),
             ):
                 try:
-                    profile.sample.sample(
+                    profiling.sampling.sample.sample(
                         proc.pid,
                         duration_sec=2,  # Longer than process lifetime
                         sample_interval_usec=50000,
@@ -1685,7 +1685,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
 
     def test_invalid_output_format(self):
         with self.assertRaises(ValueError):
-            profile.sample.sample(
+            profiling.sampling.sample.sample(
                 os.getpid(),
                 duration_sec=1,
                 output_format="invalid_format",
@@ -1694,13 +1694,13 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
     def test_invalid_output_format_with_mocked_profiler(self):
         """Test invalid output format with proper mocking to avoid permission issues."""
         with mock.patch(
-            "profile.sample.SampleProfiler"
+            "profiling.sampling.sample.SampleProfiler"
         ) as mock_profiler_class:
             mock_profiler = mock.MagicMock()
             mock_profiler_class.return_value = mock_profiler
 
             with self.assertRaises(ValueError) as cm:
-                profile.sample.sample(
+                profiling.sampling.sample.sample(
                     12345,
                     duration_sec=1,
                     output_format="unknown_format",
@@ -1787,22 +1787,23 @@ class TestSampleProfilerCLI(unittest.TestCase):
         coordinator_cmd = args[0]
         self.assertEqual(coordinator_cmd[0], sys.executable)
         self.assertEqual(coordinator_cmd[1], "-m")
-        self.assertEqual(coordinator_cmd[2], "profile._sync_coordinator")
+        self.assertEqual(coordinator_cmd[2], "profiling.sampling._sync_coordinator")
         self.assertEqual(coordinator_cmd[3], "12345")  # port
         # cwd is coordinator_cmd[4]
         self.assertEqual(coordinator_cmd[5:], expected_target_args)
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_module_argument_parsing(self):
-        test_args = ["profile.sample", "-m", "mymodule"]
+        test_args = ["profiling.sampling.sample", "-m", "mymodule"]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             self._verify_coordinator_command(mock_popen, ("-m", "mymodule"))
             mock_sample.assert_called_once_with(
@@ -1818,17 +1819,18 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 realtime_stats=False,
             )
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_module_with_arguments(self):
-        test_args = ["profile.sample", "-m", "mymodule", "arg1", "arg2", "--flag"]
+        test_args = ["profiling.sampling.sample", "-m", "mymodule", "arg1", "arg2", "--flag"]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             self._verify_coordinator_command(mock_popen, ("-m", "mymodule", "arg1", "arg2", "--flag"))
             mock_sample.assert_called_once_with(
@@ -1844,17 +1846,18 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 realtime_stats=False,
             )
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_script_argument_parsing(self):
-        test_args = ["profile.sample", "myscript.py"]
+        test_args = ["profiling.sampling.sample", "myscript.py"]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             self._verify_coordinator_command(mock_popen, ("myscript.py",))
             mock_sample.assert_called_once_with(
@@ -1870,12 +1873,13 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 realtime_stats=False,
             )
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_script_with_arguments(self):
-        test_args = ["profile.sample", "myscript.py", "arg1", "arg2", "--flag"]
+        test_args = ["profiling.sampling.sample", "myscript.py", "arg1", "arg2", "--flag"]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
         ):
@@ -1884,74 +1888,75 @@ class TestSampleProfilerCLI(unittest.TestCase):
             # Override specific behavior for this test
             mock_process.wait.side_effect = [subprocess.TimeoutExpired(test_args, 0.1), None]
 
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             # Verify the coordinator command was called
             args, kwargs = mock_popen.call_args
             coordinator_cmd = args[0]
             self.assertEqual(coordinator_cmd[0], sys.executable)
             self.assertEqual(coordinator_cmd[1], "-m")
-            self.assertEqual(coordinator_cmd[2], "profile._sync_coordinator")
+            self.assertEqual(coordinator_cmd[2], "profiling.sampling._sync_coordinator")
             self.assertEqual(coordinator_cmd[3], "12345")  # port
             # cwd is coordinator_cmd[4]
             self.assertEqual(coordinator_cmd[5:], ("myscript.py", "arg1", "arg2", "--flag"))
 
     def test_cli_mutually_exclusive_pid_module(self):
-        test_args = ["profile.sample", "-p", "12345", "-m", "mymodule"]
+        test_args = ["profiling.sampling.sample", "-p", "12345", "-m", "mymodule"]
 
         with (
             mock.patch("sys.argv", test_args),
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
             self.assertRaises(SystemExit) as cm,
         ):
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
         error_msg = mock_stderr.getvalue()
         self.assertIn("not allowed with argument", error_msg)
 
     def test_cli_mutually_exclusive_pid_script(self):
-        test_args = ["profile.sample", "-p", "12345", "myscript.py"]
+        test_args = ["profiling.sampling.sample", "-p", "12345", "myscript.py"]
 
         with (
             mock.patch("sys.argv", test_args),
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
             self.assertRaises(SystemExit) as cm,
         ):
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
         error_msg = mock_stderr.getvalue()
         self.assertIn("only one target type can be specified", error_msg)
 
     def test_cli_no_target_specified(self):
-        test_args = ["profile.sample", "-d", "5"]
+        test_args = ["profiling.sampling.sample", "-d", "5"]
 
         with (
             mock.patch("sys.argv", test_args),
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
             self.assertRaises(SystemExit) as cm,
         ):
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
         error_msg = mock_stderr.getvalue()
         self.assertIn("one of the arguments", error_msg)
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_module_with_profiler_options(self):
         test_args = [
-            "profile.sample", "-i", "1000", "-d", "30", "-a",
+            "profiling.sampling.sample", "-i", "1000", "-d", "30", "-a",
             "--sort-tottime", "-l", "20", "-m", "mymodule",
         ]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             self._verify_coordinator_command(mock_popen, ("-m", "mymodule"))
             mock_sample.assert_called_once_with(
@@ -1967,22 +1972,23 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 realtime_stats=False,
             )
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_script_with_profiler_options(self):
         """Test script with various profiler options."""
         test_args = [
-            "profile.sample", "-i", "2000", "-d", "60",
+            "profiling.sampling.sample", "-i", "2000", "-d", "60",
             "--collapsed", "-o", "output.txt",
             "myscript.py", "scriptarg",
         ]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             self._verify_coordinator_command(mock_popen, ("myscript.py", "scriptarg"))
             # Verify profiler options were passed correctly
@@ -2000,43 +2006,44 @@ class TestSampleProfilerCLI(unittest.TestCase):
             )
 
     def test_cli_empty_module_name(self):
-        test_args = ["profile.sample", "-m"]
+        test_args = ["profiling.sampling.sample", "-m"]
 
         with (
             mock.patch("sys.argv", test_args),
             mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
             self.assertRaises(SystemExit) as cm,
         ):
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
         self.assertEqual(cm.exception.code, 2)  # argparse error
         error_msg = mock_stderr.getvalue()
         self.assertIn("argument -m/--module: expected one argument", error_msg)
 
+    @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
     def test_cli_long_module_option(self):
-        test_args = ["profile.sample", "--module", "mymodule", "arg1"]
+        test_args = ["profiling.sampling.sample", "--module", "mymodule", "arg1"]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
             mock.patch("subprocess.Popen") as mock_popen,
             mock.patch("socket.socket") as mock_socket,
         ):
             self._setup_sync_mocks(mock_socket, mock_popen)
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             self._verify_coordinator_command(mock_popen, ("-m", "mymodule", "arg1"))
 
     def test_cli_complex_script_arguments(self):
         test_args = [
-            "profile.sample", "script.py",
+            "profiling.sampling.sample", "script.py",
             "--input", "file.txt", "-v", "--output=/tmp/out", "positional"
         ]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
-            mock.patch("profile.sample._run_with_sync") as mock_run_with_sync,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample._run_with_sync") as mock_run_with_sync,
         ):
             mock_process = mock.MagicMock()
             mock_process.pid = 12345
@@ -2044,7 +2051,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             mock_process.poll.return_value = None
             mock_run_with_sync.return_value = mock_process
 
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             mock_run_with_sync.assert_called_once_with((
                 sys.executable, "script.py",
@@ -2056,16 +2063,16 @@ class TestSampleProfilerCLI(unittest.TestCase):
         test_cases = [
             # Test sort options are invalid with collapsed
             (
-                ["profile.sample", "--collapsed", "--sort-nsamples", "-p", "12345"],
+                ["profiling.sampling.sample", "--collapsed", "--sort-nsamples", "-p", "12345"],
                 "sort",
             ),
             (
-                ["profile.sample", "--collapsed", "--sort-tottime", "-p", "12345"],
+                ["profiling.sampling.sample", "--collapsed", "--sort-tottime", "-p", "12345"],
                 "sort",
             ),
             (
                 [
-                    "profile.sample",
+                    "profiling.sampling.sample",
                     "--collapsed",
                     "--sort-cumtime",
                     "-p",
@@ -2075,7 +2082,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             ),
             (
                 [
-                    "profile.sample",
+                    "profiling.sampling.sample",
                     "--collapsed",
                     "--sort-sample-pct",
                     "-p",
@@ -2085,7 +2092,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
             ),
             (
                 [
-                    "profile.sample",
+                    "profiling.sampling.sample",
                     "--collapsed",
                     "--sort-cumul-pct",
                     "-p",
@@ -2094,18 +2101,18 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 "sort",
             ),
             (
-                ["profile.sample", "--collapsed", "--sort-name", "-p", "12345"],
+                ["profiling.sampling.sample", "--collapsed", "--sort-name", "-p", "12345"],
                 "sort",
             ),
             # Test limit option is invalid with collapsed
-            (["profile.sample", "--collapsed", "-l", "20", "-p", "12345"], "limit"),
+            (["profiling.sampling.sample", "--collapsed", "-l", "20", "-p", "12345"], "limit"),
             (
-                ["profile.sample", "--collapsed", "--limit", "20", "-p", "12345"],
+                ["profiling.sampling.sample", "--collapsed", "--limit", "20", "-p", "12345"],
                 "limit",
             ),
             # Test no-summary option is invalid with collapsed
             (
-                ["profile.sample", "--collapsed", "--no-summary", "-p", "12345"],
+                ["profiling.sampling.sample", "--collapsed", "--no-summary", "-p", "12345"],
                 "summary",
             ),
         ]
@@ -2116,7 +2123,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
                 self.assertRaises(SystemExit) as cm,
             ):
-                profile.sample.main()
+                profiling.sampling.sample.main()
 
             self.assertEqual(cm.exception.code, 2)  # argparse error code
             error_msg = mock_stderr.getvalue()
@@ -2125,13 +2132,13 @@ class TestSampleProfilerCLI(unittest.TestCase):
 
     def test_cli_default_collapsed_filename(self):
         """Test that collapsed format gets a default filename when not specified."""
-        test_args = ["profile.sample", "--collapsed", "-p", "12345"]
+        test_args = ["profiling.sampling.sample", "--collapsed", "-p", "12345"]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
         ):
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             # Check that filename was set to default collapsed format
             mock_sample.assert_called_once()
@@ -2143,12 +2150,12 @@ class TestSampleProfilerCLI(unittest.TestCase):
         """Test custom output filenames for both formats."""
         test_cases = [
             (
-                ["profile.sample", "--pstats", "-o", "custom.pstats", "-p", "12345"],
+                ["profiling.sampling.sample", "--pstats", "-o", "custom.pstats", "-p", "12345"],
                 "custom.pstats",
                 "pstats",
             ),
             (
-                ["profile.sample", "--collapsed", "-o", "custom.txt", "-p", "12345"],
+                ["profiling.sampling.sample", "--collapsed", "-o", "custom.txt", "-p", "12345"],
                 "custom.txt",
                 "collapsed",
             ),
@@ -2157,9 +2164,9 @@ class TestSampleProfilerCLI(unittest.TestCase):
         for test_args, expected_filename, expected_format in test_cases:
             with (
                 mock.patch("sys.argv", test_args),
-                mock.patch("profile.sample.sample") as mock_sample,
+                mock.patch("profiling.sampling.sample.sample") as mock_sample,
             ):
-                profile.sample.main()
+                profiling.sampling.sample.main()
 
                 mock_sample.assert_called_once()
                 call_args = mock_sample.call_args[1]
@@ -2169,32 +2176,32 @@ class TestSampleProfilerCLI(unittest.TestCase):
     def test_cli_missing_required_arguments(self):
         """Test that CLI requires PID argument."""
         with (
-            mock.patch("sys.argv", ["profile.sample"]),
+            mock.patch("sys.argv", ["profiling.sampling.sample"]),
             mock.patch("sys.stderr", io.StringIO()),
         ):
             with self.assertRaises(SystemExit):
-                profile.sample.main()
+                profiling.sampling.sample.main()
 
     def test_cli_mutually_exclusive_format_options(self):
         """Test that pstats and collapsed options are mutually exclusive."""
         with (
             mock.patch(
                 "sys.argv",
-                ["profile.sample", "--pstats", "--collapsed", "-p", "12345"],
+                ["profiling.sampling.sample", "--pstats", "--collapsed", "-p", "12345"],
             ),
             mock.patch("sys.stderr", io.StringIO()),
         ):
             with self.assertRaises(SystemExit):
-                profile.sample.main()
+                profiling.sampling.sample.main()
 
     def test_argument_parsing_basic(self):
-        test_args = ["profile.sample", "-p", "12345"]
+        test_args = ["profiling.sampling.sample", "-p", "12345"]
 
         with (
             mock.patch("sys.argv", test_args),
-            mock.patch("profile.sample.sample") as mock_sample,
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
         ):
-            profile.sample.main()
+            profiling.sampling.sample.main()
 
             mock_sample.assert_called_once_with(
                 12345,
@@ -2220,13 +2227,13 @@ class TestSampleProfilerCLI(unittest.TestCase):
         ]
 
         for option, expected_sort_value in sort_options:
-            test_args = ["profile.sample", option, "-p", "12345"]
+            test_args = ["profiling.sampling.sample", option, "-p", "12345"]
 
             with (
                 mock.patch("sys.argv", test_args),
-                mock.patch("profile.sample.sample") as mock_sample,
+                mock.patch("profiling.sampling.sample.sample") as mock_sample,
             ):
-                profile.sample.main()
+                profiling.sampling.sample.main()
 
                 mock_sample.assert_called_once()
                 call_args = mock_sample.call_args[1]
