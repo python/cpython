@@ -273,7 +273,8 @@ static compobject *
 newcompobject(PyTypeObject *type)
 {
     compobject *self;
-    assert(type != NULL && type->tp_alloc != NULL);
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
     self = _compobject_CAST(type->tp_alloc(type, 0));
     if (self == NULL)
         return NULL;
@@ -1124,7 +1125,6 @@ zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls)
     return_value->is_initialised = 1;
 
     LEAVE_ZLIB(self);
-    assert(PyObject_GC_IsTracked((PyObject *)return_value));
     return (PyObject *)return_value;
 
 error:
@@ -1210,7 +1210,6 @@ zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls)
     return_value->is_initialised = 1;
 
     LEAVE_ZLIB(self);
-    assert(PyObject_GC_IsTracked((PyObject *)return_value));
     return (PyObject *)return_value;
 
 error:
