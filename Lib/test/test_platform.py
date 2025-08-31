@@ -525,8 +525,10 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(override.model, "Whiz")
             self.assertTrue(override.is_simulator)
 
-    @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
+        if support.is_emscripten:
+            assert platform.libc_ver() == ("emscripten", "4.0.12")
+            return
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
            os.path.exists(sys.executable+'.exe'):
