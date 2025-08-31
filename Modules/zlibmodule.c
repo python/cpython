@@ -282,24 +282,21 @@ newcompobject(PyTypeObject *type)
     self->zdict = NULL;
     self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unused_data == NULL) {
-        goto error;
+        Py_DECREF(self);
+        return NULL;
     }
     self->unconsumed_tail = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unconsumed_tail == NULL) {
-        goto error;
+        Py_DECREF(self);
+        return NULL;
     }
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
+        Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        goto error;
+        return NULL;
     }
-
-    PyObject_GC_Track(self);
     return self;
-
-error:
-    Py_DECREF(self);
-    return NULL;
 }
 
 static void*
@@ -1776,12 +1773,14 @@ zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
     self->zst.avail_in = 0;
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL) {
-        goto error;
+        Py_CLEAR(self);
+        return NULL;
     }
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
+        Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate lock");
-        goto error;
+        return NULL;
     }
     int err = inflateInit2(&(self->zst), wbits);
     switch (err) {
@@ -1789,28 +1788,25 @@ zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
         self->is_initialised = 1;
         if (self->zdict != NULL && wbits < 0) {
             if (set_inflate_zdict_ZlibDecompressor(state, self) < 0) {
-                goto error;
+                Py_DECREF(self);
+                return NULL;
             }
         }
-        break;
+        return (PyObject *)self;
     case Z_STREAM_ERROR:
+        Py_DECREF(self);
         PyErr_SetString(PyExc_ValueError, "Invalid initialization option");
-        goto error;
+        return NULL;
     case Z_MEM_ERROR:
+        Py_DECREF(self);
         PyErr_SetString(PyExc_MemoryError,
                         "Can't allocate memory for decompression object");
-        goto error;
+        return NULL;
     default:
         zlib_error(state, self->zst, err, "while creating decompression object");
-        goto error;
+        Py_DECREF(self);
+        return NULL;
     }
-
-    PyObject_GC_Track(self);
-    return (PyObject *)self;
-
-error:
-    Py_DECREF(self);
-    return NULL;
 }
 
 #include "clinic/zlibmodule.c.h"
