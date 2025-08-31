@@ -78,7 +78,7 @@ following functions:
 
    Returns the digit value assigned to the character *chr* as integer.
    If no such value is defined, *default* is returned, or, if not given,
-   :exc:`ValueError` is raised.
+   :exc:`ValueError` is raised::
 
       >>> unicodedata.digit('\N{SUPERSCRIPT NINE}')
       9
