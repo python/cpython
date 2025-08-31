@@ -4310,6 +4310,8 @@ class ThreadedTests(unittest.TestCase):
                                chatty=True, connectionchatty=True,
                                sni_name=hostname)
 
+    @unittest.skipUnless(CAN_SET_CLIENT_SIGALGS,
+                         "AWS-LC doesn't support setting client sigalgs")
     def test_client_sigalgs(self):
         # no mutual auth, so cient_sigalg should be None
         client_context, server_context, hostname = testing_context()
