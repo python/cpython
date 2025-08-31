@@ -66,7 +66,8 @@ A small number of constants live in the built-in namespace.  They are:
 .. data:: Ellipsis
 
    The same as the ellipsis literal "``...``", an object frequently used as a
-   placeholder of another values.
+   placeholder of another values. Assignments to  ``Ellipsis`` are possible.
+   However, assignments to  ``...`` are illegal and raise a :exc:`SyntaxError`.
    ``Ellipsis`` is the sole instance of the :data:`types.EllipsisType` type.
 
 
