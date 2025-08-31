@@ -2921,7 +2921,7 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
   process certificate requests while they send or receive application data
   from the server.
 - TLS 1.3 features like early data, deferred TLS client cert request,
-  signature algorithm configuration, and rekeying are not supported yet.
+  and rekeying are not supported yet.
 
 
 .. seealso::
