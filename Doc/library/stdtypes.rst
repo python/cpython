@@ -5887,7 +5887,7 @@ or instead of :ref:`pass statement <tut-pass>`.
 .. seealso::
 
    `NumPy's slicing and striding <https://numpy.org/doc/stable/user/basics.indexing.html#slicing-and-striding>`_
-      A known-well Ellipsis use on third packages is the slicing on the Numpy.
+      A well-known Ellipsis use in third party packages is for slicing in Numpy.
 
 
 .. _bltin-notimplemented-object:
