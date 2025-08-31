@@ -5869,12 +5869,19 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used by slicing (see :ref:`slicings`).  It supports no
+This object is commonly used as a placeholder of another objects, values or even
+instructions.  It supports no
 special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
 :const:`Ellipsis` singleton.
 
 It is written as ``Ellipsis`` or ``...``.
+
+For instance, at the standard library and its documentation, ``Ellipsis`` can
+appears in :ref:`pretty printers <prettyprinter-objects>`,
+:const:`documentation tests <doctest.ELLIPSIS>`,
+:ref:`type annotations <annotating-callables>`,
+or instead of :ref:`pass statement <tut-pass>`.
 
 
 .. _bltin-notimplemented-object:
