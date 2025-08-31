@@ -8,10 +8,8 @@ def skip_on_buildbot(func):
     changes, only on some buildbot runners, the tests will fail with
     ResourceWarnings.
     """
-    is_buildbot = "buildbot" in os.getcwd() or any(
-        "buildbot" in key.lower() for key in os.environ
-    )
-    assert is_buildbot, f"no buildbot in {os.getcwd()} or {tuple(os.environ)}"
+    # detect "not github actions" as a proxy for BUILDBOT not being present yet.
+    is_buildbot = "GITHUB_ACTION" not in os.environ or "BUILDBOT" in os.environ
     skipper = unittest.skip("Causes Resource Warnings (python/cpython#132947)")
     wrapper = skipper if is_buildbot else lambda x: x
     return wrapper(func)
