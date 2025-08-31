@@ -192,7 +192,7 @@ Here is an example that imports a module from a ZIP archive - note that the
    Archive:  example_archive.zip
      Length     Date   Time    Name
     --------    ----   ----    ----
-        8467  05-11-25 12:29   example.py
+        8467  01-01-00 12:30   example.py
     --------                   -------
         8467                   1 file
 
