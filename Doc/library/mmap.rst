@@ -277,6 +277,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       pagefile) will silently create a new map with the original data copied over
       up to the length of the new size.
 
+      .. availability:: Systems with the ``madvise`` system call or Windows.
+
       .. versionchanged:: 3.11
          Correctly fails if attempting to resize when another map is held
          Allows resize against an anonymous map on Windows
@@ -375,7 +377,7 @@ MADV_* Constants
    These options can be passed to :meth:`mmap.madvise`.  Not every option will
    be present on every system.
 
-   Availability: Systems with the madvise() system call.
+   .. availability:: Systems with the ``madvise`` system call.
 
    .. versionadded:: 3.8
 
