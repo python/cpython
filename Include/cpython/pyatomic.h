@@ -87,8 +87,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#include <string.h>
-
 // --- _Py_atomic_add --------------------------------------------------------
 // Atomically adds `value` to `obj` and returns the previous value
 
