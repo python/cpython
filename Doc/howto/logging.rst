@@ -302,10 +302,10 @@ reading the following sections. If you're ready for that, grab some of your
 favourite beverage and carry on.
 
 If your logging needs are simple, then use the above examples to incorporate
-logging into your own scripts, and if you run into problems or don't
-understand something, please post a question on the comp.lang.python Usenet
-group (available at https://groups.google.com/g/comp.lang.python) and you
-should receive help before too long.
+logging into your own scripts, and if you run into problems or don't understand
+something, please post a question in the Help category of the `Python
+discussion forum <https://discuss.python.org/c/help/7>`_ and you should receive
+help before too long.
 
 Still here? You can carry on reading the next few sections, which provide a
 slightly more advanced/in-depth tutorial than the basic one above. After that,
