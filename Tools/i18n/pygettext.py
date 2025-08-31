@@ -193,7 +193,7 @@ def make_escapes(pass_nonascii):
         escape = escape_ascii
     else:
         escape = escape_nonascii
-    escapes = [r"\%03o" % i for i in range(256)]
+    escapes = [fr"\{i:03o}" for i in range(256)]
     for i in range(32, 127):
         escapes[i] = chr(i)
     escapes[ord('\\')] = r'\\'
@@ -387,7 +387,7 @@ def unparse_spec(name, spec):
             parts.append(f'{pos + 1}c')
         else:
             parts.append(str(pos + 1))
-    return f'{name}:{','.join(parts)}'
+    return f"{name}:{','.join(parts)}"
 
 
 def process_keywords(keywords, *, no_default_keywords):
@@ -796,7 +796,7 @@ def main():
         try:
             with open(options.excludefilename) as fp:
                 options.toexclude = fp.readlines()
-        except IOError:
+        except OSError:
             print(f"Can't read --exclude-file: {options.excludefilename}",
                   file=sys.stderr)
             sys.exit(1)

@@ -1,0 +1,8 @@
+extend = "../../.ruff.toml"  # Inherit the project-wide settings
+
+[lint]
+select = [
+    "F",  # Enable all pyflakes rules
+    "I",  # Enable all isort rules
+    "UP",  # Enable all pyupgrade rules by default
+]
