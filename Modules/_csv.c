@@ -1281,7 +1281,7 @@ csv_writerow(PyObject *op, PyObject *seq)
             quoted = 1;
             break;
         case QUOTE_STRINGS:
-            quoted = !is_none && PyUnicode_Check(field);
+            quoted = PyUnicode_Check(field);
             break;
         case QUOTE_NOTNULL:
             quoted = !is_none;
