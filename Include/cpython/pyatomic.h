@@ -87,6 +87,8 @@
 #  error "this header file must not be included directly"
 #endif
 
+#include <assert.h>
+
 // --- _Py_atomic_add --------------------------------------------------------
 // Atomically adds `value` to `obj` and returns the previous value
 
@@ -550,12 +552,9 @@ _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 static inline void *
 _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
 {
-    // XXX: The assertions below currently fail on Android ARM build.
-    // In fact, assert(1 == 1) fails on that build.
-
-    // assert(((uintptr_t)dest & (uintptr_t)(sizeof (void *) - 1)) == 0);
-    // assert(((uintptr_t)src & (uintptr_t)(sizeof (void *) - 1)) == 0);
-    // assert(n % (size_t)sizeof(void *) == 0);
+    assert(((uintptr_t)dest & (uintptr_t)(sizeof (void *) - 1)) == 0);
+    assert(((uintptr_t)src & (uintptr_t)(sizeof (void *) - 1)) == 0);
+    assert(n % (size_t)sizeof(void *) == 0);
 
     if (dest != src) {
         void **dest_ = (void **)dest;
@@ -573,9 +572,9 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
 static inline void *
 _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
 {
-    // assert(((uintptr_t)dest & (uintptr_t)(sizeof (void *) - 1)) == 0);
-    // assert(((uintptr_t)src & (uintptr_t)(sizeof (void *) - 1)) == 0);
-    // assert(n % (size_t)sizeof(void *) == 0);
+    assert(((uintptr_t)dest & (uintptr_t)(sizeof (void *) - 1)) == 0);
+    assert(((uintptr_t)src & (uintptr_t)(sizeof (void *) - 1)) == 0);
+    assert(n % (size_t)sizeof(void *) == 0);
 
     if (dest < src || dest >= (void *)((char *)src + n)) {
         void **dest_ = (void **)dest;
