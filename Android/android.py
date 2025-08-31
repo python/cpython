@@ -737,7 +737,6 @@ def ci(context):
             # Prove the package is self-contained by using it to run the tests.
             shutil.unpack_archive(package_path, temp_dir)
 
-            # Arguments are similar to --fast-ci, but in single-process mode.
             launcher_args = ["--managed", "maxVersion", "-v"]
             test_args = ["--fast-ci", "--single-process"]
             run(
