@@ -1340,8 +1340,7 @@ csv_writerow(PyObject *op, PyObject *seq)
               dialect->quoting == QUOTE_NOTNULL))) {
             PyErr_SetString(self->error_obj,
                             "single empty field record must be quoted");
-            PyUnicodeWriter_Discard(writer);
-            return NULL;
+            goto error_after_iter;
         }
         if (PyUnicodeWriter_WriteChar(writer, dialect->quotechar) < 0) {
             goto error_after_iter;
@@ -1352,9 +1351,7 @@ csv_writerow(PyObject *op, PyObject *seq)
     }
 
     if (PyUnicodeWriter_WriteStr(writer, self->dialect->lineterminator) < 0) {
-error_after_iter:
-        PyUnicodeWriter_Discard(writer);
-        return NULL;
+        goto error_after_iter;
     }
 
     line = PyUnicodeWriter_Finish(writer);
@@ -1368,6 +1365,7 @@ error_after_iter:
 
 error:
     Py_XDECREF(iter);
+error_after_iter:
     PyUnicodeWriter_Discard(writer);
     return NULL;
 }
