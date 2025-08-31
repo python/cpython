@@ -1368,9 +1368,7 @@ error_after_iter:
 
 error:
     Py_XDECREF(iter);
-    if (writer) {
-        PyUnicodeWriter_Discard(writer);
-    }
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
