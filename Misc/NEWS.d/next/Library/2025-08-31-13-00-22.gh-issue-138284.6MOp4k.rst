@@ -1,0 +1,1 @@
+Earlier  urllib.parse.parse_qsl was taking illegal characters like '^' , ' ` ' etc. which should not be the case according to RFC 3986. Hence added the check and now will throw ValueError in case of any illegal characters other than allowed ones. Also written test for it.
