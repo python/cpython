@@ -1264,7 +1264,7 @@ csv_writerow(PyObject *op, PyObject *seq)
     while ((field = PyIter_Next(iter))) {
         int quoted;
         PyObject *str_field = NULL;
-        bool is_none = (field == Py_None);
+        bool null_field = (field == Py_None);
 
         if (field_count > 0) {
             if (PyUnicodeWriter_WriteChar(writer, dialect->delimiter) < 0) {
@@ -1284,15 +1284,14 @@ csv_writerow(PyObject *op, PyObject *seq)
             quoted = PyUnicode_Check(field);
             break;
         case QUOTE_NOTNULL:
-            quoted = !is_none;
+            quoted = !null_field;
             break;
         default:
             quoted = 0;
             break;
         }
 
-        if (is_none) {
-            /* None is NULL. */
+        if (null_field) {
             str_field = NULL;
         }
         else if (PyUnicode_Check(field)) {
@@ -1308,8 +1307,8 @@ csv_writerow(PyObject *op, PyObject *seq)
 
         /* Single empty field special case */
         if (field_count == 0) {
-            first_field_was_none = is_none;
-            if (is_none) {
+            first_field_was_none = null_field;
+            if (null_field) {
                 first_field_was_empty_like = true;
             }
             else {
