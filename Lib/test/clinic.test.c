@@ -1614,15 +1614,15 @@ test_Py_ssize_t_converter
     c: Py_ssize_t(accept={int, NoneType}) = 56
     d: Py_ssize_t(accept={int}, allow_negative=False) = 78
     e: Py_ssize_t(accept={int, NoneType}, allow_negative=False) = 90
-    f: Py_ssize_t(accept={int}, allow_negative=True) = 12
-    g: Py_ssize_t(accept={int, NoneType}, allow_negative=True) = 34
+    f: Py_ssize_t(accept={int}, allow_negative=True) = -12
+    g: Py_ssize_t(accept={int, NoneType}, allow_negative=True) = -34
     /
 
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_Py_ssize_t_converter__doc__,
-"test_Py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=12,\n"
-"                          g=34, /)\n"
+"test_Py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=-12,\n"
+"                          g=-34, /)\n"
 "--\n"
 "\n");
 
@@ -1643,8 +1643,8 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     Py_ssize_t c = 56;
     Py_ssize_t d = 78;
     Py_ssize_t e = 90;
-    Py_ssize_t f = 12;
-    Py_ssize_t g = 34;
+    Py_ssize_t f = -12;
+    Py_ssize_t g = -34;
 
     if (!_PyArg_CheckPositional("test_Py_ssize_t_converter", nargs, 0, 7)) {
         goto exit;
@@ -1743,7 +1743,7 @@ static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                                Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
                                Py_ssize_t f, Py_ssize_t g)
-/*[clinic end generated code: output=8721e4925ea46578 input=0d80cb5c942b6e0f]*/
+/*[clinic end generated code: output=2034b285dd317556 input=a25bac8ecf2890aa]*/
 
 
 /*[clinic input]

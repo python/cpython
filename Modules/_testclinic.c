@@ -445,8 +445,8 @@ py_ssize_t_converter
     c: Py_ssize_t(accept={int, NoneType}) = 56
     d: Py_ssize_t(accept={int}, allow_negative=False) = 78
     e: Py_ssize_t(accept={int, NoneType}, allow_negative=False) = 90
-    f: Py_ssize_t(accept={int}, allow_negative=False) = -1
-    g: Py_ssize_t(accept={int, NoneType}, allow_negative=False) = -1
+    f: Py_ssize_t(accept={int}, allow_negative=False) = -12
+    g: Py_ssize_t(accept={int, NoneType}, allow_negative=False) = -34
     /
 
 [clinic start generated code]*/
@@ -455,7 +455,7 @@ static PyObject *
 py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                           Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
                           Py_ssize_t f, Py_ssize_t g)
-/*[clinic end generated code: output=ecf8e1a4a9abc95e input=d4571dd2ba885665]*/
+/*[clinic end generated code: output=ecf8e1a4a9abc95e input=d3b8f1f6efccf4b2]*/
 {
     RETURN_PACKED_ARGS(7, PyLong_FromSsize_t, Py_ssize_t, a, b, c, d, e, f, g);
 }

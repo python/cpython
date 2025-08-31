@@ -1196,8 +1196,8 @@ exit:
 }
 
 PyDoc_STRVAR(py_ssize_t_converter__doc__,
-"py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=-1, g=-1,\n"
-"                     /)\n"
+"py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=-12,\n"
+"                     g=-34, /)\n"
 "--\n"
 "\n");
 
@@ -1218,8 +1218,8 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t c = 56;
     Py_ssize_t d = 78;
     Py_ssize_t e = 90;
-    Py_ssize_t f = -1;
-    Py_ssize_t g = -1;
+    Py_ssize_t f = -12;
+    Py_ssize_t g = -34;
 
     if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 7)) {
         goto exit;
@@ -4600,4 +4600,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3b8d90ce4a2f3466 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c95ecbc773bc439d input=a9049054013a1b77]*/

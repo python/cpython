@@ -46,6 +46,7 @@ _Py_convert_optional_to_non_negative_ssize_t(PyObject *obj, void *result)
     return 1;
 }
 
+
 /* Helper for mkvalue() to scan the length of a format */
 
 static Py_ssize_t
