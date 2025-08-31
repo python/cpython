@@ -51,6 +51,7 @@ IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
 CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
+CAN_SET_CLIENT_SIGALGS = "AWS-LC" not in ssl.OPENSSL_VERSION
 CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
 PY_SSL_DEFAULT_CIPHERS = sysconfig.get_config_var('PY_SSL_DEFAULT_CIPHERS')
@@ -997,20 +998,30 @@ class ContextTests(unittest.TestCase):
         self.assertNotIn('P-256', ctx.get_groups())
         self.assertIn('P-256', ctx.get_groups(include_aliases=True))
 
-    def test_set_sigalgs(self):
+    @unittest.skipUnless(CAN_SET_CLIENT_SIGALGS,
+                         "AWS-LC doesn't support setting client sigalgs")
+    def test_set_client_sigalgs(self):
         ctx = ssl.create_default_context()
 
         self.assertIsNone(ctx.set_client_sigalgs('rsa_pss_rsae_sha256'))
-        self.assertIsNone(ctx.set_server_sigalgs('rsa_pss_rsae_sha256'))
 
         self.assertRaises(ssl.SSLError, ctx.set_client_sigalgs,
-                          'rsa_pss_rsae_sha256:foo')
-        self.assertRaises(ssl.SSLError, ctx.set_server_sigalgs,
                           'rsa_pss_rsae_sha256:foo')
 
         # Ignoring unknown sigalgs is only supported since OpenSSL 3.3.
         if CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS:
             self.assertIsNone(ctx.set_client_sigalgs('rsa_pss_rsae_sha256:?foo'))
+
+    def test_set_server_sigalgs(self):
+        ctx = ssl.create_default_context()
+
+        self.assertIsNone(ctx.set_server_sigalgs('rsa_pss_rsae_sha256'))
+
+        self.assertRaises(ssl.SSLError, ctx.set_server_sigalgs,
+                          'rsa_pss_rsae_sha256:foo')
+
+        # Ignoring unknown sigalgs is only supported since OpenSSL 3.3.
+        if CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS:
             self.assertIsNone(ctx.set_server_sigalgs('rsa_pss_rsae_sha256:?foo'))
 
     def test_options(self):

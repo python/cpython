@@ -3839,11 +3839,16 @@ _ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
                                          const char *sigalgslist)
 /*[clinic end generated code: output=f4f5be160a29c7d6 input=500d853ce9fd94ff]*/
 {
+#ifdef OPENSSL_IS_AWSLC
+    _setSSLError(get_state_ctx(self), "can't set client sigalgs on AWS-LC", 0, __FILE__, __LINE__);
+    return NULL;
+#else
     if (!SSL_CTX_set1_client_sigalgs_list(self->ctx, sigalgslist)) {
         _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
         return NULL;
     }
     Py_RETURN_NONE;
+#endif
 }
 
 /*[clinic input]
