@@ -1286,7 +1286,7 @@ csv_writerow(PyObject *op, PyObject *seq)
         case QUOTE_NOTNULL:
             quoted = !is_none;
             break;
-        default: /* Default QUOTE_MINIMAL or other to minimal behavior */
+        default:
             quoted = 0;
             break;
         }
@@ -1294,9 +1294,11 @@ csv_writerow(PyObject *op, PyObject *seq)
         if (is_none) {
             /* None is NULL. */
             str_field = NULL;
-        } else if (PyUnicode_Check(field)) {
+        }
+        else if (PyUnicode_Check(field)) {
             str_field = Py_NewRef(field);
-        } else {
+        }
+        else {
             str_field = PyObject_Str(field);
             if (str_field == NULL) {
                 Py_DECREF(field);
@@ -1309,13 +1311,13 @@ csv_writerow(PyObject *op, PyObject *seq)
             first_field_was_none = is_none;
             if (is_none) {
                 first_field_was_empty_like = true;
-            } else {
+            }
+            else {
                 Py_ssize_t len = str_field ? PyUnicode_GET_LENGTH(str_field) : 0;
                 first_field_was_empty_like = (len == 0);
             }
         }
 
-        /* Important side-effect: this may promote to "quoted". */
         if (_write_field(writer, self, str_field, &quoted) < 0) {
             Py_XDECREF(str_field);
             Py_DECREF(field);
