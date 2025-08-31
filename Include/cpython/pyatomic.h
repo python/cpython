@@ -87,6 +87,8 @@
 #  error "this header file must not be included directly"
 #endif
 
+#include <string.h>
+
 // --- _Py_atomic_add --------------------------------------------------------
 // Atomically adds `value` to `obj` and returns the previous value
 
@@ -545,6 +547,61 @@ static inline Py_ssize_t
 _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 
 
+// --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
+
+static inline void *
+_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
+{
+    return memcpy(dest, src, n);
+    // assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
+    // assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
+    // assert(n % sizeof(void *) == 0);
+
+    // if (dest != src) {
+    //     void **dest_ = (void **)dest;
+    //     void **src_ = (void **)src;
+    //     void **end = dest_ + n / sizeof(void *);
+
+    //     for (; dest_ != end; dest_++, src_++) {
+    //         _Py_atomic_store_ptr_relaxed(dest_, *src_);
+    //     }
+    // }
+
+    // return dest;
+}
+
+static inline void *
+_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
+{
+    return memmove(dest, src, n);
+    // assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
+    // assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
+    // assert(n % sizeof(void *) == 0);
+
+    // if (dest < src || dest >= (void *)((char *)src + n)) {
+    //     void **dest_ = (void **)dest;
+    //     void **src_ = (void **)src;
+    //     void **end = dest_ + n / sizeof(void *);
+
+    //     for (; dest_ != end; dest_++, src_++) {
+    //         _Py_atomic_store_ptr_relaxed(dest_, *src_);
+    //     }
+    // }
+    // else if (dest > src) {
+    //     n = n / sizeof(void *) - 1;
+    //     void **dest_ = (void **)dest + n;
+    //     void **src_ = (void **)src + n;
+    //     void **end = (void **)dest - 1;
+
+    //     for (; dest_ != end; dest_--, src_--) {
+    //         _Py_atomic_store_ptr_relaxed(dest_, *src_);
+    //     }
+    // }
+
+    // return dest;
+}
+
+
 
 
 // --- _Py_atomic_fence ------------------------------------------------------
@@ -612,56 +669,3 @@ static inline void _Py_atomic_fence_release(void);
 #else
 # error "long must be 4 or 8 bytes in size"
 #endif  // SIZEOF_LONG
-
-
-// --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
-
-static inline void *
-_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
-{
-    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
-    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-    assert(n % sizeof(void *) == 0);
-
-    if (dest != src) {
-        void **dest_ = (void **)dest;
-        void **src_ = (void **)src;
-        void **end = dest_ + n / sizeof(void *);
-
-        for (; dest_ != end; dest_++, src_++) {
-            _Py_atomic_store_ptr_relaxed(dest_, *src_);
-        }
-    }
-
-    return dest;
-}
-
-static inline void *
-_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, Py_ssize_t n)
-{
-    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
-    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-    assert(n % sizeof(void *) == 0);
-
-    if (dest < src || dest >= (void *)((char *)src + n)) {
-        void **dest_ = (void **)dest;
-        void **src_ = (void **)src;
-        void **end = dest_ + n / sizeof(void *);
-
-        for (; dest_ != end; dest_++, src_++) {
-            _Py_atomic_store_ptr_relaxed(dest_, *src_);
-        }
-    }
-    else if (dest > src) {
-        n = n / sizeof(void *) - 1;
-        void **dest_ = (void **)dest + n;
-        void **src_ = (void **)src + n;
-        void **end = (void **)dest - 1;
-
-        for (; dest_ != end; dest_--, src_--) {
-            _Py_atomic_store_ptr_relaxed(dest_, *src_);
-        }
-    }
-
-    return dest;
-}
