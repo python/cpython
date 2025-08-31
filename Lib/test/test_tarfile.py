@@ -4039,6 +4039,21 @@ class TestExtractionFilters(unittest.TestCase):
                 tarfile.AbsoluteLinkError,
                 "'parent' is a link to an absolute path")
 
+    @unittest.skipUnless(os_helper.can_symlink(), 'requires symlink support')
+    @symlink_test
+    def test_symlink_target_sanitized_on_windows(self):
+        with ArchiveMaker() as arc:
+            arc.add('link', symlink_to="relative/test/path")
+
+        with self.check_context(arc.open(), 'fully_trusted'):
+            self.expect_file('link', type=tarfile.SYMTYPE)
+            link_path = os.path.normpath(self.destdir / "link")
+            link_target = os.readlink(link_path)
+            if os.name == "nt":
+                self.assertEqual(link_target, "relative\\test\\path")
+            else:
+                self.assertEqual(link_target, "relative/test/path")
+
     def test_absolute_hardlink(self):
         # Test hardlink to an absolute path
         # Inspired by 'dirsymlink' in https://github.com/jwilk/traversal-archives

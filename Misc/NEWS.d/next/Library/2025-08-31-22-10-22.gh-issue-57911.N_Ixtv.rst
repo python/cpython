@@ -1,0 +1,3 @@
+When extracting tar files on Windows the path of symlink targets will be
+sanitized to use backward-slashes as path separator because Posix flavoured
+path separators result in corrupted links.
