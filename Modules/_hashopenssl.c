@@ -1176,7 +1176,8 @@ PyDoc_STRVAR(HASHXOFobject_type_doc,
 "digest_size -- number of bytes in this hashes output");
 
 static PyType_Slot HASHXOFobject_type_slots[] = {
-    /* tp_dealloc and tp_traverse are inherited from _hashlib.HASH */
+    /* tp_dealloc is inherited from _hashlib.HASH */
+    {Py_tp_traverse, _hashlib_HASH_traverse},
     {Py_tp_doc, (char *)HASHXOFobject_type_doc},
     {Py_tp_methods, HASHXOFobject_methods},
     {Py_tp_getset, HASHXOFobject_getsets},
