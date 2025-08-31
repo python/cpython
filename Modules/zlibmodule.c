@@ -1775,6 +1775,8 @@ zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
     self->zst.opaque = NULL;
     self->zst.zalloc = PyZlib_Malloc;
     self->zst.zfree = PyZlib_Free;
+    self->zst.next_in = NULL;
+    self->zst.avail_in = 0;
 
     self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
     if (self->unused_data == NULL) {
