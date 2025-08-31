@@ -40,7 +40,7 @@ _Py_convert_optional_to_non_negative_ssize_t(PyObject *obj, void *result)
         return 0;
     }
     if (obj != Py_None && *((Py_ssize_t *)result) < 0) {
-       	PyErr_SetString(PyExc_ValueError, "argument must be >= 0");
+       	PyErr_SetString(PyExc_ValueError, "argument must be at least 0");
     	return 0;
     }
     return 1;

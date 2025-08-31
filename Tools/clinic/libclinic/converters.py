@@ -447,7 +447,7 @@ class Py_ssize_t_converter(CConverter):
             non_negative_check = self.format_code("""
                     if ({paramname} < 0) {{{{
                         PyErr_SetString(PyExc_ValueError,
-                                        "{paramname} must be >=0");
+                                        "{paramname} must be at least 0");
                         goto exit;
                     }}}}""",
             argname=argname)

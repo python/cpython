@@ -1701,7 +1701,7 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
         d = ival;
         if (d < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "d must be >=0");
+                            "d must be at least 0");
             goto exit;
         }
     }
@@ -1743,7 +1743,7 @@ static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
                                Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
                                Py_ssize_t f, Py_ssize_t g)
-/*[clinic end generated code: output=2034b285dd317556 input=a25bac8ecf2890aa]*/
+/*[clinic end generated code: output=41297dd17ad0458d input=a25bac8ecf2890aa]*/
 
 
 /*[clinic input]
