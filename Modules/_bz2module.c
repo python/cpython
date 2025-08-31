@@ -373,7 +373,7 @@ _bz2_BZ2Compressor_impl(PyTypeObject *type, int compresslevel)
     if (catch_bz2_error(bzerror))
         goto error;
 
-    PyObject_GC_Track((PyObject *)self);
+    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error:
@@ -684,7 +684,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     if (catch_bz2_error(bzerror))
         goto error;
 
-    PyObject_GC_Track((PyObject *)self);
+    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error:
