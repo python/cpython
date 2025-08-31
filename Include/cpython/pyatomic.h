@@ -552,6 +552,9 @@ _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 static inline void *
 _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
 {
+    assert(_Py_IS_ALIGNED(dest, sizeof(void *)));
+    assert(_Py_IS_ALIGNED(src, sizeof(void *)));
+    assert(n % sizeof(void *) == 0);
     return memcpy(dest, src, n);
     // assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
     // assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
@@ -573,6 +576,9 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
 static inline void *
 _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
 {
+    assert(_Py_IS_ALIGNED(dest, sizeof(void *)));
+    assert(_Py_IS_ALIGNED(src, sizeof(void *)));
+    assert(n % sizeof(void *) == 0);
     return memmove(dest, src, n);
     // assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
     // assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
