@@ -876,7 +876,7 @@ Compressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    tp->tp_free(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
@@ -1331,7 +1331,7 @@ Decompressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    tp->tp_free(self);
+    PyObject_GC_Del(self);
     Py_DECREF(tp);
 }
 
