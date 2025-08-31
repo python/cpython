@@ -5,7 +5,7 @@
  */
 
 #include "parts.h"
-#include "pyconfig.h"  // SIZEOF_VOID_P
+// #include "pyconfig.h"  // SIZEOF_VOID_P
 
 // We define atomic bitwise operations on these types
 #define FOR_BITWISE_TYPES(V)    \
