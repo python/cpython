@@ -88,7 +88,7 @@ following functions:
 
    Returns the numeric value assigned to the character *chr* as float.
    If no such value is defined, *default* is returned, or, if not given,
-   :exc:`ValueError` is raised.
+   :exc:`ValueError` is raised::
 
       >>> unicodedata.numeric('½')
       0.5
