@@ -83,6 +83,7 @@ following functions:
       >>> unicodedata.digit('\N{SUPERSCRIPT NINE}')
       9
 
+
 .. function:: numeric(chr, default=None, /)
 
    Returns the numeric value assigned to the character *chr* as float.
@@ -91,6 +92,7 @@ following functions:
 
       >>> unicodedata.numeric('½')
       0.5
+
 
 .. function:: category(chr)
 
@@ -183,6 +185,7 @@ following functions:
    Even if two unicode strings are normalized and look the same to
    a human reader, if one has combining characters and the other
    doesn't, they may not compare equal.
+
 
 .. function:: is_normalized(form, unistr)
 
