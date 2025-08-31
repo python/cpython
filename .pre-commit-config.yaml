@@ -16,7 +16,7 @@ repos:
         files: ^Tools/build/
       - id: ruff
         name: Run Ruff (lint) on Tools/i18n/
-        args: [ --exit-non-zero-on-fix, --config=Tools/i18n/.ruff.toml ]
+        args: [--exit-non-zero-on-fix, --config=Tools/i18n/.ruff.toml]
         files: ^Tools/i18n/
       - id: ruff
         name: Run Ruff (lint) on Argument Clinic
