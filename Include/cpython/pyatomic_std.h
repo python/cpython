@@ -1090,17 +1090,17 @@ _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
 
 // --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
 
-#include <string.h>
+// #include <string.h>
 
 static inline void *
 _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
 {
-    _Py_USING_STD;
+    // _Py_USING_STD;
     // assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
     // assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-    assert(n % sizeof(void *) == 0);
+    // assert(n % sizeof(void *) == 0);
 
-    memcpy(dest, src, n);
+    // memcpy(dest, src, n);
 
     // if (dest != src) {
     //     void **dest_ = (void **)dest;
@@ -1119,12 +1119,12 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
 static inline void *
 _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
 {
-    _Py_USING_STD;
+    // _Py_USING_STD;
     // assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
     // assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-    assert(n % sizeof(void *) == 0);
+    // assert(n % sizeof(void *) == 0);
 
-    memmove(dest, src, n);
+    // memmove(dest, src, n);
 
     // if (dest < src || dest >= (void *)((char *)src + n)) {
     //     void **dest_ = (void **)dest;
