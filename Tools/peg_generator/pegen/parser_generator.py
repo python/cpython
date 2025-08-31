@@ -45,7 +45,7 @@ class RuleCollectorVisitor(GrammarVisitor):
     """Visitor that invokes a provided callmaker visitor with just the NamedItem nodes"""
 
     def __init__(self, rules: Dict[str, Rule], callmakervisitor: GrammarVisitor) -> None:
-        self.rulses = rules
+        self.rules = rules
         self.callmaker = callmakervisitor
 
     def visit_Rule(self, rule: Rule) -> None:

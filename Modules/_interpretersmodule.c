@@ -1276,8 +1276,8 @@ _interpreters_run_func_impl(PyObject *module, PyObject *id, PyObject *func,
 _interpreters.call
     id: object
     callable: object
-    args as args_obj: object(subclass_of='&PyTuple_Type', c_default='NULL') = ()
-    kwargs as kwargs_obj: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
+    args: object(subclass_of='&PyTuple_Type', c_default='NULL') = ()
+    kwargs: object(subclass_of='&PyDict_Type', c_default='NULL') = {}
     *
     preserve_exc: bool = False
     restrict as restricted: bool = False
@@ -1289,9 +1289,9 @@ Pass the given args and kwargs, if possible.
 
 static PyObject *
 _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
-                        PyObject *args_obj, PyObject *kwargs_obj,
-                        int preserve_exc, int restricted)
-/*[clinic end generated code: output=983ee27b3c43f6ef input=77590fdb3f519d65]*/
+                        PyObject *args, PyObject *kwargs, int preserve_exc,
+                        int restricted)
+/*[clinic end generated code: output=b7a4a27d72df3ebc input=b026d0b212a575e6]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     int reqready = 1;
@@ -1302,7 +1302,7 @@ _interpreters_call_impl(PyObject *module, PyObject *id, PyObject *callable,
     }
 
     struct interp_call call = {0};
-    if (_interp_call_pack(tstate, &call, callable, args_obj, kwargs_obj) < 0) {
+    if (_interp_call_pack(tstate, &call, callable, args, kwargs) < 0) {
         return NULL;
     }
 
@@ -1328,6 +1328,7 @@ finally:
 
 
 /*[clinic input]
+@permit_long_summary
 _interpreters.is_shareable
     obj: object
 
@@ -1336,7 +1337,7 @@ Return True if the object's data may be shared between interpreters and False ot
 
 static PyObject *
 _interpreters_is_shareable_impl(PyObject *module, PyObject *obj)
-/*[clinic end generated code: output=227856926a22940b input=72b9a36bdf1d2a53]*/
+/*[clinic end generated code: output=227856926a22940b input=95f888d35a6d4bb3]*/
 {
     PyThreadState *tstate = _PyThreadState_GET();
     if (_PyObject_CheckXIData(tstate, obj) == 0) {
@@ -1376,7 +1377,7 @@ _interpreters_is_running_impl(PyObject *module, PyObject *id, int restricted)
 
 /*[clinic input]
 _interpreters.get_config
-    id as idobj: object
+    id: object
     *
     restrict as restricted: bool = False
 
@@ -1384,17 +1385,16 @@ Return a representation of the config used to initialize the interpreter.
 [clinic start generated code]*/
 
 static PyObject *
-_interpreters_get_config_impl(PyObject *module, PyObject *idobj,
-                              int restricted)
-/*[clinic end generated code: output=63f81d35c2fe1387 input=aa38d50f534eb3c5]*/
+_interpreters_get_config_impl(PyObject *module, PyObject *id, int restricted)
+/*[clinic end generated code: output=56773353b9b7224a input=59519a01c22d96d1]*/
 {
-    if (idobj == Py_None) {
-        idobj = NULL;
+    if (id == Py_None) {
+        id = NULL;
     }
 
     int reqready = 0;
     PyInterpreterState *interp = \
-            resolve_interp(idobj, restricted, reqready, "get the config of");
+            resolve_interp(id, restricted, reqready, "get the config of");
     if (interp == NULL) {
         return NULL;
     }
@@ -1492,6 +1492,7 @@ _interpreters_decref_impl(PyObject *module, PyObject *id, int restricted)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _interpreters.capture_exception
     exc as exc_arg: object = None
 
@@ -1503,7 +1504,7 @@ The returned snapshot is the same as what _interpreters.exec() returns.
 
 static PyObject *
 _interpreters_capture_exception_impl(PyObject *module, PyObject *exc_arg)
-/*[clinic end generated code: output=ef3f5393ef9c88a6 input=32045341e979bc9e]*/
+/*[clinic end generated code: output=ef3f5393ef9c88a6 input=6c4dcb78fb722217]*/
 {
     PyObject *exc = exc_arg;
     if (exc == NULL || exc == Py_None) {
