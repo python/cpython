@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import importlib
+import os
 import pkgutil
 import sys
 import token
 import tokenize
+from importlib.machinery import FileFinder
 from io import StringIO
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -50,6 +53,7 @@ class ModuleCompleter:
         self.namespace = namespace or {}
         self._global_cache: list[pkgutil.ModuleInfo] = []
         self._curr_sys_path: list[str] = sys.path[:]
+        self._stdlib_path = os.path.dirname(importlib.__path__[0])
 
     def get_completions(self, line: str) -> list[str] | None:
         """Return the next possible import completions for 'line'."""
@@ -104,15 +108,26 @@ class ModuleCompleter:
                 return []
 
         modules: Iterable[pkgutil.ModuleInfo] = self.global_cache
+        is_stdlib_import: bool | None = None
         for segment in path.split('.'):
             modules = [mod_info for mod_info in modules
                        if mod_info.ispkg and mod_info.name == segment]
+            if is_stdlib_import is None:
+                # Top-level import decide if we import from stdlib or not
+                is_stdlib_import = all(
+                    self._is_stdlib_module(mod_info) for mod_info in modules
+                )
             modules = self.iter_submodules(modules)
 
         module_names = [module.name for module in modules]
-        module_names.extend(HARDCODED_SUBMODULES.get(path, ()))
+        if is_stdlib_import:
+            module_names.extend(HARDCODED_SUBMODULES.get(path, ()))
         return [module_name for module_name in module_names
                 if self.is_suggestion_match(module_name, prefix)]
+
+    def _is_stdlib_module(self, module_info: pkgutil.ModuleInfo) -> bool:
+        return (isinstance(module_info.module_finder, FileFinder)
+                and module_info.module_finder.path == self._stdlib_path)
 
     def is_suggestion_match(self, module_name: str, prefix: str) -> bool:
         if prefix:

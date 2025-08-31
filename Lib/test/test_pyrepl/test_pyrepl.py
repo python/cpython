@@ -1083,6 +1083,18 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
+    def test_hardcoded_stdlib_submodules_not_proposed_if_local_import(self):
+        with tempfile.TemporaryDirectory() as _dir:
+            dir = pathlib.Path(_dir)
+            (dir / "collections").mkdir()
+            (dir / "collections" / "__init__.py").touch()
+            (dir / "collections" / "foo.py").touch()
+            with patch.object(sys, "path", [dir, *sys.path]):
+                events = code_to_events("import collections.\t\n")
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, "import collections.foo")
+
     def test_get_path_and_prefix(self):
         cases = (
             ('', ('', '')),
