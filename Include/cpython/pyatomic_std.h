@@ -1102,16 +1102,17 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
 
     // memcpy(dest, src, n);
 
-    // if (dest != src) {
-    //     void **dest_ = (void **)dest;
-    //     void **src_ = (void **)src;
-    //     void **end = dest_ + n / sizeof(void *);
+    if (dest != src) {
+        void **dest_ = (void **)dest;
+        void **src_ = (void **)src;
+        void **end = dest_ + n / sizeof(void *);
 
-    //     for (; dest_ != end; dest_++, src_++) {
-    //         atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
-    //                               memory_order_relaxed);
-    //     }
-    // }
+        for (; dest_ != end; dest_++, src_++) {
+            *dest_ = *src_;
+            // atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
+            //                       memory_order_relaxed);
+        }
+    }
 
     return dest;
 }
@@ -1126,27 +1127,29 @@ _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
 
     // memmove(dest, src, n);
 
-    // if (dest < src || dest >= (void *)((char *)src + n)) {
-    //     void **dest_ = (void **)dest;
-    //     void **src_ = (void **)src;
-    //     void **end = dest_ + n / sizeof(void *);
+    if (dest < src || dest >= (void *)((char *)src + n)) {
+        void **dest_ = (void **)dest;
+        void **src_ = (void **)src;
+        void **end = dest_ + n / sizeof(void *);
 
-    //     for (; dest_ != end; dest_++, src_++) {
-    //         atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
-    //                               memory_order_relaxed);
-    //     }
-    // }
-    // else if (dest > src) {
-    //     n = n / sizeof(void *) - 1;
-    //     void **dest_ = (void **)dest + n;
-    //     void **src_ = (void **)src + n;
-    //     void **end = (void **)dest - 1;
+        for (; dest_ != end; dest_++, src_++) {
+            *dest_ = *src_;
+            // atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
+            //                       memory_order_relaxed);
+        }
+    }
+    else if (dest > src) {
+        n = n / sizeof(void *) - 1;
+        void **dest_ = (void **)dest + n;
+        void **src_ = (void **)src + n;
+        void **end = (void **)dest - 1;
 
-    //     for (; dest_ != end; dest_--, src_--) {
-    //         atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
-    //                               memory_order_relaxed);
-    //     }
-    // }
+        for (; dest_ != end; dest_--, src_--) {
+            *dest_ = *src_;
+            // atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
+            //                       memory_order_relaxed);
+        }
+    }
 
     return dest;
 }
