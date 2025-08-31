@@ -752,7 +752,9 @@ py_wrapper_EVP_MD_CTX_new(void)
 static HASHobject *
 new_hash_object(PyTypeObject *type)
 {
-    HASHobject *retval = PyObject_GC_New(HASHobject, type);
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    HASHobject *retval = (HASHobject *)type->tp_alloc(type, 0);
     if (retval == NULL) {
         return NULL;
     }
@@ -764,7 +766,6 @@ new_hash_object(PyTypeObject *type)
         return NULL;
     }
 
-    PyObject_GC_Track(retval);
     return retval;
 }
 
@@ -797,7 +798,7 @@ _hashlib_HASH_dealloc(PyObject *op)
     PyObject_GC_UnTrack(op);
     HASHobject *self = HASHobject_CAST(op);
     EVP_MD_CTX_free(self->ctx);
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1176,7 +1177,7 @@ PyDoc_STRVAR(HASHXOFobject_type_doc,
 "digest_size -- number of bytes in this hashes output");
 
 static PyType_Slot HASHXOFobject_type_slots[] = {
-    /* tp_dealloc is inherited from _hashlib.HASH */
+    {Py_tp_dealloc, _hashlib_HASH_dealloc},
     {Py_tp_traverse, _hashlib_HASH_traverse},
     {Py_tp_doc, (char *)HASHXOFobject_type_doc},
     {Py_tp_methods, HASHXOFobject_methods},
@@ -1916,7 +1917,8 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         goto error;
     }
 
-    self = PyObject_GC_New(HMACobject, state->HMAC_type);
+    assert(state->HMAC_type != NULL);
+    self = (HMACobject *)state->HMAC_type->tp_alloc(state->HMAC_type, 0);
     if (self == NULL) {
         goto error;
     }
@@ -1924,7 +1926,6 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     self->ctx = ctx;
     ctx = NULL;  // 'ctx' is now owned by 'self'
     HASHLIB_INIT_MUTEX(self);
-    PyObject_GC_Track(self);
 
     if ((msg_obj != NULL) && (msg_obj != Py_None)) {
         if (!_hmac_update(self, msg_obj)) {
@@ -2023,7 +2024,8 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return NULL;
     }
 
-    retval = PyObject_GC_New(HMACobject, Py_TYPE(self));
+    PyTypeObject *type = Py_TYPE(self);
+    retval = (HMACobject *)type->tp_alloc(type, 0);
     if (retval == NULL) {
         HMAC_CTX_free(ctx);
         return NULL;
@@ -2031,7 +2033,6 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
     retval->ctx = ctx;
     HASHLIB_INIT_MUTEX(retval);
 
-    PyObject_GC_Track(retval);
     return (PyObject *)retval;
 }
 
@@ -2045,7 +2046,7 @@ _hmac_dealloc(PyObject *op)
         HMAC_CTX_free(self->ctx);
         self->ctx = NULL;
     }
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
