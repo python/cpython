@@ -114,18 +114,20 @@ function main() {
     const mouseX = event.pageX || event.clientX;
     const mouseY = event.pageY || event.clientY;
 
-    // Calculate tooltip width (default to 320px if not rendered yet)
+    // Calculate tooltip dimensions (default to 320px width if not rendered yet)
     let tooltipWidth = 320;
+    let tooltipHeight = 200;
     if (this._tooltip && this._tooltip.node()) {
       const node = this._tooltip
         .style("opacity", 0)
         .style("display", "block")
         .node();
       tooltipWidth = node.offsetWidth || 320;
+      tooltipHeight = node.offsetHeight || 200;
       this._tooltip.style("display", null);
     }
 
-    // Calculate position: if overflow, show to the left of cursor
+    // Calculate horizontal position: if overflow, show to the left of cursor
     const padding = 10;
     const rightEdge = mouseX + padding + tooltipWidth;
     const viewportWidth = window.innerWidth;
@@ -137,10 +139,21 @@ function main() {
       left = mouseX + padding;
     }
 
+    // Calculate vertical position: if overflow, show above cursor
+    const bottomEdge = mouseY + padding + tooltipHeight;
+    const viewportHeight = window.innerHeight;
+    let top;
+    if (bottomEdge > viewportHeight) {
+      top = mouseY - tooltipHeight - padding;
+      if (top < 0) top = padding; // prevent off top edge
+    } else {
+      top = mouseY + padding;
+    }
+
     this._tooltip
       .html(tooltipHTML)
       .style("left", left + "px")
-      .style("top", mouseY - 10 + "px")
+      .style("top", top + "px")
       .transition()
       .duration(200)
       .style("opacity", 1);
