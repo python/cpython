@@ -36,19 +36,14 @@ _Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
 int
 _Py_convert_optional_to_non_negative_ssize_t(PyObject *obj, void *result)
 {
-    if (_Py_convert_optional_to_ssize_t(obj, result)) {
-        if(obj == Py_None || *((Py_ssize_t *)result) >= 0) {
-            return 1;
-        }
-        else {
-            PyErr_SetString(PyExc_ValueError,
-                            "argument must not be negative");
-            return 0;
-        }
-    }
-    else {
+    if (!_Py_convert_optional_to_ssize_t(obj, result)) {
         return 0;
     }
+    if (obj != Py_None && *((Py_ssize_t *)result) < 0) {
+       	PyErr_SetString(PyExc_ValueError, "argument must be >= 0");
+    	return 0;
+    }
+    return 1;
 }
 
 /* Helper for mkvalue() to scan the length of a format */

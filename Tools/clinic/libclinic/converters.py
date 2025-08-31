@@ -434,12 +434,11 @@ class Py_ssize_t_converter(CConverter):
             fail(f"Py_ssize_t_converter: illegal 'accept' argument {accept!r}")
 
     def use_converter(self) -> None:
-        if self.converter == '_Py_convert_optional_to_ssize_t':
-            self.add_include('pycore_abstract.h',
-                             '_Py_convert_optional_to_ssize_t()')
-        elif self.converter == '_Py_convert_optional_to_non_negative_ssize_t':
-            self.add_include('pycore_abstract.h',
-                             '_Py_convert_optional_to_non_negative_ssize_t()')
+        if self.converter in {
+            '_Py_convert_optional_to_ssize_t',
+            '_Py_convert_optional_to_non_negative_ssize_t',
+        }:
+            self.add_include('pycore_abstract.h', f'{self.converter}()')
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.allow_negative:
@@ -448,7 +447,7 @@ class Py_ssize_t_converter(CConverter):
             non_negative_check = self.format_code("""
                     if ({paramname} < 0) {{{{
                         PyErr_SetString(PyExc_ValueError,
-                                        "{paramname} must not be negative");
+                                        "{paramname} must be >=0");
                         goto exit;
                     }}}}""",
             argname=argname)

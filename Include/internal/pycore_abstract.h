@@ -52,7 +52,7 @@ extern int _PyObject_RealIsSubclass(PyObject *derived, PyObject *cls);
 PyAPI_FUNC(int) _Py_convert_optional_to_ssize_t(PyObject *, void *);
 
 // Convert Python int to Py_ssize_t. Do nothing if the argument is None.
-// Raises ValueError if argument is negative
+// Raises ValueError if argument is negative.
 PyAPI_FUNC(int) _Py_convert_optional_to_non_negative_ssize_t(PyObject *, void *);
 
 // Same as PyNumber_Index() but can return an instance of a subclass of int.

@@ -1614,12 +1614,15 @@ test_Py_ssize_t_converter
     c: Py_ssize_t(accept={int, NoneType}) = 56
     d: Py_ssize_t(accept={int}, allow_negative=False) = 78
     e: Py_ssize_t(accept={int, NoneType}, allow_negative=False) = 90
+    f: Py_ssize_t(accept={int}, allow_negative=True) = 12
+    g: Py_ssize_t(accept={int, NoneType}, allow_negative=True) = 34
     /
 
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_Py_ssize_t_converter__doc__,
-"test_Py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, /)\n"
+"test_Py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=12,\n"
+"                          g=34, /)\n"
 "--\n"
 "\n");
 
@@ -1628,7 +1631,8 @@ PyDoc_STRVAR(test_Py_ssize_t_converter__doc__,
 
 static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                               Py_ssize_t c, Py_ssize_t d, Py_ssize_t e);
+                               Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                               Py_ssize_t f, Py_ssize_t g);
 
 static PyObject *
 test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1639,8 +1643,10 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     Py_ssize_t c = 56;
     Py_ssize_t d = 78;
     Py_ssize_t e = 90;
+    Py_ssize_t f = 12;
+    Py_ssize_t g = 34;
 
-    if (!_PyArg_CheckPositional("test_Py_ssize_t_converter", nargs, 0, 5)) {
+    if (!_PyArg_CheckPositional("test_Py_ssize_t_converter", nargs, 0, 7)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -1695,7 +1701,7 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
         d = ival;
         if (d < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "d must not be negative");
+                            "d must be >=0");
             goto exit;
         }
     }
@@ -1705,8 +1711,29 @@ test_Py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t na
     if (!_Py_convert_optional_to_non_negative_ssize_t(args[4], &e)) {
         goto exit;
     }
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[5]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        f = ival;
+    }
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_ssize_t(args[6], &g)) {
+        goto exit;
+    }
 skip_optional:
-    return_value = test_Py_ssize_t_converter_impl(module, a, b, c, d, e);
+    return_value = test_Py_ssize_t_converter_impl(module, a, b, c, d, e, f, g);
 
 exit:
     return return_value;
@@ -1714,8 +1741,9 @@ exit:
 
 static PyObject *
 test_Py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                               Py_ssize_t c, Py_ssize_t d, Py_ssize_t e)
-/*[clinic end generated code: output=df3873c05e53e497 input=5c693ea198fa3dd5]*/
+                               Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                               Py_ssize_t f, Py_ssize_t g)
+/*[clinic end generated code: output=8721e4925ea46578 input=0d80cb5c942b6e0f]*/
 
 
 /*[clinic input]

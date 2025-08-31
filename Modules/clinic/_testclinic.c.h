@@ -1196,7 +1196,8 @@ exit:
 }
 
 PyDoc_STRVAR(py_ssize_t_converter__doc__,
-"py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, /)\n"
+"py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=-1, g=-1,\n"
+"                     /)\n"
 "--\n"
 "\n");
 
@@ -1205,7 +1206,8 @@ PyDoc_STRVAR(py_ssize_t_converter__doc__,
 
 static PyObject *
 py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                          Py_ssize_t c, Py_ssize_t d, Py_ssize_t e);
+                          Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                          Py_ssize_t f, Py_ssize_t g);
 
 static PyObject *
 py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1216,8 +1218,10 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t c = 56;
     Py_ssize_t d = 78;
     Py_ssize_t e = 90;
+    Py_ssize_t f = -1;
+    Py_ssize_t g = -1;
 
-    if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 5)) {
+    if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 7)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -1272,7 +1276,7 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         d = ival;
         if (d < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "d must not be negative");
+                            "d must be >=0");
             goto exit;
         }
     }
@@ -1282,8 +1286,34 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_Py_convert_optional_to_non_negative_ssize_t(args[4], &e)) {
         goto exit;
     }
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[5]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        f = ival;
+        if (f < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "f must be >=0");
+            goto exit;
+        }
+    }
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_non_negative_ssize_t(args[6], &g)) {
+        goto exit;
+    }
 skip_optional:
-    return_value = py_ssize_t_converter_impl(module, a, b, c, d, e);
+    return_value = py_ssize_t_converter_impl(module, a, b, c, d, e, f, g);
 
 exit:
     return return_value;
@@ -4570,4 +4600,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ebfd7ad360d0ea26 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b8d90ce4a2f3466 input=a9049054013a1b77]*/
