@@ -1,2 +1,0 @@
-Add ``allow_negative`` flag to ``Py_ssize_t`` Argument Clinic converter, to
-enable generation of bound checking
