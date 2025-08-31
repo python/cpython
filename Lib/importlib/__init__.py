@@ -85,7 +85,18 @@ def import_module(name, package=None):
             if character != '.':
                 break
             level += 1
-    return _bootstrap._gcd_import(name[level:], package, level)
+    module = _bootstrap._gcd_import(name[level:], package, level)
+    if module:
+        sys.audit(
+            "import",
+            name,
+            # We could try to grab __file__ here but it breaks LazyLoader
+            None,
+            sys.path,
+            sys.meta_path,
+            sys.path_hooks
+        )
+    return module
 
 
 _RELOADING = {}
