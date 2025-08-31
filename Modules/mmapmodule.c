@@ -634,6 +634,7 @@ is_writable(mmap_object *self)
     return 0;
 }
 
+#if defined(MS_WINDOWS) || defined(HAVE_MREMAP)
 static int
 is_resizeable(mmap_object *self)
 {
@@ -656,6 +657,7 @@ is_resizeable(mmap_object *self)
     return 0;
 
 }
+#endif /* defined(MS_WINDOWS) || defined(HAVE_MREMAP) */
 
 
 static PyObject *
@@ -768,6 +770,7 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
  / new size?
  */
 
+#if defined(MS_WINDOWS) || defined(HAVE_MREMAP)
 static PyObject *
 mmap_resize_method(PyObject *op, PyObject *args)
 {
@@ -882,11 +885,6 @@ mmap_resize_method(PyObject *op, PyObject *args)
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-#ifndef HAVE_MREMAP
-        PyErr_SetString(PyExc_SystemError,
-                        "mmap: resizing not available--no mremap()");
-        return NULL;
-#else
         void *newmap;
 
         if (self->fd != -1 && ftruncate(self->fd, self->offset + new_size) == -1) {
@@ -911,10 +909,10 @@ mmap_resize_method(PyObject *op, PyObject *args)
         self->data = newmap;
         self->size = new_size;
         Py_RETURN_NONE;
-#endif /* HAVE_MREMAP */
 #endif /* UNIX */
     }
 }
+#endif /* defined(MS_WINDOWS) || defined(HAVE_MREMAP) */
 
 static PyObject *
 mmap_tell_method(PyObject *op, PyObject *Py_UNUSED(ignored))
@@ -1202,7 +1200,9 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"read",            mmap_read_method,         METH_VARARGS},
     {"read_byte",       mmap_read_byte_method,    METH_NOARGS},
     {"readline",        mmap_read_line_method,    METH_NOARGS},
+#if defined(MS_WINDOWS) || defined(HAVE_MREMAP)
     {"resize",          mmap_resize_method,       METH_VARARGS},
+#endif
     {"seek",            mmap_seek_method,         METH_VARARGS},
     {"seekable",        mmap_seekable_method,     METH_NOARGS},
     {"size",            mmap_size_method,         METH_NOARGS},

@@ -57,6 +57,7 @@ class MmapTests(unittest.TestCase):
             f.write(b'\0'* (PAGESIZE-3) )
             f.flush()
             m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
+            self.addCleanup(m.close)
         finally:
             f.close()
 
@@ -114,31 +115,34 @@ class MmapTests(unittest.TestCase):
         # Try to seek to negative position...
         self.assertRaises(ValueError, m.seek, -len(m)-1, 2)
 
-        # Try resizing map
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
+    def test_resize(self):
+        # Create a file to be mmap'ed.
+        f = open(TESTFN, 'bw+')
         try:
-            m.resize(512)
-        except SystemError:
-            # resize() not supported
-            # No messages are printed, since the output of this test suite
-            # would then be different across platforms.
-            pass
-        else:
-            # resize() is supported
-            self.assertEqual(len(m), 512)
-            # Check that we can no longer seek beyond the new size.
-            self.assertRaises(ValueError, m.seek, 513, 0)
+            # Write 2 pages worth of data to the file
+            f.write(b'\0'* 2 * PAGESIZE)
+            f.flush()
+            m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
+            self.addCleanup(m.close)
+        finally:
+            f.close()
 
-            # Check that the underlying file is truncated too
-            # (bug #728515)
-            f = open(TESTFN, 'rb')
-            try:
-                f.seek(0, 2)
-                self.assertEqual(f.tell(), 512)
-            finally:
-                f.close()
-            self.assertEqual(m.size(), 512)
+        # Try resizing map
+        m.resize(512)
+        self.assertEqual(len(m), 512)
+        # Check that we can no longer seek beyond the new size.
+        self.assertRaises(ValueError, m.seek, 513, 0)
 
-        m.close()
+        # Check that the underlying file is truncated too
+        # (bug #728515)
+        f = open(TESTFN, 'rb')
+        try:
+            f.seek(0, 2)
+            self.assertEqual(f.tell(), 512)
+        finally:
+            f.close()
+        self.assertEqual(m.size(), 512)
 
     def test_access_parameter(self):
         # Test for "access" keyword parameter
@@ -186,7 +190,7 @@ class MmapTests(unittest.TestCase):
             # Ensuring that readonly mmap can't be resized
             try:
                 m.resize(2*mapsize)
-            except SystemError:   # resize is not universally supported
+            except AttributeError:   # resize is not universally supported
                 pass
             except TypeError:
                 pass
@@ -242,8 +246,9 @@ class MmapTests(unittest.TestCase):
             with open(TESTFN, "rb") as fp:
                 self.assertEqual(fp.read(), b'c'*mapsize,
                                  "Copy-on-write test data file should not be modified.")
-            # Ensuring copy-on-write maps cannot be resized
-            self.assertRaises(TypeError, m.resize, 2*mapsize)
+            if hasattr(m, 'resize'):
+                # Ensuring copy-on-write maps cannot be resized
+                self.assertRaises(TypeError, m.resize, 2*mapsize)
             m.close()
 
         # Ensuring invalid access parameter raises exception
@@ -285,10 +290,11 @@ class MmapTests(unittest.TestCase):
                         with self.assertRaises(OSError) as err_cm:
                             m.size()
                         self.assertEqual(err_cm.exception.errno, errno.EBADF)
-                        with self.assertRaises(ValueError):
-                            m.resize(size * 2)
-                        with self.assertRaises(ValueError):
-                            m.resize(size // 2)
+                        if hasattr(m, 'resize'):
+                            with self.assertRaises(ValueError):
+                                m.resize(size * 2)
+                            with self.assertRaises(ValueError):
+                                m.resize(size // 2)
                         self.assertEqual(m.closed, False)
 
                         # Smoke-test other API
@@ -311,8 +317,9 @@ class MmapTests(unittest.TestCase):
         with mmap.mmap(-1, size, trackfd=False) as m:
             with self.assertRaises(OSError):
                 m.size()
-            with self.assertRaises(ValueError):
-                m.resize(size // 2)
+            if hasattr(m, 'resize'):
+                with self.assertRaises(ValueError):
+                    m.resize(size // 2)
             self.assertEqual(len(m), size)
             m[0] = ord('a')
             assert m[0] == ord('a')
@@ -617,7 +624,7 @@ class MmapTests(unittest.TestCase):
             # Try resizing map
             try:
                 m.resize(512)
-            except SystemError:
+            except AttributeError:
                 pass
             else:
                 # resize() is supported
@@ -812,14 +819,12 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(mm.write(b"yz"), 2)
         self.assertEqual(mm.write(b"python"), 6)
 
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
     def test_resize_past_pos(self):
         m = mmap.mmap(-1, 8192)
         self.addCleanup(m.close)
         m.read(5000)
-        try:
-            m.resize(4096)
-        except SystemError:
-            self.skipTest("resizing not supported")
+        m.resize(4096)
         self.assertEqual(m.read(14), b'')
         self.assertRaises(ValueError, m.read_byte)
         self.assertRaises(ValueError, m.write_byte, 42)
