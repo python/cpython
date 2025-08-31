@@ -1,1 +1,1 @@
-Earlier  urllib.parse.parse_qsl was taking illegal characters like '^' , ' ` ' etc. which should not be the case according to RFC 3986. Hence added the check and now will throw ValueError in case of any illegal characters other than allowed ones. Also written test for it.
+:mod:`urllib.parse`: in strict parsing, :func:`~urllib.parse.parse_qsl` now properly rejects characters according to :rfc:`3986` and raises a :exc:`ValueError` when encountering them.
