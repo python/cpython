@@ -600,22 +600,6 @@ static inline Py_ssize_t
 _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj)
 { return __atomic_load_n(obj, __ATOMIC_ACQUIRE); }
 
-
-// --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
-
-static inline void *
-_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
-{
-    return memcpy(dest, src, n);
-}
-
-static inline void *
-_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
-{
-    return memmove(dest, src, n);
-}
-
-
 // --- _Py_atomic_fence ------------------------------------------------------
 
 static inline void
