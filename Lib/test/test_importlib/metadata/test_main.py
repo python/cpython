@@ -22,7 +22,7 @@ from importlib.metadata import (
 )
 
 from . import fixtures
-from . import _issue132947
+from . import _issue138313
 from ._path import Symlink
 
 
@@ -358,7 +358,7 @@ class PackagesDistributionsPrebuiltTest(fixtures.ZipFixtures, unittest.TestCase)
         self._fixture_on_path('example-21.12-py3-none-any.whl')
         assert packages_distributions()['example'] == ['example']
 
-    @_issue132947.skip_on_buildbot
+    @_issue138313.skip_on_buildbot
     def test_packages_distributions_example2(self):
         """
         Test packages_distributions on a wheel built
