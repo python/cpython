@@ -5884,6 +5884,12 @@ appears in :ref:`pretty printers <prettyprinter-objects>`,
 or instead of :ref:`pass statement <tut-pass>`.
 
 
+.. seealso::
+
+   `NumPy's slicing and striding <https://numpy.org/doc/stable/user/basics.indexing.html#slicing-and-striding>`_
+      A known-well Ellipsis use on third packages is the slicing on the Numpy.
+
+
 .. _bltin-notimplemented-object:
 
 The NotImplemented Object
