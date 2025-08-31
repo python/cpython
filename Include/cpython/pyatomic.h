@@ -545,7 +545,13 @@ static inline Py_ssize_t
 _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 
 
-// // --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
+// --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
+
+static inline void *
+_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n);
+
+static inline void *
+_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n);
 
 // static inline void *
 // _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
