@@ -11,8 +11,6 @@ var Scorer = {
     return score;
   },
 
-  // all values below this line are the Sphinx defaults
-
   // Additive scores depending on the priority of the object
   // Priority is set by object domains
   // (see https://www.sphinx-doc.org/en/master/extdev/domainapi.html)
