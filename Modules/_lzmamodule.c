@@ -856,7 +856,6 @@ Compressor_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             goto error;
     }
 
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error:
@@ -874,7 +873,7 @@ Compressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1306,7 +1305,6 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
             goto error;
     }
 
-    PyObject_GC_Track(self);
     return (PyObject *)self;
 
 error:
@@ -1328,7 +1326,7 @@ Decompressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    PyObject_GC_Del(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
