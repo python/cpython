@@ -1,6 +1,6 @@
 import token
 import tokenize
-from typing import Dict, Iterator, List
+from collections.abc import Iterator
 
 Mark = int  # NewType('Mark', int)
 
@@ -17,7 +17,7 @@ class Tokenizer:
     This is pretty tied to Python's syntax.
     """
 
-    _tokens: List[tokenize.TokenInfo]
+    _tokens: list[tokenize.TokenInfo]
 
     def __init__(
         self, tokengen: Iterator[tokenize.TokenInfo], *, path: str = "", verbose: bool = False
@@ -26,7 +26,7 @@ class Tokenizer:
         self._tokens = []
         self._index = 0
         self._verbose = verbose
-        self._lines: Dict[int, str] = {}
+        self._lines: dict[int, str] = {}
         self._path = path
         if verbose:
             self.report(False, False)
@@ -72,7 +72,7 @@ class Tokenizer:
                 break
         return tok
 
-    def get_lines(self, line_numbers: List[int]) -> List[str]:
+    def get_lines(self, line_numbers: list[int]) -> list[str]:
         """Retrieve source lines corresponding to line numbers."""
         if self._lines:
             lines = self._lines
