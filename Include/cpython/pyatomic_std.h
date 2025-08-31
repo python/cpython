@@ -1108,9 +1108,9 @@ _Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, size_t n)
         void **end = dest_ + n / sizeof(void *);
 
         for (; dest_ != end; dest_++, src_++) {
-            *dest_ = *src_;
-            // atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
-            //                       memory_order_relaxed);
+            // *dest_ = *src_;
+            atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
+                                  memory_order_relaxed);
         }
     }
 
@@ -1133,9 +1133,9 @@ _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
         void **end = dest_ + n / sizeof(void *);
 
         for (; dest_ != end; dest_++, src_++) {
-            *dest_ = *src_;
-            // atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
-            //                       memory_order_relaxed);
+            // *dest_ = *src_;
+            atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
+                                  memory_order_relaxed);
         }
     }
     else if (dest > src) {
@@ -1145,9 +1145,9 @@ _Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, size_t n)
         void **end = (void **)dest - 1;
 
         for (; dest_ != end; dest_--, src_--) {
-            *dest_ = *src_;
-            // atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
-            //                       memory_order_relaxed);
+            // *dest_ = *src_;
+            atomic_store_explicit((_Atomic(void*)*)dest_, *src_,
+                                  memory_order_relaxed);
         }
     }
 
