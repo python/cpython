@@ -1007,7 +1007,8 @@ class Path(PurePath):
             if not parents or self.parent == self:
                 raise
             if parent_mode is not None:
-                self.parent.mkdir(mode=parent_mode, parents=True, exist_ok=True, parent_mode=parent_mode)
+                self.parent.mkdir(mode=parent_mode, parents=True, exist_ok=True,
+                                  parent_mode=parent_mode)
             else:
                 self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
