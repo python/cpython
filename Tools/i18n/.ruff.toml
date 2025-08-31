@@ -1,4 +1,5 @@
 extend = "../../.ruff.toml"  # Inherit the project-wide settings
+target-version = "py313"
 
 [lint]
 select = [

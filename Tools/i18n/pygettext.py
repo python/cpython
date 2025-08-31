@@ -387,7 +387,7 @@ def unparse_spec(name, spec):
             parts.append(f'{pos + 1}c')
         else:
             parts.append(str(pos + 1))
-    return f"{name}:{','.join(parts)}"
+    return f'{name}:{','.join(parts)}'
 
 
 def process_keywords(keywords, *, no_default_keywords):
