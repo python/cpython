@@ -1308,13 +1308,7 @@ csv_writerow(PyObject *op, PyObject *seq)
         /* Single empty field special case */
         if (field_count == 0) {
             first_field_was_none = null_field;
-            if (null_field) {
-                first_field_was_empty_like = true;
-            }
-            else {
-                Py_ssize_t len = str_field ? PyUnicode_GET_LENGTH(str_field) : 0;
-                first_field_was_empty_like = (len == 0);
-            }
+            first_field_was_empty_like = null_field || !PyUnicode_GET_LENGTH(str_field);
         }
 
         if (_write_field(writer, self, str_field, &quoted) < 0) {
