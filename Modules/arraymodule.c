@@ -714,7 +714,6 @@ ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
 }
 
 /* Methods */
-
 static void
 array_dealloc(PyObject *op)
 {

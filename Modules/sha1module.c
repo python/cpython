@@ -81,7 +81,6 @@ newSHA1object(SHA1State *st)
 
 
 /* Internal methods for a hash object */
-
 static void
 SHA1_dealloc(PyObject *op)
 {

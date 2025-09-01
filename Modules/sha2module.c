@@ -164,7 +164,6 @@ newSHA512object(sha2_state *state)
 }
 
 /* Internal methods for our hash objects. */
-
 static void
 SHA256_dealloc(PyObject *op)
 {

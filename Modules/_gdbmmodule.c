@@ -122,7 +122,6 @@ newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
-
 static void
 gdbm_dealloc(PyObject *op)
 {

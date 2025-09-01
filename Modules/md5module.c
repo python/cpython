@@ -82,7 +82,6 @@ newMD5object(MD5State * st)
 }
 
 /* Internal methods for a hash object */
-
 static void
 MD5_dealloc(PyObject *op)
 {
