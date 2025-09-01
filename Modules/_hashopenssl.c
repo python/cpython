@@ -282,8 +282,6 @@ typedef struct {
     PyMutex mutex;  /* OpenSSL context lock */
 } EVPobject;
 
-#define EVPobject_CAST(op)  ((EVPobject *)(op))
-
 typedef struct {
     PyObject_HEAD
     HMAC_CTX *ctx;            /* OpenSSL hmac context */
@@ -291,8 +289,6 @@ typedef struct {
     bool use_mutex;
     PyMutex mutex;  /* HMAC context lock */
 } HMACobject;
-
-#define HMACobject_CAST(op) ((HMACobject *)(op))
 
 #include "clinic/_hashopenssl.c.h"
 /*[clinic input]
@@ -501,9 +497,7 @@ py_digest_by_digestmod(PyObject *module, PyObject *digestmod, enum Py_hash_type 
 static EVPobject *
 newEVPobject(PyTypeObject *type)
 {
-    assert(type != NULL);
-    assert(type->tp_alloc != NULL);
-    EVPobject *retval = (EVPobject *)type->tp_alloc(type, 0);
+    EVPobject *retval = (EVPobject *)PyObject_New(EVPobject, type);
     if (retval == NULL) {
         return NULL;
     }
@@ -542,21 +536,12 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
 /* Internal methods for a hash object */
 
 static void
-EVP_dealloc(PyObject *op)
+EVP_dealloc(EVPobject *self)
 {
-    PyTypeObject *tp = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
-    EVPobject *self = EVPobject_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
     EVP_MD_CTX_free(self->ctx);
-    tp->tp_free(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
-}
-
-static int
-EVP_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
 }
 
 static int
@@ -796,7 +781,6 @@ PyDoc_STRVAR(hashtype_doc,
 
 static PyType_Slot EVPtype_slots[] = {
     {Py_tp_dealloc, EVP_dealloc},
-    {Py_tp_traverse, EVP_traverse},
     {Py_tp_repr, EVP_repr},
     {Py_tp_doc, (char *)hashtype_doc},
     {Py_tp_methods, EVP_methods},
@@ -805,16 +789,11 @@ static PyType_Slot EVPtype_slots[] = {
 };
 
 static PyType_Spec EVPtype_spec = {
-    .name = "_hashlib.HASH",
-    .basicsize = sizeof(EVPobject),
-    .flags = (
-        Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_DISALLOW_INSTANTIATION
-        | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_HAVE_GC
-    ),
-    .slots = EVPtype_slots
+    "_hashlib.HASH",    /*tp_name*/
+    sizeof(EVPobject),  /*tp_basicsize*/
+    0,                  /*tp_itemsize*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    EVPtype_slots
 };
 
 #ifdef PY_OPENSSL_HAS_SHAKE
@@ -955,8 +934,6 @@ PyDoc_STRVAR(hashxoftype_doc,
 "digest_size -- number of bytes in this hashes output");
 
 static PyType_Slot EVPXOFtype_slots[] = {
-    {Py_tp_dealloc, EVP_dealloc},
-    {Py_tp_traverse, EVP_traverse},
     {Py_tp_doc, (char *)hashxoftype_doc},
     {Py_tp_methods, EVPXOF_methods},
     {Py_tp_getset, EVPXOF_getseters},
@@ -964,16 +941,11 @@ static PyType_Slot EVPXOFtype_slots[] = {
 };
 
 static PyType_Spec EVPXOFtype_spec = {
-    .name = "_hashlib.HASHXOF",
-    .basicsize = sizeof(EVPobject),
-    .flags = (
-        Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_DISALLOW_INSTANTIATION
-        | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_HAVE_GC
-    ),
-    .slots = EVPXOFtype_slots
+    "_hashlib.HASHXOF",    /*tp_name*/
+    sizeof(EVPobject),  /*tp_basicsize*/
+    0,                  /*tp_itemsize*/
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    EVPXOFtype_slots
 };
 
 
@@ -1687,8 +1659,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     }
 
     _hashlibstate *state = get_hashlib_state(module);
-    assert(state->HMACtype != NULL);
-    self = (HMACobject *)state->HMACtype->tp_alloc(state->HMACtype, 0);
+    self = PyObject_New(HMACobject, state->HMACtype);
     if (self == NULL) {
         goto error;
     }
@@ -1793,8 +1764,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return NULL;
     }
 
-    PyTypeObject *type = Py_TYPE(self);
-    retval = (HMACobject *)type->tp_alloc(type, 0);
+    retval = PyObject_New(HMACobject, Py_TYPE(self));
     if (retval == NULL) {
         HMAC_CTX_free(ctx);
         return NULL;
@@ -1806,24 +1776,15 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 }
 
 static void
-_hmac_dealloc(PyObject *op)
+_hmac_dealloc(HMACobject *self)
 {
-    PyTypeObject *tp = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
-    HMACobject *self = HMACobject_CAST(op);
+    PyTypeObject *tp = Py_TYPE(self);
     if (self->ctx != NULL) {
         HMAC_CTX_free(self->ctx);
         self->ctx = NULL;
     }
-    tp->tp_free(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
-}
-
-static int
-_hmac_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
 }
 
 static PyObject *
@@ -1993,22 +1954,16 @@ digest_size -- number of bytes in digest() output\n");
 static PyType_Slot HMACtype_slots[] = {
     {Py_tp_doc, (char *)hmactype_doc},
     {Py_tp_repr, (reprfunc)_hmac_repr},
-    {Py_tp_dealloc, _hmac_dealloc},
-    {Py_tp_traverse, _hmac_traverse},
+    {Py_tp_dealloc,(destructor)_hmac_dealloc},
     {Py_tp_methods, HMAC_methods},
     {Py_tp_getset, HMAC_getset},
     {0, NULL}
 };
 
 PyType_Spec HMACtype_spec = {
-    .name = "_hashlib.HMAC",
-    .basicsize = sizeof(HMACobject),
-    .flags = (
-        Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_DISALLOW_INSTANTIATION
-        | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_HAVE_GC
-    ),
+    "_hashlib.HMAC",    /* name */
+    sizeof(HMACobject),     /* basicsize */
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = HMACtype_slots,
 };
 
