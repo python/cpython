@@ -758,7 +758,10 @@ static pollObject *
 newPollObject(PyObject *module)
 {
     pollObject *self;
-    self = PyObject_New(pollObject, get_select_state(module)->poll_Type);
+    PyTypeObject *type = get_select_state(module)->poll_Type;
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    self = (pollObject *)type->tp_alloc(type, 0);
     if (self == NULL)
         return NULL;
     /* ufd_uptodate is a Boolean, denoting whether the
@@ -777,16 +780,25 @@ newPollObject(PyObject *module)
 static void
 poll_dealloc(PyObject *op)
 {
+    PyTypeObject *type = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     pollObject *self = pollObject_CAST(op);
-    PyTypeObject *type = Py_TYPE(self);
     if (self->ufds != NULL) {
         PyMem_Free(self->ufds);
     }
     Py_XDECREF(self->dict);
-    PyObject_Free(self);
+    type->tp_free(self);
     Py_DECREF(type);
 }
 
+static int
+poll_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    pollObject *self = pollObject_CAST(op);
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(self->dict);
+    return 0;
+}
 
 #ifdef HAVE_SYS_DEVPOLL_H
 static PyMethodDef devpoll_methods[];
@@ -1392,13 +1404,22 @@ select_epoll_impl(PyTypeObject *type, int sizehint, int flags)
 static void
 pyepoll_dealloc(PyObject *op)
 {
+    PyTypeObject *type = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     pyEpoll_Object *self = pyEpoll_Object_CAST(op);
-    PyTypeObject *type = Py_TYPE(self);
     (void)pyepoll_internal_close(self);
     freefunc epoll_free = PyType_GetSlot(type, Py_tp_free);
     epoll_free(self);
     Py_DECREF(type);
 }
+
+static int
+pyepoll_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
+
 
 /*[clinic input]
 @critical_section
@@ -2476,6 +2497,7 @@ static PyMethodDef poll_methods[] = {
 
 static PyType_Slot poll_Type_slots[] = {
     {Py_tp_dealloc, poll_dealloc},
+    {Py_tp_traverse, poll_traverse},
     {Py_tp_methods, poll_methods},
     {0, 0},
 };
@@ -2483,7 +2505,11 @@ static PyType_Slot poll_Type_slots[] = {
 static PyType_Spec poll_Type_spec = {
     .name = "select.poll",
     .basicsize = sizeof(pollObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = poll_Type_slots,
 };
 
@@ -2520,6 +2546,7 @@ static PyMethodDef pyepoll_methods[] = {
 
 static PyType_Slot pyEpoll_Type_slots[] = {
     {Py_tp_dealloc, pyepoll_dealloc},
+    {Py_tp_traverse, pyepoll_traverse},
     {Py_tp_doc, (void*)pyepoll_doc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_getset, pyepoll_getsetlist},
@@ -2529,11 +2556,10 @@ static PyType_Slot pyEpoll_Type_slots[] = {
 };
 
 static PyType_Spec pyEpoll_Type_spec = {
-    "select.epoll",
-    sizeof(pyEpoll_Object),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    pyEpoll_Type_slots
+    .name = "select.epoll",
+    .basicsize = sizeof(pyEpoll_Object),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .slots = pyEpoll_Type_slots
 };
 
 #endif /* HAVE_EPOLL */
