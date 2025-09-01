@@ -1161,27 +1161,51 @@ typedef struct lru_list_elem {
 
 #define lru_list_elem_CAST(op)  ((lru_list_elem *)(op))
 
+static int
+lru_list_elem_clear(PyObject *op)
+{
+    lru_list_elem *link = lru_list_elem_CAST(op);
+    Py_CLEAR(link->key);
+    Py_CLEAR(link->result);
+    return 0;
+}
+
 static void
 lru_list_elem_dealloc(PyObject *op)
 {
-    lru_list_elem *link = lru_list_elem_CAST(op);
-    PyTypeObject *tp = Py_TYPE(link);
-    Py_XDECREF(link->key);
-    Py_XDECREF(link->result);
-    tp->tp_free(link);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    (void)lru_list_elem_clear(op);
+    tp->tp_free(op);
     Py_DECREF(tp);
 }
 
+static int
+lru_list_elem_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    lru_list_elem *self = lru_list_elem_CAST(op);
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(self->key);
+    Py_VISIT(self->result);
+    return 0;
+}
+
 static PyType_Slot lru_list_elem_type_slots[] = {
+    {Py_tp_clear, lru_list_elem_clear},
     {Py_tp_dealloc, lru_list_elem_dealloc},
+    {Py_tp_traverse, lru_list_elem_traverse},
     {0, 0}
 };
 
 static PyType_Spec lru_list_elem_type_spec = {
     .name = "functools._lru_list_elem",
     .basicsize = sizeof(lru_list_elem),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
-             Py_TPFLAGS_IMMUTABLETYPE,
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = lru_list_elem_type_slots
 };
 
@@ -1454,8 +1478,10 @@ bounded_lru_cache_update_lock_held(lru_cache_object *self,
         self->root.next == &self->root)
     {
         /* Cache is not full, so put the result in a new link */
-        link = (lru_list_elem *)PyObject_New(lru_list_elem,
-                                             self->lru_list_elem_type);
+        PyTypeObject *type = self->lru_list_elem_type;
+        assert(type != NULL);
+        assert(type->tp_alloc != NULL);
+        link = (lru_list_elem *)type->tp_alloc(type, 0);
         if (link == NULL) {
             Py_DECREF(key);
             Py_DECREF(result);
@@ -1811,9 +1837,7 @@ lru_cache_tp_traverse(PyObject *op, visitproc visit, void *arg)
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
         lru_list_elem *next = link->next;
-        Py_VISIT(link->key);
-        Py_VISIT(link->result);
-        Py_VISIT(Py_TYPE(link));
+        Py_VISIT(link);
         link = next;
     }
     Py_VISIT(self->cache);
