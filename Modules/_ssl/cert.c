@@ -19,7 +19,8 @@ newCertificate(PyTypeObject *type, X509 *cert, int upref)
 {
     PySSLCertificate *self;
 
-    assert(type != NULL && type->tp_alloc != NULL);
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
     assert(cert != NULL);
 
     self = (PySSLCertificate *) type->tp_alloc(type, 0);
@@ -219,11 +220,19 @@ certificate_richcompare(PyObject *lhs, PyObject *rhs, int op)
 static void
 certificate_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     PySSLCertificate *self = PySSLCertificate_CAST(op);
-    PyTypeObject *tp = Py_TYPE(self);
     X509_free(self->cert);
-    (void)Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+certificate_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
 }
 
 static PyMethodDef certificate_methods[] = {
@@ -235,6 +244,7 @@ static PyMethodDef certificate_methods[] = {
 
 static PyType_Slot PySSLCertificate_slots[] = {
     {Py_tp_dealloc, certificate_dealloc},
+    {Py_tp_traverse, certificate_traverse},
     {Py_tp_repr, certificate_repr},
     {Py_tp_hash, certificate_hash},
     {Py_tp_richcompare, certificate_richcompare},
@@ -243,9 +253,13 @@ static PyType_Slot PySSLCertificate_slots[] = {
 };
 
 static PyType_Spec PySSLCertificate_spec = {
-    "_ssl.Certificate",
-    sizeof(PySSLCertificate),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
-    PySSLCertificate_slots,
+    .name = "_ssl.Certificate",
+    .basicsize = sizeof(PySSLCertificate),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
+    .slots = PySSLCertificate_slots,
 };
