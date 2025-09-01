@@ -277,7 +277,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       pagefile) will silently create a new map with the original data copied over
       up to the length of the new size.
 
-      .. availability:: Systems with the ``madvise`` system call or Windows.
+      .. availability:: Linux, Windows
 
       .. versionchanged:: 3.11
          Correctly fails if attempting to resize when another map is held
