@@ -99,7 +99,7 @@ following functions:
    Returns the general category assigned to the character *chr* as
    string. General category names consist of two letters.
    See the `General Category Values section of the Unicode Character
-   Database documentation <https://www.unicode.org/reports/tr44/#General_Category_Values>`_
+   Database documentation <https://www.unicode.org/reports/tr44/tr44-30.html#General_Category_Values>`_
    for a list of category codes. For example::
 
       >>> unicodedata.category('A')  # 'L'etter, 'u'ppercase
@@ -111,7 +111,7 @@ following functions:
    Returns the bidirectional class assigned to the character *chr* as
    string. If no such value is defined, an empty string is returned.
    See the `Bidirectional Class Values section of the Unicode Character
-   Database <https://www.unicode.org/reports/tr44/#Bidi_Class_Values>`_
+   Database <https://www.unicode.org/reports/tr44/tr44-30.html#Bidi_Class_Values>`_
    documentation for a list of bidirectional codes. For example::
 
       >>> unicodedata.bidirectional('\N{ARABIC-INDIC DIGIT SEVEN}') # 'A'rabic, 'N'umber
@@ -123,7 +123,7 @@ following functions:
    Returns the canonical combining class assigned to the character *chr*
    as integer. Returns ``0`` if no combining class is defined.
    See the `Canonical Combining Class Values section of the Unicode Character
-   Database <www.unicode.org/reports/tr44/#Canonical_Combining_Class_Values>`_
+   Database <www.unicode.org/reports/tr44/tr44-30.html#Canonical_Combining_Class_Values>`_
    for more information.
 
 
@@ -131,7 +131,7 @@ following functions:
 
    Returns the east asian width assigned to the character *chr* as
    string. For a list of widths and or more information, see the
-   `Unicode Standard Annex #11 <https://www.unicode.org/reports/tr11/>`_.
+   `Unicode Standard Annex #11 <https://www.unicode.org/reports/tr11/tr11-41.html>`_.
 
 
 .. function:: mirrored(chr)
