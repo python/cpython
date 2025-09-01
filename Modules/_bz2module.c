@@ -402,7 +402,6 @@ static PyType_Slot bz2_compressor_type_slots[] = {
     {Py_tp_methods, BZ2Compressor_methods},
     {Py_tp_new, _bz2_BZ2Compressor},
     {Py_tp_doc, (char *)_bz2_BZ2Compressor__doc__},
-    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0}
 };
 

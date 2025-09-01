@@ -915,7 +915,6 @@ static PyType_Slot lzma_compressor_type_slots[] = {
     {Py_tp_methods, Compressor_methods},
     {Py_tp_new, Compressor_new},
     {Py_tp_doc, (char *)Compressor_doc},
-    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0}
 };
 
