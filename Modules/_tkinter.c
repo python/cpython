@@ -589,10 +589,14 @@ Tkapp_New(const char *screenName, const char *className,
           int interactive, int wantobjects, int wantTk, int sync,
           const char *use)
 {
+    PyTypeObject *type;
     TkappObject *v;
     char *argv0;
 
-    v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
+    type = (PyTypeObject *)Tkapp_Type;
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    v = (TkappObject *)type->tp_alloc(type, 0);
     if (v == NULL)
         return NULL;
 
@@ -788,8 +792,13 @@ static PyObject *PyTclObject_Type;
 static PyObject *
 newPyTclObject(Tcl_Obj *arg)
 {
+    PyTypeObject *type;
     PyTclObject *self;
-    self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
+
+    type = (PyTypeObject *)PyTclObject_Type;
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    self = (PyTclObject *)type->tp_alloc(type, 0);
     if (self == NULL)
         return NULL;
     Tcl_IncrRefCount(arg);
@@ -799,14 +808,22 @@ newPyTclObject(Tcl_Obj *arg)
 }
 
 static void
-PyTclObject_dealloc(PyObject *_self)
+PyTclObject_dealloc(PyObject *op)
 {
-    PyTclObject *self = PyTclObject_CAST(_self);
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    PyTclObject *self = PyTclObject_CAST(op);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+PyTclObject_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
 }
 
 /* Like _str, but create Unicode if necessary. */
@@ -897,6 +914,7 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 
 static PyType_Slot PyTclObject_Type_slots[] = {
     {Py_tp_dealloc, PyTclObject_dealloc},
+    {Py_tp_traverse, PyTclObject_traverse},
     {Py_tp_repr, PyTclObject_repr},
     {Py_tp_str, PyTclObject_str},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -906,11 +924,14 @@ static PyType_Slot PyTclObject_Type_slots[] = {
 };
 
 static PyType_Spec PyTclObject_Type_spec = {
-    "_tkinter.Tcl_Obj",
-    sizeof(PyTclObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    PyTclObject_Type_slots,
+    .name = "_tkinter.Tcl_Obj",
+    .basicsize = sizeof(PyTclObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_HAVE_GC
+    ),
+    .slots = PyTclObject_Type_slots,
 };
 
 
@@ -2742,9 +2763,13 @@ _tkinter_tktimertoken_deletetimerhandler_impl(TkttObject *self)
 static TkttObject *
 Tktt_New(PyObject *func)
 {
+    PyTypeObject *type;
     TkttObject *v;
 
-    v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
+    type = (PyTypeObject *)Tktt_Type;
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    v = (TkttObject *)type->tp_alloc(type, 0);
     if (v == NULL)
         return NULL;
 
@@ -2756,16 +2781,23 @@ Tktt_New(PyObject *func)
 }
 
 static void
-Tktt_Dealloc(PyObject *self)
+Tktt_Dealloc(PyObject *op)
 {
-    TkttObject *v = TkttObject_CAST(self);
-    PyObject *func = v->func;
-    PyObject *tp = (PyObject *) Py_TYPE(self);
-
-    Py_XDECREF(func);
-
-    PyObject_Free(self);
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    TkttObject *self = TkttObject_CAST(op);
+    Py_XDECREF(self->func);
+    tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+Tktt_Traverse(PyObject *op, visitproc visit, void *arg)
+{
+    TkttObject *self = TkttObject_CAST(op);
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(self->func);
+    return 0;
 }
 
 static PyObject *
@@ -3061,18 +3093,27 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self)
 static void
 Tkapp_Dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     TkappObject *self = TkappObject_CAST(op);
-    PyTypeObject *tp = Py_TYPE(self);
     /*CHECK_TCL_APPARTMENT;*/
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
     Py_XDECREF(self->trace);
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
     DisableEventHook();
 }
 
+static int
+Tkapp_Traverse(PyObject *op, visitproc visit, void *arg)
+{
+    TkappObject *self = TkappObject_CAST(op);
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(self->trace);
+    return 0;
+}
 
 
 /**** Tkinter Module ****/
@@ -3261,17 +3302,21 @@ static PyMethodDef Tktt_methods[] =
 
 static PyType_Slot Tktt_Type_slots[] = {
     {Py_tp_dealloc, Tktt_Dealloc},
+    {Py_tp_traverse, Tktt_Traverse},
     {Py_tp_repr, Tktt_Repr},
     {Py_tp_methods, Tktt_methods},
     {0, 0}
 };
 
 static PyType_Spec Tktt_Type_spec = {
-    "_tkinter.tktimertoken",
-    sizeof(TkttObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tktt_Type_slots,
+    .name = "_tkinter.tktimertoken",
+    .basicsize = sizeof(TkttObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_HAVE_GC
+    ),
+    .slots = Tktt_Type_slots,
 };
 
 
@@ -3317,17 +3362,21 @@ static PyMethodDef Tkapp_methods[] =
 
 static PyType_Slot Tkapp_Type_slots[] = {
     {Py_tp_dealloc, Tkapp_Dealloc},
+    {Py_tp_traverse, Tkapp_Traverse},
     {Py_tp_methods, Tkapp_methods},
     {0, 0}
 };
 
 
 static PyType_Spec Tkapp_Type_spec = {
-    "_tkinter.tkapp",
-    sizeof(TkappObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tkapp_Type_slots,
+    .name = "_tkinter.tkapp",
+    .basicsize = sizeof(TkappObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_HAVE_GC
+    ),
+    .slots = Tkapp_Type_slots,
 };
 
 static PyMethodDef moduleMethods[] =
