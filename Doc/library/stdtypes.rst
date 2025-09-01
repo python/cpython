@@ -5877,7 +5877,7 @@ special operations.  There is exactly one ellipsis object, named
 
 It is written as ``Ellipsis`` or ``...``.
 
-For instance, at the standard library and its documentation, ``Ellipsis`` can
+For instance, in the standard library and its documentation, ``Ellipsis`` can
 appears in :ref:`pretty printers <prettyprinter-objects>`,
 :const:`documentation tests <doctest.ELLIPSIS>`,
 :ref:`type annotations <annotating-callables>`,
