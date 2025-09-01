@@ -420,7 +420,8 @@ class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
     c_ignored_default = "0"
 
-    def converter_init(self, *, accept: TypeSet = {int}, allow_negative: bool = True) -> None:
+    def converter_init(self, *, accept: TypeSet = {int},
+                       allow_negative: bool = True) -> None:
         self.allow_negative = allow_negative
         if accept == {int}:
             self.format_unit = 'n'
@@ -442,15 +443,16 @@ class Py_ssize_t_converter(CConverter):
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.allow_negative:
-            non_negative_check = ""
+            non_negative_check = ''
         else:
             non_negative_check = self.format_code("""
                     if ({paramname} < 0) {{{{
                         PyErr_SetString(PyExc_ValueError,
-                                        "{paramname} must be at least 0");
+                                        "{paramname} cannot be negative");
                         goto exit;
                     }}}}""",
-            argname=argname)
+                argname=argname,
+            )
         if self.format_unit == 'n':
             if limited_capi:
                 PyNumber_Index = 'PyNumber_Index'
@@ -473,7 +475,8 @@ class Py_ssize_t_converter(CConverter):
                 """,
                 argname=argname,
                 PyNumber_Index=PyNumber_Index,
-                non_negative_check=non_negative_check)
+                non_negative_check=non_negative_check,
+            )
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
         return self.format_code("""
@@ -492,7 +495,7 @@ class Py_ssize_t_converter(CConverter):
             """,
             argname=argname,
             bad_argument=self.bad_argument(displayname, 'integer or None', limited_capi=limited_capi),
-            non_negative_check=non_negative_check
+            non_negative_check=non_negative_check,
         )
 
 

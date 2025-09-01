@@ -1276,7 +1276,7 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         d = ival;
         if (d < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "d must be at least 0");
+                            "d cannot be negative");
             goto exit;
         }
     }
@@ -1302,7 +1302,7 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         f = ival;
         if (f < 0) {
             PyErr_SetString(PyExc_ValueError,
-                            "f must be at least 0");
+                            "f cannot be negative");
             goto exit;
         }
     }
@@ -4600,4 +4600,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=33cb216c09730402 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0764e6f8c9d94057 input=a9049054013a1b77]*/
