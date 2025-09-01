@@ -6,6 +6,10 @@ import errno
 import termios
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
+import subprocess
+import time
+import shutil
+import signal
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
@@ -356,3 +360,58 @@ class TestUnixConsoleEIOHandling(TestCase):
             if e.args[0] == errno.EIO:
                 self.fail("EIO error should have been handled gracefully in restore()")
             raise
+
+class TestEIOWithStrace(unittest.TestCase):
+    def setUp(self):
+        self.strace = shutil.which("strace")
+        if not self.strace:
+            self.skipTest("strace")
+
+    def _attach_strace(self, pid):
+        cmd = [self.strace, "-qq", "-p", str(pid), "-e", "inject=read:error=EIO:when=1", "-o", "/dev/null"]
+        try:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            time.sleep(0.15)
+            if p.poll() is None:
+                return p
+        except Exception:
+            pass
+
+        cmd = [self.strace, "-qq", "-p", str(pid), "-e", "fault=read:error=EIO:when=1", "-o", "/dev/null"]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        time.sleep(0.15)
+        return p
+
+    def test_repl_eio(self):
+        pybin = sys.executable
+
+        child_code = r"""
+import signal, sys
+signal.signal(signal.SIGUSR1, lambda *a: None)
+print("READY", flush=True)
+signal.pause()
+input()
+"""
+
+        proc = subprocess.Popen(
+            [pybin, "-S", "-c", child_code],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        line = proc.stdout.readline().strip()
+        self.assertEqual(line, "READY")
+
+        tracer = self._attach_strace(proc.pid)
+
+        try:
+            os.kill(proc.pid, signal.SIGUSR1)
+            _, err = proc.communicate(timeout=5)
+        finally:
+            if tracer and tracer.poll() is None:
+                tracer.terminate()
+
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertTrue("Errno 5" in err or "Input/output error" in err or "EOFError" in err, err)
