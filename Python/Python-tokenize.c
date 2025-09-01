@@ -351,17 +351,26 @@ exit:
 static void
 tokenizeriter_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     tokenizeriterobject *it = (tokenizeriterobject*)op;
-    PyTypeObject *tp = Py_TYPE(it);
     Py_XDECREF(it->last_line);
     _PyTokenizer_Free(it->tok);
     tp->tp_free(it);
     Py_DECREF(tp);
 }
 
+static int
+tokenizeriter_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
+
 static PyType_Slot tokenizeriter_slots[] = {
     {Py_tp_new, tokenizeriter_new},
     {Py_tp_dealloc, tokenizeriter_dealloc},
+    {Py_tp_traverse, tokenizeriter_traverse},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, tokenizeriter_next},
@@ -371,7 +380,11 @@ static PyType_Slot tokenizeriter_slots[] = {
 static PyType_Spec tokenizeriter_spec = {
     .name = "_tokenize.TokenizerIter",
     .basicsize = sizeof(tokenizeriterobject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = tokenizeriter_slots,
 };
 
