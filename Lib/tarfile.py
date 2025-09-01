@@ -2721,8 +2721,8 @@ class TarFile(object):
                 link_target = tarinfo.linkname
                 if os.name == "nt":
                     # gh-57911: Posix-flavoured forward-slash path separators in
-                    # symlink targets aren't sanitized by Windows automaticly,
-                    # resulting in corrupted links.
+                    # symlink targets aren't acknowledged by Windows, resulting
+                    # in corrupted links.
                     link_target = link_target.replace("/", os.path.sep)
                 os.symlink(link_target, targetpath)
                 return

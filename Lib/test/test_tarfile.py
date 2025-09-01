@@ -4041,7 +4041,7 @@ class TestExtractionFilters(unittest.TestCase):
 
     @symlink_test
     @os_helper.skip_unless_symlink
-    def test_symlink_target_sanitized_on_windows(self):
+    def test_symlink_target_seperator_rewrite_on_windows(self):
         with ArchiveMaker() as arc:
             arc.add('link', symlink_to="relative/test/path")
 
