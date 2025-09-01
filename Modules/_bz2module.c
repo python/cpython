@@ -129,6 +129,9 @@ typedef struct {
     PyThread_type_lock lock;
 } BZ2Decompressor;
 
+#define _BZ2Compressor_CAST(op)     ((BZ2Compressor *)(op))
+#define _BZ2Decompressor_CAST(op)   ((BZ2Decompressor *)(op))
+
 /* Helper functions. */
 
 static int
@@ -376,19 +379,21 @@ error:
 }
 
 static void
-BZ2Compressor_dealloc(BZ2Compressor *self)
+BZ2Compressor_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    BZ2Compressor *self = _BZ2Compressor_CAST(op);
     BZ2_bzCompressEnd(&self->bzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-    PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-BZ2Compressor_traverse(BZ2Compressor *self, visitproc visit, void *arg)
+BZ2Compressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -416,7 +421,7 @@ static PyType_Spec bz2_compressor_type_spec = {
     // bz2_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = bz2_compressor_type_slots,
 };
 
@@ -680,8 +685,11 @@ error:
 }
 
 static void
-BZ2Decompressor_dealloc(BZ2Decompressor *self)
+BZ2Decompressor_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
     if(self->input_buffer != NULL) {
         PyMem_Free(self->input_buffer);
     }
@@ -690,14 +698,12 @@ BZ2Decompressor_dealloc(BZ2Decompressor *self)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
-
-    PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-BZ2Decompressor_traverse(BZ2Decompressor *self, visitproc visit, void *arg)
+BZ2Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -744,7 +750,7 @@ static PyType_Spec bz2_decompressor_type_spec = {
     // bz2_decompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
     .slots = bz2_decompressor_type_slots,
 };
 
