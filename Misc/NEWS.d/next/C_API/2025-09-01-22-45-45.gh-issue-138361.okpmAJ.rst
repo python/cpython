@@ -1,0 +1,2 @@
+Added ``N`` as new ``PyArg_Parse`` format unit for non-negative ``Py_ssize_t``
+values.

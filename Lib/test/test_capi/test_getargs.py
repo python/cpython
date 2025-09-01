@@ -290,6 +290,32 @@ class Unsigned_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(UINT_MAX & -VERY_LARGE, getargs_I(-VERY_LARGE))
 
+    def test_N(self):
+        from _testcapi import getargs_N
+        # n returns 'Py_ssize_t', and does range checking
+        # (0 ... PY_SSIZE_T_MAX)
+        self.assertRaises(TypeError, getargs_N, 3.14)
+        self.assertEqual(99, getargs_N(Index()))
+        self.assertEqual(0, getargs_N(IndexIntSubclass()))
+        self.assertRaises(TypeError, getargs_N, BadIndex())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_N(BadIndex2()))
+        self.assertEqual(0, getargs_N(BadIndex3()))
+        self.assertRaises(TypeError, getargs_N, Int())
+        self.assertEqual(0, getargs_N(IntSubclass()))
+        self.assertRaises(TypeError, getargs_N, BadInt())
+        self.assertRaises(TypeError, getargs_N, BadInt2())
+        self.assertEqual(0, getargs_N(BadInt3()))
+
+        self.assertRaises(OverflowError, getargs_N, PY_SSIZE_T_MIN-1)
+        self.assertRaises(OverflowError, getargs_N, PY_SSIZE_T_MIN)
+        self.assertRaises(OverflowError, getargs_N, -1)
+        self.assertEqual(PY_SSIZE_T_MAX, getargs_N(PY_SSIZE_T_MAX))
+        self.assertRaises(OverflowError, getargs_N, PY_SSIZE_T_MAX+1)
+
+        self.assertEqual(42, getargs_N(42))
+        self.assertRaises(OverflowError, getargs_N, VERY_LARGE)
+
     def test_k(self):
         from _testcapi import getargs_k
         # k returns 'unsigned long', no range checking

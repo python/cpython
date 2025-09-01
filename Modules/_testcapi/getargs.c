@@ -438,6 +438,16 @@ getargs_n(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+getargs_N(PyObject *self, PyObject *args)
+{
+    Py_ssize_t value;
+    if (!PyArg_ParseTuple(args, "N", &value)) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(value);
+}
+
+static PyObject *
 getargs_p(PyObject *self, PyObject *args)
 {
     int value;
@@ -793,6 +803,7 @@ static PyMethodDef test_methods[] = {
     {"getargs_keywords", _PyCFunction_CAST(getargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"getargs_l",               getargs_l,                       METH_VARARGS},
     {"getargs_n",               getargs_n,                       METH_VARARGS},
+    {"getargs_N",               getargs_N,                       METH_VARARGS},
     {"getargs_p",               getargs_p,                       METH_VARARGS},
     {"getargs_positional_only_and_keywords", _PyCFunction_CAST(getargs_positional_only_and_keywords), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s",               getargs_s,                       METH_VARARGS},

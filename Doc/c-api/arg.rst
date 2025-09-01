@@ -285,6 +285,9 @@ the minimal value for the corresponding signed integer type of the same size.
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
 
+``N`` (:class:`int`) [:c:type:`Py_ssize_t`]
+   Convert a non-negative Python integer to a C :c:type:`Py_ssize_t`.
+
 ``c`` (:class:`bytes` or :class:`bytearray` of length 1) [char]
    Convert a Python byte, represented as a :class:`bytes` or
    :class:`bytearray` object of length 1, to a C :c:expr:`char`.

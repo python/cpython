@@ -814,6 +814,27 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         *p = ival;
         break;
     }
+
+    case 'N': { /* Py_ssize_t - non negative */
+        PyObject *iobj;
+        Py_ssize_t *p = va_arg(*p_va, Py_ssize_t *);
+        Py_ssize_t ival = -1;
+        iobj = _PyNumber_Index(arg);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred())
+            RETURN_ERR_OCCURRED;
+        else if (ival < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "integer is less than minimum");
+            RETURN_ERR_OCCURRED;
+        }
+        *p = ival;
+        break;
+    }
+
     case 'l': {/* long int */
         long *p = va_arg(*p_va, long *);
         long ival = PyLong_AsLong(arg);
@@ -2618,6 +2639,7 @@ skipitem(const char **p_format, va_list *p_va, int flags)
     case 'L': /* long long */
     case 'K': /* long long sized bitfield */
     case 'n': /* Py_ssize_t */
+    case 'N': /* Py_ssize_t - non negative */
     case 'f': /* float */
     case 'd': /* double */
     case 'D': /* complex double */
