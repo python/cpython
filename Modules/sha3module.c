@@ -226,13 +226,6 @@ SHA3_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
-static int
-SHA3_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 /* External methods for a hash object */
 
 
@@ -424,7 +417,7 @@ static PyGetSetDef SHA3_getseters[] = {
     static PyType_Slot type_slots_obj[] = { \
         {Py_tp_clear, SHA3_clear}, \
         {Py_tp_dealloc, SHA3_dealloc}, \
-        {Py_tp_traverse, SHA3_traverse}, \
+        {Py_tp_traverse, _PyObject_VisitType}, \
         {Py_tp_doc, (char*)type_doc}, \
         {Py_tp_methods, type_methods}, \
         {Py_tp_getset, type_getseters}, \
