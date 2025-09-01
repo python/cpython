@@ -5426,7 +5426,25 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
 dnl detect zlib from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+# Check for zlib-rs
+AC_MSG_CHECKING([for --with-zlib-rs])
+AC_ARG_WITH(
+  [zlib-rs],
+  [AS_HELP_STRING([--with-zlib-rs], [use zlib-rs, a Rust re-implementation of zlib (default is no)])],
+  [with_zlib_rs=yes], [with_zlib_rs=no])
+AC_MSG_RESULT([$with_zlib_rs])
+
+AS_VAR_IF([with_zlib_rs], [yes], [
+  AS_VAR_SET([zlib_name], ["libz_rs"])
+  AS_VAR_SET([zlib_version], ["0.5.0"])
+  AS_VAR_SET([zlib_libname], ["z_rs"])
+], [
+  AS_VAR_SET([zlib_name], ["zlib"])
+  AS_VAR_SET([zlib_version], ["1.2.0"])
+  AS_VAR_SET([zlib_libname], ["z"])
+])
+
+PKG_CHECK_MODULES([ZLIB], [$zlib_name >= $zlib_version], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
@@ -5435,11 +5453,11 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LIBS="$LIBS $ZLIB_LIBS"
     AC_CHECK_HEADERS([zlib.h], [
-      PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
+      PY_CHECK_LIB([$zlib_libname], [gzread], [have_zlib=yes], [have_zlib=no])
     ], [have_zlib=no])
     AS_VAR_IF([have_zlib], [yes], [
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      ZLIB_LIBS=${ZLIB_LIBS-"-l$zlib_libname"}
       PY_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
     ])
   ])
@@ -5454,16 +5472,33 @@ AS_VAR_IF([have_zlib], [yes], [
 dnl detect bzip2 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
 
-PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
+# Check for bzip2-rs
+AC_MSG_CHECKING([for --with-bzip2-rs])
+AC_ARG_WITH(
+  [bzip2-rs],
+  [AS_HELP_STRING([--with-bzip2-rs], [use bzip2-rs, a Rust re-implementation of bzip2 (default is no)])],
+  [with_bzip2_rs=yes], [with_bzip2_rs=no])
+AC_MSG_RESULT([$with_bzip2_rs])
+
+AS_VAR_IF([with_bzip2_rs], [yes], [
+  AS_VAR_SET([bzip2_name], ["libbz2_rs"])
+  AS_VAR_SET([bzip2_libname], ["bz2_rs"])
+], [
+  AS_VAR_SET([bzip2_name], ["bzip2"])
+  AS_VAR_SET([bzip2_libname], ["bz2"])
+])
+
+
+PKG_CHECK_MODULES([BZIP2], [$bzip2_name], [have_bzip2=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
     LIBS="$LIBS $BZIP2_LIBS"
     AC_CHECK_HEADERS([bzlib.h], [
-      AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
+      AC_CHECK_LIB([$bzip2_libname], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
     ], [have_bzip2=no])
     AS_VAR_IF([have_bzip2], [yes], [
       BZIP2_CFLAGS=${BZIP2_CFLAGS-""}
-      BZIP2_LIBS=${BZIP2_LIBS-"-lbz2"}
+      BZIP2_LIBS=${BZIP2_LIBS-"-l$bzip2_libname"}
     ])
   ])
 ])
