@@ -774,16 +774,12 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo --bar'.split())
     Namespace(foo=True, bar=False, baz=True)
 
-* ``'append'`` - This stores a list, and appends each argument value to the
-  list. It is useful to allow an option to be specified multiple times.
-  If the default value is non-empty, the default elements will be present
-  in the parsed value for the option, with any values from the
-  command line appended after those default values. Example usage::
+* ``'append'`` - This appends each argument value to a list.
+  It is useful for allowing an option to be specified multiple times.
+  If the default value is a non-empty list, the parsed value will start
+  with the default list's elements and any values from the command line
+  will be appended after those default values. Example usage::
 
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--foo', action='append')
-    >>> parser.parse_args('--foo 1 --foo 2'.split())
-    Namespace(foo=['1', '2'])
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='append', default=['0'])
     >>> parser.parse_args('--foo 1 --foo 2'.split())
