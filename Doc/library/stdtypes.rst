@@ -5869,7 +5869,7 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used as a placeholder of another objects, values or even
+This object is commonly used as a placeholder for other objects, values or even
 instructions.  It supports no
 special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
