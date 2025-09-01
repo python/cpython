@@ -3384,3 +3384,10 @@ PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
     assert(op != NULL);
     return _PyObject_IsUniquelyReferenced(op);
 }
+
+int _PyObject_VisitType(PyObject *op, visitproc visit, void *arg)
+{
+    assert(op != NULL);
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
