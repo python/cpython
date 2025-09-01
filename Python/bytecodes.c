@@ -5344,12 +5344,6 @@ dummy_func(
             value = PyStackRef_FromPyObjectBorrow(ptr);
         }
 
-        tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
-            assert(PyStackRef_FunctionCheck(frame->f_funcobj));
-            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-            DEOPT_IF(func->func_version != func_version);
-        }
-
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
 #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;

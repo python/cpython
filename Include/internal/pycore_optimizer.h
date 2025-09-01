@@ -276,6 +276,10 @@ struct _Py_UOpsAbstractFrame {
     // Max stacklen
     int stack_len;
     int locals_len;
+    uint32_t globals_checked_version;
+    bool builtins_watched;
+    bool globals_watched;
+    PyFunctionObject *func;
 
     JitOptRef *stack_pointer;
     JitOptRef *stack;
