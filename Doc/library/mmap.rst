@@ -377,7 +377,7 @@ MADV_* Constants
    These options can be passed to :meth:`mmap.madvise`.  Not every option will
    be present on every system.
 
-   .. availability:: Systems with the ``madvise`` system call.
+   Availability: Systems with the madvise() system call.
 
    .. versionadded:: 3.8
 
