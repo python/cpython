@@ -380,7 +380,7 @@ classes supporting container APIs.  For example, to write a class supporting
 the full :class:`Set` API, it is only necessary to supply the three underlying
 abstract methods: :meth:`~object.__contains__`, :meth:`~container.__iter__`, and
 :meth:`~object.__len__`. The ABC supplies the remaining methods such as
-:meth:`!__and__` and :meth:`~frozenset.isdisjoint`::
+:meth:`!__and__` and :meth:`~set.isdisjoint`::
 
     class ListBasedSet(collections.abc.Set):
         ''' Alternate set implementation favoring space over speed

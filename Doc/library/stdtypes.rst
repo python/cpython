@@ -4737,9 +4737,10 @@ The constructors for both classes work the same:
       Return a shallow copy of the set.
 
 
-   Note, the non-operator versions of :meth:`union`, :meth:`intersection`,
-   :meth:`difference`, :meth:`symmetric_difference`, :meth:`issubset`, and
-   :meth:`issuperset` methods will accept any iterable as an argument.  In
+   Note, the non-operator versions of :meth:`~set.union`,
+   :meth:`~set.intersection`, :meth:`~set.difference`,
+   :meth:`~set.symmetric_difference`, :meth:`~set.issubset`, and
+   :meth:`~set.issuperset` methods will accept any iterable as an argument.  In
    contrast, their operator based counterparts require their arguments to be
    sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
    in favor of the more readable ``set('abc').intersection('cbs')``.
@@ -4815,10 +4816,10 @@ The constructors for both classes work the same:
       Remove all elements from the set.
 
 
-   Note, the non-operator versions of the :meth:`update`,
-   :meth:`intersection_update`, :meth:`difference_update`, and
-   :meth:`symmetric_difference_update` methods will accept any iterable as an
-   argument.
+   Note, the non-operator versions of the :meth:`~set.update`,
+   :meth:`~set.intersection_update`, :meth:`~set.difference_update`, and
+   :meth:`~set.symmetric_difference_update` methods will accept any iterable as
+   an argument.
 
    Note, the *elem* argument to the :meth:`~object.__contains__`,
    :meth:`remove`, and
