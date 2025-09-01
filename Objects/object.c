@@ -3388,6 +3388,9 @@ PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
 int _PyObject_VisitType(PyObject *op, visitproc visit, void *arg)
 {
     assert(op != NULL);
-    Py_VISIT(Py_TYPE(op));
+    PyTypeObject *tp = Py_TYPE(op);
+    assert(PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(tp, Py_TPFLAGS_IMMUTABLETYPE));
+    Py_VISIT(tp);
     return 0;
 }
