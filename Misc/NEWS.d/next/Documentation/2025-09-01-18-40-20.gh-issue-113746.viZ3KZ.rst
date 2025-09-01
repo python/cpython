@@ -1,0 +1,2 @@
+Fixed incorrect/misleading search results related to :class:`set` and
+:class:`frozenset` methods.  Patch by Adam Hartz.
