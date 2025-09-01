@@ -2308,6 +2308,88 @@ output pop
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e7c7c42daced52b0]*/
 
+
+/*[clinic input]
+output push
+destination kwarg new file '{dirname}/clinic/_testclinic_kwds.c.h'
+output everything kwarg
+output docstring_prototype suppress
+output parser_prototype suppress
+output impl_definition block
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=02965b54b3981cc4]*/
+
+#include "clinic/_testclinic_kwds.c.h"
+
+
+/*[clinic input]
+lone_kwds
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+lone_kwds_impl(PyObject *module, PyObject *kwds)
+/*[clinic end generated code: output=572549c687a0432e input=6ef338b913ecae17]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+kwds_with_pos_only
+    a: object
+    b: object
+    /
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
+                        PyObject *kwds)
+/*[clinic end generated code: output=573096d3a7efcce5 input=da081a5d9ae8878a]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+kwds_with_stararg
+    *args: tuple
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_stararg_impl(PyObject *module, PyObject *args, PyObject *kwds)
+/*[clinic end generated code: output=d4b0064626a25208 input=1be404572d685859]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+kwds_with_pos_only_and_stararg
+    a: object
+    b: object
+    /
+    *args: tuple
+    **kwds: dict
+[clinic start generated code]*/
+
+static PyObject *
+kwds_with_pos_only_and_stararg_impl(PyObject *module, PyObject *a,
+                                    PyObject *b, PyObject *args,
+                                    PyObject *kwds)
+/*[clinic end generated code: output=af7df7640c792246 input=2fe330c7981f0829]*/
+{
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
+output pop
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e7c7c42daced52b0]*/
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -2399,6 +2481,12 @@ static PyMethodDef tester_methods[] = {
     DEPR_KWD_NOINLINE_METHODDEF
     DEPR_KWD_MULTI_METHODDEF
     DEPR_MULTI_METHODDEF
+
+    LONE_KWDS_METHODDEF
+    KWDS_WITH_POS_ONLY_METHODDEF
+    KWDS_WITH_STARARG_METHODDEF
+    KWDS_WITH_POS_ONLY_AND_STARARG_METHODDEF
+
     {NULL, NULL}
 };
 

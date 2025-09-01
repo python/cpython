@@ -1279,3 +1279,30 @@ class varpos_array_converter(VarPosCConverter):
             {paramname} = {start};
             {self.length_name} = {size};
             """
+
+
+# Converters for var-keyword parameters.
+
+class VarKeywordCConverter(CConverter):
+    format_unit = ''
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        raise AssertionError('should never be called')
+
+    def parse_var_keyword(self) -> str:
+        raise NotImplementedError
+
+
+class var_keyword_dict_converter(VarKeywordCConverter):
+    type = 'PyObject *'
+    format_unit = ''
+    c_default = 'NULL'
+
+    def cleanup(self) -> str:
+        return f'Py_XDECREF({self.parser_name});\n'
+
+    def parse_var_keyword(self) -> str:
+        param_name = self.parser_name
+        return f"""
+            {param_name} = (kwargs != NULL) ? Py_NewRef(kwargs) : PyDict_New();
+            """

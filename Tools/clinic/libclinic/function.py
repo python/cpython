@@ -223,6 +223,9 @@ class Parameter:
     def is_vararg(self) -> bool:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
 
+    def is_var_keyword(self) -> bool:
+        return self.kind == inspect.Parameter.VAR_KEYWORD
+
     def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
 

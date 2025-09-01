@@ -909,27 +909,37 @@ class DSLParser:
         if len(function_args.args) > 1:
             fail(f"Function {self.function.name!r} has an "
                  f"invalid parameter declaration (comma?): {line!r}")
-        if function_args.kwarg:
-            fail(f"Function {self.function.name!r} has an "
-                 f"invalid parameter declaration (**kwargs?): {line!r}")
 
+        is_vararg = is_var_keyword = False
         if function_args.vararg:
             self.check_previous_star()
             self.check_remaining_star()
             is_vararg = True
             parameter = function_args.vararg
+        elif function_args.kwarg:
+            # If the existing parameters are all positional only or ``*args``
+            # (var-positional), then we allow ``**kwds`` (var-keyword).
+            # Currently, pos-or-keyword or keyword-only arguments are not
+            # allowed with the ``**kwds`` converter.
+            if not all(p.is_positional_only() or p.is_vararg()
+                       for p in self.function.parameters.values()):
+                fail(f"Function {self.function.name!r} has an "
+                     f"invalid parameter declaration (**kwargs?): {line!r}")
+            is_var_keyword = True
+            parameter = function_args.kwarg
         else:
-            is_vararg = False
             parameter = function_args.args[0]
 
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
         if is_vararg:
-            name = 'varpos_' + name
+            name = f'varpos_{name}'
+        elif is_var_keyword:
+            name = f'var_keyword_{name}'
 
         value: object
         if not function_args.defaults:
-            if is_vararg:
+            if is_vararg or is_var_keyword:
                 value = NULL
             else:
                 if self.parameter_state is ParamState.OPTIONAL:
@@ -1065,6 +1075,8 @@ class DSLParser:
         kind: inspect._ParameterKind
         if is_vararg:
             kind = inspect.Parameter.VAR_POSITIONAL
+        elif is_var_keyword:
+            kind = inspect.Parameter.VAR_KEYWORD
         elif self.keyword_only:
             kind = inspect.Parameter.KEYWORD_ONLY
         else:
@@ -1116,7 +1128,7 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
-        if is_vararg:
+        if is_vararg or is_var_keyword:
             self.keyword_only = True
 
     @staticmethod
@@ -1450,11 +1462,16 @@ class DSLParser:
                 if p.is_vararg():
                     p_lines.append("*")
                     added_star = True
+                if p.is_var_keyword():
+                    p_lines.append("**")
 
                 name = p.converter.signature_name or p.name
                 p_lines.append(name)
 
-                if not p.is_vararg() and p.converter.is_optional():
+                if (
+                    not (p.is_vararg() or p.is_var_keyword())
+                    and p.converter.is_optional()
+                ):
                     p_lines.append('=')
                     value = p.converter.py_default
                     if not value:
@@ -1583,8 +1600,11 @@ class DSLParser:
 
         for p in reversed(self.function.parameters.values()):
             if self.keyword_only:
-                if (p.kind == inspect.Parameter.KEYWORD_ONLY or
-                    p.kind == inspect.Parameter.VAR_POSITIONAL):
+                if p.kind in {
+                    inspect.Parameter.KEYWORD_ONLY,
+                    inspect.Parameter.VAR_POSITIONAL,
+                    inspect.Parameter.VAR_KEYWORD
+                }:
                     return
             elif self.deprecated_positional:
                 if p.deprecated_positional == self.deprecated_positional:
