@@ -3389,8 +3389,7 @@ int _PyObject_VisitType(PyObject *op, visitproc visit, void *arg)
 {
     assert(op != NULL);
     PyTypeObject *tp = Py_TYPE(op);
-    assert(PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
-    assert(!PyType_HasFeature(tp, Py_TPFLAGS_IMMUTABLETYPE));
+    _PyObject_ASSERT((PyObject *)tp, PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
     Py_VISIT(tp);
     return 0;
 }
