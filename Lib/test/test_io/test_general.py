@@ -1,24 +1,7 @@
-"""Unit tests for the io module."""
+"""General tests for the io module.
 
-# Tests of io are scattered over the test suite:
-# * test_bufio - tests file buffering
-# * test_memoryio - tests BytesIO and StringIO
-# * test_fileio - tests FileIO
-# * test_file - tests the file interface
-# * test_io.test_general - tests everything else in the io module
-# * test_univnewlines - tests universal newline support
-# * test_largefile - tests operations on a file greater than 2**32 bytes
-#     (only enabled with -ulargefile)
-# * test_free_threading/test_io - tests thread safety of io objects
-
-################################################################################
-# ATTENTION TEST WRITERS!!!
-################################################################################
-# When writing tests for io, it's important to test both the C and Python
-# implementations. This is usually done by writing a base test that refers to
-# the type it is testing as an attribute. Then it provides custom subclasses to
-# test both implementations. This file has lots of examples.
-################################################################################
+New tests should go in more specific modules; see test_io/__init__.py
+"""
 
 import abc
 import array
