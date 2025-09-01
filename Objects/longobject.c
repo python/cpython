@@ -3682,13 +3682,13 @@ long_hash(PyObject *obj)
     assert(i>=2);
     --i;
     x = v->long_value.ob_digit[i];
-    assert(x < _PyHASH_MODULUS);
+    assert(x < PyHASH_MODULUS);
 #endif
 #if ( PyHASH_BITS > (2 * PyLong_SHIFT) )
     --i;
     x = ((x << PyLong_SHIFT));
     x += v->long_value.ob_digit[i];
-    assert(x < _PyHASH_MODULUS);
+    assert(x < PyHASH_MODULUS);
 #endif
     while (--i >= 0) {
         /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
