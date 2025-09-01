@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from _pyrepl.utils import str_width, wlen, prev_next_window
+from _pyrepl.utils import str_width, wlen, prev_next_window, gen_colors
 
 
 class TestUtils(TestCase):
@@ -60,3 +60,38 @@ class TestUtils(TestCase):
         self.assertEqual(next(pnw), (3, 4, None))
         with self.assertRaises(ZeroDivisionError):
             next(pnw)
+
+    def test_gen_colors_keyword_highlighting(self):
+        no_highlight_cases = [
+            ("a.set", [(".", "op")]),  # 'set' should not be highlighted after '.'
+            ("a.def", [(".", "op")]),  # 'def' should not be highlighted after '.'
+            ("obj.class", [(".", "op")]),  # 'class' should not be highlighted after '.'
+            ("obj.list", [(".", "op")]),  # 'list' should not be highlighted after '.'
+            ("obj.match", [(".", "op")]),  # 'match' should not be highlighted after '.'
+        ]
+        for code, expected_highlights in no_highlight_cases:
+            with self.subTest(code=code):
+                colors = list(gen_colors(code))
+                # Extract (text, tag) pairs for comparison
+                actual_highlights = []
+                for color in colors:
+                    span_text = code[color.span.start:color.span.end + 1]
+                    actual_highlights.append((span_text, color.tag))
+                self.assertEqual(actual_highlights, expected_highlights,
+                               f"In '{code}', expected {expected_highlights}, got {actual_highlights}")
+        highlight_cases = [
+            ("set", [("set", "builtin")]),
+            ("list", [("list", "builtin")]),
+            ("def func():", [("def", "keyword"), ("func", "definition"), ("(", "op"), (")", "op"), (":", "op")]),
+            ("class A:", [("class", "keyword"), ("A", "definition"), (":", "op")]),
+        ]
+        for code, expected_highlights in highlight_cases:
+            with self.subTest(code=code):
+                colors = list(gen_colors(code))
+                # Extract (text, tag) pairs for comparison
+                actual_highlights = []
+                for color in colors:
+                    span_text = code[color.span.start:color.span.end + 1]
+                    actual_highlights.append((span_text, color.tag))
+                self.assertEqual(actual_highlights, expected_highlights,
+                               f"In '{code}', expected {expected_highlights}, got {actual_highlights}")
