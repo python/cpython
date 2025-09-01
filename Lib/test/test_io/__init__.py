@@ -1,7 +1,7 @@
 """Tests for the io module and its implementations (_io and _pyio)
 
 Tests are split across multiple files inside `test_io` to increase
-parallelism and focus on specific pieces implementation pieces.
+parallelism and focus on specific implementation pieces.
 
 * test_io
   * test_bufferedio - tests file buffering
