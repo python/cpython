@@ -705,7 +705,7 @@ PyDoc_STRVAR(_interpqueues__register_heap_types__doc__,
 
 static PyObject *
 _interpqueues__register_heap_types_impl(PyObject *module,
-                                        PyObject *queuetype,
+                                        PyTypeObject *queuetype,
                                         PyObject *emptyerror,
                                         PyObject *fullerror);
 
@@ -741,7 +741,7 @@ _interpqueues__register_heap_types(PyObject *module, PyObject *const *args, Py_s
     };
     #undef KWTUPLE
     PyObject *argsbuf[3];
-    PyObject *queuetype;
+    PyTypeObject *queuetype;
     PyObject *emptyerror;
     PyObject *fullerror;
 
@@ -750,7 +750,11 @@ _interpqueues__register_heap_types(PyObject *module, PyObject *const *args, Py_s
     if (!args) {
         goto exit;
     }
-    queuetype = args[0];
+    if (!PyObject_TypeCheck(args[0], &PyType_Type)) {
+        _PyArg_BadArgument("_register_heap_types", "argument 'queuetype'", (&PyType_Type)->tp_name, args[0]);
+        goto exit;
+    }
+    queuetype = (PyTypeObject *)args[0];
     emptyerror = args[1];
     fullerror = args[2];
     return_value = _interpqueues__register_heap_types_impl(module, queuetype, emptyerror, fullerror);
@@ -758,4 +762,4 @@ _interpqueues__register_heap_types(PyObject *module, PyObject *const *args, Py_s
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=52face6bdf794fe1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64cea8e1063429b6 input=a9049054013a1b77]*/

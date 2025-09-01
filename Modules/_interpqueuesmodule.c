@@ -1812,7 +1812,7 @@ _interpqueues_get_count_impl(PyObject *module, int64_t qid)
 
 /*[clinic input]
 _interpqueues._register_heap_types
-    queuetype: object
+    queuetype: object(subclass_of='&PyType_Type', type='PyTypeObject *')
     emptyerror: object
     fullerror: object
 
@@ -1821,16 +1821,11 @@ Return the number of items in the queue.
 
 static PyObject *
 _interpqueues__register_heap_types_impl(PyObject *module,
-                                        PyObject *queuetype,
+                                        PyTypeObject *queuetype,
                                         PyObject *emptyerror,
                                         PyObject *fullerror)
-/*[clinic end generated code: output=8d7b129b64dcd01f input=878c5f97c09404bf]*/
+/*[clinic end generated code: output=f33f6e8b5af905cd input=57d24ae405eda521]*/
 {
-    if (!PyType_Check(queuetype)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "expected a type for 'queuetype'");
-        return NULL;
-    }
     if (!PyExceptionClass_Check(emptyerror)) {
         PyErr_SetString(PyExc_TypeError,
                         "expected an exception type for 'emptyerror'");
@@ -1844,7 +1839,7 @@ _interpqueues__register_heap_types_impl(PyObject *module,
 
     module_state *state = get_module_state(module);
 
-    if (set_external_queue_type(state, (PyTypeObject *)queuetype) < 0) {
+    if (set_external_queue_type(state, queuetype) < 0) {
         return NULL;
     }
     if (set_external_exc_types(state, emptyerror, fullerror) < 0) {
