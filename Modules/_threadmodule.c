@@ -1434,11 +1434,19 @@ typedef struct {
 static void
 localdummy_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     localdummyobject *self = localdummyobject_CAST(op);
     FT_CLEAR_WEAKREFS(op, self->weakreflist);
-    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+localdummy_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
 }
 
 static PyMemberDef local_dummy_type_members[] = {
@@ -1448,6 +1456,7 @@ static PyMemberDef local_dummy_type_members[] = {
 
 static PyType_Slot local_dummy_type_slots[] = {
     {Py_tp_dealloc, localdummy_dealloc},
+    {Py_tp_traverse, localdummy_traverse},
     {Py_tp_doc, "Thread-local dummy"},
     {Py_tp_members, local_dummy_type_members},
     {0, 0}
@@ -1456,8 +1465,12 @@ static PyType_Slot local_dummy_type_slots[] = {
 static PyType_Spec local_dummy_type_spec = {
     .name = "_thread._localdummy",
     .basicsize = sizeof(localdummyobject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION |
-              Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = local_dummy_type_slots,
 };
 
