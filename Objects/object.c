@@ -3385,7 +3385,8 @@ PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
     return _PyObject_IsUniquelyReferenced(op);
 }
 
-int _PyObject_VisitType(PyObject *op, visitproc visit, void *arg)
+int
+_PyObject_VisitType(PyObject *op, visitproc visit, void *arg)
 {
     assert(op != NULL);
     PyTypeObject *tp = Py_TYPE(op);
