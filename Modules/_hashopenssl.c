@@ -752,7 +752,9 @@ py_wrapper_EVP_MD_CTX_new(void)
 static HASHobject *
 new_hash_object(PyTypeObject *type)
 {
-    HASHobject *retval = PyObject_New(HASHobject, type);
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    HASHobject *retval = (HASHobject *)type->tp_alloc(type, 0);
     if (retval == NULL) {
         return NULL;
     }
@@ -792,11 +794,19 @@ _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
 static void
 _hashlib_HASH_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     HASHobject *self = HASHobject_CAST(op);
-    PyTypeObject *tp = Py_TYPE(self);
     EVP_MD_CTX_free(self->ctx);
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+_hashlib_HASH_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
 }
 
 static int
@@ -993,6 +1003,7 @@ PyDoc_STRVAR(HASHobject_type_doc,
 
 static PyType_Slot HASHobject_type_slots[] = {
     {Py_tp_dealloc, _hashlib_HASH_dealloc},
+    {Py_tp_traverse, _hashlib_HASH_traverse},
     {Py_tp_repr, _hashlib_HASH_repr},
     {Py_tp_doc, (char *)HASHobject_type_doc},
     {Py_tp_methods, HASH_methods},
@@ -1008,6 +1019,7 @@ static PyType_Spec HASHobject_type_spec = {
         | Py_TPFLAGS_BASETYPE
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
         | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
     ),
     .slots = HASHobject_type_slots
 };
@@ -1165,6 +1177,8 @@ PyDoc_STRVAR(HASHXOFobject_type_doc,
 "digest_size -- number of bytes in this hashes output");
 
 static PyType_Slot HASHXOFobject_type_slots[] = {
+    {Py_tp_dealloc, _hashlib_HASH_dealloc},
+    {Py_tp_traverse, _hashlib_HASH_traverse},
     {Py_tp_doc, (char *)HASHXOFobject_type_doc},
     {Py_tp_methods, HASHXOFobject_methods},
     {Py_tp_getset, HASHXOFobject_getsets},
@@ -1179,6 +1193,7 @@ static PyType_Spec HASHXOFobject_type_spec = {
         | Py_TPFLAGS_BASETYPE
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
         | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
     ),
     .slots = HASHXOFobject_type_slots
 };
@@ -1902,7 +1917,8 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         goto error;
     }
 
-    self = PyObject_New(HMACobject, state->HMAC_type);
+    assert(state->HMAC_type != NULL);
+    self = (HMACobject *)state->HMAC_type->tp_alloc(state->HMAC_type, 0);
     if (self == NULL) {
         goto error;
     }
@@ -1939,20 +1955,30 @@ locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
     return 0;
 }
 
-/* returning 0 means that an error occurred and an exception is set */
+#define BAD_DIGEST_SIZE 0
+
+/*
+ * Return the digest size in bytes.
+ *
+ * On error, set an exception and return BAD_DIGEST_SIZE.
+ */
 static unsigned int
 _hashlib_hmac_digest_size(HMACobject *self)
 {
     const EVP_MD *md = _hashlib_hmac_get_md(self);
     if (md == NULL) {
-        return 0;
+        return BAD_DIGEST_SIZE;
     }
-    unsigned int digest_size = EVP_MD_size(md);
-    assert(digest_size <= EVP_MAX_MD_SIZE);
+    int digest_size = EVP_MD_size(md);
+    /* digest_size < 0 iff EVP_MD context is NULL (which is impossible here) */
+    assert(digest_size >= 0);
+    assert(digest_size <= (int)EVP_MAX_MD_SIZE);
+    /* digest_size == 0 means that the context is not entirely initialized */
     if (digest_size == 0) {
-        notify_ssl_error_occurred("invalid digest size");
+        raise_ssl_error(PyExc_ValueError, "missing digest size");
+        return BAD_DIGEST_SIZE;
     }
-    return digest_size;
+    return (unsigned int)digest_size;
 }
 
 static int
@@ -1998,7 +2024,8 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return NULL;
     }
 
-    retval = PyObject_New(HMACobject, Py_TYPE(self));
+    PyTypeObject *type = Py_TYPE(self);
+    retval = (HMACobject *)type->tp_alloc(type, 0);
     if (retval == NULL) {
         HMAC_CTX_free(ctx);
         return NULL;
@@ -2012,14 +2039,22 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 static void
 _hmac_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     HMACobject *self = HMACobject_CAST(op);
-    PyTypeObject *tp = Py_TYPE(self);
     if (self->ctx != NULL) {
         HMAC_CTX_free(self->ctx);
         self->ctx = NULL;
     }
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+_hashlib_HMAC_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
 }
 
 static PyObject *
@@ -2053,24 +2088,38 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
     Py_RETURN_NONE;
 }
 
-static int
-_hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
+/*
+ * Extract the MAC value to 'buf' and return the digest size.
+ *
+ * The buffer 'buf' must have at least hashlib_openssl_HMAC_digest_size(self)
+ * bytes. Smaller buffers lead to undefined behaviors.
+ *
+ * On error, set an exception and return -1.
+ */
+static Py_ssize_t
+_hmac_digest(HMACobject *self, unsigned char *buf)
 {
+    unsigned int digest_size = _hashlib_hmac_digest_size(self);
+    assert(digest_size <= EVP_MAX_MD_SIZE);
+    if (digest_size == BAD_DIGEST_SIZE) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
     HMAC_CTX *temp_ctx = py_openssl_wrapper_HMAC_CTX_new();
     if (temp_ctx == NULL) {
-        return 0;
+        return -1;
     }
     if (locked_HMAC_CTX_copy(temp_ctx, self) < 0) {
         HMAC_CTX_free(temp_ctx);
-        return 0;
+        return -1;
     }
-    int r = HMAC_Final(temp_ctx, buf, &len);
+    int r = HMAC_Final(temp_ctx, buf, NULL);
     HMAC_CTX_free(temp_ctx);
     if (r == 0) {
         notify_ssl_error_occurred_in(Py_STRINGIFY(HMAC_Final));
-        return 0;
+        return -1;
     }
-    return 1;
+    return digest_size;
 }
 
 /*[clinic input]
@@ -2082,16 +2131,9 @@ static PyObject *
 _hashlib_HMAC_digest_impl(HMACobject *self)
 /*[clinic end generated code: output=1b1424355af7a41e input=bff07f74da318fb4]*/
 {
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
-    if (digest_size == 0) {
-        return NULL;
-    }
-    int r = _hmac_digest(self, digest, digest_size);
-    if (r == 0) {
-        return NULL;
-    }
-    return PyBytes_FromStringAndSize((const char *)digest, digest_size);
+    unsigned char buf[EVP_MAX_MD_SIZE];
+    Py_ssize_t n = _hmac_digest(self, buf);
+    return n < 0 ? NULL : PyBytes_FromStringAndSize((const char *)buf, n);
 }
 
 /*[clinic input]
@@ -2109,24 +2151,17 @@ static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self)
 /*[clinic end generated code: output=80d825be1eaae6a7 input=5e48db83ab1a4d19]*/
 {
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
-    if (digest_size == 0) {
-        return NULL;
-    }
-    int r = _hmac_digest(self, digest, digest_size);
-    if (r == 0) {
-        return NULL;
-    }
-    return _Py_strhex((const char *)digest, digest_size);
+    unsigned char buf[EVP_MAX_MD_SIZE];
+    Py_ssize_t n = _hmac_digest(self, buf);
+    return n < 0 ? NULL : _Py_strhex((const char *)buf, n);
 }
 
 static PyObject *
 _hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    unsigned int digest_size = _hashlib_hmac_digest_size(self);
-    return digest_size == 0 ? NULL : PyLong_FromLong(digest_size);
+    unsigned int size = _hashlib_hmac_digest_size(self);
+    return size == BAD_DIGEST_SIZE ? NULL : PyLong_FromLong(size);
 }
 
 static PyObject *
@@ -2188,15 +2223,21 @@ static PyType_Slot HMACtype_slots[] = {
     {Py_tp_doc, (char *)hmactype_doc},
     {Py_tp_repr, _hmac_repr},
     {Py_tp_dealloc, _hmac_dealloc},
+    {Py_tp_traverse, _hashlib_HMAC_traverse},
     {Py_tp_methods, HMAC_methods},
     {Py_tp_getset, HMAC_getset},
     {0, NULL}
 };
 
 PyType_Spec HMACtype_spec = {
-    "_hashlib.HMAC",    /* name */
-    sizeof(HMACobject),     /* basicsize */
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    .name = "_hashlib.HMAC",
+    .basicsize = sizeof(HMACobject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = HMACtype_slots,
 };
 

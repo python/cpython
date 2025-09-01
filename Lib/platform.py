@@ -173,6 +173,11 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
     """
     if not executable:
+        if sys.platform == "emscripten":
+            # Emscripten's os.confstr reports that it is glibc, so special case
+            # it.
+            ver = ".".join(str(x) for x in sys._emscripten_info.emscripten_version)
+            return ("emscripten", ver)
         try:
             ver = os.confstr('CS_GNU_LIBC_VERSION')
             # parse 'glibc 2.28' as ('glibc', '2.28')

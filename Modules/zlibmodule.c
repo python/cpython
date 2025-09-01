@@ -273,7 +273,9 @@ static compobject *
 newcompobject(PyTypeObject *type)
 {
     compobject *self;
-    self = PyObject_New(compobject, type);
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    self = _compobject_CAST(type->tp_alloc(type, 0));
     if (self == NULL)
         return NULL;
     self->eof = 0;
@@ -716,33 +718,41 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 }
 
 static void
-Dealloc(compobject *self)
+compobject_dealloc_impl(PyObject *op, int (*dealloc)(z_streamp))
 {
-    PyTypeObject *type = Py_TYPE(self);
+    PyTypeObject *type = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    compobject *self = _compobject_CAST(op);
+    if (self->is_initialised) {
+        (void)dealloc(&self->zst);
+    }
     PyThread_free_lock(self->lock);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     Py_XDECREF(self->zdict);
-    PyObject_Free(self);
+    type->tp_free(self);
     Py_DECREF(type);
+}
+
+static int
+compobject_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    compobject *self = _compobject_CAST(op);
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(self->zdict);
+    return 0;
 }
 
 static void
 Comp_dealloc(PyObject *op)
 {
-    compobject *self = _compobject_CAST(op);
-    if (self->is_initialised)
-        (void)deflateEnd(&self->zst);
-    Dealloc(self);
+    compobject_dealloc_impl(op, &deflateEnd);
 }
 
 static void
 Decomp_dealloc(PyObject *op)
 {
-    compobject *self = _compobject_CAST(op);
-    if (self->is_initialised)
-        (void)inflateEnd(&self->zst);
-    Dealloc(self);
+    compobject_dealloc_impl(op, &inflateEnd);
 }
 
 /*[clinic input]
@@ -1368,6 +1378,8 @@ typedef struct {
     char needs_input;
 } ZlibDecompressor;
 
+#define ZlibDecompressor_CAST(op)   ((ZlibDecompressor *)(op))
+
 /*[clinic input]
 class zlib._ZlibDecompressor "ZlibDecompressor *" "&ZlibDecompressorType"
 [clinic start generated code]*/
@@ -1376,8 +1388,9 @@ class zlib._ZlibDecompressor "ZlibDecompressor *" "&ZlibDecompressorType"
 static void
 ZlibDecompressor_dealloc(PyObject *op)
 {
-    ZlibDecompressor *self = (ZlibDecompressor*)op;
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    PyTypeObject *type = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
+    ZlibDecompressor *self = ZlibDecompressor_CAST(op);
     PyThread_free_lock(self->lock);
     if (self->is_initialised) {
         inflateEnd(&self->zst);
@@ -1385,8 +1398,17 @@ ZlibDecompressor_dealloc(PyObject *op)
     PyMem_Free(self->input_buffer);
     Py_CLEAR(self->unused_data);
     Py_CLEAR(self->zdict);
-    PyObject_Free(self);
+    type->tp_free(self);
     Py_DECREF(type);
+}
+
+static int
+ZlibDecompressor_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    ZlibDecompressor *self = ZlibDecompressor_CAST(op);
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(self->zdict);
+    return 0;
 }
 
 static int
@@ -1731,8 +1753,9 @@ static PyObject *
 zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
 /*[clinic end generated code: output=1065607df0d33baa input=9ebad0be6de226e2]*/
 {
+    assert(type != NULL && type->tp_alloc != NULL);
     zlibstate *state = PyType_GetModuleState(type);
-    ZlibDecompressor *self = PyObject_New(ZlibDecompressor, type);
+    ZlibDecompressor *self = ZlibDecompressor_CAST(type->tp_alloc(type, 0));
     if (self == NULL) {
         return NULL;
     }
@@ -2015,6 +2038,7 @@ static PyMethodDef zlib_methods[] =
 
 static PyType_Slot Comptype_slots[] = {
     {Py_tp_dealloc, Comp_dealloc},
+    {Py_tp_traverse, compobject_traverse},
     {Py_tp_methods, comp_methods},
     {0, 0},
 };
@@ -2022,12 +2046,17 @@ static PyType_Slot Comptype_slots[] = {
 static PyType_Spec Comptype_spec = {
     .name = "zlib.Compress",
     .basicsize = sizeof(compobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots= Comptype_slots,
 };
 
 static PyType_Slot Decomptype_slots[] = {
     {Py_tp_dealloc, Decomp_dealloc},
+    {Py_tp_traverse, compobject_traverse},
     {Py_tp_methods, Decomp_methods},
     {Py_tp_members, Decomp_members},
     {0, 0},
@@ -2036,12 +2065,17 @@ static PyType_Slot Decomptype_slots[] = {
 static PyType_Spec Decomptype_spec = {
     .name = "zlib.Decompress",
     .basicsize = sizeof(compobject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = Decomptype_slots,
 };
 
 static PyType_Slot ZlibDecompressor_type_slots[] = {
     {Py_tp_dealloc, ZlibDecompressor_dealloc},
+    {Py_tp_traverse, ZlibDecompressor_traverse},
     {Py_tp_members, ZlibDecompressor_members},
     {Py_tp_new, zlib__ZlibDecompressor},
     {Py_tp_doc, (char *)zlib__ZlibDecompressor__doc__},
@@ -2056,7 +2090,11 @@ static PyType_Spec ZlibDecompressor_type_spec = {
     // ZlibDecompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = ZlibDecompressor_type_slots,
 };
 
