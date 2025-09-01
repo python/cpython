@@ -251,7 +251,7 @@ statements: a ``try`` statement's ``else`` clause runs when no exception
 occurs, and a loop's ``else`` clause runs when no ``break`` occurs. For more on
 the ``try`` statement and exceptions, see :ref:`tut-handling`.
 
-.. index:: single: ...; placeholder
+.. index:: single: ...; ellipsis literal
 .. _tut-pass:
 
 :keyword:`!pass` Statements
