@@ -65,8 +65,8 @@ A small number of constants live in the built-in namespace.  They are:
 .. index:: single: ...; ellipsis literal
 .. data:: Ellipsis
 
-   The same as the ellipsis literal "``...``", an object frequently used as a
-   placeholder for another value. Assignment to  ``Ellipsis`` is possible, but
+   The same as the ellipsis literal "``...``", an object frequently used to
+   indicate that something is omitted. Assignment to ``Ellipsis`` is possible, but
    assignment to  ``...`` is not possible and raises a :exc:`SyntaxError`.
    ``Ellipsis`` is the sole instance of the :data:`types.EllipsisType` type.
 
