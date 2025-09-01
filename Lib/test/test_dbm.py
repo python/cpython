@@ -124,7 +124,9 @@ class AnyDBMTestCase:
         self.assertIn(b'empty', f)
         self.assertEqual(f[b'empty'], b'')
         self.assertEqual(f.get(b'empty'), b'')
-        self.assertEqual(f.setdefault(b'empty'), b'')
+        # setdefault raises TypeError when missing default argument
+        with self.assertRaises(TypeError):
+            f.setdefault(b'empty')
         f.close()
 
     def test_anydbm_access(self):

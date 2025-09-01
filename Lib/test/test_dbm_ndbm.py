@@ -48,7 +48,9 @@ class DbmTestCase(unittest.TestCase):
         self.assertIn(b'empty', self.d)
         self.assertEqual(self.d[b'empty'], b'')
         self.assertEqual(self.d.get(b'empty'), b'')
-        self.assertEqual(self.d.setdefault(b'empty'), b'')
+        # setdefault raises TypeError when missing default argument
+        with self.assertRaises(TypeError):
+            self.d.setdefault(b'empty')
         self.d.close()
 
     def test_modes(self):
