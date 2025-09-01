@@ -572,6 +572,12 @@ random_init(PyObject *self, PyObject *args, PyObject *kwds)
     return random_seed(RandomObject_CAST(self), arg);
 }
 
+static int
+random_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
+}
 
 static PyMethodDef random_methods[] = {
     _RANDOM_RANDOM_RANDOM_METHODDEF
@@ -590,16 +596,15 @@ static PyType_Slot Random_Type_slots[] = {
     {Py_tp_methods, random_methods},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_init, random_init},
-    {Py_tp_free, PyObject_Free},
+    {Py_tp_traverse, random_traverse},
     {0, 0},
 };
 
 static PyType_Spec Random_Type_spec = {
-    "_random.Random",
-    sizeof(RandomObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    Random_Type_slots
+    .name = "_random.Random",
+    .basicsize = sizeof(RandomObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .slots = Random_Type_slots
 };
 
 PyDoc_STRVAR(module_doc,
