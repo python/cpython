@@ -1104,9 +1104,7 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
  * WRITER
  */
 static inline int
-_is_structural_char(Py_UCS4 c, DialectObj *dialect) {
-    Py_ssize_t term_len = PyUnicode_GET_LENGTH(dialect->lineterminator);
-
+_is_structural_char(Py_UCS4 c, DialectObj *dialect, Py_ssize_t term_len) {
     if (c == dialect->delimiter || c == '\n' || c == '\r') {
         return 1;
     }
@@ -1120,6 +1118,7 @@ static int
 _write_field(PyUnicodeWriter *writer, WriterObj *self, PyObject *field, int *quoted)
 {
     DialectObj *dialect = self->dialect;
+    Py_ssize_t term_len = PyUnicode_GET_LENGTH(dialect->lineterminator);
     Py_ssize_t field_len = 0;
 
     bool is_none = (field == NULL);
@@ -1148,7 +1147,7 @@ _write_field(PyUnicodeWriter *writer, WriterObj *self, PyObject *field, int *quo
         Py_ssize_t i;
         for (i = 0; i < field_len; i++) {
             Py_UCS4 c = PyUnicode_READ_CHAR(field, i);
-            if (_is_structural_char(c, dialect) ||
+            if (_is_structural_char(c, dialect, term_len) ||
                 (c == dialect->quotechar && dialect->doublequote)) {
                 *quoted = 1;
                 break;
@@ -1170,7 +1169,7 @@ _write_field(PyUnicodeWriter *writer, WriterObj *self, PyObject *field, int *quo
 
             if (dialect->quoting == QUOTE_NONE) {
                 /* escape structural characters when we cannot quote. */
-                if (_is_structural_char(c, dialect) ||
+                if (_is_structural_char(c, dialect, term_len) ||
                     c == dialect->escapechar ||
                     c == dialect->quotechar) {
                     if (dialect->escapechar == NOT_SET) {
