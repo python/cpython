@@ -142,6 +142,7 @@ set_add_entry_takeref(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t i;                       /* Unsigned for defined overflow behavior */
     int probes;
     int cmp;
+    assert(PySet_CheckExact(so) || PyFrozenSet_CheckExact(so));
 
   restart:
 
