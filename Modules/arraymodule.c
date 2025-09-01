@@ -715,13 +715,6 @@ ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
 
 /* Methods */
 
-static int
-array_tp_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
 static void
 array_dealloc(PyObject *op)
 {
@@ -2968,7 +2961,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_getset, array_getsets},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, array_new},
-    {Py_tp_traverse, array_tp_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
 
     /* as sequence */
     {Py_sq_length, array_length},
