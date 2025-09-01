@@ -162,13 +162,6 @@ PyHKEY_deallocFunc(PyObject *ob)
 }
 
 static int
-PyHKEY_traverseFunc(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
-static int
 PyHKEY_boolFunc(PyObject *ob)
 {
     return ((PyHKEYObject *)ob)->hkey != 0;
@@ -369,7 +362,7 @@ static PyType_Slot pyhkey_type_slots[] = {
     {Py_tp_members, PyHKEY_memberlist},
     {Py_tp_methods, PyHKEY_methods},
     {Py_tp_doc, (char *)PyHKEY_doc},
-    {Py_tp_traverse, PyHKEY_traverseFunc},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_hash, PyHKEY_hashFunc},
     {Py_tp_str, PyHKEY_strFunc},
 
