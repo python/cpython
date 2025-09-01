@@ -879,6 +879,7 @@ Unimplemented:
 }
 
 /*[clinic input]
+@permit_long_summary
 complex.conjugate
 
 Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.
@@ -886,7 +887,7 @@ Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.
 
 static PyObject *
 complex_conjugate_impl(PyComplexObject *self)
-/*[clinic end generated code: output=5059ef162edfc68e input=5fea33e9747ec2c4]*/
+/*[clinic end generated code: output=5059ef162edfc68e input=71b8ab003e1cec95]*/
 {
     Py_complex c = self->cval;
     c.imag = -c.imag;
