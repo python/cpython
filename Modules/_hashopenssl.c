@@ -752,7 +752,9 @@ py_wrapper_EVP_MD_CTX_new(void)
 static HASHobject *
 new_hash_object(PyTypeObject *type)
 {
-    HASHobject *retval = PyObject_New(HASHobject, type);
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    HASHobject *retval = (HASHobject *)type->tp_alloc(type, 0);
     if (retval == NULL) {
         return NULL;
     }
@@ -792,11 +794,19 @@ _hashlib_HASH_hash(HASHobject *self, const void *vp, Py_ssize_t len)
 static void
 _hashlib_HASH_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     HASHobject *self = HASHobject_CAST(op);
-    PyTypeObject *tp = Py_TYPE(self);
     EVP_MD_CTX_free(self->ctx);
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+_hashlib_HASH_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
 }
 
 static int
@@ -993,6 +1003,7 @@ PyDoc_STRVAR(HASHobject_type_doc,
 
 static PyType_Slot HASHobject_type_slots[] = {
     {Py_tp_dealloc, _hashlib_HASH_dealloc},
+    {Py_tp_traverse, _hashlib_HASH_traverse},
     {Py_tp_repr, _hashlib_HASH_repr},
     {Py_tp_doc, (char *)HASHobject_type_doc},
     {Py_tp_methods, HASH_methods},
@@ -1008,6 +1019,7 @@ static PyType_Spec HASHobject_type_spec = {
         | Py_TPFLAGS_BASETYPE
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
         | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
     ),
     .slots = HASHobject_type_slots
 };
@@ -1165,6 +1177,8 @@ PyDoc_STRVAR(HASHXOFobject_type_doc,
 "digest_size -- number of bytes in this hashes output");
 
 static PyType_Slot HASHXOFobject_type_slots[] = {
+    {Py_tp_dealloc, _hashlib_HASH_dealloc},
+    {Py_tp_traverse, _hashlib_HASH_traverse},
     {Py_tp_doc, (char *)HASHXOFobject_type_doc},
     {Py_tp_methods, HASHXOFobject_methods},
     {Py_tp_getset, HASHXOFobject_getsets},
@@ -1179,6 +1193,7 @@ static PyType_Spec HASHXOFobject_type_spec = {
         | Py_TPFLAGS_BASETYPE
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
         | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
     ),
     .slots = HASHXOFobject_type_slots
 };
@@ -1902,7 +1917,8 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         goto error;
     }
 
-    self = PyObject_New(HMACobject, state->HMAC_type);
+    assert(state->HMAC_type != NULL);
+    self = (HMACobject *)state->HMAC_type->tp_alloc(state->HMAC_type, 0);
     if (self == NULL) {
         goto error;
     }
@@ -2008,7 +2024,8 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return NULL;
     }
 
-    retval = PyObject_New(HMACobject, Py_TYPE(self));
+    PyTypeObject *type = Py_TYPE(self);
+    retval = (HMACobject *)type->tp_alloc(type, 0);
     if (retval == NULL) {
         HMAC_CTX_free(ctx);
         return NULL;
@@ -2022,14 +2039,22 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 static void
 _hmac_dealloc(PyObject *op)
 {
+    PyTypeObject *tp = Py_TYPE(op);
+    PyObject_GC_UnTrack(op);
     HMACobject *self = HMACobject_CAST(op);
-    PyTypeObject *tp = Py_TYPE(self);
     if (self->ctx != NULL) {
         HMAC_CTX_free(self->ctx);
         self->ctx = NULL;
     }
-    PyObject_Free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
+}
+
+static int
+_hashlib_HMAC_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(op));
+    return 0;
 }
 
 static PyObject *
@@ -2198,15 +2223,21 @@ static PyType_Slot HMACtype_slots[] = {
     {Py_tp_doc, (char *)hmactype_doc},
     {Py_tp_repr, _hmac_repr},
     {Py_tp_dealloc, _hmac_dealloc},
+    {Py_tp_traverse, _hashlib_HMAC_traverse},
     {Py_tp_methods, HMAC_methods},
     {Py_tp_getset, HMAC_getset},
     {0, NULL}
 };
 
 PyType_Spec HMACtype_spec = {
-    "_hashlib.HMAC",    /* name */
-    sizeof(HMACobject),     /* basicsize */
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE,
+    .name = "_hashlib.HMAC",
+    .basicsize = sizeof(HMACobject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = HMACtype_slots,
 };
 
