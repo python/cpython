@@ -413,13 +413,6 @@ typedef struct {
 
 #define Pdata_CAST(op)  ((Pdata *)(op))
 
-static int
-Pdata_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
 Pdata_dealloc(PyObject *op)
 {
@@ -437,7 +430,7 @@ Pdata_dealloc(PyObject *op)
 
 static PyType_Slot pdata_slots[] = {
     {Py_tp_dealloc, Pdata_dealloc},
-    {Py_tp_traverse, Pdata_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL},
 };
 
