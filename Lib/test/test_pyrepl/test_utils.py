@@ -62,26 +62,16 @@ class TestUtils(TestCase):
             next(pnw)
 
     def test_gen_colors_keyword_highlighting(self):
-        no_highlight_cases = [
+        cases = [
+            # no highlights
             ("a.set", [(".", "op")]),
             ("obj.list", [(".", "op")]),
             ("obj.match", [(".", "op")]),
-        ]
-        for code, expected_highlights in no_highlight_cases:
-            with self.subTest(code=code):
-                colors = list(gen_colors(code))
-                # Extract (text, tag) pairs for comparison
-                actual_highlights = []
-                for color in colors:
-                    span_text = code[color.span.start:color.span.end + 1]
-                    actual_highlights.append((span_text, color.tag))
-                self.assertEqual(actual_highlights, expected_highlights,
-                               f"In '{code}', expected {expected_highlights}, got {actual_highlights}")
-        highlight_cases = [
+            # highlights
             ("set", [("set", "builtin")]),
             ("list", [("list", "builtin")]),
         ]
-        for code, expected_highlights in highlight_cases:
+        for code, expected_highlights in cases:
             with self.subTest(code=code):
                 colors = list(gen_colors(code))
                 # Extract (text, tag) pairs for comparison
@@ -89,5 +79,4 @@ class TestUtils(TestCase):
                 for color in colors:
                     span_text = code[color.span.start:color.span.end + 1]
                     actual_highlights.append((span_text, color.tag))
-                self.assertEqual(actual_highlights, expected_highlights,
-                               f"In '{code}', expected {expected_highlights}, got {actual_highlights}")
+                self.assertEqual(actual_highlights, expected_highlights)

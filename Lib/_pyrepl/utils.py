@@ -208,8 +208,10 @@ def gen_colors_from_token_stream(
                 ):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "soft_keyword")
-                elif (token.string in BUILTINS
-                      and not (prev_token and prev_token.type == T.OP and prev_token.string == ".")):
+                elif (
+                    token.string in BUILTINS
+                    and not (prev_token and prev_token.type == T.OP
+                                        and prev_token.string == ".")):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "builtin")
 
