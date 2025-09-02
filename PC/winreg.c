@@ -2037,7 +2037,7 @@ all subkeys and values of the specified key are deleted.
 
 static PyObject *
 winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
-/*[clinic end generated code: output=c34395ee59290501 input=440b81a7bc3fe183]*/
+/*[clinic end generated code: output=c34395ee59290501 input=419ef9bb8b06e4bf]*/
 {
     LONG rc;
 

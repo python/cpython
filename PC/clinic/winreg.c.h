@@ -1646,12 +1646,7 @@ PyDoc_STRVAR(winreg_DeleteTree__doc__,
 "    and values of the specified key.\n"
 "\n"
 "This function deletes a key and all its descendants. If sub_key is None,\n"
-"all subkeys and values of the specified key are deleted.\n"
-"\n"
-"The key must be opened with appropriate access rights (DELETE,\n"
-"KEY_ENUMERATE_SUB_KEYS, and KEY_QUERY_VALUE).\n"
-"\n"
-"Requires Windows Vista or later. On older systems, NotImplementedError is raised.");
+"all subkeys and values of the specified key are deleted.");
 
 #define WINREG_DELETETREE_METHODDEF    \
     {"DeleteTree", _PyCFunction_CAST(winreg_DeleteTree), METH_FASTCALL, winreg_DeleteTree__doc__},
@@ -1847,4 +1842,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=72b697dd1415071a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce7e8e38884851fb input=a9049054013a1b77]*/
