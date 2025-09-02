@@ -281,9 +281,13 @@ class MmapTests(unittest.TestCase):
                 if close_original_fd:
                     f.close()
                 self.assertEqual(len(m), size)
-                with self.assertRaises(OSError) as err_cm:
-                    m.size()
-                self.assertEqual(err_cm.exception.errno, errno.EBADF)
+                if os.name == 'nt':
+                    with self.assertRaises(ValueError):
+                        m.size()
+                else:
+                    with self.assertRaises(OSError) as err_cm:
+                        m.size()
+                    self.assertEqual(err_cm.exception.errno, errno.EBADF)
                 with self.assertRaises(ValueError):
                     m.resize(size * 2)
                 with self.assertRaises(ValueError):

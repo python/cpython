@@ -716,7 +716,7 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
     CHECK_VALID(NULL);
 
 #ifdef MS_WINDOWS
-    if (self->file_handle != INVALID_HANDLE_VALUE || !self->trackfd) {
+    if (self->file_handle != INVALID_HANDLE_VALUE) {
         DWORD low,high;
         long long size;
         low = GetFileSize(self->file_handle, &high);
@@ -731,8 +731,12 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
             return PyLong_FromLong((long)low);
         size = (((long long)high)<<32) + low;
         return PyLong_FromLongLong(size);
-    } else {
+    else if (self->trackfd) {
         return PyLong_FromSsize_t(self->size);
+    } else {
+        PyErr_SetString(PyExc_ValueError,
+            "can't get size with trackfd=False");
+        return NULL;
     }
 #endif /* MS_WINDOWS */
 
