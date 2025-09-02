@@ -747,7 +747,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(info.byteorder, sys.byteorder)
         for attr, flag in [
             ("free_threaded", "Py_GIL_DISABLED"),
-            ("debug", "Py_REF_DEBUG"),
+            ("debug", "Py_DEBUG"),
         ]:
             self.assertEqual(getattr(info, attr, None),
                              bool(sysconfig.get_config_var(flag)),

@@ -3670,7 +3670,7 @@ make_abi_info(void)
         goto error;
     }
 
-#ifdef Py_REF_DEBUG
+#ifdef Py_DEBUG
     value = Py_True;
 #else
     value = Py_False;
