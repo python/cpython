@@ -23,8 +23,10 @@
 #endif
 
 #include <Python.h>
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
@@ -126,13 +128,6 @@ typedef struct {
 
 #define mmap_object_CAST(op)    ((mmap_object *)(op))
 
-static int
-mmap_object_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
 static void
 mmap_object_dealloc(PyObject *op)
 {
@@ -163,8 +158,7 @@ mmap_object_dealloc(PyObject *op)
     Py_END_ALLOW_THREADS
 #endif /* UNIX */
 
-    if (m_obj->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, m_obj->weakreflist);
 
     tp->tp_free(m_obj);
     Py_DECREF(tp);
@@ -529,7 +523,7 @@ mmap_read_method(PyObject *op, PyObject *args)
     mmap_object *self = mmap_object_CAST(op);
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|n?:read", &num_bytes))
+    if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
         return NULL;
     CHECK_VALID(NULL);
 
@@ -1498,7 +1492,7 @@ static PyType_Slot mmap_object_slots[] = {
     {Py_tp_members, mmap_object_members},
     {Py_tp_getset, mmap_object_getset},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, mmap_object_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
 
     /* as sequence */
     {Py_sq_length, mmap_length},
@@ -1723,7 +1717,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
     DWORD size_lo;      /* lower 32 bits of size */
-    PyObject *tagname = NULL;
+    PyObject *tagname = Py_None;
     DWORD dwErr = 0;
     int fileno;
     HANDLE fh = 0;
@@ -1733,7 +1727,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                 "tagname",
                                 "access", "offset", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|U?iL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|OiL", keywords,
                                      &fileno, &map_size,
                                      &tagname, &access, &offset)) {
         return NULL;
@@ -1866,7 +1860,13 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     /* set the tag name */
-    if (tagname != NULL) {
+    if (!Py_IsNone(tagname)) {
+        if (!PyUnicode_Check(tagname)) {
+            Py_DECREF(m_obj);
+            return PyErr_Format(PyExc_TypeError, "expected str or None for "
+                                "'tagname', not %.200s",
+                                Py_TYPE(tagname)->tp_name);
+        }
         m_obj->tagname = PyUnicode_AsWideCharString(tagname, NULL);
         if (m_obj->tagname == NULL) {
             Py_DECREF(m_obj);

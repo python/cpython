@@ -2277,6 +2277,18 @@ The C-API provides a basic mutual exclusion lock.
 
    .. versionadded:: 3.13
 
+.. c:function:: int PyMutex_IsLocked(PyMutex *m)
+
+   Returns non-zero if the mutex *m* is currently locked, zero otherwise.
+
+   .. note::
+
+      This function is intended for use in assertions and debugging only and
+      should not be used to make concurrency control decisions, as the lock
+      state may change immediately after the check.
+
+   .. versionadded:: 3.14
+
 .. _python-critical-section-api:
 
 Python Critical Section API
@@ -2287,12 +2299,26 @@ per-object locks for :term:`free-threaded <free threading>` CPython.  They are
 intended to replace reliance on the :term:`global interpreter lock`, and are
 no-ops in versions of Python with the global interpreter lock.
 
+Critical sections are intended to be used for custom types implemented
+in C-API extensions. They should generally not be used with built-in types like
+:class:`list` and :class:`dict` because their public C-APIs
+already use critical sections internally, with the notable
+exception of :c:func:`PyDict_Next`, which requires critical section
+to be acquired externally.
+
 Critical sections avoid deadlocks by implicitly suspending active critical
-sections and releasing the locks during calls to :c:func:`PyEval_SaveThread`.
-When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
-is resumed, and its locks reacquired.  This means the critical section API
-provides weaker guarantees than traditional locks -- they are useful because
-their behavior is similar to the :term:`GIL`.
+sections, hence, they do not provide exclusive access such as provided by
+traditional locks like :c:type:`PyMutex`.  When a critical section is started,
+the per-object lock for the object is acquired. If the code executed inside the
+critical section calls C-API functions then it can suspend the critical section thereby
+releasing the per-object lock, so other threads can acquire the per-object lock
+for the same object.
+
+Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
+available. Use these variants to start a critical section in a situation where
+there is no :c:type:`PyObject` -- for example, when working with a C type that
+does not extend or wrap :c:type:`PyObject` but still needs to call into the C
+API in a manner that might lead to deadlocks.
 
 The functions and structs used by the macros are exposed for cases
 where C macros are not available. They should only be used as in the
@@ -2339,6 +2365,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    .. versionadded:: 3.13
 
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION_MUTEX(m)
+
+   Locks the mutex *m* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection _py_cs;
+          PyCriticalSection_BeginMutex(&_py_cs, m)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION`, there is no cast for
+   the argument of the macro - it must be a :c:type:`PyMutex` pointer.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
+
 .. c:macro:: Py_END_CRITICAL_SECTION()
 
    Ends the critical section and releases the per-object lock.
@@ -2367,6 +2410,23 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
    In the default build, this macro expands to ``{``.
 
    .. versionadded:: 3.13
+
+.. c:macro:: Py_BEGIN_CRITICAL_SECTION2_MUTEX(m1, m2)
+
+   Locks the mutexes *m1* and *m2* and begins a critical section.
+
+   In the free-threaded build, this macro expands to::
+
+     {
+          PyCriticalSection2 _py_cs2;
+          PyCriticalSection2_BeginMutex(&_py_cs2, m1, m2)
+
+   Note that unlike :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, there is no cast for
+   the arguments of the macro - they must be :c:type:`PyMutex` pointers.
+
+   On the default build, this macro expands to ``{``.
+
+   .. versionadded:: 3.14
 
 .. c:macro:: Py_END_CRITICAL_SECTION2()
 

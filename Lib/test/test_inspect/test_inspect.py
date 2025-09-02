@@ -148,6 +148,29 @@ def meth_self_o(self, object, /): pass
 def meth_type_noargs(type, /): pass
 def meth_type_o(type, object, /): pass
 
+# Decorator decorator that returns a simple wrapped function
+def identity_wrapper(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapped
+
+# Original signature of the simple wrapped function returned by
+# identity_wrapper().
+varargs_signature = (
+    (('args', ..., ..., 'var_positional'),
+    ('kwargs', ..., ..., 'var_keyword')),
+    ...,
+)
+
+# Decorator decorator that returns a simple descriptor
+class custom_descriptor:
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, instance, owner):
+        return self.func.__get__(instance, owner)
+
 
 class TestPredicates(IsTestBase):
 
@@ -1189,11 +1212,17 @@ class TestBuggyCases(GetSourceBase):
 
         self.assertSourceEqual(run(mod2.func225), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
+        self.assertSourceEqual(mod2.cls226.func232, 232, 235)
         self.assertSourceEqual(run(mod2.cls226().func232), 233, 234)
 
     def test_class_definition_same_name_diff_methods(self):
         self.assertSourceEqual(mod2.cls296, 296, 298)
         self.assertSourceEqual(mod2.cls310, 310, 312)
+
+    def test_generator_expression(self):
+        self.assertSourceEqual(next(mod2.ge377), 377, 380)
+        self.assertSourceEqual(next(mod2.func383()), 385, 388)
+
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
@@ -2820,7 +2849,7 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        asyncio._set_event_loop_policy(None)
+        asyncio.events._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
@@ -4021,44 +4050,266 @@ class TestSignatureObject(unittest.TestCase):
                            ('bar', 2, ..., "keyword_only")),
                           ...))
 
-    def test_signature_on_class_with_decorated_new(self):
-        def identity(func):
-            @functools.wraps(func)
-            def wrapped(*args, **kwargs):
-                return func(*args, **kwargs)
-            return wrapped
-
-        class Foo:
-            @identity
-            def __new__(cls, a, b):
+    def test_signature_on_class_with_wrapped_metaclass_call(self):
+        class CM(type):
+            @identity_wrapper
+            def __call__(cls, a):
+                pass
+        class C(metaclass=CM):
+            def __init__(self, b):
                 pass
 
-        self.assertEqual(self.signature(Foo),
-                         ((('a', ..., ..., "positional_or_keyword"),
-                           ('b', ..., ..., "positional_or_keyword")),
+        self.assertEqual(self.signature(C),
+                         ((('a', ..., ..., "positional_or_keyword"),),
                           ...))
 
-        self.assertEqual(self.signature(Foo.__new__),
-                         ((('cls', ..., ..., "positional_or_keyword"),
-                           ('a', ..., ..., "positional_or_keyword"),
-                           ('b', ..., ..., "positional_or_keyword")),
-                          ...))
+        with self.subTest('classmethod'):
+            class CM(type):
+                @classmethod
+                @identity_wrapper
+                def __call__(cls, a):
+                    return a
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
 
-        class Bar:
-            __new__ = identity(object.__new__)
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
 
-        varargs_signature = (
-            (('args', ..., ..., 'var_positional'),
-             ('kwargs', ..., ..., 'var_keyword')),
-            ...,
-        )
+        with self.subTest('staticmethod'):
+            class CM(type):
+                @staticmethod
+                @identity_wrapper
+                def __call__(a):
+                    return a
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
 
-        self.assertEqual(self.signature(Bar), ((), ...))
-        self.assertEqual(self.signature(Bar.__new__), varargs_signature)
-        self.assertEqual(self.signature(Bar, follow_wrapped=False),
-                         varargs_signature)
-        self.assertEqual(self.signature(Bar.__new__, follow_wrapped=False),
-                         varargs_signature)
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                @identity_wrapper
+                def call(self, a):
+                    return a
+            class CM(type):
+                __call__ = A().call
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('descriptor'):
+            class CM(type):
+                @custom_descriptor
+                @identity_wrapper
+                def __call__(self, a):
+                    return a
+            class C(metaclass=CM):
+                def __init__(self, b):
+                    pass
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+            self.assertEqual(self.signature(C.__call__),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+            self.assertEqual(self.signature(C, follow_wrapped=False),
+                             varargs_signature)
+            self.assertEqual(self.signature(C.__call__, follow_wrapped=False),
+                             varargs_signature)
+
+    def test_signature_on_class_with_wrapped_init(self):
+        class C:
+            @identity_wrapper
+            def __init__(self, b):
+                pass
+
+        C(1)  # does not raise
+        self.assertEqual(self.signature(C),
+                        ((('b', ..., ..., "positional_or_keyword"),),
+                        ...))
+
+        with self.subTest('classmethod'):
+            class C:
+                @classmethod
+                @identity_wrapper
+                def __init__(cls, b):
+                    pass
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class C:
+                @staticmethod
+                @identity_wrapper
+                def __init__(b):
+                    pass
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                @identity_wrapper
+                def call(self, a):
+                    pass
+
+            class C:
+                __init__ = A().call
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partial'):
+            class C:
+                __init__ = functools.partial(identity_wrapper(lambda x, a, b: None), 2)
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('b', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partialmethod'):
+            class C:
+                @identity_wrapper
+                def _init(self, x, a):
+                    self.a = (x, a)
+                __init__ = functools.partialmethod(_init, 2)
+
+            self.assertEqual(C(1).a, (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('descriptor'):
+            class C:
+                @custom_descriptor
+                @identity_wrapper
+                def __init__(self, a):
+                    pass
+
+            C(1)  # does not raise
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+            self.assertEqual(self.signature(C.__init__),
+                            ((('self', ..., ..., "positional_or_keyword"),
+                            ('a', ..., ..., "positional_or_keyword")),
+                            ...))
+
+            self.assertEqual(self.signature(C, follow_wrapped=False),
+                             varargs_signature)
+            self.assertEqual(self.signature(C.__new__, follow_wrapped=False),
+                             varargs_signature)
+
+    def test_signature_on_class_with_wrapped_new(self):
+        with self.subTest('FunctionType'):
+            class C:
+                @identity_wrapper
+                def __new__(cls, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('classmethod'):
+            class C:
+                @classmethod
+                @identity_wrapper
+                def __new__(cls, cls2, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('staticmethod'):
+            class C:
+                @staticmethod
+                @identity_wrapper
+                def __new__(cls, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('MethodType'):
+            class A:
+                @identity_wrapper
+                def call(self, cls, a):
+                    return a
+            class C:
+                __new__ = A().call
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partial'):
+            class C:
+                __new__ = functools.partial(identity_wrapper(lambda x, cls, a: (x, a)), 2)
+
+            self.assertEqual(C(1), (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('partialmethod'):
+            class C:
+                __new__ = functools.partialmethod(identity_wrapper(lambda cls, x, a: (x, a)), 2)
+
+            self.assertEqual(C(1), (2, 1))
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+
+        with self.subTest('descriptor'):
+            class C:
+                @custom_descriptor
+                @identity_wrapper
+                def __new__(cls, a):
+                    return a
+
+            self.assertEqual(C(1), 1)
+            self.assertEqual(self.signature(C),
+                            ((('a', ..., ..., "positional_or_keyword"),),
+                            ...))
+            self.assertEqual(self.signature(C.__new__),
+                            ((('cls', ..., ..., "positional_or_keyword"),
+                            ('a', ..., ..., "positional_or_keyword")),
+                            ...))
+
+            self.assertEqual(self.signature(C, follow_wrapped=False),
+                             varargs_signature)
+            self.assertEqual(self.signature(C.__new__, follow_wrapped=False),
+                             varargs_signature)
 
     def test_signature_on_class_with_init(self):
         class C:
@@ -5786,6 +6037,7 @@ class TestSignatureDefinitions(unittest.TestCase):
             'AsyncGeneratorType': {'athrow'},
             'CoroutineType': {'throw'},
             'GeneratorType': {'throw'},
+            'FrameLocalsProxyType': {'setdefault', 'pop', 'get'},
         }
         self._test_module_has_signatures(types,
                 unsupported_signature=unsupported_signature,
@@ -5829,6 +6081,21 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_collections_abc_module_has_signatures(self):
         import collections.abc
         self._test_module_has_signatures(collections.abc)
+
+    def test_datetime_module_has_signatures(self):
+        # Only test if the C implementation is available.
+        import_helper.import_module('_datetime')
+        import datetime
+        no_signature = {'tzinfo'}
+        unsupported_signature = {'timezone'}
+        methods_unsupported_signature = {
+            'date': {'replace'},
+            'time': {'replace'},
+            'datetime': {'replace', 'combine'},
+        }
+        self._test_module_has_signatures(datetime,
+                no_signature, unsupported_signature,
+                methods_unsupported_signature=methods_unsupported_signature)
 
     def test_errno_module_has_signatures(self):
         import errno
@@ -5916,6 +6183,7 @@ class TestSignatureDefinitions(unittest.TestCase):
     def test_threading_module_has_signatures(self):
         import threading
         self._test_module_has_signatures(threading)
+        self.assertIsNotNone(inspect.signature(threading.__excepthook__))
 
     def test_thread_module_has_signatures(self):
         import _thread

@@ -173,6 +173,11 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
 
     """
     if not executable:
+        if sys.platform == "emscripten":
+            # Emscripten's os.confstr reports that it is glibc, so special case
+            # it.
+            ver = ".".join(str(x) for x in sys._emscripten_info.emscripten_version)
+            return ("emscripten", ver)
         try:
             ver = os.confstr('CS_GNU_LIBC_VERSION')
             # parse 'glibc 2.28' as ('glibc', '2.28')
@@ -194,6 +199,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         | (GLIBC_([0-9.]+))
         | (libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)
         | (musl-([0-9.]+))
+        | (libc.musl(?:-\w+)?.so(?:\.(\d[0-9.]*))?)
         """,
         re.ASCII | re.VERBOSE)
 
@@ -219,9 +225,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                     continue
                 if not m:
                     break
-            libcinit, glibc, glibcversion, so, threads, soversion, musl, muslversion = [
-                s.decode('latin1') if s is not None else s
-                for s in m.groups()]
+            decoded_groups = [s.decode('latin1') if s is not None else s
+                              for s in m.groups()]
+            (libcinit, glibc, glibcversion, so, threads, soversion,
+             musl, muslversion, musl_so, musl_sover) = decoded_groups
             if libcinit and not lib:
                 lib = 'libc'
             elif glibc:
@@ -241,6 +248,10 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                 lib = 'musl'
                 if not ver or V(muslversion) > V(ver):
                     ver = muslversion
+            elif musl_so:
+                lib = 'musl'
+                if musl_sover and (not ver or V(musl_sover) > V(ver)):
+                    ver = musl_sover
             pos = m.end()
     return lib, version if ver is None else ver
 
@@ -612,6 +623,9 @@ def system_alias(system, release, version):
 
 ### Various internal helpers
 
+# Table for cleaning up characters in filenames.
+_SIMPLE_SUBSTITUTIONS = str.maketrans(r' /\:;"()', r'_-------')
+
 def _platform(*args):
 
     """ Helper to format the platform string in a filename
@@ -621,28 +635,13 @@ def _platform(*args):
     platform = '-'.join(x.strip() for x in filter(len, args))
 
     # Cleanup some possible filename obstacles...
-    platform = platform.replace(' ', '_')
-    platform = platform.replace('/', '-')
-    platform = platform.replace('\\', '-')
-    platform = platform.replace(':', '-')
-    platform = platform.replace(';', '-')
-    platform = platform.replace('"', '-')
-    platform = platform.replace('(', '-')
-    platform = platform.replace(')', '-')
+    platform = platform.translate(_SIMPLE_SUBSTITUTIONS)
 
     # No need to report 'unknown' information...
     platform = platform.replace('unknown', '')
 
     # Fold '--'s and remove trailing '-'
-    while True:
-        cleaned = platform.replace('--', '-')
-        if cleaned == platform:
-            break
-        platform = cleaned
-    while platform and platform[-1] == '-':
-        platform = platform[:-1]
-
-    return platform
+    return re.sub(r'-{2,}', '-', platform).rstrip('-')
 
 def _node(default=''):
 

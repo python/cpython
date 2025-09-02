@@ -206,11 +206,13 @@ _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym)
     if (const_val == NULL) {
         return false;
     }
+    if (_PyLong_CheckExactAndCompact(const_val)) {
+        return true;
+    }
     PyTypeObject *typ = Py_TYPE(const_val);
-    return (typ == &PyLong_Type) ||
-           (typ == &PyUnicode_Type) ||
+    return (typ == &PyUnicode_Type) ||
            (typ == &PyFloat_Type) ||
-           (typ == &PyTuple_Type) ||
+           (typ == &_PyNone_Type) ||
            (typ == &PyBool_Type);
 }
 
@@ -886,6 +888,13 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
 
     // Frame setup
     ctx->curr_frame_depth = 0;
+
+    // Ctx signals.
+    // Note: this must happen before frame_new, as it might override
+    // the result should frame_new set things to bottom.
+    ctx->done = false;
+    ctx->out_of_space = false;
+    ctx->contradiction = false;
 }
 
 int
