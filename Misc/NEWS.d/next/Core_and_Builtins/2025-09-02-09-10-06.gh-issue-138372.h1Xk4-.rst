@@ -1,0 +1,2 @@
+Fix type name shown in :exc:`SyntaxWarning`\s involving :ref:`template string
+literals <t-strings>`. Patch by Brian Schubert.

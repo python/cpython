@@ -1586,6 +1586,7 @@ class GrammarTests(unittest.TestCase):
         check('[[1, 2] [f"{x}"]]')
         check('[[1, 2] [f"x={x}"]]')
         check('[[1, 2] ["abc"]]')
+        msg=r'indices must be integers or slices, not string.templatelib.Template;'
         check('[[1, 2] [t"{x}"]]')
         check('[[1, 2] [t"x={x}"]]')
         msg=r'indices must be integers or slices, not'
