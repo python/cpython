@@ -901,7 +901,7 @@ Improved Modules
 asyncio
 -------
 
-Add missing :meth:`~loop.connect_accepted_socket`
+Add missing :meth:`~asyncio.loop.connect_accepted_socket`
 method.
 (Contributed by Alex Grönholm in :issue:`41332`.)
 
