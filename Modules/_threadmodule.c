@@ -2524,7 +2524,7 @@ _thread__get_name_impl(PyObject *module)
 
 #ifdef __sun
     // gh-138004: Decode Solaris/Illumos (e.g. OpenIndiana) thread names
-    //  from ASCII, since OpenIndiana only supports ASCII names.
+    // from ASCII, since OpenIndiana only supports ASCII names.
     return PyUnicode_DecodeASCII(name, strlen(name), "surrogateescape");
 #else
     return PyUnicode_DecodeFSDefault(name);
