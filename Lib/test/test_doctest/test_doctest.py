@@ -1449,22 +1449,22 @@ output to match any substring in the actual output:
 
 The IGNORE_CASE flag causes the test runner to ignore case when
 matching the expected output to the actual output.
-    >>> print("Hello World") # doctest: +IGNORE_CASE
+
+    >>> print("HeLlO WoRlD") # doctest: +IGNORE_CASE
     hello world
 
 It can resolve the issues with POSIX and Windows NAN and other types.
 On Windows this should fail without the flag.
+
     >>> float("NaN") # doctest: +IGNORE_CASE
     nan
 
-On POSIX this should fail.
-    >>> float("NaN") # doctest: +IGNORE_CASE
-    NaN
+It also works with boolean values.
 
-    >>> float("nan") # doctest: +IGNORE_CASE
-    nan
-    >>> float("nan") # doctest: +IGNORE_CASE
-    NaN
+    >>> print("tRuE") # doctest: +IGNORE_CASE
+    1
+    >>> print("FaLsE") # doctest: +IGNORE_CASE
+    0
 
 
 The SKIP flag causes an example to be skipped entirely.  I.e., the
