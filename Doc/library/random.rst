@@ -630,7 +630,8 @@ Recipes
 -------
 
 These recipes show how to efficiently make random selections
-from the combinatoric iterators in the :mod:`itertools` module:
+from the combinatoric iterators in the :mod:`itertools` module
+or the :pypi:`more-itertools` project:
 
 .. testcode::
    import random
@@ -660,6 +661,14 @@ from the combinatoric iterators in the :mod:`itertools` module:
        n = len(pool)
        indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
+
+   def random_derangement(iterable):
+       "Choose a permutation where no element is in its original position."
+       seq = tuple(iterable)
+       while True:
+           perm = random_permutation(seq)
+           if all(p != q for p, q in zip(seq, perm)):
+               return perm
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
