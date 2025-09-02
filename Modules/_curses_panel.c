@@ -429,6 +429,23 @@ PyCursesPanel_New(_curses_panel_state *state, PANEL *pan,
     return (PyObject *)po;
 }
 
+static int
+PyCursesPanel_Clear(PyObject *op)
+{
+    PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
+    PyObject *extra = (PyObject *)panel_userptr(self->pan);
+    if (extra != NULL) {
+        Py_CLEAR(extra);
+        if (set_panel_userptr(self->pan, NULL) == ERR) {
+            curses_panel_panel_set_error(self, "set_panel_userptr", NULL);
+            // Do not add a PyErr_FormatUnraisable() because the GC
+            // is responsible for handling exceptions in tp_clear.
+        }
+    }
+    // do NOT clear self->wo yet as there is no cycle to break with it
+    return 0;
+}
+
 static void
 PyCursesPanel_Dealloc(PyObject *self)
 {
@@ -464,6 +481,7 @@ PyCursesPanel_Traverse(PyObject *op, visitproc visit, void *arg)
 {
     PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
     Py_VISIT(Py_TYPE(op));
+    Py_VISIT(panel_userptr(self->pan));
     Py_VISIT(self->wo);
     return 0;
 }
@@ -659,6 +677,7 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 /* -------------------------------------------------------*/
 
 static PyType_Slot PyCursesPanel_Type_slots[] = {
+    {Py_tp_clear, PyCursesPanel_Clear},
     {Py_tp_dealloc, PyCursesPanel_Dealloc},
     {Py_tp_traverse, PyCursesPanel_Traverse},
     {Py_tp_methods, PyCursesPanel_Methods},
