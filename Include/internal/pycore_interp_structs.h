@@ -99,7 +99,6 @@ struct _ceval_runtime_state {
     // For example, we use a preallocated array
     // for the list of pending calls.
     struct _pending_calls pending_mainthread;
-    PyMutex sys_trace_profile_mutex;
 };
 
 
@@ -692,6 +691,13 @@ struct _Py_interp_cached_objects {
     PyTypeObject *paramspecargs_type;
     PyTypeObject *paramspeckwargs_type;
     PyTypeObject *constevaluator_type;
+
+    /* Descriptors for __dict__ and __weakref__ */
+#ifdef Py_GIL_DISABLED
+    PyMutex descriptor_mutex;
+#endif
+    PyObject *dict_descriptor;
+    PyObject *weakref_descriptor;
 };
 
 struct _Py_interp_static_objects {
@@ -759,6 +765,7 @@ struct _Py_unique_id_pool {
 
 #endif
 
+typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
@@ -951,8 +958,8 @@ struct _is {
     PyDict_WatchCallback builtins_dict_watcher;
 
     _Py_GlobalMonitors monitors;
-    bool sys_profile_initialized;
-    bool sys_trace_initialized;
+    _PyOnceFlag sys_profile_once_flag;
+    _PyOnceFlag sys_trace_once_flag;
     Py_ssize_t sys_profiling_threads; /* Count of threads with c_profilefunc set */
     Py_ssize_t sys_tracing_threads; /* Count of threads with c_tracefunc set */
     PyObject *monitoring_callables[PY_MONITORING_TOOL_IDS][_PY_MONITORING_EVENTS];
