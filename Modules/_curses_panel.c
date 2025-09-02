@@ -452,14 +452,7 @@ PyCursesPanel_Dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
 
     PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
-    PyObject *obj = (PyObject *)panel_userptr(po->pan);
-    if (obj) {
-        Py_DECREF(obj);
-        if (set_panel_userptr(po->pan, NULL) == ERR) {
-            curses_panel_panel_set_error(po, "set_panel_userptr", "__del__");
-            PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
-        }
-    }
+    (void)PyCursesPanel_Clear(self);
     if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
         curses_panel_panel_set_error(po, "del_panel", "__del__");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
