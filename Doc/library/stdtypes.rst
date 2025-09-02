@@ -5891,8 +5891,7 @@ Python also uses three dots in ways that are not ``Ellipsis`` objects, for insta
 
 - Doctest's :const:`ELLIPSIS <doctest.ELLIPSIS>`, as a pattern for missing content.
 
-- The default Python prompt of the :term:`interactive` shell when entering the
-  code for an indented code block, meaning "please finish your statement".
+- The default Python prompt of the :term:`interactive` shell when partial input is incomplete.
 
 Lastly, the Python documentation often uses three dots in conventional English
 usage to mean omitted content, even in code examples that also use them as the
