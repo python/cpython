@@ -1032,13 +1032,6 @@ HMACObject_dealloc(PyObject *op)
     Py_DECREF(type);
 }
 
-static int
-HMACObject_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
 static PyMethodDef HMACObject_methods[] = {
     _HMAC_HMAC_COPY_METHODDEF
     _HMAC_HMAC_UPDATE_METHODDEF
@@ -1060,7 +1053,7 @@ static PyType_Slot HMACObject_Type_slots[] = {
     {Py_tp_getset, HMACObject_getsets},
     {Py_tp_clear, HMACObject_clear},
     {Py_tp_dealloc, HMACObject_dealloc},
-    {Py_tp_traverse, HMACObject_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL} /* sentinel */
 };
 
