@@ -17,11 +17,6 @@
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIGINT
 #endif
-#ifdef HAVE_PTHREAD_H
-#  include <pthread.h>
-#endif
-#include <errno.h>
-#include <string.h>
 
 // ThreadError is just an alias to PyExc_RuntimeError
 #define ThreadError PyExc_RuntimeError
@@ -660,13 +655,6 @@ PyThreadHandleObject_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)PyThreadHandleObject_new(type);
 }
 
-static int
-PyThreadHandleObject_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
 PyThreadHandleObject_dealloc(PyObject *op)
 {
@@ -756,7 +744,7 @@ static PyType_Slot ThreadHandle_Type_slots[] = {
     {Py_tp_dealloc, PyThreadHandleObject_dealloc},
     {Py_tp_repr, PyThreadHandleObject_repr},
     {Py_tp_getset, ThreadHandle_getsetlist},
-    {Py_tp_traverse, PyThreadHandleObject_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_methods, ThreadHandle_methods},
     {Py_tp_new, PyThreadHandleObject_tp_new},
     {0, 0}
@@ -771,13 +759,6 @@ static PyType_Spec ThreadHandle_Type_spec = {
 };
 
 /* Lock objects */
-
-static int
-lock_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
 
 static void
 lock_dealloc(PyObject *self)
@@ -1050,7 +1031,7 @@ static PyType_Slot lock_type_slots[] = {
     {Py_tp_repr, lock_repr},
     {Py_tp_doc, (void *)lock_doc},
     {Py_tp_methods, lock_methods},
-    {Py_tp_traverse, lock_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_new, lock_new},
     {0, 0}
 };
@@ -1064,13 +1045,6 @@ static PyType_Spec lock_type_spec = {
 };
 
 /* Recursive lock objects */
-
-static int
-rlock_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
 
 static int
 rlock_locked_impl(rlockobject *self)
@@ -1364,7 +1338,7 @@ static PyType_Slot rlock_type_slots[] = {
     {Py_tp_methods, rlock_methods},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, rlock_new},
-    {Py_tp_traverse, rlock_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0},
 };
 
@@ -2522,58 +2496,6 @@ of the main interpreter.");
 #   include <pthread_np.h>
 #endif
 
-/* Helper: encode/truncate and call native API to set thread name.
- * Return:
- *   0  : success
- *   >0 : errno-style native error code (e.g. EINVAL)
- *  -1  : Python-level error (an exception has been set)
- */
-static int
-set_encoded_thread_name(PyObject *name_obj, const char *encoding)
-{
-    PyObject *name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
-    if (name_encoded == NULL) {
-        /* PyUnicode_AsEncodedString set an exception */
-        return -1;
-    }
-
-#ifdef _PYTHREAD_NAME_MAXLEN
-    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
-        PyObject *truncated = PyBytes_FromStringAndSize(
-            PyBytes_AS_STRING(name_encoded),
-            _PYTHREAD_NAME_MAXLEN);
-        Py_DECREF(name_encoded);
-        if (truncated == NULL) {
-            /* PyBytes_FromStringAndSize set an exception */
-            return -1;
-        }
-        name_encoded = truncated;
-    }
-#endif
-
-    const char *name = PyBytes_AS_STRING(name_encoded);
-    int rc = 0;
-
-#ifdef __APPLE__
-    rc = pthread_setname_np(name);
-#elif defined(__NetBSD__)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, "%s", (void *)name);
-#elif defined(HAVE_PTHREAD_SETNAME_NP)
-    pthread_t thread = pthread_self();
-    rc = pthread_setname_np(thread, name);
-#elif defined(HAVE_PTHREAD_SET_NAME_NP)
-    pthread_t thread = pthread_self();
-    pthread_set_name_np(thread, name);
-    rc = 0; /* that API returns void */
-#else
-    rc = 0; /* no-op if platform unsupported */
-#endif
-
-    Py_DECREF(name_encoded);
-    return rc;
-}
-
 #if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread._get_name
@@ -2601,7 +2523,8 @@ _thread__get_name_impl(PyObject *module)
     }
 
 #ifdef __sun
-    return PyUnicode_DecodeUTF8(name, strlen(name), "surrogateescape");
+    // Decode Solaris/Illumos (e.g. OpenIndiana) thread names as ASCII with "replace" to avoid decoding errors.
+    return PyUnicode_DecodeASCII(name, strlen(name), "replace");
 #else
     return PyUnicode_DecodeFSDefault(name);
 #endif
@@ -2639,30 +2562,49 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 {
 #ifndef MS_WINDOWS
 #ifdef __sun
-    // Solaris always uses UTF-8
-    const char *encoding = "utf-8";
+    // Decode Solaris/Illumos (e.g. OpenIndiana) thread names as ASCII to avoid decoding errors.
+    const char *encoding = "ascii";
 #else
     // Encode the thread name to the filesystem encoding using the "replace"
     // error handler
     PyInterpreterState *interp = _PyInterpreterState_GET();
     const char *encoding = interp->unicode.fs_codec.encoding;
 #endif
-
-    int rc = set_encoded_thread_name(name_obj, encoding);
-    /* Confirm a Python exception was set by the helper.
-    If not, convert to a runtime error (defensive). */
-    if (rc == -1 && PyErr_Occurred()) {
+    PyObject *name_encoded;
+    name_encoded = PyUnicode_AsEncodedString(name_obj, encoding, "replace");
+    if (name_encoded == NULL) {
         return NULL;
     }
 
-    /* If native API refused (EINVAL) and we didn't try ASCII, retry with ASCII. */
-    if (rc == EINVAL && strcmp(encoding, "ascii") != 0) {
-        rc = set_encoded_thread_name(name_obj, "ascii");
-        if (rc == -1 && PyErr_Occurred()) {
+#ifdef _PYTHREAD_NAME_MAXLEN
+    // Truncate to _PYTHREAD_NAME_MAXLEN bytes + the NUL byte if needed
+    if (PyBytes_GET_SIZE(name_encoded) > _PYTHREAD_NAME_MAXLEN) {
+        PyObject *truncated;
+        truncated = PyBytes_FromStringAndSize(PyBytes_AS_STRING(name_encoded),
+                                              _PYTHREAD_NAME_MAXLEN);
+        if (truncated == NULL) {
+            Py_DECREF(name_encoded);
             return NULL;
         }
-        /* fall through to raise errno below */
+        Py_SETREF(name_encoded, truncated);
     }
+#endif
+
+    const char *name = PyBytes_AS_STRING(name_encoded);
+#ifdef __APPLE__
+    int rc = pthread_setname_np(name);
+#elif defined(__NetBSD__)
+    pthread_t thread = pthread_self();
+    int rc = pthread_setname_np(thread, "%s", (void *)name);
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
+    pthread_t thread = pthread_self();
+    int rc = pthread_setname_np(thread, name);
+#else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
+    pthread_t thread = pthread_self();
+    int rc = 0; /* pthread_set_name_np() returns void */
+    pthread_set_name_np(thread, name);
+#endif
+    Py_DECREF(name_encoded);
     if (rc) {
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
