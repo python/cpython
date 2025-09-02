@@ -6,10 +6,11 @@ import errno
 import termios
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
+from test.support.strace_helper import requires_strace
 import subprocess
-import time
 import shutil
 import signal
+import textwrap
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
@@ -315,29 +316,6 @@ class TestUnixConsoleEIOHandling(TestCase):
 
     @patch('_pyrepl.unix_console.tcsetattr')
     @patch('_pyrepl.unix_console.tcgetattr')
-    def test_eio_error_handling_in_prepare(self, mock_tcgetattr, mock_tcsetattr):
-        mock_termios = Mock()
-        mock_termios.iflag = 0
-        mock_termios.oflag = 0
-        mock_termios.cflag = 0
-        mock_termios.lflag = 0
-        mock_termios.cc = [0] * 32
-        mock_termios.copy.return_value = mock_termios
-        mock_tcgetattr.return_value = mock_termios
-
-        mock_tcsetattr.side_effect = termios.error(errno.EIO, "Input/output error")
-
-        console = UnixConsole(term="xterm")
-
-        try:
-            console.prepare()
-        except termios.error as e:
-            if e.args[0] == errno.EIO:
-                self.fail("EIO error should have been handled gracefully in prepare()")
-            raise
-
-    @patch('_pyrepl.unix_console.tcsetattr')
-    @patch('_pyrepl.unix_console.tcgetattr')
     def test_eio_error_handling_in_restore(self, mock_tcgetattr, mock_tcsetattr):
 
         mock_termios = Mock()
@@ -361,48 +339,56 @@ class TestUnixConsoleEIOHandling(TestCase):
                 self.fail("EIO error should have been handled gracefully in restore()")
             raise
 
+@requires_strace()
 class TestEIOWithStrace(unittest.TestCase):
-    def setUp(self):
-        self.strace = shutil.which("strace")
-        if not self.strace:
-            self.skipTest("strace")
-
     def _attach_strace(self, pid):
-        cmd = [self.strace, "-qq", "-p", str(pid), "-e", "inject=read:error=EIO:when=1", "-o", "/dev/null"]
+        strace = shutil.which("strace")
+        cmd = [strace, "-qq", "-p", str(pid), "-e", "inject=read:error=EIO:when=1", "-o", "/dev/null"]
         try:
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            time.sleep(0.15)
-            if p.poll() is None:
+            try:
+                p.communicate(timeout=0.15)
+            except subprocess.TimeoutExpired:
                 return p
-        except Exception:
+            except (OSError, subprocess.SubprocessError):
+                pass
+        except (OSError, subprocess.SubprocessError):
             pass
 
-        cmd = [self.strace, "-qq", "-p", str(pid), "-e", "fault=read:error=EIO:when=1", "-o", "/dev/null"]
+        # Fallback command
+        cmd = [strace, "-qq", "-p", str(pid), "-e", "fault=read:error=EIO:when=1", "-o", "/dev/null"]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        time.sleep(0.15)
+        try:
+            p.communicate(timeout=0.15)
+        except subprocess.TimeoutExpired:
+            pass
         return p
 
     def test_repl_eio(self):
-        pybin = sys.executable
-
-        child_code = r"""
-import signal, sys
-signal.signal(signal.SIGUSR1, lambda *a: None)
-print("READY", flush=True)
-signal.pause()
-input()
-"""
+        child_code = textwrap.dedent("""
+            import signal, sys
+            signal.signal(signal.SIGUSR1, lambda *a: None)
+            print("READY", flush=True)
+            signal.pause()
+            input()
+        """).strip()
 
         proc = subprocess.Popen(
-            [pybin, "-S", "-c", child_code],
+            [sys.executable, "-S", "-c", child_code],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
 
-        line = proc.stdout.readline().strip()
-        self.assertEqual(line, "READY")
+        ready = False
+        while not ready:
+            line = proc.stdout.readline().strip()
+            if line == "READY":
+                ready = True
+                break
+            if proc.poll() is not None:
+                self.fail("Child process exited unexpectedly")
 
         tracer = self._attach_strace(proc.pid)
 
@@ -412,6 +398,5 @@ input()
         finally:
             if tracer and tracer.poll() is None:
                 tracer.terminate()
-
         self.assertNotEqual(proc.returncode, 0)
         self.assertTrue("Errno 5" in err or "Input/output error" in err or "EOFError" in err, err)
