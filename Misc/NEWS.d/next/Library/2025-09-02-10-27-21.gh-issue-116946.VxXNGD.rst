@@ -1,0 +1,2 @@
+The C type of :func:`select.epoll` objects is now immutable. Patch by
+Bénédikt Tran.

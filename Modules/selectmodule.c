@@ -1413,14 +1413,6 @@ pyepoll_dealloc(PyObject *op)
     Py_DECREF(type);
 }
 
-static int
-pyepoll_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
-
 /*[clinic input]
 @critical_section
 select.epoll.close
@@ -2546,7 +2538,6 @@ static PyMethodDef pyepoll_methods[] = {
 
 static PyType_Slot pyEpoll_Type_slots[] = {
     {Py_tp_dealloc, pyepoll_dealloc},
-    {Py_tp_traverse, pyepoll_traverse},
     {Py_tp_doc, (void*)pyepoll_doc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_getset, pyepoll_getsetlist},
@@ -2558,7 +2549,7 @@ static PyType_Slot pyEpoll_Type_slots[] = {
 static PyType_Spec pyEpoll_Type_spec = {
     .name = "select.epoll",
     .basicsize = sizeof(pyEpoll_Object),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
     .slots = pyEpoll_Type_slots
 };
 
