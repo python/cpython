@@ -5029,12 +5029,12 @@ class ProtocolsTest(unittest.TestCase):
             pass
 
     def test_reader_subclass(self):
-        self.assertIsSubclass(MyReader, io.Reader[bytes])
-        self.assertNotIsSubclass(str, io.Reader[bytes])
+        self.assertIsSubclass(self.MyReader, io.Reader)
+        self.assertNotIsSubclass(str, io.Reader)
 
     def test_writer_subclass(self):
-        self.assertIsSubclass(MyWriter, io.Writer[bytes])
-        self.assertNotIsSubclass(str, io.Writer[bytes])
+        self.assertIsSubclass(self.MyWriter, io.Writer)
+        self.assertNotIsSubclass(str, io.Writer)
 
 
 def load_tests(loader, tests, pattern):
@@ -5048,6 +5048,7 @@ def load_tests(loader, tests, pattern):
              CTextIOWrapperTest, PyTextIOWrapperTest,
              CMiscIOTest, PyMiscIOTest,
              CSignalsTest, PySignalsTest, TestIOCTypes,
+             ProtocolsTest,
              )
 
     # Put the namespaces of the IO module we are testing and some useful mock
