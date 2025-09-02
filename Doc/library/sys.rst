@@ -26,7 +26,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    enabling an unsupported one) by core dev consensus.  Entries should be removed
    following :pep:`387`.
 
-   The following attributes are available in cpython:
+   The following attributes are available in CPython:
 
    *pointer_bits* is the width of pointers in bits, as an integer, equivalent
    to ``8 * sizeof(void *)``, i.e. usually ``32`` or ``64``.

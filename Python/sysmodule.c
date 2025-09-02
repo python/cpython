@@ -3699,7 +3699,7 @@ make_abi_info(void)
     return ns;
 
 error:
-    Py_CLEAR(abi_info);
+    Py_DECREF(abi_info);
     return NULL;
 }
 
