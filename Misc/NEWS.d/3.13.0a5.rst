@@ -742,7 +742,7 @@ Add ``windows_31j`` to aliases for ``cp932`` codec
 .. nonce: fv35wU
 .. section: Library
 
-:func:`functools.partial`s of :func:`repr` has been improved to include the
+:func:`functools.partial`\s of :func:`repr` has been improved to include the
 :term:`module` name. Patched by Furkan Onder and Anilyka Barry.
 
 ..
