@@ -3693,6 +3693,8 @@ class TestExtractionFilters(unittest.TestCase):
                 cls.dotdot_resolves_early = False
             else:
                 raise AssertionError('Could not determine link resolution')
+        else:
+            cls.dotdot_resolves_early = True
 
     @contextmanager
     def check_context(self, tar, filter, *, check_flag=True):
