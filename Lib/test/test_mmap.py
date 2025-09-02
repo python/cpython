@@ -5,7 +5,6 @@ from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 import unittest
-import errno
 import os
 import re
 import itertools
@@ -281,9 +280,8 @@ class MmapTests(unittest.TestCase):
                         if close_original_fd:
                             f.close()
                         self.assertEqual(len(m), size)
-                        with self.assertRaises(OSError) as err_cm:
+                        with self.assertRaises(ValueError):
                             m.size()
-                        self.assertEqual(err_cm.exception.errno, errno.EBADF)
                         with self.assertRaises(ValueError):
                             m.resize(size * 2)
                         with self.assertRaises(ValueError):
@@ -308,7 +306,7 @@ class MmapTests(unittest.TestCase):
     def test_trackfd_neg1(self):
         size = 64
         with mmap.mmap(-1, size, trackfd=False) as m:
-            with self.assertRaises(OSError):
+            with self.assertRaises(ValueError):
                 m.size()
             with self.assertRaises(ValueError):
                 m.resize(size // 2)
@@ -504,6 +502,7 @@ class MmapTests(unittest.TestCase):
             b = x & 0xff
             m[x] = b
             self.assertEqual(m[x], b)
+        self.assertEqual(m.size(), PAGESIZE)
 
     def test_read_all(self):
         m = mmap.mmap(-1, 16)
