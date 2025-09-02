@@ -1,1 +1,1 @@
-Add :meth:`winreg.DeleteTree`.
+Add :func:`winreg.DeleteTree`.
