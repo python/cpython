@@ -1,0 +1,2 @@
+Add missing validation of argument ``count`` in ``os.sendfile`` to be
+non-negative.
