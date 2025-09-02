@@ -6,7 +6,6 @@ from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 import unittest
-import errno
 import os
 import re
 import itertools
