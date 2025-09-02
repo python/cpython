@@ -1294,6 +1294,7 @@ extern "C" {
     INIT_ID(template), \
     INIT_ID(term), \
     INIT_ID(text), \
+    INIT_ID(third), \
     INIT_ID(threading), \
     INIT_ID(throw), \
     INIT_ID(time), \

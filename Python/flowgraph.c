@@ -2993,11 +2993,8 @@ optimize_load_fast(cfg_builder *g)
         }
 
         // Push fallthrough block
-        cfg_instr *term = basicblock_last_instr(block);
-        if (term != NULL && block->b_next != NULL &&
-            !(IS_UNCONDITIONAL_JUMP_OPCODE(term->i_opcode) ||
-              IS_SCOPE_EXIT_OPCODE(term->i_opcode))) {
-            assert(BB_HAS_FALLTHROUGH(block));
+        if (BB_HAS_FALLTHROUGH(block)) {
+            assert(block->b_next != NULL);
             load_fast_push_block(&sp, block->b_next, refs.size);
         }
 

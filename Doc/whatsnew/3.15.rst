@@ -169,6 +169,45 @@ production systems where traditional profiling approaches would be too intrusive
 (Contributed by Pablo Galindo and László Kiss Kollár in :gh:`135953`.)
 
 
+Improved error messages
+-----------------------
+
+* The interpreter now provides more helpful suggestions in :exc:`AttributeError`
+  exceptions when accessing an attribute on an object that does not exist, but
+  a similar attribute is available through one of its members.
+
+  For example, if the object has an attribute that itself exposes the requested
+  name, the error message will suggest accessing it via that inner attribute:
+
+  .. code-block:: python
+
+     @dataclass
+     class Circle:
+        radius: float
+
+        @property
+        def area(self) -> float:
+           return pi * self.radius**2
+
+     class Container:
+        def __init__(self, inner: Circle) -> None:
+           self.inner = inner
+
+     circle = Circle(radius=4.0)
+     container = Container(circle)
+     print(container.area)
+
+  Running this code now produces a clearer suggestion:
+
+  .. code-block:: pycon
+
+     Traceback (most recent call last):
+     File "/home/pablogsal/github/python/main/lel.py", line 42, in <module>
+        print(container.area)
+              ^^^^^^^^^^^^^^
+     AttributeError: 'Container' object has no attribute 'area'. Did you mean: 'inner.area'?
+
+
 Other language changes
 ======================
 
@@ -199,6 +238,25 @@ Other language changes
 
 * Several error messages incorrectly using the term "argument" have been corrected.
   (Contributed by Stan Ulbrych in :gh:`133382`.)
+
+* The interpreter now tries to provide a suggestion when
+  :func:`delattr` fails due to a missing attribute.
+  When an attribute name that closely resembles an existing attribute is used,
+  the interpreter will suggest the correct attribute name in the error message.
+  For example:
+
+  .. doctest::
+
+     >>> class A:
+     ...     pass
+     >>> a = A()
+     >>> a.abcde = 1
+     >>> del a.abcdf  # doctest: +ELLIPSIS
+     Traceback (most recent call last):
+     ...
+     AttributeError: 'A' object has no attribute 'abcdf'. Did you mean: 'abcde'?
+
+  (Contributed by Nikita Sobolev and Pranjal Prajapati in :gh:`136588`.)
 
 * Unraisable exceptions are now highlighted with color by default. This can be
   controlled by :ref:`environment variables <using-on-controlling-color>`.
@@ -312,6 +370,15 @@ os.path
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
+resource
+--------
+
+* Add new constants: :data:`~resource.RLIMIT_NTHR`,
+  :data:`~resource.RLIMIT_UMTXP`, :data:`~resource.RLIMIT_THREADS`,
+  :data:`~resource.RLIM_SAVED_CUR`, and :data:`~resource.RLIM_SAVED_MAX`.
+  (Contributed by Serhiy Storchaka in :gh:`137512`.)
+
+
 shelve
 ------
 
@@ -358,6 +425,13 @@ ssl
      currently set in the context. This call requires OpenSSL 3.5 or later.
 
    (Contributed by Ron Frederick in :gh:`136306`)
+
+* Added a new method :meth:`ssl.SSLContext.set_ciphersuites` for setting TLS 1.3
+  ciphers. For TLS 1.2 or earlier, :meth:`ssl.SSLContext.set_ciphers` should
+  continue to be used. Both calls can be made on the same context and the
+  selected cipher suite will depend on the TLS version negotiated when a
+  connection is made.
+  (Contributed by Ron Frederick in :gh:`137197`.)
 
 
 tarfile
@@ -542,6 +616,14 @@ wave
   of the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes,
   which were deprecated since Python 3.13.
   (Contributed by Bénédikt Tran in :gh:`133873`.)
+
+
+zipimport
+---------
+
+* Remove deprecated :meth:`!zipimport.zipimporter.load_module`.
+  Use :meth:`zipimport.zipimporter.exec_module` instead.
+  (Contributed by Jiahao Li in :gh:`133656`.)
 
 
 Porting to Python 3.15

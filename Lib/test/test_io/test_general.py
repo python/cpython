@@ -5,7 +5,7 @@
 # * test_memoryio - tests BytesIO and StringIO
 # * test_fileio - tests FileIO
 # * test_file - tests the file interface
-# * test_io - tests everything else in the io module
+# * test_io.test_general - tests everything else in the io module
 # * test_univnewlines - tests universal newline support
 # * test_largefile - tests operations on a file greater than 2**32 bytes
 #     (only enabled with -ulargefile)
