@@ -1921,16 +1921,71 @@ class MakedirTests(unittest.TestCase):
     def test_mode(self):
         # Note: in some cases, the umask might already be 2 in which case this
         # will pass even if os.umask is actually broken.
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
         with os_helper.temp_umask(0o002):
-            base = os_helper.TESTFN
-            parent = os.path.join(base, 'dir1')
-            path = os.path.join(parent, 'dir2')
-            os.makedirs(path, 0o555)
+            os.makedirs(path, 0o705)
             self.assertTrue(os.path.exists(path))
             self.assertTrue(os.path.isdir(path))
             if os.name != 'nt':
-                self.assertEqual(os.stat(path).st_mode & 0o777, 0o555)
+                # Leaf directory gets the specified mode
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o705)
+                # Parent directory uses default permissions (respecting umask)
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
+
+    @unittest.skipIf(
+        support.is_wasi,
+        "WASI's umask is a stub."
+    )
+    def test_mode_with_parent_mode(self):
+        # Test the parent_mode parameter
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o002):
+            # Specify mode for both leaf and parent directories
+            os.makedirs(path, 0o770, parent_mode=0o750)
+            self.assertTrue(os.path.exists(path))
+            self.assertTrue(os.path.isdir(path))
+            if os.name != 'nt':
+                # Leaf directory gets the mode parameter
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o770)
+                # Parent directory gets the parent_mode parameter
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o750)
+
+    @unittest.skipIf(
+        support.is_wasi,
+        "WASI's umask is a stub."
+    )
+    def test_parent_mode_deep_hierarchy(self):
+        # Test parent_mode with deep directory hierarchy
+        base = os.path.join(os_helper.TESTFN, 'dir1', 'dir2', 'dir3')
+        with os_helper.temp_umask(0o002):
+            os.makedirs(base, 0o755, parent_mode=0o700)
+            self.assertTrue(os.path.exists(base))
+            if os.name != 'nt':
+                # Check that all parent directories have parent_mode
+                level1 = os.path.join(os_helper.TESTFN, 'dir1')
+                level2 = os.path.join(level1, 'dir2')
+                self.assertEqual(os.stat(level1).st_mode & 0o777, 0o700)
+                self.assertEqual(os.stat(level2).st_mode & 0o777, 0o700)
+                # Leaf directory has the regular mode
+                self.assertEqual(os.stat(base).st_mode & 0o777, 0o755)
+
+    @unittest.skipIf(
+        support.is_wasi,
+        "WASI's umask is a stub."
+    )
+    def test_parent_mode_same_as_mode(self):
+        # Test emulating Python 3.6 behavior by setting parent_mode=mode
+        parent = os.path.join(os_helper.TESTFN, 'dir1')
+        path = os.path.join(parent, 'dir2')
+        with os_helper.temp_umask(0o002):
+            os.makedirs(path, 0o705, parent_mode=0o705)
+            self.assertTrue(os.path.exists(path))
+            if os.name != 'nt':
+                # Both directories should have the same mode
+                self.assertEqual(os.stat(path).st_mode & 0o777, 0o705)
+                self.assertEqual(os.stat(parent).st_mode & 0o777, 0o705)
 
     @unittest.skipIf(
         support.is_wasi,

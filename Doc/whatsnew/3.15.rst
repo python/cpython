@@ -358,6 +358,15 @@ math
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
+os
+--
+
+* :func:`os.makedirs` function now has a *parent_mode* parameter that allows
+  specifying the mode for intermediate directories. This can be used to match
+  the behavior from Python 3.6 and earlier by passing ``parent_mode=mode``.
+  (Contributed by Zackery Spytz and Gregory P. Smith in :gh:`86533`.)
+
+
 os.path
 -------
 
@@ -547,6 +556,10 @@ http.server
 
 pathlib
 -------
+
+* :meth:`pathlib.Path.mkdir` now has a *parent_mode* parameter that allows
+  specifying the mode for intermediate directories when ``parents=True``.
+  (Contributed by Gregory P. Smith in :gh:`86533`.)
 
 * Removed deprecated :meth:`!pathlib.PurePath.is_reserved`.
   Use :func:`os.path.isreserved` to detect reserved paths on Windows.
