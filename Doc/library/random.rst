@@ -667,10 +667,11 @@ or the :pypi:`more-itertools` project:
        seq = tuple(iterable)
        if len(seq) < 2:
            raise ValueError('derangments require at least two values')
+       perm = list(seq)
        while True:
-           perm = random_permutation(seq)
+           random.shuffle(perm)
            if all(p != q for p, q in zip(seq, perm)):
-               return perm
+               return tuple(perm)
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
