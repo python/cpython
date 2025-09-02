@@ -2340,7 +2340,7 @@ class MiscTestCase(unittest.TestCase):
                 if truncate is not None:
                     encoded = encoded[:truncate]
                 if sys.platform.startswith("sunos"):
-                    expected = encoded.decode("ascii", "replace")
+                    expected = encoded.decode("ascii", "surrogateescape")
                 else:
                     expected = os.fsdecode(encoded)
             else:
