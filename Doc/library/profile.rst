@@ -28,7 +28,7 @@ The Python standard library provides three different profiling implementations:
 
 **Statistical Profiler:**
 
-1. :mod:`profiling.sampling` provides statistical profiling of running Python processes
+1. :mod:`!profiling.sampling` provides statistical profiling of running Python processes
    using periodic stack sampling. It can attach to any running Python process without
    requiring code modification or restart, making it ideal for production debugging.
 
@@ -74,7 +74,7 @@ The Python standard library provides three different profiling implementations:
 
 .. note::
 
-   The statistical profiler (:mod:`profiling.sampling`) is recommended for most production
+   The statistical profiler (:mod:`!profiling.sampling`) is recommended for most production
    use cases due to its extremely low overhead and ability to profile running processes
    without modification. It can attach to any Python process and collect performance
    data with minimal impact on execution speed, making it ideal for debugging
@@ -220,7 +220,7 @@ Statistical Profiler Command Line Interface
 
 .. program:: profiling.sampling
 
-The :mod:`profiling.sampling` module can be invoked as a script to profile running processes::
+The :mod:`!profiling.sampling` module can be invoked as a script to profile running processes::
 
    python -m profiling.sampling [options] PID
 
@@ -339,13 +339,13 @@ The statistical profiler produces output similar to deterministic profilers but 
 
 .. _profile-cli:
 
-:mod:`profiling.sampling` Module Reference
+:mod:`!profiling.sampling` Module Reference
 =======================================================
 
 .. module:: profiling.sampling
    :synopsis: Python statistical profiler.
 
-This section documents the programmatic interface for the :mod:`profiling.sampling` module.
+This section documents the programmatic interface for the :mod:`!profiling.sampling` module.
 For command-line usage, see :ref:`sampling-profiler-cli`. For conceptual information
 about statistical profiling, see :ref:`statistical-profiling`
 
@@ -856,7 +856,7 @@ What Is Deterministic Profiling?
 call*, *function return*, and *exception* events are monitored, and precise
 timings are made for the intervals between these events (during which time the
 user's code is executing).  In contrast, :dfn:`statistical profiling` (which is
-provided by the :mod:`profiling.sampling` module) periodically samples the effective instruction pointer, and
+provided by the :mod:`!profiling.sampling` module) periodically samples the effective instruction pointer, and
 deduces where time is being spent.  The latter technique traditionally involves
 less overhead (as the code does not need to be instrumented), but provides only
 relative indications of where time is being spent.

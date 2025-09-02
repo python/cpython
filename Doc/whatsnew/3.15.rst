@@ -75,8 +75,8 @@ New features
 High frequency statistical sampling profiler
 --------------------------------------------
 
-A new statistical sampling profiler has been added to the :mod:`profile` module as
-:mod:`profiling.sampling`. This profiler enables low-overhead performance analysis of
+A new statistical sampling profiler has been added to the new :mod:`!profiling` module as
+:mod:`!profiling.sampling`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
 
 Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
