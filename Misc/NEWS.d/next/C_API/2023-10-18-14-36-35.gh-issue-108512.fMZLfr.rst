@@ -1,0 +1,2 @@
+Add functions :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
+:c:func:`PySys_GetOptionalAttr` and :c:func:`PySys_GetOptionalAttrString`.

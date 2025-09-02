@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2006 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Contact: email-sig@python.org
 # email package unit tests for (optional) Asian codecs
 

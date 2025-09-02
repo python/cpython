@@ -1,2 +1,0 @@
-Respect :envvar:`PYTHON_BASIC_REPL` when running in interactive inspect mode
-(``python -i``). Patch by Pablo Galindo

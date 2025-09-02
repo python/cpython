@@ -57,7 +57,10 @@ lock_thread(void *arg)
     _Py_atomic_store_int(&test_data->started, 1);
 
     PyMutex_Lock(m);
-    assert(m->_bits == 1);
+    // gh-135641: in rare cases the lock may still have `_Py_HAS_PARKED` set
+    // (m->_bits == 3) due to bucket collisions in the parking lot hash table
+    // between this mutex and the `test_data.done` event.
+    assert(m->_bits == 1 || m->_bits == 3);
 
     PyMutex_Unlock(m);
     assert(m->_bits == 0);

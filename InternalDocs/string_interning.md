@@ -2,57 +2,57 @@
 
 *Interned* strings are conceptually part of an interpreter-global
 *set* of interned strings, meaning that:
+
 - no two interned strings have the same content (across an interpreter);
 - two interned strings can be safely compared using pointer equality
   (Python `is`).
 
 This is used to optimize dict and attribute lookups, among other things.
 
-Python uses three different mechanisms to intern strings:
+Python uses two different mechanisms to intern strings: singletons and
+dynamic interning.
 
-- Singleton strings marked in C source with `_Py_STR` and `_Py_ID` macros.
-  These are statically allocated, and collected using `make regen-global-objects`
-  (`Tools/build/generate_global_objects.py`), which generates code
-  for declaration, initialization and finalization.
+## Singletons
 
-  The difference between the two kinds is not important. (A `_Py_ID` string is
-  a valid C name, with which we can refer to it; a `_Py_STR` may e.g. contain
-  non-identifier characters, so it needs a separate C-compatible name.)
+The 256 possible one-character latin-1 strings, which can be retrieved with
+`_Py_LATIN1_CHR(c)`, are stored in statically allocated arrays,
+`_PyRuntime.static_objects.strings.ascii` and
+`_PyRuntime.static_objects.strings.latin1`.
 
-  The empty string is in this category (as `_Py_STR(empty)`).
+Longer singleton strings are marked in C source with `_Py_ID` (if the string
+is a valid C identifier fragment) or `_Py_STR` (if it needs a separate
+C-compatible name.)
+These are also stored in statically allocated arrays.
+They are collected from CPython sources using `make regen-global-objects`
+(`Tools/build/generate_global_objects.py`), which generates code
+for declaration, initialization and finalization.
 
-  These singletons are interned in a runtime-global lookup table,
-  `_PyRuntime.cached_objects.interned_strings` (`INTERNED_STRINGS`),
-  at runtime initialization.
+The empty string is one of the singletons: `_Py_STR(empty)`.
 
-- The 256 possible one-character latin-1 strings are singletons,
-  which can be retrieved with `_Py_LATIN1_CHR(c)`, are stored in runtime-global
-  arrays, `_PyRuntime.static_objects.strings.ascii` and
-  `_PyRuntime.static_objects.strings.latin1`.
-
-  These are NOT interned at startup in the normal build.
-  In the free-threaded build, they are; this avoids modifying the
-  global lookup table after threads are started.
-
-  Interning a one-char latin-1 string will always intern the corresponding
-  singleton.
-
-- All other strings are allocated dynamically, and have their
-  `_PyUnicode_STATE(s).statically_allocated` flag set to zero.
-  When interned, such strings are added to an interpreter-wide dict,
-  `PyInterpreterState.cached_objects.interned_strings`.
-
-  The key and value of each entry in this dict reference the same object.
-
-The three sets of singletons (`_Py_STR`, `_Py_ID`, `_Py_LATIN1_CHR`)
+The three sets of singletons (`_Py_LATIN1_CHR`, `_Py_ID`, `_Py_STR`)
 are disjoint.
 If you have such a singleton, it (and no other copy) will be interned.
+
+These singletons are interned in a runtime-global lookup table,
+`_PyRuntime.cached_objects.interned_strings` (`INTERNED_STRINGS`),
+at runtime initialization, and immutable until it's torn down
+at runtime finalization.
+It is shared across threads and interpreters without any synchronization.
+
+
+## Dynamically allocated strings
+
+All other strings are allocated dynamically, and have their
+`_PyUnicode_STATE(s).statically_allocated` flag set to zero.
+When interned, such strings are added to an interpreter-wide dict,
+`PyInterpreterState.cached_objects.interned_strings`.
+
+The key and value of each entry in this dict reference the same object.
 
 
 ## Immortality and reference counting
 
-Invariant: Every immortal string is interned, *except* the one-char latin-1
-singletons (which might but might not be interned).
+Invariant: Every immortal string is interned.
 
 In practice, this means that you must not use `_Py_SetImmortal` on
 a string. (If you know it's already immortal, don't immortalize it;
@@ -62,6 +62,7 @@ if it's interned and mortal it needs extra processing in
 
 The converse is not true: interned strings can be mortal.
 For mortal interned strings:
+
 - the 2 references from the interned dict (key & value) are excluded from
   their refcount
 - the deallocator (`unicode_dealloc`) removes the string from the interned dict
@@ -73,7 +74,7 @@ We currently also immortalize strings contained in code objects and similar,
 specifically in the compiler and in `marshal`.
 These are “close enough” to immortal: even in use cases like hot reloading
 or `eval`-ing user input, the number of distinct identifiers and string
-constants expected to stay low.
+constants is expected to stay low.
 
 
 ## Internal API
@@ -91,6 +92,7 @@ modify in place.
 The functions take ownership of (“steal”) the reference to their argument,
 and update the argument with a *new* reference.
 This means:
+
 - They're “reference neutral”.
 - They must not be called with a borrowed reference.
 
@@ -115,8 +117,5 @@ The valid transitions between these states are:
   Using `_PyUnicode_InternStatic` on these is an error; the other cases
   don't change the state.
 
-- One-char latin-1 singletons can be interned (0 -> 3) using any interning
-  function; after that the functions don't change the state.
-
-- Other statically allocated strings are interned (0 -> 3) at runtime init;
+- Singletons are interned (0 -> 3) at runtime init;
   after that all interning functions don't change the state.

@@ -5,6 +5,7 @@ import warnings
 
 from .case import TestCase
 
+__unittest = True
 
 class IsolatedAsyncioTestCase(TestCase):
     # Names intentionally have a long prefix
@@ -74,9 +75,17 @@ class IsolatedAsyncioTestCase(TestCase):
             enter = cls.__aenter__
             exit = cls.__aexit__
         except AttributeError:
-            raise TypeError(f"'{cls.__module__}.{cls.__qualname__}' object does "
-                            f"not support the asynchronous context manager protocol"
-                           ) from None
+            msg = (f"'{cls.__module__}.{cls.__qualname__}' object does "
+                   "not support the asynchronous context manager protocol")
+            try:
+                cls.__enter__
+                cls.__exit__
+            except AttributeError:
+                pass
+            else:
+                msg += (" but it supports the context manager protocol. "
+                        "Did you mean to use enterContext()?")
+            raise TypeError(msg) from None
         result = await enter(cm)
         self.addAsyncCleanup(exit, cm, None, None, None)
         return result

@@ -1,0 +1,3 @@
+Make ``type_params`` parameter required in :func:`!typing._eval_type` after
+a deprecation period for not providing this parameter. Also remove the
+:exc:`DeprecationWarning` for the old behavior.

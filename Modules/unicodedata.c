@@ -77,9 +77,11 @@ typedef struct previous_version {
     Py_UCS4 (*normalization)(Py_UCS4);
 } PreviousDBVersion;
 
+#define PreviousDBVersion_CAST(op)  ((PreviousDBVersion *)(op))
+
 #include "clinic/unicodedata.c.h"
 
-#define get_old_record(self, v)    ((((PreviousDBVersion*)self)->getrecord)(v))
+#define get_old_record(self, v)    (PreviousDBVersion_CAST(self)->getrecord(v))
 
 static PyMemberDef DB_members[] = {
         {"unidata_version", Py_T_STRING, offsetof(PreviousDBVersion, name), Py_READONLY},
@@ -303,6 +305,7 @@ unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.combining -> int
 
     self: self
@@ -316,7 +319,7 @@ Returns 0 if no combining class is defined.
 
 static int
 unicodedata_UCD_combining_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=cad056d0cb6a5920 input=9f2d6b2a95d0a22a]*/
+/*[clinic end generated code: output=cad056d0cb6a5920 input=e05edfbb882ebfed]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -387,6 +390,7 @@ unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
 }
 
 /*[clinic input]
+@permit_long_summary
 unicodedata.UCD.decomposition
 
     self: self
@@ -400,7 +404,7 @@ An empty string is returned in case no such mapping is defined.
 
 static PyObject *
 unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=7d699f3ec7565d27 input=e4c12459ad68507b]*/
+/*[clinic end generated code: output=7d699f3ec7565d27 input=84d628d1abfd01ec]*/
 {
     char decomp[256];
     int code, index, count;
@@ -413,7 +417,7 @@ unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
     if (UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
-            return PyUnicode_FromString(""); /* unassigned */
+            return Py_GetConstant(Py_CONSTANT_EMPTY_STR); /* unassigned */
     }
 
     if (code < 0 || code >= 0x110000)
@@ -589,7 +593,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     PyMem_Free(output);
     if (!result)
         return NULL;
-    /* result is guaranteed to be ready, as it is compact. */
+
     kind = PyUnicode_KIND(result);
     data = PyUnicode_DATA(result);
 
@@ -653,7 +657,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     result = nfd_nfkd(self, input, k);
     if (!result)
         return NULL;
-    /* result will be "ready". */
+
     kind = PyUnicode_KIND(result);
     data = PyUnicode_DATA(result);
     len = PyUnicode_GET_LENGTH(result);
@@ -933,34 +937,34 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
            them  later would cause internal errors. */
-        return Py_NewRef(input);
+        return PyUnicode_FromObject(input);
     }
 
     if (PyUnicode_CompareWithASCIIString(form, "NFC") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      true,  false, true) == YES) {
-            return Py_NewRef(input);
+            return PyUnicode_FromObject(input);
         }
         return nfc_nfkc(self, input, 0);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFKC") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      true,  true,  true) == YES) {
-            return Py_NewRef(input);
+            return PyUnicode_FromObject(input);
         }
         return nfc_nfkc(self, input, 1);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFD") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      false, false, true) == YES) {
-            return Py_NewRef(input);
+            return PyUnicode_FromObject(input);
         }
         return nfd_nfkd(self, input, 0);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFKD") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      false, true,  true) == YES) {
-            return Py_NewRef(input);
+            return PyUnicode_FromObject(input);
         }
         return nfd_nfkd(self, input, 1);
     }
@@ -1590,15 +1594,8 @@ static PyMethodDef unicodedata_functions[] = {
     {NULL, NULL}                /* sentinel */
 };
 
-static int
-ucd_traverse(PreviousDBVersion *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
-ucd_dealloc(PreviousDBVersion *self)
+ucd_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -1608,7 +1605,7 @@ ucd_dealloc(PreviousDBVersion *self)
 
 static PyType_Slot ucd_type_slots[] = {
     {Py_tp_dealloc, ucd_dealloc},
-    {Py_tp_traverse, ucd_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_methods, unicodedata_functions},
     {Py_tp_members, DB_members},

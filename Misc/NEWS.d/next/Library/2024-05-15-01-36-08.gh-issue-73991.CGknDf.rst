@@ -1,2 +1,0 @@
-Add :meth:`pathlib.Path.copy`, which copies the content of one file to another,
-like :func:`shutil.copyfile`.

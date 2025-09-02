@@ -33,6 +33,19 @@ _Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
     return 1;
 }
 
+int
+_Py_convert_optional_to_non_negative_ssize_t(PyObject *obj, void *result)
+{
+    if (!_Py_convert_optional_to_ssize_t(obj, result)) {
+        return 0;
+    }
+    if (obj != Py_None && *((Py_ssize_t *)result) < 0) {
+        PyErr_SetString(PyExc_ValueError, "argument cannot be negative");
+        return 0;
+    }
+    return 1;
+}
+
 
 /* Helper for mkvalue() to scan the length of a format */
 
@@ -321,7 +334,8 @@ do_mkvalue(const char **p_format, va_list *p_va)
             return PyLong_FromLongLong((long long)va_arg(*p_va, long long));
 
         case 'K':
-            return PyLong_FromUnsignedLongLong((long long)va_arg(*p_va, unsigned long long));
+            return PyLong_FromUnsignedLongLong(
+                va_arg(*p_va, unsigned long long));
 
         case 'u':
         {
@@ -363,6 +377,11 @@ do_mkvalue(const char **p_format, va_list *p_va)
         {
             int i = va_arg(*p_va, int);
             return PyUnicode_FromOrdinal(i);
+        }
+        case 'p':
+        {
+            int i = va_arg(*p_va, int);
+            return PyBool_FromLong(i);
         }
 
         case 's':
@@ -647,4 +666,21 @@ PyModule_AddType(PyObject *module, PyTypeObject *type)
     assert(name != NULL);
 
     return PyModule_AddObjectRef(module, name, (PyObject *)type);
+}
+
+
+/* Exported functions for version helper macros */
+
+#undef Py_PACK_FULL_VERSION
+uint32_t
+Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial)
+{
+    return _Py_PACK_FULL_VERSION(x, y, z, level, serial);
+}
+
+#undef Py_PACK_VERSION
+uint32_t
+Py_PACK_VERSION(int x, int y)
+{
+    return _Py_PACK_VERSION(x, y);
 }
