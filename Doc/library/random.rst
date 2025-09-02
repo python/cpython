@@ -665,6 +665,8 @@ or the :pypi:`more-itertools` project:
    def random_derangement(iterable):
        "Choose a permutation where no element is in its original position."
        seq = tuple(iterable)
+       if len(seq) < 2:
+           raise ValueError('derangments require at least two values')
        while True:
            perm = random_permutation(seq)
            if all(p != q for p, q in zip(seq, perm)):
