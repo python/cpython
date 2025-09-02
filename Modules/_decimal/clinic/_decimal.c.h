@@ -1219,15 +1219,19 @@ PyDoc_STRVAR(_decimal_Decimal_as_tuple__doc__,
 "Return a tuple representation of the number.");
 
 #define _DECIMAL_DECIMAL_AS_TUPLE_METHODDEF    \
-    {"as_tuple", (PyCFunction)_decimal_Decimal_as_tuple, METH_NOARGS, _decimal_Decimal_as_tuple__doc__},
+    {"as_tuple", _PyCFunction_CAST(_decimal_Decimal_as_tuple), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_as_tuple__doc__},
 
 static PyObject *
-_decimal_Decimal_as_tuple_impl(PyObject *self);
+_decimal_Decimal_as_tuple_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_decimal_Decimal_as_tuple(PyObject *self, PyObject *Py_UNUSED(ignored))
+_decimal_Decimal_as_tuple(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _decimal_Decimal_as_tuple_impl(self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "as_tuple() takes no arguments");
+        return NULL;
+    }
+    return _decimal_Decimal_as_tuple_impl(self, cls);
 }
 
 PyDoc_STRVAR(_decimal_Decimal_exp__doc__,
@@ -6892,4 +6896,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=1b0a97f9f941a5d3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e938de3a355a353a input=a9049054013a1b77]*/

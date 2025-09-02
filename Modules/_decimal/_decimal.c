@@ -4276,12 +4276,14 @@ _decimal_Decimal___round___impl(PyObject *self, PyTypeObject *cls,
 /*[clinic input]
 _decimal.Decimal.as_tuple
 
+    cls: defining_class
+
 Return a tuple representation of the number.
 [clinic start generated code]*/
 
 static PyObject *
-_decimal_Decimal_as_tuple_impl(PyObject *self)
-/*[clinic end generated code: output=c6e8e2420c515eca input=e26f2151d78ff59d]*/
+_decimal_Decimal_as_tuple_impl(PyObject *self, PyTypeObject *cls)
+/*[clinic end generated code: output=d68b967becee8ab9 input=bfa86d640224d9f5]*/
 {
     PyObject *result = NULL;
     PyObject *sign = NULL;
@@ -4361,7 +4363,7 @@ _decimal_Decimal_as_tuple_impl(PyObject *self)
         }
     }
 
-    decimal_state *state = get_module_state_by_def(Py_TYPE(self));
+    decimal_state *state = PyType_GetModuleState(cls);
     result = PyObject_CallFunctionObjArgs((PyObject *)state->DecimalTuple,
                                           sign, coeff, expt, NULL);
 
