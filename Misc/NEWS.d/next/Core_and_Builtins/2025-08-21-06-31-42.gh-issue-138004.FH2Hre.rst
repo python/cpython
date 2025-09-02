@@ -1,1 +1,1 @@
-_thread.set_name() now retries with an ASCII fallback if pthread_setname_np() rejects UTF-8 names on some POSIX-compliant platforms.
+On Solaris/Illumos platforms, thread names are now encoded as ASCII to avoid errors on systems (e.g. OpenIndiana) that don't support non-ASCII names.

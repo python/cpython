@@ -2281,6 +2281,9 @@ class MiscTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
     @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
     def test_set_name(self):
+        # Ensure main thread name is restored after test
+        self.addCleanup(_thread.set_name, _thread._get_name())
+
         # set_name() limit in bytes
         truncate = getattr(_thread, "_NAME_MAXLEN", None)
         limit = truncate or 100
