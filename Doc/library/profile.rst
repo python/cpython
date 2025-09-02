@@ -28,7 +28,7 @@ The Python standard library provides three different profiling implementations:
 
 **Statistical Profiler:**
 
-1. :mod:`profile.sample` provides statistical profiling of running Python processes
+1. :mod:`profiling.sampling` provides statistical profiling of running Python processes
    using periodic stack sampling. It can attach to any running Python process without
    requiring code modification or restart, making it ideal for production debugging.
 
@@ -55,26 +55,26 @@ The Python standard library provides three different profiling implementations:
 
 **Profiler Comparison:**
 
-+-------------------+----------------------+----------------------+----------------------+
-| Feature           | Statistical          | Deterministic        | Deterministic        |
-|                   | (``profile.sample``) | (``cProfile``)       | (``profile``)        |
-+===================+======================+======================+======================+
-| **Target**        | Running process      | Code you run         | Code you run         |
-+-------------------+----------------------+----------------------+----------------------+
-| **Overhead**      | Virtually none       | Moderate             | High                 |
-+-------------------+----------------------+----------------------+----------------------+
-| **Accuracy**      | Statistical approx.  | Exact call counts    | Exact call counts    |
-+-------------------+----------------------+----------------------+----------------------+
-| **Setup**         | Attach to any PID    | Instrument code      | Instrument code      |
-+-------------------+----------------------+----------------------+----------------------+
-| **Use Case**      | Production debugging | Development/testing  | Profiler extension   |
-+-------------------+----------------------+----------------------+----------------------+
-| **Implementation**| C extension          | C extension          | Pure Python          |
-+-------------------+----------------------+----------------------+----------------------+
++-------------------+--------------------------+----------------------+----------------------+
+| Feature           | Statistical              | Deterministic        | Deterministic        |
+|                   | (``profiling.sampling``) | (``cProfile``)       | (``profile``)        |
++===================+==========================+======================+======================+
+| **Target**        | Running process          | Code you run         | Code you run         |
++-------------------+--------------------------+----------------------+----------------------+
+| **Overhead**      | Virtually none           | Moderate             | High                 |
++-------------------+--------------------------+----------------------+----------------------+
+| **Accuracy**      | Statistical approx.      | Exact call counts    | Exact call counts    |
++-------------------+--------------------------+----------------------+----------------------+
+| **Setup**         | Attach to any PID        | Instrument code      | Instrument code      |
++-------------------+--------------------------+----------------------+----------------------+
+| **Use Case**      | Production debugging     | Development/testing  | Profiler extension   |
++-------------------+--------------------------+----------------------+----------------------+
+| **Implementation**| C extension              | C extension          | Pure Python          |
++-------------------+--------------------------+----------------------+----------------------+
 
 .. note::
 
-   The statistical profiler (:mod:`profile.sample`) is recommended for most production
+   The statistical profiler (:mod:`profiling.sampling`) is recommended for most production
    use cases due to its extremely low overhead and ability to profile running processes
    without modification. It can attach to any Python process and collect performance
    data with minimal impact on execution speed, making it ideal for debugging
@@ -138,11 +138,11 @@ on an existing application.
 
 To profile an existing running process::
 
-   python -m profile.sample 1234
+   python -m profiling.sampling 1234
 
 To profile with custom settings::
 
-   python -m profile.sample -i 50 -d 30 1234
+   python -m profiling.sampling -i 50 -d 30 1234
 
 **Deterministic Profiling (Development/Testing):**
 
@@ -218,34 +218,34 @@ them in various ways.
 Statistical Profiler Command Line Interface
 ===========================================
 
-.. program:: profile.sample
+.. program:: profiling.sampling
 
-The :mod:`profile.sample` module can be invoked as a script to profile running processes::
+The :mod:`profiling.sampling` module can be invoked as a script to profile running processes::
 
-   python -m profile.sample [options] PID
+   python -m profiling.sampling [options] PID
 
 **Basic Usage Examples:**
 
 Profile process 1234 for 10 seconds with default settings::
 
-   python -m profile.sample 1234
+   python -m profiling.sampling 1234
 
 Profile with custom interval and duration, save to file::
 
-   python -m profile.sample -i 50 -d 30 -o profile.stats 1234
+   python -m profiling.sampling -i 50 -d 30 -o profile.stats 1234
 
 Generate collapsed stacks to use with tools like `flamegraph.pl
 <https://github.com/brendangregg/FlameGraph>`_::
 
-   python -m profile.sample --collapsed 1234
+   python -m profiling.sampling --collapsed 1234
 
 Profile all threads, sort by total time::
 
-   python -m profile.sample -a --sort-tottime 1234
+   python -m profiling.sampling -a --sort-tottime 1234
 
 Profile with real-time sampling statistics::
 
-   python -m profile.sample --realtime-stats 1234
+   python -m profiling.sampling --realtime-stats 1234
 
 **Command Line Options:**
 
@@ -339,13 +339,13 @@ The statistical profiler produces output similar to deterministic profilers but 
 
 .. _profile-cli:
 
-:mod:`profile.sample` Module Reference
+:mod:`profiling.sampling` Module Reference
 =======================================================
 
-.. module:: profile.sample
+.. module:: profiling.sampling
    :synopsis: Python statistical profiler.
 
-This section documents the programmatic interface for the :mod:`profile.sample` module.
+This section documents the programmatic interface for the :mod:`profiling.sampling` module.
 For command-line usage, see :ref:`sampling-profiler-cli`. For conceptual information
 about statistical profiling, see :ref:`statistical-profiling`
 
@@ -373,14 +373,14 @@ about statistical profiling, see :ref:`statistical-profiling`
    Examples::
 
        # Basic usage - profile process 1234 for 10 seconds
-       import profile.sample
-       profile.sample.sample(1234)
+       import profiling.sampling
+       profiling.sampling.sample(1234)
 
        # Profile with custom settings
-       profile.sample.sample(1234, duration_sec=30, sample_interval_usec=50, all_threads=True)
+       profiling.sampling.sample(1234, duration_sec=30, sample_interval_usec=50, all_threads=True)
 
        # Generate collapsed stack traces for flamegraph.pl
-       profile.sample.sample(1234, output_format='collapsed', filename='profile.collapsed')
+       profiling.sampling.sample(1234, output_format='collapsed', filename='profile.collapsed')
 
 .. class:: SampleProfiler(pid, sample_interval_usec, all_threads)
 
@@ -856,7 +856,7 @@ What Is Deterministic Profiling?
 call*, *function return*, and *exception* events are monitored, and precise
 timings are made for the intervals between these events (during which time the
 user's code is executing).  In contrast, :dfn:`statistical profiling` (which is
-provided by the :mod:`profile.sample` module) periodically samples the effective instruction pointer, and
+provided by the :mod:`profiling.sampling` module) periodically samples the effective instruction pointer, and
 deduces where time is being spent.  The latter technique traditionally involves
 less overhead (as the code does not need to be instrumented), but provides only
 relative indications of where time is being spent.
