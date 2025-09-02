@@ -758,10 +758,7 @@ static pollObject *
 newPollObject(PyObject *module)
 {
     pollObject *self;
-    PyTypeObject *type = get_select_state(module)->poll_Type;
-    assert(type != NULL);
-    assert(type->tp_alloc != NULL);
-    self = (pollObject *)type->tp_alloc(type, 0);
+    self = PyObject_New(pollObject, get_select_state(module)->poll_Type);
     if (self == NULL)
         return NULL;
     /* ufd_uptodate is a Boolean, denoting whether the
@@ -780,16 +777,16 @@ newPollObject(PyObject *module)
 static void
 poll_dealloc(PyObject *op)
 {
-    PyTypeObject *type = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     pollObject *self = pollObject_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
     if (self->ufds != NULL) {
         PyMem_Free(self->ufds);
     }
     Py_XDECREF(self->dict);
-    type->tp_free(self);
+    PyObject_Free(self);
     Py_DECREF(type);
 }
+
 
 #ifdef HAVE_SYS_DEVPOLL_H
 static PyMethodDef devpoll_methods[];
@@ -1395,9 +1392,8 @@ select_epoll_impl(PyTypeObject *type, int sizehint, int flags)
 static void
 pyepoll_dealloc(PyObject *op)
 {
-    PyTypeObject *type = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     pyEpoll_Object *self = pyEpoll_Object_CAST(op);
+    PyTypeObject *type = Py_TYPE(self);
     (void)pyepoll_internal_close(self);
     freefunc epoll_free = PyType_GetSlot(type, Py_tp_free);
     epoll_free(self);
@@ -2494,7 +2490,6 @@ static PyType_Spec poll_Type_spec = {
     ),
     .slots = poll_Type_slots,
 };
-
 
 #ifdef HAVE_SYS_DEVPOLL_H
 
