@@ -438,10 +438,9 @@ PyCursesPanel_Clear(PyObject *op)
         Py_CLEAR(extra);
         if (set_panel_userptr(self->pan, NULL) == ERR) {
             curses_panel_panel_set_error(self, "set_panel_userptr", NULL);
-            PyErr_FormatUnraisable("Exception ignored in tp_clear of %T", op);
         }
     }
-    // do NOT clear self->wo yet as there is no cycle to break with it
+    // self->wo should not be cleared because an associated WINDOW may exist
     return 0;
 }
 
