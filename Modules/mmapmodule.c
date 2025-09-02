@@ -1723,7 +1723,8 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD dwErr = 0;
     int fileno;
     HANDLE fh = INVALID_HANDLE_VALUE;
-    int access = (access_mode)ACCESS_DEFAULT, trackfd = 1;
+    int access = (access_mode)ACCESS_DEFAULT;
+    int trackfd = 1;
     DWORD flProtect, dwDesiredAccess;
     static char *keywords[] = { "fileno", "length",
                                 "tagname",
