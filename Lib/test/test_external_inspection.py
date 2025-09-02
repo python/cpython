@@ -19,6 +19,11 @@ from test.support.socket_helper import find_unused_port
 
 import subprocess
 
+try:
+    from concurrent import interpreters
+except ImportError:
+    interpreters = None
+
 PROCESS_VM_READV_SUPPORTED = False
 
 try:
@@ -45,6 +50,12 @@ skip_if_not_supported = unittest.skipIf(
     ),
     "Test only runs on Linux, Windows and MacOS",
 )
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 def get_stack_trace(pid):
@@ -1132,6 +1143,360 @@ class TestGetStackTrace(unittest.TestCase):
         sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
         "Test only runs on Linux with process_vm_readv support",
     )
+    @requires_subinterpreters
+    def test_subinterpreter_stack_trace(self):
+        # Test that subinterpreters are correctly handled
+        port = find_unused_port()
+
+        # Calculate subinterpreter code separately and pickle it to avoid f-string issues
+        import pickle
+        subinterp_code = textwrap.dedent(f'''
+            import socket
+            import time
+
+            def sub_worker():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            sub_worker()
+        ''').strip()
+
+        # Pickle the subinterpreter code
+        pickled_code = pickle.dumps(subinterp_code)
+
+        script = textwrap.dedent(
+            f"""
+            from concurrent import interpreters
+            import time
+            import sys
+            import socket
+            import threading
+
+            # Connect to the test process
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def main_worker():
+                # Function running in main interpreter
+                sock.sendall(b"ready:main\\n")
+                time.sleep(10_000)
+
+            def run_subinterp():
+                # Create and run subinterpreter
+                subinterp = interpreters.create()
+
+                import pickle
+                pickled_code = {pickled_code!r}
+                subinterp_code = pickle.loads(pickled_code)
+                subinterp.exec(subinterp_code)
+
+            # Start subinterpreter in thread
+            sub_thread = threading.Thread(target=run_subinterp)
+            sub_thread.start()
+
+            # Start main thread work
+            main_thread = threading.Thread(target=main_worker)
+            main_thread.start()
+
+            # Keep main thread alive
+            main_thread.join()
+            sub_thread.join()
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            # Create a socket server to communicate with the target process
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+
+            script_name = _make_test_script(script_dir, "script", script)
+            client_sockets = []
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                
+                # Accept connections from both main and subinterpreter
+                responses = set()
+                while len(responses) < 2:  # Wait for both "ready:main" and "ready:sub"
+                    try:
+                        client_socket, _ = server_socket.accept()
+                        client_sockets.append(client_socket)
+                        
+                        # Read the response from this connection
+                        response = client_socket.recv(1024)
+                        if b"ready:main" in response:
+                            responses.add("main")
+                        if b"ready:sub" in response:
+                            responses.add("sub")
+                    except socket.timeout:
+                        break
+
+                server_socket.close()
+                stack_trace = get_stack_trace(p.pid)
+            except PermissionError:
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace"
+                )
+            finally:
+                for client_socket in client_sockets:
+                    if client_socket is not None:
+                        client_socket.close()
+                p.kill()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+            # Verify we have multiple interpreters
+            self.assertGreaterEqual(len(stack_trace), 1, "Should have at least one interpreter")
+
+            # Look for main interpreter (ID 0) and subinterpreter (ID > 0)
+            main_interp = None
+            sub_interp = None
+
+            for interpreter_info in stack_trace:
+                if interpreter_info.interpreter_id == 0:
+                    main_interp = interpreter_info
+                elif interpreter_info.interpreter_id > 0:
+                    sub_interp = interpreter_info
+
+            self.assertIsNotNone(main_interp, "Main interpreter should be present")
+
+            # Check main interpreter has expected stack trace
+            main_found = False
+            for thread_info in main_interp.threads:
+                for frame in thread_info.frame_info:
+                    if frame.funcname == "main_worker":
+                        main_found = True
+                        break
+                if main_found:
+                    break
+            self.assertTrue(main_found, "Main interpreter should have main_worker in stack")
+
+            # If subinterpreter is present, check its stack trace
+            if sub_interp:
+                sub_found = False
+                for thread_info in sub_interp.threads:
+                    for frame in thread_info.frame_info:
+                        if frame.funcname in ("sub_worker", "nested_func"):
+                            sub_found = True
+                            break
+                    if sub_found:
+                        break
+                self.assertTrue(sub_found, "Subinterpreter should have sub_worker or nested_func in stack")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    @requires_subinterpreters
+    def test_multiple_subinterpreters_with_threads(self):
+        # Test multiple subinterpreters, each with multiple threads
+        port = find_unused_port()
+        
+        # Calculate subinterpreter codes separately and pickle them
+        import pickle
+        
+        # Code for first subinterpreter with 2 threads
+        subinterp1_code = textwrap.dedent(f'''
+            import socket
+            import time
+            import threading
+
+            def worker1():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub1-t1\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            def worker2():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub1-t2\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            t1 = threading.Thread(target=worker1)
+            t2 = threading.Thread(target=worker2)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+        ''').strip()
+        
+        # Code for second subinterpreter with 2 threads
+        subinterp2_code = textwrap.dedent(f'''
+            import socket
+            import time
+            import threading
+
+            def worker1():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub2-t1\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            def worker2():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub2-t2\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            t1 = threading.Thread(target=worker1)
+            t2 = threading.Thread(target=worker2)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+        ''').strip()
+        
+        # Pickle the subinterpreter codes
+        pickled_code1 = pickle.dumps(subinterp1_code)
+        pickled_code2 = pickle.dumps(subinterp2_code)
+
+        script = textwrap.dedent(
+            f"""
+            from concurrent import interpreters
+            import time
+            import sys
+            import socket
+            import threading
+
+            # Connect to the test process
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def main_worker():
+                # Function running in main interpreter
+                sock.sendall(b"ready:main\\n")
+                time.sleep(10_000)
+
+            def run_subinterp1():
+                # Create and run first subinterpreter
+                subinterp = interpreters.create()
+                
+                import pickle
+                pickled_code = {pickled_code1!r}
+                subinterp_code = pickle.loads(pickled_code)
+                subinterp.exec(subinterp_code)
+
+            def run_subinterp2():
+                # Create and run second subinterpreter
+                subinterp = interpreters.create()
+                
+                import pickle
+                pickled_code = {pickled_code2!r}
+                subinterp_code = pickle.loads(pickled_code)
+                subinterp.exec(subinterp_code)
+
+            # Start subinterpreters in threads
+            sub1_thread = threading.Thread(target=run_subinterp1)
+            sub2_thread = threading.Thread(target=run_subinterp2)
+            sub1_thread.start()
+            sub2_thread.start()
+
+            # Start main thread work
+            main_thread = threading.Thread(target=main_worker)
+            main_thread.start()
+
+            # Keep main thread alive
+            main_thread.join()
+            sub1_thread.join()
+            sub2_thread.join()
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            # Create a socket server to communicate with the target process
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(5)  # Allow multiple connections
+
+            script_name = _make_test_script(script_dir, "script", script)
+            client_sockets = []
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                
+                # Accept connections from main and all subinterpreter threads
+                expected_responses = {"ready:main", "ready:sub1-t1", "ready:sub1-t2", "ready:sub2-t1", "ready:sub2-t2"}
+                responses = set()
+                
+                while len(responses) < 5:  # Wait for all 5 ready signals
+                    try:
+                        client_socket, _ = server_socket.accept()
+                        client_sockets.append(client_socket)
+                        
+                        # Read the response from this connection
+                        response = client_socket.recv(1024)
+                        response_str = response.decode().strip()
+                        if response_str in expected_responses:
+                            responses.add(response_str)
+                    except socket.timeout:
+                        break
+
+                server_socket.close()
+                stack_trace = get_stack_trace(p.pid)
+            except PermissionError:
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace"
+                )
+            finally:
+                for client_socket in client_sockets:
+                    if client_socket is not None:
+                        client_socket.close()
+                p.kill()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+            # Verify we have multiple interpreters
+            self.assertGreaterEqual(len(stack_trace), 2, "Should have at least two interpreters")
+
+            # Count interpreters by ID
+            interpreter_ids = {interp.interpreter_id for interp in stack_trace}
+            self.assertIn(0, interpreter_ids, "Main interpreter should be present")
+            self.assertGreaterEqual(len(interpreter_ids), 3, "Should have main + at least 2 subinterpreters")
+
+            # Count total threads across all interpreters
+            total_threads = sum(len(interp.threads) for interp in stack_trace)
+            self.assertGreaterEqual(total_threads, 5, "Should have at least 5 threads total")
+
+            # Look for expected function names in stack traces
+            all_funcnames = set()
+            for interpreter_info in stack_trace:
+                for thread_info in interpreter_info.threads:
+                    for frame in thread_info.frame_info:
+                        all_funcnames.add(frame.funcname)
+            
+            # Should find functions from different interpreters and threads
+            expected_funcs = {"main_worker", "worker1", "worker2", "nested_func"}
+            found_funcs = expected_funcs.intersection(all_funcnames)
+            self.assertGreater(len(found_funcs), 0, f"Should find some expected functions, got: {all_funcnames}")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
     @requires_gil_enabled("Free threaded builds don't have an 'active thread'")
     def test_only_active_thread(self):
         # Test that only_active_thread parameter works correctly
@@ -1276,13 +1641,13 @@ class TestGetStackTrace(unittest.TestCase):
                 if interpreter_info.threads:
                     gil_thread_id = interpreter_info.threads[0].thread_id
                     break
-            
+
             # Get all thread IDs from all_traces
             all_thread_ids = []
             for interpreter_info in all_traces:
                 for thread_info in interpreter_info.threads:
                     all_thread_ids.append(thread_info.thread_id)
-            
+
             self.assertIn(
                 gil_thread_id,
                 all_thread_ids,
