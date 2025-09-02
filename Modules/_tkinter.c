@@ -792,13 +792,8 @@ static PyObject *PyTclObject_Type;
 static PyObject *
 newPyTclObject(Tcl_Obj *arg)
 {
-    PyTypeObject *type;
     PyTclObject *self;
-
-    type = (PyTypeObject *)PyTclObject_Type;
-    assert(type != NULL);
-    assert(type->tp_alloc != NULL);
-    self = (PyTclObject *)type->tp_alloc(type, 0);
+    self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
     if (self == NULL)
         return NULL;
     Tcl_IncrRefCount(arg);
@@ -808,22 +803,14 @@ newPyTclObject(Tcl_Obj *arg)
 }
 
 static void
-PyTclObject_dealloc(PyObject *op)
+PyTclObject_dealloc(PyObject *_self)
 {
-    PyTypeObject *tp = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
-    PyTclObject *self = PyTclObject_CAST(op);
+    PyTclObject *self = PyTclObject_CAST(_self);
+    PyObject *tp = (PyObject *) Py_TYPE(self);
     Tcl_DecrRefCount(self->value);
     Py_XDECREF(self->string);
-    tp->tp_free(self);
+    PyObject_Free(self);
     Py_DECREF(tp);
-}
-
-static int
-PyTclObject_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
 }
 
 /* Like _str, but create Unicode if necessary. */
@@ -914,7 +901,6 @@ static PyGetSetDef PyTclObject_getsetlist[] = {
 
 static PyType_Slot PyTclObject_Type_slots[] = {
     {Py_tp_dealloc, PyTclObject_dealloc},
-    {Py_tp_traverse, PyTclObject_traverse},
     {Py_tp_repr, PyTclObject_repr},
     {Py_tp_str, PyTclObject_str},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -929,7 +915,7 @@ static PyType_Spec PyTclObject_Type_spec = {
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
-        | Py_TPFLAGS_HAVE_GC
+        | Py_TPFLAGS_IMMUTABLETYPE
     ),
     .slots = PyTclObject_Type_slots,
 };
