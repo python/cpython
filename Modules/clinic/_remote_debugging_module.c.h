@@ -125,7 +125,7 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder_get_stack_trace__doc__,
 "get_stack_trace($self, /)\n"
 "--\n"
 "\n"
-"Returns stack traces for all interpreters and threads in target process.\n"
+"Returns stack traces for all interpreters and threads in process.\n"
 "\n"
 "Each element in the returned list is a tuple of (interpreter_id, thread_list), where:\n"
 "- interpreter_id is the interpreter identifier\n"
@@ -297,4 +297,4 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace(PyObject *self, PyObject 
 
     return return_value;
 }
-/*[clinic end generated code: output=55fcb9833c5c3121 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ba15411abf82c33 input=a9049054013a1b77]*/
