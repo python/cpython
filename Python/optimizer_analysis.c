@@ -461,7 +461,7 @@ const uint16_t op_without_decref_inputs[MAX_UOP_ID + 1] = {
     [_BINARY_OP_SUBTRACT_FLOAT] = _BINARY_OP_SUBTRACT_FLOAT__NO_DECREF_INPUTS,
 };
 
-/* 1 for success, 0 for not ready, clears all possible errors. */
+/* >0 (length) for success, 0 for not ready, clears all possible errors. */
 static int
 optimize_uops(
     PyCodeObject *co,
