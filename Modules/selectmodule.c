@@ -433,7 +433,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
 
 typedef struct {
     PyObject_HEAD
-    PyObject *dict;
+    PyObject *dict;     // cannot create cycles as it only contains exact ints
     int ufd_uptodate;
     int ufd_len;
     struct pollfd *ufds;
@@ -789,15 +789,6 @@ poll_dealloc(PyObject *op)
     Py_XDECREF(self->dict);
     type->tp_free(self);
     Py_DECREF(type);
-}
-
-static int
-poll_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    pollObject *self = pollObject_CAST(op);
-    Py_VISIT(Py_TYPE(op));
-    Py_VISIT(self->dict);
-    return 0;
 }
 
 #ifdef HAVE_SYS_DEVPOLL_H
@@ -2489,7 +2480,6 @@ static PyMethodDef poll_methods[] = {
 
 static PyType_Slot poll_Type_slots[] = {
     {Py_tp_dealloc, poll_dealloc},
-    {Py_tp_traverse, poll_traverse},
     {Py_tp_methods, poll_methods},
     {0, 0},
 };
@@ -2500,10 +2490,11 @@ static PyType_Spec poll_Type_spec = {
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
-        | Py_TPFLAGS_HAVE_GC
+        | Py_TPFLAGS_IMMUTABLETYPE
     ),
     .slots = poll_Type_slots,
 };
+
 
 #ifdef HAVE_SYS_DEVPOLL_H
 
