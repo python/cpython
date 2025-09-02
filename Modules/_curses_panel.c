@@ -438,8 +438,7 @@ PyCursesPanel_Clear(PyObject *op)
         Py_CLEAR(extra);
         if (set_panel_userptr(self->pan, NULL) == ERR) {
             curses_panel_panel_set_error(self, "set_panel_userptr", NULL);
-            // Do not add a PyErr_FormatUnraisable() because the GC
-            // is responsible for handling exceptions in tp_clear.
+            PyErr_FormatUnraisable("Exception ignored in tp_clear of %s", op);
         }
     }
     // do NOT clear self->wo yet as there is no cycle to break with it
