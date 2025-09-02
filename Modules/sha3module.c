@@ -471,10 +471,7 @@ SHA3_TYPE_SPEC(sha3_512_spec, "sha3_512", sha3_512_slots);
 static int
 sha3_shake_check_digest_length(Py_ssize_t length)
 {
-    if (length < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative digest length");
-        return -1;
-    }
+    assert(length >= 0);
     if ((size_t)length >= (1 << 29)) {
         /*
          * Raise OverflowError to match the semantics of OpenSSL SHAKE
@@ -491,14 +488,14 @@ sha3_shake_check_digest_length(Py_ssize_t length)
 /*[clinic input]
 _sha3.shake_128.digest
 
-    length: Py_ssize_t
+    length: Py_ssize_t(allow_negative=False)
 
 Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_shake_128_digest_impl(SHA3object *self, Py_ssize_t length)
-/*[clinic end generated code: output=6c53fb71a6cff0a0 input=be03ade4b31dd54c]*/
+/*[clinic end generated code: output=6c53fb71a6cff0a0 input=1160c9f86ae0f867]*/
 {
     if (sha3_shake_check_digest_length(length) < 0) {
         return NULL;
@@ -526,14 +523,14 @@ _sha3_shake_128_digest_impl(SHA3object *self, Py_ssize_t length)
 /*[clinic input]
 _sha3.shake_128.hexdigest
 
-    length: Py_ssize_t
+    length: Py_ssize_t(allow_negative=False)
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length)
-/*[clinic end generated code: output=a27412d404f64512 input=0d84d05d7a8ccd37]*/
+/*[clinic end generated code: output=a27412d404f64512 input=ff06c9362949d2c8]*/
 {
     if (sha3_shake_check_digest_length(length) < 0) {
         return NULL;
