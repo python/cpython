@@ -4398,8 +4398,7 @@ nm_##MPDFUNC(PyObject *self)                                \
     PyObject *context;                                      \
     uint32_t status = 0;                                    \
                                                             \
-    decimal_state *state =                                  \
-        get_module_state_by_def(Py_TYPE(self));             \
+    decimal_state *state = get_module_state_by_def(Py_TYPE(self));   \
     CURRENT_CONTEXT(state, context);                        \
     if ((result = dec_alloc(state)) == NULL) {              \
         return NULL;                                        \
@@ -4424,7 +4423,7 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
     PyObject *context;                                           \
     uint32_t status = 0;                                         \
                                                                  \
-    decimal_state *state = find_state_left_or_right(self, other);\
+    decimal_state *state = find_state_left_or_right(self, other); \
     CURRENT_CONTEXT(state, context) ;                            \
     CONVERT_BINOP(&a, &b, self, other, context);                 \
                                                                  \
@@ -4531,7 +4530,6 @@ nm_##MPDFUNC(PyObject *self, PyObject *other)                    \
     PyObject *a, *b;                                            \
     PyObject *result;                                           \
     decimal_state *state = PyType_GetModuleState(cls);          \
-        get_module_state_by_def(Py_TYPE(self));                 \
     CONTEXT_CHECK_VA(state, context);                           \
     CONVERT_BINOP_RAISE(&a, &b, self, other, context);          \
                                                                 \
