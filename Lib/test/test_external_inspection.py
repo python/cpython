@@ -1223,14 +1223,14 @@ class TestGetStackTrace(unittest.TestCase):
             client_sockets = []
             try:
                 p = subprocess.Popen([sys.executable, script_name])
-                
+
                 # Accept connections from both main and subinterpreter
                 responses = set()
                 while len(responses) < 2:  # Wait for both "ready:main" and "ready:sub"
                     try:
                         client_socket, _ = server_socket.accept()
                         client_sockets.append(client_socket)
-                        
+
                         # Read the response from this connection
                         response = client_socket.recv(1024)
                         if b"ready:main" in response:
@@ -1301,10 +1301,10 @@ class TestGetStackTrace(unittest.TestCase):
     def test_multiple_subinterpreters_with_threads(self):
         # Test multiple subinterpreters, each with multiple threads
         port = find_unused_port()
-        
+
         # Calculate subinterpreter codes separately and pickle them
         import pickle
-        
+
         # Code for first subinterpreter with 2 threads
         subinterp1_code = textwrap.dedent(f'''
             import socket
@@ -1334,7 +1334,7 @@ class TestGetStackTrace(unittest.TestCase):
             t1.join()
             t2.join()
         ''').strip()
-        
+
         # Code for second subinterpreter with 2 threads
         subinterp2_code = textwrap.dedent(f'''
             import socket
@@ -1364,7 +1364,7 @@ class TestGetStackTrace(unittest.TestCase):
             t1.join()
             t2.join()
         ''').strip()
-        
+
         # Pickle the subinterpreter codes
         pickled_code1 = pickle.dumps(subinterp1_code)
         pickled_code2 = pickle.dumps(subinterp2_code)
@@ -1389,7 +1389,7 @@ class TestGetStackTrace(unittest.TestCase):
             def run_subinterp1():
                 # Create and run first subinterpreter
                 subinterp = interpreters.create()
-                
+
                 import pickle
                 pickled_code = {pickled_code1!r}
                 subinterp_code = pickle.loads(pickled_code)
@@ -1398,7 +1398,7 @@ class TestGetStackTrace(unittest.TestCase):
             def run_subinterp2():
                 # Create and run second subinterpreter
                 subinterp = interpreters.create()
-                
+
                 import pickle
                 pickled_code = {pickled_code2!r}
                 subinterp_code = pickle.loads(pickled_code)
@@ -1436,16 +1436,16 @@ class TestGetStackTrace(unittest.TestCase):
             client_sockets = []
             try:
                 p = subprocess.Popen([sys.executable, script_name])
-                
+
                 # Accept connections from main and all subinterpreter threads
                 expected_responses = {"ready:main", "ready:sub1-t1", "ready:sub1-t2", "ready:sub2-t1", "ready:sub2-t2"}
                 responses = set()
-                
+
                 while len(responses) < 5:  # Wait for all 5 ready signals
                     try:
                         client_socket, _ = server_socket.accept()
                         client_sockets.append(client_socket)
-                        
+
                         # Read the response from this connection
                         response = client_socket.recv(1024)
                         response_str = response.decode().strip()
@@ -1486,7 +1486,7 @@ class TestGetStackTrace(unittest.TestCase):
                 for thread_info in interpreter_info.threads:
                     for frame in thread_info.frame_info:
                         all_funcnames.add(frame.funcname)
-            
+
             # Should find functions from different interpreters and threads
             expected_funcs = {"main_worker", "worker1", "worker2", "nested_func"}
             found_funcs = expected_funcs.intersection(all_funcnames)

@@ -19,7 +19,7 @@ class PstatsCollector(Collector):
         """Process a single thread's frame stack."""
         if not frames:
             return
-            
+
         # Process each frame in the stack to track cumulative calls
         for frame in frames:
             location = (frame.filename, frame.lineno, frame.funcname)

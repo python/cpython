@@ -2730,10 +2730,10 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             Py_CLEAR(result);
             goto exit;
         }
-        
+
         int64_t interpreter_id = GET_MEMBER(int64_t, interp_state_buffer,
                 self->debug_offsets.interpreter_state.id);
-        
+
         // Get code object generation from buffer
         uint64_t code_object_generation = GET_MEMBER(uint64_t, interp_state_buffer,
                 self->debug_offsets.interpreter_state.code_object_generation);
@@ -2766,13 +2766,13 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             // Find the GIL holder for THIS interpreter
             int gil_locked = GET_MEMBER(int, interp_state_buffer,
                 self->debug_offsets.interpreter_state.gil_runtime_state_locked);
-            
+
             if (!gil_locked) {
                 // This interpreter's GIL is not locked, skip it
                 Py_DECREF(interpreter_threads);
                 goto next_interpreter;
             }
-            
+
             // Get the GIL holder for this interpreter
             current_tstate = (uintptr_t)GET_MEMBER(PyThreadState*, interp_state_buffer,
                 self->debug_offsets.interpreter_state.gil_runtime_state_holder);
@@ -2808,7 +2808,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
                 break;
             }
         }
-        
+
         // Create the InterpreterInfo StructSequence
         RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)self);
         PyObject *interpreter_info = PyStructSequence_New(state->InterpreterInfo_Type);
@@ -2818,7 +2818,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             Py_CLEAR(result);
             goto exit;
         }
-        
+
         PyObject *interp_id = PyLong_FromLongLong(interpreter_id);
         if (!interp_id) {
             Py_DECREF(interpreter_threads);
@@ -2827,10 +2827,10 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             Py_CLEAR(result);
             goto exit;
         }
-        
+
         PyStructSequence_SetItem(interpreter_info, 0, interp_id);  // steals reference
         PyStructSequence_SetItem(interpreter_info, 1, interpreter_threads);  // steals reference
-        
+
         // Add this interpreter to the result list
         if (PyList_Append(result, interpreter_info) == -1) {
             Py_DECREF(interpreter_info);

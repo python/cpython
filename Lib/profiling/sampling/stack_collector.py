@@ -13,7 +13,7 @@ class StackTraceCollector(Collector):
         """Process a single thread's frame stack."""
         if not frames:
             return
-            
+
         # Store the complete call stack (reverse order - root first)
         call_tree = list(reversed(frames))
         self.call_trees.append(call_tree)
