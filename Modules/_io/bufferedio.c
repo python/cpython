@@ -172,6 +172,7 @@ _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _io._BufferedIOBase.read1
 
     cls: defining_class
@@ -187,7 +188,7 @@ A short result does not imply that EOF is imminent.
 static PyObject *
 _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
                                int Py_UNUSED(size))
-/*[clinic end generated code: output=2e7fc62972487eaa input=af76380e020fd9e6]*/
+/*[clinic end generated code: output=2e7fc62972487eaa input=1e76df255063afd6]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "read1");

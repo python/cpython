@@ -1707,8 +1707,7 @@ class LongTest(unittest.TestCase):
         self.assertEqual(hash(-sys.hash_info.modulus - 2), -2)
         self.assertEqual(hash(-sys.hash_info.modulus - 1), -2)
         self.assertEqual(hash(-sys.hash_info.modulus), 0)
-        self.assertEqual(hash(-sys.hash_info.modulus + 1), - (sys.hash_info.modulus - 1))
-
+        self.assertEqual(hash(-sys.hash_info.modulus + 1), -sys.hash_info.modulus + 1)
 
 if __name__ == "__main__":
     unittest.main()

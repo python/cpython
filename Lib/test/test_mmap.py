@@ -732,7 +732,7 @@ class MmapTests(unittest.TestCase):
         m2.close()
         m1.close()
 
-        with self.assertRaisesRegex(TypeError, 'must be str or None'):
+        with self.assertRaisesRegex(TypeError, 'tagname'):
             mmap.mmap(-1, 8, tagname=1)
 
     @cpython_only
@@ -901,35 +901,69 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    def test_resize_up_when_mapped_to_pagefile(self):
+    def test_resize_up_anonymous_mapping(self):
         """If the mmap is backed by the pagefile ensure a resize up can happen
         and that the original data is still in place
         """
         start_size = PAGESIZE
         new_size = 2 * start_size
-        data = bytes(random.getrandbits(8) for _ in range(start_size))
+        data = random.randbytes(start_size)
 
-        m = mmap.mmap(-1, start_size)
-        m[:] = data
-        m.resize(new_size)
-        self.assertEqual(len(m), new_size)
-        self.assertEqual(m[:start_size], data[:start_size])
+        with mmap.mmap(-1, start_size) as m:
+            m[:] = data
+            if sys.platform.startswith(('linux', 'android')):
+                # Can't expand a shared anonymous mapping on Linux.
+                # See https://bugzilla.kernel.org/show_bug.cgi?id=8691
+                with self.assertRaises(ValueError):
+                    m.resize(new_size)
+            else:
+                try:
+                    m.resize(new_size)
+                except SystemError:
+                    pass
+                else:
+                    self.assertEqual(len(m), new_size)
+                    self.assertEqual(m[:start_size], data)
+                    self.assertEqual(m[start_size:], b'\0' * (new_size - start_size))
 
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    def test_resize_down_when_mapped_to_pagefile(self):
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_resize_up_private_anonymous_mapping(self):
+        start_size = PAGESIZE
+        new_size = 2 * start_size
+        data = random.randbytes(start_size)
+
+        with mmap.mmap(-1, start_size, flags=mmap.MAP_PRIVATE) as m:
+            m[:] = data
+            try:
+                m.resize(new_size)
+            except SystemError:
+                pass
+            else:
+                self.assertEqual(len(m), new_size)
+                self.assertEqual(m[:start_size], data)
+                self.assertEqual(m[start_size:], b'\0' * (new_size - start_size))
+
+    def test_resize_down_anonymous_mapping(self):
         """If the mmap is backed by the pagefile ensure a resize down up can happen
         and that a truncated form of the original data is still in place
         """
-        start_size = PAGESIZE
+        start_size = 2 * PAGESIZE
         new_size = start_size // 2
-        data = bytes(random.getrandbits(8) for _ in range(start_size))
+        data = random.randbytes(start_size)
 
-        m = mmap.mmap(-1, start_size)
-        m[:] = data
-        m.resize(new_size)
-        self.assertEqual(len(m), new_size)
-        self.assertEqual(m[:new_size], data[:new_size])
+        with mmap.mmap(-1, start_size) as m:
+            m[:] = data
+            try:
+                m.resize(new_size)
+            except SystemError:
+                pass
+            else:
+                self.assertEqual(len(m), new_size)
+                self.assertEqual(m[:], data[:new_size])
+                if sys.platform.startswith(('linux', 'android')):
+                    # Can't expand to its original size.
+                    with self.assertRaises(ValueError):
+                        m.resize(start_size)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_resize_fails_if_mapping_held_elsewhere(self):

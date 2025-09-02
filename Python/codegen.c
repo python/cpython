@@ -29,6 +29,7 @@
 #include "pycore_symtable.h"      // PySTEntryObject
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 #include "pycore_ceval.h"         // SPECIAL___ENTER__
+#include "pycore_template.h"      // _PyTemplate_Type
 
 #define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
@@ -3617,10 +3618,11 @@ infer_type(expr_ty e)
         return &PyGen_Type;
     case Lambda_kind:
         return &PyFunction_Type;
-    case JoinedStr_kind:
     case TemplateStr_kind:
-    case FormattedValue_kind:
     case Interpolation_kind:
+        return &_PyTemplate_Type;
+    case JoinedStr_kind:
+    case FormattedValue_kind:
         return &PyUnicode_Type;
     case Constant_kind:
         return Py_TYPE(e->v.Constant.value);
@@ -3674,6 +3676,8 @@ check_subscripter(compiler *c, expr_ty e)
     case Set_kind:
     case SetComp_kind:
     case GeneratorExp_kind:
+    case TemplateStr_kind:
+    case Interpolation_kind:
     case Lambda_kind: {
         location loc = LOC(e);
         return _PyCompile_Warn(c, loc, "'%.200s' object is not subscriptable; "
@@ -3708,9 +3712,7 @@ check_index(compiler *c, expr_ty e, expr_ty s)
     case List_kind:
     case ListComp_kind:
     case JoinedStr_kind:
-    case TemplateStr_kind:
-    case FormattedValue_kind:
-    case Interpolation_kind: {
+    case FormattedValue_kind: {
         location loc = LOC(e);
         return _PyCompile_Warn(c, loc, "%.200s indices must be integers "
                                        "or slices, not %.200s; "
@@ -4081,16 +4083,6 @@ codegen_template_str(compiler *c, expr_ty e)
         }
         else {
             VISIT(c, expr, value);
-            Py_ssize_t j;
-            for (j = i + 1; j < value_count; j++) {
-                value = asdl_seq_GET(e->v.TemplateStr.values, j);
-                if (value->kind == Interpolation_kind) {
-                    break;
-                }
-                VISIT(c, expr, value);
-                ADDOP_INPLACE(c, loc, Add);
-            }
-            i = j - 1;
             stringslen++;
             last_was_interpolation = 0;
         }

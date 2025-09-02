@@ -23,6 +23,7 @@
 #endif
 
 #include <Python.h>
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
 #include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
@@ -119,6 +120,7 @@ typedef struct {
 #ifdef UNIX
     int fd;
     _Bool trackfd;
+    int flags;
 #endif
 
     PyObject *weakreflist;
@@ -126,13 +128,6 @@ typedef struct {
 } mmap_object;
 
 #define mmap_object_CAST(op)    ((mmap_object *)(op))
-
-static int
-mmap_object_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
 
 static void
 mmap_object_dealloc(PyObject *op)
@@ -529,7 +524,7 @@ mmap_read_method(PyObject *op, PyObject *args)
     mmap_object *self = mmap_object_CAST(op);
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|n?:read", &num_bytes))
+    if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
         return NULL;
     CHECK_VALID(NULL);
 
@@ -888,6 +883,13 @@ mmap_resize_method(PyObject *op, PyObject *args)
 #else
         void *newmap;
 
+#ifdef __linux__
+        if (self->fd == -1 && !(self->flags & MAP_PRIVATE) && new_size > self->size) {
+            PyErr_Format(PyExc_ValueError,
+                "mmap: can't expand a shared anonymous mapping on Linux");
+            return NULL;
+        }
+#endif
         if (self->fd != -1 && ftruncate(self->fd, self->offset + new_size) == -1) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
@@ -1498,7 +1500,7 @@ static PyType_Slot mmap_object_slots[] = {
     {Py_tp_members, mmap_object_members},
     {Py_tp_getset, mmap_object_getset},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, mmap_object_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
 
     /* as sequence */
     {Py_sq_length, mmap_length},
@@ -1684,6 +1686,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     else {
         m_obj->fd = -1;
     }
+    m_obj->flags = flags;
 
     Py_BEGIN_ALLOW_THREADS
     m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
@@ -1723,7 +1726,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
     DWORD size_lo;      /* lower 32 bits of size */
-    PyObject *tagname = NULL;
+    PyObject *tagname = Py_None;
     DWORD dwErr = 0;
     int fileno;
     HANDLE fh = 0;
@@ -1733,7 +1736,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
                                 "tagname",
                                 "access", "offset", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|U?iL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|OiL", keywords,
                                      &fileno, &map_size,
                                      &tagname, &access, &offset)) {
         return NULL;
@@ -1866,7 +1869,13 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     /* set the tag name */
-    if (tagname != NULL) {
+    if (!Py_IsNone(tagname)) {
+        if (!PyUnicode_Check(tagname)) {
+            Py_DECREF(m_obj);
+            return PyErr_Format(PyExc_TypeError, "expected str or None for "
+                                "'tagname', not %.200s",
+                                Py_TYPE(tagname)->tp_name);
+        }
         m_obj->tagname = PyUnicode_AsWideCharString(tagname, NULL);
         if (m_obj->tagname == NULL) {
             Py_DECREF(m_obj);
