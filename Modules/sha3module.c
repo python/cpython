@@ -471,6 +471,7 @@ SHA3_TYPE_SPEC(sha3_512_spec, "sha3_512", sha3_512_slots);
 static int
 sha3_shake_check_digest_length(Py_ssize_t length)
 {
+    assert(length >= 0);
     if ((size_t)length >= (1 << 29)) {
         /*
          * Raise OverflowError to match the semantics of OpenSSL SHAKE
