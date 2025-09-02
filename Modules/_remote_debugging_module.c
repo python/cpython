@@ -164,6 +164,20 @@ static PyStructSequence_Desc ThreadInfo_desc = {
     2
 };
 
+// InterpreterInfo structseq type - replaces 2-tuple (interpreter_id, thread_list)
+static PyStructSequence_Field InterpreterInfo_fields[] = {
+    {"interpreter_id", "Interpreter ID"},
+    {"threads", "List of threads in this interpreter"},
+    {NULL}
+};
+
+static PyStructSequence_Desc InterpreterInfo_desc = {
+    "_remote_debugging.InterpreterInfo",
+    "Information about an interpreter",
+    InterpreterInfo_fields,
+    2
+};
+
 // AwaitedInfo structseq type - replaces 2-tuple (tid, awaited_by_list)
 static PyStructSequence_Field AwaitedInfo_fields[] = {
     {"thread_id", "Thread ID"},
@@ -193,6 +207,7 @@ typedef struct {
     PyTypeObject *FrameInfo_Type;
     PyTypeObject *CoroInfo_Type;
     PyTypeObject *ThreadInfo_Type;
+    PyTypeObject *InterpreterInfo_Type;
     PyTypeObject *AwaitedInfo_Type;
 } RemoteDebuggingState;
 
@@ -2649,28 +2664,37 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 @critical_section
 _remote_debugging.RemoteUnwinder.get_stack_trace
 
-Returns a list of stack traces for threads in the target process.
+Returns a list of stack traces for all interpreters and their threads in the target process.
 
-Each element in the returned list is a tuple of (thread_id, frame_list), where:
-- thread_id is the OS thread identifier
-- frame_list is a list of tuples (function_name, filename, line_number) representing
-  the Python stack frames for that thread, ordered from most recent to oldest
+Each element in the returned list is a tuple of (interpreter_id, thread_list), where:
+- interpreter_id is the interpreter identifier
+- thread_list is a list of tuples (thread_id, frame_list) for threads in that interpreter
+  - thread_id is the OS thread identifier
+  - frame_list is a list of tuples (function_name, filename, line_number) representing
+    the Python stack frames for that thread, ordered from most recent to oldest
 
 The threads returned depend on the initialization parameters:
-- If only_active_thread was True: returns only the thread holding the GIL
-- If all_threads was True: returns all threads
-- Otherwise: returns only the main thread
+- If only_active_thread was True: returns only the thread holding the GIL across all interpreters
+- If all_threads was True: returns all threads across all interpreters
+- Otherwise: returns only the main thread of each interpreter
 
 Example:
     [
-        (1234, [
-            ('process_data', 'worker.py', 127),
-            ('run_worker', 'worker.py', 45),
-            ('main', 'app.py', 23)
+        (0, [  # Main interpreter
+            (1234, [
+                ('process_data', 'worker.py', 127),
+                ('run_worker', 'worker.py', 45),
+                ('main', 'app.py', 23)
+            ]),
+            (1235, [
+                ('handle_request', 'server.py', 89),
+                ('serve_forever', 'server.py', 52)
+            ])
         ]),
-        (1235, [
-            ('handle_request', 'server.py', 89),
-            ('serve_forever', 'server.py', 52)
+        (1, [  # Sub-interpreter
+            (1236, [
+                ('sub_worker', 'sub.py', 15)
+            ])
         ])
     ]
 
@@ -2682,20 +2706,18 @@ Raises:
 
 [clinic start generated code]*/
 
-static PyObject *
-_remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=666192b90c69d567 input=c527a4b858601408]*/
+static int
+process_interpreter_threads(RemoteUnwinderObject *self, uintptr_t interpreter_addr, 
+                           PyObject *result, int64_t interpreter_id)
 {
-    PyObject* result = NULL;
-    // Read interpreter state into opaque buffer
     char interp_state_buffer[INTERP_STATE_BUFFER_SIZE];
     if (_Py_RemoteDebug_PagedReadRemoteMemory(
             &self->handle,
-            self->interpreter_addr,
+            interpreter_addr,
             INTERP_STATE_BUFFER_SIZE,
             interp_state_buffer) < 0) {
         set_exception_cause(self, PyExc_RuntimeError, "Failed to read interpreter state buffer");
-        goto exit;
+        return -1;
     }
 
     // Get code object generation from buffer
@@ -2705,28 +2727,6 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
     if (code_object_generation != self->code_object_generation) {
         self->code_object_generation = code_object_generation;
         _Py_hashtable_clear(self->code_object_cache);
-    }
-
-    // If only_active_thread is true, we need to determine which thread holds the GIL
-    PyThreadState* gil_holder = NULL;
-    if (self->only_active_thread) {
-        // The GIL state is already in interp_state_buffer, just read from there
-        // Check if GIL is locked
-        int gil_locked = GET_MEMBER(int, interp_state_buffer,
-            self->debug_offsets.interpreter_state.gil_runtime_state_locked);
-
-        if (gil_locked) {
-            // Get the last holder (current holder when GIL is locked)
-            gil_holder = GET_MEMBER(PyThreadState*, interp_state_buffer,
-                self->debug_offsets.interpreter_state.gil_runtime_state_holder);
-        } else {
-            // GIL is not locked, return empty list
-            result = PyList_New(0);
-            if (!result) {
-                set_exception_cause(self, PyExc_MemoryError, "Failed to create empty result list");
-            }
-            goto exit;
-        }
     }
 
 #ifdef Py_GIL_DISABLED
@@ -2739,47 +2739,129 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
     }
 #endif
 
+    // Create a list to hold threads for this interpreter
+    PyObject *interpreter_threads = PyList_New(0);
+    if (!interpreter_threads) {
+        set_exception_cause(self, PyExc_MemoryError, "Failed to create interpreter threads list");
+        return -1;
+    }
+
     uintptr_t current_tstate;
-    if (self->only_active_thread && gil_holder != NULL) {
-        // We have the GIL holder, process only that thread
-        current_tstate = (uintptr_t)gil_holder;
+    if (self->only_active_thread) {
+        // Find the GIL holder for THIS interpreter
+        int gil_locked = GET_MEMBER(int, interp_state_buffer,
+            self->debug_offsets.interpreter_state.gil_runtime_state_locked);
+        
+        if (!gil_locked) {
+            // This interpreter's GIL is not locked, skip it
+            Py_DECREF(interpreter_threads);
+            return 0;  // Success, but no threads to process
+        }
+        
+        // Get the GIL holder for this interpreter
+        current_tstate = (uintptr_t)GET_MEMBER(PyThreadState*, interp_state_buffer,
+            self->debug_offsets.interpreter_state.gil_runtime_state_holder);
     } else if (self->tstate_addr == 0) {
-        // Get threads head from buffer
+        // Get all threads for this interpreter
         current_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
                 self->debug_offsets.interpreter_state.threads_head);
     } else {
+        // Target specific thread (only process first interpreter)
         current_tstate = self->tstate_addr;
-    }
-
-    result = PyList_New(0);
-    if (!result) {
-        set_exception_cause(self, PyExc_MemoryError, "Failed to create stack trace result list");
-        goto exit;
     }
 
     while (current_tstate != 0) {
         PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate);
         if (!frame_info) {
-            Py_CLEAR(result);
+            Py_DECREF(interpreter_threads);
             set_exception_cause(self, PyExc_RuntimeError, "Failed to unwind stack for thread");
-            goto exit;
+            return -1;
         }
 
-        if (PyList_Append(result, frame_info) == -1) {
+        if (PyList_Append(interpreter_threads, frame_info) == -1) {
             Py_DECREF(frame_info);
-            Py_CLEAR(result);
+            Py_DECREF(interpreter_threads);
             set_exception_cause(self, PyExc_RuntimeError, "Failed to append thread frame info");
-            goto exit;
+            return -1;
         }
         Py_DECREF(frame_info);
 
-        // We are targeting a single tstate, break here
-        if (self->tstate_addr) {
+        // If targeting specific thread or only active thread, process just one
+        if (self->tstate_addr || self->only_active_thread) {
             break;
         }
+    }
+    
+    // Create the InterpreterInfo StructSequence
+    RemoteDebuggingState *state = RemoteDebugging_GetStateFromObject((PyObject*)self);
+    PyObject *interpreter_info = PyStructSequence_New(state->InterpreterInfo_Type);
+    if (!interpreter_info) {
+        Py_DECREF(interpreter_threads);
+        set_exception_cause(self, PyExc_MemoryError, "Failed to create InterpreterInfo");
+        return -1;
+    }
+    
+    PyObject *interp_id = PyLong_FromLongLong(interpreter_id);
+    if (!interp_id) {
+        Py_DECREF(interpreter_threads);
+        Py_DECREF(interpreter_info);
+        set_exception_cause(self, PyExc_MemoryError, "Failed to create interpreter ID");
+        return -1;
+    }
+    
+    PyStructSequence_SetItem(interpreter_info, 0, interp_id);  // steals reference
+    PyStructSequence_SetItem(interpreter_info, 1, interpreter_threads);  // steals reference
+    
+    // Add this interpreter to the result list
+    if (PyList_Append(result, interpreter_info) == -1) {
+        Py_DECREF(interpreter_info);
+        set_exception_cause(self, PyExc_RuntimeError, "Failed to append interpreter info");
+        return -1;
+    }
+    Py_DECREF(interpreter_info);
+    
+    return 0;
+}
 
-        // If we're only processing the GIL holder, we're done after one iteration
-        if (self->only_active_thread && gil_holder != NULL) {
+static PyObject *
+_remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self)
+/*[clinic end generated code: output=666192b90c69d567 input=c527a4b858601408]*/
+{
+    PyObject* result = PyList_New(0);
+    if (!result) {
+        set_exception_cause(self, PyExc_MemoryError, "Failed to create stack trace result list");
+        return NULL;
+    }
+
+    // Iterate over all interpreters
+    uintptr_t current_interpreter = self->interpreter_addr;
+    while (current_interpreter != 0) {
+        // Read interpreter state to get the interpreter ID
+        char interp_state_buffer[INTERP_STATE_BUFFER_SIZE];
+        if (_Py_RemoteDebug_PagedReadRemoteMemory(
+                &self->handle,
+                current_interpreter,
+                INTERP_STATE_BUFFER_SIZE,
+                interp_state_buffer) < 0) {
+            set_exception_cause(self, PyExc_RuntimeError, "Failed to read interpreter state buffer");
+            Py_CLEAR(result);
+            goto exit;
+        }
+        
+        int64_t interpreter_id = GET_MEMBER(int64_t, interp_state_buffer,
+                self->debug_offsets.interpreter_state.id);
+        
+        if (process_interpreter_threads(self, current_interpreter, result, interpreter_id) < 0) {
+            Py_CLEAR(result);
+            goto exit;
+        }
+
+        // Get the next interpreter address
+        current_interpreter = GET_MEMBER(uintptr_t, interp_state_buffer,
+                self->debug_offsets.interpreter_state.next);
+
+        // If we're targeting a specific thread, stop after first interpreter
+        if (self->tstate_addr != 0) {
             break;
         }
     }
@@ -3053,6 +3135,14 @@ _remote_debugging_exec(PyObject *m)
         return -1;
     }
 
+    st->InterpreterInfo_Type = PyStructSequence_NewType(&InterpreterInfo_desc);
+    if (st->InterpreterInfo_Type == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(m, st->InterpreterInfo_Type) < 0) {
+        return -1;
+    }
+
     st->AwaitedInfo_Type = PyStructSequence_NewType(&AwaitedInfo_desc);
     if (st->AwaitedInfo_Type == NULL) {
         return -1;
@@ -3082,6 +3172,7 @@ remote_debugging_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->FrameInfo_Type);
     Py_VISIT(state->CoroInfo_Type);
     Py_VISIT(state->ThreadInfo_Type);
+    Py_VISIT(state->InterpreterInfo_Type);
     Py_VISIT(state->AwaitedInfo_Type);
     return 0;
 }
@@ -3095,6 +3186,7 @@ remote_debugging_clear(PyObject *mod)
     Py_CLEAR(state->FrameInfo_Type);
     Py_CLEAR(state->CoroInfo_Type);
     Py_CLEAR(state->ThreadInfo_Type);
+    Py_CLEAR(state->InterpreterInfo_Type);
     Py_CLEAR(state->AwaitedInfo_Type);
     return 0;
 }

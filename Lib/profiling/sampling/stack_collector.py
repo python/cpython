@@ -9,16 +9,22 @@ class StackTraceCollector(Collector):
         self.call_trees = []
         self.function_samples = collections.defaultdict(int)
 
-    def collect(self, stack_frames):
-        for thread_id, frames in stack_frames:
-            if frames:
-                # Store the complete call stack (reverse order - root first)
-                call_tree = list(reversed(frames))
-                self.call_trees.append(call_tree)
+    def _process_frames(self, frames):
+        """Process a single thread's frame stack."""
+        if not frames:
+            return
+            
+        # Store the complete call stack (reverse order - root first)
+        call_tree = list(reversed(frames))
+        self.call_trees.append(call_tree)
 
-                # Count samples per function
-                for frame in frames:
-                    self.function_samples[frame] += 1
+        # Count samples per function
+        for frame in frames:
+            self.function_samples[frame] += 1
+
+    def collect(self, stack_frames):
+        for frames in self._iter_all_frames(stack_frames):
+            self._process_frames(frames)
 
 
 class CollapsedStackCollector(StackTraceCollector):

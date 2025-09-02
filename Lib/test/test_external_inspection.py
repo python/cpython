@@ -140,15 +140,27 @@ class TestGetStackTrace(unittest.TestCase):
             ]
             # Is possible that there are more threads, so we check that the
             # expected stack traces are in the result (looking at you Windows!)
-            self.assertIn((ANY, thread_expected_stack_trace), stack_trace)
+            found_expected_stack = False
+            for interpreter_info in stack_trace:
+                for thread_info in interpreter_info.threads:
+                    if thread_info.frame_info == thread_expected_stack_trace:
+                        found_expected_stack = True
+                        break
+                if found_expected_stack:
+                    break
+            self.assertTrue(found_expected_stack, "Expected thread stack trace not found")
 
             # Check that the main thread stack trace is in the result
             frame = FrameInfo([script_name, 19, "<module>"])
-            for _, stack in stack_trace:
-                if frame in stack:
+            main_thread_found = False
+            for interpreter_info in stack_trace:
+                for thread_info in interpreter_info.threads:
+                    if frame in thread_info.frame_info:
+                        main_thread_found = True
+                        break
+                if main_thread_found:
                     break
-            else:
-                self.fail("Main thread stack trace not found in result")
+            self.assertTrue(main_thread_found, "Main thread stack trace not found in result")
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -1086,13 +1098,17 @@ class TestGetStackTrace(unittest.TestCase):
         # Is possible that there are more threads, so we check that the
         # expected stack traces are in the result (looking at you Windows!)
         this_tread_stack = None
-        for thread_id, stack in stack_trace:
-            if thread_id == threading.get_native_id():
-                this_tread_stack = stack
+        # New format: [InterpreterInfo(interpreter_id, [ThreadInfo(...)])]
+        for interpreter_info in stack_trace:
+            for thread_info in interpreter_info.threads:
+                if thread_info.thread_id == threading.get_native_id():
+                    this_tread_stack = thread_info.frame_info
+                    break
+            if this_tread_stack:
                 break
         self.assertIsNotNone(this_tread_stack)
         self.assertEqual(
-            stack[:2],
+            this_tread_stack[:2],
             [
                 FrameInfo(
                     [
@@ -1203,15 +1219,20 @@ class TestGetStackTrace(unittest.TestCase):
                     # Wait for the main thread to start its busy work
                     all_traces = unwinder_all.get_stack_trace()
                     found = False
-                    for thread_id, stack in all_traces:
-                        if not stack:
-                            continue
-                        current_frame = stack[0]
-                        if (
-                            current_frame.funcname == "main_work"
-                            and current_frame.lineno > 15
-                        ):
-                            found = True
+                    # New format: [InterpreterInfo(interpreter_id, [ThreadInfo(...)])]
+                    for interpreter_info in all_traces:
+                        for thread_info in interpreter_info.threads:
+                            if not thread_info.frame_info:
+                                continue
+                            current_frame = thread_info.frame_info[0]
+                            if (
+                                current_frame.funcname == "main_work"
+                                and current_frame.lineno > 15
+                            ):
+                                found = True
+                                break
+                        if found:
+                            break
 
                     if found:
                         break
@@ -1237,19 +1258,31 @@ class TestGetStackTrace(unittest.TestCase):
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
 
-            # Verify we got multiple threads in all_traces
+            # Count total threads across all interpreters in all_traces
+            total_threads = sum(len(interpreter_info.threads) for interpreter_info in all_traces)
             self.assertGreater(
-                len(all_traces), 1, "Should have multiple threads"
+                total_threads, 1, "Should have multiple threads"
             )
 
-            # Verify we got exactly one thread in gil_traces
+            # Count total threads across all interpreters in gil_traces
+            total_gil_threads = sum(len(interpreter_info.threads) for interpreter_info in gil_traces)
             self.assertEqual(
-                len(gil_traces), 1, "Should have exactly one GIL holder"
+                total_gil_threads, 1, "Should have exactly one GIL holder"
             )
 
-            # The GIL holder should be in the all_traces list
-            gil_thread_id = gil_traces[0][0]
-            all_thread_ids = [trace[0] for trace in all_traces]
+            # Get the GIL holder thread ID
+            gil_thread_id = None
+            for interpreter_info in gil_traces:
+                if interpreter_info.threads:
+                    gil_thread_id = interpreter_info.threads[0].thread_id
+                    break
+            
+            # Get all thread IDs from all_traces
+            all_thread_ids = []
+            for interpreter_info in all_traces:
+                for thread_info in interpreter_info.threads:
+                    all_thread_ids.append(thread_info.thread_id)
+            
             self.assertIn(
                 gil_thread_id,
                 all_thread_ids,
