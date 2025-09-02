@@ -75,7 +75,7 @@
 #endif
 #define INTERP_STATE_BUFFER_SIZE MAX(INTERP_STATE_MIN_SIZE, 256)
 
-
+#define MAX_TLBC_SIZE 2048
 
 // Copied from Modules/_asynciomodule.c because it's not exported
 
@@ -1568,15 +1568,34 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     TLBCCacheEntry *entry = NULL;
 
     // Read the TLBC array pointer
-    if (read_ptr(unwinder, tlbc_array_addr, &tlbc_array_ptr) != 0 || tlbc_array_ptr == 0) {
+    if (read_ptr(unwinder, tlbc_array_addr, &tlbc_array_ptr) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array pointer");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array pointer");
+        return 0; // Read error
+    }
+
+    // Validate TLBC array pointer
+    if (tlbc_array_ptr == 0) {
+        PyErr_SetString(PyExc_RuntimeError, "TLBC array pointer is NULL");
         return 0; // No TLBC array
     }
 
     // Read the TLBC array size
     Py_ssize_t tlbc_size;
-    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, tlbc_array_ptr, sizeof(tlbc_size), &tlbc_size) != 0 || tlbc_size <= 0) {
+    if (_Py_RemoteDebug_PagedReadRemoteMemory(&unwinder->handle, tlbc_array_ptr, sizeof(tlbc_size), &tlbc_size) != 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to read TLBC array size");
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to read TLBC array size");
+        return 0; // Read error
+    }
+
+    // Validate TLBC array size
+    if (tlbc_size <= 0) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid TLBC array size");
+        return 0; // Invalid size
+    }
+
+    if (tlbc_size > MAX_TLBC_SIZE) {
+        PyErr_SetString(PyExc_RuntimeError, "TLBC array size exceeds maximum limit");
         return 0; // Invalid size
     }
 
@@ -1584,6 +1603,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     size_t array_data_size = tlbc_size * sizeof(void*);
     tlbc_array = PyMem_RawMalloc(sizeof(Py_ssize_t) + array_data_size);
     if (!tlbc_array) {
+        PyErr_NoMemory();
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate TLBC array");
         return 0; // Memory error
     }
@@ -1597,6 +1617,7 @@ cache_tlbc_array(RemoteUnwinderObject *unwinder, uintptr_t code_addr, uintptr_t 
     // Create cache entry
     entry = PyMem_RawMalloc(sizeof(TLBCCacheEntry));
     if (!entry) {
+        PyErr_NoMemory();
         PyMem_RawFree(tlbc_array);
         set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate TLBC cache entry");
         return 0; // Memory error
@@ -1777,6 +1798,7 @@ parse_code_object(RemoteUnwinderObject *unwinder,
 
         meta = PyMem_RawMalloc(sizeof(CachedCodeMetadata));
         if (!meta) {
+            PyErr_NoMemory();
             set_exception_cause(unwinder, PyExc_MemoryError, "Failed to allocate cached code metadata");
             goto error;
         }
@@ -2493,6 +2515,8 @@ class _remote_debugging.RemoteUnwinder "RemoteUnwinderObject *" "&RemoteUnwinder
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=55f164d8803318be]*/
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _remote_debugging.RemoteUnwinder.__init__
     pid: int
     *
@@ -2526,7 +2550,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
                                                int only_active_thread,
                                                int debug)
-/*[clinic end generated code: output=13ba77598ecdcbe1 input=8f8f12504e17da04]*/
+/*[clinic end generated code: output=13ba77598ecdcbe1 input=cfc21663fbe263c4]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -2621,6 +2645,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @critical_section
 _remote_debugging.RemoteUnwinder.get_stack_trace
 
@@ -2659,7 +2684,7 @@ Raises:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=666192b90c69d567 input=f756f341206f9116]*/
+/*[clinic end generated code: output=666192b90c69d567 input=c527a4b858601408]*/
 {
     PyObject* result = NULL;
     // Read interpreter state into opaque buffer
@@ -2765,6 +2790,8 @@ exit:
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 @critical_section
 _remote_debugging.RemoteUnwinder.get_all_awaited_by
 
@@ -2810,7 +2837,7 @@ Example output:
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_all_awaited_by_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6a49cd345e8aec53 input=a452c652bb00701a]*/
+/*[clinic end generated code: output=6a49cd345e8aec53 input=307f754cbe38250c]*/
 {
     if (!self->async_debug_offsets_available) {
         PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");
@@ -2853,6 +2880,8 @@ result_err:
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 @critical_section
 _remote_debugging.RemoteUnwinder.get_async_stack_trace
 
@@ -2899,7 +2928,7 @@ Example output (similar structure to get_all_awaited_by but only for running tas
 
 static PyObject *
 _remote_debugging_RemoteUnwinder_get_async_stack_trace_impl(RemoteUnwinderObject *self)
-/*[clinic end generated code: output=6433d52b55e87bbe input=8744b47c9ec2220a]*/
+/*[clinic end generated code: output=6433d52b55e87bbe input=6129b7d509a887c9]*/
 {
     if (!self->async_debug_offsets_available) {
         PyErr_SetString(PyExc_RuntimeError, "AsyncioDebug section not available");

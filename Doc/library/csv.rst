@@ -113,7 +113,7 @@ The :mod:`csv` module defines the following functions:
           spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 
 
-.. function:: register_dialect(name[, dialect[, **fmtparams]])
+.. function:: register_dialect(name, /, dialect='excel', **fmtparams)
 
    Associate *dialect* with *name*.  *name* must be a string. The
    dialect can be specified either by passing a sub-class of :class:`Dialect`, or
@@ -139,7 +139,8 @@ The :mod:`csv` module defines the following functions:
    Return the names of all registered dialects.
 
 
-.. function:: field_size_limit([new_limit])
+.. function:: field_size_limit()
+              field_size_limit(new_limit)
 
    Returns the current maximum field size allowed by the parser. If *new_limit* is
    given, this becomes the new limit.
@@ -526,7 +527,7 @@ out surrounded by parens. This may cause some problems for other programs which
 read CSV files (assuming they support complex numbers at all).
 
 
-.. method:: csvwriter.writerow(row)
+.. method:: csvwriter.writerow(row, /)
 
    Write the *row* parameter to the writer's file object, formatted according
    to the current :class:`Dialect`. Return the return value of the call to the
@@ -535,7 +536,7 @@ read CSV files (assuming they support complex numbers at all).
    .. versionchanged:: 3.5
       Added support of arbitrary iterables.
 
-.. method:: csvwriter.writerows(rows)
+.. method:: csvwriter.writerows(rows, /)
 
    Write all elements in *rows* (an iterable of *row* objects as described
    above) to the writer's file object, formatted according to the current

@@ -360,6 +360,7 @@ _curses_panel_panel_bottom_impl(PyCursesPanelObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _curses_panel.panel.hide
 
 Hide the panel.
@@ -369,7 +370,7 @@ This does not delete the object, it just makes the window on screen invisible.
 
 static PyObject *
 _curses_panel_panel_hide_impl(PyCursesPanelObject *self)
-/*[clinic end generated code: output=a7bbbd523e1eab49 input=f6ab884e99386118]*/
+/*[clinic end generated code: output=a7bbbd523e1eab49 input=9071b463a39a1a6a]*/
 {
     int rtn = hide_panel(self->pan);
     return curses_panel_panel_check_err(self, rtn, "hide_panel", "hide");
