@@ -2259,14 +2259,14 @@ class BufferedRWPairTest:
             self.tp(self.MockRawIO(), self.MockRawIO(), 8, 12)
 
     def test_constructor_with_not_readable(self):
-        class NotReadable(MockRawIO):
+        class NotReadable(self.MockRawIO):
             def readable(self):
                 return False
 
         self.assertRaises(OSError, self.tp, NotReadable(), self.MockRawIO())
 
     def test_constructor_with_not_writeable(self):
-        class NotWriteable(MockRawIO):
+        class NotWriteable(self.MockRawIO):
             def writable(self):
                 return False
 
@@ -2412,9 +2412,9 @@ class BufferedRWPairTest:
         writer.close = lambda: None
 
     def test_isatty(self):
-        class SelectableIsAtty(MockRawIO):
+        class SelectableIsAtty(self.MockRawIO):
             def __init__(self, isatty):
-                MockRawIO.__init__(self)
+                super().__init__()
                 self._isatty = isatty
 
             def isatty(self):
