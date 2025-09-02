@@ -438,6 +438,7 @@ PyCursesPanel_Clear(PyObject *op)
         Py_DECREF(extra);
         if (set_panel_userptr(self->pan, NULL) == ERR) {
             curses_panel_panel_set_error(self, "set_panel_userptr", NULL);
+            return -1;
         }
     }
     // self->wo should not be cleared because an associated WINDOW may exist
@@ -451,7 +452,9 @@ PyCursesPanel_Dealloc(PyObject *self)
     PyObject_GC_UnTrack(self);
 
     PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
-    (void)PyCursesPanel_Clear(self);
+    if (PyCursesPanel_Clear(self) < 0) {
+        PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
+    }
     if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
         curses_panel_panel_set_error(po, "del_panel", "__del__");
         PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
