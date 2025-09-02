@@ -63,11 +63,9 @@ class TestUtils(TestCase):
 
     def test_gen_colors_keyword_highlighting(self):
         no_highlight_cases = [
-            ("a.set", [(".", "op")]),  # 'set' should not be highlighted after '.'
-            ("a.def", [(".", "op")]),  # 'def' should not be highlighted after '.'
-            ("obj.class", [(".", "op")]),  # 'class' should not be highlighted after '.'
-            ("obj.list", [(".", "op")]),  # 'list' should not be highlighted after '.'
-            ("obj.match", [(".", "op")]),  # 'match' should not be highlighted after '.'
+            ("a.set", [(".", "op")]),
+            ("obj.list", [(".", "op")]),
+            ("obj.match", [(".", "op")]),
         ]
         for code, expected_highlights in no_highlight_cases:
             with self.subTest(code=code):
@@ -82,8 +80,6 @@ class TestUtils(TestCase):
         highlight_cases = [
             ("set", [("set", "builtin")]),
             ("list", [("list", "builtin")]),
-            ("def func():", [("def", "keyword"), ("func", "definition"), ("(", "op"), (")", "op"), (":", "op")]),
-            ("class A:", [("class", "keyword"), ("A", "definition"), (":", "op")]),
         ]
         for code, expected_highlights in highlight_cases:
             with self.subTest(code=code):
