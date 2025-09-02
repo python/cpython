@@ -279,7 +279,7 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
    ...
 
 For this last case, many people use the ellipsis literal :code:`...` instead of
-:code:`pass`. This use has no special meaning to Python, and it is not part of
+:code:`pass`. This use has no special meaning to Python, and is not part of
 the language definition (you could use any constant expression here), but
 :code:`...` is used conventionally as a placeholder body as well.
 See :ref:`bltin-ellipsis-object`.
