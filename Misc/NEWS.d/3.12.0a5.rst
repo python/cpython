@@ -38,7 +38,7 @@ would get out of sync, causing inconsistent behavior and crashes.
 .. section: Core and Builtins
 
 Fix wrong lineno in exception message on :keyword:`continue` or
-:keyword:`break` which are not in a loop. Patch by Dong-hee Na.
+:keyword:`break` which are not in a loop. Patch by Donghee Na.
 
 ..
 
@@ -48,7 +48,7 @@ Fix wrong lineno in exception message on :keyword:`continue` or
 .. section: Core and Builtins
 
 Fix :func:`~unicodedata.is_normalized` to properly handle the UCD 3.2.0
-cases. Patch by Dong-hee Na.
+cases. Patch by Donghee Na.
 
 ..
 
@@ -253,7 +253,7 @@ Adapt the ``_elementtree`` extension module to multi-phase init
 .. section: Library
 
 Avoid potential unexpected ``freeaddrinfo`` call (double free) in
-:mod:`socket` when when a libc ``getaddrinfo()`` implementation leaves
+:mod:`socket` when a libc ``getaddrinfo()`` implementation leaves
 garbage in an output pointer when returning an error. Original patch by
 Sergey G. Brester.
 
@@ -287,7 +287,7 @@ a positional argument would lead to a :exc:`TypeError`.
 .. section: Library
 
 Group-related variables of ``_posixsubprocess`` module are renamed to stress
-that supplimentary group affinity is added to a fork, not replace the
+that supplementary group affinity is added to a fork, not replace the
 inherited ones. Patch by Oleg Iarygin.
 
 ..
@@ -307,7 +307,7 @@ It must not drop the ``Unpack`` part.
 .. nonce: wz4Xgc
 .. section: Library
 
-Add :func:`os.path.splitroot()`, which splits a path into a 3-item tuple
+Add :func:`os.path.splitroot`, which splits a path into a 3-item tuple
 ``(drive, root, tail)``. This new function is used by :mod:`pathlib` to
 improve the performance of path construction by up to a third.
 
@@ -506,8 +506,8 @@ inheritance.
 .. nonce: 7sQz5l
 .. section: Build
 
-Update BOLT configration not to use depreacted usage of ``--split
-functions``. Patch by Dong-hee Na.
+Update BOLT configuration not to use deprecated usage of ``--split
+functions``. Patch by Donghee Na.
 
 ..
 

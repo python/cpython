@@ -1,3 +1,0 @@
-Add *entrypoint* keyword-only parameter to
-:meth:`sqlite3.Connection.load_extension`, for overriding the SQLite
-extension entry point. Patch by Erlend E. Aasland.

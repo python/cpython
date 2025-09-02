@@ -1,5 +1,5 @@
-:mod:`selectors` --- High-level I/O multiplexing
-================================================
+:mod:`!selectors` --- High-level I/O multiplexing
+=================================================
 
 .. module:: selectors
    :synopsis: High-level I/O multiplexing.
@@ -21,7 +21,7 @@ It defines a :class:`BaseSelector` abstract base class, along with several
 concrete implementations (:class:`KqueueSelector`, :class:`EpollSelector`...),
 that can be used to wait for I/O readiness notification on multiple file
 objects. In the following, "file object" refers to any object with a
-:meth:`fileno()` method, or a raw file descriptor. See :term:`file object`.
+:meth:`~io.IOBase.fileno` method, or a raw file descriptor. See :term:`file object`.
 
 :class:`DefaultSelector` is an alias to the most efficient implementation
 available on the current platform: this should be the default choice for most
@@ -60,9 +60,9 @@ constants below:
    +-----------------------+-----------------------------------------------+
    | Constant              | Meaning                                       |
    +=======================+===============================================+
-   | :const:`EVENT_READ`   | Available for read                            |
+   | .. data:: EVENT_READ  | Available for read                            |
    +-----------------------+-----------------------------------------------+
-   | :const:`EVENT_WRITE`  | Available for write                           |
+   | .. data:: EVENT_WRITE | Available for write                           |
    +-----------------------+-----------------------------------------------+
 
 
@@ -103,7 +103,8 @@ constants below:
    :class:`BaseSelector` and its concrete implementations support the
    :term:`context manager` protocol.
 
-   .. abstractmethod:: register(fileobj, events, data=None)
+   .. method:: register(fileobj, events, data=None)
+      :abstractmethod:
 
       Register a file object for selection, monitoring it for I/O events.
 
@@ -116,7 +117,8 @@ constants below:
       :exc:`ValueError` in case of invalid event mask or file descriptor, or
       :exc:`KeyError` if the file object is already registered.
 
-   .. abstractmethod:: unregister(fileobj)
+   .. method:: unregister(fileobj)
+      :abstractmethod:
 
       Unregister a file object from selection, removing it from monitoring. A
       file object shall be unregistered prior to being closed.
@@ -132,15 +134,16 @@ constants below:
 
       Change a registered file object's monitored events or attached data.
 
-      This is equivalent to :meth:`BaseSelector.unregister(fileobj)` followed
-      by :meth:`BaseSelector.register(fileobj, events, data)`, except that it
+      This is equivalent to ``BaseSelector.unregister(fileobj)`` followed
+      by ``BaseSelector.register(fileobj, events, data)``, except that it
       can be implemented more efficiently.
 
       This returns a new :class:`SelectorKey` instance, or raises a
       :exc:`ValueError` in case of invalid event mask or file descriptor, or
       :exc:`KeyError` if the file object is not registered.
 
-   .. abstractmethod:: select(timeout=None)
+   .. method:: select(timeout=None)
+      :abstractmethod:
 
       Wait until some registered file objects become ready, or the timeout
       expires.
@@ -183,7 +186,8 @@ constants below:
       This returns the :class:`SelectorKey` instance associated to this file
       object, or raises :exc:`KeyError` if the file object is not registered.
 
-   .. abstractmethod:: get_map()
+   .. method:: get_map()
+      :abstractmethod:
 
       Return a mapping of file objects to selector keys.
 

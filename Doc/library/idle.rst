@@ -1,7 +1,7 @@
 .. _idle:
 
-IDLE
-====
+IDLE --- Python editor and shell
+================================
 
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 
@@ -12,13 +12,14 @@ IDLE
    single: Python Editor
    single: Integrated Development Environment
 
+..
+   Remember to update Lib/idlelib/help.html with idlelib.help.copy_source() when modifying this file.
+
 --------------
 
 IDLE is Python's Integrated Development and Learning Environment.
 
 IDLE has the following features:
-
-* coded in 100% pure Python, using the :mod:`tkinter` GUI toolkit
 
 * cross-platform: works mostly the same on Windows, Unix, and macOS
 
@@ -422,41 +423,34 @@ and that other files do not.  Run Python code with the Run menu.
 Key bindings
 ^^^^^^^^^^^^
 
-In this section, 'C' refers to the :kbd:`Control` key on Windows and Unix and
-the :kbd:`Command` key on macOS.
+The IDLE insertion cursor is a thin vertical bar between character
+positions.  When characters are entered, the insertion cursor and
+everything to its right moves right one character and
+the new character is entered in the new space.
 
-* :kbd:`Backspace` deletes to the left; :kbd:`Del` deletes to the right
+Several non-character keys move the cursor and possibly
+delete characters.  Deletion does not puts text on the clipboard,
+but IDLE has an undo list.  Wherever this doc discusses keys,
+'C' refers to the :kbd:`Control` key on Windows and
+Unix and the :kbd:`Command` key on macOS.  (And all such discussions
+assume that the keys have not been re-bound to something else.)
 
-* :kbd:`C-Backspace` delete word left; :kbd:`C-Del` delete word to the right
+* Arrow keys move the cursor one character or line.
 
-* Arrow keys and :kbd:`Page Up`/:kbd:`Page Down` to move around
+* :kbd:`C-LeftArrow` and :kbd:`C-RightArrow` moves left or right one word.
 
-* :kbd:`C-LeftArrow` and :kbd:`C-RightArrow` moves by words
+* :kbd:`Home` and :kbd:`End` go to the beginning or end of the line.
 
-* :kbd:`Home`/:kbd:`End` go to begin/end of line
+* :kbd:`Page Up` and :kbd:`Page Down` go up or down one screen.
 
-* :kbd:`C-Home`/:kbd:`C-End` go to begin/end of file
+* :kbd:`C-Home` and :kbd:`C-End` go to beginning or end of the file.
 
-* Some useful Emacs bindings are inherited from Tcl/Tk:
+* :kbd:`Backspace` and :kbd:`Del` (or :kbd:`C-d`) delete the previous
+  or next character.
 
-   * :kbd:`C-a` beginning of line
+* :kbd:`C-Backspace` and :kbd:`C-Del` delete one word left or right.
 
-   * :kbd:`C-e` end of line
-
-   * :kbd:`C-k` kill line (but doesn't put it in clipboard)
-
-   * :kbd:`C-l` center window around the insertion point
-
-   * :kbd:`C-b` go backward one character without deleting (usually you can
-     also use the cursor key for this)
-
-   * :kbd:`C-f` go forward one character without deleting (usually you can
-     also use the cursor key for this)
-
-   * :kbd:`C-p` go up one line (usually you can also use the cursor key for
-     this)
-
-   * :kbd:`C-d` delete next character
+* :kbd:`C-k` deletes ('kills') everything to the right.
 
 Standard keybindings (like :kbd:`C-c` to copy and :kbd:`C-v` to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.
@@ -479,7 +473,7 @@ Search and Replace
 
 Any selection becomes a search target.  However, only selections within
 a line work because searches are only performed within lines with the
-terminal newline removed.  If ``[x] Regular expresion`` is checked, the
+terminal newline removed.  If ``[x] Regular expression`` is checked, the
 target is interpreted according to the Python re module.
 
 .. _completions:
@@ -611,23 +605,18 @@ when one requests a restart on the Shell menu, or when one runs code
 in an editor window.
 
 The editing features described in previous subsections work when entering
-code interactively.  IDLE's Shell window also responds to the following keys.
+code interactively.  IDLE's Shell window also responds to the following:
 
-* :kbd:`C-c` interrupts executing command
+* :kbd:`C-c` attempts to interrupt statement execution (but may fail).
 
-* :kbd:`C-d` sends end-of-file; closes window if typed at a ``>>>`` prompt
+* :kbd:`C-d` closes Shell if typed at a ``>>>`` prompt.
 
-* :kbd:`Alt-/` (Expand word) is also useful to reduce typing
+* :kbd:`Alt-p` and :kbd:`Alt-n` (:kbd:`C-p` and :kbd:`C-n` on macOS)
+  retrieve to the current prompt the previous or next previously
+  entered statement that matches anything already typed.
 
-  Command history
-
-  * :kbd:`Alt-p` retrieves previous command matching what you have typed. On
-    macOS use :kbd:`C-p`.
-
-  * :kbd:`Alt-n` retrieves next. On macOS use :kbd:`C-n`.
-
-  * :kbd:`Return` while the cursor is on any previous command
-    retrieves that command
+* :kbd:`Return` while the cursor is on any previous statement
+  appends the latter to anything already typed at the prompt.
 
 Text colors
 ^^^^^^^^^^^
@@ -671,29 +660,61 @@ functions to be used from IDLE's Python shell.
 Command line usage
 ^^^^^^^^^^^^^^^^^^
 
-.. code-block:: none
+.. program:: idle
 
-   idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
+IDLE can be invoked from the command line with various options. The general syntax is:
 
-   -c command  run command in the shell window
-   -d          enable debugger and open shell window
-   -e          open editor window
-   -h          print help message with legal combinations and exit
-   -i          open shell window
-   -r file     run file in shell window
-   -s          run $IDLESTARTUP or $PYTHONSTARTUP first, in shell window
-   -t title    set title of shell window
-   -           run stdin in shell (- must be last option before args)
+.. code-block:: bash
 
-If there are arguments:
+   python -m idlelib [options] [file ...]
 
-* If ``-``, ``-c``, or ``r`` is used, all arguments are placed in
-  ``sys.argv[1:...]`` and ``sys.argv[0]`` is set to ``''``, ``'-c'``,
-  or ``'-r'``.  No editor window is opened, even if that is the default
-  set in the Options dialog.
+The following options are available:
 
-* Otherwise, arguments are files opened for editing and
-  ``sys.argv`` reflects the arguments passed to IDLE itself.
+.. option:: -c <command>
+
+   Run the specified Python command in the shell window.
+   For example, pass ``-c "print('Hello, World!')"``.
+   On Windows, the outer quotes must be double quotes as shown.
+
+.. option:: -d
+
+   Enable the debugger and open the shell window.
+
+.. option:: -e
+
+   Open an editor window.
+
+.. option:: -h
+
+   Print a help message with legal combinations of options and exit.
+
+.. option:: -i
+
+   Open a shell window.
+
+.. option:: -r <file>
+
+   Run the specified file in the shell window.
+
+.. option:: -s
+
+   Run the startup file (as defined by the environment variables :envvar:`IDLESTARTUP` or :envvar:`PYTHONSTARTUP`) before opening the shell window.
+
+.. option:: -t <title>
+
+   Set the title of the shell window.
+
+.. option:: -
+
+   Read and execute standard input in the shell window. This option must be the last one before any arguments.
+
+If arguments are provided:
+
+- If ``-``, ``-c``, or ``-r`` is used, all arguments are placed in ``sys.argv[1:]``,
+  and ``sys.argv[0]`` is set to ``''``, ``'-c'``, or ``'-r'`` respectively.
+  No editor window is opened, even if that is the default set in the *Options* dialog.
+- Otherwise, arguments are treated as files to be opened for editing, and ``sys.argv`` reflects the arguments passed to IDLE itself.
+
 
 Startup failure
 ^^^^^^^^^^^^^^^
@@ -985,8 +1006,8 @@ information.  The only current default extension is zzdummy, an example
 also used for testing.
 
 
-idlelib
--------
+idlelib --- implementation of IDLE application
+----------------------------------------------
 
 .. module:: idlelib
    :synopsis: Implementation package for the IDLE shell/editor.

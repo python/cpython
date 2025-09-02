@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 '''SMTP/ESMTP client class.
 
 This should follow RFC 821 (SMTP), RFC 1869 (ESMTP), RFC 2554 (SMTP
@@ -105,7 +103,7 @@ class SMTPSenderRefused(SMTPResponseException):
     """Sender address refused.
 
     In addition to the attributes set by on all SMTPResponseException
-    exceptions, this sets `sender' to the string that the SMTP refused.
+    exceptions, this sets 'sender' to the string that the SMTP refused.
     """
 
     def __init__(self, code, msg, sender):
@@ -178,6 +176,15 @@ def _quote_periods(bindata):
 
 def _fix_eols(data):
     return  re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data)
+
+
+try:
+    hmac.digest(b'', b'', 'md5')
+except ValueError:
+    _have_cram_md5_support = False
+else:
+    _have_cram_md5_support = True
+
 
 try:
     import ssl
@@ -315,7 +322,7 @@ class SMTP:
     def connect(self, host='localhost', port=0, source_address=None):
         """Connect to a host on a given port.
 
-        If the hostname ends with a colon (`:') followed by a number, and
+        If the hostname ends with a colon (':') followed by a number, and
         there is no port specified, that suffix will be stripped off and the
         number interpreted as the port number to use.
 
@@ -346,7 +353,7 @@ class SMTP:
         return (code, msg)
 
     def send(self, s):
-        """Send `s' to the server."""
+        """Send 's' to the server."""
         if self.debuglevel > 0:
             self._print_debug('send:', repr(s))
         if self.sock:
@@ -542,7 +549,7 @@ class SMTP:
                     raise SMTPNotSupportedError(
                         'SMTPUTF8 not supported by server')
             optionlist = ' ' + ' '.join(options)
-        self.putcmd("mail", "FROM:%s%s" % (quoteaddr(sender), optionlist))
+        self.putcmd("mail", "from:%s%s" % (quoteaddr(sender), optionlist))
         return self.getreply()
 
     def rcpt(self, recip, options=()):
@@ -550,7 +557,7 @@ class SMTP:
         optionlist = ''
         if options and self.does_esmtp:
             optionlist = ' ' + ' '.join(options)
-        self.putcmd("rcpt", "TO:%s%s" % (quoteaddr(recip), optionlist))
+        self.putcmd("rcpt", "to:%s%s" % (quoteaddr(recip), optionlist))
         return self.getreply()
 
     def data(self, msg):
@@ -667,8 +674,11 @@ class SMTP:
         # CRAM-MD5 does not support initial-response.
         if challenge is None:
             return None
-        return self.user + " " + hmac.HMAC(
-            self.password.encode('ascii'), challenge, 'md5').hexdigest()
+        if not _have_cram_md5_support:
+            raise SMTPException("CRAM-MD5 is not supported")
+        password = self.password.encode('ascii')
+        authcode = hmac.HMAC(password, challenge, 'md5')
+        return f"{self.user} {authcode.hexdigest()}"
 
     def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
@@ -720,8 +730,10 @@ class SMTP:
         advertised_authlist = self.esmtp_features["auth"].split()
 
         # Authentication methods we can handle in our preferred order:
-        preferred_auths = ['CRAM-MD5', 'PLAIN', 'LOGIN']
-
+        if _have_cram_md5_support:
+            preferred_auths = ['CRAM-MD5', 'PLAIN', 'LOGIN']
+        else:
+            preferred_auths = ['PLAIN', 'LOGIN']
         # We try the supported authentications in our preferred order, if
         # the server supports them.
         authlist = [auth for auth in preferred_auths

@@ -1,4 +1,0 @@
-Fix datetime.astimezone method return value when invoked on a naive datetime
-instance that represents local time falling in a timezone transition gap.
-PEP 495 requires that instances with fold=1 produce earlier times than those
-with fold=0 in this case.

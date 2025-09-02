@@ -1,6 +1,0 @@
-Fixed a bug that caused :mod:`hmac` to raise an exception when the requested
-hash algorithm was not available in OpenSSL despite being available
-separately as part of ``hashlib`` itself.  It now falls back properly to the
-built-in. This could happen when, for example, your OpenSSL does not include
-SHA3 support and you want to compute ``hmac.digest(b'K', b'M',
-'sha3_256')``.

@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """The Tab Nanny despises ambiguous indentation.  She knows no mercy.
 
 tabnanny -- Detection of ambiguous indentation
@@ -109,6 +107,10 @@ def check(file):
 
     except IndentationError as msg:
         errprint("%r: Indentation Error: %s" % (file, msg))
+        return
+
+    except SyntaxError as msg:
+        errprint("%r: Syntax Error: %s" % (file, msg))
         return
 
     except NannyNag as nag:
@@ -272,6 +274,12 @@ def format_witnesses(w):
     return prefix + " " + ', '.join(firsts)
 
 def process_tokens(tokens):
+    try:
+        _process_tokens(tokens)
+    except TabError as e:
+        raise NannyNag(e.lineno, e.msg, e.text)
+
+def _process_tokens(tokens):
     INDENT = tokenize.INDENT
     DEDENT = tokenize.DEDENT
     NEWLINE = tokenize.NEWLINE

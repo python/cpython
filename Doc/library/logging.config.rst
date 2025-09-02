@@ -1,5 +1,5 @@
-:mod:`logging.config` --- Logging configuration
-===============================================
+:mod:`!logging.config` --- Logging configuration
+================================================
 
 .. module:: logging.config
    :synopsis: Configuration of the logging module.
@@ -69,7 +69,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
              dictConfigClass(config).configure()
 
    For example, a subclass of :class:`DictConfigurator` could call
-   ``DictConfigurator.__init__()`` in its own :meth:`__init__()`, then
+   ``DictConfigurator.__init__()`` in its own :meth:`__init__`, then
    set up custom prefixes which would be usable in the subsequent
    :meth:`configure` call. :attr:`dictConfigClass` would be bound to
    this new subclass, and then :func:`dictConfig` could be called exactly as
@@ -87,10 +87,14 @@ in :mod:`logging` itself) and defining handlers which are declared either in
    provides a mechanism to present the choices and load the chosen
    configuration).
 
+   It will raise :exc:`FileNotFoundError` if the file
+   doesn't exist and :exc:`RuntimeError` if the file is invalid or
+   empty.
+
    :param fname: A filename, or a file-like object, or an instance derived
                  from :class:`~configparser.RawConfigParser`. If a
-                 ``RawConfigParser``-derived instance is passed, it is used as
-                 is. Otherwise, a :class:`~configparser.Configparser` is
+                 :class:`!RawConfigParser`-derived instance is passed, it is used as
+                 is. Otherwise, a :class:`~configparser.ConfigParser` is
                  instantiated, and the configuration read by it from the
                  object passed in ``fname``. If that has a :meth:`readline`
                  method, it is assumed to be a file-like object and read using
@@ -99,7 +103,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                  :meth:`~configparser.ConfigParser.read`.
 
 
-   :param defaults: Defaults to be passed to the ConfigParser can be specified
+   :param defaults: Defaults to be passed to the :class:`!ConfigParser` can be specified
                     in this argument.
 
    :param disable_existing_loggers: If specified as ``False``, loggers which
@@ -111,7 +115,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     they or their ancestors are explicitly named
                                     in the logging configuration.
 
-    :param encoding: The encoding used to open file when *fname* is filename.
+   :param encoding: The encoding used to open file when *fname* is filename.
 
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
@@ -123,8 +127,12 @@ in :mod:`logging` itself) and defining handlers which are declared either in
         application (e.g. based on command-line parameters or other aspects
         of the runtime environment) before being passed to ``fileConfig``.
 
-    .. versionadded:: 3.10
-       The *encoding* parameter is added.
+    .. versionchanged:: 3.10
+       Added the *encoding* parameter.
+
+    .. versionchanged:: 3.12
+       An exception will be thrown if the provided file
+       doesn't exist or is invalid or empty.
 
 .. function:: listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None)
 
@@ -249,11 +257,11 @@ otherwise, the context is used to determine what to instantiate.
   which correspond to the arguments passed to create a
   :class:`~logging.Formatter` object:
 
-   * ``format``
-   * ``datefmt``
-   * ``style``
-   * ``validate`` (since version >=3.8)
-   * ``defaults`` (since version >=3.12)
+  * ``format``
+  * ``datefmt``
+  * ``style``
+  * ``validate`` (since version >=3.8)
+  * ``defaults`` (since version >=3.12)
 
   An optional ``class`` key indicates the name of the formatter's
   class (as a dotted module and class name).  The instantiation
@@ -536,11 +544,11 @@ valid keyword parameter name, and so will not clash with the names of
 the keyword arguments used in the call.  The ``'()'`` also serves as a
 mnemonic that the corresponding value is a callable.
 
-    .. versionchanged:: 3.11
-       The ``filters`` member of ``handlers`` and ``loggers`` can take
-       filter instances in addition to ids.
+.. versionchanged:: 3.11
+   The ``filters`` member of ``handlers`` and ``loggers`` can take
+   filter instances in addition to ids.
 
-You can also specify a special key ``'.'`` whose value is a dictionary is a
+You can also specify a special key ``'.'`` whose value is a
 mapping of attribute names to values. If found, the specified attributes will
 be set on the user-defined object before it is returned. Thus, with the
 following configuration::
@@ -578,7 +586,7 @@ configuration dictionary for the handler named ``foo``, and later (once that
 handler has been configured) it points to the configured handler instance.
 Thus, ``cfg://handlers.foo`` could resolve to either a dictionary or a handler
 instance. In general, it is wise to name handlers in a way such that dependent
-handlers are configured _after_ any handlers they depend on; that allows
+handlers are configured *after* any handlers they depend on; that allows
 something like ``cfg://handlers.foo`` to be used in configuring a handler that
 depends on handler ``foo``. If that dependent handler were named ``bar``,
 problems would result, because the configuration of ``bar`` would be attempted
@@ -677,7 +685,8 @@ resolve to ``'dev_team@domain.tld'`` and the string
 ``'support_team@domain.tld'``. The ``subject`` value could be accessed
 using either ``'cfg://handlers.email.subject'`` or, equivalently,
 ``'cfg://handlers.email[subject]'``.  The latter form only needs to be
-used if the key contains spaces or non-alphanumeric characters.  If an
+used if the key contains spaces or non-alphanumeric characters. Please note
+that the characters ``[`` and ``]`` are not allowed in the keys. If an
 index value consists only of decimal digits, access will be attempted
 using the corresponding integer value, falling back to the string
 value if needed.
@@ -744,13 +753,17 @@ The ``queue`` and ``listener`` keys are optional.
 
 If the ``queue`` key is present, the corresponding value can be one of the following:
 
-* An actual instance of :class:`queue.Queue` or a subclass thereof. This is of course
-  only possible if you are constructing or modifying the configuration dictionary in
-  code.
+* An object implementing the :meth:`Queue.put_nowait <queue.Queue.put_nowait>`
+  and :meth:`Queue.get <queue.Queue.get>` public API. For instance, this may be
+  an actual instance of :class:`queue.Queue` or a subclass thereof, or a proxy
+  obtained by :meth:`multiprocessing.managers.SyncManager.Queue`.
+
+  This is of course only possible if you are constructing or modifying
+  the configuration dictionary in code.
 
 * A string that resolves to a callable which, when called with no arguments, returns
-  the :class:`queue.Queue` instance to use. That callable could be a
-  :class:`queue.Queue` subclass or a function which returns a suitable queue instance,
+  the queue instance to use. That callable could be a :class:`queue.Queue` subclass
+  or a function which returns a suitable queue instance,
   such as ``my.module.queue_factory()``.
 
 * A dict with a ``'()'`` key which is constructed in the usual way as discussed in

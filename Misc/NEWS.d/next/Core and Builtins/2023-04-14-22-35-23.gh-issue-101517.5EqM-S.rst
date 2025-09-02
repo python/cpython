@@ -1,1 +1,0 @@
-Fix bug in line numbers of instructions emitted for :keyword:`except* <except_star>`.

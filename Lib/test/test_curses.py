@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
-                          check_disallow_instantiation)
+                          check_disallow_instantiation, MISSING_C_DOCSTRINGS,
+                          gc_collect)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -129,6 +130,9 @@ class TestCurses(unittest.TestCase):
         curses.use_env(False)
         curses.use_env(True)
 
+    def test_error(self):
+        self.assertIsSubclass(curses.error, Exception)
+
     def test_create_windows(self):
         win = curses.newwin(5, 10)
         self.assertEqual(win.getbegyx(), (0, 0))
@@ -180,6 +184,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win3.getbegyx(), (4, 8))
         self.assertEqual(win3.getparyx(), (2, 1))
         self.assertEqual(win3.getmaxyx(), (6, 11))
+
+    def test_subwindows_references(self):
+        win = curses.newwin(5, 10)
+        win2 = win.subwin(3, 7)
+        del win
+        gc_collect()
+        del win2
+        gc_collect()
 
     def test_move_cursor(self):
         stdscr = self.stdscr
@@ -751,7 +763,6 @@ class TestCurses(unittest.TestCase):
         curses.nl(False)
         curses.nl()
 
-
     def test_input_options(self):
         stdscr = self.stdscr
 
@@ -943,9 +954,6 @@ class TestCurses(unittest.TestCase):
 
     @requires_colors
     def test_pair_content(self):
-        if not hasattr(curses, 'use_default_colors'):
-            self.assertEqual(curses.pair_content(0),
-                             (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
         maxpair = self.get_pair_limit() - 1
         if maxpair > 0:
@@ -990,13 +998,27 @@ class TestCurses(unittest.TestCase):
     @requires_curses_func('use_default_colors')
     @requires_colors
     def test_use_default_colors(self):
-        old = curses.pair_content(0)
         try:
             curses.use_default_colors()
         except curses.error:
             self.skipTest('cannot change color (use_default_colors() failed)')
         self.assertEqual(curses.pair_content(0), (-1, -1))
-        self.assertIn(old, [(curses.COLOR_WHITE, curses.COLOR_BLACK), (-1, -1), (0, 0)])
+
+    @requires_curses_func('assume_default_colors')
+    @requires_colors
+    def test_assume_default_colors(self):
+        try:
+            curses.assume_default_colors(-1, -1)
+        except curses.error:
+            self.skipTest('cannot change color (assume_default_colors() failed)')
+        self.assertEqual(curses.pair_content(0), (-1, -1))
+        curses.assume_default_colors(curses.COLOR_YELLOW, curses.COLOR_BLUE)
+        self.assertEqual(curses.pair_content(0), (curses.COLOR_YELLOW, curses.COLOR_BLUE))
+        curses.assume_default_colors(curses.COLOR_RED, -1)
+        self.assertEqual(curses.pair_content(0), (curses.COLOR_RED, -1))
+        curses.assume_default_colors(-1, curses.COLOR_GREEN)
+        self.assertEqual(curses.pair_content(0), (-1, curses.COLOR_GREEN))
+        curses.assume_default_colors(-1, -1)
 
     def test_keyname(self):
         # TODO: key_name()
@@ -1081,6 +1103,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(curses.LINES, lines)
         self.assertEqual(curses.COLS, cols)
 
+        with self.assertRaises(OverflowError):
+            curses.resize_term(35000, 1)
+        with self.assertRaises(OverflowError):
+            curses.resize_term(1, 35000)
+        # GH-120378: Overflow failure in resize_term() causes refresh to fail
+        tmp = curses.initscr()
+        tmp.erase()
+
     @requires_curses_func('resizeterm')
     def test_resizeterm(self):
         curses.update_lines_cols()
@@ -1094,6 +1124,14 @@ class TestCurses(unittest.TestCase):
         curses.resizeterm(lines, cols)
         self.assertEqual(curses.LINES, lines)
         self.assertEqual(curses.COLS, cols)
+
+        with self.assertRaises(OverflowError):
+            curses.resizeterm(35000, 1)
+        with self.assertRaises(OverflowError):
+            curses.resizeterm(1, 35000)
+        # GH-120378: Overflow failure in resizeterm() causes refresh to fail
+        tmp = curses.initscr()
+        tmp.erase()
 
     def test_ungetch(self):
         curses.ungetch(b'A')
@@ -1142,6 +1180,8 @@ class TestCurses(unittest.TestCase):
         with self.assertRaises(TypeError):
             del stdscr.encoding
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_issue21088(self):
         stdscr = self.stdscr
         #
@@ -1220,7 +1260,7 @@ class TestAscii(unittest.TestCase):
 
     def test_controlnames(self):
         for name in curses.ascii.controlnames:
-            self.assertTrue(hasattr(curses.ascii, name), name)
+            self.assertHasAttr(curses.ascii, name)
 
     def test_ctypes(self):
         def check(func, expected):
@@ -1364,26 +1404,33 @@ class TextboxTest(unittest.TestCase):
         self.mock_win.reset_mock()
         self.textbox.do_command(curses.KEY_LEFT)
         self.mock_win.move.assert_called_with(1, 0)
+        self.mock_win.reset_mock()
+
+    def test_move_right(self):
+        """Test moving the cursor right."""
+        self.mock_win.reset_mock()
         self.textbox.do_command(curses.KEY_RIGHT)
         self.mock_win.move.assert_called_with(1, 2)
         self.mock_win.reset_mock()
 
-    def test_move_left(self):
-        """Test moving the cursor left."""
+    def test_move_left_and_right(self):
+        """Test moving the cursor left and then right."""
         self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_LEFT)
+        self.mock_win.move.assert_called_with(1, 0)
         self.textbox.do_command(curses.KEY_RIGHT)
         self.mock_win.move.assert_called_with(1, 2)
         self.mock_win.reset_mock()
 
     def test_move_up(self):
-        """Test moving the cursor left."""
+        """Test moving the cursor up."""
         self.mock_win.reset_mock()
         self.textbox.do_command(curses.KEY_UP)
         self.mock_win.move.assert_called_with(0, 1)
         self.mock_win.reset_mock()
 
     def test_move_down(self):
-        """Test moving the cursor left."""
+        """Test moving the cursor down."""
         self.mock_win.reset_mock()
         self.textbox.do_command(curses.KEY_DOWN)
         self.mock_win.move.assert_called_with(2, 1)

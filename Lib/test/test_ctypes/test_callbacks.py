@@ -1,18 +1,24 @@
+import ctypes
 import functools
+import gc
+import math
+import sys
 import unittest
-from test import support
-
-from ctypes import *
-from test.test_ctypes import need_symbol
 from _ctypes import CTYPES_MAX_ARGCOUNT
-import _ctypes_test
+from ctypes import (CDLL, cdll, Structure, CFUNCTYPE,
+                    ArgumentError, POINTER, sizeof,
+                    c_byte, c_ubyte, c_char,
+                    c_short, c_ushort, c_int, c_uint,
+                    c_long, c_longlong, c_ulonglong, c_ulong,
+                    c_float, c_double, c_longdouble, py_object)
+from ctypes.util import find_library
+from test import support
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
+
 
 class Callbacks(unittest.TestCase):
     functype = CFUNCTYPE
-
-##    def tearDown(self):
-##        import gc
-##        gc.collect()
 
     def callback(self, *args):
         self.got_args = args
@@ -34,8 +40,6 @@ class Callbacks(unittest.TestCase):
         else:
             self.assertEqual(self.got_args, (-3, arg))
             self.assertEqual(result, arg)
-
-    ################
 
     def test_byte(self):
         self.check_type(c_byte, 42)
@@ -65,18 +69,15 @@ class Callbacks(unittest.TestCase):
     def test_ulong(self):
         self.check_type(c_ulong, 42)
 
-    @need_symbol('c_longlong')
     def test_longlong(self):
         self.check_type(c_longlong, 42)
         self.check_type(c_longlong, -42)
 
-    @need_symbol('c_ulonglong')
     def test_ulonglong(self):
         self.check_type(c_ulonglong, 42)
 
     def test_float(self):
         # only almost equal: double -> float -> double
-        import math
         self.check_type(c_float, math.e)
         self.check_type(c_float, -math.e)
 
@@ -84,7 +85,6 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_double, 3.14)
         self.check_type(c_double, -3.14)
 
-    @need_symbol('c_longdouble')
     def test_longdouble(self):
         self.check_type(c_longdouble, 3.14)
         self.check_type(c_longdouble, -3.14)
@@ -93,30 +93,21 @@ class Callbacks(unittest.TestCase):
         self.check_type(c_char, b"x")
         self.check_type(c_char, b"a")
 
-    # disabled: would now (correctly) raise a RuntimeWarning about
-    # a memory leak.  A callback function cannot return a non-integral
-    # C type without causing a memory leak.
-    @unittest.skip('test disabled')
-    def test_char_p(self):
-        self.check_type(c_char_p, "abc")
-        self.check_type(c_char_p, "def")
-
     def test_pyobject(self):
         o = ()
-        from sys import getrefcount as grc
         for o in (), [], object():
-            initial = grc(o)
+            initial = sys.getrefcount(o)
             # This call leaks a reference to 'o'...
             self.check_type(py_object, o)
-            before = grc(o)
+            before = sys.getrefcount(o)
             # ...but this call doesn't leak any more.  Where is the refcount?
             self.check_type(py_object, o)
-            after = grc(o)
+            after = sys.getrefcount(o)
             self.assertEqual((after, o), (before, o))
 
     def test_unsupported_restype_1(self):
         # Only "fundamental" result types are supported for callback
-        # functions, the type must have a non-NULL stgdict->setfunc.
+        # functions, the type must have a non-NULL stginfo->setfunc.
         # POINTER(c_double), for example, is not supported.
 
         prototype = self.functype.__func__(POINTER(c_double))
@@ -130,12 +121,11 @@ class Callbacks(unittest.TestCase):
     def test_issue_7959(self):
         proto = self.functype.__func__(None)
 
-        class X(object):
+        class X:
             def func(self): pass
             def __init__(self):
                 self.v = proto(self.func)
 
-        import gc
         for i in range(32):
             X()
         gc.collect()
@@ -144,33 +134,30 @@ class Callbacks(unittest.TestCase):
         self.assertEqual(len(live), 0)
 
     def test_issue12483(self):
-        import gc
         class Nasty:
             def __del__(self):
                 gc.collect()
         CFUNCTYPE(None)(lambda x=Nasty(): None)
 
-    @need_symbol('WINFUNCTYPE')
+    @unittest.skipUnless(hasattr(ctypes, 'WINFUNCTYPE'),
+                         'ctypes.WINFUNCTYPE is required')
     def test_i38748_stackCorruption(self):
-        callback_funcType = WINFUNCTYPE(c_long, c_long, c_longlong)
+        callback_funcType = ctypes.WINFUNCTYPE(c_long, c_long, c_longlong)
         @callback_funcType
         def callback(a, b):
             c = a + b
             print(f"a={a}, b={b}, c={c}")
             return c
         dll = cdll[_ctypes_test.__file__]
-        # With no fix for i38748, the next line will raise OSError and cause the test to fail.
-        self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
+        with support.captured_stdout() as out:
+            # With no fix for i38748, the next line will raise OSError and cause the test to fail.
+            self.assertEqual(dll._test_i38748_runCallback(callback, 5, 10), 15)
+            self.assertEqual(out.getvalue(), "a=5, b=10, c=15\n")
 
+if hasattr(ctypes, 'WINFUNCTYPE'):
+    class StdcallCallbacks(Callbacks):
+        functype = ctypes.WINFUNCTYPE
 
-@need_symbol('WINFUNCTYPE')
-class StdcallCallbacks(Callbacks):
-    try:
-        functype = WINFUNCTYPE
-    except NameError:
-        pass
-
-################################################################
 
 class SampleCallbacksTestCase(unittest.TestCase):
 
@@ -195,7 +182,6 @@ class SampleCallbacksTestCase(unittest.TestCase):
         self.assertLess(diff, 0.01, "%s not less than 0.01" % diff)
 
     def test_issue_8959_a(self):
-        from ctypes.util import find_library
         libc_path = find_library("c")
         if not libc_path:
             self.skipTest('could not find libc')
@@ -210,19 +196,21 @@ class SampleCallbacksTestCase(unittest.TestCase):
         libc.qsort(array, len(array), sizeof(c_int), cmp_func)
         self.assertEqual(array[:], [1, 5, 7, 33, 99])
 
-    @need_symbol('WINFUNCTYPE')
+    @unittest.skipUnless(hasattr(ctypes, 'WINFUNCTYPE'),
+                         'ctypes.WINFUNCTYPE is required')
     def test_issue_8959_b(self):
         from ctypes.wintypes import BOOL, HWND, LPARAM
         global windowCount
         windowCount = 0
 
-        @WINFUNCTYPE(BOOL, HWND, LPARAM)
+        @ctypes.WINFUNCTYPE(BOOL, HWND, LPARAM)
         def EnumWindowsCallbackFunc(hwnd, lParam):
             global windowCount
             windowCount += 1
             return True #Allow windows to keep enumerating
 
-        windll.user32.EnumWindows(EnumWindowsCallbackFunc, 0)
+        user32 = ctypes.windll.user32
+        user32.EnumWindows(EnumWindowsCallbackFunc, 0)
 
     def test_callback_register_int(self):
         # Issue #8275: buggy handling of callback args under Win64
@@ -336,9 +324,9 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
             self.assertIsInstance(cm.unraisable.exc_value, TypeError)
             self.assertEqual(cm.unraisable.err_msg,
-                             "Exception ignored on converting result "
-                             "of ctypes callback function")
-            self.assertIs(cm.unraisable.object, func)
+                             f"Exception ignored while converting result "
+                             f"of ctypes callback function {func!r}")
+            self.assertIsNone(cm.unraisable.object)
 
 
 if __name__ == '__main__':

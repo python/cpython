@@ -1,0 +1,56 @@
+name: Crash report
+description: A hard crash of the interpreter, possibly with a core dump
+labels: ["type-crash"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+          This form is for hard crashes of the Python interpreter, segmentation faults, failed C-level assertions, and similar. Unexpected exceptions raised from Python functions in the standard library count as bugs rather than crashes.
+
+          The CPython interpreter is written in a different programming language, C. A "CPython crash" is when Python itself fails, leading to a traceback in the C stack.
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: >
+        Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
+        [Copy and paste code where possible rather than using screenshots](https://meta.stackoverflow.com/a/285557/13990016),
+        and put any code blocks inside triple backticks.
+
+      value: |
+        ```python
+        # Add a code block here, if required
+        ```
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: "CPython versions tested on:"
+      multiple: true
+      options:
+        - "3.9"
+        - "3.10"
+        - "3.11"
+        - "3.12"
+        - "3.13"
+        - "3.14"
+        - "3.15"
+        - "CPython main branch"
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: "Operating systems tested on:"
+      multiple: true
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: false
+  - type: input
+    attributes:
+      label: "Output from running 'python -VV' on the command line:"
+      description: If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.
+    validations:
+      required: false

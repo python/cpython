@@ -1,1 +1,0 @@
-Adapt the :mod:`winreg` extension module to :pep:`687`.

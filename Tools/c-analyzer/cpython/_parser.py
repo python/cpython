@@ -66,13 +66,12 @@ Python/dynload_aix.c            # sys/ldr.h
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/emscripten_signal.c
+Python/emscripten_syscalls.c
 Python/thread_pthread.h
 Python/thread_pthread_stubs.h
 
 # only huge constants (safe but parsing is slow)
-Modules/_ssl_data.h
-Modules/_ssl_data_300.h
-Modules/_ssl_data_111.h
+Modules/_ssl_data_*.h
 Modules/cjkcodecs/mappings_*.h
 Modules/unicodedata_db.h
 Modules/unicodename_db.h
@@ -82,9 +81,19 @@ Objects/unicodetype_db.h
 Python/deepfreeze/*.c
 Python/frozen_modules/*.h
 Python/generated_cases.c.h
+Python/executor_cases.c.h
+Python/optimizer_cases.c.h
+# XXX: Throws errors if PY_VERSION_HEX is not mocked out
+Modules/clinic/_testclinic_depr.c.h
 
 # not actually source
 Python/bytecodes.c
+Python/optimizer_bytecodes.c
+
+# mimalloc
+Objects/mimalloc/*.c
+Include/internal/mimalloc/*.h
+Include/internal/mimalloc/mimalloc/*.h
 
 # @end=conf@
 ''')
@@ -96,6 +105,7 @@ EXCLUDED += clean_lines('''
 # The problem with xmlparse.c is that something
 # has gone wrong where # we handle "maybe inline actual"
 # in Tools/c-analyzer/c_parser/parser/_global.py.
+Modules/expat/internal.h
 Modules/expat/xmlparse.c
 ''')
 
@@ -106,21 +116,25 @@ glob	dirname
 *	.
 *	./Include
 *	./Include/internal
+*   ./Include/internal/mimalloc
 
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
 Modules/_elementtree.c	Modules/expat
 Modules/_hacl/*.c	Modules/_hacl/include
+Modules/_hacl/*.c	Modules/_hacl/
 Modules/_hacl/*.h	Modules/_hacl/include
+Modules/_hacl/*.h	Modules/_hacl/
 Modules/md5module.c	Modules/_hacl/include
 Modules/sha1module.c	Modules/_hacl/include
 Modules/sha2module.c	Modules/_hacl/include
 Modules/sha3module.c	Modules/_hacl/include
+Modules/blake2module.c	Modules/_hacl/include
+Modules/hmacmodule.c	Modules/_hacl/include
 Objects/stringlib/*.h	Objects
 
 # possible system-installed headers, just in case
 Modules/_tkinter.c	/usr/include/tcl8.6
 Modules/_uuidmodule.c	/usr/include/uuid
-Modules/nismodule.c	/usr/include/tirpc
 Modules/tkappinit.c	/usr/include/tcl
 
 # @end=tsv@
@@ -158,6 +172,7 @@ Objects/stringlib/count.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/find.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/partition.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/replace.h	Objects/stringlib/fastsearch.h
+Objects/stringlib/repr.h	Objects/stringlib/fastsearch.h
 Objects/stringlib/split.h	Objects/stringlib/fastsearch.h
 
 # @end=tsv@
@@ -226,6 +241,7 @@ Include/cpython/fileobject.h	Py_CPYTHON_FILEOBJECT_H	1
 Include/cpython/fileutils.h	Py_CPYTHON_FILEUTILS_H	1
 Include/cpython/frameobject.h	Py_CPYTHON_FRAMEOBJECT_H	1
 Include/cpython/import.h	Py_CPYTHON_IMPORT_H	1
+Include/cpython/interpreteridobject.h	Py_CPYTHON_INTERPRETERIDOBJECT_H	1
 Include/cpython/listobject.h	Py_CPYTHON_LISTOBJECT_H	1
 Include/cpython/methodobject.h	Py_CPYTHON_METHODOBJECT_H	1
 Include/cpython/object.h	Py_CPYTHON_OBJECT_H	1
@@ -276,6 +292,7 @@ Modules/_dbmmodule.c	HAVE_GDBM_DASH_NDBM_H	1
 Modules/_sre/sre_lib.h	LOCAL(type)	static inline type
 Modules/_sre/sre_lib.h	SRE(F)	sre_ucs2_##F
 Objects/stringlib/codecs.h	STRINGLIB_IS_UNICODE	1
+Include/internal/pycore_crossinterp_data_registry.h	Py_CORE_CROSSINTERP_DATA_REGISTRY_H	1
 
 # @end=tsv@
 ''')[1:]
@@ -309,10 +326,13 @@ MAX_SIZES = {
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
     _abs('Modules/expat/expat.h'): (10_000, 400),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
-    _abs('Objects/typeobject.c'): (35_000, 200),
+    _abs('Objects/typeobject.c'): (380_000, 13_000),
     _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/optimizer.c'): (100_000, 5_000),
+    _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
+    _abs('Python/initconfig.c'): (50_000, 500),
 
     # Generated files:
     _abs('Include/internal/pycore_opcode.h'): (10_000, 1000),
@@ -324,7 +344,7 @@ MAX_SIZES = {
     _abs('Python/stdlib_module_names.h'): (5_000, 500),
 
     # These large files are currently ignored (see above).
-    _abs('Modules/_ssl_data.h'): (80_000, 10_000),
+    _abs('Modules/_ssl_data_31.h'): (80_000, 10_000),
     _abs('Modules/_ssl_data_300.h'): (80_000, 10_000),
     _abs('Modules/_ssl_data_111.h'): (80_000, 10_000),
     _abs('Modules/cjkcodecs/mappings_*.h'): (160_000, 2_000),

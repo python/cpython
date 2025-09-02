@@ -1,15 +1,12 @@
 {
-    "build": {
-        "dockerfile": "Dockerfile"
-    },
+    "image": "ghcr.io/python/devcontainer:latest",
     "onCreateCommand": [
         // Install common tooling.
         "dnf",
         "install",
         "-y",
-        "which",
-        "zsh",
-        "fish"
+        // For umask fix below.
+        "/usr/bin/setfacl"
     ],
     "updateContentCommand": {
         // Using the shell for `nproc` usage.
@@ -22,6 +19,11 @@
             "html"
         ]
     },
+    "postCreateCommand": {
+        // https://github.com/orgs/community/discussions/26026
+        "umask fix: workspace": ["sudo", "setfacl", "-bnR", "."],
+        "umask fix: /tmp": ["sudo", "setfacl", "-bnR", "/tmp"]
+    },
     "customizations": {
         "vscode": {
             "extensions": [
@@ -31,10 +33,10 @@
                 "maelvalais.autoconf",
                 // C auto-complete.
                 "ms-vscode.cpptools",
-                // To view built docs.
-                "ms-vscode.live-server"
-                // https://github.com/microsoft/vscode-python/issues/18073
-                // "ms-python.python"
+                // To view HTML build of docs.
+                "ms-vscode.live-server",
+                // Python auto-complete.
+                "ms-python.python"
             ],
             "settings": {
                 "C_Cpp.default.compilerPath": "/usr/bin/clang",
