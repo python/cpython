@@ -186,9 +186,6 @@ This module offers the following functions:
    This function deletes a key and all its descendants. If *sub_key* is
    ``None``, all subkeys and values of the specified key are deleted.
 
-   If the function succeeds, the entire key tree is removed.
-   If the function fails, an :exc:`OSError` exception is raised.
-
    .. audit-event:: winreg.DeleteTree key,sub_key winreg.DeleteTree
 
    .. versionadded:: next
