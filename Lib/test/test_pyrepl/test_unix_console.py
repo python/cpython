@@ -1,8 +1,8 @@
+import errno
 import itertools
 import os
 import sys
 import unittest
-import errno
 import termios
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
