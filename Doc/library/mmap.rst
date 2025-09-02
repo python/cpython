@@ -312,11 +312,10 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       Return the length of the file, which can be larger than the size of the
       memory-mapped area.
+      For anonymous mapping, return its size.
 
-      .. versionchanged:: 3.11
-         For a mapping of anonymous memory, the size is now returned on both
-         Unix and Windows. Previously, the size would be returned on Windows
-         and an :exc:`OSError` would be raised on Unix.
+      .. versionchanged:: next
+         Supports anonymous mapping on Unix.
 
 
    .. method:: tell()
