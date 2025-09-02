@@ -746,13 +746,6 @@ signaldict_setitem(PyObject *self, PyObject *key, PyObject *value)
     return 0;
 }
 
-static int
-signaldict_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
 signaldict_dealloc(PyObject *self)
 {
@@ -845,7 +838,7 @@ static PyMethodDef signaldict_methods[] = {
 
 static PyType_Slot signaldict_slots[] = {
     {Py_tp_dealloc, signaldict_dealloc},
-    {Py_tp_traverse, signaldict_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_repr, signaldict_repr},
     {Py_tp_hash, PyObject_HashNotImplemented},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -2235,13 +2228,6 @@ PyDecType_New(decimal_state *state, PyTypeObject *type)
     return (PyObject *)dec;
 }
 #define dec_alloc(st) PyDecType_New(st, (st)->PyDec_Type)
-
-static int
-dec_traverse(PyObject *dec, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(dec));
-    return 0;
-}
 
 static void
 dec_dealloc(PyObject *dec)
@@ -6121,7 +6107,7 @@ static PyType_Slot dec_slots[] = {
     {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_dealloc, dec_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, dec_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_repr, dec_repr},
     {Py_tp_hash, dec_hash},
     {Py_tp_str, dec_str},
