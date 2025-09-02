@@ -416,12 +416,14 @@ clauses.
 --------------------------
 
 If :keyword:`!finally` is present, it specifies a 'cleanup' handler.  The
-:keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`else <except_else>` clauses.  If an exception occurs in any of the clauses and is
-not handled, the exception is temporarily saved. The :keyword:`!finally` clause
-is executed.  If there is a saved exception it is re-raised at the end of the
-:keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
-exception, the saved exception is set as the context of the new exception.
+:keyword:`try` clause is executed, including any :keyword:`except`
+and :keyword:`else <except_else>` clauses.
+If an exception occurs in any of the clauses and is not handled,
+the exception is temporarily saved.
+The :keyword:`!finally` clause is executed.  If there is a saved exception
+it is re-raised at the end of the :keyword:`!finally` clause.
+If the :keyword:`!finally` clause raises another exception, the saved exception
+is set as the context of the new exception.
 If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
 or :keyword:`continue` statement, the saved exception is discarded. For example,
 this function returns 42.
