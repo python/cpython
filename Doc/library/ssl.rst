@@ -1684,19 +1684,33 @@ to speed up repeated connections from the same clients.
 
 .. method:: SSLContext.set_ciphers(ciphers)
 
-   Set the available ciphers for sockets created with this context.
-   It should be a string in the `OpenSSL cipher list format
+   Set the allowed ciphers for sockets created with this context when
+   connecting using TLS 1.2 and earlier.  The *ciphers* argument should
+   be a string in the `OpenSSL cipher list format
    <https://docs.openssl.org/master/man1/ciphers/>`_.
+   To set allowed TLS 1.3 ciphers, use :meth:`SSLContext.set_ciphersuites`.
+
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
 
    .. note::
-      when connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
-      give the currently selected cipher.
+      When connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
+      return details about the negotiated cipher.
 
-      TLS 1.3 cipher suites cannot be disabled with
-      :meth:`~SSLContext.set_ciphers`.
+.. method:: SSLContext.set_ciphersuites(ciphersuites)
+
+   Set the allowed ciphers for sockets created with this context when
+   connecting using TLS 1.3.  The *ciphersuites* argument should be a
+   colon-separate string of TLS 1.3 cipher names.  If no cipher can be
+   selected (because compile-time options or other configuration forbids
+   use of all the specified ciphers), an :class:`SSLError` will be raised.
+
+   .. note::
+      When connected, the :meth:`SSLSocket.cipher` method of SSL sockets will
+      return details about the negotiated cipher.
+
+   .. versionadded:: next
 
 .. method:: SSLContext.set_groups(groups)
 
@@ -2845,10 +2859,15 @@ TLS 1.3
 The TLS 1.3 protocol behaves slightly differently than previous version
 of TLS/SSL. Some new TLS 1.3 features are not yet available.
 
-- TLS 1.3 uses a disjunct set of cipher suites. All AES-GCM and
-  ChaCha20 cipher suites are enabled by default.  The method
-  :meth:`SSLContext.set_ciphers` cannot enable or disable any TLS 1.3
-  ciphers yet, but :meth:`SSLContext.get_ciphers` returns them.
+- TLS 1.3 uses a disjunct set of cipher suites.  All AES-GCM and ChaCha20
+  cipher suites are enabled by default.  To restrict which TLS 1.3 ciphers
+  are allowed, the :meth:`SSLContext.set_ciphersuites` method should be
+  called instead of :meth:`SSLContext.set_ciphers`, which only affects
+  ciphers in older TLS versions.  The :meth:`SSLContext.get_ciphers` method
+  returns information about ciphers for both TLS 1.3 and earlier versions
+  and the method :meth:`SSLSocket.cipher` returns information about the
+  negotiated cipher for both TLS 1.3 and earlier versions once a connection
+  is established.
 - Session tickets are no longer sent as part of the initial handshake and
   are handled differently.  :attr:`SSLSocket.session` and :class:`SSLSession`
   are not compatible with TLS 1.3.

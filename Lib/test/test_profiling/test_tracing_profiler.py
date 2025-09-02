@@ -4,7 +4,7 @@ import sys
 import unittest
 
 # rip off all interesting stuff from test_profile
-import cProfile
+import profiling.tracing as cProfile
 import tempfile
 import textwrap
 from test.test_profile import ProfileTest, regenerate_expected_output

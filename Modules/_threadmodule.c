@@ -655,13 +655,6 @@ PyThreadHandleObject_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)PyThreadHandleObject_new(type);
 }
 
-static int
-PyThreadHandleObject_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
 PyThreadHandleObject_dealloc(PyObject *op)
 {
@@ -751,7 +744,7 @@ static PyType_Slot ThreadHandle_Type_slots[] = {
     {Py_tp_dealloc, PyThreadHandleObject_dealloc},
     {Py_tp_repr, PyThreadHandleObject_repr},
     {Py_tp_getset, ThreadHandle_getsetlist},
-    {Py_tp_traverse, PyThreadHandleObject_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_methods, ThreadHandle_methods},
     {Py_tp_new, PyThreadHandleObject_tp_new},
     {0, 0}
@@ -766,13 +759,6 @@ static PyType_Spec ThreadHandle_Type_spec = {
 };
 
 /* Lock objects */
-
-static int
-lock_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
 
 static void
 lock_dealloc(PyObject *self)
@@ -1045,7 +1031,7 @@ static PyType_Slot lock_type_slots[] = {
     {Py_tp_repr, lock_repr},
     {Py_tp_doc, (void *)lock_doc},
     {Py_tp_methods, lock_methods},
-    {Py_tp_traverse, lock_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_new, lock_new},
     {0, 0}
 };
@@ -1059,13 +1045,6 @@ static PyType_Spec lock_type_spec = {
 };
 
 /* Recursive lock objects */
-
-static int
-rlock_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
 
 static int
 rlock_locked_impl(rlockobject *self)
@@ -1359,7 +1338,7 @@ static PyType_Slot rlock_type_slots[] = {
     {Py_tp_methods, rlock_methods},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, rlock_new},
-    {Py_tp_traverse, rlock_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0},
 };
 
