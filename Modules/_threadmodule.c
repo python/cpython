@@ -2523,8 +2523,8 @@ _thread__get_name_impl(PyObject *module)
     }
 
 #ifdef __sun
-    // Decode Solaris/Illumos (e.g. OpenIndiana) thread names as ASCII
-    // since OpenIndiana only supports ASCII names.
+    // gh-138004: Decode Solaris/Illumos (e.g. OpenIndiana) thread names
+    //  from ASCII, since OpenIndiana only supports ASCII names.
     return PyUnicode_DecodeASCII(name, strlen(name), "surrogateescape");
 #else
     return PyUnicode_DecodeFSDefault(name);
@@ -2563,7 +2563,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 {
 #ifndef MS_WINDOWS
 #ifdef __sun
-    // Encode Solaris/Illumos thread names as ASCII
+    // gh-138004: Encode Solaris/Illumos thread names to ASCII,
     // since OpenIndiana does not support non-ASCII names.
     const char *encoding = "ascii";
 #else
