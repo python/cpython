@@ -282,9 +282,8 @@ class MmapTests(unittest.TestCase):
                         if close_original_fd:
                             f.close()
                         self.assertEqual(len(m), size)
-                        with self.assertRaises(OSError) as err_cm:
+                        with self.assertRaises(ValueError):
                             m.size()
-                        self.assertEqual(err_cm.exception.errno, errno.EBADF)
                         with self.assertRaises(ValueError):
                             m.resize(size * 2)
                         with self.assertRaises(ValueError):
@@ -309,7 +308,7 @@ class MmapTests(unittest.TestCase):
     def test_trackfd_neg1(self):
         size = 64
         with mmap.mmap(-1, size, trackfd=False) as m:
-            with self.assertRaises(OSError):
+            with self.assertRaises(ValueError):
                 m.size()
             with self.assertRaises(ValueError):
                 m.resize(size // 2)

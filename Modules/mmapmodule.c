@@ -740,10 +740,7 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-    {
-        if (self->fd == -1) {
-            return PyLong_FromSsize_t(self->size);
-        }
+    if (self->fd != -1) {
         struct _Py_stat_struct status;
         if (_Py_fstat(self->fd, &status) == -1)
             return NULL;
@@ -752,6 +749,14 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 #else
         return PyLong_FromLong(status.st_size);
 #endif
+    }
+    else if (self->trackfd) {
+        return PyLong_FromSsize_t(self->size);
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+            "can't get size with trackfd=False");
+        return NULL;
     }
 #endif /* UNIX */
 }
