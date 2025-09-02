@@ -1,0 +1,2 @@
+Audit thread-safety for :mod:`termios` on the :term:`free threaded <free
+threading>` build.
