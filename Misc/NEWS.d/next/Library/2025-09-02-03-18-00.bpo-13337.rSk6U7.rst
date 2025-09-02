@@ -1,1 +1,1 @@
-Adds the :const:`~doctest.IGNORE_CASE` flag to the :mod:`doctest` module. Patch by Justin Baum.
+Adds the :flag:`~doctest.IGNORE_CASE` flag to the :mod:`doctest` module. Patch by Justin Baum.
