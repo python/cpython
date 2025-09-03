@@ -1,0 +1,2 @@
+Partially evaluate undefined global generics in
+:py:meth:`annotationlib.ForwardRef.evaluate`
