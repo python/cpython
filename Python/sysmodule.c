@@ -1160,6 +1160,7 @@ sys_settrace(PyObject *module, PyObject *function)
 }
 
 /*[clinic input]
+@permit_long_summary
 sys._settraceallthreads
 
     function as arg: object
@@ -1173,7 +1174,7 @@ in the library manual.
 
 static PyObject *
 sys__settraceallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=161cca30207bf3ca input=d4bde1f810d73675]*/
+/*[clinic end generated code: output=161cca30207bf3ca input=e5750f5dc01142eb]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -1183,9 +1184,10 @@ sys__settraceallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-
-    PyEval_SetTraceAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetTraceAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1240,6 +1242,7 @@ sys_setprofile(PyObject *module, PyObject *function)
 }
 
 /*[clinic input]
+@permit_long_summary
 sys._setprofileallthreads
 
     function as arg: object
@@ -1253,7 +1256,7 @@ chapter in the library manual.
 
 static PyObject *
 sys__setprofileallthreads(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=2d61319e27b309fe input=a10589439ba20cee]*/
+/*[clinic end generated code: output=2d61319e27b309fe input=9a3dc3352c63b471]*/
 {
     PyObject* argument = NULL;
     Py_tracefunc func = NULL;
@@ -1263,8 +1266,10 @@ sys__setprofileallthreads(PyObject *module, PyObject *arg)
         argument = arg;
     }
 
-    PyEval_SetProfileAllThreads(func, argument);
-
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetProfileAllThreads(interp, func, argument) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -2138,6 +2143,7 @@ sys__current_frames_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_summary
 sys._current_exceptions
 
 Return a dict mapping each thread's identifier to its current raised exception.
@@ -2147,7 +2153,7 @@ This function should be used for specialized purposes only.
 
 static PyObject *
 sys__current_exceptions_impl(PyObject *module)
-/*[clinic end generated code: output=2ccfd838c746f0ba input=0e91818fbf2edc1f]*/
+/*[clinic end generated code: output=2ccfd838c746f0ba input=4ba429b6cfcd736d]*/
 {
     return _PyThread_CurrentExceptions();
 }
@@ -2308,6 +2314,7 @@ sys__stats_clear_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 sys._stats_dump -> bool
 
 Dump stats to file, and clears the stats.
@@ -2317,7 +2324,7 @@ Return False if no statistics were not dumped because stats gathering was off.
 
 static int
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=6e346b4ba0de4489 input=31a489e39418b2a5]*/
+/*[clinic end generated code: output=6e346b4ba0de4489 input=5a3ab40d2fb5af47]*/
 {
     int res = _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
@@ -2640,6 +2647,7 @@ sys__baserepl_impl(PyObject *module)
     PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
     Py_RETURN_NONE;
 }
+
 
 /*[clinic input]
 sys._is_gil_enabled -> bool
@@ -4013,13 +4021,14 @@ module _jit
 PyDoc_STRVAR(_jit_doc, "Utilities for observing just-in-time compilation.");
 
 /*[clinic input]
+@permit_long_summary
 _jit.is_available -> bool
 Return True if the current Python executable supports JIT compilation, and False otherwise.
 [clinic start generated code]*/
 
 static int
 _jit_is_available_impl(PyObject *module)
-/*[clinic end generated code: output=6849a9cd2ff4aac9 input=03add84aa8347cf1]*/
+/*[clinic end generated code: output=6849a9cd2ff4aac9 input=d009d751ae64c9ef]*/
 {
     (void)module;
 #ifdef _Py_TIER2
@@ -4030,26 +4039,28 @@ _jit_is_available_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_summary
 _jit.is_enabled -> bool
 Return True if JIT compilation is enabled for the current Python process (implies sys._jit.is_available()), and False otherwise.
 [clinic start generated code]*/
 
 static int
 _jit_is_enabled_impl(PyObject *module)
-/*[clinic end generated code: output=55865f8de993fe42 input=02439394da8e873f]*/
+/*[clinic end generated code: output=55865f8de993fe42 input=0524151e857f4f3a]*/
 {
     (void)module;
     return _PyInterpreterState_GET()->jit;
 }
 
 /*[clinic input]
+@permit_long_summary
 _jit.is_active -> bool
 Return True if the topmost Python frame is currently executing JIT code (implies sys._jit.is_enabled()), and False otherwise.
 [clinic start generated code]*/
 
 static int
 _jit_is_active_impl(PyObject *module)
-/*[clinic end generated code: output=7facca06b10064d4 input=be2fcd8a269d9b72]*/
+/*[clinic end generated code: output=7facca06b10064d4 input=081ee32563dc2086]*/
 {
     (void)module;
     return _PyThreadState_GET()->current_executor != NULL;

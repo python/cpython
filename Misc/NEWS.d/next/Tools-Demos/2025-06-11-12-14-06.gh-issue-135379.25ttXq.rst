@@ -1,4 +1,4 @@
 The cases generator no longer accepts type annotations on stack items.
-Conversions to non-default types are now done explictly in bytecodes.c and
+Conversions to non-default types are now done explicitly in bytecodes.c and
 optimizer_bytecodes.c. This will simplify code generation for top-of-stack
 caching and other future features.

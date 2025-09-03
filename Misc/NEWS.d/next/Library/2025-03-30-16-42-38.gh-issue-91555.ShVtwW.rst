@@ -1,2 +1,0 @@
-Ignore log messages generated during handling of log messages, to avoid
-deadlock or infinite recursion.

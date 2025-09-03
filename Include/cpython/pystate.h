@@ -28,10 +28,10 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 /* Remote debugger support */
-#define MAX_SCRIPT_PATH_SIZE 512
-typedef struct _remote_debugger_support {
+#define _Py_MAX_SCRIPT_PATH_SIZE 512
+typedef struct {
     int32_t debugger_pending_call;
-    char debugger_script_path[MAX_SCRIPT_PATH_SIZE];
+    char debugger_script_path[_Py_MAX_SCRIPT_PATH_SIZE];
 } _PyRemoteDebuggerSupport;
 
 typedef struct _err_stackitem {
@@ -197,6 +197,9 @@ struct _ts {
     _PyErr_StackItem exc_state;
 
     PyObject *current_executor;
+
+    /* Internal to the JIT */
+    struct _PyExitData *jit_exit;
 
     uint64_t dict_global_version;
 

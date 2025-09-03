@@ -42,6 +42,9 @@ Program Execution
 
 - [Exception Handling](exception_handling.md)
 
+- [Quiescent-State Based Reclamation (QSBR)](qsbr.md)
+
+- [Stack protection](stack_protection.md)
 
 Modules
 ---

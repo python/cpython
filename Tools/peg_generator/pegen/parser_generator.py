@@ -44,8 +44,7 @@ from pegen.grammar import (
 class RuleCollectorVisitor(GrammarVisitor):
     """Visitor that invokes a provided callmaker visitor with just the NamedItem nodes"""
 
-    def __init__(self, rules: Dict[str, Rule], callmakervisitor: GrammarVisitor) -> None:
-        self.rulses = rules
+    def __init__(self, callmakervisitor: GrammarVisitor) -> None:
         self.callmaker = callmakervisitor
 
     def visit_Rule(self, rule: Rule) -> None:
@@ -56,7 +55,7 @@ class RuleCollectorVisitor(GrammarVisitor):
 
 
 class KeywordCollectorVisitor(GrammarVisitor):
-    """Visitor that collects all the keywods and soft keywords in the Grammar"""
+    """Visitor that collects all the keywords and soft keywords in the Grammar"""
 
     def __init__(self, gen: "ParserGenerator", keywords: Dict[str, int], soft_keywords: Set[str]):
         self.generator = gen
@@ -163,7 +162,7 @@ class ParserGenerator:
         for rule in self.all_rules.values():
             keyword_collector.visit(rule)
 
-        rule_collector = RuleCollectorVisitor(self.rules, self.callmakervisitor)
+        rule_collector = RuleCollectorVisitor(self.callmakervisitor)
         done: Set[str] = set()
         while True:
             computed_rules = list(self.all_rules)

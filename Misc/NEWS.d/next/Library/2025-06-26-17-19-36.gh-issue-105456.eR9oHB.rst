@@ -1,0 +1,2 @@
+Removed :mod:`!sre_compile`, :mod:`!sre_constants` and :mod:`!sre_parse`
+modules.
