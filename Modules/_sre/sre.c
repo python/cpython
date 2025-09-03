@@ -2355,7 +2355,7 @@ match_getindex(MatchObject* self, PyObject* index)
     }
 
     // Check that i*2 cannot overflow to make static analyzers happy
-    assert(i <= SRE_MAXGROUPS);
+    assert((size_t)i <= SRE_MAXGROUPS);
     return i;
 }
 
