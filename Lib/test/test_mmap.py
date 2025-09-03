@@ -118,15 +118,12 @@ class MmapTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
     def test_resize(self):
         # Create a file to be mmap'ed.
-        f = open(TESTFN, 'bw+')
-        try:
+        with open(TESTFN, 'bw+') as f:
             # Write 2 pages worth of data to the file
             f.write(b'\0'* 2 * PAGESIZE)
             f.flush()
             m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
             self.addCleanup(m.close)
-        finally:
-            f.close()
 
         # Try resizing map
         m.resize(512)
@@ -136,12 +133,9 @@ class MmapTests(unittest.TestCase):
 
         # Check that the underlying file is truncated too
         # (bug #728515)
-        f = open(TESTFN, 'rb')
-        try:
+        with open(TESTFN, 'rb') as f:
             f.seek(0, 2)
             self.assertEqual(f.tell(), 512)
-        finally:
-            f.close()
         self.assertEqual(m.size(), 512)
 
     def test_access_parameter(self):
@@ -187,15 +181,10 @@ class MmapTests(unittest.TestCase):
             else:
                 self.fail("Able to write to readonly memory map")
 
-            # Ensuring that readonly mmap can't be resized
-            try:
-                m.resize(2*mapsize)
-            except AttributeError:   # resize is not universally supported
-                pass
-            except TypeError:
-                pass
-            else:
-                self.fail("Able to resize readonly memory map")
+            if hasattr(m, 'resize'):
+                # Ensuring that readonly mmap can't be resized
+                with self.assertRaises(TypeError):
+                    m.resize(2*mapsize)
             with open(TESTFN, "rb") as fp:
                 self.assertEqual(fp.read(), b'a'*mapsize,
                                  "Readonly memory map data file was modified")
@@ -621,13 +610,9 @@ class MmapTests(unittest.TestCase):
             self.assertEqual(m[0:3], b'foo')
             f.close()
 
-            # Try resizing map
-            try:
+            if hasattr(m, 'resize'):
+                # Try resizing map
                 m.resize(512)
-            except AttributeError:
-                pass
-            else:
-                # resize() is supported
                 self.assertEqual(len(m), 512)
                 # Check that we can no longer seek beyond the new size.
                 self.assertRaises(ValueError, m.seek, 513, 0)
