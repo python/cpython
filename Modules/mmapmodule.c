@@ -912,7 +912,7 @@ mmap_resize_method(PyObject *op, PyObject *args)
 #endif /* UNIX */
     }
 }
-#endif  /* defined(MS_WINDOWS) || defined(HAVE_MREMAP) */
+#endif /* MS_WINDOWS || HAVE_MREMAP */
 
 static PyObject *
 mmap_tell_method(PyObject *op, PyObject *Py_UNUSED(ignored))
