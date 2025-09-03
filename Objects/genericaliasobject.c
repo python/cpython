@@ -525,6 +525,14 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             return NULL;
         }
         if (unpack) {
+            if (!PyTuple_Check(arg)) {
+                Py_DECREF(newargs);
+                Py_DECREF(item);
+                Py_XDECREF(tuple_args);
+                PyErr_Format(PyExc_TypeError,
+                             "expected a tuple, not %T", arg);
+                return NULL;
+            }
             jarg = tuple_extend(&newargs, jarg,
                     &PyTuple_GET_ITEM(arg, 0), PyTuple_GET_SIZE(arg));
             Py_DECREF(arg);
