@@ -334,6 +334,7 @@ def _get_dochome():
     else:
         return "https://docs.python.org/%d.%d/" % sys.version_info[:2]
 
+
 if __name__ == '__main__':
     from unittest import main
     main('idlelib.idle_test.test_help', verbosity=2, exit=False)
