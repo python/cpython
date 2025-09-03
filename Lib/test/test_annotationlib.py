@@ -1675,6 +1675,21 @@ class TestForwardRefClass(unittest.TestCase):
 
         self.assertEqual(exc.exception.name, "doesntexist")
 
+    def test_evaluate_undefined_generic(self):
+        # Test the codepath where have to eval() with undefined variables.
+        fwdref = ForwardRef("glob[int, undef]").evaluate(format=Format.FORWARDREF, globals={"glob": dict})
+        self.assertIs(fwdref.__origin__, dict)
+        self.assertIs(fwdref.__args__[0], int)
+
+        fwdref = ForwardRef("loc[int, undef]").evaluate(format=Format.FORWARDREF, locals={"loc": dict})
+        self.assertIs(fwdref.__origin__, dict)
+        self.assertIs(fwdref.__args__[0], int)
+
+        # Ensure that globals overwrite builtins
+        fwdref = ForwardRef("list[int, undef]").evaluate(format=Format.FORWARDREF, globals={"list": dict})
+        self.assertIs(fwdref.__origin__, dict)
+        self.assertIs(fwdref.__args__[0], int)
+
     def test_fwdref_invalid_syntax(self):
         fr = ForwardRef("if")
         with self.assertRaises(SyntaxError):
