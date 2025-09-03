@@ -1,2 +1,2 @@
-When extracting tar files on Windows Posix flavoured path separators in symlink
-targets will be replaced by backward-slashes to prevent corrupted links.
+When extracting tar files on Windows, slashes in symlink targets will be
+replaced by backslashes to prevent corrupted links.
