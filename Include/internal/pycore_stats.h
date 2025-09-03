@@ -77,7 +77,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define RARE_EVENT_INTERP_INC(interp, name) \
     do { \
         /* saturating add */ \
-        int val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
+        uint8_t val = FT_ATOMIC_LOAD_UINT8_RELAXED(interp->rare_events.name); \
         if (val < UINT8_MAX) { \
             FT_ATOMIC_STORE_UINT8(interp->rare_events.name, val + 1); \
         } \
