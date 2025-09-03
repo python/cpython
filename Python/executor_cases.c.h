@@ -1688,7 +1688,7 @@
             _PyInterpreterFrame* pushed_frame = _PyFrame_PushUnchecked(tstate, getitem, 2, frame);
             pushed_frame->localsplus[0] = container;
             pushed_frame->localsplus[1] = sub;
-            frame->return_offset = 6 ;
+            frame->return_offset = 6u ;
             new_frame = PyStackRef_Wrap(pushed_frame);
             stack_pointer[-3] = new_frame;
             stack_pointer += -2;
@@ -2057,8 +2057,8 @@
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            assert( 2 + oparg <= UINT16_MAX);
-            frame->return_offset = (uint16_t)( 2 + oparg);
+            assert( 2u + oparg <= UINT16_MAX);
+            frame->return_offset = (uint16_t)( 2u + oparg);
             pushed_frame->previous = frame;
             gen_frame = PyStackRef_Wrap(pushed_frame);
             stack_pointer[-1] = gen_frame;
@@ -4610,7 +4610,7 @@
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             pushed_frame->previous = frame;
-            frame->return_offset = (uint16_t)( 2 + oparg);
+            frame->return_offset = (uint16_t)( 2u + oparg);
             gen_frame = PyStackRef_Wrap(pushed_frame);
             stack_pointer[0] = gen_frame;
             stack_pointer += 1;
