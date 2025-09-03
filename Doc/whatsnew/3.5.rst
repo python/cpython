@@ -424,7 +424,7 @@ are declared in the annotations::
         return 'Hello ' + name
 
 While these annotations are available at runtime through the usual
-:attr:`~object.__annotations__` attribute, *no automatic type checking happens
+:attr:`!__annotations__` attribute, *no automatic type checking happens
 at runtime*.  Instead, it is assumed that a separate off-line type checker
 (e.g. `mypy <https://mypy-lang.org>`_) will be used for on-demand
 source code analysis.
@@ -936,7 +936,7 @@ methods to match the corresponding methods of :class:`str`.
 collections.abc
 ---------------
 
-The :meth:`Sequence.index() <collections.abc.MutableSequence.index>` method now
+The :meth:`!Sequence.index` method now
 accepts *start* and *stop* arguments to match the corresponding methods
 of :class:`tuple`, :class:`list`, etc.
 (Contributed by Devin Jeanpierre in :issue:`23086`.)
