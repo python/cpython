@@ -236,7 +236,9 @@ DOM Level 2 added the ability to create new :class:`Document` and
 Node Objects
 ^^^^^^^^^^^^
 
-All of the components of an XML document are subclasses of :class:`Node`.
+.. class:: Node
+
+   All of the components of an XML document are subclasses of :class:`Node`.
 
 
 .. attribute:: Node.nodeType
@@ -403,14 +405,16 @@ All of the components of an XML document are subclasses of :class:`Node`.
 NodeList Objects
 ^^^^^^^^^^^^^^^^
 
-A :class:`NodeList` represents a sequence of nodes.  These objects are used in
-two ways in the DOM Core recommendation:  an :class:`Element` object provides
-one as its list of child nodes, and the :meth:`getElementsByTagName` and
-:meth:`getElementsByTagNameNS` methods of :class:`Node` return objects with this
-interface to represent query results.
+.. class:: NodeList
 
-The DOM Level 2 recommendation defines one method and one attribute for these
-objects:
+   A :class:`NodeList` represents a sequence of nodes.  These objects are used in
+   two ways in the DOM Core recommendation:  an :class:`Element` object provides
+   one as its list of child nodes, and the :meth:`getElementsByTagName` and
+   :meth:`getElementsByTagNameNS` methods of :class:`Node` return objects with this
+   interface to represent query results.
+
+   The DOM Level 2 recommendation defines one method and one attribute for these
+   objects:
 
 
 .. method:: NodeList.item(i)
@@ -442,16 +446,18 @@ If a DOM implementation supports modification of the document, the
 DocumentType Objects
 ^^^^^^^^^^^^^^^^^^^^
 
-Information about the notations and entities declared by a document (including
-the external subset if the parser uses it and can provide the information) is
-available from a :class:`DocumentType` object.  The :class:`DocumentType` for a
-document is available from the :class:`Document` object's :attr:`doctype`
-attribute; if there is no ``DOCTYPE`` declaration for the document, the
-document's :attr:`doctype` attribute will be set to ``None`` instead of an
-instance of this interface.
+.. class:: DocumentType
 
-:class:`DocumentType` is a specialization of :class:`Node`, and adds the
-following attributes:
+   Information about the notations and entities declared by a document (including
+   the external subset if the parser uses it and can provide the information) is
+   available from a :class:`DocumentType` object.  The :class:`DocumentType` for a
+   document is available from the :class:`Document` object's :attr:`doctype`
+   attribute; if there is no ``DOCTYPE`` declaration for the document, the
+   document's :attr:`doctype` attribute will be set to ``None`` instead of an
+   instance of this interface.
+
+   :class:`DocumentType` is a specialization of :class:`Node`, and adds the
+   following attributes:
 
 
 .. attribute:: DocumentType.publicId
@@ -502,9 +508,11 @@ following attributes:
 Document Objects
 ^^^^^^^^^^^^^^^^
 
-A :class:`Document` represents an entire XML document, including its constituent
-elements, attributes, processing instructions, comments etc.  Remember that it
-inherits properties from :class:`Node`.
+.. class:: Document
+
+   A :class:`Document` represents an entire XML document, including its constituent
+   elements, attributes, processing instructions, comments etc.  Remember that it
+   inherits properties from :class:`Node`.
 
 
 .. attribute:: Document.documentElement
@@ -582,8 +590,10 @@ inherits properties from :class:`Node`.
 Element Objects
 ^^^^^^^^^^^^^^^
 
-:class:`Element` is a subclass of :class:`Node`, so inherits all the attributes
-of that class.
+.. class:: Element
+
+   :class:`Element` is a subclass of :class:`Node`, so inherits all the attributes
+   of that class.
 
 
 .. attribute:: Element.tagName
@@ -686,7 +696,9 @@ of that class.
 Attr Objects
 ^^^^^^^^^^^^
 
-:class:`Attr` inherits from :class:`Node`, so inherits all its attributes.
+.. class:: Attr
+
+   :class:`Attr` inherits from :class:`Node`, so inherits all its attributes.
 
 
 .. attribute:: Attr.name
@@ -719,7 +731,9 @@ Attr Objects
 NamedNodeMap Objects
 ^^^^^^^^^^^^^^^^^^^^
 
-:class:`NamedNodeMap` does *not* inherit from :class:`Node`.
+.. class:: NamedNodeMap
+
+   :class:`NamedNodeMap` does *not* inherit from :class:`Node`.
 
 
 .. attribute:: NamedNodeMap.length
@@ -743,8 +757,10 @@ of methods on the :class:`Element` objects.
 Comment Objects
 ^^^^^^^^^^^^^^^
 
-:class:`Comment` represents a comment in the XML document.  It is a subclass of
-:class:`Node`, but cannot have child nodes.
+.. class:: Comment
+
+   :class:`Comment` represents a comment in the XML document.  It is a subclass of
+   :class:`Node`, but cannot have child nodes.
 
 
 .. attribute:: Comment.data
@@ -759,14 +775,16 @@ Comment Objects
 Text and CDATASection Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :class:`Text` interface represents text in the XML document.  If the parser
-and DOM implementation support the DOM's XML extension, portions of the text
-enclosed in CDATA marked sections are stored in :class:`CDATASection` objects.
-These two interfaces are identical, but provide different values for the
-:attr:`nodeType` attribute.
+.. class:: Text
 
-These interfaces extend the :class:`Node` interface.  They cannot have child
-nodes.
+   The :class:`Text` interface represents text in the XML document.  If the parser
+   and DOM implementation support the DOM's XML extension, portions of the text
+   enclosed in CDATA marked sections are stored in :class:`CDATASection` objects.
+   These two interfaces are identical, but provide different values for the
+   :attr:`nodeType` attribute.
+
+   These interfaces extend the :class:`Node` interface.  They cannot have child
+   nodes.
 
 
 .. attribute:: Text.data
@@ -787,8 +805,10 @@ nodes.
 ProcessingInstruction Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Represents a processing instruction in the XML document; this inherits from the
-:class:`Node` interface and cannot have child nodes.
+.. class:: ProcessingInstruction
+
+   Represents a processing instruction in the XML document; this inherits from the
+   :class:`Node` interface and cannot have child nodes.
 
 
 .. attribute:: ProcessingInstruction.target
