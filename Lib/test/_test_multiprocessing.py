@@ -7369,20 +7369,7 @@ class TestSharedMemoryNames(unittest.TestCase):
             print("SUCCESS")
         """)
 
-        # Run the test script as a subprocess to capture all output
-        result = subprocess.run(
-            [sys.executable, '-c', test_script],
-            capture_output=True,
-            text=True
-        )
-
-        self.assertEqual(result.returncode, 0,
-                        f"Script failed with stderr: {result.stderr}")
-        self.assertIn("SUCCESS", result.stdout)
-
-        stderr_lower = result.stderr.lower()
-        self.assertNotIn("too many values to unpack", stderr_lower,
-                        f"Resource tracker parsing error found in stderr: {result.stderr}")
-
-        self.assertNotIn("valueerror", stderr_lower,
-                        f"ValueError found in stderr: {result.stderr}")
+        rc, out, err = assert_python_ok("-c", test_script)
+        self.assertIn(b"SUCCESS", out)
+        self.assertNotIn(b"traceback", err.lower(), err)
+        self.assertNotIn(b"resource_tracker.py", err, err)
