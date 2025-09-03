@@ -120,6 +120,7 @@ typedef struct {
 #ifdef UNIX
     int fd;
     _Bool trackfd;
+    int flags;
 #endif
 
     PyObject *weakreflist;
@@ -127,13 +128,6 @@ typedef struct {
 } mmap_object;
 
 #define mmap_object_CAST(op)    ((mmap_object *)(op))
-
-static int
-mmap_object_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
 
 static void
 mmap_object_dealloc(PyObject *op)
@@ -746,7 +740,7 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-    {
+    if (self->fd != -1) {
         struct _Py_stat_struct status;
         if (_Py_fstat(self->fd, &status) == -1)
             return NULL;
@@ -755,6 +749,14 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 #else
         return PyLong_FromLong(status.st_size);
 #endif
+    }
+    else if (self->trackfd) {
+        return PyLong_FromSsize_t(self->size);
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+            "can't get size with trackfd=False");
+        return NULL;
     }
 #endif /* UNIX */
 }
@@ -889,6 +891,13 @@ mmap_resize_method(PyObject *op, PyObject *args)
 #else
         void *newmap;
 
+#ifdef __linux__
+        if (self->fd == -1 && !(self->flags & MAP_PRIVATE) && new_size > self->size) {
+            PyErr_Format(PyExc_ValueError,
+                "mmap: can't expand a shared anonymous mapping on Linux");
+            return NULL;
+        }
+#endif
         if (self->fd != -1 && ftruncate(self->fd, self->offset + new_size) == -1) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
@@ -1499,7 +1508,7 @@ static PyType_Slot mmap_object_slots[] = {
     {Py_tp_members, mmap_object_members},
     {Py_tp_getset, mmap_object_getset},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, mmap_object_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
 
     /* as sequence */
     {Py_sq_length, mmap_length},
@@ -1685,6 +1694,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     else {
         m_obj->fd = -1;
     }
+    m_obj->flags = flags;
 
     Py_BEGIN_ALLOW_THREADS
     m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
