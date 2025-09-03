@@ -295,10 +295,8 @@ def show_idlehelp(parent):
 
 
 def _get_dochome():
-    """Returns path to local docs
+    "Return path to local docs if present, otherwise link to docs.python.org."
 
-     If none found returns link to docs.python.org.
-     """
     dochome = os.path.join(sys.base_prefix, 'Doc', 'index.html')
     if sys.platform.count('linux'):
         # look for html docs in a couple of standard places
