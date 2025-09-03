@@ -273,8 +273,6 @@ PyJitRef_IsBorrowed(JitOptRef ref)
 }
 
 struct _Py_UOpsAbstractFrame {
-    bool builtins_watched;
-     // Has the globals dict of this frame been watched?
     bool globals_watched;
      // The version number of the globals dicts, once checked. 0 if unchecked.
     uint32_t globals_checked_version;
@@ -300,6 +298,8 @@ typedef struct _JitOptContext {
     char done;
     char out_of_space;
     bool contradiction;
+     // Has the builtins dict been watched?
+    bool builtins_watched;
     // The current "executing" frame.
     _Py_UOpsAbstractFrame *frame;
     _Py_UOpsAbstractFrame frames[MAX_ABSTRACT_FRAME_DEPTH];

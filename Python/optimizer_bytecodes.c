@@ -1268,9 +1268,9 @@ dummy_func(void) {
             /* Do nothing */
         }
         else {
-            if (!ctx->frame->builtins_watched) {
+            if (!ctx->builtins_watched) {
                 PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
-                ctx->frame->builtins_watched = true;
+                ctx->builtins_watched = true;
             }
             if (ctx->frame->globals_checked_version != 0 && ctx->frame->globals_watched) {
                 cnst = convert_global_to_const(this_instr, builtins, false);

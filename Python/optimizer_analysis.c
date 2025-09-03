@@ -320,6 +320,7 @@ optimize_uops(
     ctx->done = false;
     ctx->out_of_space = false;
     ctx->contradiction = false;
+    ctx->builtins_watched = false;
 
     _PyUOpInstruction *this_instr = NULL;
     for (int i = 0; !ctx->done; i++) {
