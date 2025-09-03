@@ -1401,7 +1401,7 @@ is also available in the :mod:`!token` module documentation.
    a delimiter that introduces decorators.
 
    For some tokens, the distinction is unclear.
-   For example, some people consider ``. ( )`` to be delimiters, while others
+   For example, some people consider ``.``, ``(``, and ``)`` to be delimiters, while others
    see the :py:func:`getattr` operator and the function call operator(s).
 
    Some of Python's operators, like ``and``, ``or``, and ``not in``, use
