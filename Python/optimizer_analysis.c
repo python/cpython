@@ -312,15 +312,11 @@ optimize_uops(
     _Py_uop_abstractcontext_init(ctx);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, (PyCodeObject *)func->func_code, curr_stacklen, NULL, 0);
     if (frame == NULL) {
-        return -1;
+        return 0;
     }
     frame->func = func;
     ctx->curr_frame_depth++;
     ctx->frame = frame;
-    ctx->done = false;
-    ctx->out_of_space = false;
-    ctx->contradiction = false;
-    ctx->builtins_watched = false;
 
     _PyUOpInstruction *this_instr = NULL;
     for (int i = 0; !ctx->done; i++) {
