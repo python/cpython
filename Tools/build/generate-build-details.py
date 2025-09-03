@@ -61,7 +61,10 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     if '_multiarch' in data['implementation']:
         data['implementation']['_multiarch'] = sysconfig.get_config_var('MULTIARCH')
 
-    data['abi']['flags'] = list(sys.abiflags)
+    if sys.platform != 'win32':
+        data['abi']['flags'] = list(sys.abiflags)
+    else:
+        data['abi']['flags'] = []
 
     data['suffixes']['source'] = importlib.machinery.SOURCE_SUFFIXES
     data['suffixes']['bytecode'] = importlib.machinery.BYTECODE_SUFFIXES

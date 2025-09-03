@@ -90,7 +90,6 @@ needs_installed_python = unittest.skipIf(
 )
 
 
-@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
 @unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     """Test CPython's install details file implementation."""
@@ -98,9 +97,12 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     @property
     def location(self):
         if sysconfig.is_python_build():
-            projectdir = sysconfig.get_config_var('projectbase')
-            with open(os.path.join(projectdir, 'pybuilddir.txt')) as f:
-                dirname = os.path.join(projectdir, f.read())
+            if sys.platform == 'win32':
+                dirname = sysconfig.get_config_var('BINDIR')
+            else:
+                projectdir = sysconfig.get_config_var('projectbase')
+                with open(os.path.join(projectdir, 'pybuilddir.txt')) as f:
+                    dirname = os.path.join(projectdir, f.read())
         else:
             dirname = sysconfig.get_path('stdlib')
         return os.path.join(dirname, 'build-details.json')

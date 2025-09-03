@@ -1,0 +1,3 @@
+The :pep:`739` :file:`build-details.json` file is now generated and
+installed on Windows.
+Patch by Adam Turner.
