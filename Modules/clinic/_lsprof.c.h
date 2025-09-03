@@ -82,6 +82,39 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_lsprof_Profiler__pythrow_callback__doc__,
+"_pythrow_callback($self, code, instruction_offset, exception, /)\n"
+"--\n"
+"\n");
+
+#define _LSPROF_PROFILER__PYTHROW_CALLBACK_METHODDEF    \
+    {"_pythrow_callback", _PyCFunction_CAST(_lsprof_Profiler__pythrow_callback), METH_FASTCALL, _lsprof_Profiler__pythrow_callback__doc__},
+
+static PyObject *
+_lsprof_Profiler__pythrow_callback_impl(ProfilerObject *self, PyObject *code,
+                                        PyObject *instruction_offset,
+                                        PyObject *exception);
+
+static PyObject *
+_lsprof_Profiler__pythrow_callback(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *code;
+    PyObject *instruction_offset;
+    PyObject *exception;
+
+    if (!_PyArg_CheckPositional("_pythrow_callback", nargs, 3, 3)) {
+        goto exit;
+    }
+    code = args[0];
+    instruction_offset = args[1];
+    exception = args[2];
+    return_value = _lsprof_Profiler__pythrow_callback_impl((ProfilerObject *)self, code, instruction_offset, exception);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_lsprof_Profiler__pyreturn_callback__doc__,
 "_pyreturn_callback($self, code, instruction_offset, retval, /)\n"
 "--\n"
@@ -218,9 +251,11 @@ _lsprof_Profiler_enable(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(subcalls), &_Py_ID(builtins), },
     };
     #undef NUM_KEYWORDS
@@ -331,9 +366,11 @@ profiler_init(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(timer), &_Py_ID(timeunit), &_Py_ID(subcalls), &_Py_ID(builtins), },
     };
     #undef NUM_KEYWORDS
@@ -407,4 +444,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d983dbf23fd8ac3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9e46985561166c37 input=a9049054013a1b77]*/

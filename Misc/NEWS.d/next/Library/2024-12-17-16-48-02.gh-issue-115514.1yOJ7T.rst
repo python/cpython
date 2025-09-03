@@ -1,2 +1,0 @@
-Fix exceptions and incomplete writes after :class:`!asyncio._SelectorTransport`
-is closed before writes are completed.

@@ -1,2 +1,0 @@
-Fix ``traceback.TracebackException._format_syntax_error`` not to fail on
-exceptions with custom metadata.

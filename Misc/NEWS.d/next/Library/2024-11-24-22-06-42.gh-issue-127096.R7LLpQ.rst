@@ -1,2 +1,0 @@
-Do not recreate unnamed section on every read in
-:class:`configparser.ConfigParser`. Patch by Andrey Efremov.

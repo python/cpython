@@ -1,0 +1,1 @@
+Fix :func:`sys.getwindowsversion` failing without setting an exception when called on some WinAPI partitions.

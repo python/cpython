@@ -1,2 +1,0 @@
-Deprecate :func:`!sysconfig.expand_makefile_vars`, in favor of using
-:func:`sysconfig.get_paths` with the ``vars`` argument.

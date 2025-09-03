@@ -55,7 +55,9 @@ int _Py_open_cloexec_works = -1;
 
 // mbstowcs() and mbrtowc() errors
 static const size_t DECODE_ERROR = ((size_t)-1);
+#ifdef HAVE_MBRTOWC
 static const size_t INCOMPLETE_CHARACTER = (size_t)-2;
+#endif
 
 
 static int
@@ -129,6 +131,7 @@ is_valid_wide_char(wchar_t ch)
         // Reject lone surrogate characters
         return 0;
     }
+#if SIZEOF_WCHAR_T > 2
     if (ch > MAX_UNICODE) {
         // bpo-35883: Reject characters outside [U+0000; U+10ffff] range.
         // The glibc mbstowcs() UTF-8 decoder does not respect the RFC 3629,
@@ -136,6 +139,7 @@ is_valid_wide_char(wchar_t ch)
         // https://sourceware.org/bugzilla/show_bug.cgi?id=2373
         return 0;
     }
+#endif
     return 1;
 }
 
@@ -524,15 +528,7 @@ decode_current_locale(const char* arg, wchar_t **wstr, size_t *wlen,
             break;
         }
 
-        if (converted == INCOMPLETE_CHARACTER) {
-            /* Incomplete character. This should never happen,
-               since we provide everything that we have -
-               unless there is a bug in the C library, or I
-               misunderstood how mbrtowc works. */
-            goto decode_error;
-        }
-
-        if (converted == DECODE_ERROR) {
+        if (converted == DECODE_ERROR || converted == INCOMPLETE_CHARACTER) {
             if (!surrogateescape) {
                 goto decode_error;
             }
@@ -2788,6 +2784,43 @@ error:
     return -1;
 }
 #else   /* MS_WINDOWS */
+
+// The Windows Games API family doesn't expose GetNamedPipeHandleStateW so attempt
+// to load it directly from the Kernel32.dll
+#if !defined(MS_WINDOWS_APP) && !defined(MS_WINDOWS_SYSTEM)
+BOOL
+GetNamedPipeHandleStateW(HANDLE hNamedPipe, LPDWORD lpState, LPDWORD lpCurInstances, LPDWORD lpMaxCollectionCount,
+                         LPDWORD lpCollectDataTimeout, LPWSTR lpUserName, DWORD nMaxUserNameSize)
+{
+    static int initialized = 0;
+    typedef BOOL(__stdcall* PGetNamedPipeHandleStateW) (
+        HANDLE hNamedPipe, LPDWORD lpState, LPDWORD lpCurInstances, LPDWORD lpMaxCollectionCount,
+        LPDWORD lpCollectDataTimeout, LPWSTR lpUserName, DWORD nMaxUserNameSize);
+    static PGetNamedPipeHandleStateW _GetNamedPipeHandleStateW;
+
+    if (initialized == 0) {
+        HMODULE api = LoadLibraryExW(L"Kernel32.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (api) {
+            _GetNamedPipeHandleStateW = (PGetNamedPipeHandleStateW)GetProcAddress(
+                api, "GetNamedPipeHandleStateW");
+        }
+        else {
+            _GetNamedPipeHandleStateW = NULL;
+        }
+        initialized = 1;
+    }
+
+    if (!_GetNamedPipeHandleStateW) {
+        SetLastError(E_NOINTERFACE);
+        return FALSE;
+    }
+
+    return _GetNamedPipeHandleStateW(
+        hNamedPipe, lpState, lpCurInstances, lpMaxCollectionCount, lpCollectDataTimeout, lpUserName, nMaxUserNameSize
+    );
+}
+#endif /* !MS_WINDOWS_APP && !MS_WINDOWS_SYSTEM */
+
 int
 _Py_get_blocking(int fd)
 {

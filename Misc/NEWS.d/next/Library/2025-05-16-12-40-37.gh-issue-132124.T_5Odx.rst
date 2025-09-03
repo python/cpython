@@ -1,0 +1,6 @@
+On POSIX-compliant systems, :func:`!multiprocessing.util.get_temp_dir` now
+ignores :envvar:`TMPDIR` (and similar environment variables) if the path
+length of ``AF_UNIX`` socket files exceeds the platform-specific maximum
+length when using the :ref:`forkserver
+<multiprocessing-start-method-forkserver>` start method. Patch by Bénédikt
+Tran.

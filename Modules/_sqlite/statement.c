@@ -62,7 +62,7 @@ pysqlite_statement_create(pysqlite_Connection *connection, PyObject *sql)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        _pysqlite_seterror(state, db);
+        set_error_from_db(state, db);
         return NULL;
     }
 
@@ -114,13 +114,6 @@ stmt_dealloc(PyObject *op)
     }
     tp->tp_free(self);
     Py_DECREF(tp);
-}
-
-static int
-stmt_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 /*
@@ -183,7 +176,7 @@ lstrip_sql(const char *sql)
 
 static PyType_Slot stmt_slots[] = {
     {Py_tp_dealloc, stmt_dealloc},
-    {Py_tp_traverse, stmt_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL},
 };
 
