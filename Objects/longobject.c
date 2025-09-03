@@ -3683,8 +3683,9 @@ long_hash(PyObject *obj)
     --i;
     x = v->long_value.ob_digit[i];
     assert(x < PyHASH_MODULUS);
-    // unroll second digit
+
 #if ( PyHASH_BITS > (2 * PyLong_SHIFT) )
+    // unroll second digit
     assert(i>=1);
     --i;
     x <<= PyLong_SHIFT;
