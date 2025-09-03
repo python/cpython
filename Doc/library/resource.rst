@@ -50,7 +50,6 @@ this module for those platforms.
 .. data:: RLIM_INFINITY
 
    Constant used to represent the limit for an unlimited resource.
-   Its value is larger than any limited resource value.
 
    .. versionchanged:: next
       It is now always positive.

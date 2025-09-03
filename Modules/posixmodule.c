@@ -686,7 +686,7 @@ reset_remotedebug_data(PyThreadState *tstate)
 {
     tstate->remote_debugger_support.debugger_pending_call = 0;
     memset(tstate->remote_debugger_support.debugger_script_path, 0,
-           Py_MAX_SCRIPT_PATH_SIZE);
+           _Py_MAX_SCRIPT_PATH_SIZE);
 }
 
 
@@ -8000,7 +8000,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 //
 // This should only be called from the parent process after
 // PyOS_AfterFork_Parent().
-static void
+static int
 warn_about_fork_with_threads(const char* name)
 {
     // It's not safe to issue the warning while the world is stopped, because
@@ -8051,14 +8051,14 @@ warn_about_fork_with_threads(const char* name)
         PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
         if (!threading) {
             PyErr_Clear();
-            return;
+            return 0;
         }
         PyObject *threading_active =
                 PyObject_GetAttr(threading, &_Py_ID(_active));
         if (!threading_active) {
             PyErr_Clear();
             Py_DECREF(threading);
-            return;
+            return 0;
         }
         PyObject *threading_limbo =
                 PyObject_GetAttr(threading, &_Py_ID(_limbo));
@@ -8066,7 +8066,7 @@ warn_about_fork_with_threads(const char* name)
             PyErr_Clear();
             Py_DECREF(threading);
             Py_DECREF(threading_active);
-            return;
+            return 0;
         }
         Py_DECREF(threading);
         // Duplicating what threading.active_count() does but without holding
@@ -8082,7 +8082,7 @@ warn_about_fork_with_threads(const char* name)
         Py_DECREF(threading_limbo);
     }
     if (num_python_threads > 1) {
-        PyErr_WarnFormat(
+        return PyErr_WarnFormat(
                 PyExc_DeprecationWarning, 1,
 #ifdef HAVE_GETPID
                 "This process (pid=%d) is multi-threaded, "
@@ -8094,8 +8094,8 @@ warn_about_fork_with_threads(const char* name)
                 getpid(),
 #endif
                 name);
-        PyErr_Clear();
     }
+    return 0;
 }
 #endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
@@ -8134,7 +8134,9 @@ os_fork1_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("fork1");
+        if (warn_about_fork_with_threads("fork1") < 0) {
+            return NULL;
+        }
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -8183,7 +8185,8 @@ os_fork_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("fork");
+        if (warn_about_fork_with_threads("fork") < 0)
+            return NULL;
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -8208,10 +8211,10 @@ static PyObject *
 os_sched_get_priority_max_impl(PyObject *module, int policy)
 /*[clinic end generated code: output=9e465c6e43130521 input=2097b7998eca6874]*/
 {
-    int max;
-
-    max = sched_get_priority_max(policy);
-    if (max < 0)
+    /* make sure that errno is cleared before the call */
+    errno = 0;
+    int max = sched_get_priority_max(policy);
+    if (max == -1 && errno)
         return posix_error();
     return PyLong_FromLong(max);
 }
@@ -8229,8 +8232,10 @@ static PyObject *
 os_sched_get_priority_min_impl(PyObject *module, int policy)
 /*[clinic end generated code: output=7595c1138cc47a6d input=21bc8fa0d70983bf]*/
 {
+    /* make sure that errno is cleared before the call */
+    errno = 0;
     int min = sched_get_priority_min(policy);
-    if (min < 0)
+    if (min == -1 && errno)
         return posix_error();
     return PyLong_FromLong(min);
 }
@@ -9040,7 +9045,8 @@ os_forkpty_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("forkpty");
+        if (warn_about_fork_with_threads("forkpty") < 0)
+            return NULL;
     }
     if (pid == -1) {
         return posix_error();
@@ -12477,7 +12483,7 @@ os.copy_file_range
         Source file descriptor.
     dst: int
         Destination file descriptor.
-    count: Py_ssize_t
+    count: Py_ssize_t(allow_negative=False)
         Number of bytes to copy.
     offset_src: object = None
         Starting offset in src.
@@ -12493,7 +12499,7 @@ respectively for offset_dst.
 static PyObject *
 os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
                         PyObject *offset_src, PyObject *offset_dst)
-/*[clinic end generated code: output=1a91713a1d99fc7a input=42fdce72681b25a9]*/
+/*[clinic end generated code: output=1a91713a1d99fc7a input=08dacb760869b87c]*/
 {
     off_t offset_src_val, offset_dst_val;
     off_t *p_offset_src = NULL;
@@ -12504,11 +12510,6 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
      * for future extensions and currently must be to 0. */
     int flags = 0;
 
-
-    if (count < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
-        return NULL;
-    }
 
     if (offset_src != Py_None) {
         if (!Py_off_t_converter(offset_src, &offset_src_val)) {
@@ -12546,7 +12547,7 @@ os.splice
         Source file descriptor.
     dst: int
         Destination file descriptor.
-    count: Py_ssize_t
+    count: Py_ssize_t(allow_negative=False)
         Number of bytes to copy.
     offset_src: object = None
         Starting offset in src.
@@ -12566,7 +12567,7 @@ static PyObject *
 os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
                PyObject *offset_src, PyObject *offset_dst,
                unsigned int flags)
-/*[clinic end generated code: output=d0386f25a8519dc5 input=047527c66c6d2e0a]*/
+/*[clinic end generated code: output=d0386f25a8519dc5 input=034852a7b2e7af35]*/
 {
     off_t offset_src_val, offset_dst_val;
     off_t *p_offset_src = NULL;
@@ -12574,10 +12575,6 @@ os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
     Py_ssize_t ret;
     int async_err = 0;
 
-    if (count < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
-        return NULL;
-    }
 
     if (offset_src != Py_None) {
         if (!Py_off_t_converter(offset_src, &offset_src_val)) {
@@ -15190,7 +15187,7 @@ exit:
 @permit_long_summary
 os.urandom
 
-    size: Py_ssize_t
+    size: Py_ssize_t(allow_negative=False)
     /
 
 Return a bytes object containing random bytes suitable for cryptographic use.
@@ -15198,14 +15195,11 @@ Return a bytes object containing random bytes suitable for cryptographic use.
 
 static PyObject *
 os_urandom_impl(PyObject *module, Py_ssize_t size)
-/*[clinic end generated code: output=42c5cca9d18068e9 input=ade19e6b362e7388]*/
+/*[clinic end generated code: output=42c5cca9d18068e9 input=58a0def87dbc2c22]*/
 {
     PyObject *bytes;
     int result;
 
-    if (size < 0)
-        return PyErr_Format(PyExc_ValueError,
-                            "negative argument not allowed");
     bytes = PyBytes_FromStringAndSize(NULL, size);
     if (bytes == NULL)
         return NULL;
