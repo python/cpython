@@ -1468,10 +1468,7 @@ class DSLParser:
                 name = p.converter.signature_name or p.name
                 p_lines.append(name)
 
-                if (
-                    not (p.is_vararg() or p.is_var_keyword())
-                    and p.converter.is_optional()
-                ):
+                if not p.is_variable_length() and p.converter.is_optional():
                     p_lines.append('=')
                     value = p.converter.py_default
                     if not value:

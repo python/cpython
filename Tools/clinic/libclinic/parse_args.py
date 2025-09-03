@@ -36,7 +36,7 @@ def declare_parser(
 
     num_keywords = len([
         p for p in f.parameters.values()
-        if not p.is_positional_only() and not (p.is_vararg() or p.is_var_keyword())
+        if p.is_positional_or_keyword() or p.is_keyword_only()
     ])
 
     condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'

@@ -214,17 +214,23 @@ class Parameter:
     def __repr__(self) -> str:
         return f'<clinic.Parameter {self.name!r}>'
 
-    def is_keyword_only(self) -> bool:
-        return self.kind == inspect.Parameter.KEYWORD_ONLY
-
     def is_positional_only(self) -> bool:
         return self.kind == inspect.Parameter.POSITIONAL_ONLY
+
+    def is_positional_or_keyword(self) -> bool:
+        return self.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
+
+    def is_keyword_only(self) -> bool:
+        return self.kind == inspect.Parameter.KEYWORD_ONLY
 
     def is_vararg(self) -> bool:
         return self.kind == inspect.Parameter.VAR_POSITIONAL
 
     def is_var_keyword(self) -> bool:
         return self.kind == inspect.Parameter.VAR_KEYWORD
+
+    def is_variable_length(self) -> bool:
+        return self.is_vararg() or self.is_var_keyword()
 
     def is_optional(self) -> bool:
         return not self.is_vararg() and (self.default is not unspecified)
