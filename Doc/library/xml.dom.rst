@@ -238,7 +238,7 @@ Node Objects
 
 .. class:: Node
 
-   All of the components of an XML document are subclasses of :class:`Node`.
+   All of the components of an XML document are subclasses of :class:`!Node`.
 
 
 .. attribute:: Node.nodeType
@@ -407,7 +407,7 @@ NodeList Objects
 
 .. class:: NodeList
 
-   A :class:`NodeList` represents a sequence of nodes.  These objects are used in
+   A :class:`!NodeList` represents a sequence of nodes.  These objects are used in
    two ways in the DOM Core recommendation:  an :class:`Element` object provides
    one as its list of child nodes, and the :meth:`getElementsByTagName` and
    :meth:`getElementsByTagNameNS` methods of :class:`Node` return objects with this
@@ -450,13 +450,13 @@ DocumentType Objects
 
    Information about the notations and entities declared by a document (including
    the external subset if the parser uses it and can provide the information) is
-   available from a :class:`DocumentType` object.  The :class:`DocumentType` for a
+   available from a :class:`!DocumentType` object.  The :class:`!DocumentType` for a
    document is available from the :class:`Document` object's :attr:`doctype`
    attribute; if there is no ``DOCTYPE`` declaration for the document, the
    document's :attr:`doctype` attribute will be set to ``None`` instead of an
    instance of this interface.
 
-   :class:`DocumentType` is a specialization of :class:`Node`, and adds the
+   :class:`!DocumentType` is a specialization of :class:`Node`, and adds the
    following attributes:
 
 
@@ -510,7 +510,7 @@ Document Objects
 
 .. class:: Document
 
-   A :class:`Document` represents an entire XML document, including its constituent
+   A :class:`!Document` represents an entire XML document, including its constituent
    elements, attributes, processing instructions, comments etc.  Remember that it
    inherits properties from :class:`Node`.
 
@@ -592,7 +592,7 @@ Element Objects
 
 .. class:: Element
 
-   :class:`Element` is a subclass of :class:`Node`, so inherits all the attributes
+   :class:`!Element` is a subclass of :class:`Node`, so inherits all the attributes
    of that class.
 
 
@@ -698,7 +698,7 @@ Attr Objects
 
 .. class:: Attr
 
-   :class:`Attr` inherits from :class:`Node`, so inherits all its attributes.
+   :class:`!Attr` inherits from :class:`Node`, so inherits all its attributes.
 
 
 .. attribute:: Attr.name
@@ -733,7 +733,7 @@ NamedNodeMap Objects
 
 .. class:: NamedNodeMap
 
-   :class:`NamedNodeMap` does *not* inherit from :class:`Node`.
+   :class:`!NamedNodeMap` does *not* inherit from :class:`Node`.
 
 
 .. attribute:: NamedNodeMap.length
@@ -759,8 +759,8 @@ Comment Objects
 
 .. class:: Comment
 
-   :class:`Comment` represents a comment in the XML document.  It is a subclass of
-   :class:`Node`, but cannot have child nodes.
+   :class:`!Comment` represents a comment in the XML document.
+   It is a subclass of :class:`Node`, but cannot have child nodes.
 
 
 .. attribute:: Comment.data
@@ -777,7 +777,7 @@ Text and CDATASection Objects
 
 .. class:: Text
 
-   The :class:`Text` interface represents text in the XML document.  If the parser
+   The :class:`!Text` interface represents text in the XML document.  If the parser
    and DOM implementation support the DOM's XML extension, portions of the text
    enclosed in CDATA marked sections are stored in :class:`CDATASection` objects.
    These two interfaces are identical, but provide different values for the
