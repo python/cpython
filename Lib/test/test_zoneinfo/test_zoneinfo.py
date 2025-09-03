@@ -1784,6 +1784,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             ("/usr/share/zoneinfo", "../relative/path",),
             ("path/to/somewhere", "../relative/path",),
             ("/usr/share/zoneinfo", "path/to/somewhere", "../relative/path",),
+            (pathlib.Path("path/to/somewhere"),)
         ]
         for input_paths in bad_values:
             with self.subTest(input_paths=input_paths):
