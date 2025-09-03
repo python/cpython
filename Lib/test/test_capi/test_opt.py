@@ -5,6 +5,7 @@ import textwrap
 import unittest
 import gc
 import os
+import types
 
 import _opcode
 
@@ -16,6 +17,8 @@ _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
 from _testinternalcapi import TIER2_THRESHOLD
 
+#For test of issue 136154
+GLOBAL_136154 = 42
 
 @contextlib.contextmanager
 def clear_executors(func):
@@ -2500,6 +2503,30 @@ class TestUopsOptimization(unittest.TestCase):
 
         # For now... until we constant propagate it away.
         self.assertIn("_BINARY_OP", uops)
+
+    def test_jitted_code_sees_changed_globals(self):
+        "Issue 136154: Check that jitted code spots the change in the globals"
+
+        def make_f():
+            def f():
+                return GLOBAL_136154
+            return f
+
+        make_f_with_bad_globals = types.FunctionType(make_f.__code__, {})
+
+        def jitted(funcs):
+            for func in funcs:
+                func()
+
+        # Make a "good" f:
+        f = make_f()
+        # Compile jitted for the "good" f:
+        jitted([f] * TIER2_THRESHOLD)
+        # This "bad" f has different globals, but the *same* code/function versions:
+        f_with_bad_globals = make_f_with_bad_globals()
+        # A "good" f to enter the JIT code, and a "bad" f to trigger the bug:
+        with self.assertRaises(NameError):
+            jitted([f, f_with_bad_globals])
 
 
 def global_identity(x):
