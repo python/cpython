@@ -1277,22 +1277,22 @@ Notes:
    item is removed and returned.
 
 (3)
-   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
+   :meth:`!remove` raises :exc:`ValueError` when *x* is not found in *s*.
 
 (4)
-   The :meth:`reverse` method modifies the sequence in place for economy of
+   The :meth:`!reverse` method modifies the sequence in place for economy of
    space when reversing a large sequence.  To remind users that it operates by
    side effect, it does not return the reversed sequence.
 
 (5)
-   :meth:`clear` and :meth:`!copy` are included for consistency with the
+   :meth:`!clear` and :meth:`!copy` are included for consistency with the
    interfaces of mutable containers that don't support slicing operations
    (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
    :class:`collections.abc.MutableSequence` ABC, but most concrete
    mutable sequence classes provide it.
 
    .. versionadded:: 3.3
-      :meth:`clear` and :meth:`!copy` methods.
+      :meth:`!clear` and :meth:`!copy` methods.
 
 (6)
    The value *n* is an integer, or an object implementing
@@ -4659,11 +4659,12 @@ other sequence-like behavior.
 
 There are currently two built-in set types, :class:`set` and :class:`frozenset`.
 The :class:`set` type is mutable --- the contents can be changed using methods
-like :meth:`~set.add` and :meth:`~set.remove`.  Since it is mutable, it has no
-hash value and cannot be used as either a dictionary key or as an element of
-another set.  The :class:`frozenset` type is immutable and :term:`hashable` ---
-its contents cannot be altered after it is created; it can therefore be used as
-a dictionary key or as an element of another set.
+like :meth:`add <frozenset.add>` and :meth:`remove <frozenset.add>`.
+Since it is mutable, it has no hash value and cannot be used as
+either a dictionary key or as an element of another set.
+The :class:`frozenset` type is immutable and :term:`hashable` ---
+its contents cannot be altered after it is created;
+it can therefore be used as a dictionary key or as an element of another set.
 
 Non-empty sets (not frozensets) can be created by placing a comma-separated list
 of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to the
@@ -5762,7 +5763,7 @@ Methods
 .. index:: pair: object; method
 
 Methods are functions that are called using the attribute notation. There are
-two flavors: :ref:`built-in methods <builtin-methods>` (such as :meth:`append`
+two flavors: :ref:`built-in methods <builtin-methods>` (such as :meth:`!append`
 on lists) and :ref:`class instance method <instance-methods>`.
 Built-in methods are described with the types that support them.
 
