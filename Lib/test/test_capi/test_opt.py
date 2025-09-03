@@ -2501,6 +2501,55 @@ class TestUopsOptimization(unittest.TestCase):
         # For now... until we constant propagate it away.
         self.assertIn("_BINARY_OP", uops)
 
+    def test_strip_reference_information_through_str(self):
+        # This test needs to be in another script due to Python's
+        # string interning details.
+        script_helper.assert_python_ok('-c', textwrap.dedent("""
+        import _testinternalcapi
+        import _opcode
+
+        def get_first_executor(func):
+            code = func.__code__
+            co_code = code.co_code
+            for i in range(0, len(co_code), 2):
+                try:
+                    return _opcode.get_executor(code, i)
+                except ValueError:
+                    pass
+            return None
+
+        def iter_opnames(ex):
+            for item in ex:
+                yield item[0]
+
+        def get_opnames(ex):
+            return list(iter_opnames(ex))
+
+        def testfunc(n):
+            for _ in range(n):
+                str("abcde")
+
+
+        testfunc(_testinternalcapi.TIER2_THRESHOLD)
+        ex = get_first_executor(testfunc)
+        assert ex is not None
+        uops = get_opnames(ex)
+        assert "_POP_TOP_NOP" not in uops
+        """))
+
+    def test_strip_reference_information_through_tuple(self):
+        def testfunc(n):
+            for _ in range(n):
+                tuple((1,))
+
+        testfunc(TIER2_THRESHOLD * 2)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+
+        self.assertNotIn("_POP_TOP_NOP", uops)
+
 
 def global_identity(x):
     return x
