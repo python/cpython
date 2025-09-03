@@ -2469,6 +2469,10 @@ instead of as an error.
 setUpModule and tearDownModule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. function:: setUpModule
+              tearDownModule
+   :no-typesetting:
+
 These should be implemented as functions::
 
     def setUpModule():
