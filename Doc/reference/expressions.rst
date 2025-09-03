@@ -9,9 +9,11 @@ Expressions
 
 This chapter explains the meaning of the elements of expressions in Python.
 
-**Syntax Notes:** In this and the following chapters, extended BNF notation will
-be used to describe syntax, not lexical analysis.  When (one alternative of) a
-syntax rule has the form
+**Syntax Notes:** In this and the following chapters,
+:ref:`grammar notation <notation>` will be used to describe syntax,
+not lexical analysis.
+
+When (one alternative of) a syntax rule has the form
 
 .. productionlist:: python-grammar
    name: othername
@@ -29,17 +31,13 @@ Arithmetic conversions
 
 When a description of an arithmetic operator below uses the phrase "the numeric
 arguments are converted to a common real type", this means that the operator
-implementation for built-in types works as follows:
+implementation for built-in numeric types works as described in
+:ref:`Numeric Types <stdtypes-mixed-arithmetic>` section of the standard
+library documentation.
 
-* If both arguments are complex numbers, no conversion is performed;
-
-* if either argument is a complex or a floating-point number, the other is converted to a floating-point number;
-
-* otherwise, both must be integers and no conversion is necessary.
-
-Some additional rules apply for certain operators (e.g., a string as a left
-argument to the '%' operator).  Extensions must define their own conversion
-behavior.
+Some additional rules apply for certain operators and non-numeric operands
+(e.g., a string as a left argument to the '%' operator).
+Extensions must define their own conversion behavior.
 
 
 .. _atoms:
@@ -49,15 +47,56 @@ Atoms
 
 .. index:: atom
 
-Atoms are the most basic elements of expressions.  The simplest atoms are
-identifiers or literals.  Forms enclosed in parentheses, brackets or braces are
-also categorized syntactically as atoms.  The syntax for atoms is:
+Atoms are the most basic elements of expressions.
+The simplest atoms are :ref:`names <identifiers>` or literals.
+Forms enclosed in parentheses, brackets or braces are also categorized
+syntactically as atoms.
 
-.. productionlist:: python-grammar
-   atom: `identifier` | `literal` | `enclosure`
-   enclosure: `parenth_form` | `list_display` | `dict_display` | `set_display`
-            : | `generator_expression` | `yield_atom`
+Formally, the syntax for atoms is:
 
+.. grammar-snippet::
+   :group: python-grammar
+
+   atom:
+      | 'True'
+      | 'False'
+      | 'None'
+      | '...'
+      | `identifier`
+      | `literal`
+      | `enclosure`
+   enclosure:
+      | `parenth_form`
+      | `list_display`
+      | `dict_display`
+      | `set_display`
+
+
+.. _atom-singletons:
+
+Built-in constants
+------------------
+
+The keywords ``True``, ``False``, and ``None`` name
+:ref:`built-in constants <built-in-consts>`.
+The token ``...`` names the :py:data:`Ellipsis` constant.
+
+Evaluation of these atoms yields the corresponding value.
+
+.. note::
+
+   Several more built-in constants are available as global variables,
+   but only the ones mentioned here are :ref:`keywords <keywords>` and have
+   special support in the parser.
+   In particular, these names cannot be reassigned or used as attributes
+
+   .. code-block:: pycon
+
+      >>> False = 123
+        File "<input>", line 1
+         False = 123
+         ^^^^^
+      SyntaxError: cannot assign to False
 
 .. _atom-identifiers:
 
@@ -131,20 +170,28 @@ Literals
 
 .. index:: single: literal
 
-Python supports string and bytes literals and various numeric literals:
+A :dfn:`literal` is a textual representation of a value.
+Python supports numeric, string and bytes literals.
+:ref:`Format strings <f-strings>` and :ref:`template strings <t-strings>`
+are treated as string literals.
 
-.. grammar-snippet::
-   :group: python-grammar
+Numeric literals consist of a single :token:`python-grammar:NUMBER` token,
+which names an integer, floating-point number, or an imaginary number.
+See the :ref:`numbers` section in Lexical analysis documentation for details.
 
-   literal: `strings` | `NUMBER`
+String and bytes literals may consist of several tokens.
+See section :ref:`string-concatenation` for details.
 
-Evaluation of a literal yields an object of the given type (string, bytes,
-integer, floating-point number, complex number) with the given value.  The value
-may be approximated in the case of floating-point and imaginary (complex)
-literals.
-See section :ref:`literals` for details.
-See section :ref:`string-concatenation` for details on ``strings``.
+Note that negative and complex numbers, like ``-3`` or ``3+4.2j``,
+are syntactically not literals, but expressions :ref:`unary <unary>` or
+:ref:`binary <binary>` arithmetic operations involving the ``-`` or ``+``
+operator.
 
+Evaluation of a literal yields and object of the given type
+(:class:`int`, :class:`float`, :class:`complex`, :class:`str`,
+:class:`bytes`, or :class:`~string.templatelib.Template`) with the given value.
+The value may be approximated in the case of floating-point
+and imaginary literals.
 
 .. index::
    triple: immutable; data; type
@@ -155,6 +202,21 @@ is less important than its value.  Multiple evaluations of literals with the
 same value (either the same occurrence in the program text or a different
 occurrence) may obtain the same object or a different object with the same
 value.
+
+.. impl-detail::
+
+   In CPython, each evaluation of a :ref:`template strings <t-strings>` results
+   in a different object.
+   Note that for two template strings to have the same value, the *identity*
+   of the values of their :class:`~string.templatelib.Interpolation`\ s
+   must match.
+
+The formal grammar for literals is:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   literal: `strings` | `NUMBER`
 
 
 .. _string-concatenation:
@@ -168,13 +230,6 @@ as their concatenation::
 
    >>> "hello" 'world'
    "helloworld"
-
-Formally:
-
-.. grammar-snippet::
-   :group: python-grammar
-
-   strings: ( `STRING` | `fstring`)+ | `tstring`+
 
 This feature is defined at the syntactical level, so it only works with literals.
 To concatenate string expressions at run time, the '+' operator may be used::
@@ -207,6 +262,13 @@ string literals::
 
    >>> t"Hello" t"{name}!"
    Template(strings=('Hello', '!'), interpolations=(...))
+
+Formally:
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   strings: ( `STRING` | `fstring`)+ | `tstring`+
 
 
 .. _parenthesized:
@@ -1297,8 +1359,9 @@ for the operands): ``-1**2`` results in ``-1``.
 
 The power operator has the same semantics as the built-in :func:`pow` function,
 when called with two arguments: it yields its left argument raised to the power
-of its right argument.  The numeric arguments are first converted to a common
-type, and the result is of that type.
+of its right argument.
+Numeric arguments are first :ref:`converted to a common type <stdtypes-mixed-arithmetic>`,
+and the result is of that type.
 
 For int operands, the result has the same type as the operands unless the second
 argument is negative; in that case, all arguments are converted to float and a
@@ -1384,9 +1447,10 @@ operators and one for additive operators:
 
 The ``*`` (multiplication) operator yields the product of its arguments.  The
 arguments must either both be numbers, or one argument must be an integer and
-the other must be a sequence. In the former case, the numbers are converted to a
-common real type and then multiplied together.  In the latter case, sequence
-repetition is performed; a negative repetition factor yields an empty sequence.
+the other must be a sequence. In the former case, the numbers are
+:ref:`converted to a common real type <stdtypes-mixed-arithmetic>` and then
+multiplied together.  In the latter case, sequence repetition is performed;
+a negative repetition factor yields an empty sequence.
 
 This operation can be customized using the special :meth:`~object.__mul__` and
 :meth:`~object.__rmul__` methods.
@@ -1430,8 +1494,9 @@ The floor division operation can be customized using the special
    pair: operator; % (percent)
 
 The ``%`` (modulo) operator yields the remainder from the division of the first
-argument by the second.  The numeric arguments are first converted to a common
-type.  A zero right argument raises the :exc:`ZeroDivisionError` exception.  The
+argument by the second.  The numeric arguments are first converted to a
+:ref:`converted to a common type <stdtypes-mixed-arithmetic>`.
+A zero right argument raises the :exc:`ZeroDivisionError` exception.  The
 arguments may be floating-point numbers, e.g., ``3.14%0.7`` equals ``0.34``
 (since ``3.14`` equals ``4*0.7 + 0.34``.)  The modulo operator always yields a
 result with the same sign as its second operand (or zero); the absolute value of
@@ -1462,7 +1527,9 @@ floating-point number using the :func:`abs` function if appropriate.
 
 The ``+`` (addition) operator yields the sum of its arguments.  The arguments
 must either both be numbers or both be sequences of the same type.  In the
-former case, the numbers are converted to a common real type and then added together.
+former case, the numbers are
+:ref:`converted to a common real type <stdtypes-mixed-arithmetic>` and then
+added together.
 In the latter case, the sequences are concatenated.
 
 This operation can be customized using the special :meth:`~object.__add__` and
@@ -1477,8 +1544,9 @@ This operation can be customized using the special :meth:`~object.__add__` and
    single: operator; - (minus)
    single: - (minus); binary operator
 
-The ``-`` (subtraction) operator yields the difference of its arguments.  The
-numeric arguments are first converted to a common real type.
+The ``-`` (subtraction) operator yields the difference of its arguments.
+The numeric arguments are first
+:ref:`converted to a common real type <stdtypes-mixed-arithmetic>`.
 
 This operation can be customized using the special :meth:`~object.__sub__` and
 :meth:`~object.__rsub__` methods.
