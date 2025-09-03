@@ -351,7 +351,7 @@ class CTestCase(unittest.TestCase):
 
     # Use the class as a proxy to the io module members.
     def __getattr__(self, name):
-        return getattr(self.io, name)
+        return getattr(io, name)
 
 
 class PyTestCase(unittest.TestCase):
@@ -368,9 +368,9 @@ class PyTestCase(unittest.TestCase):
     SlowFlushRawIO = PySlowFlushRawIO
     MockCharPseudoDevFileIO = PyMockCharPseudoDevFileIO
 
-    # Use the class as a proxy to the io module members.
+    # Use the class as a proxy to the _pyio module members.
     def __getattr__(self, name):
-        return getattr(self.io, name)
+        return getattr(pyio, name)
 
 
 class IOTest(unittest.TestCase):
