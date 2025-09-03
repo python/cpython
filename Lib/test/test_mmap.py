@@ -885,6 +885,7 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
     def test_resize_up_anonymous_mapping(self):
         """If the mmap is backed by the pagefile ensure a resize up can happen
         and that the original data is still in place
@@ -901,16 +902,13 @@ class MmapTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     m.resize(new_size)
             else:
-                try:
-                    m.resize(new_size)
-                except SystemError:
-                    pass
-                else:
-                    self.assertEqual(len(m), new_size)
-                    self.assertEqual(m[:start_size], data)
-                    self.assertEqual(m[start_size:], b'\0' * (new_size - start_size))
+                m.resize(new_size)
+                self.assertEqual(len(m), new_size)
+                self.assertEqual(m[:start_size], data)
+                self.assertEqual(m[start_size:], b'\0' * (new_size - start_size))
 
     @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
     def test_resize_up_private_anonymous_mapping(self):
         start_size = PAGESIZE
         new_size = 2 * start_size
@@ -918,15 +916,12 @@ class MmapTests(unittest.TestCase):
 
         with mmap.mmap(-1, start_size, flags=mmap.MAP_PRIVATE) as m:
             m[:] = data
-            try:
-                m.resize(new_size)
-            except SystemError:
-                pass
-            else:
-                self.assertEqual(len(m), new_size)
-                self.assertEqual(m[:start_size], data)
-                self.assertEqual(m[start_size:], b'\0' * (new_size - start_size))
+            m.resize(new_size)
+            self.assertEqual(len(m), new_size)
+            self.assertEqual(m[:start_size], data)
+            self.assertEqual(m[start_size:], b'\0' * (new_size - start_size))
 
+    @unittest.skipUnless(hasattr(mmap.mmap, 'resize'), 'requires mmap.resize')
     def test_resize_down_anonymous_mapping(self):
         """If the mmap is backed by the pagefile ensure a resize down up can happen
         and that a truncated form of the original data is still in place
@@ -937,17 +932,13 @@ class MmapTests(unittest.TestCase):
 
         with mmap.mmap(-1, start_size) as m:
             m[:] = data
-            try:
-                m.resize(new_size)
-            except SystemError:
-                pass
-            else:
-                self.assertEqual(len(m), new_size)
-                self.assertEqual(m[:], data[:new_size])
-                if sys.platform.startswith(('linux', 'android')):
-                    # Can't expand to its original size.
-                    with self.assertRaises(ValueError):
-                        m.resize(start_size)
+            m.resize(new_size)
+            self.assertEqual(len(m), new_size)
+            self.assertEqual(m[:], data[:new_size])
+            if sys.platform.startswith(('linux', 'android')):
+                # Can't expand to its original size.
+                with self.assertRaises(ValueError):
+                    m.resize(start_size)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_resize_fails_if_mapping_held_elsewhere(self):
