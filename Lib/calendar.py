@@ -149,6 +149,14 @@ try:
 except ValueError:
     standalone_month_name = month_name
     standalone_month_abbr = month_abbr
+else:
+    # Some systems that do not support '%OB' will keep it as-is (i.e.,
+    # we get [..., '%OB', '%OB', '%OB']), so for non-distinct names,
+    # we fall back to month_name/month_abbr.
+    if len(set(standalone_month_name)) != len(set(month_name)):
+        standalone_month_name = month_name
+    if len(set(standalone_month_abbr)) != len(set(month_abbr)):
+        standalone_month_abbr = month_abbr
 
 
 def isleap(year):
@@ -370,7 +378,7 @@ class TextCalendar(Calendar):
         """
         Returns a formatted week day name.
         """
-        if width >= 9:
+        if width >= max(map(len, day_name)):
             names = day_name
         else:
             names = day_abbr

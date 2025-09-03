@@ -1,0 +1,3 @@
+Check the ``strftime()`` behavior at runtime instead of at the compile time
+to support cross-compiling.
+Remove the internal macro ``_Py_NORMALIZE_CENTURY``.

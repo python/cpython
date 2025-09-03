@@ -11,6 +11,8 @@
             break;
         }
 
+        /* _CHECK_PERIODIC_AT_END is not a viable micro-op for tier 2 */
+
         case _CHECK_PERIODIC_IF_NOT_YIELD_FROM: {
             break;
         }
@@ -936,7 +938,7 @@
                 assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
                 long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
                 assert(index >= 0);
-                int tuple_length = sym_tuple_length(tuple_st);
+                Py_ssize_t tuple_length = sym_tuple_length(tuple_st);
                 if (tuple_length == -1) {
                     res = sym_new_not_null(ctx);
                 }
@@ -1058,7 +1060,7 @@
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
+            JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
@@ -1897,13 +1899,13 @@
             JitOptRef obj;
             JitOptRef len;
             obj = stack_pointer[-1];
-            int tuple_length = sym_tuple_length(obj);
+            Py_ssize_t tuple_length = sym_tuple_length(obj);
             if (tuple_length == -1) {
                 len = sym_new_type(ctx, &PyLong_Type);
             }
             else {
                 assert(tuple_length >= 0);
-                PyObject *temp = PyLong_FromLong(tuple_length);
+                PyObject *temp = PyLong_FromSsize_t(tuple_length);
                 if (temp == NULL) {
                     goto error;
                 }
@@ -2494,7 +2496,7 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             if (sym_matches_type(arg, &PyUnicode_Type)) {
-                res = arg;
+                res = PyJitRef_StripReferenceInfo(arg);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
@@ -2520,7 +2522,7 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             if (sym_matches_type(arg, &PyTuple_Type)) {
-                res = arg;
+                res = PyJitRef_StripReferenceInfo(arg);
             }
             else {
                 res = sym_new_type(ctx, &PyTuple_Type);
@@ -2616,9 +2618,9 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             res = sym_new_type(ctx, &PyLong_Type);
-            int tuple_length = sym_tuple_length(arg);
+            Py_ssize_t tuple_length = sym_tuple_length(arg);
             if (tuple_length >= 0) {
-                PyObject *temp = PyLong_FromLong(tuple_length);
+                PyObject *temp = PyLong_FromSsize_t(tuple_length);
                 if (temp == NULL) {
                     goto error;
                 }
@@ -3195,6 +3197,10 @@
         }
 
         case _DEOPT: {
+            break;
+        }
+
+        case _HANDLE_PENDING_AND_DEOPT: {
             break;
         }
 
