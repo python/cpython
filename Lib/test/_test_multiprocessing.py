@@ -5936,6 +5936,7 @@ class TestStartMethod(unittest.TestCase):
     def _dummy_func():
         pass
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_spawn_dont_set_context(self):
         # Run a process with spawn or forkserver context may change
         # the global start method, see gh-109263.
@@ -5946,7 +5947,7 @@ class TestStartMethod(unittest.TestCase):
                 ctx = multiprocessing.get_context(method)
             except ValueError:
                 continue
-            process = ctx .Process(target=self._dummy_func)
+            process = ctx.Process(target=self._dummy_func)
             process.start()
             process.join()
             self.assertIsNone(multiprocessing.get_start_method(allow_none=True))
