@@ -1371,22 +1371,22 @@ is also available in the :mod:`!token` module documentation.
    :group: python-grammar
 
    OP:
-      | arithmetic_operator
+      | assignment_operator
       | bitwise_operator
       | comparison_operator
       | enclosing_delimiter
       | other_delimiter
-      | assignment_operator
-      | other_op
+      | arithmetic_operator
       | "..."
+      | other_op
 
-   arithmetic_operator:   "+"  | "-"  | "*"  | "**"  | "/"   | "//"  | "%"
-   bitwise_operator:      "&"  | "|"  | "^"  | "~"   | "<<"  | ">>"
    assignment_operator:   "+=" | "-=" | "*=" | "**=" | "/="  | "//=" | "%=" |
                           "&=" | "|=" | "^=" | "<<=" | ">>=" | "@="  | ":="
-   comparison_operator:   "<"  | ">"  | "<=" | ">="  | "=="  | "!="
+   bitwise_operator:      "&"  | "|"  | "^"  | "~"   | "<<"  | ">>"
+   comparison_operator:   "<=" | ">=" | "<"  | ">"   | "=="  | "!="
    enclosing_delimiter:   "("  | ")"  | "["  | "]"   | "{"   | "}"
    other_delimiter:       ","  | ":"  | "!"  | ";"   | "="   | "->"
+   arithmetic_operator:   "+"  | "-"  | "**" | "*"   | "//"  | "/"   | "%"
    other_op:              "."  | "@"
 
 .. note::
