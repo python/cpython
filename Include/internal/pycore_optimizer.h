@@ -252,6 +252,12 @@ PyJitRef_Wrap(JitOptSymbol *sym)
 }
 
 static inline JitOptRef
+PyJitRef_StripReferenceInfo(JitOptRef ref)
+{
+    return PyJitRef_Wrap(PyJitRef_Unwrap(ref));
+}
+
+static inline JitOptRef
 PyJitRef_Borrow(JitOptRef ref)
 {
     return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
