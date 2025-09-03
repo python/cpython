@@ -7335,3 +7335,54 @@ class ForkInThreads(unittest.TestCase):
         res = assert_python_failure("-c", code, PYTHONWARNINGS='error')
         self.assertIn(b'DeprecationWarning', res.err)
         self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
+
+@unittest.skipUnless(HAS_SHMEM, "requires multiprocessing.shared_memory")
+class TestSharedMemoryNames(unittest.TestCase):
+    def test_that_shared_memory_name_with_colons_has_no_resource_tracker_errors(self):
+        # Test script that creates and cleans up shared memory with colon in name
+        test_script = textwrap.dedent("""
+            import sys
+            from multiprocessing import shared_memory
+            import time
+
+            # Test various patterns of colons in names
+            test_names = [
+                "a:b",
+                "a:b:c",
+                "test:name:with:many:colons",
+                ":starts:with:colon",
+                "ends:with:colon:",
+                "::double::colons::",
+            ]
+
+            for name in test_names:
+                try:
+                    shm = shared_memory.SharedMemory(create=True, size=100, name=name)
+                    shm.buf[:5] = b'hello'  # Write something to the shared memory
+                    shm.close()
+                    shm.unlink()
+
+                except Exception as e:
+                    print(f"Error with name '{name}': {e}", file=sys.stderr)
+                    sys.exit(1)
+
+            print("SUCCESS")
+        """)
+
+        # Run the test script as a subprocess to capture all output
+        result = subprocess.run(
+            [sys.executable, '-c', test_script],
+            capture_output=True,
+            text=True
+        )
+
+        self.assertEqual(result.returncode, 0,
+                        f"Script failed with stderr: {result.stderr}")
+        self.assertIn("SUCCESS", result.stdout)
+
+        stderr_lower = result.stderr.lower()
+        self.assertNotIn("too many values to unpack", stderr_lower,
+                        f"Resource tracker parsing error found in stderr: {result.stderr}")
+
+        self.assertNotIn("valueerror", stderr_lower,
+                        f"ValueError found in stderr: {result.stderr}")
