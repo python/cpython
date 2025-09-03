@@ -501,7 +501,7 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
          */
         size_t n3 = 0;
         for (size_t i = 0; i < n2; i++) {
-            if (buf[i] > 0x10000) {
+            if ((Py_UCS4)buf[i] > 0x10000u) {
                 n3++;
             }
         }
@@ -514,10 +514,10 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
             }
             size_t j = 0;
             for (size_t i = 0; i < n2; i++) {
-                wchar_t c = buf[i];
-                if (c > 0x10000) {
-                    buf2[j++] = (((Py_UCS4)c) >> 16) | 0x10000u;
-                    buf2[j++] = ((Py_UCS4)c) & 0xffffu;
+                Py_UCS4 c = (Py_UCS4)buf[i];
+                if (c > 0x10000u) {
+                    buf2[j++] = (c >> 16) | 0x10000u;
+                    buf2[j++] = c & 0xFFFFu;
                 }
                 else {
                     buf2[j++] = c;
