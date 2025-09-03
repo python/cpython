@@ -272,11 +272,11 @@ Collections Abstract Base Classes -- Detailed Descriptions
    linked list), the mixins will have quadratic performance and will
    likely need to be overridden.
 
-   .. method:: index(self, value, start=0, stop=None)
+   .. method:: index(value, start=0, stop=None)
 
       Return first index of *value*.
 
-      Raises ValueError if the value is not present.
+      Raises :exc:`ValueError` if the value is not present.
 
       Supporting the *start* and *stop* arguments is optional, but recommended.
 
