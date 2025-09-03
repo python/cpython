@@ -236,7 +236,7 @@ def get_message_lines(typ, exc, tb):
         with contextlib.redirect_stderr(err):
             sys.__excepthook__(typ, exc, tb)
         err_list = err.getvalue().split("\n")[1:]
-        
+
         for i in range(len(err_list)):
             if err_list[i].startswith(" "):
                 continue
