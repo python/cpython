@@ -1060,7 +1060,7 @@
             JitOptRef retval;
             JitOptRef res;
             retval = stack_pointer[-1];
-            JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
+            JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
@@ -2496,7 +2496,7 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             if (sym_matches_type(arg, &PyUnicode_Type)) {
-                res = arg;
+                res = PyJitRef_StripReferenceInfo(arg);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
@@ -2522,7 +2522,7 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             if (sym_matches_type(arg, &PyTuple_Type)) {
-                res = arg;
+                res = PyJitRef_StripReferenceInfo(arg);
             }
             else {
                 res = sym_new_type(ctx, &PyTuple_Type);
