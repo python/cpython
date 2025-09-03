@@ -3689,10 +3689,10 @@ make_abi_info(void)
         goto error;
     }
     res = PyDict_SetItemString(abi_info, "byteorder", value);
+    Py_DECREF(value);
     if (res < 0) {
         goto error;
     }
-    Py_DECREF(value);
 
     ns = _PyNamespace_New(abi_info);
     Py_DECREF(abi_info);
