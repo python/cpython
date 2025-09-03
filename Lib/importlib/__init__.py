@@ -86,16 +86,6 @@ def import_module(name, package=None):
                 break
             level += 1
     module = _bootstrap._gcd_import(name[level:], package, level)
-    if module:
-        sys.audit(
-            "import",
-            name,
-            # We could try to grab __file__ here but it breaks LazyLoader
-            None,
-            sys.path,
-            sys.meta_path,
-            sys.path_hooks
-        )
     return module
 
 

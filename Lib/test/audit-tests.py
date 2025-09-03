@@ -676,14 +676,18 @@ def test_import_module():
     import importlib
 
     with TestHook() as hook:
-        importlib.import_module("os")  # random stdlib
+        importlib.import_module("importlib")  # already imported, won't get logged
+        importlib.import_module("email") # standard library module
         importlib.import_module("pythoninfo")  # random module
+        importlib.import_module(".test_importlib.abc", "test")  # relative import
 
     actual = [a[0] for e, a in hook.seen if e == "import"]
     assertSequenceEqual(
         [
-            "os",
+            "email",
             "pythoninfo",
+            "test.test_importlib.abc",
+            "test.test_importlib"
         ],
         actual,
     )

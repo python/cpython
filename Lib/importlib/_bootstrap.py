@@ -1395,6 +1395,10 @@ def _gcd_import(name, package=None, level=0):
     _sanity_check(name, package, level)
     if level > 0:
         name = _resolve_name(name, package, level)
+    module = sys.modules.get(name, _NEEDS_LOADING)
+    if (module is _NEEDS_LOADING or
+        getattr(getattr(module, "__spec__", None), "_initializing", False)):
+        sys.audit("import", name, None, sys.path, sys.meta_path, sys.path_hooks)
     return _find_and_load(name, _gcd_import)
 
 
