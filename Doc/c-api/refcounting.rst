@@ -19,7 +19,7 @@ of Python objects.
    references to the object are actually held.  For example, some
    objects are :term:`immortal` and have a very high refcount that does not
    reflect the actual number of references.  Consequently, do not rely
-   on the returned value to be accurate, other than a value of 0 or 1.
+   on the returned value to be accurate.
 
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
 
@@ -37,6 +37,10 @@ of Python objects.
 
    .. versionchanged:: 3.11
       The parameter type is no longer :c:expr:`const PyObject*`.
+
+   .. versionchanged:: 3.14
+      A return value of 1 is no longer sufficient to determine that *o* is
+      solely referenced by the caller.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
