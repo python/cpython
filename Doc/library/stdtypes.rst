@@ -5869,12 +5869,33 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used by slicing (see :ref:`slicings`).  It supports no
-special operations.  There is exactly one ellipsis object, named
+This object is commonly used used to indicate that something is omitted.
+It supports no special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
 :const:`Ellipsis` singleton.
 
 It is written as ``Ellipsis`` or ``...``.
+
+In typical use, ``...`` as the ``Ellipsis`` object appears in a few different
+places, for instance:
+
+- In type annotations, such as :ref:`callable arguments <annotating-callables>`
+  or :ref:`tuple elements <annotating-tuples>`.
+
+- As the body of a function instead of a :ref:`pass statement <tut-pass>`.
+
+- In third-party libraries, such as `Numpy's slicing and striding
+  <https://numpy.org/doc/stable/user/basics.indexing.html#slicing-and-striding>`_.
+
+Python also uses three dots in ways that are not ``Ellipsis`` objects, for instance:
+
+- Doctest's :const:`ELLIPSIS <doctest.ELLIPSIS>`, as a pattern for missing content.
+
+- The default Python prompt of the :term:`interactive` shell when partial input is incomplete.
+
+Lastly, the Python documentation often uses three dots in conventional English
+usage to mean omitted content, even in code examples that also use them as the
+``Ellipsis``.
 
 
 .. _bltin-notimplemented-object:
