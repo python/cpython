@@ -10,7 +10,7 @@ extern "C" {
 
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 #include "pycore_uop_ids.h"
-#include "pycore_stackref.h"
+#include "pycore_stackref.h"      // _PyStackRef
 #include <stdbool.h>
 
 
@@ -67,8 +67,9 @@ typedef struct {
 #endif
 } _PyUOpInstruction;
 
-typedef struct {
+typedef struct _PyExitData {
     uint32_t target;
+    uint16_t index;
     _Py_BackoffCounter temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;
@@ -81,7 +82,6 @@ typedef struct _PyExecutorObject {
     uint32_t code_size;
     size_t jit_size;
     void *jit_code;
-    void *jit_side_entry;
     _PyExitData exits[1];
 } _PyExecutorObject;
 
@@ -316,6 +316,9 @@ extern JitOptRef _Py_uop_sym_new_type(
     JitOptContext *ctx, PyTypeObject *typ);
 
 extern JitOptRef _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val);
+extern JitOptRef _Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val);
+bool _Py_uop_sym_is_safe_const(JitOptContext *ctx, JitOptRef sym);
+_PyStackRef _Py_uop_sym_get_const_as_stackref(JitOptContext *ctx, JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_null(JitOptContext *ctx);
 extern bool _Py_uop_sym_has_type(JitOptRef sym);
 extern bool _Py_uop_sym_matches_type(JitOptRef sym, PyTypeObject *typ);
@@ -351,6 +354,16 @@ PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
 PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
 
+static inline _PyExecutorObject *_PyExecutor_FromExit(_PyExitData *exit)
+{
+    _PyExitData *exit0 = exit - exit->index;
+    return (_PyExecutorObject *)(((char *)exit0) - offsetof(_PyExecutorObject, exits));
+}
+
+extern _PyExecutorObject *_PyExecutor_GetColdExecutor(void);
+
+PyAPI_FUNC(void) _PyExecutor_ClearExit(_PyExitData *exit);
+
 static inline int is_terminator(const _PyUOpInstruction *uop)
 {
     int opcode = uop->opcode;
@@ -359,6 +372,8 @@ static inline int is_terminator(const _PyUOpInstruction *uop)
         opcode == _JUMP_TO_TOP
     );
 }
+
+extern void _PyExecutor_Free(_PyExecutorObject *self);
 
 PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 #ifdef _Py_TIER2

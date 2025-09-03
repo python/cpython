@@ -96,12 +96,6 @@ newdbmobject(_dbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
-static int
-dbm_traverse(PyObject *dp, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(dp));
-    return 0;
-}
 
 static void
 dbm_dealloc(PyObject *self)
@@ -540,7 +534,7 @@ static PyMethodDef dbm_methods[] = {
 
 static PyType_Slot dbmtype_spec_slots[] = {
     {Py_tp_dealloc, dbm_dealloc},
-    {Py_tp_traverse, dbm_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_methods, dbm_methods},
     {Py_sq_contains, dbm_contains},
     {Py_mp_length, dbm_length},

@@ -963,20 +963,44 @@ PyFunction_Check:PyObject*:o:0:
 PyFunction_GetAnnotations:PyObject*::0:
 PyFunction_GetAnnotations:PyObject*:op:0:
 
+PyFunction_GET_ANNOTATIONS:PyObject*::0:
+PyFunction_GET_ANNOTATIONS:PyObject*:op:0:
+
 PyFunction_GetClosure:PyObject*::0:
 PyFunction_GetClosure:PyObject*:op:0:
+
+PyFunction_GET_CLOSURE:PyObject*::0:
+PyFunction_GET_CLOSURE:PyObject*:op:0:
 
 PyFunction_GetCode:PyObject*::0:
 PyFunction_GetCode:PyObject*:op:0:
 
+PyFunction_GET_CODE:PyObject*::0:
+PyFunction_GET_CODE:PyObject*:op:0:
+
 PyFunction_GetDefaults:PyObject*::0:
 PyFunction_GetDefaults:PyObject*:op:0:
+
+PyFunction_GET_DEFAULTS:PyObject*::0:
+PyFunction_GET_DEFAULTS:PyObject*:op:0:
+
+PyFunction_GetKwDefaults:PyObject*::0:
+PyFunction_GetKwDefaults:PyObject*:op:0:
+
+PyFunction_GET_KW_DEFAULTS:PyObject*::0:
+PyFunction_GET_KW_DEFAULTS:PyObject*:op:0:
 
 PyFunction_GetGlobals:PyObject*::0:
 PyFunction_GetGlobals:PyObject*:op:0:
 
+PyFunction_GET_GLOBALS:PyObject*::0:
+PyFunction_GET_GLOBALS:PyObject*:op:0:
+
 PyFunction_GetModule:PyObject*::0:
 PyFunction_GetModule:PyObject*:op:0:
+
+PyFunction_GET_MODULE:PyObject*::0:
+PyFunction_GET_MODULE:PyObject*:op:0:
 
 PyFunction_New:PyObject*::+1:
 PyFunction_New:PyObject*:code:+1:

@@ -100,15 +100,19 @@ PyDoc_STRVAR(_sha3_sha3_224_copy__doc__,
 "Return a copy of the hash object.");
 
 #define _SHA3_SHA3_224_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_sha3_sha3_224_copy, METH_NOARGS, _sha3_sha3_224_copy__doc__},
+    {"copy", _PyCFunction_CAST(_sha3_sha3_224_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sha3_sha3_224_copy__doc__},
 
 static PyObject *
-_sha3_sha3_224_copy_impl(SHA3object *self);
+_sha3_sha3_224_copy_impl(SHA3object *self, PyTypeObject *cls);
 
 static PyObject *
-_sha3_sha3_224_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+_sha3_sha3_224_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return _sha3_sha3_224_copy_impl((SHA3object *)self);
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
+        PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
+        return NULL;
+    }
+    return _sha3_sha3_224_copy_impl((SHA3object *)self, cls);
 }
 
 PyDoc_STRVAR(_sha3_sha3_224_digest__doc__,
@@ -231,6 +235,11 @@ _sha3_shake_128_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, 
             goto exit;
         }
         length = ival;
+        if (length < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "length cannot be negative");
+            goto exit;
+        }
     }
     return_value = _sha3_shake_128_digest_impl((SHA3object *)self, length);
 
@@ -300,10 +309,15 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t narg
             goto exit;
         }
         length = ival;
+        if (length < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "length cannot be negative");
+            goto exit;
+        }
     }
     return_value = _sha3_shake_128_hexdigest_impl((SHA3object *)self, length);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c17e3ec670afe253 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=78284adde71d590c input=a9049054013a1b77]*/

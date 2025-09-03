@@ -191,12 +191,15 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD, GNU/kFreeBSD, Solaris.
 
    .. versionadded:: 3.8
 
    .. versionchanged:: 3.13
       Added support for GNU/kFreeBSD.
+
+   .. versionchanged:: next
+      Added support for Solaris.
 
 
 .. function:: enumerate()
@@ -621,7 +624,7 @@ since it is impossible to detect the termination of alien threads.
       an error to :meth:`~Thread.join` a thread before it has been started
       and attempts to do so raise the same exception.
 
-      If an attempt is made to join a running daemonic thread in in late stages
+      If an attempt is made to join a running daemonic thread in late stages
       of :term:`Python finalization <interpreter shutdown>` :meth:`!join`
       raises a :exc:`PythonFinalizationError`.
 

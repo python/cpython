@@ -1125,6 +1125,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _lzma.LZMADecompressor.decompress
 
     data: Py_buffer
@@ -1149,7 +1150,7 @@ the unused_data attribute.
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=ef4e20ec7122241d input=60c1f135820e309d]*/
+/*[clinic end generated code: output=ef4e20ec7122241d input=d5cbd45801b4b8b0]*/
 {
     PyObject *result = NULL;
 
@@ -1471,6 +1472,7 @@ error:
 
 
 /*[clinic input]
+@permit_long_summary
 _lzma._decode_filter_properties
     filter_id: lzma_vli
     encoded_props: Py_buffer
@@ -1484,7 +1486,7 @@ The result does not include the filter ID itself, only the options.
 static PyObject *
 _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
                                      Py_buffer *encoded_props)
-/*[clinic end generated code: output=714fd2ef565d5c60 input=246410800782160c]*/
+/*[clinic end generated code: output=714fd2ef565d5c60 input=b9750bf909109bbe]*/
 {
     lzma_filter filter;
     lzma_ret lzret;

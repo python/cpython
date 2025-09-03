@@ -60,6 +60,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
 
         if not source or source.isspace():
             return False
+        # Remember to update CLI_COMMANDS in _completer.py
         if source[0] == ".":
             match source[1:].strip():
                 case "version":
