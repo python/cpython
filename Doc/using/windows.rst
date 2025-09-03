@@ -1868,11 +1868,8 @@ if a 32 or 64 bit implementation shall be requested by adding "-32" or "-64".
 For example, a shebang line of ``#!python`` has no version qualifier, while
 ``#!python3`` has a version qualifier which specifies only a major version.
 
-.. envvar:: PY_PYTHON
-   :no-typesetting:
-
 If no version qualifiers are found in a command, the environment
-variable :envvar:`PY_PYTHON` can be set to specify the default version
+variable :envvar:`!PY_PYTHON` can be set to specify the default version
 qualifier. If it is not set, the default is "3". The variable can
 specify any value that may be passed on the command line, such as "3",
 "3.7", "3.7-32" or "3.7-64". (Note that the "-64" option is only
@@ -1945,10 +1942,7 @@ For example:
 Diagnostics
 -----------
 
-.. envvar:: PYLAUNCHER_DEBUG
-   :no-typesetting:
-
-If an environment variable :envvar:`PYLAUNCHER_DEBUG` is set (to any value), the
+If an environment variable :envvar:`!PYLAUNCHER_DEBUG` is set (to any value), the
 launcher will print diagnostic information to stderr (i.e. to the console).
 While this information manages to be simultaneously verbose *and* terse, it
 should allow you to see what versions of Python were located, why a
@@ -1958,10 +1952,7 @@ target Python. It is primarily intended for testing and debugging.
 Dry Run
 -------
 
-.. envvar:: PYLAUNCHER_DRYRUN
-   :no-typesetting:
-
-If an environment variable :envvar:`PYLAUNCHER_DRYRUN` is set (to any value),
+If an environment variable :envvar:`!PYLAUNCHER_DRYRUN` is set (to any value),
 the launcher will output the command it would have run, but will not actually
 launch Python. This may be useful for tools that want to use the launcher to
 detect and then launch Python directly. Note that the command written to
@@ -1971,20 +1962,14 @@ the console.
 Install on demand
 -----------------
 
-.. envvar:: PYLAUNCHER_ALLOW_INSTALL
-   :no-typesetting:
-
-If an environment variable :envvar:`PYLAUNCHER_ALLOW_INSTALL` is set (to any
+If an environment variable :envvar:`!PYLAUNCHER_ALLOW_INSTALL` is set (to any
 value), and the requested Python version is not installed but is available on
 the Microsoft Store, the launcher will attempt to install it. This may require
 user interaction to complete, and you may need to run the command again.
 
-.. envvar:: PYLAUNCHER_ALWAYS_INSTALL
-   :no-typesetting:
-
-An additional :envvar:`PYLAUNCHER_ALWAYS_INSTALL` variable causes the launcher
+An additional :envvar:`!PYLAUNCHER_ALWAYS_INSTALL` variable causes the launcher
 to always try to install Python, even if it is detected. This is mainly intended
-for testing (and should be used with :envvar:`PYLAUNCHER_DRYRUN`).
+for testing (and should be used with :envvar:`!PYLAUNCHER_DRYRUN`).
 
 Return codes
 ------------
