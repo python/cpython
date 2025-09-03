@@ -2200,6 +2200,32 @@ _ssl__SSLSocket_group_impl(PySSLSocket *self)
 #endif
 }
 
+static PyObject *
+ssl_socket_signame_impl(PySSLSocket *socket,
+                        enum py_ssl_server_or_client self_socket_type)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30500000L
+    int ret;
+    const char *sigalg;
+
+    if (socket->ssl == NULL) {
+        Py_RETURN_NONE;
+    }
+    ret = (socket->socket_type == self_socket_type)
+        ? SSL_get0_signature_name(socket->ssl, &sigalg)
+        : SSL_get0_peer_signature_name(socket->ssl, &sigalg);
+    if (ret == 0) {
+        Py_RETURN_NONE;
+    }
+    assert(sigalg != NULL);
+    return PyUnicode_DecodeFSDefault(sigalg);
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting sig algorithms requires OpenSSL 3.5 or later.");
+    return NULL;
+#endif
+}
+
 /*[clinic input]
 @critical_section
 _ssl._SSLSocket.client_sigalg
@@ -2209,27 +2235,7 @@ static PyObject *
 _ssl__SSLSocket_client_sigalg_impl(PySSLSocket *self)
 /*[clinic end generated code: output=499dd7fbf021a47b input=a0d9696b5414c627]*/
 {
-#if OPENSSL_VERSION_NUMBER >= 0x30500000L
-    int ret;
-    const char *sigalg;
-
-    if (self->ssl == NULL) {
-        Py_RETURN_NONE;
-    }
-    if (self->socket_type == PY_SSL_CLIENT) {
-        ret = SSL_get0_signature_name(self->ssl, &sigalg);
-    } else {
-        ret = SSL_get0_peer_signature_name(self->ssl, &sigalg);
-    }
-    if (ret == 0) {
-        Py_RETURN_NONE;
-    }
-    return PyUnicode_DecodeFSDefault(sigalg);
-#else
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Getting sig algorithms requires OpenSSL 3.5 or later.");
-    return NULL;
-#endif
+    return ssl_socket_signame_impl(self, PY_SSL_CLIENT);
 }
 
 /*[clinic input]
@@ -2241,27 +2247,7 @@ static PyObject *
 _ssl__SSLSocket_server_sigalg_impl(PySSLSocket *self)
 /*[clinic end generated code: output=c508a766a8e275dc input=9063e562a1e6b946]*/
 {
-#if OPENSSL_VERSION_NUMBER >= 0x30500000L
-    int ret;
-    const char *sigalg;
-
-    if (self->ssl == NULL) {
-        Py_RETURN_NONE;
-    }
-    if (self->socket_type == PY_SSL_CLIENT) {
-        ret = SSL_get0_peer_signature_name(self->ssl, &sigalg);
-    } else {
-        ret = SSL_get0_signature_name(self->ssl, &sigalg);
-    }
-    if (ret == 0) {
-        Py_RETURN_NONE;
-    }
-    return PyUnicode_DecodeFSDefault(sigalg);
-#else
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Getting sig algorithms requires OpenSSL 3.5 or later.");
-    return NULL;
-#endif
+    return ssl_socket_signame_impl(self, PY_SSL_SERVER);
 }
 
 /*[clinic input]

@@ -999,7 +999,7 @@ class ContextTests(unittest.TestCase):
         self.assertIn('P-256', ctx.get_groups(include_aliases=True))
 
     @unittest.skipUnless(CAN_SET_CLIENT_SIGALGS,
-                         "AWS-LC doesn't support setting client sigalgs")
+                         "SSL library doesn't support setting client sigalgs")
     def test_set_client_sigalgs(self):
         ctx = ssl.create_default_context()
 
@@ -4311,7 +4311,7 @@ class ThreadedTests(unittest.TestCase):
                                sni_name=hostname)
 
     @unittest.skipUnless(CAN_SET_CLIENT_SIGALGS,
-                         "AWS-LC doesn't support setting client sigalgs")
+                         "SSL library doesn't support setting client sigalgs")
     def test_client_sigalgs(self):
         # no mutual auth, so cient_sigalg should be None
         client_context, server_context, hostname = testing_context()
@@ -4322,16 +4322,19 @@ class ThreadedTests(unittest.TestCase):
             self.assertIsNone(stats['client_sigalg'])
 
         # server auto, client rsa_pss_rsae_sha384
+        sigalg = "rsa_pss_rsae_sha384"
         client_context, server_context, hostname = \
             testing_context(client_cert=SIGNED_CERTFILE)
-        client_context.set_client_sigalgs("rsa_pss_rsae_sha384")
+        client_context.set_client_sigalgs(sigalg)
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
         if CAN_GET_SELECTED_OPENSSL_SIGALG:
-            self.assertEqual(stats['client_sigalg'], "rsa_pss_rsae_sha384")
+            self.assertEqual(stats['client_sigalg'], sigalg)
 
-        # server / client sigalg mismatch
+    @unittest.skipUnless(CAN_SET_CLIENT_SIGALGS,
+                         "SSL library doesn't support setting client sigalgs")
+    def test_client_sigalgs_mismatch(self):
         client_context, server_context, hostname = \
             testing_context(client_cert=SIGNED_CERTFILE)
         client_context.set_client_sigalgs("rsa_pss_rsae_sha256")
@@ -4345,24 +4348,25 @@ class ThreadedTests(unittest.TestCase):
 
     def test_server_sigalgs(self):
         # server rsa_pss_rsae_sha384, client auto
+        sigalg = "rsa_pss_rsae_sha384"
         client_context, server_context, hostname = testing_context()
-        server_context.set_server_sigalgs("rsa_pss_rsae_sha384")
+        server_context.set_server_sigalgs(sigalg)
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
         if CAN_GET_SELECTED_OPENSSL_SIGALG:
-            self.assertEqual(stats['server_sigalg'], "rsa_pss_rsae_sha384")
+            self.assertEqual(stats['server_sigalg'], sigalg)
 
         # server auto, client rsa_pss_rsae_sha384
         client_context, server_context, hostname = testing_context()
-        client_context.set_server_sigalgs("rsa_pss_rsae_sha384")
+        client_context.set_server_sigalgs(sigalg)
         stats = server_params_test(client_context, server_context,
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
         if CAN_GET_SELECTED_OPENSSL_SIGALG:
-            self.assertEqual(stats['server_sigalg'], "rsa_pss_rsae_sha384")
+            self.assertEqual(stats['server_sigalg'], sigalg)
 
-        # server / client sigalg mismatch
+    def test_server_sigalgs_mismatch(self):
         client_context, server_context, hostname = testing_context()
         client_context.set_server_sigalgs("rsa_pss_rsae_sha256")
         server_context.set_server_sigalgs("rsa_pss_rsae_sha384")

@@ -1300,16 +1300,16 @@ SSL sockets also have the following additional methods and attributes:
 .. method:: SSLSocket.client_sigalg()
 
    Return the signature algorithm used for performing certificate-based client
-   authentication on this connection. If no connection has been established
-   or client authentication didn't occur, this method returns ``None``.
+   authentication on this connection, or ``None`` if no connection has been
+   established or client authentication didn't occur.
 
    .. versionadded:: next
 
 .. method:: SSLSocket.server_sigalg()
 
    Return the signature algorithm used by the server to complete the TLS
-   handshake on this connection. If no connection has been established
-   or the cipher suite has no signature, this method returns ``None``.
+   handshake on this connection, or ``None`` if no connection has been
+   established or the cipher suite has no signature.
 
    .. versionadded:: next
 
