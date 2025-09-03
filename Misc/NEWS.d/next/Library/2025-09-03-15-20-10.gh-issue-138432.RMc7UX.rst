@@ -1,0 +1,4 @@
+:meth:`zoneinfo.reset_tzpath` will now raise ``ValueError`` if it encounters
+an :class:`os.PathLike` object representing a relative path, along with a
+more informative error message. It previously raised ``TypeError`` in this
+case.
