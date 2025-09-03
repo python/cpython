@@ -2670,6 +2670,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/source \
 		test/test_inspect \
 		test/test_interpreters \
+		test/test_io \
 		test/test_json \
 		test/test_module \
 		test/test_multiprocessing_fork \

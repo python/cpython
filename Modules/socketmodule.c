@@ -5538,13 +5538,6 @@ sock_finalize(PyObject *self)
     PyErr_SetRaisedException(exc);
 }
 
-static int
-sock_traverse(PyObject *s, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(s));
-    return 0;
-}
-
 static void
 sock_dealloc(PyObject *s)
 {
@@ -5843,7 +5836,7 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
 
 static PyType_Slot sock_slots[] = {
     {Py_tp_dealloc, sock_dealloc},
-    {Py_tp_traverse, sock_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_repr, sock_repr},
     {Py_tp_doc, (void *)sock_doc},
     {Py_tp_methods, sock_methods},

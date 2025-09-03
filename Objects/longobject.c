@@ -6356,7 +6356,7 @@ int_as_integer_ratio_impl(PyObject *self)
 /*[clinic input]
 int.to_bytes
 
-    length: Py_ssize_t = 1
+    length: Py_ssize_t(allow_negative=False) = 1
         Length of bytes object to use.  An OverflowError is raised if the
         integer is not representable with the given number of bytes.  Default
         is length 1.
@@ -6378,7 +6378,7 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=a0103d0e9ad85c2b]*/
+/*[clinic end generated code: output=89c801df114050a3 input=66f9d0c20529b44f]*/
 {
     int little_endian;
     PyObject *bytes;
@@ -6392,12 +6392,6 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
     else {
         PyErr_SetString(PyExc_ValueError,
             "byteorder must be either 'little' or 'big'");
-        return NULL;
-    }
-
-    if (length < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "length argument must be non-negative");
         return NULL;
     }
 
