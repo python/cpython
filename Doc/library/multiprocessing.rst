@@ -2448,7 +2448,7 @@ with the :class:`Pool` class.
       Callbacks should complete immediately since otherwise the thread which
       handles the results will get blocked.
 
-   .. method:: imap(func, iterable[, chunksize])
+   .. method:: imap(func, iterable[, chunksize[, buffersize]])
 
       A lazier version of :meth:`.map`.
 
@@ -2462,11 +2462,26 @@ with the :class:`Pool` class.
       ``next(timeout)`` will raise :exc:`multiprocessing.TimeoutError` if the
       result cannot be returned within *timeout* seconds.
 
-   .. method:: imap_unordered(func, iterable[, chunksize])
+      The *iterable* is collected immediately rather than lazily, unless a
+      *buffersize* is specified to limit the number of submitted tasks whose
+      results have not yet been yielded. If the buffer is full, iteration over
+      the *iterables* pauses until a result is yielded from the buffer.
+      To fully utilize pool's capacity when using this feature,
+      set *buffersize* at least to the number of processes in pool
+      (to consume *iterable* as you go), or even higher
+      (to prefetch the next ``N=buffersize-processes`` arguments).
+
+      .. versionadded:: next
+         Added the *buffersize* parameter.
+
+   .. method:: imap_unordered(func, iterable[, chunksize[, buffersize]])
 
       The same as :meth:`imap` except that the ordering of the results from the
       returned iterator should be considered arbitrary.  (Only when there is
       only one worker process is the order guaranteed to be "correct".)
+
+      .. versionadded:: next
+         Added the *buffersize* parameter.
 
    .. method:: starmap(func, iterable[, chunksize])
 

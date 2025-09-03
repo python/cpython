@@ -2968,18 +2968,42 @@ class _TestPool(BaseTestCase):
             p.join()
 
     def test_imap(self):
-        it = self.pool.imap(sqr, list(range(10)))
-        self.assertEqual(list(it), list(map(sqr, list(range(10)))))
+        optimal_buffersize = 4  # `self.pool` size
+        buffersize_variants = [
+            {"buffersize": None},
+            {"buffersize": 1},
+            {"buffersize": optimal_buffersize},
+            {"buffersize": optimal_buffersize * 2},
+        ]
 
-        it = self.pool.imap(sqr, list(range(10)))
-        for i in range(10):
-            self.assertEqual(next(it), i*i)
-        self.assertRaises(StopIteration, it.__next__)
+        for kwargs in ({}, *buffersize_variants):
+            with self.subTest(**kwargs):
+                iterable = range(10)
+                if self.TYPE != "threads":
+                    iterable = list(iterable)
+                it = self.pool.imap(sqr, iterable, **kwargs)
+                self.assertEqual(list(it), list(map(sqr, list(range(10)))))
 
-        it = self.pool.imap(sqr, list(range(1000)), chunksize=100)
-        for i in range(1000):
-            self.assertEqual(next(it), i*i)
-        self.assertRaises(StopIteration, it.__next__)
+                iterable = range(10)
+                if self.TYPE != "threads":
+                    iterable = list(iterable)
+                it = self.pool.imap(sqr, iterable, **kwargs)
+                for i in range(10):
+                    self.assertEqual(next(it), i * i)
+                self.assertRaises(StopIteration, it.__next__)
+
+        for kwargs in (
+            {"chunksize": 100},
+            {"chunksize": 100, "buffersize": optimal_buffersize},
+        ):
+            with self.subTest(**kwargs):
+                iterable = range(1000)
+                if self.TYPE != "threads":
+                    iterable = list(iterable)
+                it = self.pool.imap(sqr, iterable, **kwargs)
+                for i in range(1000):
+                    self.assertEqual(next(it), i * i)
+                self.assertRaises(StopIteration, it.__next__)
 
     def test_imap_handle_iterable_exception(self):
         if self.TYPE == 'manager':
@@ -3008,11 +3032,32 @@ class _TestPool(BaseTestCase):
         self.assertRaises(SayWhenError, it.__next__)
 
     def test_imap_unordered(self):
-        it = self.pool.imap_unordered(sqr, list(range(10)))
-        self.assertEqual(sorted(it), list(map(sqr, list(range(10)))))
+        optimal_buffersize = 4  # `self.pool` size
+        buffersize_variants = [
+            {"buffersize": None},
+            {"buffersize": 1},
+            {"buffersize": optimal_buffersize},
+            {"buffersize": optimal_buffersize * 2},
+        ]
 
-        it = self.pool.imap_unordered(sqr, list(range(1000)), chunksize=100)
-        self.assertEqual(sorted(it), list(map(sqr, list(range(1000)))))
+        for kwargs in ({}, *buffersize_variants):
+            with self.subTest(**kwargs):
+                iterable = range(10)
+                if self.TYPE != "threads":
+                    iterable = list(iterable)
+                it = self.pool.imap_unordered(sqr, iterable, **kwargs)
+                self.assertEqual(sorted(it), list(map(sqr, list(range(10)))))
+
+        for kwargs in (
+            {"chunksize": 100},
+            {"chunksize": 100, "buffersize": optimal_buffersize},
+        ):
+            with self.subTest(**kwargs):
+                iterable = range(1000)
+                if self.TYPE != "threads":
+                    iterable = list(iterable)
+                it = self.pool.imap_unordered(sqr, iterable, **kwargs)
+                self.assertEqual(sorted(it), list(map(sqr, list(range(1000)))))
 
     def test_imap_unordered_handle_iterable_exception(self):
         if self.TYPE == 'manager':
@@ -3049,6 +3094,141 @@ class _TestPool(BaseTestCase):
                 value = next(it)
                 self.assertIn(value, expected_values)
                 expected_values.remove(value)
+
+    def test_imap_and_imap_unordered_buffersize_type_validation(self):
+        for method_name in ("imap", "imap_unordered"):
+            for buffersize in ("foo", 2.0):
+                with (
+                    self.subTest(method=method_name, buffersize=buffersize),
+                    self.assertRaisesRegex(
+                        TypeError, "buffersize must be an integer or None"
+                    ),
+                ):
+                    method = getattr(self.pool, method_name)
+                    method(str, range(4), buffersize=buffersize)
+
+    def test_imap_and_imap_unordered_buffersize_value_validation(self):
+        for method_name in ("imap", "imap_unordered"):
+            for buffersize in (0, -1):
+                with (
+                    self.subTest(method=method_name, buffersize=buffersize),
+                    self.assertRaisesRegex(
+                        ValueError, "buffersize must be None or > 0"
+                    ),
+                ):
+                    method = getattr(self.pool, method_name)
+                    method(str, range(4), buffersize=buffersize)
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_and_imap_unordered_when_buffer_is_full(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        for method_name in ("imap", "imap_unordered"):
+            with self.subTest(method=method_name):
+                processes = 4
+                p = self.Pool(processes)
+                last_produced_task_arg = Value("i")
+
+                def produce_args():
+                    for arg in itertools.count(1):
+                        last_produced_task_arg.value = arg
+                        yield arg
+
+                method = getattr(p, method_name)
+                it = method(functools.partial(sqr, wait=0.2), produce_args())
+
+                time.sleep(0.2)
+                # `iterable` could've been advanced only `processes` times,
+                # but in fact it advances further (`> processes`) because of
+                # not waiting for workers or user code to catch up.
+                self.assertGreater(last_produced_task_arg.value, processes)
+
+                next(it)
+                time.sleep(0.2)
+                self.assertGreater(last_produced_task_arg.value, processes + 1)
+
+                next(it)
+                time.sleep(0.2)
+                self.assertGreater(last_produced_task_arg.value, processes + 2)
+
+                p.terminate()
+                p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_and_imap_unordered_buffersize_when_buffer_is_full(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        for method_name in ("imap", "imap_unordered"):
+            with self.subTest(method=method_name):
+                processes = 4
+                p = self.Pool(processes)
+                last_produced_task_arg = Value("i")
+
+                def produce_args():
+                    for arg in itertools.count(1):
+                        last_produced_task_arg.value = arg
+                        yield arg
+
+                method = getattr(p, method_name)
+                it = method(
+                    functools.partial(sqr, wait=0.2),
+                    produce_args(),
+                    buffersize=processes,
+                )
+
+                time.sleep(0.2)
+                self.assertEqual(last_produced_task_arg.value, processes)
+
+                next(it)
+                time.sleep(0.2)
+                self.assertEqual(last_produced_task_arg.value, processes + 1)
+
+                next(it)
+                time.sleep(0.2)
+                self.assertEqual(last_produced_task_arg.value, processes + 2)
+
+                p.terminate()
+                p.join()
+
+    def test_imap_and_imap_unordered_buffersize_on_empty_iterable(self):
+        for method_name in ("imap", "imap_unordered"):
+            with self.subTest(method=method_name):
+                method = getattr(self.pool, method_name)
+
+                res = method(str, [], buffersize=2)
+
+                self.assertIsNone(next(res, None))
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        p = self.Pool(4)
+        res = p.imap(str, itertools.count(), buffersize=2)
+
+        self.assertEqual(next(res, None), "0")
+        self.assertEqual(next(res, None), "1")
+        self.assertEqual(next(res, None), "2")
+
+        p.terminate()
+        p.join()
+
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    def test_imap_unordered_buffersize_on_infinite_iterable(self):
+        if self.TYPE != "threads":
+            self.skipTest("test not appropriate for {}".format(self.TYPE))
+
+        p = self.Pool(4)
+        res = p.imap(str, itertools.count(), buffersize=2)
+        first_three_results = sorted(next(res, None) for _ in range(3))
+
+        self.assertEqual(first_three_results, ["0", "1", "2"])
+
+        p.terminate()
+        p.join()
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def test_make_pool(self):
