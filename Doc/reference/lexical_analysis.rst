@@ -73,10 +73,10 @@ with links to sections that contain more information.
    * * * question mark (``?``)
        * dollar (``$``)
        *
-         .. (the following uses zero-width-joiner characters to render
+         .. (the following uses zero-width space characters to render
          .. a literal backquote)
 
-         backquote (``‍`‍``)
+         backquote (``​`​``)
        * control character
      * * Error (outside string literals and comments)
 
