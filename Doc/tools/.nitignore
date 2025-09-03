@@ -11,7 +11,6 @@ Doc/c-api/module.rst
 Doc/c-api/stable.rst
 Doc/c-api/type.rst
 Doc/c-api/typeobj.rst
-Doc/extending/extending.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/email.charset.rst
@@ -61,7 +60,4 @@ Doc/using/windows.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst
-Doc/whatsnew/2.7.rst
-Doc/whatsnew/3.4.rst
 Doc/whatsnew/3.5.rst
-Doc/whatsnew/3.6.rst
