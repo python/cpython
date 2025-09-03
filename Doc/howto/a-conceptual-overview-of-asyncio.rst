@@ -177,10 +177,11 @@ Creating a task automatically schedules it for execution (by adding a
 callback to run it in the event loop's to-do list, that is, collection of jobs).
 
 :mod:`!asyncio` automatically associates tasks with the event loop for you.
-Typically there's only one event loop, so that's quite straightforward.
-It's uncommon, but some applications use multithreading and :mod:`!asyncio`
-together, where there's one event loop per thread, stored in thread-local
-storage.
+This automatic association was purposely designed into :mod:`!asyncio` for
+the sake of simplicity.
+Without it, you'd have to keep track of the event loop object and pass it to
+any coroutine function that wants to create tasks, adding redundant clutter
+to your code.
 
 ::
 
