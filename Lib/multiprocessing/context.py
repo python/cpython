@@ -150,8 +150,8 @@ class BaseContext(object):
 
         # GH-135726: allow_none=True prevents this "get" call from setting the
         # default context as the selected one as a side-effect.
-        method = self.get_start_method(allow_none=True) \
-                 or _default_context.get_start_method(allow_none=True)
+        method = (self.get_start_method(allow_none=True)
+                  or _default_context.get_start_method(allow_none=True))
         if method != "spawn":
             return
 
