@@ -34,10 +34,10 @@ def declare_parser(
         fname = '.fname = "{name}",'
         format_ = ''
 
-    num_keywords = sum(
-        1 for p in f.parameters.values()
+    num_keywords = len([
+        p for p in f.parameters.values()
         if not p.is_positional_only() and not (p.is_vararg() or p.is_var_keyword())
-    )
+    ])
 
     condition = '#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)'
     if limited_capi:
