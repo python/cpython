@@ -49,6 +49,54 @@ def strongly_connected_components(
             yield from dfs(v)
 
 
+def topsort(
+    data: dict[Set[str], set[Set[str]]]
+) -> Iterable[Set[Set[str]]]:
+    """Topological sort.
+
+    Args:
+      data: A map from SCCs (represented as frozen sets of strings) to
+            sets of SCCs, its dependencies.  NOTE: This data structure
+            is modified in place -- for normalization purposes,
+            self-dependencies are removed and entries representing
+            orphans are added.
+
+    Returns:
+      An iterator yielding sets of SCCs that have an equivalent
+      ordering.  NOTE: The algorithm doesn't care about the internal
+      structure of SCCs.
+
+    Example:
+      Suppose the input has the following structure:
+
+        {A: {B, C}, B: {D}, C: {D}}
+
+      This is normalized to:
+
+        {A: {B, C}, B: {D}, C: {D}, D: {}}
+
+      The algorithm will yield the following values:
+
+        {D}
+        {B, C}
+        {A}
+
+    From https://code.activestate.com/recipes/577413-topological-sort/history/1/.
+    """
+    # TODO: Use a faster algorithm?
+    for k, v in data.items():
+        v.discard(k)  # Ignore self dependencies.
+    for item in set.union(*data.values()) - set(data.keys()):
+        data[item] = set()
+    while True:
+        ready = {item for item, dep in data.items() if not dep}
+        if not ready:
+            break
+        yield ready
+        data = {item: (dep - ready) for item, dep in data.items() if item not in ready}
+    assert not data, f"A cyclic dependency exists amongst {data}"
+
+
 def find_cycles_in_scc(
     graph: dict[str, Set[str]], scc: Set[str], start: str
 ) -> Iterable[list[str]]:
