@@ -316,7 +316,9 @@ Standard names are defined for the following types:
 
    .. versionchanged:: 3.14
 
-      This is now an alias for :class:`typing.Union`.
+      Added read-only attributes :attr:`!__name__`, :attr:`!__qualname__`
+      and :attr:`!__origin__`.
+
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
