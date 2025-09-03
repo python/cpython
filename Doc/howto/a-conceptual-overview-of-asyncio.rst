@@ -460,9 +460,9 @@ That might sound odd to you. You might be thinking:
    That causes the error: ``SyntaxError: yield from not allowed in a coroutine.``
    This was intentionally designed for the sake of simplicity -- mandating only
    one way of using coroutines.
+   Despite that, ``yield from`` and ``await`` effectively do the same thing.
    Initially ``yield`` was barred as well, but was re-accepted to allow for
    async generators.
-   Despite that, ``yield from`` and ``await`` effectively do the same thing.
 
 =======
 Futures
