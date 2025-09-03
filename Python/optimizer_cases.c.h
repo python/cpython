@@ -1343,7 +1343,7 @@
                 }
             }
             if (cnst == NULL) {
-                res = sym_new_unknown(ctx);
+                res = sym_new_not_null(ctx);
             }
             else {
                 res = sym_new_const(ctx, cnst);
@@ -1379,7 +1379,7 @@
                 }
             }
             if (cnst == NULL) {
-                res = sym_new_unknown(ctx);
+                res = sym_new_not_null(ctx);
             }
             else {
                 res = sym_new_const(ctx, cnst);

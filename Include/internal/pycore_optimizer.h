@@ -273,12 +273,14 @@ PyJitRef_IsBorrowed(JitOptRef ref)
 }
 
 struct _Py_UOpsAbstractFrame {
+    bool builtins_watched;
+     // Has the globals dict of this frame been watched?
+    bool globals_watched;
+     // The version number of the globals dicts, once checked. 0 if unchecked.
+    uint32_t globals_checked_version;
     // Max stacklen
     int stack_len;
     int locals_len;
-    uint32_t globals_checked_version;
-    bool builtins_watched;
-    bool globals_watched;
     PyFunctionObject *func;
 
     JitOptRef *stack_pointer;

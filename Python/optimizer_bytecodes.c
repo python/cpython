@@ -1254,8 +1254,7 @@ dummy_func(void) {
         ctx->frame->globals_checked_version = version;
     }
 
-    op(_LOAD_GLOBAL_BUILTINS, (version/1, index/1 -- res))
-    {
+    op(_LOAD_GLOBAL_BUILTINS, (version/1, index/1 -- res)) {
         (void)version;
         (void)index;
         PyObject *cnst = NULL;
@@ -1278,15 +1277,14 @@ dummy_func(void) {
             }
         }
         if (cnst == NULL) {
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
         }
         else {
             res = sym_new_const(ctx, cnst);
         }
     }
 
-    op(_LOAD_GLOBAL_MODULE, (version/1, unused/1, index/1 -- res))
-    {
+    op(_LOAD_GLOBAL_MODULE, (version/1, unused/1, index/1 -- res)) {
         (void)index;
         PyObject *cnst = NULL;
         if (ctx->frame->func != NULL) {
@@ -1314,7 +1312,7 @@ dummy_func(void) {
             }
         }
         if (cnst == NULL) {
-            res = sym_new_unknown(ctx);
+            res = sym_new_not_null(ctx);
         }
         else {
             res = sym_new_const(ctx, cnst);
