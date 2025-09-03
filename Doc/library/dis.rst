@@ -270,7 +270,7 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added the *show_caches* and *adaptive* parameters.
 
 
-.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,
+.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False, \
                     show_offset=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
