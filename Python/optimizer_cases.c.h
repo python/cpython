@@ -938,7 +938,7 @@
                 assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
                 long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
                 assert(index >= 0);
-                int tuple_length = sym_tuple_length(tuple_st);
+                Py_ssize_t tuple_length = sym_tuple_length(tuple_st);
                 if (tuple_length == -1) {
                     res = sym_new_not_null(ctx);
                 }
@@ -1899,13 +1899,13 @@
             JitOptRef obj;
             JitOptRef len;
             obj = stack_pointer[-1];
-            int tuple_length = sym_tuple_length(obj);
+            Py_ssize_t tuple_length = sym_tuple_length(obj);
             if (tuple_length == -1) {
                 len = sym_new_type(ctx, &PyLong_Type);
             }
             else {
                 assert(tuple_length >= 0);
-                PyObject *temp = PyLong_FromLong(tuple_length);
+                PyObject *temp = PyLong_FromSsize_t(tuple_length);
                 if (temp == NULL) {
                     goto error;
                 }
@@ -2618,9 +2618,9 @@
             JitOptRef res;
             arg = stack_pointer[-1];
             res = sym_new_type(ctx, &PyLong_Type);
-            int tuple_length = sym_tuple_length(arg);
+            Py_ssize_t tuple_length = sym_tuple_length(arg);
             if (tuple_length >= 0) {
-                PyObject *temp = PyLong_FromLong(tuple_length);
+                PyObject *temp = PyLong_FromSsize_t(tuple_length);
                 if (temp == NULL) {
                     goto error;
                 }
