@@ -6,6 +6,7 @@ import unittest
 import termios
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
+from test.support import script_helper
 import subprocess
 import signal
 import textwrap
@@ -437,10 +438,8 @@ class TestUnixConsoleEIOHandling(TestCase):
             signal.pause()
         """).strip()
 
-        proc = subprocess.Popen(
-            [sys.executable, "-S", "-c", child_code],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
+        proc = script_helper.spawn_python(
+            "-S", "-c", child_code,
             stderr=subprocess.PIPE,
             text=True
         )
