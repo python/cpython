@@ -1,6 +1,6 @@
 """Tests for the io module and its implementations (_io and _pyio)
 
-Tests are split across multiple files inside `test_io` to increase
+Tests are split across multiple files to increase
 parallelism and focus on specific implementation pieces.
 
 * test_io
@@ -18,7 +18,7 @@ parallelism and focus on specific implementation pieces.
    When writing tests for io, it's important to test both the C and Python
    implementations. This is usually done by writing a base test that refers to
    the type it is testing as an attribute. Then it provides custom subclasses to
-   test both implementations. This file has lots of examples.
+   test both implementations. This directory contains lots of examples.
 """
 
 import os
