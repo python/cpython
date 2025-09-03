@@ -67,6 +67,7 @@ class TestUtils(TestCase):
             ("a.set", [(".", "op")]),
             ("obj.list", [(".", "op")]),
             ("obj.match", [(".", "op")]),
+            ("b. \\\n format", [(".", "op")]),
             # highlights
             ("set", [("set", "builtin")]),
             ("list", [("list", "builtin")]),
