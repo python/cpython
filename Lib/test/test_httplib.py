@@ -386,6 +386,52 @@ class HeaderTests(TestCase):
         self.assertEqual(lines[2], "header: Second: val1")
         self.assertEqual(lines[3], "header: Second: val2")
 
+    def test_max_response_headers(self):
+        max_headers = client._MAXHEADERS + 20
+        headers = [f"Name{i}: Value{i}".encode() for i in range(max_headers)]
+        body = b"HTTP/1.1 200 OK\r\n" + b"\r\n".join(headers)
+
+        with self.subTest(max_headers=None):
+            sock = FakeSocket(body)
+            resp = client.HTTPResponse(sock)
+            with self.assertRaisesRegex(
+                client.HTTPException, f"got more than 100 headers"
+            ):
+                resp.begin()
+
+        with self.subTest(max_headers=max_headers):
+            sock = FakeSocket(body)
+            resp = client.HTTPResponse(sock)
+            resp.begin(_max_headers=max_headers)
+
+    def test_max_connection_headers(self):
+        max_headers = client._MAXHEADERS + 20
+        headers = (
+            f"Name{i}: Value{i}".encode() for i in range(max_headers - 1)
+        )
+        body = (
+            b"HTTP/1.1 200 OK\r\n"
+            + b"\r\n".join(headers)
+            + b"\r\nContent-Length: 12\r\n\r\nDummy body\r\n"
+        )
+
+        with self.subTest(max_headers=None):
+            conn = client.HTTPConnection("example.com")
+            conn.sock = FakeSocket(body)
+            conn.request("GET", "/")
+            with self.assertRaisesRegex(
+                client.HTTPException, f"got more than {client._MAXHEADERS} headers"
+            ):
+                response = conn.getresponse()
+
+        with self.subTest(max_headers=None):
+            conn = client.HTTPConnection(
+                "example.com", max_response_headers=max_headers
+            )
+            conn.sock = FakeSocket(body)
+            conn.request("GET", "/")
+            response = conn.getresponse()
+            response.read()
 
 class HttpMethodTests(TestCase):
     def test_invalid_method_names(self):
