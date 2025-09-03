@@ -1017,22 +1017,17 @@ static PyType_Spec HASHobject_type_spec = {
 /*[clinic input]
 _hashlib.HASHXOF.digest
 
-  length: Py_ssize_t
+  length: Py_ssize_t(allow_negative=False)
 
 Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
-/*[clinic end generated code: output=dcb09335dd2fe908 input=3eb034ce03c55b21]*/
+/*[clinic end generated code: output=dcb09335dd2fe908 input=224d047da2c12a42]*/
 {
     EVP_MD_CTX *temp_ctx;
     PyObject *retval;
-
-    if (length < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative digest length");
-        return NULL;
-    }
 
     if (length == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
@@ -1072,23 +1067,18 @@ error:
 /*[clinic input]
 _hashlib.HASHXOF.hexdigest
 
-    length: Py_ssize_t
+    length: Py_ssize_t(allow_negative=False)
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
 _hashlib_HASHXOF_hexdigest_impl(HASHobject *self, Py_ssize_t length)
-/*[clinic end generated code: output=519431cafa014f39 input=0e58f7238adb7ab8]*/
+/*[clinic end generated code: output=519431cafa014f39 input=4a41b8ab5d3bfee2]*/
 {
     unsigned char *digest;
     EVP_MD_CTX *temp_ctx;
     PyObject *retval;
-
-    if (length < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative digest length");
-        return NULL;
-    }
 
     if (length == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);

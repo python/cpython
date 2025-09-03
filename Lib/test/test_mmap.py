@@ -1,3 +1,4 @@
+from test import support
 from test.support import (
     requires, _2G, _4G, gc_collect, cpython_only, is_emscripten, is_apple,
     in_systemd_nspawn_sync_suppressed,
@@ -6,7 +7,6 @@ from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok
 import unittest
-import errno
 import os
 import re
 import itertools
@@ -264,47 +264,49 @@ class MmapTests(unittest.TestCase):
                     self.assertRaises(TypeError, m.write_byte, 0)
                     m.close()
 
-    @unittest.skipIf(os.name == 'nt', 'trackfd not present on Windows')
-    def test_trackfd_parameter(self):
+    @support.subTests('close_original_fd', (True, False))
+    def test_trackfd_parameter(self, close_original_fd):
         size = 64
         with open(TESTFN, "wb") as f:
             f.write(b"a"*size)
-        for close_original_fd in True, False:
-            with self.subTest(close_original_fd=close_original_fd):
-                with open(TESTFN, "r+b") as f:
-                    with mmap.mmap(f.fileno(), size, trackfd=False) as m:
-                        if close_original_fd:
-                            f.close()
-                        self.assertEqual(len(m), size)
-                        with self.assertRaises(OSError) as err_cm:
-                            m.size()
-                        self.assertEqual(err_cm.exception.errno, errno.EBADF)
-                        if hasattr(m, 'resize'):
-                            with self.assertRaises(ValueError):
-                                m.resize(size * 2)
-                            with self.assertRaises(ValueError):
-                                m.resize(size // 2)
-                        self.assertEqual(m.closed, False)
+        with open(TESTFN, "r+b") as f:
+            with mmap.mmap(f.fileno(), size, trackfd=False) as m:
+                if close_original_fd:
+                    f.close()
+                self.assertEqual(len(m), size)
+                with self.assertRaises(ValueError):
+                    m.size()
+                if hasattr(m, 'resize'):
+                    with self.assertRaises(ValueError):
+                        m.resize(size * 2)
+                    with self.assertRaises(ValueError):
+                        m.resize(size // 2)
+                self.assertIs(m.closed, False)
 
-                        # Smoke-test other API
-                        m.write_byte(ord('X'))
-                        m[2] = ord('Y')
-                        m.flush()
-                        with open(TESTFN, "rb") as f:
-                            self.assertEqual(f.read(4), b'XaYa')
-                        self.assertEqual(m.tell(), 1)
-                        m.seek(0)
-                        self.assertEqual(m.tell(), 0)
-                        self.assertEqual(m.read_byte(), ord('X'))
+                # Smoke-test other API
+                m.write_byte(ord('X'))
+                m[2] = ord('Y')
+                m.flush()
+                with open(TESTFN, "rb") as f:
+                    self.assertEqual(f.read(4), b'XaYa')
+                self.assertEqual(m.tell(), 1)
+                m.seek(0)
+                self.assertEqual(m.tell(), 0)
+                self.assertEqual(m.read_byte(), ord('X'))
 
-                self.assertEqual(m.closed, True)
-                self.assertEqual(os.stat(TESTFN).st_size, size)
+                if os.name == 'nt' and not close_original_fd:
+                    self.assertRaises(PermissionError, os.rename, TESTFN, TESTFN+'1')
+                else:
+                    os.rename(TESTFN, TESTFN+'1')
+                    os.rename(TESTFN+'1', TESTFN)
 
-    @unittest.skipIf(os.name == 'nt', 'trackfd not present on Windows')
+        self.assertIs(m.closed, True)
+        self.assertEqual(os.stat(TESTFN).st_size, size)
+
     def test_trackfd_neg1(self):
         size = 64
         with mmap.mmap(-1, size, trackfd=False) as m:
-            with self.assertRaises(OSError):
+            with self.assertRaises(ValueError):
                 m.size()
             if hasattr(m, 'resize'):
                 with self.assertRaises(ValueError):
@@ -312,15 +314,6 @@ class MmapTests(unittest.TestCase):
             self.assertEqual(len(m), size)
             m[0] = ord('a')
             assert m[0] == ord('a')
-
-    @unittest.skipIf(os.name != 'nt', 'trackfd only fails on Windows')
-    def test_no_trackfd_parameter_on_windows(self):
-        # 'trackffd' is an invalid keyword argument for this function
-        size = 64
-        with self.assertRaises(TypeError):
-            mmap.mmap(-1, size, trackfd=True)
-        with self.assertRaises(TypeError):
-            mmap.mmap(-1, size, trackfd=False)
 
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...
@@ -501,6 +494,7 @@ class MmapTests(unittest.TestCase):
             b = x & 0xff
             m[x] = b
             self.assertEqual(m[x], b)
+        self.assertEqual(m.size(), PAGESIZE)
 
     def test_read_all(self):
         m = mmap.mmap(-1, 16)
@@ -891,35 +885,69 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
         self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
 
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    def test_resize_up_when_mapped_to_pagefile(self):
+    def test_resize_up_anonymous_mapping(self):
         """If the mmap is backed by the pagefile ensure a resize up can happen
         and that the original data is still in place
         """
         start_size = PAGESIZE
         new_size = 2 * start_size
-        data = bytes(random.getrandbits(8) for _ in range(start_size))
+        data = random.randbytes(start_size)
 
-        m = mmap.mmap(-1, start_size)
-        m[:] = data
-        m.resize(new_size)
-        self.assertEqual(len(m), new_size)
-        self.assertEqual(m[:start_size], data[:start_size])
+        with mmap.mmap(-1, start_size) as m:
+            m[:] = data
+            if sys.platform.startswith(('linux', 'android')):
+                # Can't expand a shared anonymous mapping on Linux.
+                # See https://bugzilla.kernel.org/show_bug.cgi?id=8691
+                with self.assertRaises(ValueError):
+                    m.resize(new_size)
+            else:
+                try:
+                    m.resize(new_size)
+                except SystemError:
+                    pass
+                else:
+                    self.assertEqual(len(m), new_size)
+                    self.assertEqual(m[:start_size], data)
+                    self.assertEqual(m[start_size:], b'\0' * (new_size - start_size))
 
-    @unittest.skipUnless(os.name == 'nt', 'requires Windows')
-    def test_resize_down_when_mapped_to_pagefile(self):
+    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    def test_resize_up_private_anonymous_mapping(self):
+        start_size = PAGESIZE
+        new_size = 2 * start_size
+        data = random.randbytes(start_size)
+
+        with mmap.mmap(-1, start_size, flags=mmap.MAP_PRIVATE) as m:
+            m[:] = data
+            try:
+                m.resize(new_size)
+            except SystemError:
+                pass
+            else:
+                self.assertEqual(len(m), new_size)
+                self.assertEqual(m[:start_size], data)
+                self.assertEqual(m[start_size:], b'\0' * (new_size - start_size))
+
+    def test_resize_down_anonymous_mapping(self):
         """If the mmap is backed by the pagefile ensure a resize down up can happen
         and that a truncated form of the original data is still in place
         """
-        start_size = PAGESIZE
+        start_size = 2 * PAGESIZE
         new_size = start_size // 2
-        data = bytes(random.getrandbits(8) for _ in range(start_size))
+        data = random.randbytes(start_size)
 
-        m = mmap.mmap(-1, start_size)
-        m[:] = data
-        m.resize(new_size)
-        self.assertEqual(len(m), new_size)
-        self.assertEqual(m[:new_size], data[:new_size])
+        with mmap.mmap(-1, start_size) as m:
+            m[:] = data
+            try:
+                m.resize(new_size)
+            except SystemError:
+                pass
+            else:
+                self.assertEqual(len(m), new_size)
+                self.assertEqual(m[:], data[:new_size])
+                if sys.platform.startswith(('linux', 'android')):
+                    # Can't expand to its original size.
+                    with self.assertRaises(ValueError):
+                        m.resize(start_size)
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_resize_fails_if_mapping_held_elsewhere(self):
