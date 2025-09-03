@@ -410,8 +410,8 @@ NodeList Objects
    A :class:`!NodeList` represents a sequence of nodes.  These objects are used in
    two ways in the DOM Core recommendation:  an :class:`Element` object provides
    one as its list of child nodes, and the :meth:`getElementsByTagName` and
-   :meth:`getElementsByTagNameNS` methods of :class:`Node` return objects with this
-   interface to represent query results.
+   :meth:`getElementsByTagNameNS` methods of :class:`Element` & :class:`Document`
+   return objects with this interface to represent query results.
 
    The DOM Level 2 recommendation defines one method and one attribute for these
    objects:
