@@ -65,5 +65,5 @@ def ast_dump(
         return repr(node), True
 
     if all(cls.__name__ != "AST" for cls in node.__class__.__mro__):
-        raise TypeError("expected AST, got %r" % node.__class__.__name__)
+        raise TypeError(f"expected AST, got {node.__class__.__name__!r}")
     return _format(node)[0]

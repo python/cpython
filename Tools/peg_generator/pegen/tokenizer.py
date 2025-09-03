@@ -8,7 +8,11 @@ exact_token_types = token.EXACT_TOKEN_TYPES
 
 
 def shorttok(tok: tokenize.TokenInfo) -> str:
-    return "%-25.25s" % f"{tok.start[0]}.{tok.start[1]}: {token.tok_name[tok.type]}:{tok.string!r}"
+    formatted = (
+        f"{tok.start[0]}.{tok.start[1]}: "
+        f"{token.tok_name[tok.type]}:{tok.string!r}"
+    )
+    return f"{formatted:<25.25}"
 
 
 class Tokenizer:
