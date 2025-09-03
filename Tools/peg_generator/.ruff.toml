@@ -1,4 +1,5 @@
 extend = "../../.ruff.toml"  # Inherit the project-wide settings
+
 extend-exclude = [
     # Generated files:
     "Tools/peg_generator/pegen/grammar_parser.py",
