@@ -237,7 +237,7 @@ class MmapTests(unittest.TestCase):
                                  "Copy-on-write test data file should not be modified.")
             if hasattr(m, 'resize'):
                 # Ensuring copy-on-write maps cannot be resized
-                self.assertRaises(TypeError, m.resize, 2*mapsize)
+                self.assertRaises(TypeError, m.resize, 2 * mapsize)
             m.close()
 
         # Ensuring invalid access parameter raises exception
