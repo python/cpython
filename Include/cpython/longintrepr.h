@@ -48,6 +48,7 @@ typedef int64_t stwodigits; /* signed variant of twodigits */
 #define _PyLong_DECIMAL_SHIFT   9 /* max(e such that 10**e fits in a digit) */
 #define _PyLong_DECIMAL_BASE    ((digit)1000000000) /* 10 ** DECIMAL_SHIFT */
 #elif PYLONG_BITS_IN_DIGIT == 15
+#error "Boo!"
 typedef unsigned short digit;
 typedef short sdigit; /* signed variant of digit */
 typedef unsigned long twodigits;
