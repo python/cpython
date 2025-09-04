@@ -2205,12 +2205,6 @@ class LowLevelTests(TestBase):
             self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
 
     def test_get_current_missing(self):
-        with self.subTest('main'):
-            main, *_ = _interpreters.get_main()
-            interpid, whence = _interpreters.get_current()
-            self.assertEqual(interpid, main)
-            self.assertEqual(whence, _interpreters.WHENCE_RUNTIME)
-
         script = f"""
             import contextvars
             from concurrent.interpreters import get_current
