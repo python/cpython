@@ -162,7 +162,7 @@ def deepcopy(x, memo=None):
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
-_atomic_types =  frozenset({types.NoneType, types.EllipsisType, types.NotImplementedType,
+_atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplementedType,
           int, float, bool, complex, bytes, str, types.CodeType, type, range,
           types.BuiltinFunctionType, types.FunctionType, weakref.ref, property})
 
