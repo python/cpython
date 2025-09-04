@@ -1,2 +1,2 @@
-Partially evaluate undefined global generics in
-:meth:`annotationlib.ForwardRef.evaluate`
+Fix partial evaluation of :class:`annnotationlib.ForwardRef` objects which rely
+on names defined as globals.
