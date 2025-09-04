@@ -3110,7 +3110,7 @@ Build Changes
   with :c:expr:`Py_NO_LINK_LIB`.
   (Contributed by Jean-Christophe Fillion-Robin in :gh:`82909`.)
 
-* CPython now enables defaults a set of recommended compiler options
+* CPython now enables a set of recommended compiler options by default
   for improved security.
   Use the :option:`--disable-safety` :file:`configure` option to disable them,
   or the :option:`--enable-slower-safety` option for a larger set
