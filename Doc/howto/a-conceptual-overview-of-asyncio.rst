@@ -251,9 +251,9 @@ different ways::
 In a crucial way, the behavior of ``await`` depends on the type of object
 being awaited.
 
-^^^^^^^^^^
-await task
-^^^^^^^^^^
+^^^^^^^^^^^^^^
+Awaiting tasks
+^^^^^^^^^^^^^^
 
 Awaiting a task will cede control from the current task or coroutine to
 the event loop.
@@ -286,9 +286,9 @@ This is a basic, yet reliable mental model.
 In practice, the control handoffs are slightly more complex, but not by much.
 In part 2, we'll walk through the details that make this possible.
 
-^^^^^^^^^^^^^^^
-await coroutine
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
+Awaiting coroutines
+^^^^^^^^^^^^^^^^^^^
 
 **Unlike tasks, awaiting a coroutine does not hand control back to the event
 loop!**
