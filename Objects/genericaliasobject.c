@@ -529,9 +529,9 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
                 Py_DECREF(newargs);
                 Py_DECREF(item);
                 Py_XDECREF(tuple_args);
-                Py_DECREF(arg);
                 PyErr_Format(PyExc_TypeError,
                              "expected a tuple, not %T", arg);
+                Py_DECREF(arg);
                 return NULL;
             }
             jarg = tuple_extend(&newargs, jarg,
