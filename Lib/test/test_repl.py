@@ -99,6 +99,71 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertIn(p.returncode, (1, 120))
 
     @cpython_only
+    def test_issue134163_exec_hang(self):
+        # Complete reproduction code that simulates REPL exec() behavior
+        # note these prints are used can not drop
+        user_input = dedent("""
+            exec('''
+            def test_repl_hanging():
+                print("=" * 60)
+                print("Reproducing gh-134163 outside REPL")
+                print("Simulating interactive interpreter exec() behavior")
+                print("=" * 60)
+                print()
+
+                # First, import and set up the memory failure condition
+                print("Step 1: Setting up memory allocation failure...")
+                print("Step 2: Preparing code that will trigger exception handling...")
+                # Create a code object that will cause exception handling
+                # This simulates what happens when REPL executes user input
+                test_code = \"\"\"
+            # This code will trigger the problematic code path
+            # by causing an exception during execution when memory is constrained
+            import _testcapi
+            _testcapi.set_nomemory(0)  # This line triggers the hang condition
+                \"\"\"
+                print("Step 3: Compiling test code...")
+                try:
+                    compiled_code = compile(test_code, "<reproduce_script>", "exec")
+                except Exception as e:
+                    print(f"Compilation failed: {e}")
+                    exit(1)
+                print("Step 4: Executing code that triggers the hang condition...")
+                print("BEFORE FIX: This would hang indefinitely")
+                print("AFTER FIX: This should exit gracefully")
+                print()
+                try:
+                    exec(compiled_code, {"__name__": "__console__"})
+                    print("Code executed successfully (unexpected)")
+                except SystemExit:
+                    print("SystemExit caught - re-raising")
+                    raise
+                except Exception as e:
+                    print(f"Exception caught during exec(): {type(e).__name__}: {e}")
+                    print("This is the expected path - exception handling should work normally")
+                    # The showtraceback() equivalent would be called here in real REPL
+                    import traceback
+                    traceback.print_exc()
+
+            test_repl_hanging()
+            ''')
+            """)
+        p = spawn_repl()
+        with SuppressCrashReport():
+            p.stdin.write(user_input)
+        output = kill_python(p)
+        # The test should complete without hanging and show expected output
+        # We expect either successful completion or controlled failure
+        self.assertIn(p.returncode, (0, 1, 120))
+        # Verify that the simulation steps were executed or that we got the expected memory error output
+        # The key test is that it doesn't hang - if we get output, the test passed
+        # Look for either the expected reproduction output or memory error indicators
+        has_reproduction_output = "Reproducing gh-134163 outside REPL" in output
+        has_memory_error_output = "object type name: MemoryError" in output
+        self.assertTrue(has_reproduction_output or has_memory_error_output,
+                       f"Expected either reproduction output or memory error output, got: {output[:500]}...")
+
+    @cpython_only
     def test_multiline_string_parsing(self):
         # bpo-39209: Multiline string tokens need to be handled in the tokenizer
         # in two places: the interactive path and the non-interactive path.
