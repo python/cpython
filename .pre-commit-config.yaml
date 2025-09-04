@@ -18,6 +18,10 @@ repos:
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
+      - id: ruff
+        name: Run Ruff (lint) on Tools/peg_generator/
+        args: [--exit-non-zero-on-fix, --config=Tools/peg_generator/.ruff.toml]
+        files: ^Tools/peg_generator/
       - id: ruff-format
         name: Run Ruff (format) on Doc/
         args: [--check]
