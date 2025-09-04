@@ -136,49 +136,31 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
 def make_paths_relative(data: dict[str, Any], config_path: str | None = None) -> None:
     # Make base_prefix relative to the config_path directory
     if config_path:
-        data['base_prefix'] = relative_path(data['base_prefix'],
-                                            os.path.dirname(config_path))
-    base_prefix = data['base_prefix']
-
+        data['base_prefix'] = os.path.relpath(data['base_prefix'], os.path.dirname(config_path))
     # Update path values to make them relative to base_prefix
-    PATH_KEYS = (
+    PATH_KEYS = [
         'base_interpreter',
         'libpython.dynamic',
         'libpython.dynamic_stableabi',
         'libpython.static',
         'c_api.headers',
         'c_api.pkgconfig_path',
-    )
+    ]
     for entry in PATH_KEYS:
-        *parents, child = entry.split('.')
+        parent, _, child = entry.rpartition('.')
         # Get the key container object
         try:
             container = data
-            for part in parents:
+            for part in parent.split('.'):
                 container = container[part]
-            if child not in container:
-                raise KeyError
             current_path = container[child]
         except KeyError:
             continue
         # Get the relative path
-        new_path = relative_path(current_path, base_prefix)
+        new_path = os.path.relpath(current_path, data['base_prefix'])
         # Join '.' so that the path is formated as './path' instead of 'path'
         new_path = os.path.join('.', new_path)
         container[child] = new_path
-
-
-def relative_path(path: str, base: str) -> str:
-    if os.name != 'nt':
-        return os.path.relpath(path, base)
-
-    # There are no relative paths between drives on Windows.
-    path_drv, _ = os.path.splitdrive(path)
-    base_drv, _ = os.path.splitdrive(base)
-    if path_drv.lower() == base_drv.lower():
-        return os.path.relpath(path, base)
-
-    return path
 
 
 def main() -> None:
