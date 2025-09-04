@@ -85,8 +85,7 @@ def import_module(name, package=None):
             if character != '.':
                 break
             level += 1
-    module = _bootstrap._gcd_import(name[level:], package, level)
-    return module
+    return _bootstrap._gcd_import(name[level:], package, level)
 
 
 _RELOADING = {}
