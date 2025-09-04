@@ -762,9 +762,8 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        // We wrap and unwrap the value to mimic PyStackRef_MakeHeapSafe
-        // in bytecodes.c
-        JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
+        // Mimics PyStackRef_MakeHeapSafe in the interpreter.
+        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -925,7 +924,9 @@ dummy_func(void) {
     op(_CALL_STR_1, (unused, unused, arg -- res)) {
         if (sym_matches_type(arg, &PyUnicode_Type)) {
             // e.g. str('foo') or str(foo) where foo is known to be a string
-            res = arg;
+            // Note: we must strip the reference information because it goes
+            // through str() which strips the reference information from it.
+            res = PyJitRef_StripReferenceInfo(arg);
         }
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
@@ -1065,7 +1066,9 @@ dummy_func(void) {
     op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
         if (sym_matches_type(arg, &PyTuple_Type)) {
             // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple
-            res = arg;
+            // Note: we must strip the reference information because it goes
+            // through tuple() which strips the reference information from it.
+            res = PyJitRef_StripReferenceInfo(arg);
         }
         else {
             res = sym_new_type(ctx, &PyTuple_Type);
