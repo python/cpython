@@ -550,8 +550,39 @@ hashlib
 
   (Contributed by Bénédikt Tran in :gh:`134978`.)
 
+__version__
+-----------
+
+* The ``__version__`` attribute has been deprecated in these standard library
+  modules and will be removed in Python 3.17.
+  Use :py:data:`sys.version_info` instead.
+
+  - :mod:`argparse`
+  - :mod:`csv`
+  - :mod:`!ctypes.macholib`
+  - :mod:`ipaddress`
+  - :mod:`json`
+  - :mod:`logging` (``__date__`` also deprecated)
+  - :mod:`optparse`
+  - :mod:`pickle`
+  - :mod:`platform`
+  - :mod:`re`
+  - :mod:`socketserver`
+  - :mod:`tabnanny`
+  - :mod:`tkinter.font`
+  - :mod:`tkinter.ttk`
+
+  (Contributed by Hugo van Kemenade in :gh:`76007`.)
 
 .. Add deprecations above alphabetically, not here at the end.
+
+.. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
+.. include:: ../deprecations/pending-removal-in-3.19.rst
+
+.. include:: ../deprecations/pending-removal-in-future.rst
 
 Removed
 =======

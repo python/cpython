@@ -7356,6 +7356,16 @@ class TestColorized(TestCase):
         '''))
 
 
+class TestModule(unittest.TestCase):
+    def test_deprecated__version__(self):
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            "'__version__' is deprecated and slated for removal in Python 3.17",
+        ) as cm:
+            getattr(argparse, "__version__")
+        self.assertEqual(cm.filename, __file__)
+
+
 def tearDownModule():
     # Remove global references to avoid looking like we have refleaks.
     RFile.seen = {}
