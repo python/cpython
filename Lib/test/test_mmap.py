@@ -184,7 +184,7 @@ class MmapTests(unittest.TestCase):
             if hasattr(m, 'resize'):
                 # Ensuring that readonly mmap can't be resized
                 with self.assertRaises(TypeError):
-                    m.resize(2*mapsize)
+                    m.resize(2 * mapsize)
             with open(TESTFN, "rb") as fp:
                 self.assertEqual(fp.read(), b'a'*mapsize,
                                  "Readonly memory map data file was modified")
