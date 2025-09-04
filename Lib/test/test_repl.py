@@ -99,9 +99,9 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertIn(p.returncode, (1, 120))
 
     @cpython_only
-    def test_issue134163_exec_hang(self):
-        # Complete reproduction code that simulates REPL exec() behavior
-        # note these prints are used can not drop
+    def test_exec_set_nomemory_hang(self):
+        # gh-134163 Complete reproduction code that simulates REPL exec() no memory hang
+        # note these print are used can not drop for trigger the malloc
         user_input = dedent("""
             exec('''
             def test_repl_hanging():
@@ -152,8 +152,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         with SuppressCrashReport():
             p.stdin.write(user_input)
         output = kill_python(p)
-        # The test should complete without hanging and show expected output
-        # We expect either successful completion or controlled failure
+
         self.assertIn(p.returncode, (0, 1, 120))
         # Verify that the simulation steps were executed or that we got the expected memory error output
         # The key test is that it doesn't hang - if we get output, the test passed
