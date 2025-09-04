@@ -2209,14 +2209,10 @@ class LowLevelTests(TestBase):
             import contextvars
             print(getattr(contextvars.Token, "MISSING", "'doesn't exist'"))
             """
-        def parse_stdout(text):
-            interpid, whence = eval(text)
-            return interpid, whence
 
-        with self.subTest('from _interpreter'):
-            orig = _interpreters.create()
-            text = self.run_and_capture(orig, script)
-            self.assertEqual(text.strip(), "<Token.MISSING>")
+        orig = _interpreters.create()
+        text = self.run_and_capture(orig, script)
+        self.assertEqual(text.strip(), "<Token.MISSING>")
 
     def test_is_running(self):
         def check(interpid, expected):
