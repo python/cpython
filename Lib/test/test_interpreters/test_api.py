@@ -2204,6 +2204,27 @@ class LowLevelTests(TestBase):
             whence = eval(text)
             self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
 
+    def test_get_current_missing(self):
+        with self.subTest('main'):
+            main, *_ = _interpreters.get_main()
+            interpid, whence = _interpreters.get_current()
+            self.assertEqual(interpid, main)
+            self.assertEqual(whence, _interpreters.WHENCE_RUNTIME)
+
+        script = f"""
+            import contextvars
+            from concurrent.interpreters import get_current
+            print(getattr(contextvars.Token, "MISSING", "'doesn't exist'"))
+            """
+        def parse_stdout(text):
+            interpid, whence = eval(text)
+            return interpid, whence
+
+        with self.subTest('from concurrent.interpreters'):
+            orig = _interpreters.create()
+            text = self.run_and_capture(orig, script)
+            self.assertEqual(text.strip(), "<Token.MISSING>")
+
     def test_is_running(self):
         def check(interpid, expected):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):
