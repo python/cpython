@@ -2213,7 +2213,7 @@ class LowLevelTests(TestBase):
             interpid, whence = eval(text)
             return interpid, whence
 
-        with self.subTest('from concurrent.interpreters'):
+        with self.subTest('from _interpreter'):
             orig = _interpreters.create()
             text = self.run_and_capture(orig, script)
             self.assertEqual(text.strip(), "<Token.MISSING>")
