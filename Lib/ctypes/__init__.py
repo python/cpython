@@ -426,9 +426,7 @@ class CDLL(object):
 
     if _os.name == "nt":
         def _load_library(self, name, mode, handle, winmode):
-            if winmode is not None:
-                mode = winmode
-            else:
+            if winmode is None:
                 import nt as _nt
                 mode = _nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
                 # WINAPI LoadLibrary searches for a DLL if the given name
