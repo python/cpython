@@ -1,2 +1,2 @@
-Fix Context initialization so that all subinterpreters are assigned the
-MISSING value.
+Fix :mod:`contextvars` initialization so that all subinterpreters are assigned the
+:attr:`~contextvars.Token.MISSING` value.
