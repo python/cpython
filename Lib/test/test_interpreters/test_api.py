@@ -2204,10 +2204,9 @@ class LowLevelTests(TestBase):
             whence = eval(text)
             self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
 
-    def test_get_current_missing(self):
+    def test_contextvars_missing(self):
         script = f"""
             import contextvars
-            from concurrent.interpreters import get_current
             print(getattr(contextvars.Token, "MISSING", "'doesn't exist'"))
             """
         def parse_stdout(text):
