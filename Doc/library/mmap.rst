@@ -289,7 +289,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       pagefile) will silently create a new map with the original data copied over
       up to the length of the new size.
 
-      Availability: Windows and Systems with the ``mremap()`` system call.
+      Availability: Windows and systems with the ``mremap()`` system call.
 
       .. versionchanged:: 3.11
          Correctly fails if attempting to resize when another map is held
