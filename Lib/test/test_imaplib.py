@@ -256,7 +256,20 @@ class IdleCmdDelayedPacketHandler(SimpleIMAPHandler):
             self._send_tagged(tag, 'BAD', 'Expected DONE')
 
 
-class NewIMAPTestsMixin():
+class AuthHandler_CRAM_MD5(SimpleIMAPHandler):
+    capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
+    def cmd_AUTHENTICATE(self, tag, args):
+        self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
+                            'VzdG9uLm1jaS5uZXQ=')
+        r = yield
+        if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
+                 b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
+            self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
+        else:
+            self._send_tagged(tag, 'NO', 'No access')
+
+
+class NewIMAPTestsMixin:
     client = None
 
     def _setup(self, imap_handler, connect=True):
@@ -439,39 +452,30 @@ class NewIMAPTestsMixin():
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_bytes(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
     @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def test_login_cram_md5_plain_text(self):
-        class AuthHandler(SimpleIMAPHandler):
-            capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
-            def cmd_AUTHENTICATE(self, tag, args):
-                self._send_textline('+ PDE4OTYuNjk3MTcwOTUyQHBvc3RvZmZpY2Uucm'
-                                    'VzdG9uLm1jaS5uZXQ=')
-                r = yield
-                if (r == b'dGltIGYxY2E2YmU0NjRiOWVmYT'
-                         b'FjY2E2ZmZkNmNmMmQ5ZjMy\r\n'):
-                    self._send_tagged(tag, 'OK', 'CRAM-MD5 successful')
-                else:
-                    self._send_tagged(tag, 'NO', 'No access')
-        client, _ = self._setup(AuthHandler)
-        self.assertTrue('AUTH=CRAM-MD5' in client.capabilities)
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
         ret, _ = client.login_cram_md5("tim", "tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
+
+    def test_login_cram_md5_blocked(self):
+        def side_effect(*a, **kw):
+            raise ValueError
+
+        client, _ = self._setup(AuthHandler_CRAM_MD5)
+        self.assertIn('AUTH=CRAM-MD5', client.capabilities)
+        msg = re.escape("CRAM-MD5 authentication is not supported")
+        with (
+            mock.patch("hmac.HMAC", side_effect=side_effect),
+            self.assertRaisesRegex(imaplib.IMAP4.error, msg)
+        ):
+            client.login_cram_md5("tim", b"tanstaaftanstaaf")
 
     def test_aborted_authentication(self):
         class MyServer(SimpleIMAPHandler):
