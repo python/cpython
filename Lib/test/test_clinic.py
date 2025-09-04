@@ -2610,6 +2610,19 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):
+        errmsg = re.escape("converter_init() got an unexpected keyword argument 'allow_negative'")
+        unsupported_converters = [converter_name for converter_name in converters.keys()
+                                  if converter_name != "Py_ssize_t"]
+        for converter in unsupported_converters:
+            with self.subTest(converter=converter):
+                block = f"""
+                    module m
+                    m.func
+                        a: {converter}(allow_negative=True)
+                """
+                with self.assertRaisesRegex((AssertionError, TypeError), errmsg):
+                    self.parse_function(block)
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
@@ -2792,6 +2805,7 @@ class ClinicExternalTest(TestCase):
             out = self.expect_success("-v", fn)
             self.assertEqual(out.strip(), fn)
 
+    @support.force_not_colorized
     def test_cli_help(self):
         out = self.expect_success("-h")
         self.assertIn("usage: clinic.py", out)
@@ -2978,7 +2992,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
             fr"{re.escape(name)}\(\) is deprecated. Parameters? {pnames} will "
-            fr"become( a)? keyword-only parameters? in Python 3\.37"
+            fr"become( a)? keyword-only parameters? in Python 3\.14"
         )
         self.check_depr(regex, fn, *args, **kwds)
 
@@ -2991,7 +3005,7 @@ class ClinicFunctionalTest(unittest.TestCase):
         regex = (
             fr"Passing keyword argument{pl} {pnames} to "
             fr"{re.escape(name)}\(\) is deprecated. Parameter{pl} {pnames} "
-            fr"will become positional-only in Python 3\.37."
+            fr"will become positional-only in Python 3\.14."
         )
         self.check_depr(regex, fn, *args, **kwds)
 
@@ -3193,8 +3207,12 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.py_ssize_t_converter(PY_SSIZE_T_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.py_ssize_t_converter([])
-        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None), (1, 2, 56))
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, -1)
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, 78, -1)
+        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56, 78, 90, -12, -34))
+        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None, 3, None, 4, None), (1, 2, 56, 3, 90, 4, -34))
 
     def test_slice_index_converter(self):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
@@ -3802,9 +3820,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
         errmsg = (
             "Passing more than 1 positional argument to depr_star_multi() is deprecated. "
-            "Parameter 'b' will become a keyword-only parameter in Python 3.39. "
-            "Parameters 'c' and 'd' will become keyword-only parameters in Python 3.38. "
-            "Parameters 'e', 'f' and 'g' will become keyword-only parameters in Python 3.37.")
+            "Parameter 'b' will become a keyword-only parameter in Python 3.16. "
+            "Parameters 'c' and 'd' will become keyword-only parameters in Python 3.15. "
+            "Parameters 'e', 'f' and 'g' will become keyword-only parameters in Python 3.14.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", c="c", d="d", e="e", f="f", g="g", h="h")
         check("a", "b", "c", d="d", e="e", f="f", g="g", h="h")
@@ -3903,9 +3921,9 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", "b", "c", "d", "e", "f", "g", h="h")
         errmsg = (
             "Passing keyword arguments 'b', 'c', 'd', 'e', 'f' and 'g' to depr_kwd_multi() is deprecated. "
-            "Parameter 'b' will become positional-only in Python 3.37. "
-            "Parameters 'c' and 'd' will become positional-only in Python 3.38. "
-            "Parameters 'e', 'f' and 'g' will become positional-only in Python 3.39.")
+            "Parameter 'b' will become positional-only in Python 3.14. "
+            "Parameters 'c' and 'd' will become positional-only in Python 3.15. "
+            "Parameters 'e', 'f' and 'g' will become positional-only in Python 3.16.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", "c", "d", "e", "f", g="g", h="h")
         check("a", "b", "c", "d", "e", f="f", g="g", h="h")
@@ -3920,8 +3938,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertRaises(TypeError, fn, "a", "b", "c", "d", "e", "f", "g")
         errmsg = (
             "Passing more than 4 positional arguments to depr_multi() is deprecated. "
-            "Parameter 'e' will become a keyword-only parameter in Python 3.38. "
-            "Parameter 'f' will become a keyword-only parameter in Python 3.37.")
+            "Parameter 'e' will become a keyword-only parameter in Python 3.15. "
+            "Parameter 'f' will become a keyword-only parameter in Python 3.14.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", "c", "d", "e", "f", g="g")
         check("a", "b", "c", "d", "e", f="f", g="g")
@@ -3929,8 +3947,8 @@ class ClinicFunctionalTest(unittest.TestCase):
         fn("a", "b", "c", d="d", e="e", f="f", g="g")
         errmsg = (
             "Passing keyword arguments 'b' and 'c' to depr_multi() is deprecated. "
-            "Parameter 'b' will become positional-only in Python 3.37. "
-            "Parameter 'c' will become positional-only in Python 3.38.")
+            "Parameter 'b' will become positional-only in Python 3.14. "
+            "Parameter 'c' will become positional-only in Python 3.15.")
         check = partial(self.check_depr, re.escape(errmsg), fn)
         check("a", "b", c="c", d="d", e="e", f="f", g="g")
         check("a", b="b", c="c", d="d", e="e", f="f", g="g")

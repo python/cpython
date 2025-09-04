@@ -137,8 +137,9 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
 BUILTIN_EXCEPTION_LIMIT = object()
 
 
-def _print_exception_bltin(exc, /):
-    file = sys.stderr if sys.stderr is not None else sys.__stderr__
+def _print_exception_bltin(exc, file=None, /):
+    if file is None:
+        file = sys.stderr if sys.stderr is not None else sys.__stderr__
     colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
@@ -540,7 +541,7 @@ class StackSummary(list):
         colorize = kwargs.get("colorize", False)
         row = []
         filename = frame_summary.filename
-        if frame_summary.filename.startswith("<stdin>-"):
+        if frame_summary.filename.startswith("<stdin-") and frame_summary.filename.endswith('>'):
             filename = "<stdin>"
         if colorize:
             theme = _colorize.get_theme(force_color=True).traceback
@@ -1106,6 +1107,11 @@ class TracebackException:
             suggestion = _compute_suggestion_error(exc_value, exc_traceback, wrong_name)
             if suggestion:
                 self._str += f". Did you mean: '{suggestion}'?"
+        elif exc_type and issubclass(exc_type, ModuleNotFoundError) and \
+                sys.flags.no_site and \
+                getattr(exc_value, "name", None) not in sys.stdlib_module_names:
+            self._str += (". Site initialization is disabled, did you forget to "
+                + "add the site-packages directory to sys.path?")
         elif exc_type and issubclass(exc_type, (NameError, AttributeError)) and \
                 getattr(exc_value, "name", None) is not None:
             wrong_name = getattr(exc_value, "name", None)
@@ -1316,7 +1322,6 @@ class TracebackException:
             lines = source.splitlines()
 
         error_code = lines[line -1 if line > 0 else 0:end_line]
-        error_code[0] = error_code[0][offset:]
         error_code = textwrap.dedent('\n'.join(error_code))
 
         # Do not continue if the source is too large
@@ -1332,7 +1337,8 @@ class TracebackException:
             if token.type != tokenize.NAME:
                 continue
             # Only consider NAME tokens on the same line as the error
-            if from_filename and token.start[0]+line != end_line+1:
+            the_end = end_line if line == 0 else end_line + 1
+            if from_filename and token.start[0]+line != the_end:
                 continue
             wrong_name = token.string
             if wrong_name in keyword.kwlist:
@@ -1595,6 +1601,34 @@ def _substitution_cost(ch_a, ch_b):
     return _MOVE_COST
 
 
+def _check_for_nested_attribute(obj, wrong_name, attrs):
+    """Check if any attribute of obj has the wrong_name as a nested attribute.
+
+    Returns the first nested attribute suggestion found, or None.
+    Limited to checking 20 attributes.
+    Only considers non-descriptor attributes to avoid executing arbitrary code.
+    """
+    # Check for nested attributes (only one level deep)
+    attrs_to_check = [x for x in attrs if not x.startswith('_')][:20]  # Limit number of attributes to check
+    for attr_name in attrs_to_check:
+        with suppress(Exception):
+            # Check if attr_name is a descriptor - if so, skip it
+            attr_from_class = getattr(type(obj), attr_name, None)
+            if attr_from_class is not None and hasattr(attr_from_class, '__get__'):
+                continue  # Skip descriptors to avoid executing arbitrary code
+
+            # Safe to get the attribute since it's not a descriptor
+            attr_obj = getattr(obj, attr_name)
+
+            # Check if the nested attribute exists and is not a descriptor
+            nested_attr_from_class = getattr(type(attr_obj), wrong_name, None)
+
+            if hasattr(attr_obj, wrong_name):
+                return f"{attr_name}.{wrong_name}"
+
+    return None
+
+
 def _compute_suggestion_error(exc_value, tb, wrong_name):
     if wrong_name is None or not isinstance(wrong_name, str):
         return None
@@ -1660,7 +1694,9 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
     except ImportError:
         pass
     else:
-        return _suggestions._generate_suggestions(d, wrong_name)
+        suggestion = _suggestions._generate_suggestions(d, wrong_name)
+        if suggestion:
+            return suggestion
 
     # Compute closest match
 
@@ -1685,6 +1721,14 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         if not suggestion or current_distance < best_distance:
             suggestion = possible_name
             best_distance = current_distance
+
+    # If no direct attribute match found, check for nested attributes
+    if not suggestion and isinstance(exc_value, AttributeError):
+        with suppress(Exception):
+            nested_suggestion = _check_for_nested_attribute(exc_value.obj, wrong_name, d)
+            if nested_suggestion:
+                return nested_suggestion
+
     return suggestion
 
 

@@ -485,6 +485,7 @@ class TestSupport(unittest.TestCase):
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(os, 'waitpid') and hasattr(os, 'WNOHANG'),
                          'need os.waitpid() and os.WNOHANG')
     @support.requires_fork()
@@ -787,7 +788,7 @@ class TestSupport(unittest.TestCase):
     def test_linked_to_musl(self):
         linked = support.linked_to_musl()
         self.assertIsNotNone(linked)
-        if support.is_wasi or support.is_emscripten:
+        if support.is_wasm32:
             self.assertTrue(linked)
         # The value is cached, so make sure it returns the same value again.
         self.assertIs(linked, support.linked_to_musl())
