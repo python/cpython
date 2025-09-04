@@ -207,8 +207,9 @@ def main() -> None:
         make_paths_relative(data, args.config_file_path)
 
     json_output = json.dumps(data, indent=2)
-    with open(args.location, 'w') as f:
-        print(json_output, file=f)
+    with open(args.location, 'w', encoding='utf-8') as f:
+        f.write(json_output)
+        f.write('\n')
 
 
 if __name__ == '__main__':
