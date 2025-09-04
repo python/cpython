@@ -32,11 +32,13 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    *free_threaded* is a boolean indicating whether the interpreter supports
    running in free-threaded mode (i.e. with the GIL disabled).
-   This reflects the presence of the :option:`--disable-gil` configure option.
+   This reflects the presence of the :option:`--disable-gil` configure option,
+   or the setting of the `DisableGil` property on Windows, respectively.
 
    *debug* is a boolean indicating whether the interpreter was built in
    :ref:`debug mode <debug-build>`.
-   This reflects the presence of the :option:`--with-pydebug` configure option.
+   This reflects the presence of the :option:`--with-pydebug` configure option,
+   or the `Debug` configuration on Windows, respectively.
 
    *byteorder* is a string indicating the native byte order, either ``'big'`` or
    ``'little'``.
