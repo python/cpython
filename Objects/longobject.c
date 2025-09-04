@@ -3692,6 +3692,7 @@ long_hash(PyObject *obj)
     x += v->long_value.ob_digit[i];
     assert(x < PyHASH_MODULUS);
 #endif
+
     while (--i >= 0) {
         /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
            want to compute x * 2**PyLong_SHIFT + v->long_value.ob_digit[i] modulo
