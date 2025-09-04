@@ -364,10 +364,10 @@ resource_getpagesize_impl(PyObject *module)
 /*[clinic end generated code: output=9ba93eb0f3d6c3a9 input=546545e8c1f42085]*/
 {
     long pagesize = 0;
-#if defined(HAVE_GETPAGESIZE)
-    pagesize = getpagesize();
-#elif defined(HAVE_SYSCONF) && defined(_SC_PAGE_SIZE)
+#if defined(HAVE_SYSCONF) && defined(_SC_PAGE_SIZE)
     pagesize = sysconf(_SC_PAGE_SIZE);
+#elif defined(HAVE_GETPAGESIZE)
+    pagesize = getpagesize();
 #else
 #   error "unsupported platform: resource.getpagesize()"
 #endif
