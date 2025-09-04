@@ -444,6 +444,15 @@ class CDLL(object):
 
     else:
         def _load_library(self, name, mode, handle, winmode):
+            # If the filename that has been provided is an iOS/tvOS/watchOS
+            # .fwork file, dereference the location to the true origin of the
+            # binary.
+            if name and name.endswith(".fwork"):
+                with open(name) as f:
+                    name = _os.path.join(
+                        _os.path.dirname(_sys.executable),
+                        f.read().strip()
+                    )
             if _sys.platform.startswith("aix"):
                 """When the name contains ".a(" and ends with ")",
                    e.g., "libFOO.a(libFOO.so)" - this is taken to be an
@@ -452,15 +461,6 @@ class CDLL(object):
                 """
                 if name and name.endswith(")") and ".a(" in name:
                     mode |= _os.RTLD_MEMBER | _os.RTLD_NOW
-            # If the filename that has been provided is an iOS/tvOS/watchOS
-            # .fwork file, dereference the location to the true origin of the
-            # binary.
-            if name.endswith(".fwork"):
-                with open(name) as f:
-                    name = _os.path.join(
-                        _os.path.dirname(_sys.executable),
-                        f.read().strip()
-                    )
             self._name = name
             return _dlopen(name, mode)
 
