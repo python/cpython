@@ -410,14 +410,27 @@ extern char *ctermid_r(char *);
 
 #ifdef HAVE_LINUX_STATX
 #  pragma weak statx
-#  define HAVE_LINUX_STATX_RUNTIME (statx != NULL)
-/* provide definitions introduced later than statx itself */
-#  define _Py_STATX_MNT_ID 0x00001000U
-#  define _Py_STATX_SUBVOL 0x00008000U
-#  define _Py_STATX_MASK (STATX_BASIC_STATS | STATX_BTIME | _Py_STATX_MNT_ID | _Py_STATX_SUBVOL)
-#  define _Py_STATX_MNT_ID_OFFSET 144
-#  define _Py_STATX_SUBVOL_OFFSET 160
-#endif
+/* provide constants introduced later than statx itself */
+#  ifndef STATX_MNT_ID
+#    define STATX_MNT_ID 0x00001000U
+#  endif
+#  ifndef STATX_DIOALIGN
+#    define STATX_DIOALIGN 0x00002000U
+#  endif
+#  ifndef STATX_MNT_ID_UNIQUE
+#    define STATX_MNT_ID_UNIQUE 0x00004000U
+#  endif
+#  ifndef STATX_SUBVOL
+#    define STATX_SUBVOL 0x00008000U
+#  endif
+#  ifndef STATX_WRITE_ATOMIC
+#    define STATX_WRITE_ATOMIC 0x00010000U
+#  endif
+#  ifndef STATX_DIO_READ_ALIGN
+#    define STATX_DIO_READ_ALIGN 0x00020000U
+#  endif
+# define _Py_STATX_KNOWN (STATX_BASIC_STATS | STATX_MNT_ID | STATX_DIOALIGN | STATX_MNT_ID_UNIQUE | STATX_SUBVOL | STATX_WRITE_ATOMIC | STATX_DIO_READ_ALIGN)
+#endif /* HAVE_LINUX_STATX */
 
 
 #if !defined(EX_OK) && defined(EXIT_SUCCESS)
@@ -2380,10 +2393,18 @@ static PyStructSequence_Field stat_result_fields[] = {
     {"st_reparse_tag", "Windows reparse tag"},
 #endif
 #ifdef HAVE_LINUX_STATX
-    {"st_attributes", "Linux file attribute bits"},
-    {"st_attributes_mask", "Linux file attribute bits supported by this file"},
-    {"st_mnt_id", "Linux mount ID for /proc/self/mountinfo"},
-    {"st_subvol", "Linux subvolume identifier"},
+    {"stx_mask", "Linux member validity bitmask"},
+    {"stx_attributes", "Linux file attribute bits"},
+    {"stx_attributes_mask", "Linux file attribute bits supported by this file"},
+    {"stx_mnt_id", "Linux mount ID"},
+    {"stx_dio_mem_align", "Linux direct IO buffer alignment"},
+    {"stx_dio_offset_align", "Linux direct IO file offset alignment"},
+    {"stx_subvol", "Linux subvolume identifier"},
+    {"stx_atomic_write_unit_min", "Linux atomic write unit minimum"},
+    {"stx_atomic_write_unit_max", "Linux atomic write unit maximum"},
+    {"stx_atomic_write_segments_max", "Linux atomic write segment maximum"},
+    {"stx_dio_read_offset_align", "Linux direct IO buffer and offset alignment for reads"},
+    {"stx_atomic_write_unit_max", "Linux atomic write unit optimized maximum"},
 #endif
     {0}
 };
@@ -2449,10 +2470,18 @@ static PyStructSequence_Field stat_result_fields[] = {
 #endif
 
 #ifdef HAVE_LINUX_STATX
-#define ST_ATTRIBUTES_IDX (ST_REPARSE_TAG_IDX+1)
-#define ST_ATTRIBUTES_MASK_IDX (ST_ATTRIBUTES_IDX+1)
-#define ST_MNT_ID_IDX (ST_ATTRIBUTES_MASK_IDX+1)
-#define ST_SUBVOL_IDX (ST_MNT_ID_IDX+1)
+#define STX_MASK_IDX (ST_REPARSE_TAG_IDX+1)
+#define STX_ATTRIBUTES_IDX (STX_MASK_IDX+1)
+#define STX_ATTRIBUTES_MASK_IDX (STX_ATTRIBUTES_IDX+1)
+#define STX_MNT_ID_IDX (STX_ATTRIBUTES_MASK_IDX+1)
+#define STX_DIO_MEM_ALIGN_IDX (STX_MNT_ID_IDX+1)
+#define STX_DIO_OFFSET_ALIGN_IDX (STX_DIO_MEM_ALIGN_IDX+1)
+#define STX_SUBVOL_IDX (STX_DIO_OFFSET_ALIGN_IDX+1)
+#define STX_ATOMIC_WRITE_UNIT_MIN_IDX (STX_SUBVOL_IDX+1)
+#define STX_ATOMIC_WRITE_UNIT_MAX_IDX (STX_ATOMIC_WRITE_UNIT_MIN_IDX+1)
+#define STX_ATOMIC_WRITE_SEGMENTS_MAX_IDX (STX_ATOMIC_WRITE_UNIT_MAX_IDX+1)
+#define STX_DIO_READ_OFFSET_ALIGN_IDX (STX_ATOMIC_WRITE_SEGMENTS_MAX_IDX+1)
+#define STX_ATOMIC_WRITE_UNIT_MAX_OPT_IDX (STX_DIO_READ_OFFSET_ALIGN_IDX+1)
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2784,6 +2813,12 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #endif
       SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(bsec + bnsec * 1e-9));
     }
+#elif defined(HAVE_LINUX_STATX)
+    /* We were built with statx support, so stat_result.st_birthtime[_ns]
+       exists, but we fell back to stat because statx isn't available at
+       runtime.  User programs assume st_birthtime is not None. */
+    SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(0.0));
+    SET_ITEM(ST_BIRTHTIME_NS_IDX, _PyLong_GetZero());
 #elif defined(MS_WINDOWS)
     if (fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
                   st->st_birthtime, st->st_birthtime_nsec) < 0) {
@@ -2803,6 +2838,20 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
     SET_ITEM(ST_REPARSE_TAG_IDX, PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
+#ifdef HAVE_LINUX_STATX
+    SET_ITEM(STX_MASK_IDX, PyLong_FromUnsignedLong(STATX_BASIC_STATS));
+    SET_ITEM(STX_ATTRIBUTES_IDX, Py_None);
+    SET_ITEM(STX_ATTRIBUTES_MASK_IDX, Py_None);
+    SET_ITEM(STX_MNT_ID_IDX, Py_None);
+    SET_ITEM(STX_DIO_MEM_ALIGN_IDX, Py_None);
+    SET_ITEM(STX_DIO_OFFSET_ALIGN_IDX, Py_None);
+    SET_ITEM(STX_SUBVOL_IDX, Py_None);
+    SET_ITEM(STX_ATOMIC_WRITE_UNIT_MIN_IDX, Py_None);
+    SET_ITEM(STX_ATOMIC_WRITE_UNIT_MAX_IDX, Py_None);
+    SET_ITEM(STX_ATOMIC_WRITE_SEGMENTS_MAX_IDX, Py_None);
+    SET_ITEM(STX_DIO_READ_OFFSET_ALIGN_IDX, Py_None);
+    SET_ITEM(STX_ATOMIC_WRITE_UNIT_MAX_OPT_IDX, Py_None);
+#endif
 
     assert(!PyErr_Occurred());
     return v;
@@ -2810,13 +2859,11 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 error:
     Py_DECREF(v);
     return NULL;
-
-#undef SET_ITEM
 }
 
 #ifdef HAVE_LINUX_STATX
 static PyObject*
-_pystat_fromstructstatx(PyObject *module, struct statx *st)
+_pystat_fromstructstatx(PyObject *module, struct statx *st, unsigned int mask)
 {
     assert(!PyErr_Occurred());
 
@@ -2826,75 +2873,104 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st)
         return NULL;
     }
 
-#define SET_ITEM(pos, expr) \
+    /* Per the comment in /usr/include/linux/stat.h, even if a bit is cleared
+       in stx_mask, the corresponding field is "set to an appropriate
+       fabricated value" or cleared, never left uninitialized. */
+#define SET_ITEM_IF(pos, bit, expr) \
     do { \
-        PyObject *obj = (expr); \
+        PyObject *obj = mask & (bit) ? (expr) : Py_None; \
         if (obj == NULL) { \
             goto error; \
         } \
         PyStructSequence_SET_ITEM(v, (pos), obj); \
     } while (0)
 
-    SET_ITEM(0, PyLong_FromLong((long)st->stx_mode));
+    SET_ITEM_IF(0, STATX_TYPE | STATX_MODE,
+                PyLong_FromLong((long)st->stx_mode));
     static_assert(sizeof(unsigned long long) >= sizeof(st->stx_ino),
                   "statx.stx_ino is larger than unsigned long long");
-    SET_ITEM(1, PyLong_FromUnsignedLongLong(st->stx_ino));
+    SET_ITEM_IF(1, STATX_INO, PyLong_FromUnsignedLongLong(st->stx_ino));
     dev_t dev = makedev(st->stx_dev_major, st->stx_dev_minor);
     SET_ITEM(2, _PyLong_FromDev(dev));
 
-    SET_ITEM(3, PyLong_FromLong((long)st->stx_nlink));
-    SET_ITEM(4, _PyLong_FromUid(st->stx_uid));
-    SET_ITEM(5, _PyLong_FromGid(st->stx_gid));
+    SET_ITEM_IF(3, STATX_NLINK, PyLong_FromLong((long)st->stx_nlink));
+    SET_ITEM_IF(4, STATX_UID, _PyLong_FromUid(st->stx_uid));
+    SET_ITEM_IF(5, STATX_GID, _PyLong_FromGid(st->stx_gid));
     static_assert(sizeof(long long) >= sizeof(st->stx_size),
                   "statx.stx_size is larger than long long");
-    SET_ITEM(6, PyLong_FromLongLong(st->stx_size));
+    SET_ITEM_IF(6, STATX_SIZE, PyLong_FromLongLong(st->stx_size));
 
-    if (fill_time(module, v, 7, 10, 13, st->stx_atime.tv_sec,
+    if (mask & STATX_ATIME) {
+        if (fill_time(module, v, 7, 10, 13, st->stx_atime.tv_sec,
                   st->stx_atime.tv_nsec) < 0) {
-        goto error;
+            goto error;
+        }
     }
-    if (fill_time(module, v, 8, 11, 14, st->stx_mtime.tv_sec,
-                  st->stx_mtime.tv_nsec) < 0) {
-        goto error;
+    else {
+        SET_ITEM(7, Py_None);
+        SET_ITEM(10, Py_None);
+        SET_ITEM(13, Py_None);
     }
-    if (fill_time(module, v, 9, 12, 15, st->stx_ctime.tv_sec,
-                  st->stx_ctime.tv_nsec) < 0) {
-        goto error;
+    if (mask & STATX_MTIME) {
+        if (fill_time(module, v, 8, 11, 14, st->stx_mtime.tv_sec,
+                    st->stx_mtime.tv_nsec) < 0) {
+            goto error;
+        }
     }
-    if (st->stx_mask & STATX_BTIME) {
+    else {
+        SET_ITEM(8, Py_None);
+        SET_ITEM(11, Py_None);
+        SET_ITEM(14, Py_None);
+    }
+    if (mask & STATX_CTIME) {
+        if (fill_time(module, v, 9, 12, 15, st->stx_ctime.tv_sec,
+                    st->stx_ctime.tv_nsec) < 0) {
+            goto error;
+        }
+    }
+    else {
+        SET_ITEM(9, Py_None);
+        SET_ITEM(12, Py_None);
+        SET_ITEM(15, Py_None);
+    }
+    if (mask & STATX_BTIME) {
         if (fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
                       st->stx_btime.tv_sec, st->stx_btime.tv_nsec) < 0) {
             goto error;
         }
     }
     else {
-        SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(0.0));
-        SET_ITEM(ST_BIRTHTIME_NS_IDX, _PyLong_GetZero());
+        SET_ITEM(ST_BIRTHTIME_IDX, Py_None);
+        SET_ITEM(ST_BIRTHTIME_NS_IDX, Py_None);
     }
 
     SET_ITEM(ST_BLKSIZE_IDX, PyLong_FromLong((long)st->stx_blksize));
-    SET_ITEM(ST_BLOCKS_IDX, PyLong_FromLong((long)st->stx_blocks));
+    SET_ITEM_IF(ST_BLOCKS_IDX, STATX_BLOCKS,
+                PyLong_FromLong((long)st->stx_blocks));
     dev_t rdev = makedev(st->stx_rdev_major, st->stx_rdev_minor);
     SET_ITEM(ST_RDEV_IDX, _PyLong_FromDev(rdev));
 
-    SET_ITEM(ST_ATTRIBUTES_IDX, PyLong_FromUnsignedLong(st->stx_attributes));
-    SET_ITEM(ST_ATTRIBUTES_MASK_IDX, PyLong_FromLong(st->stx_attributes_mask));
-
-    if (st->stx_mask & _Py_STATX_MNT_ID) {
-        void* stx_mnt_id = ((unsigned char*)st) + _Py_STATX_MNT_ID_OFFSET;
-        SET_ITEM(ST_MNT_ID_IDX, PyLong_FromUnsignedNativeBytes(stx_mnt_id, 8, -1));
-    }
-    else {
-        SET_ITEM(ST_MNT_ID_IDX, Py_None);
-    }
-
-    if (st->stx_mask & _Py_STATX_SUBVOL) {
-        void* stx_subvol = ((unsigned char*)st) + _Py_STATX_SUBVOL_OFFSET;
-        SET_ITEM(ST_SUBVOL_IDX, PyLong_FromUnsignedNativeBytes(stx_subvol, 8, -1));
-    }
-    else {
-        SET_ITEM(ST_SUBVOL_IDX, Py_None);
-    }
+    SET_ITEM(STX_MASK_IDX, PyLong_FromUnsignedLong(st->stx_mask & mask));
+    SET_ITEM(STX_ATTRIBUTES_IDX, PyLong_FromUnsignedLong(st->stx_attributes));
+    SET_ITEM(STX_ATTRIBUTES_MASK_IDX, PyLong_FromLong(st->stx_attributes_mask));
+#define SET_ITEM_IF_OFFSET(pos, bit, offset, len) \
+    do { \
+        void *addr = ((unsigned char*)st) + offset; \
+        PyObject *obj = mask & (bit) ? PyLong_FromUnsignedNativeBytes(addr, len, -1) : Py_None; \
+        if (obj == NULL) { \
+            goto error; \
+        } \
+        PyStructSequence_SET_ITEM(v, (pos), obj); \
+    } while (0)
+    SET_ITEM_IF_OFFSET(STX_MNT_ID_IDX, STATX_MNT_ID | STATX_MNT_ID_UNIQUE, 144, 8);
+    SET_ITEM_IF_OFFSET(STX_DIO_MEM_ALIGN_IDX, STATX_DIOALIGN, 152, 4);
+    SET_ITEM_IF_OFFSET(STX_DIO_OFFSET_ALIGN_IDX, STATX_DIOALIGN, 156, 4);
+    SET_ITEM_IF_OFFSET(STX_SUBVOL_IDX, STATX_SUBVOL, 160, 8);
+    SET_ITEM_IF_OFFSET(STX_ATOMIC_WRITE_UNIT_MIN_IDX, STATX_WRITE_ATOMIC, 168, 4);
+    SET_ITEM_IF_OFFSET(STX_ATOMIC_WRITE_UNIT_MAX_IDX, STATX_WRITE_ATOMIC, 172, 4);
+    SET_ITEM_IF_OFFSET(STX_ATOMIC_WRITE_SEGMENTS_MAX_IDX, STATX_WRITE_ATOMIC, 176, 4);
+    SET_ITEM_IF_OFFSET(STX_DIO_READ_OFFSET_ALIGN_IDX, STATX_DIO_READ_ALIGN, 180, 4);
+    SET_ITEM_IF_OFFSET(STX_ATOMIC_WRITE_UNIT_MAX_OPT_IDX, STATX_WRITE_ATOMIC, 184, 4);
 
     assert(!PyErr_Occurred());
     return v;
@@ -2903,9 +2979,11 @@ error:
     Py_DECREF(v);
     return NULL;
 
-#undef SET_ITEM
+#undef SET_ITEM_IF_OFFSET
+#undef SET_ITEM_IF
 }
 #endif /* HAVE_LINUX_STATX */
+#undef SET_ITEM
 
 /* POSIX methods */
 
@@ -2934,16 +3012,18 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
 #ifdef HAVE_LINUX_STATX
     struct statx stx = {};
     static int statx_works = -1;
-    if (HAVE_LINUX_STATX_RUNTIME && statx_works != 0) {
+    if (statx != NULL && statx_works != 0) {
+        unsigned int mask = STATX_BASIC_STATS | STATX_BTIME;
         int flags = AT_NO_AUTOMOUNT;
         flags |= follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW;
+
         Py_BEGIN_ALLOW_THREADS
         if (path->fd != -1) {
             flags |= AT_EMPTY_PATH;
-            result = statx(path->fd, "", flags, _Py_STATX_MASK, &stx);
+            result = statx(path->fd, "", flags, mask, &stx);
         }
         else {
-            result = statx(dir_fd, path->narrow, flags, _Py_STATX_MASK, &stx);
+            result = statx(dir_fd, path->narrow, flags, mask, &stx);
         }
         Py_END_ALLOW_THREADS
 
@@ -2956,7 +3036,7 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
             }
         }
         else {
-            return _pystat_fromstructstatx(module, &stx);
+            return _pystat_fromstructstatx(module, &stx, mask);
         }
     }
 #endif /* HAVE_LINUX_STATX */
@@ -3406,6 +3486,107 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
     int follow_symlinks = 0;
     return posix_do_stat(module, "lstat", path, dir_fd, follow_symlinks);
 }
+
+
+#ifdef HAVE_LINUX_STATX
+static int
+optional_bool_converter(PyObject *arg, void *addr) {
+    int value;
+    if (arg == Py_None) {
+        value = -1;
+    }
+    else {
+        value = Py_IsTrue(arg);
+        if (value < 0) {
+            return 0;
+        }
+    }
+    *((int *)addr) = value;
+    return 1;
+}
+
+/*[python input]
+class optional_bool_converter(CConverter):
+    type = 'int'
+    converter = 'optional_bool_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=47de85b300eeb19e]*/
+
+/*[clinic input]
+
+os.statx
+
+    path : path_t(allow_fd=True)
+        Path to be examined; can be string, bytes, a path-like object or
+        open-file-descriptor int.
+
+    mask: unsigned_int(bitwise=True)
+        A bitmask of STATX_* constants defining the requested information.
+
+    *
+
+    dir_fd : dir_fd = None
+        If not None, it should be a file descriptor open to a directory,
+        and path should be a relative string; path will then be relative to
+        that directory.
+
+    follow_symlinks: bool = True
+        If False, and the last element of the path is a symbolic link,
+        statx will examine the symbolic link itself instead of the file
+        the link points to.
+
+    sync: optional_bool(c_default='-1') = None
+        If True, statx will return up-to-date values, even if doing so is
+        expensive.  If False, statx will return cached values if possible.
+        If None, statx lets the operating system decide.
+
+    raw: bool = False
+        If False, fields that were not requested or that are not valid will be
+        None.  If True, all fields will be initialized with the (possibly fake)
+        kernel-provided value; use stx_mask to check validity.
+
+Perform a statx system call on the given path.
+
+It's an error to use dir_fd or follow_symlinks when specifying path as
+  an open file descriptor.
+
+[clinic start generated code]*/
+
+static PyObject *
+os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
+              int follow_symlinks, int sync, int raw)
+/*[clinic end generated code: output=94261132ec9b507e input=de4f8caad620361b]*/
+{
+    if (path_and_dir_fd_invalid("stat", path, dir_fd) ||
+        dir_fd_and_fd_invalid("stat", dir_fd, path->fd) ||
+        fd_and_follow_symlinks_invalid("stat", path->fd, follow_symlinks))
+        return NULL;
+
+    int result;
+    struct statx stx = {};
+    /* Future bits may refer to members beyond the current size of struct
+       statx, so we need to mask them off to prevent memory corruption. */
+    mask &= _Py_STATX_KNOWN;
+    int flags = AT_NO_AUTOMOUNT | (follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+    if (sync != -1) {
+        flags |= sync ? AT_STATX_FORCE_SYNC : AT_STATX_DONT_SYNC;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &stx);
+    }
+    else {
+        result = statx(dir_fd, path->narrow, flags, mask, &stx);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (result != 0) {
+        return path_error(path);
+    }
+    return _pystat_fromstructstatx(module, &stx, raw ? _Py_STATX_KNOWN : mask & stx.stx_mask);
+}
+#endif
 
 
 /*[clinic input]
@@ -17123,6 +17304,7 @@ os__emscripten_debugger_impl(PyObject *module)
 
 static PyMethodDef posix_methods[] = {
     OS_STAT_METHODDEF
+    OS_STATX_METHODDEF
     OS_ACCESS_METHODDEF
     OS_TTYNAME_METHODDEF
     OS_CHDIR_METHODDEF
@@ -17960,6 +18142,30 @@ all_ins(PyObject *m)
 #endif
 #endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
 
+#ifdef HAVE_LINUX_STATX
+    if (PyModule_AddIntMacro(m, STATX_TYPE)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_MODE)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_NLINK)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_UID)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_GID)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_ATIME)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_MTIME)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_CTIME)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_INO)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_SIZE)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_BLOCKS)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_BASIC_STATS)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_BTIME)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_MNT_ID)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_DIOALIGN)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_MNT_ID_UNIQUE)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_SUBVOL)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_WRITE_ATOMIC)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_DIO_READ_ALIGN)) return -1;
+    /* STATX_ALL intentionally omitted because it is deprecated */
+    /* STATX_ATTR_* constants are in the stat module */
+#endif /* HAVE_LINUX_STATX */
+
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
     if (PyModule_AddIntConstant(m, "_COPYFILE_STAT", COPYFILE_STAT)) return -1;
@@ -18226,6 +18432,27 @@ posixmodule_exec(PyObject *m)
             return -1;
         }
         if (PyDict_PopString(dct, "preadv", NULL) < 0) {
+            return -1;
+        }
+    }
+#endif
+
+#ifdef HAVE_LINUX_STATX
+    /* We retract os.statx in three cases:
+       - the weakly-linked statx wrapper function is not available (old libc)
+       - the wrapper function fails with EINVAL on sync flags (glibc's
+         emulation of statx via stat fails in this way)
+       - the wrapper function fails with ENOSYS (libc built without fallback
+         running on an old kernel) */
+    struct statx stx;
+    if (statx == NULL
+        || (statx(-1, "/", AT_STATX_DONT_SYNC, 0, &stx) == -1
+            && (errno == EINVAL || errno == ENOSYS))) {
+        PyObject* dct = PyModule_GetDict(m);
+        if (dct == NULL) {
+            return -1;
+        }
+        if (PyDict_PopString(dct, "statx", NULL) < 0) {
             return -1;
         }
     }

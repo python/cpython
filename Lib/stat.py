@@ -200,8 +200,8 @@ FILE_ATTRIBUTE_TEMPORARY = 256
 FILE_ATTRIBUTE_VIRTUAL = 65536
 
 
-# Linux STATX_ATTR constants for interpreting os.stat()'s
-# "st_attributes" and "st_attributes_mask" members
+# Linux STATX_ATTR constants for interpreting os.statx()'s
+# "stx_attributes" and "stx_attributes_mask" members
 
 STATX_ATTR_COMPRESSED = 0x00000004
 STATX_ATTR_IMMUTABLE = 0x00000010
