@@ -10,9 +10,12 @@ import typing
 
 import _targets
 
-_LLVM_VERSION = 19
+_LLVM_VERSION_DEFAULT = "19"
+_EXTERNALS_LLVM_TAG_DEFAULT = "llvm-19.1.7.0"
+
+_LLVM_VERSION = os.getenv("LLVM_VERSION", _LLVM_VERSION_DEFAULT)
 _LLVM_VERSION_PATTERN = re.compile(rf"version\s+{_LLVM_VERSION}\.\d+\.\d+\S*\s+")
-_EXTERNALS_LLVM_TAG = "llvm-19.1.7.0"
+_EXTERNALS_LLVM_TAG = os.getenv("EXTERNALS_LLVM_TAG", _EXTERNALS_LLVM_TAG_DEFAULT)
 
 _P = typing.ParamSpec("_P")
 _R = typing.TypeVar("_R")
