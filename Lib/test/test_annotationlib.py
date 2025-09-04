@@ -1677,21 +1677,29 @@ class TestForwardRefClass(unittest.TestCase):
 
     def test_evaluate_undefined_generic(self):
         # Test the codepath where have to eval() with undefined variables.
-        generic = ForwardRef("glob[int, undef]").evaluate(format=Format.FORWARDREF, globals={"glob": dict})
-        self.assertNotIsInstance(generic, ForwardRef)
-        self.assertIs(generic.__origin__, dict)
-        self.assertIs(generic.__args__[0], int)
+        class C:
+            x: alias[int, undef]
 
-        generic = ForwardRef("loc[int, undef]").evaluate(format=Format.FORWARDREF, locals={"loc": dict})
+        generic = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF,
+            globals={"alias": dict}
+        )
         self.assertNotIsInstance(generic, ForwardRef)
         self.assertIs(generic.__origin__, dict)
+        self.assertEqual(len(generic.__args__), 2)
         self.assertIs(generic.__args__[0], int)
+        self.assertIsInstance(generic.__args__[1], ForwardRef)
 
-        # Ensure that globals overwrite builtins
-        generic = ForwardRef("list[int, undef]").evaluate(format=Format.FORWARDREF, globals={"list": dict})
+        generic = get_annotations(C, format=Format.FORWARDREF)["x"].evaluate(
+            format=Format.FORWARDREF,
+            globals={"alias": Union},
+            locals={"alias": dict}
+        )
         self.assertNotIsInstance(generic, ForwardRef)
         self.assertIs(generic.__origin__, dict)
+        self.assertEqual(len(generic.__args__), 2)
         self.assertIs(generic.__args__[0], int)
+        self.assertIsInstance(generic.__args__[1], ForwardRef)
 
     def test_fwdref_invalid_syntax(self):
         fr = ForwardRef("if")
