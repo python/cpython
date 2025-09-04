@@ -408,9 +408,8 @@ extern char *ctermid_r(char *);
 #  define STRUCT_STAT struct stat
 #endif
 
-#if defined(__linux__) && defined(STATX_BASIC_STATS)
+#ifdef HAVE_LINUX_STATX
 #  pragma weak statx
-#  define HAVE_LINUX_STATX 1
 #  define HAVE_LINUX_STATX_RUNTIME (statx != NULL)
 /* provide definitions introduced later than statx itself */
 #  define _Py_STATX_MNT_ID 0x00001000U

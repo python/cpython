@@ -1,6 +1,6 @@
-# generated automatically by aclocal 1.16.5 -*- Autoconf -*-
+# generated automatically by aclocal 1.18.1 -*- Autoconf -*-
 
-# Copyright (C) 1996-2021 Free Software Foundation, Inc.
+# Copyright (C) 1996-2025 Free Software Foundation, Inc.
 
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -44,12 +44,12 @@ m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun
 #   Early versions of this macro (i.e., before serial 12) would not work
 #   when interprocedural optimization (via link-time optimization) was
 #   enabled. This would happen when, say, the GCC/clang "-flto" flag, or the
-#   ICC "-ipo" flag was used, for example. The problem was that under
-#   these conditions, the compiler did not allocate for and write the special
+#   ICC "-ipo" flag was used, for example. The problem was that under these
+#   conditions, the compiler did not allocate for and write the special
 #   float value in the data segment of the object file, since doing so might
-#   not prove optimal once more context was available. Thus, the special value
-#   (in platform-dependent binary form) could not be found in the object file,
-#   and the macro would fail.
+#   not prove optimal once more context was available. Thus, the special
+#   value (in platform-dependent binary form) could not be found in the
+#   object file, and the macro would fail.
 #
 #   The solution to the above problem was to:
 #
@@ -68,19 +68,19 @@ m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun
 #        program binary that contains the value, which the macro can then find.
 #
 #   How does the exit code depend on the special value residing in memory?
-#   Memory, unlike variables and registers, can be addressed indirectly at run
-#   time. The exit code of this test program is a result of indirectly reading
-#   and writing to the memory region where the special value is supposed to
-#   reside. The actual memory addresses used and the values to be written are
-#   derived from the the program input ("argv") and are therefore not known at
-#   compile or link time. The compiler has no choice but to defer the
-#   computation to run time, and to prepare by allocating and populating the
-#   data segment with the special value. For further details, refer to the
-#   source code of the test program.
+#   Memory, unlike variables and registers, can be addressed indirectly at
+#   run time. The exit code of this test program is a result of indirectly
+#   reading and writing to the memory region where the special value is
+#   supposed to reside. The actual memory addresses used and the values to
+#   be written are derived from the the program input ("argv") and are
+#   therefore not known at compile or link time. The compiler has no choice
+#   but to defer the computation to run time, and to prepare by allocating
+#   and populating the data segment with the special value. For further
+#   details, refer to the source code of the test program.
 #
-#   Note that the test program is never meant to be run. It only exists to host
-#   a double float value in a given platform's binary format. Thus, error
-#   handling is not included.
+#   Note that the test program is never meant to be run. It only exists to
+#   host a double float value in a given platform's binary format. Thus,
+#   error handling is not included.
 #
 # LICENSE
 #
@@ -91,7 +91,7 @@ m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 14
+#serial 13
 
 AC_DEFUN([AX_C_FLOAT_WORDS_BIGENDIAN],
   [AC_CACHE_CHECK(whether float word ordering is bigendian,
@@ -112,10 +112,10 @@ int main (int argc, char *argv[])
 
 ]])], [
 
-if grep noonsees conftest* > /dev/null ; then
+if grep noonsees conftest$EXEEXT >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if grep seesnoon conftest* >/dev/null ; then
+if grep seesnoon conftest$EXEEXT >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -181,14 +181,24 @@ esac
 #   and this notice are preserved.  This file is offered as-is, without any
 #   warranty.
 
-#serial 6
+#serial 11
 
 AC_DEFUN([AX_CHECK_COMPILE_FLAG],
 [AC_PREREQ(2.64)dnl for _AC_LANG_PREFIX and AS_VAR_IF
 AS_VAR_PUSHDEF([CACHEVAR],[ax_cv_check_[]_AC_LANG_ABBREV[]flags_$4_$1])dnl
-AC_CACHE_CHECK([whether _AC_LANG compiler accepts $1], CACHEVAR, [
+AC_CACHE_CHECK([whether the _AC_LANG compiler accepts $1], CACHEVAR, [
   ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
-  _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $4 $1"
+  if test x"m4_case(_AC_LANG,
+                     [C], [$GCC],
+                     [C++], [$GXX],
+                     [Fortran], [$GFC],
+                     [Fortran 77], [$G77],
+                     [Objective C], [$GOBJC],
+                     [Objective C++], [$GOBJCXX],
+                     [no])" = xyes ; then
+    add_gnu_werror="-Werror"
+  fi
+  _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $4 $1 $add_gnu_werror"
   AC_COMPILE_IFELSE([m4_default([$5],[AC_LANG_PROGRAM()])],
     [AS_VAR_SET(CACHEVAR,[yes])],
     [AS_VAR_SET(CACHEVAR,[no])])
@@ -224,7 +234,7 @@ AS_VAR_POPDEF([CACHEVAR])dnl
 #   and this notice are preserved.  This file is offered as-is, without any
 #   warranty.
 
-#serial 11
+#serial 12
 
 AU_ALIAS([AC_CHECK_DEFINED], [AC_CHECK_DEFINE])
 AC_DEFUN([AC_CHECK_DEFINE],[
@@ -264,8 +274,8 @@ AC_CACHE_CHECK([for $2], ac_var,
 dnl AC_LANG_FUNC_LINK_TRY
 [AC_LINK_IFELSE([AC_LANG_PROGRAM([$1
                 #undef $2
-                char $2 ();],[
-                char (*f) () = $2;
+                char $2 (void);],[
+                char (*f) (void) = $2;
                 return f != $2; ])],
                 [AS_VAR_SET(ac_var, yes)],
                 [AS_VAR_SET(ac_var, no)])])
@@ -399,7 +409,7 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
 ])
 
 # pkg.m4 - Macros to locate and use pkg-config.   -*- Autoconf -*-
-# serial 12 (pkg-config-0.29.2)
+# serial 13 (pkgconf)
 
 dnl Copyright © 2004 Scott James Remnant <scott@netsplit.com>.
 dnl Copyright © 2012-2015 Dan Nicholson <dbn.lists@gmail.com>
@@ -415,9 +425,7 @@ dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 dnl General Public License for more details.
 dnl
 dnl You should have received a copy of the GNU General Public License
-dnl along with this program; if not, write to the Free Software
-dnl Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-dnl 02111-1307, USA.
+dnl along with this program; if not, see <https://www.gnu.org/licenses/>.
 dnl
 dnl As a special exception to the GNU General Public License, if you
 dnl distribute this file as part of a program that contains a
@@ -446,8 +454,8 @@ m4_if(m4_version_compare(PKG_MACROS_VERSION, [$1]), -1,
     [m4_fatal([pkg.m4 version $1 or higher is required but ]PKG_MACROS_VERSION[ found])])
 ])dnl PKG_PREREQ
 
-dnl PKG_PROG_PKG_CONFIG([MIN-VERSION])
-dnl ----------------------------------
+dnl PKG_PROG_PKG_CONFIG([MIN-VERSION], [ACTION-IF-NOT-FOUND])
+dnl ---------------------------------------------------------
 dnl Since: 0.16
 dnl
 dnl Search for the pkg-config tool and set the PKG_CONFIG variable to
@@ -455,6 +463,12 @@ dnl first found in the path. Checks that the version of pkg-config found
 dnl is at least MIN-VERSION. If MIN-VERSION is not specified, 0.9.0 is
 dnl used since that's the first version where most current features of
 dnl pkg-config existed.
+dnl
+dnl If pkg-config is not found or older than specified, it will result
+dnl in an empty PKG_CONFIG variable. To avoid widespread issues with
+dnl scripts not checking it, ACTION-IF-NOT-FOUND defaults to aborting.
+dnl You can specify [PKG_CONFIG=false] as an action instead, which would
+dnl result in pkg-config tests failing, but no bogus error messages.
 AC_DEFUN([PKG_PROG_PKG_CONFIG],
 [m4_pattern_forbid([^_?PKG_[A-Z_]+$])
 m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
@@ -475,6 +489,9 @@ if test -n "$PKG_CONFIG"; then
 		AC_MSG_RESULT([no])
 		PKG_CONFIG=""
 	fi
+fi
+if test -z "$PKG_CONFIG"; then
+	m4_default([$2], [AC_MSG_ERROR([pkg-config not found])])
 fi[]dnl
 ])dnl PKG_PROG_PKG_CONFIG
 
@@ -744,7 +761,7 @@ AS_IF([test "$AS_TR_SH([with_]m4_tolower([$1]))" = "yes"],
 
 # AM_CONDITIONAL                                            -*- Autoconf -*-
 
-# Copyright (C) 1997-2021 Free Software Foundation, Inc.
+# Copyright (C) 1997-2025 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
@@ -775,7 +792,7 @@ AC_CONFIG_COMMANDS_PRE(
 Usually this means the macro was only invoked conditionally.]])
 fi])])
 
-# Copyright (C) 2006-2021 Free Software Foundation, Inc.
+# Copyright (C) 2006-2025 Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,

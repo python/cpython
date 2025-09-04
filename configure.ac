@@ -7618,6 +7618,22 @@ AC_ARG_ENABLE([test-modules],
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
+AC_MSG_CHECKING([for --without-linux-statx])
+AC_ARG_WITH([linux-statx],
+  [AS_HELP_STRING([--without-linux-statx], [don't provide os.statx nor os.stat_result.st_birthtime])],
+  [], [AS_CASE($ac_sys_system, [Linux*], [with_linux_statx=yes], [with_linux_statx=no])])
+AC_MSG_RESULT([$with_linux_statx])
+AS_IF([test "x$with_linux_statx" != xno],
+  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <sys/stat.h>
+  ]], [[void* p = statx]])],
+    [AC_DEFINE(HAVE_LINUX_STATX, 1, Define if you have the 'statx' function.)
+     AC_MSG_RESULT(yes)],
+    [AC_MSG_RESULT(no)
+     AC_MSG_ERROR([statx syscall wrapper function not available; upgrade to
+                   glibc 2.28 or later or use --without-linux-statx])
+  ])])
+
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked
 # explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
