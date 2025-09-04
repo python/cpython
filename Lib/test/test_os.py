@@ -3958,7 +3958,7 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(cm.exception.errno, errno.EINVAL)
 
     async def test_invalid_count(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError, msg="count cannot be negative"):
             await self.sendfile_wrapper(self.sockno, self.fileno, offset=0,
                                         count=-1)
 
