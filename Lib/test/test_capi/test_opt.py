@@ -2528,6 +2528,22 @@ class TestUopsOptimization(unittest.TestCase):
         with self.assertRaises(NameError):
             jitted([f, f_with_bad_globals])
 
+    def test_reference_tracking_across_call_doesnt_crash(self):
+
+        def f1():
+            for _ in range(TIER2_THRESHOLD + 1):
+                # Choose a value that won't occur elsewhere to avoid sharing
+                str("value that won't occur elsewhere to avoid sharing")
+
+        f1()
+
+        def f2():
+            for _ in range(TIER2_THRESHOLD + 1):
+                # Choose a value that won't occur elsewhere to avoid sharing
+                tuple((31, -17, 25, "won't occur elsewhere"))
+
+        f2()
+
 
 def global_identity(x):
     return x
