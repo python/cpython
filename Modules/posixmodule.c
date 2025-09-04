@@ -3557,9 +3557,9 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
               int follow_symlinks, int sync, int raw)
 /*[clinic end generated code: output=94261132ec9b507e input=de4f8caad620361b]*/
 {
-    if (path_and_dir_fd_invalid("stat", path, dir_fd) ||
-        dir_fd_and_fd_invalid("stat", dir_fd, path->fd) ||
-        fd_and_follow_symlinks_invalid("stat", path->fd, follow_symlinks))
+    if (path_and_dir_fd_invalid("statx", path, dir_fd) ||
+        dir_fd_and_fd_invalid("statx", dir_fd, path->fd) ||
+        fd_and_follow_symlinks_invalid("statx", path->fd, follow_symlinks))
         return NULL;
 
     int result;
