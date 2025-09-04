@@ -453,7 +453,7 @@ class CDLL(object):
                    Otherwise, name is presented to dlopen() as a file argument.
                 """
                 if name and name.endswith(")") and ".a(" in name:
-                    mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
+                    mode |= _os.RTLD_MEMBER | _os.RTLD_NOW
             # If the filename that has been provided is an iOS/tvOS/watchOS
             # .fwork file, dereference the location to the true origin of the
             # binary.
