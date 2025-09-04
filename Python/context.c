@@ -1361,7 +1361,7 @@ PyStatus
 _PyContext_Init(PyInterpreterState *interp)
 {
     PyObject *missing = get_token_missing();
-    assert(PyUnstable_IsImmortal(missing));  
+    assert(PyUnstable_IsImmortal(missing));
     if (PyDict_SetItemString(
         _PyType_GetDict(&PyContextToken_Type), "MISSING", missing))
     {
