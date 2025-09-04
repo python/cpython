@@ -55,7 +55,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     data['language']['version'] = sysconfig.get_python_version()
     data['language']['version_info'] = version_info_to_dict(sys.version_info)
 
-    data['implementation'] = vars(sys.implementation)
+    data['implementation'] = vars(sys.implementation).copy()
     data['implementation']['version'] = version_info_to_dict(sys.implementation.version)
     # Fix cross-compilation
     if '_multiarch' in data['implementation']:
