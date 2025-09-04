@@ -173,9 +173,9 @@ def relative_path(path: str, base: str) -> str:
         return os.path.relpath(path, base)
 
     # There are no relative paths between drives on Windows.
-    path_drv, path_root, _ = os.path.splitroot(path)
-    base_drv, base_root, _ = os.path.splitroot(base)
-    if path_drv.lower() == base_drv.lower() and path_root == base_root:
+    path_drv, _ = os.path.splitdrive(path)
+    base_drv, _ = os.path.splitdrive(base)
+    if path_drv.lower() == base_drv.lower():
         return os.path.relpath(path, base)
 
     return path
