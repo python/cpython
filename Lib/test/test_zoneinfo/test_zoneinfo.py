@@ -1806,6 +1806,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
     def test_tzpath_attribute(self):
         tzpath_0 = [f"{DRIVE}/one", f"{DRIVE}/two"]
         tzpath_1 = [f"{DRIVE}/three"]
+        tzpath_pathlike = (pathlib.Path("/usr/share/zoneinfo"),)
 
         with self.tzpath_context(tzpath_0):
             query_0 = self.module.TZPATH
@@ -1813,8 +1814,12 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         with self.tzpath_context(tzpath_1):
             query_1 = self.module.TZPATH
 
+        with self.tzpath_context(tzpath_pathlike):
+            query_pathlike = self.module.TZPATH
+
         self.assertSequenceEqual(tzpath_0, query_0)
         self.assertSequenceEqual(tzpath_1, query_1)
+        self.assertSequenceEqual(tzpath_pathlike, query_pathlike)
 
 
 class CTzPathTest(TzPathTest):
