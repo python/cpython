@@ -3468,6 +3468,9 @@ datetime.date.strptime
     /
 
 Parse string according to the given date format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
@@ -3608,6 +3611,9 @@ datetime.date.strftime
 Format using strftime().
 
 Example: "%d/%m/%Y, %H:%M:%S".
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
@@ -4711,6 +4717,9 @@ datetime.time.strptime
     /
 
 Parse string according to the given time format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
@@ -4891,6 +4900,8 @@ datetime.time.strftime
 Format using strftime().
 
 The date part of the timestamp passed to underlying strftime should not be used.
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
@@ -5787,6 +5798,8 @@ datetime.datetime.strptime
     /
 
 Parse string according to the given date and time format (like time.strptime()).
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
