@@ -15,6 +15,10 @@ repos:
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/
       - id: ruff
+        name: Run Ruff (lint) on Tools/i18n/
+        args: [--exit-non-zero-on-fix, --config=Tools/i18n/.ruff.toml]
+        files: ^Tools/i18n/
+      - id: ruff
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
