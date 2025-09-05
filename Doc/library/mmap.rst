@@ -48,10 +48,11 @@ update the underlying file.
 
 To map anonymous memory, -1 should be passed as the fileno along with the length.
 
-.. class:: mmap(fileno, length, tagname=None, access=ACCESS_DEFAULT, offset=0)
+.. class:: mmap(fileno, length, tagname=None, \
+                access=ACCESS_DEFAULT, offset=0, *, trackfd=True)
 
    **(Windows version)** Maps *length* bytes from the file specified by the
-   file handle *fileno*, and creates a mmap object.  If *length* is larger
+   file descriptor *fileno*, and creates a mmap object.  If *length* is larger
    than the current size of the file, the file is extended to contain *length*
    bytes.  If *length* is ``0``, the maximum length of the map is the current
    size of the file, except that if the file is empty Windows raises an
@@ -68,6 +69,17 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    *offset* may be specified as a non-negative integer offset. mmap references
    will be relative to the offset from the beginning of the file. *offset*
    defaults to 0.  *offset* must be a multiple of the :const:`ALLOCATIONGRANULARITY`.
+
+   If *trackfd* is ``False``, the file handle corresponding to *fileno* will
+   not be duplicated, and the resulting :class:`!mmap` object will not
+   be associated with the map's underlying file.
+   This means that the :meth:`~mmap.mmap.size` and :meth:`~mmap.mmap.resize`
+   methods will fail.
+   This mode is useful to limit the number of open file handles.
+   The original file can be renamed (but not deleted) after closing *fileno*.
+
+   .. versionchanged:: next
+      The *trackfd* parameter was added.
 
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
@@ -312,10 +324,10 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       Return the length of the file, which can be larger than the size of the
       memory-mapped area.
-      For anonymous mapping, return its size.
+      For an anonymous mapping, return its size.
 
       .. versionchanged:: next
-         Supports anonymous mapping on Unix.
+         Anonymous mappings are now supported on Unix.
 
 
    .. method:: tell()
