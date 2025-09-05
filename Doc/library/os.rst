@@ -3143,7 +3143,7 @@ features:
 
       .. note::
 
-         ``st_mode`` is an **int** bitmask that combines the file type and the
+         ``st_mode`` is an :class:`int` bitmask that combines the file type and the
          permission bits. If you expect POSIX-style values like ``755`` or ``644``,
          render the value in octal and/or mask out only the permission bits. For example:
 
