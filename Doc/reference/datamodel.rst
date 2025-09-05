@@ -1680,6 +1680,8 @@ Special read-only attributes
      - The :term:`generator` or :term:`coroutine` object that owns this frame,
        or ``None`` if the frame is a normal function.
 
+       .. versionadded:: 3.14
+
 .. index::
    single: f_trace (frame attribute)
    single: f_trace_lines (frame attribute)
