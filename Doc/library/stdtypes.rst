@@ -1030,36 +1030,6 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``max(s)``               | largest item of *s*            |          |
 +--------------------------+--------------------------------+----------+
 
-.. method:: list.count(value, /)
-            range.count(value, /)
-            tuple.count(value, /)
-   :no-contents-entry:
-   :no-index-entry:
-   :no-typesetting:
-.. method:: sequence.count(value, /)
-
-   Return the total number of occurrences of *value* in *sequence*.
-
-.. method:: list.index(value[, start[, stop])
-            range.index(value[, start[, stop])
-            tuple.index(value[, start[, stop])
-   :no-contents-entry:
-   :no-index-entry:
-   :no-typesetting:
-.. method:: sequence.index(value[, start[, stop])
-
-   Return the index of the first occurrence of *value* in *sequence*.
-
-   Raises :exc:`ValueError` if *value* is not found in *sequence*.
-
-   The *start* or *stop* arguments allow for efficient searching
-   of subsections of the sequence, beginning at *start* and ending at *stop*.
-   This is roughly equivalent to ``start + sequence[start:stop].index(value)``,
-   only without copying any data.
-
-   .. caution::
-      Not all sequence types support passing the *start* and *stop* arguments.
-
 Sequences of the same type also support comparisons.  In particular, tuples
 and lists are compared lexicographically by comparing corresponding elements.
 This means that to compare equal, every element must compare equal and the
@@ -1166,6 +1136,41 @@ Notes:
 (8)
    An :exc:`IndexError` is raised if *i* is outside the sequence range.
 
+.. rubric:: Sequence Methods
+
+Sequence types also support the following methods:
+
+.. method:: list.count(value, /)
+            range.count(value, /)
+            tuple.count(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.count(value, /)
+
+   Return the total number of occurrences of *value* in *sequence*.
+
+.. method:: list.index(value[, start[, stop])
+            range.index(value[, start[, stop])
+            tuple.index(value[, start[, stop])
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.index(value[, start[, stop])
+
+   Return the index of the first occurrence of *value* in *sequence*.
+
+   Raises :exc:`ValueError` if *value* is not found in *sequence*.
+
+   The *start* or *stop* arguments allow for efficient searching
+   of subsections of the sequence, beginning at *start* and ending at *stop*.
+   This is roughly equivalent to ``start + sequence[start:stop].index(value)``,
+   only without copying any data.
+
+   .. caution::
+      Not all sequence types support passing the *start* and *stop* arguments.
+
+
 
 .. _typesseq-immutable:
 
@@ -1246,6 +1251,21 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s *= n``                   | updates *s* with its contents  | \(2)                |
 |                              | repeated *n* times             |                     |
 +------------------------------+--------------------------------+---------------------+
+
+Notes:
+
+(1)
+   If *k* is not equal to ``1``, *t* must have the same length as the slice it is replacing.
+
+(2)
+   The value *n* is an integer, or an object implementing
+   :meth:`~object.__index__`.  Zero and negative values of *n* clear
+   the sequence.  Items in the sequence are not copied; they are referenced
+   multiple times, as explained for ``s * n`` under :ref:`typesseq-common`.
+
+.. rubric:: Mutable Sequence Methods
+
+Mutable sequence types also support the following methods:
 
 .. method:: bytearray.append(value, /)
             list.append(value, /)
@@ -1337,18 +1357,6 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    Reverse the items of *sequence* in place.
    This method maintains economy of space when reversing a large sequence.
    To remind users that it operates by side-effect, it returns ``None``.
-
-
-Notes:
-
-(1)
-   If *k* is not equal to ``1``, *t* must have the same length as the slice it is replacing.
-
-(2)
-   The value *n* is an integer, or an object implementing
-   :meth:`~object.__index__`.  Zero and negative values of *n* clear
-   the sequence.  Items in the sequence are not copied; they are referenced
-   multiple times, as explained for ``s * n`` under :ref:`typesseq-common`.
 
 
 .. _typesseq-list:
