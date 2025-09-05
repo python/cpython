@@ -1171,7 +1171,6 @@ Sequence types also support the following methods:
       Not all sequence types support passing the *start* and *stop* arguments.
 
 
-
 .. _typesseq-immutable:
 
 Immutable Sequence Types
