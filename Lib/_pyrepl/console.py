@@ -114,6 +114,7 @@ class Console(ABC):
         """Wipe the screen"""
         ...
 
+    @abstractmethod
     def clear_all(self) -> None:
         """Clear screen and scrollback buffer."""
         ...
