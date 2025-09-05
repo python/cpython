@@ -288,8 +288,8 @@ Disallow: /dollar%24
 Disallow: /asterisk%2A
 Disallow: /sub/dir
 Disallow: /slash%2F
-Disallow: /query/question?q=?
-Disallow: /query/raw/question?q=%3F
+Disallow: /query/question?q=%3F
+Disallow: /query/raw/question?q=?
 Disallow: /query/eq?q%3Dv
 Disallow: /query/amp?q=v%26a
 """
