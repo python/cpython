@@ -6,7 +6,7 @@ from time import sleep, time
 # The maximum length of a log message in bytes, including the level marker and
 # tag, is defined as LOGGER_ENTRY_MAX_PAYLOAD at
 # https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:system/logging/liblog/include/log/log.h;l=71.
-# Messages longer than this will be be truncated by logcat. This limit has already
+# Messages longer than this will be truncated by logcat. This limit has already
 # been reduced at least once in the history of Android (from 4076 to 4068 between
 # API level 23 and 26), so leave some headroom.
 MAX_BYTES_PER_WRITE = 4000
@@ -31,15 +31,20 @@ def init_streams(android_log_write, stdout_prio, stderr_prio):
     logcat = Logcat(android_log_write)
 
     sys.stdout = TextLogStream(
-        stdout_prio, "python.stdout", errors=sys.stdout.errors)
+        stdout_prio, "python.stdout", sys.stdout.fileno())
     sys.stderr = TextLogStream(
-        stderr_prio, "python.stderr", errors=sys.stderr.errors)
+        stderr_prio, "python.stderr", sys.stderr.fileno())
 
 
 class TextLogStream(io.TextIOWrapper):
-    def __init__(self, prio, tag, **kwargs):
+    def __init__(self, prio, tag, fileno=None, **kwargs):
+        # The default is surrogateescape for stdout and backslashreplace for
+        # stderr, but in the context of an Android log, readability is more
+        # important than reversibility.
         kwargs.setdefault("encoding", "UTF-8")
-        super().__init__(BinaryLogStream(prio, tag), **kwargs)
+        kwargs.setdefault("errors", "backslashreplace")
+
+        super().__init__(BinaryLogStream(prio, tag, fileno), **kwargs)
         self._lock = RLock()
         self._pending_bytes = []
         self._pending_bytes_count = 0
@@ -98,9 +103,10 @@ class TextLogStream(io.TextIOWrapper):
 
 
 class BinaryLogStream(io.RawIOBase):
-    def __init__(self, prio, tag):
+    def __init__(self, prio, tag, fileno=None):
         self.prio = prio
         self.tag = tag
+        self._fileno = fileno
 
     def __repr__(self):
         return f"<BinaryLogStream {self.tag!r}>"
@@ -121,6 +127,12 @@ class BinaryLogStream(io.RawIOBase):
         if b:
             logcat.write(self.prio, self.tag, b)
         return len(b)
+
+    # This is needed by the test suite --timeout option, which uses faulthandler.
+    def fileno(self):
+        if self._fileno is None:
+            raise io.UnsupportedOperation("fileno")
+        return self._fileno
 
 
 # When a large volume of data is written to logcat at once, e.g. when a test
@@ -156,7 +168,10 @@ class Logcat:
             now = time()
             self._bucket_level += (
                 (now - self._prev_write_time) * MAX_BYTES_PER_SECOND)
-            self._bucket_level = min(self._bucket_level, BUCKET_SIZE)
+
+            # If the bucket level is still below zero, the clock must have gone
+            # backwards, so reset it to zero and continue.
+            self._bucket_level = max(0, min(self._bucket_level, BUCKET_SIZE))
             self._prev_write_time = now
 
             self._bucket_level -= PER_MESSAGE_OVERHEAD + len(tag) + len(message)

@@ -1,3 +1,0 @@
-Add the :class:`symtable.SymbolTableType` enumeration to represent the
-possible outputs of the :class:`symtable.SymbolTable.get_type` method. Patch
-by Bénédikt Tran.

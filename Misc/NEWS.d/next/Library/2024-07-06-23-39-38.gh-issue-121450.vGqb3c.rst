@@ -1,4 +1,0 @@
-Hard-coded breakpoints (:func:`breakpoint` and :func:`pdb.set_trace()`) now
-reuse the most recent ``Pdb`` instance that calls ``Pdb.set_trace()``,
-instead of creating a new one each time. As a result, all the instance specific
-data like ``display`` and ``commands`` are preserved across Hard-coded breakpoints.
