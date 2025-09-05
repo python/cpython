@@ -1,6 +1,9 @@
+import argparse
 import ast
 import asyncio
+import asyncio.tools
 import concurrent.futures
+import contextvars
 import inspect
 import os
 import site
@@ -9,7 +12,7 @@ import threading
 import types
 import warnings
 
-from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
+from _colorize import get_theme
 from _pyrepl.console import InteractiveColoredConsole
 
 from . import futures
@@ -22,6 +25,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
 
         self.loop = loop
+        self.context = contextvars.copy_context()
 
     def runcode(self, code):
         global return_code
@@ -55,12 +59,12 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 return
 
             try:
-                repl_future = self.loop.create_task(coro)
+                repl_future = self.loop.create_task(coro, context=self.context)
                 futures._chain_future(repl_future, future)
             except BaseException as exc:
                 future.set_exception(exc)
 
-        loop.call_soon_threadsafe(callback)
+        self.loop.call_soon_threadsafe(callback, context=self.context)
 
         try:
             return future.result()
@@ -73,7 +77,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
-
+            return self.STATEMENT_FAILED
 
 class REPLThread(threading.Thread):
 
@@ -91,35 +95,25 @@ class REPLThread(threading.Thread):
             console.write(banner)
 
             if startup_path := os.getenv("PYTHONSTARTUP"):
+                sys.audit("cpython.run_startup", startup_path)
+
                 import tokenize
                 with tokenize.open(startup_path) as f:
                     startup_code = compile(f.read(), startup_path, "exec")
                     exec(startup_code, console.locals)
 
             ps1 = getattr(sys, "ps1", ">>> ")
-            if can_colorize():
-                ps1 = f"{ANSIColors.BOLD_MAGENTA}{ps1}{ANSIColors.RESET}"
+            if CAN_USE_PYREPL:
+                theme = get_theme().syntax
+                ps1 = f"{theme.prompt}{ps1}{theme.reset}"
             console.write(f"{ps1}import asyncio\n")
 
-            try:
-                import errno
-                if os.getenv("PYTHON_BASIC_REPL"):
-                    raise RuntimeError("user environment requested basic REPL")
-                if not os.isatty(sys.stdin.fileno()):
-                    raise OSError(errno.ENOTTY, "tty required", "stdin")
-
-                # This import will fail on operating systems with no termios.
+            if CAN_USE_PYREPL:
                 from _pyrepl.simple_interact import (
-                    check,
                     run_multiline_interactive_console,
                 )
-                if err := check():
-                    raise RuntimeError(err)
-            except Exception as e:
-                console.interact(banner="", exitmsg="")
-            else:
                 try:
-                    run_multiline_interactive_console(console=console)
+                    run_multiline_interactive_console(console)
                 except SystemExit:
                     # expected via the `exit` and `quit` commands
                     pass
@@ -128,6 +122,8 @@ class REPLThread(threading.Thread):
                     console.showtraceback()
                     console.write("Internal error, ")
                     return_code = 1
+            else:
+                console.interact(banner="", exitmsg="")
         finally:
             warnings.filterwarnings(
                 'ignore',
@@ -136,9 +132,54 @@ class REPLThread(threading.Thread):
 
             loop.call_soon_threadsafe(loop.stop)
 
+    def interrupt(self) -> None:
+        if not CAN_USE_PYREPL:
+            return
+
+        from _pyrepl.simple_interact import _get_reader
+        r = _get_reader()
+        if r.threading_hook is not None:
+            r.threading_hook.add("")  # type: ignore
+
 
 if __name__ == '__main__':
-    CAN_USE_PYREPL = True
+    parser = argparse.ArgumentParser(
+        prog="python3 -m asyncio",
+        description="Interactive asyncio shell and CLI tools",
+        color=True,
+    )
+    subparsers = parser.add_subparsers(help="sub-commands", dest="command")
+    ps = subparsers.add_parser(
+        "ps", help="Display a table of all pending tasks in a process"
+    )
+    ps.add_argument("pid", type=int, help="Process ID to inspect")
+    pstree = subparsers.add_parser(
+        "pstree", help="Display a tree of all pending tasks in a process"
+    )
+    pstree.add_argument("pid", type=int, help="Process ID to inspect")
+    args = parser.parse_args()
+    match args.command:
+        case "ps":
+            asyncio.tools.display_awaited_by_tasks_table(args.pid)
+            sys.exit(0)
+        case "pstree":
+            asyncio.tools.display_awaited_by_tasks_tree(args.pid)
+            sys.exit(0)
+        case None:
+            pass  # continue to the interactive shell
+        case _:
+            # shouldn't happen as an invalid command-line wouldn't parse
+            # but let's keep it for the next person adding a command
+            print(f"error: unhandled command {args.command}", file=sys.stderr)
+            parser.print_usage(file=sys.stderr)
+            sys.exit(1)
+
+    sys.audit("cpython.run_stdin")
+
+    if os.getenv('PYTHON_BASIC_REPL'):
+        CAN_USE_PYREPL = False
+    else:
+        from _pyrepl.main import CAN_USE_PYREPL
 
     return_code = 0
     loop = asyncio.new_event_loop()
@@ -163,6 +204,7 @@ if __name__ == '__main__':
     interactive_hook = getattr(sys, "__interactivehook__", None)
 
     if interactive_hook is not None:
+        sys.audit("cpython.run_interactivehook", interactive_hook)
         interactive_hook()
 
     if interactive_hook is site.register_readline:
@@ -187,6 +229,7 @@ if __name__ == '__main__':
             keyboard_interrupted = True
             if repl_future and not repl_future.done():
                 repl_future.cancel()
+            repl_thread.interrupt()
             continue
         else:
             break

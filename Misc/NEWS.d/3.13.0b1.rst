@@ -354,16 +354,6 @@ asend().throw()
 
 ..
 
-.. date: 2024-04-13-18-59-25
-.. gh-issue: 115874
-.. nonce: c3xG-E
-.. section: Core and Builtins
-
-Fixed a possible segfault during garbage collection of
-``_asyncio.FutureIter`` objects
-
-..
-
 .. date: 2024-04-13-16-55-53
 .. gh-issue: 117536
 .. nonce: xkVbfv
@@ -702,8 +692,8 @@ image data. Add *background* and *grayscale* parameters to
 Add the :class:`!PhotoImage` method :meth:`!copy_replace` to copy a region
 from one image to other image, possibly with pixel zooming and/or
 subsampling. Add *from_coords* parameter to :class:`!PhotoImage` methods
-:meth:`!copy()`, :meth:`!zoom()` and :meth:`!subsample()`. Add *zoom* and
-*subsample* parameters to :class:`!PhotoImage` method :meth:`!copy()`.
+:meth:`!copy`, :meth:`!zoom` and :meth:`!subsample`. Add *zoom* and
+*subsample* parameters to :class:`!PhotoImage` method :meth:`!copy`.
 
 ..
 
@@ -880,6 +870,16 @@ relating to PEP 706. If a ``filter`` argument is not provided to
 ``extract()`` or ``extractall``, the deprecation warning now points to the
 line in the user's code where the relevant function was called. Patch by
 Alex Waygood.
+
+..
+
+.. date: 2024-04-13-18-59-25
+.. gh-issue: 115874
+.. nonce: c3xG-E
+.. section: Library
+
+Fixed a possible segfault during garbage collection of
+``_asyncio.FutureIter`` objects. Patch by Savannah Ostrowski.
 
 ..
 
@@ -1213,7 +1213,7 @@ changed from ``'r'`` to ``'rb'``.
 .. nonce: eeS6w7
 .. section: Library
 
-Fix :func:`inspect.signature()` to correctly handle parameter defaults on
+Fix :func:`inspect.signature` to correctly handle parameter defaults on
 methods in extension modules that use names defined in the module namespace.
 
 ..
@@ -1315,7 +1315,7 @@ Hamdan.
 .. section: Library
 
 Adjust ``logging.LogRecord`` to use ``time.time_ns()`` and fix minor bug
-related to floating point math.
+related to floating-point math.
 
 ..
 

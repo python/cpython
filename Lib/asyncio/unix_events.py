@@ -28,7 +28,6 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop',
-    'DefaultEventLoopPolicy',
     'EventLoop',
 )
 
@@ -95,7 +94,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         Raise RuntimeError if there is a problem setting up the handler.
         """
         if (coroutines.iscoroutine(callback) or
-                coroutines.iscoroutinefunction(callback)):
+                coroutines._iscoroutinefunction(callback)):
             raise TypeError("coroutines cannot be used "
                             "with add_signal_handler()")
         self._check_signal(sig)
@@ -963,11 +962,11 @@ def can_use_pidfd():
     return True
 
 
-class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class _UnixDefaultEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
     """UNIX event loop policy"""
     _loop_factory = _UnixSelectorEventLoop
 
 
 SelectorEventLoop = _UnixSelectorEventLoop
-DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+_DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
 EventLoop = SelectorEventLoop

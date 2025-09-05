@@ -446,7 +446,7 @@ regardless of *lineterminator* value.
 .. section: Library
 
 Restore support of space delimiter with ``skipinitialspace=True`` in
-:mod:`csv`. :func:`csv.writer()` now quotes empty fields if delimiter is a
+:mod:`csv`. :func:`csv.writer` now quotes empty fields if delimiter is a
 space and skipinitialspace is true and raises exception if quoting is not
 possible.
 
@@ -606,10 +606,10 @@ is complete.
 .. nonce: SQ998l
 .. section: Library
 
-:func:`posixpath.commonpath()` now raises a :exc:`ValueError` exception when
+:func:`posixpath.commonpath` now raises a :exc:`ValueError` exception when
 passed an empty iterable. Previously, :exc:`IndexError` was raised.
 
-:func:`posixpath.commonpath()` now raises a :exc:`TypeError` exception when
+:func:`posixpath.commonpath` now raises a :exc:`TypeError` exception when
 passed ``None``. Previously, :exc:`ValueError` was raised.
 
 ..
@@ -742,8 +742,8 @@ Add ``windows_31j`` to aliases for ``cp932`` codec
 .. nonce: fv35wU
 .. section: Library
 
-:func:`functools.partial`s of :func:`repr` has been improved to include the
-:term:`module` name. Patched by Furkan Onder and Anilyka Barry.
+Always include the :term:`module` name in the :func:`repr` of
+:func:`functools.partial` objects.  Patch by Furkan Onder and Anilyka Barry.
 
 ..
 
@@ -823,7 +823,7 @@ Add missing call to localization function in :mod:`argparse`.
 .. nonce: Me7fJe
 .. section: Library
 
-Fix :meth:`multiprocessing.connection.Listener.accept()` to accept empty
+Fix :meth:`multiprocessing.connection.Listener.accept` to accept empty
 bytes as authkey. Not accepting empty bytes as key causes it to hang
 indefinitely.
 

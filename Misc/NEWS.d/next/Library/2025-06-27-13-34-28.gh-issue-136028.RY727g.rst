@@ -1,0 +1,3 @@
+Fix parsing month names containing "İ" (U+0130, LATIN CAPITAL LETTER I WITH
+DOT ABOVE) in :func:`time.strptime`. This affects locales az_AZ, ber_DZ,
+ber_MA and crh_UA.

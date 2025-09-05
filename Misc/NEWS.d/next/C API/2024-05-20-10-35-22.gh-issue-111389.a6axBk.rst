@@ -1,2 +1,0 @@
-Add :c:macro:`PyHASH_MULTIPLIER` constant: prime multiplier used in string
-and various other hashes. Patch by Victor Stinner.
