@@ -5692,13 +5692,6 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
     return (PyObject *) self;
 }
 
-static int
-memory_bio_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
 memory_bio_dealloc(PyObject *op)
 {
@@ -5869,7 +5862,7 @@ static PyType_Slot PySSLMemoryBIO_slots[] = {
     {Py_tp_getset, memory_bio_getsetlist},
     {Py_tp_new, _ssl_MemoryBIO},
     {Py_tp_dealloc, memory_bio_dealloc},
-    {Py_tp_traverse, memory_bio_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0},
 };
 

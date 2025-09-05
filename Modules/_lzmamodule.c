@@ -866,13 +866,12 @@ error:
 static void
 Compressor_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     Compressor *self = Compressor_CAST(op);
     lzma_end(&self->lzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
+    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -934,7 +933,7 @@ static PyType_Spec lzma_compressor_type_spec = {
     // lzma_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lzma_compressor_type_slots,
 };
 
@@ -1315,8 +1314,6 @@ error:
 static void
 Decompressor_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     Decompressor *self = Decompressor_CAST(op);
     if(self->input_buffer != NULL)
         PyMem_Free(self->input_buffer);
@@ -1326,6 +1323,7 @@ Decompressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
+    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1383,7 +1381,7 @@ static PyType_Spec lzma_decompressor_type_spec = {
     // lzma_decompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lzma_decompressor_type_slots,
 };
 

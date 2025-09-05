@@ -4,6 +4,7 @@
 .. module:: annotationlib
    :synopsis: Functionality for introspecting annotations
 
+.. versionadded:: 3.14
 
 **Source code:** :source:`Lib/annotationlib.py`
 
