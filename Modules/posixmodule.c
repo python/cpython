@@ -2591,74 +2591,64 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
 #define S_TO_NS (1000000000LL)
     assert(nsec < S_TO_NS);
 
+    if (s_index >= 0) {
+        PyObject *s = _PyLong_FromTime_t(sec);
+        if (!s) {
+            return -1;
+        }
+        PyStructSequence_SET_ITEM(v, s_index, s);
+    }
+
     if (f_index >= 0) {
-        PyObject *float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
+        PyObject *float_s = PyFloat_FromDouble(sec + 1e-9 * nsec);
         if (!float_s) {
             return -1;
         }
         PyStructSequence_SET_ITEM(v, f_index, float_s);
     }
 
-    /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
-    if ((LLONG_MIN / S_TO_NS) <= sec && sec <= (LONG_MAX / S_TO_NS - 1)) {
-        if (s_index >= 0) {
-            PyObject *s = _PyLong_FromTime_t(sec);
-            if (!s) {
-                return -1;
-            }
-            PyStructSequence_SET_ITEM(v, s_index, s);
-        }
-
-        if (ns_index >= 0) {
+    int res = -1;
+    if (ns_index >= 0) {
+        /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
+        if ((LLONG_MIN / S_TO_NS) <= sec && sec <= (LONG_MAX / S_TO_NS - 1)) {
             PyObject *ns_total = PyLong_FromLongLong(sec * S_TO_NS + nsec);
             if (!ns_total) {
                 return -1;
             }
             PyStructSequence_SET_ITEM(v, ns_index, ns_total);
+            res = 0;
         }
+        else {
+            PyObject *s_in_ns = NULL;
+            PyObject *ns_total = NULL;
+            PyObject *s = _PyLong_FromTime_t(sec);
+            PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+            if (!(s && ns_fractional)) {
+                goto exit;
+            }
 
-        assert(!PyErr_Occurred());
-        return 0;
-    }
-#undef S_TO_NS
+            s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
+            if (!s_in_ns) {
+                goto exit;
+            }
 
-    int res = -1;
-    PyObject *s_in_ns = NULL;
-    PyObject *ns_total = NULL;
-    PyObject *s = _PyLong_FromTime_t(sec);
-    PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
-    if (!(s && ns_fractional)) {
-        goto exit;
-    }
+            ns_total = PyNumber_Add(s_in_ns, ns_fractional);
+            if (!ns_total) {
+                goto exit;
+            }
+            PyStructSequence_SET_ITEM(v, ns_index, ns_total);
+            res = 0;
 
-    s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
-    if (!s_in_ns) {
-        goto exit;
-    }
-
-    ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-    if (!ns_total) {
-        goto exit;
-    }
-
-    if (s_index >= 0) {
-        PyStructSequence_SET_ITEM(v, s_index, s);
-        s = NULL;
-    }
-    if (ns_index >= 0) {
-        PyStructSequence_SET_ITEM(v, ns_index, ns_total);
-        ns_total = NULL;
+        exit:
+            Py_XDECREF(s);
+            Py_XDECREF(ns_fractional);
+            Py_XDECREF(s_in_ns);
+        }
     }
 
     assert(!PyErr_Occurred());
-    res = 0;
-
-exit:
-    Py_XDECREF(s);
-    Py_XDECREF(ns_fractional);
-    Py_XDECREF(s_in_ns);
-    Py_XDECREF(ns_total);
     return res;
+    #undef S_TO_NS
 }
 
 #ifdef MS_WINDOWS
