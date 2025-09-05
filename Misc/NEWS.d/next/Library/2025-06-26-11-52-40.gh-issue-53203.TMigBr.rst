@@ -1,0 +1,2 @@
+Fix :func:`time.strptime` for ``%c`` and ``%x`` formats on locales byn_ER,
+wal_ET and lzh_TW, and for ``%X`` format on locales ar_SA, bg_BG and lzh_TW.

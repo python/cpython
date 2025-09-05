@@ -1,5 +1,5 @@
-:mod:`winreg` --- Windows registry access
-=========================================
+:mod:`!winreg` --- Windows registry access
+==========================================
 
 .. module:: winreg
    :platform: Windows
@@ -173,6 +173,24 @@ This module offers the following functions:
       See :ref:`above <exception-changed>`.
 
 
+.. function:: DeleteTree(key, sub_key=None)
+
+   Deletes the specified key and all its subkeys and values recursively.
+
+   *key* is an already open key, or one of the predefined
+   :ref:`HKEY_* constants <hkey-constants>`.
+
+   *sub_key* is a string that names the subkey to delete. If ``None``,
+   deletes all subkeys and values of the specified key.
+
+   This function deletes a key and all its descendants. If *sub_key* is
+   ``None``, all subkeys and values of the specified key are deleted.
+
+   .. audit-event:: winreg.DeleteTree key,sub_key winreg.DeleteTree
+
+   .. versionadded:: next
+
+
 .. function:: DeleteValue(key, value)
 
    Removes a named value from a registry key.
@@ -288,7 +306,7 @@ This module offers the following functions:
    table (FAT) file system, the filename may not have an extension.
 
    A call to :func:`LoadKey` fails if the calling process does not have the
-   :const:`SE_RESTORE_PRIVILEGE` privilege.  Note that privileges are different
+   :c:data:`!SE_RESTORE_PRIVILEGE` privilege.  Note that privileges are different
    from permissions -- see the `RegLoadKey documentation
    <https://msdn.microsoft.com/en-us/library/ms724889%28v=VS.85%29.aspx>`__ for
    more details.
@@ -414,7 +432,7 @@ This module offers the following functions:
 
    If *key* represents a key on a remote computer, the path described by
    *file_name* is relative to the remote computer. The caller of this method must
-   possess the :const:`SeBackupPrivilege` security privilege.  Note that
+   possess the **SeBackupPrivilege** security privilege.  Note that
    privileges are different than permissions -- see the
    `Conflicts Between User Rights and Permissions documentation
    <https://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__
@@ -536,7 +554,7 @@ This module offers the following functions:
 Constants
 ------------------
 
-The following constants are defined for use in many :mod:`_winreg` functions.
+The following constants are defined for use in many :mod:`winreg` functions.
 
 .. _hkey-constants:
 
@@ -745,7 +763,7 @@ All registry functions in this module return one of these objects.
 All registry functions in this module which accept a handle object also accept
 an integer, however, use of the handle object is encouraged.
 
-Handle objects provide semantics for :meth:`__bool__` -- thus ::
+Handle objects provide semantics for :meth:`~object.__bool__` -- thus ::
 
    if handle:
        print("Yes")

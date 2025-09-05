@@ -1,6 +1,0 @@
-Starting new threads and process creation through :func:`os.fork` during interpreter
-shutdown (such as from :mod:`atexit` handlers) is no longer supported.  It can lead
-to race condition between the main Python runtime thread freeing thread states while
-internal :mod:`threading` routines are trying to allocate and use the state of just
-created threads. Or forked children trying to use the mid-shutdown runtime and thread
-state in the child process.

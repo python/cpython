@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 import builtins
 import rlcompleter
+from test.support import MISSING_C_DOCSTRINGS
 
 class CompleteMe:
     """ Trivial class used in testing rlcompleter.Completer. """
@@ -40,12 +41,12 @@ class TestRlcompleter(unittest.TestCase):
 
         # test with a customized namespace
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe()'])
+                ['CompleteMe(' if MISSING_C_DOCSTRINGS else 'CompleteMe()'])
         self.assertEqual(self.completer.global_matches('eg'),
                          ['egg('])
         # XXX: see issue5256
         self.assertEqual(self.completer.global_matches('CompleteM'),
-                         ['CompleteMe()'])
+                ['CompleteMe(' if MISSING_C_DOCSTRINGS else 'CompleteMe()'])
 
     def test_attr_matches(self):
         # test with builtins namespace
@@ -53,8 +54,26 @@ class TestRlcompleter(unittest.TestCase):
                          ['str.{}('.format(x) for x in dir(str)
                           if x.startswith('s')])
         self.assertEqual(self.stdcompleter.attr_matches('tuple.foospamegg'), [])
-        expected = sorted({'None.%s%s' % (x, '(' if x != '__doc__' else '')
-                           for x in dir(None)})
+
+        def create_expected_for_none():
+            if not MISSING_C_DOCSTRINGS:
+                parentheses = ('__init_subclass__', '__class__')
+            else:
+                # When `--without-doc-strings` is used, `__class__`
+                # won't have a known signature.
+                parentheses = ('__init_subclass__',)
+
+            items = set()
+            for x in dir(None):
+                if x in parentheses:
+                    items.add(f'None.{x}()')
+                elif x == '__doc__':
+                    items.add(f'None.{x}')
+                else:
+                    items.add(f'None.{x}(')
+            return sorted(items)
+
+        expected = create_expected_for_none()
         self.assertEqual(self.stdcompleter.attr_matches('None.'), expected)
         self.assertEqual(self.stdcompleter.attr_matches('None._'), expected)
         self.assertEqual(self.stdcompleter.attr_matches('None.__'), expected)
@@ -69,7 +88,7 @@ class TestRlcompleter(unittest.TestCase):
                          ['CompleteMe._ham'])
         matches = self.completer.attr_matches('CompleteMe.__')
         for x in matches:
-            self.assertTrue(x.startswith('CompleteMe.__'), x)
+            self.assertStartsWith(x, 'CompleteMe.__')
         self.assertIn('CompleteMe.__name__', matches)
         self.assertIn('CompleteMe.__new__(', matches)
 

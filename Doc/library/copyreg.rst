@@ -1,5 +1,5 @@
-:mod:`copyreg` --- Register :mod:`pickle` support functions
-===========================================================
+:mod:`!copyreg` --- Register :mod:`!pickle` support functions
+=============================================================
 
 .. module:: copyreg
    :synopsis: Register pickle support functions.

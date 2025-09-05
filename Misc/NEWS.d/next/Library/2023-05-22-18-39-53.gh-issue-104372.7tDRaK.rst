@@ -1,5 +1,0 @@
-On Linux where :mod:`subprocess` can use the ``vfork()`` syscall for faster
-spawning, prevent the parent process from blocking other threads by dropping
-the GIL while it waits for the vfork'ed child process ``exec()`` outcome.
-This prevents spawning a binary from a slow filesystem from blocking the
-rest of the application.

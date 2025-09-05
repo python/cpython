@@ -1,2 +1,0 @@
-Fix potential missing ``NULL`` check of ``d2i_SSL_SESSION`` result in
-``_ssl.c``.

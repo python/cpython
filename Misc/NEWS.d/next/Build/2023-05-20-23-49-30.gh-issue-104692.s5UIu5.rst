@@ -1,6 +1,0 @@
-Include ``commoninstall`` as a prerequisite for ``bininstall``
-
-This ensures that ``commoninstall`` is completed before ``bininstall``
-is started when parallel builds are used (``make -j install``), and so
-the ``python3`` symlink is only installed after all standard library
-modules are installed.

@@ -1,2 +1,0 @@
-String tests are modified to reflect that ``str`` and ``unicode`` are merged
-in Python 3. Patch by Daniel Fortunov.

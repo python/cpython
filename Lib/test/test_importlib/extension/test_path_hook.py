@@ -5,6 +5,8 @@ machinery = util.import_importlib('importlib.machinery')
 import unittest
 
 
+@unittest.skipIf(util.EXTENSIONS is None or util.EXTENSIONS.filename is None,
+                 'dynamic loading not supported or test module not available')
 class PathHookTests:
 
     """Test the path hook for extension modules."""
@@ -19,7 +21,7 @@ class PathHookTests:
     def test_success(self):
         # Path hook should handle a directory where a known extension module
         # exists.
-        self.assertTrue(hasattr(self.hook(util.EXTENSIONS.path), 'find_spec'))
+        self.assertHasAttr(self.hook(util.EXTENSIONS.path), 'find_spec')
 
 
 (Frozen_PathHooksTests,

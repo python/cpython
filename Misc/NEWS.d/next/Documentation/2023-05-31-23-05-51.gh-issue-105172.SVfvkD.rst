@@ -1,2 +1,0 @@
-Fixed :func:`functools.lru_cache` docstring accounting for ``typed``
-argument's different handling of str and int. Patch by Bar Harel.

@@ -1,3 +1,0 @@
-Prevent :mod:`multiprocessing.spawn` from failing to *import* in environments
-where ``sys.executable`` is ``None``.  This regressed in 3.11 with the addition
-of support for path-like objects in multiprocessing.

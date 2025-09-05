@@ -1,5 +1,5 @@
-:mod:`dis` --- Disassembler for Python bytecode
-===============================================
+:mod:`!dis` --- Disassembler for Python bytecode
+================================================
 
 .. module:: dis
    :synopsis: Disassembler for Python bytecode.
@@ -42,26 +42,91 @@ interpreter.
       bytecode to specialize it for different runtime conditions. The
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
+   .. versionchanged:: 3.12
+      The argument of a jump is the offset of the target instruction relative
+      to the instruction that appears immediately after the jump instruction's
+      :opcode:`CACHE` entries.
 
-Example: Given the function :func:`myfunc`::
+      As a consequence, the presence of the :opcode:`CACHE` instructions is
+      transparent for forward jumps but needs to be taken into account when
+      reasoning about backward jumps.
+
+   .. versionchanged:: 3.13
+      The output shows logical labels rather than instruction offsets
+      for jump targets and exception handlers. The ``-O`` command line
+      option and the ``show_offsets`` argument were added.
+
+   .. versionchanged:: 3.14
+      The :option:`-P <dis --show-positions>` command-line option
+      and the ``show_positions`` argument were added.
+
+      The :option:`-S <dis --specialized>` command-line option is added.
+
+Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
        return len(alist)
 
 the following command can be used to display the disassembly of
-:func:`myfunc`:
+:func:`!myfunc`:
 
 .. doctest::
 
    >>> dis.dis(myfunc)
-     2           0 RESUME                   0
+     2           RESUME                   0
    <BLANKLINE>
-     3           2 LOAD_GLOBAL              1 (NULL + len)
-                12 LOAD_FAST                0 (alist)
-                14 CALL                     1
-                22 RETURN_VALUE
+     3           LOAD_GLOBAL              1 (len + NULL)
+                 LOAD_FAST_BORROW         0 (alist)
+                 CALL                     1
+                 RETURN_VALUE
 
 (The "2" is a line number).
+
+.. _dis-cli:
+
+Command-line interface
+----------------------
+
+The :mod:`dis` module can be invoked as a script from the command line:
+
+.. code-block:: sh
+
+   python -m dis [-h] [-C] [-O] [-P] [-S] [infile]
+
+The following options are accepted:
+
+.. program:: dis
+
+.. option:: -h, --help
+
+   Display usage and exit.
+
+.. option:: -C, --show-caches
+
+   Show inline caches.
+
+   .. versionadded:: 3.13
+
+.. option:: -O, --show-offsets
+
+   Show offsets of instructions.
+
+   .. versionadded:: 3.13
+
+.. option:: -P, --show-positions
+
+   Show positions of instructions in the source code.
+
+   .. versionadded:: 3.14
+
+.. option:: -S, --specialized
+
+   Show specialized bytecode.
+
+   .. versionadded:: 3.14
+
+If :file:`infile` is specified, its disassembled code will be written to stdout.
+Otherwise, disassembly is performed on compiled source code received from stdin.
 
 Bytecode analysis
 -----------------
@@ -73,7 +138,8 @@ The bytecode analysis API allows pieces of Python code to be wrapped in a
 code.
 
 .. class:: Bytecode(x, *, first_line=None, current_offset=None,\
-                    show_caches=False, adaptive=False)
+                    show_caches=False, adaptive=False, show_offsets=False,\
+                    show_positions=False)
 
    Analyse the bytecode corresponding to a function, generator, asynchronous
    generator, coroutine, method, string of source code, or a code object (as
@@ -97,6 +163,12 @@ code.
 
    If *adaptive* is ``True``, :meth:`.dis` will display specialized bytecode
    that may be different from the original bytecode.
+
+   If *show_offsets* is ``True``, :meth:`.dis` will include instruction
+   offsets in the output.
+
+   If *show_positions* is ``True``, :meth:`.dis` will include instruction
+   source code positions in the output.
 
    .. classmethod:: from_traceback(tb, *, show_caches=False)
 
@@ -127,6 +199,12 @@ code.
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      Added the *show_offsets* parameter
+
+   .. versionchanged:: 3.14
+      Added the *show_positions* parameter.
+
 Example:
 
 .. doctest::
@@ -137,7 +215,7 @@ Example:
     ...
     RESUME
     LOAD_GLOBAL
-    LOAD_FAST
+    LOAD_FAST_BORROW
     CALL
     RETURN_VALUE
 
@@ -180,7 +258,8 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None, depth=None, show_caches=False, adaptive=False)
+.. function:: dis(x=None, *, file=None, depth=None, show_caches=False,\
+                  adaptive=False, show_offsets=False, show_positions=False)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, an asynchronous generator, a coroutine,
@@ -219,8 +298,14 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      Added the *show_offsets* parameter.
 
-.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False)
+   .. versionchanged:: 3.14
+      Added the *show_positions* parameter.
+
+.. function:: distb(tb=None, *, file=None, show_caches=False, adaptive=False,\
+                    show_offset=False, show_positions=False)
 
    Disassemble the top-of-stack function of a traceback, using the last
    traceback if none was passed.  The instruction causing the exception is
@@ -235,14 +320,23 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      Added the *show_offsets* parameter.
 
-.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
-              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False)
+   .. versionchanged:: 3.14
+      Added the *show_positions* parameter.
+
+.. function:: disassemble(code, lasti=-1, *, file=None, show_caches=False,\
+                          adaptive=False, show_offsets=False, show_positions=False)
+              disco(code, lasti=-1, *, file=None, show_caches=False, adaptive=False,\
+                    show_offsets=False, show_positions=False)
 
    Disassemble a code object, indicating the last instruction if *lasti* was
    provided.  The output is divided in the following columns:
 
-   #. the line number, for the first instruction of each line
+   #. the source code location of the instruction. Complete location information
+      is shown if *show_positions* is true. Otherwise (the default) only the
+      line number is displayed.
    #. the current instruction, indicated as ``-->``,
    #. a labelled instruction, indicated with ``>>``,
    #. the address of the instruction,
@@ -262,6 +356,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      Added the *show_offsets* parameter.
+
+   .. versionchanged:: 3.14
+      Added the *show_positions* parameter.
 
 .. function:: get_instructions(x, *, first_line=None, show_caches=False, adaptive=False)
 
@@ -276,26 +375,36 @@ operation is being performed, so the intermediate analysis object isn't useful:
    source line information (if any) is taken directly from the disassembled code
    object.
 
-   The *show_caches* and *adaptive* parameters work as they do in :func:`dis`.
+   The *adaptive* parameter works as it does in :func:`dis`.
 
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.11
       Added the *show_caches* and *adaptive* parameters.
 
+   .. versionchanged:: 3.13
+      The *show_caches* parameter is deprecated and has no effect. The iterator
+      generates the :class:`Instruction` instances with the *cache_info*
+      field populated (regardless of the value of *show_caches*) and it no longer
+      generates separate items for the cache entries.
 
 .. function:: findlinestarts(code)
 
-   This generator function uses the ``co_lines`` method
-   of the code object *code* to find the offsets which are starts of
+   This generator function uses the :meth:`~codeobject.co_lines` method
+   of the :ref:`code object <code-objects>` *code* to find the offsets which
+   are starts of
    lines in the source code.  They are generated as ``(offset, lineno)`` pairs.
 
    .. versionchanged:: 3.6
       Line numbers can be decreasing. Before, they were always increasing.
 
    .. versionchanged:: 3.10
-      The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
-      and ``co_lnotab`` attributes of the code object.
+      The :pep:`626` :meth:`~codeobject.co_lines` method is used instead of the
+      :attr:`~codeobject.co_firstlineno` and :attr:`~codeobject.co_lnotab`
+      attributes of the :ref:`code object <code-objects>`.
+
+   .. versionchanged:: 3.13
+      Line numbers can be ``None`` for bytecode that does not map to source lines.
 
 
 .. function:: findlabels(code)
@@ -402,7 +511,12 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: starts_line
 
-      line started by this opcode (if any), otherwise ``None``
+      ``True`` if this opcode starts a source line, otherwise ``False``
+
+
+   .. data:: line_number
+
+      source line number associated with this opcode (if any), otherwise ``None``
 
 
    .. data:: is_jump_target
@@ -421,6 +535,14 @@ details of bytecode instructions as :class:`Instruction` instances:
       :class:`dis.Positions` object holding the
       start and end locations that are covered by this instruction.
 
+   .. data:: cache_info
+
+      Information about the cache entries of this instruction, as
+      triplets of the form ``(name, size, data)``, where the ``name``
+      and ``size`` describe the cache format and data is the contents
+      of the cache. ``cache_info`` is ``None`` if the instruction does not have
+      caches.
+
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.11
@@ -429,8 +551,11 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. versionchanged:: 3.13
 
+      Changed field ``starts_line``.
+
       Added fields ``start_offset``, ``cache_offset``, ``end_offset``,
-      ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
+      ``baseopname``, ``baseopcode``, ``jump_target``, ``oparg``,
+      ``line_number`` and ``cache_info``.
 
 
 .. class:: Positions
@@ -469,9 +594,17 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: END_FOR
 
-   Removes the top two values from the stack.
-   Equivalent to ``POP_TOP``; ``POP_TOP``.
+   Removes the top-of-stack item.
+   Equivalent to ``POP_TOP``.
    Used to clean up at the end of loops, hence the name.
+
+   .. versionadded:: 3.12
+
+
+.. opcode:: END_SEND
+
+   Implements ``del STACK[-2]``.
+   Used to clean up when a generator exits.
 
    .. versionadded:: 3.12
 
@@ -491,7 +624,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
    Swap the top of the stack with the i-th element::
 
-      STACK[-i], STACK[-1] = stack[-1], STACK[-i]
+      STACK[-i], STACK[-1] = STACK[-1], STACK[-i]
 
    .. versionadded:: 3.11
 
@@ -578,15 +711,8 @@ not have to be) the original ``STACK[-2]``.
       STACK.append(lhs op rhs)
 
    .. versionadded:: 3.11
-
-
-.. opcode:: BINARY_SUBSCR
-
-   Implements::
-
-      key = STACK.pop()
-      container = STACK.pop()
-      STACK.append(container[index])
+   .. versionchanged:: 3.14
+      With oparg :``NB_SUBSCR``, implements binary subscript (replaces opcode ``BINARY_SUBSCR``)
 
 
 .. opcode:: STORE_SUBSCR
@@ -694,16 +820,6 @@ not have to be) the original ``STACK[-2]``.
    .. versionadded:: 3.12
 
 
-.. opcode:: BEFORE_ASYNC_WITH
-
-   Resolves ``__aenter__`` and ``__aexit__`` from ``STACK[-1]``.
-   Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack::
-
-      STACK.extend((__aexit__, __aenter__())
-
-   .. versionadded:: 3.5
-
-
 
 **Miscellaneous opcodes**
 
@@ -753,13 +869,6 @@ iterations of the loop.
    Returns with ``STACK[-1]`` to the caller of the function.
 
 
-.. opcode:: RETURN_CONST (consti)
-
-   Returns with ``co_consts[consti]`` to the caller of the function.
-
-   .. versionadded:: 3.12
-
-
 .. opcode:: YIELD_VALUE
 
    Yields ``STACK.pop()`` from a :term:`generator`.
@@ -770,6 +879,9 @@ iterations of the loop.
    .. versionchanged:: 3.12
       oparg set to be the exception block depth, for efficient closing of generators.
 
+   .. versionchanged:: 3.13
+      oparg is ``1`` if this instruction is part of a yield-from or await, and ``0``
+      otherwise.
 
 .. opcode:: SETUP_ANNOTATIONS
 
@@ -791,8 +903,8 @@ iterations of the loop.
 .. opcode:: RERAISE
 
    Re-raises the exception currently on top of the stack. If oparg is non-zero,
-   pops an additional value from the stack which is used to set ``f_lasti``
-   of the current frame.
+   pops an additional value from the stack which is used to set
+   :attr:`~frame.f_lasti` of the current frame.
 
    .. versionadded:: 3.9
 
@@ -841,34 +953,24 @@ iterations of the loop.
       Exception representation on the stack now consist of one, not three, items.
 
 
-.. opcode:: LOAD_ASSERTION_ERROR
+.. opcode:: LOAD_COMMON_CONSTANT
 
-   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
-   statement.
+   Pushes a common constant onto the stack. The interpreter contains a hardcoded
+   list of constants supported by this instruction.  Used by the :keyword:`assert`
+   statement to load :exc:`AssertionError`.
 
-   .. versionadded:: 3.9
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_BUILD_CLASS
 
-   Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
+   Pushes :func:`!builtins.__build_class__` onto the stack.  It is later called
    to construct a class.
-
-
-.. opcode:: BEFORE_WITH
-
-   This opcode performs several operations before a with block starts.  First,
-   it loads :meth:`~object.__exit__` from the context manager and pushes it onto
-   the stack for later use by :opcode:`WITH_EXCEPT_START`.  Then,
-   :meth:`~object.__enter__` is called. Finally, the result of calling the
-   ``__enter__()`` method is pushed onto the stack.
-
-   .. versionadded:: 3.11
-
 
 .. opcode:: GET_LEN
 
-   Perform ``STACK.append(len(STACK[-1]))``.
+   Perform ``STACK.append(len(STACK[-1]))``. Used in :keyword:`match` statements where
+   comparison with structure of pattern is needed.
 
    .. versionadded:: 3.10
 
@@ -909,22 +1011,23 @@ iterations of the loop.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = STACK.pop()``. *namei* is the index of *name* in the attribute
-   :attr:`co_names` of the code object. The compiler tries to use
-   :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
+   :attr:`~codeobject.co_names` of the :ref:`code object <code-objects>`.
+   The compiler tries to use :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
 .. opcode:: DELETE_NAME (namei)
 
-   Implements ``del name``, where *namei* is the index into :attr:`co_names`
-   attribute of the code object.
+   Implements ``del name``, where *namei* is the index into :attr:`~codeobject.co_names`
+   attribute of the :ref:`code object <code-objects>`.
 
 
 .. opcode:: UNPACK_SEQUENCE (count)
 
    Unpacks ``STACK[-1]`` into *count* individual values, which are put onto the stack
-   right-to-left::
+   right-to-left. Require there to be exactly *count* values.::
 
-      STACK.extend(STACK.pop()[:count:-1])
+      assert(len(STACK[-1]) == count)
+      STACK.extend(STACK.pop()[:-count-1:-1])
 
 
 .. opcode:: UNPACK_EX (counts)
@@ -954,7 +1057,8 @@ iterations of the loop.
       value = STACK.pop()
       obj.name = value
 
-   where *namei* is the index of name in :attr:`co_names`.
+   where *namei* is the index of name in :attr:`~codeobject.co_names` of the
+   :ref:`code object <code-objects>`.
 
 .. opcode:: DELETE_ATTR (namei)
 
@@ -963,7 +1067,8 @@ iterations of the loop.
       obj = STACK.pop()
       del obj.name
 
-   where *namei* is the index of name into :attr:`co_names`.
+   where *namei* is the index of name into :attr:`~codeobject.co_names` of the
+   :ref:`code object <code-objects>`.
 
 
 .. opcode:: STORE_GLOBAL (namei)
@@ -979,6 +1084,14 @@ iterations of the loop.
 .. opcode:: LOAD_CONST (consti)
 
    Pushes ``co_consts[consti]`` onto the stack.
+
+
+.. opcode:: LOAD_SMALL_INT (i)
+
+   Pushes the integer ``i`` onto the stack.
+   ``i`` must be in ``range(256)``
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: LOAD_NAME (namei)
@@ -1007,14 +1120,60 @@ iterations of the loop.
    .. versionadded:: 3.12
 
 
+.. opcode:: BUILD_TEMPLATE
+
+   Constructs a new :class:`~string.templatelib.Template` instance from a tuple
+   of strings and a tuple of interpolations and pushes the resulting object
+   onto the stack::
+
+      interpolations = STACK.pop()
+      strings = STACK.pop()
+      STACK.append(_build_template(strings, interpolations))
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: BUILD_INTERPOLATION (format)
+
+   Constructs a new :class:`~string.templatelib.Interpolation` instance from a
+   value and its source expression and pushes the resulting object onto the
+   stack.
+
+   If no conversion or format specification is present, ``format`` is set to
+   ``2``.
+
+   If the low bit of ``format`` is set, it indicates that the interpolation
+   contains a format specification.
+
+   If ``format >> 2`` is non-zero, it indicates that the interpolation
+   contains a conversion. The value of ``format >> 2`` is the conversion type
+   (``0`` for no conversion, ``1`` for ``!s``, ``2`` for ``!r``, and
+   ``3`` for ``!a``)::
+
+      conversion = format >> 2
+      if format & 1:
+          format_spec = STACK.pop()
+      else:
+          format_spec = None
+      expression = STACK.pop()
+      value = STACK.pop()
+      STACK.append(_build_interpolation(value, expression, conversion, format_spec))
+
+   .. versionadded:: 3.14
+
+
 .. opcode:: BUILD_TUPLE (count)
 
    Creates a tuple consuming *count* items from the stack, and pushes the
-   resulting tuple onto the stack.::
+   resulting tuple onto the stack::
 
-      assert count > 0
-      STACK, values = STACK[:-count], STACK[-count:]
-      STACK.append(tuple(values))
+      if count == 0:
+          value = ()
+      else:
+          value = tuple(STACK[-count:])
+          STACK = STACK[:-count]
+
+      STACK.append(value)
 
 
 .. opcode:: BUILD_LIST (count)
@@ -1036,15 +1195,6 @@ iterations of the loop.
    .. versionchanged:: 3.5
       The dictionary is created from stack items instead of creating an
       empty dictionary pre-sized to hold *count* items.
-
-
-.. opcode:: BUILD_CONST_KEY_MAP (count)
-
-   The version of :opcode:`BUILD_MAP` specialized for constant keys. Pops the
-   top element on the stack which contains a tuple of keys, then starting from
-   ``STACK[-2]``, pops *count* values to form values in the built dictionary.
-
-   .. versionadded:: 3.6
 
 
 .. opcode:: BUILD_STRING (count)
@@ -1108,7 +1258,8 @@ iterations of the loop.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
-   when calling the unbound method. Otherwise, ``NULL`` and the object returned by
+   or :opcode:`CALL_KW` when calling the unbound method.
+   Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
    .. versionchanged:: 3.12
@@ -1118,15 +1269,22 @@ iterations of the loop.
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
 
-   This opcode implements :func:`super` (e.g. ``super().method()`` and
-   ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
-   ``namei`` is shifted left by 2 bits instead of 1, and instead of expecting a
-   single receiver on the stack, it expects three objects (from top of stack
-   down): ``self`` (the first argument to the current method), ``cls`` (the
-   class within which the current method was defined), and the global ``super``.
+   This opcode implements :func:`super`, both in its zero-argument and
+   two-argument forms (e.g. ``super().method()``, ``super().attr`` and
+   ``super(cls, self).method()``, ``super(cls, self).attr``).
+
+   It pops three values from the stack (from top of stack down):
+
+   * ``self``: the first argument to the current method
+   * ``cls``: the class within which the current method was defined
+   * the global ``super``
+
+   With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
+   except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`.
+   :opcode:`LOAD_ATTR`, which results in pushing ``NULL`` and the loaded method.
+   When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
    call to :func:`super` (unset means zero-argument).
@@ -1230,9 +1388,6 @@ iterations of the loop.
    If ``STACK[-1]`` is not ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
 
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
-
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -1243,9 +1398,6 @@ iterations of the loop.
 
    If ``STACK[-1]`` is ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
-
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
 
    .. versionadded:: 3.11
 
@@ -1278,6 +1430,28 @@ iterations of the loop.
       This opcode is now only used in situations where the local variable is
       guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
+.. opcode:: LOAD_FAST_BORROW (var_num)
+
+   Pushes a borrowed reference to the local ``co_varnames[var_num]`` onto the
+   stack.
+
+   .. versionadded:: 3.14
+
+.. opcode:: LOAD_FAST_LOAD_FAST (var_nums)
+
+   Pushes references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.13
+
+
+.. opcode:: LOAD_FAST_BORROW_LOAD_FAST_BORROW (var_nums)
+
+   Pushes borrowed references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.14
+
 .. opcode:: LOAD_FAST_CHECK (var_num)
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
@@ -1298,6 +1472,20 @@ iterations of the loop.
 
    Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.
 
+.. opcode:: STORE_FAST_STORE_FAST (var_nums)
+
+   Stores ``STACK[-1]`` into ``co_varnames[var_nums >> 4]``
+   and ``STACK[-2]`` into ``co_varnames[var_nums & 15]``.
+
+   .. versionadded:: 3.13
+
+.. opcode:: STORE_FAST_LOAD_FAST (var_nums)
+
+   Stores ``STACK.pop()`` into the local ``co_varnames[var_nums >> 4]``
+   and pushes a reference to the local ``co_varnames[var_nums & 15]``
+   onto the stack.
+
+   .. versionadded:: 3.13
 
 .. opcode:: DELETE_FAST (var_num)
 
@@ -1318,7 +1506,7 @@ iterations of the loop.
    Pushes a reference to the object the cell contains on the stack.
 
    .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+      ``i`` is no longer offset by the length of :attr:`~codeobject.co_varnames`.
 
 
 .. opcode:: LOAD_FROM_DICT_OR_DEREF (i)
@@ -1327,7 +1515,7 @@ iterations of the loop.
    slot ``i`` of the "fast locals" storage in this mapping.
    If the name is not found there, loads it from the cell contained in
    slot ``i``, similar to :opcode:`LOAD_DEREF`. This is used for loading
-   free variables in class bodies (which previously used
+   :term:`closure variables <closure variable>` in class bodies (which previously used
    :opcode:`!LOAD_CLASSDEREF`) and in
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
@@ -1340,7 +1528,7 @@ iterations of the loop.
    storage.
 
    .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+      ``i`` is no longer offset by the length of :attr:`~codeobject.co_varnames`.
 
 
 .. opcode:: DELETE_DEREF (i)
@@ -1351,13 +1539,13 @@ iterations of the loop.
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.11
-      ``i`` is no longer offset by the length of ``co_varnames``.
+      ``i`` is no longer offset by the length of :attr:`~codeobject.co_varnames`.
 
 
 .. opcode:: COPY_FREE_VARS (n)
 
-   Copies the ``n`` free variables from the closure into the frame.
-   Removes the need for special code on the caller's side when calling
+   Copies the ``n`` :term:`free (closure) variables <closure variable>` from the closure
+   into the frame. Removes the need for special code on the caller's side when calling
    closures.
 
    .. versionadded:: 3.11
@@ -1376,31 +1564,47 @@ iterations of the loop.
 
 .. opcode:: CALL (argc)
 
-   Calls a callable object with the number of arguments specified by ``argc``,
-   including the named arguments specified by the preceding
-   :opcode:`KW_NAMES`, if any.
-   On the stack are (in ascending order), either:
-
-   * NULL
-   * The callable
-   * The positional arguments
-   * The named arguments
-
-   or:
+   Calls a callable object with the number of arguments specified by ``argc``.
+   On the stack are (in ascending order):
 
    * The callable
-   * ``self``
+   * ``self`` or ``NULL``
    * The remaining positional arguments
-   * The named arguments
 
-   ``argc`` is the total of the positional and named arguments, excluding
-   ``self`` when a ``NULL`` is not present.
+   ``argc`` is the total of the positional arguments, excluding ``self``.
 
    ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      The callable now always appears at the same position on the stack.
+
+   .. versionchanged:: 3.13
+      Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
+
+
+.. opcode:: CALL_KW (argc)
+
+   Calls a callable object with the number of arguments specified by ``argc``,
+   including one or more named arguments. On the stack are (in ascending order):
+
+   * The callable
+   * ``self`` or ``NULL``
+   * The remaining positional arguments
+   * The named arguments
+   * A :class:`tuple` of keyword argument names
+
+   ``argc`` is the total of the positional and named arguments, excluding ``self``.
+   The length of the tuple of keyword argument names is the number of named arguments.
+
+   ``CALL_KW`` pops all arguments, the keyword names, and the callable object
+   off the stack, calls the callable object with those arguments, and pushes the
+   return value returned by the callable object.
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
@@ -1427,18 +1631,9 @@ iterations of the loop.
    .. versionadded:: 3.11
 
 
-.. opcode:: KW_NAMES (consti)
-
-   Prefixes :opcode:`CALL`.
-   Stores a reference to ``co_consts[consti]`` into an internal variable
-   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
-
-   .. versionadded:: 3.11
-
-
 .. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
+   Pushes a new function object on the stack built from the code object at ``STACK[-1]``.
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
@@ -1474,7 +1669,7 @@ iterations of the loop.
 
       end = STACK.pop()
       start = STACK.pop()
-      STACK.append(slice(start, stop))
+      STACK.append(slice(start, end))
 
    if it is 3, implements::
 
@@ -1500,13 +1695,13 @@ iterations of the loop.
 
       value = STACK.pop()
       result = func(value)
-      STACK.push(result)
+      STACK.append(result)
 
    * ``oparg == 1``: call :func:`str` on *value*
    * ``oparg == 2``: call :func:`repr` on *value*
    * ``oparg == 3``: call :func:`ascii` on *value*
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1517,22 +1712,22 @@ iterations of the loop.
 
       value = STACK.pop()
       result = value.__format__("")
-      STACK.push(result)
+      STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
-.. opcode:: FORMAT_SPEC
+.. opcode:: FORMAT_WITH_SPEC
 
    Formats the given value with the given format spec::
 
       spec = STACK.pop()
       value = STACK.pop()
       result = value.__format__(spec)
-      STACK.push(result)
+      STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1555,11 +1750,12 @@ iterations of the loop.
       success (``True``) or failure (``False``).
 
 
-.. opcode:: RESUME (where)
+.. opcode:: RESUME (context)
 
    A no-op. Performs internal tracing, debugging and optimization checks.
 
-   The ``where`` operand marks where the ``RESUME`` occurs:
+   The ``context`` operand consists of two parts. The lowest two bits
+   indicate where the ``RESUME`` occurs:
 
    * ``0`` The start of a function, which is neither a generator, coroutine
      nor an async generator
@@ -1567,7 +1763,13 @@ iterations of the loop.
    * ``2`` After a ``yield from`` expression
    * ``3`` After an ``await`` expression
 
+   The next bit is ``1`` if the RESUME is at except-depth ``1``, and ``0``
+   otherwise.
+
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      The oparg value changed to include information about except-depth
 
 
 .. opcode:: RETURN_GENERATOR
@@ -1584,9 +1786,9 @@ iterations of the loop.
    Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
    and ``await`` statements.
 
-   If the call raises :exc:`StopIteration`, pop both items, push the
-   exception's ``value`` attribute, and increment the bytecode counter by
-   *delta*.
+   If the call raises :exc:`StopIteration`, pop the top value from the stack,
+   push the exception's ``value`` attribute, and increment the bytecode counter
+   by *delta*.
 
    .. versionadded:: 3.11
 
@@ -1597,8 +1799,8 @@ iterations of the loop.
    opcodes in the range [0,255] which don't use their argument and those
    that do (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
 
-   If your application uses pseudo instructions, use the :data:`hasarg`
-   collection instead.
+   If your application uses pseudo instructions or specialized instructions,
+   use the :data:`hasarg` collection instead.
 
    .. versionchanged:: 3.6
       Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
@@ -1609,12 +1811,14 @@ iterations of the loop.
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
 
+   .. deprecated:: 3.13
+      Use :data:`hasarg` instead.
 
 .. opcode:: CALL_INTRINSIC_1
 
    Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
    argument and sets ``STACK[-1]`` to the result. Used to implement
-   functionality that is necessary but not performance critical.
+   functionality that is not performance critical.
 
    The operand determines which intrinsic function is called:
 
@@ -1632,7 +1836,7 @@ iterations of the loop.
    | ``INTRINSIC_STOPITERATION_ERROR`` | Extracts the return value from a  |
    |                                   | ``StopIteration`` exception.      |
    +-----------------------------------+-----------------------------------+
-   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an aync generator value     |
+   | ``INTRINSIC_ASYNC_GEN_WRAP``      | Wraps an async generator value    |
    +-----------------------------------+-----------------------------------+
    | ``INTRINSIC_UNARY_POSITIVE``      | Performs the unary ``+``          |
    |                                   | operation                         |
@@ -1662,9 +1866,13 @@ iterations of the loop.
 
 .. opcode:: CALL_INTRINSIC_2
 
-   Calls an intrinsic function with two arguments. Passes ``STACK[-2]``, ``STACK[-1]`` as the
-   arguments and sets ``STACK[-1]`` to the result. Used to implement functionality that is
-   necessary but not performance critical.
+   Calls an intrinsic function with two arguments. Used to implement functionality
+   that is not performance critical::
+
+      arg2 = STACK.pop()
+      arg1 = STACK.pop()
+      result = intrinsic2(arg1, arg2)
+      STACK.append(result)
 
    The operand determines which intrinsic function is called:
 
@@ -1689,6 +1897,17 @@ iterations of the loop.
    +----------------------------------------+-----------------------------------+
 
    .. versionadded:: 3.12
+
+
+.. opcode:: LOAD_SPECIAL
+
+   Performs special method lookup on ``STACK[-1]``.
+   If ``type(STACK[-1]).__xxx__`` is a method, leave
+   ``type(STACK[-1]).__xxx__; STACK[-1]`` on the stack.
+   If ``type(STACK[-1]).__xxx__`` is not a method, leave
+   ``STACK[-1].__xxx__; NULL`` on the stack.
+
+   .. versionadded:: 3.14
 
 
 **Pseudo-instructions**
@@ -1734,6 +1953,12 @@ but are replaced by real opcodes or removed before bytecode is generated.
    Undirected relative jump instructions which are replaced by their
    directed (forward/backward) counterparts by the assembler.
 
+.. opcode:: JUMP_IF_TRUE
+.. opcode:: JUMP_IF_FALSE
+
+   Conditional jumps which do not impact the stack. Replaced by the sequence
+   ``COPY 1``, ``TO_BOOL``, ``POP_JUMP_IF_TRUE/FALSE``.
+
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot ``i`` of the "fast locals"
@@ -1760,8 +1985,9 @@ These collections are provided for automatic introspection of bytecode
 instructions:
 
 .. versionchanged:: 3.12
-   The collections now contain pseudo instructions as well. These are
-   opcodes with values ``>= MIN_PSEUDO_OPCODE``.
+   The collections now contain pseudo instructions and instrumented
+   instructions as well. These are opcodes with values ``>= MIN_PSEUDO_OPCODE``
+   and ``>= MIN_INSTRUMENTED_OPCODE``.
 
 .. data:: opname
 
@@ -1792,10 +2018,10 @@ instructions:
 
 .. data:: hasfree
 
-   Sequence of bytecodes that access a free variable. 'free' in this
-   context refers to names in the current scope that are referenced by inner
-   scopes or names in outer scopes that are referenced from this scope.  It does
-   *not* include references to global or builtin scopes.
+   Sequence of bytecodes that access a :term:`free (closure) variable <closure variable>`.
+   'free' in this context refers to names in the current scope that are
+   referenced by inner scopes or names in outer scopes that are referenced
+   from this scope.  It does *not* include references to global or builtin scopes.
 
 
 .. data:: hasname
@@ -1840,4 +2066,3 @@ instructions:
 
    .. deprecated:: 3.13
       All jumps are now relative. This list is empty.
-

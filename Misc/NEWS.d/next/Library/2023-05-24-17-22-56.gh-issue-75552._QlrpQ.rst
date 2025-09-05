@@ -1,1 +1,0 @@
-Removed the ``tkinter.tix`` module, deprecated since Python 3.6.

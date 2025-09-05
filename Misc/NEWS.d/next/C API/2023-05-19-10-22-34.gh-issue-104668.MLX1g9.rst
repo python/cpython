@@ -1,5 +1,0 @@
-Don't call :c:var:`PyOS_InputHook` or :c:var:`PyOS_ReadlineFunctionPointer`
-in subinterpreters, since it's generally difficult to avoid using global
-state in their registered callbacks. This also avoids situations where
-extensions may find themselves running in a subinterpreter they don't
-support (or haven't yet been loaded in).

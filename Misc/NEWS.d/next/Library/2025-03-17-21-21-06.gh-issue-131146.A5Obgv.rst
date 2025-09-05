@@ -1,0 +1,6 @@
+Fix :class:`calendar.TextCalendar`, :class:`calendar.HTMLCalendar`,
+and the :mod:`calendar` CLI to display month names in the nominative
+case by adding :data:`calendar.standalone_month_name` and
+:data:`calendar.standalone_month_abbr`, which provide month names and
+abbreviations in the grammatical form used when a month name stands by
+itself, if the locale supports it.

@@ -1,2 +1,0 @@
-Fix crash when accessing the ``__module__`` attribute of type aliases
-defined outside a module. Patch by Jelle Zijlstra.

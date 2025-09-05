@@ -5,31 +5,20 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* Helpers for hash functions */
-extern Py_hash_t _Py_HashDouble(PyObject *, double);
-// _decimal shared extensions uses _Py_HashPointer()
-PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
-// Similar to _Py_HashPointer(), but don't replace -1 with -2
-extern Py_hash_t _Py_HashPointerRaw(const void*);
-// _datetime shared extension uses _Py_HashBytes()
-PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
+// Similar to Py_HashPointer(), but don't replace -1 with -2.
+static inline Py_hash_t
+_Py_HashPointerRaw(const void *ptr)
+{
+    uintptr_t x = (uintptr_t)ptr;
+    Py_BUILD_ASSERT(sizeof(x) == sizeof(ptr));
 
-/* Prime multiplier used in string and various other hashes. */
-#define _PyHASH_MULTIPLIER 1000003UL  /* 0xf4243 */
+    // Bottom 3 or 4 bits are likely to be 0; rotate x by 4 to the right
+    // to avoid excessive hash collisions for dicts and sets.
+    x = (x >> 4) | (x << (8 * sizeof(uintptr_t) - 4));
 
-/* Parameters used for the numeric hash implementation.  See notes for
-   _Py_HashDouble in Python/pyhash.c.  Numeric hashes are based on
-   reduction modulo the prime 2**_PyHASH_BITS - 1. */
-
-#if SIZEOF_VOID_P >= 8
-#  define _PyHASH_BITS 61
-#else
-#  define _PyHASH_BITS 31
-#endif
-
-#define _PyHASH_MODULUS (((size_t)1 << _PyHASH_BITS) - 1)
-#define _PyHASH_INF 314159
-#define _PyHASH_IMAG _PyHASH_MULTIPLIER
+    Py_BUILD_ASSERT(sizeof(x) == sizeof(Py_hash_t));
+    return (Py_hash_t)x;
+}
 
 /* Hash secret
  *
@@ -74,26 +63,13 @@ typedef union {
     } expat;
 } _Py_HashSecret_t;
 
-// _elementtree shared extension uses _Py_HashSecret.expat
+// Export for '_elementtree' shared extension
 PyAPI_DATA(_Py_HashSecret_t) _Py_HashSecret;
 
 #ifdef Py_DEBUG
 extern int _Py_HashSecret_Initialized;
 #endif
 
-
-struct pyhash_runtime_state {
-    struct {
-#ifndef MS_WINDOWS
-        int fd;
-        dev_t st_dev;
-        ino_t st_ino;
-#else
-    // This is a placeholder so the struct isn't empty on Windows.
-    int _not_used;
-#endif
-    } urandom_cache;
-};
 
 #ifndef MS_WINDOWS
 # define _py_urandom_cache_INIT \
