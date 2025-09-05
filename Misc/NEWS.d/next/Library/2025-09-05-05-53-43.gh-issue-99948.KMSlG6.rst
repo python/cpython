@@ -1,1 +1,1 @@
-`ctypes.util.find_library` now works in Emscripten build.
+:func:`ctypes.util.find_library` now works in Emscripten build.
