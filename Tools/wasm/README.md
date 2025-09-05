@@ -22,7 +22,7 @@ https://github.com/psf/webassembly for more information.
 ### Build
 
 To cross compile to the ``wasm32-emscripten`` platform you need
-[the Emscripten compiler toolchain](https://emscripten.org/), 
+[the Emscripten compiler toolchain](https://emscripten.org/),
 a Python interpreter, and an installation of Node version 18 or newer.
 Emscripten version 4.0.2 is recommended; newer versions may also work, but all
 official testing is performed with that version. All commands below are relative
@@ -84,13 +84,24 @@ make a node application that "embeds" the interpreter instead of acting like the
 CLI you will need to write your own alternative to `node_entry.mjs`.
 
 
+### Running tests
+
+After building, you can run the full test suite with:
+```shell
+./cross-build/wasm32-emscripten/build/python/python.sh -m test -uall
+```
+You can run the browser smoke test with:
+```shell
+./Tools/wasm/emscripten/browser_test/run_test.sh
+```
+
 ### The Web Example
 
-When building for Emscripten, the web example will be built automatically. It is
-in the ``web_example`` directory. To run the web example, ``cd`` into the
+When building for Emscripten, the web example will be built automatically. It
+is in the ``web_example`` directory. To run the web example, ``cd`` into the
 ``web_example`` directory, then run ``python server.py``. This will start a web
-server; you can then visit ``http://localhost:8000/python.html`` in a browser to
-see a simple REPL example.
+server; you can then visit ``http://localhost:8000/`` in a browser to see a
+simple REPL example.
 
 The web example relies on a bug fix in Emscripten version 3.1.73 so if you build
 with earlier versions of Emscripten it may not work. The web example uses

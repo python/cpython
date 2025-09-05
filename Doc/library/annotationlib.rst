@@ -211,6 +211,10 @@ Classes
       means may not have any information about their scope, so passing
       arguments to this method may be necessary to evaluate them successfully.
 
+      If no *owner*, *globals*, *locals*, or *type_params* are provided and the
+      :class:`~ForwardRef` does not contain information about its origin,
+      empty globals and locals dictionaries are used.
+
    .. versionadded:: 3.14
 
 
@@ -507,7 +511,7 @@ code execution even with no access to any globals or builtins. For example:
 
   >>> def f(x: (1).__class__.__base__.__subclasses__()[-1].__init__.__builtins__["print"]("Hello world")): pass
   ...
-  >>> annotationlib.get_annotations(f, format=annotationlib.Format.SOURCE)
+  >>> annotationlib.get_annotations(f, format=annotationlib.Format.STRING)
   Hello world
   {'x': 'None'}
 

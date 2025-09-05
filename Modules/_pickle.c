@@ -413,13 +413,6 @@ typedef struct {
 
 #define Pdata_CAST(op)  ((Pdata *)(op))
 
-static int
-Pdata_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
 Pdata_dealloc(PyObject *op)
 {
@@ -437,7 +430,7 @@ Pdata_dealloc(PyObject *op)
 
 static PyType_Slot pdata_slots[] = {
     {Py_tp_dealloc, Pdata_dealloc},
-    {Py_tp_traverse, Pdata_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL},
 };
 
@@ -1915,7 +1908,7 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
         Py_CLEAR(module_name);
-        modules = _PySys_GetRequiredAttr(&_Py_ID(modules));
+        modules = PySys_GetAttr(&_Py_ID(modules));
         if (modules == NULL) {
             return NULL;
         }
@@ -5255,7 +5248,7 @@ load_int(PickleState *state, UnpicklerObject *self)
         }
     }
     else {
-        if (len == 3 && (x == 0 || x == 1)) {
+        if (len == 3 && s[0] == '0' && (s[1] == '0' || s[1] == '1')) {
             if ((value = PyBool_FromLong(x)) == NULL)
                 return -1;
         }
@@ -5543,17 +5536,16 @@ static int
 load_counted_binstring(PickleState *st, UnpicklerObject *self, int nbytes)
 {
     PyObject *obj;
-    Py_ssize_t size;
+    long size;
     char *s;
 
     if (_Unpickler_Read(self, st, &s, nbytes) < 0)
         return -1;
 
-    size = calc_binsize(s, nbytes);
+    size = calc_binint(s, nbytes);
     if (size < 0) {
-        PyErr_Format(st->UnpicklingError,
-                     "BINSTRING exceeds system's maximum size of %zd bytes",
-                     PY_SSIZE_T_MAX);
+        PyErr_SetString(st->UnpicklingError,
+                     "BINSTRING pickle has negative byte count");
         return -1;
     }
 

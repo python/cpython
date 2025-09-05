@@ -32,7 +32,6 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
 from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
-import _sysconfig
 
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
@@ -709,11 +708,11 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase'}
         # Keys dependent on Python being run from the prefix targetted when building (different on relocatable installs)
         if sysconfig._installation_is_relocated():
-            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase', 'srcdir'}
 
         for key in ignore_keys:
-            json_config_vars.pop(key)
-            system_config_vars.pop(key)
+            json_config_vars.pop(key, None)
+            system_config_vars.pop(key, None)
 
         self.assertEqual(system_config_vars, json_config_vars)
 

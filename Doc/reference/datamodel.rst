@@ -262,6 +262,8 @@ Booleans (:class:`bool`)
    a string, the strings ``"False"`` or ``"True"`` are returned, respectively.
 
 
+.. _datamodel-float:
+
 :class:`numbers.Real` (:class:`float`)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1228,9 +1230,21 @@ Special attributes
        :attr:`__annotations__ attributes <object.__annotations__>`.
 
        For best practices on working with :attr:`~object.__annotations__`,
-       please see :mod:`annotationlib`. Where possible, use
+       please see :mod:`annotationlib`. Use
        :func:`annotationlib.get_annotations` instead of accessing this
        attribute directly.
+
+       .. warning::
+
+          Accessing the :attr:`!__annotations__` attribute directly
+          on a class object may return annotations for the wrong class, specifically
+          in certain cases where the class, its base class, or a metaclass
+          is defined under ``from __future__ import annotations``.
+          See :pep:`749 <749#pep749-metaclasses>` for details.
+
+          This attribute does not exist on certain builtin classes. On
+          user-defined classes without ``__annotations__``, it is an
+          empty dictionary.
 
        .. versionchanged:: 3.14
           Annotations are now :ref:`lazily evaluated <lazy-evaluation>`.
@@ -2337,6 +2351,9 @@ Customizing module attribute access
    single: __dir__ (module attribute)
    single: __class__ (module attribute)
 
+.. method:: module.__getattr__
+            module.__dir__
+
 Special names ``__getattr__`` and ``__dir__`` can be also used to customize
 access to module attributes. The ``__getattr__`` function at the module level
 should accept one argument which is the name of an attribute and return the
@@ -2349,6 +2366,8 @@ it is called with the attribute name and the result is returned.
 The ``__dir__`` function should accept no arguments, and return an iterable of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
+
+.. attribute:: module.__class__
 
 For a more fine grained customization of the module behavior (setting
 attributes, properties, etc.), one can set the ``__class__`` attribute of
@@ -2615,7 +2634,7 @@ Notes on using *__slots__*:
 * :attr:`~object.__class__` assignment works only if both classes have the
   same *__slots__*.
 
-* :ref:`Multiple inheritance <tut-multiple>` with multiple slotted parent
+* :ref:`Multiple inheritance <multiple-inheritance>` with multiple slotted parent
   classes can be used,
   but only one parent is allowed to have attributes created by slots
   (the other bases must have empty slot layouts) - violations raise
@@ -2764,6 +2783,8 @@ Resolving MRO entries
    :pep:`560`
       Core support for typing module and generic types.
 
+
+.. _metaclass-determination:
 
 Determining the appropriate metaclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

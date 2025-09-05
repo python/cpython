@@ -33,6 +33,19 @@ _Py_convert_optional_to_ssize_t(PyObject *obj, void *result)
     return 1;
 }
 
+int
+_Py_convert_optional_to_non_negative_ssize_t(PyObject *obj, void *result)
+{
+    if (!_Py_convert_optional_to_ssize_t(obj, result)) {
+        return 0;
+    }
+    if (obj != Py_None && *((Py_ssize_t *)result) < 0) {
+        PyErr_SetString(PyExc_ValueError, "argument cannot be negative");
+        return 0;
+    }
+    return 1;
+}
+
 
 /* Helper for mkvalue() to scan the length of a format */
 
@@ -669,5 +682,5 @@ Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial)
 uint32_t
 Py_PACK_VERSION(int x, int y)
 {
-    return Py_PACK_FULL_VERSION(x, y, 0, 0, 0);
+    return _Py_PACK_VERSION(x, y);
 }
