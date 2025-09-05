@@ -1,1 +1,0 @@
-Fixes a possible ``NULL`` pointer dereference in :mod:`ssl`.

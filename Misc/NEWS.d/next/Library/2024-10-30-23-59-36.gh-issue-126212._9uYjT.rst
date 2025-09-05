@@ -1,3 +1,0 @@
-Fix issue where :func:`urllib.request.pathname2url` and
-:func:`~urllib.request.url2pathname` removed slashes from Windows DOS drive
-paths and URLs.

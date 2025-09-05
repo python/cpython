@@ -1,0 +1,1 @@
+Avoid LsaNtStatus to WinError conversion on unsupported WinAPI partitions.

@@ -1,3 +1,0 @@
-Added stub pages for removed modules explaining their removal, where to find
-replacements, and linking to the last Python version that supported them.
-Contributed by Ned Batchelder.

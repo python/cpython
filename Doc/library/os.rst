@@ -108,6 +108,12 @@ Python UTF-8 Mode
 .. versionadded:: 3.7
    See :pep:`540` for more details.
 
+.. versionchanged:: next
+
+   Python UTF-8 mode is now enabled by default (:pep:`686`).
+   It may be disabled with by setting :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` as
+   an environment variable or by using the :option:`-X utf8=0 <-X>` command line option.
+
 The Python UTF-8 Mode ignores the :term:`locale encoding` and forces the usage
 of the UTF-8 encoding:
 
@@ -139,30 +145,21 @@ level APIs also exhibit different default behaviours:
   default so that attempting to open a binary file in text mode is likely
   to raise an exception rather than producing nonsense data.
 
-The :ref:`Python UTF-8 Mode <utf8-mode>` is enabled if the LC_CTYPE locale is
-``C`` or ``POSIX`` at Python startup (see the :c:func:`PyConfig_Read`
-function).
-
-It can be enabled or disabled using the :option:`-X utf8 <-X>` command line
-option and the :envvar:`PYTHONUTF8` environment variable.
-
-If the :envvar:`PYTHONUTF8` environment variable is not set at all, then the
-interpreter defaults to using the current locale settings, *unless* the current
-locale is identified as a legacy ASCII-based locale (as described for
-:envvar:`PYTHONCOERCECLOCALE`), and locale coercion is either disabled or
-fails. In such legacy locales, the interpreter will default to enabling UTF-8
-mode unless explicitly instructed not to do so.
-
-The Python UTF-8 Mode can only be enabled at the Python startup. Its value
+The :ref:`Python UTF-8 Mode <utf8-mode>` is enabled by default.
+It can be disabled using the :option:`-X utf8=0 <-X>` command line
+option or the :envvar:`PYTHONUTF8=0 <PYTHONUTF8>` environment variable.
+The Python UTF-8 Mode can only be disabled at Python startup. Its value
 can be read from :data:`sys.flags.utf8_mode <sys.flags>`.
+
+If the UTF-8 mode is disabled, the interpreter defaults to using
+the current locale settings, *unless* the current locale is identified
+as a legacy ASCII-based locale (as described for :envvar:`PYTHONCOERCECLOCALE`),
+and locale coercion is either disabled or fails.
+In such legacy locales, the interpreter will default to enabling UTF-8 mode
+unless explicitly instructed not to do so.
 
 See also the :ref:`UTF-8 mode on Windows <win-utf8-mode>`
 and the :term:`filesystem encoding and error handler`.
-
-.. seealso::
-
-   :pep:`686`
-      Python 3.15 will make :ref:`utf8-mode` default.
 
 
 .. _os-procinfo:
@@ -261,7 +258,7 @@ process and user.
       :data:`os.environ` or :data:`os.environb`, or calling :func:`os.getenv`
       while reloading, may return an empty result.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: chdir(path)
@@ -321,7 +318,8 @@ process and user.
 
    .. versionadded:: 3.6
 
-   .. abstractmethod:: __fspath__()
+   .. method:: __fspath__()
+      :abstractmethod:
 
       Return the file system path representation of the object.
 
@@ -1659,6 +1657,33 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
+.. function:: readinto(fd, buffer, /)
+
+   Read from a file descriptor *fd* into a mutable
+   :ref:`buffer object <bufferobjects>` *buffer*.
+
+   The *buffer* should be mutable and :term:`bytes-like <bytes-like object>`. On
+   success, returns the number of bytes read. Less bytes may be read than the
+   size of the buffer. The underlying system call will be retried when
+   interrupted by a signal, unless the signal handler raises an exception.
+   Other errors will not be retried and an error will be raised.
+
+   Returns 0 if *fd* is at end of file or if the provided *buffer* has
+   length 0 (which can be used to check for errors without reading data).
+   Never returns negative.
+
+   .. note::
+
+      This function is intended for low-level I/O and must be applied to a file
+      descriptor as returned by :func:`os.open` or :func:`os.pipe`.  To read a
+      "file object" returned by the built-in function :func:`open`, or
+      :data:`sys.stdin`, use its member functions, for example
+      :meth:`io.BufferedIOBase.readinto`, :meth:`io.BufferedIOBase.read`, or
+      :meth:`io.TextIOBase.read`
+
+   .. versionadded:: 3.14
+
+
 .. function:: sendfile(out_fd, in_fd, offset, count)
               sendfile(out_fd, in_fd, offset, count, headers=(), trailers=(), flags=0)
 
@@ -2310,6 +2335,7 @@ features:
    This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
    supply :ref:`paths relative to directory descriptors <dir_fd>`, and :ref:`not
    following symlinks <follow_symlinks>`.
+   The default value of *follow_symlinks* is ``False`` on Windows.
 
    .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
@@ -3665,16 +3691,16 @@ features:
 
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any
-   CVS subdirectory::
+   ``__pycache__`` subdirectory::
 
       import os
       from os.path import join, getsize
-      for root, dirs, files in os.walk('python/Lib/email'):
+      for root, dirs, files in os.walk('python/Lib/xml'):
           print(root, "consumes", end=" ")
           print(sum(getsize(join(root, name)) for name in files), end=" ")
           print("bytes in", len(files), "non-directory files")
-          if 'CVS' in dirs:
-              dirs.remove('CVS')  # don't visit CVS directories
+          if '__pycache__' in dirs:
+              dirs.remove('__pycache__')  # don't visit __pycache__ directories
 
    In the next example (simple implementation of :func:`shutil.rmtree`),
    walking the tree bottom-up is essential, :func:`rmdir` doesn't allow
@@ -3727,16 +3753,16 @@ features:
 
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any
-   CVS subdirectory::
+   ``__pycache__`` subdirectory::
 
       import os
-      for root, dirs, files, rootfd in os.fwalk('python/Lib/email'):
-          print(root, "consumes", end="")
+      for root, dirs, files, rootfd in os.fwalk('python/Lib/xml'):
+          print(root, "consumes", end=" ")
           print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
-                end="")
+                end=" ")
           print("bytes in", len(files), "non-directory files")
-          if 'CVS' in dirs:
-              dirs.remove('CVS')  # don't visit CVS directories
+          if '__pycache__' in dirs:
+              dirs.remove('__pycache__')  # don't visit __pycache__ directories
 
    In the next example, walking the tree bottom-up is essential:
    :func:`rmdir` doesn't allow deleting a directory before the directory is
@@ -5411,6 +5437,8 @@ information, consult your Unix manpages.
 The following scheduling policies are exposed if they are supported by the
 operating system.
 
+.. _os-scheduling-policy:
+
 .. data:: SCHED_OTHER
 
    The default scheduling policy.
@@ -5420,9 +5448,21 @@ operating system.
    Scheduling policy for CPU-intensive processes that tries to preserve
    interactivity on the rest of the computer.
 
+.. data:: SCHED_DEADLINE
+
+   Scheduling policy for tasks with deadline constraints.
+
+   .. versionadded:: 3.14
+
 .. data:: SCHED_IDLE
 
    Scheduling policy for extremely low priority background tasks.
+
+.. data:: SCHED_NORMAL
+
+   Alias for :data:`SCHED_OTHER`.
+
+   .. versionadded:: 3.14
 
 .. data:: SCHED_SPORADIC
 
@@ -5502,7 +5542,7 @@ operating system.
 
 .. function:: sched_yield()
 
-   Voluntarily relinquish the CPU.
+   Voluntarily relinquish the CPU. See :manpage:`sched_yield(2)` for details.
 
 
 .. function:: sched_setaffinity(pid, mask, /)

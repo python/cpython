@@ -34,7 +34,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_preprocess.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">
@@ -239,6 +239,8 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\instruction_sequence.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\interpconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -402,6 +404,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\sliceobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\remote_debugging.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\specialize.c">

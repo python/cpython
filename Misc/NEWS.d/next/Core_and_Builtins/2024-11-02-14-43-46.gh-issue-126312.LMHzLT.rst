@@ -1,2 +1,0 @@
-Fix crash during garbage collection on an object frozen by :func:`gc.freeze` on the
-free-threaded build.

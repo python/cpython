@@ -1,3 +1,0 @@
-Do not include count of "peek" items in ``_PyUop_num_popped``. This ensures
-that the correct number of items are popped from the stack when a micro-op
-exits with an error.

@@ -1,4 +1,5 @@
-
+#ifndef _Py_PATCHLEVEL_H
+#define _Py_PATCHLEVEL_H
 /* Python version identification scheme.
 
    When the major or minor version changes, the VERSION variable in
@@ -17,19 +18,32 @@
 /* Version parsed out into numeric values */
 /*--start constants--*/
 #define PY_MAJOR_VERSION        3
-#define PY_MINOR_VERSION        14
+#define PY_MINOR_VERSION        15
 #define PY_MICRO_VERSION        0
 #define PY_RELEASE_LEVEL        PY_RELEASE_LEVEL_ALPHA
-#define PY_RELEASE_SERIAL       1
+#define PY_RELEASE_SERIAL       0
 
 /* Version as a string */
-#define PY_VERSION              "3.14.0a1+"
+#define PY_VERSION              "3.15.0a0"
 /*--end constants--*/
+
+
+#define _Py_PACK_FULL_VERSION(X, Y, Z, LEVEL, SERIAL) ( \
+    (((X) & 0xff) << 24) |                              \
+    (((Y) & 0xff) << 16) |                              \
+    (((Z) & 0xff) << 8) |                               \
+    (((LEVEL) & 0xf) << 4) |                            \
+    (((SERIAL) & 0xf) << 0))
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */
-#define PY_VERSION_HEX ((PY_MAJOR_VERSION << 24) | \
-                        (PY_MINOR_VERSION << 16) | \
-                        (PY_MICRO_VERSION <<  8) | \
-                        (PY_RELEASE_LEVEL <<  4) | \
-                        (PY_RELEASE_SERIAL << 0))
+#define PY_VERSION_HEX _Py_PACK_FULL_VERSION( \
+    PY_MAJOR_VERSION,                         \
+    PY_MINOR_VERSION,                         \
+    PY_MICRO_VERSION,                         \
+    PY_RELEASE_LEVEL,                         \
+    PY_RELEASE_SERIAL)
+
+// Public Py_PACK_VERSION is declared in pymacro.h; it needs <inttypes.h>.
+
+#endif //_Py_PATCHLEVEL_H

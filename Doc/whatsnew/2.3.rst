@@ -353,7 +353,7 @@ convert them to Unicode using the ``mbcs`` encoding.
 Other systems also allow Unicode strings as file names but convert them to byte
 strings before passing them to the system, which can cause a :exc:`UnicodeError`
 to be raised. Applications can test whether arbitrary Unicode strings are
-supported as file names by checking :attr:`os.path.supports_unicode_filenames`,
+supported as file names by checking :const:`os.path.supports_unicode_filenames`,
 a Boolean value.
 
 Under MacOS, :func:`os.listdir` may now return Unicode filenames.

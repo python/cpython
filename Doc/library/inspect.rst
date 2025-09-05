@@ -150,6 +150,12 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |                 | f_locals          | local namespace seen by   |
 |                 |                   | this frame                |
 +-----------------+-------------------+---------------------------+
+|                 | f_generator       | returns the generator or  |
+|                 |                   | coroutine object that     |
+|                 |                   | owns this frame, or       |
+|                 |                   | ``None`` if the frame is  |
+|                 |                   | of a regular function     |
++-----------------+-------------------+---------------------------+
 |                 | f_trace           | tracing function for this |
 |                 |                   | frame, or ``None``        |
 +-----------------+-------------------+---------------------------+
@@ -309,6 +315,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. versionchanged:: 3.10
 
    Add ``__builtins__`` attribute to functions.
+
+.. versionchanged:: 3.14
+
+   Add ``f_generator`` attribute to frames.
 
 .. function:: getmembers(object[, predicate])
 
@@ -1279,6 +1289,11 @@ Classes and functions
    This is an alias for :func:`annotationlib.get_annotations`; see the documentation
    of that function for more information.
 
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
+
    .. versionadded:: 3.10
 
    .. versionchanged:: 3.14
@@ -1705,6 +1720,13 @@ which is a bitmap of the following flags:
    The flag is set when there is a docstring for the code object in
    the source code. If set, it will be the first item in
    :attr:`~codeobject.co_consts`.
+
+   .. versionadded:: 3.14
+
+.. data:: CO_METHOD
+
+   The flag is set when the code object is a function defined in class
+   scope.
 
    .. versionadded:: 3.14
 
