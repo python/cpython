@@ -57,7 +57,7 @@ pysqlite_microprotocols_add(pysqlite_state *state, PyTypeObject *type,
 
     assert(type != NULL);
     assert(proto != NULL);
-    key = Py_BuildValue("(OO)", (PyObject*)type, proto);
+    key = PyTuple_Pack(2, (PyObject *)type, proto);
     if (!key) {
         return -1;
     }
@@ -81,24 +81,23 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
        way to get a quotable object to be its instance */
 
     /* look for an adapter in the registry */
-    key = Py_BuildValue("(OO)", (PyObject*)Py_TYPE(obj), proto);
+    key = PyTuple_Pack(2, (PyObject *)Py_TYPE(obj), proto);
     if (!key) {
         return NULL;
     }
-    adapter = PyDict_GetItemWithError(state->psyco_adapters, key);
+    if (PyDict_GetItemRef(state->psyco_adapters, key, &adapter) < 0) {
+        Py_DECREF(key);
+        return NULL;
+    }
     Py_DECREF(key);
     if (adapter) {
-        Py_INCREF(adapter);
         adapted = PyObject_CallOneArg(adapter, obj);
         Py_DECREF(adapter);
         return adapted;
     }
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
 
     /* try to have the protocol adapt this object */
-    if (_PyObject_LookupAttr(proto, state->str___adapt__, &adapter) < 0) {
+    if (PyObject_GetOptionalAttr(proto, state->str___adapt__, &adapter) < 0) {
         return NULL;
     }
     if (adapter) {
@@ -117,7 +116,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
     }
 
     /* and finally try to have the object adapt itself */
-    if (_PyObject_LookupAttr(obj, state->str___conform__, &adapter) < 0) {
+    if (PyObject_GetOptionalAttr(obj, state->str___conform__, &adapter) < 0) {
         return NULL;
     }
     if (adapter) {

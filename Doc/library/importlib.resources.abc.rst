@@ -1,3 +1,15 @@
+:mod:`!importlib.resources.abc` -- Abstract base classes for resources
+----------------------------------------------------------------------
+
+.. module:: importlib.resources.abc
+    :synopsis: Abstract base classes for resources
+
+**Source code:** :source:`Lib/importlib/resources/abc.py`
+
+--------------
+
+.. versionadded:: 3.11
+
 .. class:: ResourceReader
 
     *Superseded by TraversableResources*
@@ -10,7 +22,7 @@
     something like a data file that lives next to the ``__init__.py``
     file of the package. The purpose of this class is to help abstract
     out the accessing of such data files so that it does not matter if
-    the package and its data file(s) are stored in a e.g. zip file
+    the package and its data file(s) are stored e.g. in a zip file
     versus on the file system.
 
     For any of methods of this class, a *resource* argument is
@@ -31,330 +43,119 @@
     :const:`None`. An object compatible with this ABC should only be
     returned when the specified module is a package.
 
-    .. versionadded:: 3.7
+    .. deprecated:: 3.12
+       Use :class:`importlib.resources.abc.TraversableResources` instead.
 
-    .. abstractmethod:: open_resource(resource)
+    .. method:: open_resource(resource)
+       :abstractmethod:
 
-        Returns an opened, :term:`file-like object` for binary reading
-        of the *resource*.
+       Returns an opened, :term:`file-like object` for binary reading
+       of the *resource*.
 
-        If the resource cannot be found, :exc:`FileNotFoundError` is
-        raised.
+       If the resource cannot be found, :exc:`FileNotFoundError` is
+       raised.
 
-    .. abstractmethod:: resource_path(resource)
+    .. method:: resource_path(resource)
+       :abstractmethod:
 
-        Returns the file system path to the *resource*.
+       Returns the file system path to the *resource*.
 
-        If the resource does not concretely exist on the file system,
-        raise :exc:`FileNotFoundError`.
+       If the resource does not concretely exist on the file system,
+       raise :exc:`FileNotFoundError`.
 
-    .. abstractmethod:: is_resource(name)
+    .. method:: is_resource(name)
+       :abstractmethod:
 
-        Returns ``True`` if the named *name* is considered a resource.
-        :exc:`FileNotFoundError` is raised if *name* does not exist.
+       Returns ``True`` if the named *name* is considered a resource.
+       :exc:`FileNotFoundError` is raised if *name* does not exist.
 
-    .. abstractmethod:: contents()
+    .. method:: contents()
+       :abstractmethod:
 
-        Returns an :term:`iterable` of strings over the contents of
-        the package. Do note that it is not required that all names
-        returned by the iterator be actual resources, e.g. it is
-        acceptable to return names for which :meth:`is_resource` would
-        be false.
+       Returns an :term:`iterable` of strings over the contents of
+       the package. Do note that it is not required that all names
+       returned by the iterator be actual resources, e.g. it is
+       acceptable to return names for which :meth:`is_resource` would
+       be false.
 
-        Allowing non-resource names to be returned is to allow for
-        situations where how a package and its resources are stored
-        are known a priori and the non-resource names would be useful.
-        For instance, returning subdirectory names is allowed so that
-        when it is known that the package and resources are stored on
-        the file system then those subdirectory names can be used
-        directly.
+       Allowing non-resource names to be returned is to allow for
+       situations where how a package and its resources are stored
+       are known a priori and the non-resource names would be useful.
+       For instance, returning subdirectory names is allowed so that
+       when it is known that the package and resources are stored on
+       the file system then those subdirectory names can be used
+       directly.
 
-        The abstract method returns an iterable of no items.
-
-
-.. class:: ResourceLoader
-
-    An abstract base class for a :term:`loader` which implements the optional
-    :pep:`302` protocol for loading arbitrary resources from the storage
-    back-end.
-
-    .. deprecated:: 3.7
-       This ABC is deprecated in favour of supporting resource loading
-       through :class:`importlib.abc.ResourceReader`.
-
-    .. abstractmethod:: get_data(path)
-
-        An abstract method to return the bytes for the data located at *path*.
-        Loaders that have a file-like storage back-end
-        that allows storing arbitrary data
-        can implement this abstract method to give direct access
-        to the data stored. :exc:`OSError` is to be raised if the *path* cannot
-        be found. The *path* is expected to be constructed using a module's
-        :attr:`__file__` attribute or an item from a package's :attr:`__path__`.
-
-        .. versionchanged:: 3.4
-           Raises :exc:`OSError` instead of :exc:`NotImplementedError`.
-
-
-.. class:: InspectLoader
-
-    An abstract base class for a :term:`loader` which implements the optional
-    :pep:`302` protocol for loaders that inspect modules.
-
-    .. method:: get_code(fullname)
-
-        Return the code object for a module, or ``None`` if the module does not
-        have a code object (as would be the case, for example, for a built-in
-        module).  Raise an :exc:`ImportError` if loader cannot find the
-        requested module.
-
-        .. note::
-           While the method has a default implementation, it is suggested that
-           it be overridden if possible for performance.
-
-        .. index::
-           single: universal newlines; importlib.abc.InspectLoader.get_source method
-
-        .. versionchanged:: 3.4
-           No longer abstract and a concrete implementation is provided.
-
-    .. abstractmethod:: get_source(fullname)
-
-        An abstract method to return the source of a module. It is returned as
-        a text string using :term:`universal newlines`, translating all
-        recognized line separators into ``'\n'`` characters.  Returns ``None``
-        if no source is available (e.g. a built-in module). Raises
-        :exc:`ImportError` if the loader cannot find the module specified.
-
-        .. versionchanged:: 3.4
-           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
-
-    .. method:: is_package(fullname)
-
-        An optional method to return a true value if the module is a package, a
-        false value otherwise. :exc:`ImportError` is raised if the
-        :term:`loader` cannot find the module.
-
-        .. versionchanged:: 3.4
-           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
-
-    .. staticmethod:: source_to_code(data, path='<string>')
-
-        Create a code object from Python source.
-
-        The *data* argument can be whatever the :func:`compile` function
-        supports (i.e. string or bytes). The *path* argument should be
-        the "path" to where the source code originated from, which can be an
-        abstract concept (e.g. location in a zip file).
-
-        With the subsequent code object one can execute it in a module by
-        running ``exec(code, module.__dict__)``.
-
-        .. versionadded:: 3.4
-
-        .. versionchanged:: 3.5
-           Made the method static.
-
-    .. method:: exec_module(module)
-
-       Implementation of :meth:`Loader.exec_module`.
-
-       .. versionadded:: 3.4
-
-    .. method:: load_module(fullname)
-
-       Implementation of :meth:`Loader.load_module`.
-
-       .. deprecated:: 3.4
-          use :meth:`exec_module` instead.
-
-
-.. class:: ExecutionLoader
-
-    An abstract base class which inherits from :class:`InspectLoader` that,
-    when implemented, helps a module to be executed as a script. The ABC
-    represents an optional :pep:`302` protocol.
-
-    .. abstractmethod:: get_filename(fullname)
-
-        An abstract method that is to return the value of :attr:`__file__` for
-        the specified module. If no path is available, :exc:`ImportError` is
-        raised.
-
-        If source code is available, then the method should return the path to
-        the source file, regardless of whether a bytecode was used to load the
-        module.
-
-        .. versionchanged:: 3.4
-           Raises :exc:`ImportError` instead of :exc:`NotImplementedError`.
-
-
-.. class:: FileLoader(fullname, path)
-
-   An abstract base class which inherits from :class:`ResourceLoader` and
-   :class:`ExecutionLoader`, providing concrete implementations of
-   :meth:`ResourceLoader.get_data` and :meth:`ExecutionLoader.get_filename`.
-
-   The *fullname* argument is a fully resolved name of the module the loader is
-   to handle. The *path* argument is the path to the file for the module.
-
-   .. versionadded:: 3.3
-
-   .. attribute:: name
-
-      The name of the module the loader can handle.
-
-   .. attribute:: path
-
-      Path to the file of the module.
-
-   .. method:: load_module(fullname)
-
-      Calls super's ``load_module()``.
-
-      .. deprecated:: 3.4
-         Use :meth:`Loader.exec_module` instead.
-
-   .. abstractmethod:: get_filename(fullname)
-
-      Returns :attr:`path`.
-
-   .. abstractmethod:: get_data(path)
-
-      Reads *path* as a binary file and returns the bytes from it.
-
-
-.. class:: SourceLoader
-
-    An abstract base class for implementing source (and optionally bytecode)
-    file loading. The class inherits from both :class:`ResourceLoader` and
-    :class:`ExecutionLoader`, requiring the implementation of:
-
-    * :meth:`ResourceLoader.get_data`
-    * :meth:`ExecutionLoader.get_filename`
-          Should only return the path to the source file; sourceless
-          loading is not supported.
-
-    The abstract methods defined by this class are to add optional bytecode
-    file support. Not implementing these optional methods (or causing them to
-    raise :exc:`NotImplementedError`) causes the loader to
-    only work with source code. Implementing the methods allows the loader to
-    work with source *and* bytecode files; it does not allow for *sourceless*
-    loading where only bytecode is provided.  Bytecode files are an
-    optimization to speed up loading by removing the parsing step of Python's
-    compiler, and so no bytecode-specific API is exposed.
-
-    .. method:: path_stats(path)
-
-        Optional abstract method which returns a :class:`dict` containing
-        metadata about the specified path.  Supported dictionary keys are:
-
-        - ``'mtime'`` (mandatory): an integer or floating-point number
-          representing the modification time of the source code;
-        - ``'size'`` (optional): the size in bytes of the source code.
-
-        Any other keys in the dictionary are ignored, to allow for future
-        extensions. If the path cannot be handled, :exc:`OSError` is raised.
-
-        .. versionadded:: 3.3
-
-        .. versionchanged:: 3.4
-           Raise :exc:`OSError` instead of :exc:`NotImplementedError`.
-
-    .. method:: path_mtime(path)
-
-        Optional abstract method which returns the modification time for the
-        specified path.
-
-        .. deprecated:: 3.3
-           This method is deprecated in favour of :meth:`path_stats`.  You don't
-           have to implement it, but it is still available for compatibility
-           purposes. Raise :exc:`OSError` if the path cannot be handled.
-
-        .. versionchanged:: 3.4
-           Raise :exc:`OSError` instead of :exc:`NotImplementedError`.
-
-    .. method:: set_data(path, data)
-
-        Optional abstract method which writes the specified bytes to a file
-        path. Any intermediate directories which do not exist are to be created
-        automatically.
-
-        When writing to the path fails because the path is read-only
-        (:attr:`errno.EACCES`/:exc:`PermissionError`), do not propagate the
-        exception.
-
-        .. versionchanged:: 3.4
-           No longer raises :exc:`NotImplementedError` when called.
-
-    .. method:: get_code(fullname)
-
-        Concrete implementation of :meth:`InspectLoader.get_code`.
-
-    .. method:: exec_module(module)
-
-       Concrete implementation of :meth:`Loader.exec_module`.
-
-       .. versionadded:: 3.4
-
-    .. method:: load_module(fullname)
-
-       Concrete implementation of :meth:`Loader.load_module`.
-
-       .. deprecated:: 3.4
-          Use :meth:`exec_module` instead.
-
-    .. method:: get_source(fullname)
-
-        Concrete implementation of :meth:`InspectLoader.get_source`.
-
-    .. method:: is_package(fullname)
-
-        Concrete implementation of :meth:`InspectLoader.is_package`. A module
-        is determined to be a package if its file path (as provided by
-        :meth:`ExecutionLoader.get_filename`) is a file named
-        ``__init__`` when the file extension is removed **and** the module name
-        itself does not end in ``__init__``.
+       The abstract method returns an iterable of no items.
 
 
 .. class:: Traversable
 
-    An object with a subset of pathlib.Path methods suitable for
+    An object with a subset of :class:`pathlib.Path` methods suitable for
     traversing directories and opening files.
 
-    .. versionadded:: 3.9
+    For a representation of the object on the file-system, use
+    :meth:`importlib.resources.as_file`.
 
     .. attribute:: name
 
        Abstract. The base name of this object without any parent references.
 
-    .. abstractmethod:: iterdir()
+    .. method:: iterdir()
+       :abstractmethod:
 
        Yield Traversable objects in self.
 
-    .. abstractmethod:: is_dir()
+    .. method:: is_dir()
+       :abstractmethod:
 
-       Return True if self is a directory.
+       Return ``True`` if self is a directory.
 
-    .. abstractmethod:: is_file()
+    .. method:: is_file()
+       :abstractmethod:
 
-       Return True if self is a file.
+       Return ``True`` if self is a file.
 
-    .. abstractmethod:: joinpath(child)
+    .. method:: joinpath(*pathsegments)
+       :abstractmethod:
+
+       Traverse directories according to *pathsegments* and return
+       the result as :class:`!Traversable`.
+
+       Each *pathsegments* argument may contain multiple names separated by
+       forward slashes (``/``, ``posixpath.sep`` ).
+       For example, the following are equivalent::
+
+           files.joinpath('subdir', 'subsuddir', 'file.txt')
+           files.joinpath('subdir/subsuddir/file.txt')
+
+       Note that some :class:`!Traversable` implementations
+       might not be updated to the latest version of the protocol.
+       For compatibility with such implementations, provide a single argument
+       without path separators to each call to ``joinpath``. For example::
+
+           files.joinpath('subdir').joinpath('subsubdir').joinpath('file.txt')
+
+       .. versionchanged:: 3.11
+
+          ``joinpath`` accepts multiple *pathsegments*, and these segments
+          may contain forward slashes as path separators.
+          Previously, only a single *child* argument was accepted.
+
+    .. method:: __truediv__(child)
+       :abstractmethod:
 
        Return Traversable child in self.
+       Equivalent to ``joinpath(child)``.
 
-    .. abstractmethod:: __truediv__(child)
-
-       Return Traversable child in self.
-
-    .. abstractmethod:: open(mode='r', *args, **kwargs)
+    .. method:: open(mode='r', *args, **kwargs)
+       :abstractmethod:
 
        *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
        suitable for reading (same as :attr:`pathlib.Path.open`).
 
        When opening as text, accepts encoding parameters such as those
-       accepted by :attr:`io.TextIOWrapper`.
+       accepted by :class:`io.TextIOWrapper`.
 
     .. method:: read_bytes()
 
@@ -369,17 +170,16 @@
 
     An abstract base class for resource readers capable of serving
     the :meth:`importlib.resources.files` interface. Subclasses
-    :class:`importlib.abc.ResourceReader` and provides
-    concrete implementations of the :class:`importlib.abc.ResourceReader`'s
+    :class:`ResourceReader` and provides
+    concrete implementations of the :class:`!ResourceReader`'s
     abstract methods. Therefore, any loader supplying
-    :class:`importlib.abc.TraversableReader` also supplies ResourceReader.
+    :class:`!TraversableResources` also supplies :class:`!ResourceReader`.
 
     Loaders that wish to support resource reading are expected to
     implement this interface.
 
-    .. versionadded:: 3.9
+    .. method:: files()
+       :abstractmethod:
 
-    .. abstractmethod:: files()
-
-       Returns a :class:`importlib.abc.Traversable` object for the loaded
+       Returns a :class:`importlib.resources.abc.Traversable` object for the loaded
        package.

@@ -3,7 +3,11 @@
  * DCE compatible Universally Unique Identifier library.
  */
 
-#define PY_SSIZE_T_CLEAN
+// Need limited C API version 3.13 for Py_mod_gil
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
 
 #include "Python.h"
 #if defined(HAVE_UUID_H)
@@ -74,23 +78,47 @@ py_UuidCreate(PyObject *Py_UNUSED(context),
     return NULL;
 }
 
+static int
+py_windows_has_stable_node(void)
+{
+    UUID uuid;
+    RPC_STATUS res;
+    Py_BEGIN_ALLOW_THREADS
+    res = UuidCreateSequential(&uuid);
+    Py_END_ALLOW_THREADS
+    return res == RPC_S_OK;
+}
 #endif /* MS_WINDOWS */
 
 
 static int
-uuid_exec(PyObject *module) {
+uuid_exec(PyObject *module)
+{
+#define ADD_INT(NAME, VALUE)                                        \
+    do {                                                            \
+        if (PyModule_AddIntConstant(module, (NAME), (VALUE)) < 0) { \
+           return -1;                                               \
+        }                                                           \
+    } while (0)
+
     assert(sizeof(uuid_t) == 16);
 #if defined(MS_WINDOWS)
-    int has_uuid_generate_time_safe = 0;
+    ADD_INT("has_uuid_generate_time_safe", 0);
 #elif defined(HAVE_UUID_GENERATE_TIME_SAFE)
-    int has_uuid_generate_time_safe = 1;
+    ADD_INT("has_uuid_generate_time_safe", 1);
 #else
-    int has_uuid_generate_time_safe = 0;
+    ADD_INT("has_uuid_generate_time_safe", 0);
 #endif
-    if (PyModule_AddIntConstant(module, "has_uuid_generate_time_safe",
-                                has_uuid_generate_time_safe) < 0) {
-        return -1;
-    }
+
+#if defined(MS_WINDOWS)
+    ADD_INT("has_stable_extractable_node", py_windows_has_stable_node());
+#elif defined(HAVE_UUID_GENERATE_TIME_SAFE_STABLE_MAC)
+    ADD_INT("has_stable_extractable_node", 1);
+#else
+    ADD_INT("has_stable_extractable_node", 0);
+#endif
+
+#undef ADD_INT
     return 0;
 }
 
@@ -106,6 +134,8 @@ static PyMethodDef uuid_methods[] = {
 
 static PyModuleDef_Slot uuid_slots[] = {
     {Py_mod_exec, uuid_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

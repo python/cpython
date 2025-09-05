@@ -12,7 +12,7 @@ extern "C" {
 
 /* pydtrace_probes.h, on systems with DTrace, is auto-generated to include
    `PyDTrace_{PROBE}` and `PyDTrace_{PROBE}_ENABLED()` macros for every probe
-   defined in pydtrace_provider.d.
+   defined in pydtrace.d.
 
    Calling these functions must be guarded by a `PyDTrace_{PROBE}_ENABLED()`
    check to minimize performance impact when probing is off. For example:

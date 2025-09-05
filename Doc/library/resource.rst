@@ -1,5 +1,5 @@
-:mod:`resource` --- Resource usage information
-==============================================
+:mod:`!resource` --- Resource usage information
+===============================================
 
 .. module:: resource
    :platform: Unix
@@ -12,6 +12,8 @@
 
 This module provides basic mechanisms for measuring and controlling system
 resources utilized by a program.
+
+.. availability:: Unix, not WASI.
 
 Symbolic constants are used to specify particular system resources and to
 request usage information about either the current process or its children.
@@ -49,6 +51,20 @@ this module for those platforms.
 
    Constant used to represent the limit for an unlimited resource.
 
+   .. versionchanged:: next
+      It is now always positive.
+      Previously, it could be negative, such as -1 or -3.
+
+
+.. data:: RLIM_SAVED_CUR
+.. data:: RLIM_SAVED_MAX
+
+   Constants used to represent the soft and hard limit values if they
+   cannot be represented in the ``rlim_t`` value in C.
+   Can be equal to :data:`RLIM_INFINITY`.
+
+   .. versionadded:: next
+
 
 .. function:: getrlimit(resource)
 
@@ -61,12 +77,12 @@ this module for those platforms.
 
    Sets new limits of consumption of *resource*. The *limits* argument must be a
    tuple ``(soft, hard)`` of two integers describing the new limits. A value of
-   :data:`~resource.RLIM_INFINITY` can be used to request a limit that is
+   :const:`~resource.RLIM_INFINITY` can be used to request a limit that is
    unlimited.
 
    Raises :exc:`ValueError` if an invalid resource is specified, if the new soft
    limit exceeds the hard limit, or if a process tries to raise its hard limit.
-   Specifying a limit of :data:`~resource.RLIM_INFINITY` when the hard or
+   Specifying a limit of :const:`~resource.RLIM_INFINITY` when the hard or
    system limit for that resource is not unlimited will result in a
    :exc:`ValueError`.  A process with the effective UID of super-user can
    request any valid limit value, including unlimited, but :exc:`ValueError`
@@ -76,7 +92,7 @@ this module for those platforms.
    ``setrlimit`` may also raise :exc:`error` if the underlying system call
    fails.
 
-   VxWorks only supports setting :data:`RLIMIT_NOFILE`.
+   VxWorks only supports setting :const:`RLIMIT_NOFILE`.
 
    .. audit-event:: resource.setrlimit resource,limits resource.setrlimit
 
@@ -99,7 +115,7 @@ this module for those platforms.
 
    .. audit-event:: resource.prlimit pid,resource,limits resource.prlimit
 
-   .. availability:: Linux 2.6.36 or later with glibc 2.13 or later.
+   .. availability:: Linux >= 2.6.36 with glibc >= 2.13.
 
    .. versionadded:: 3.4
 
@@ -174,6 +190,9 @@ platform.
 .. data:: RLIMIT_VMEM
 
    The largest area of mapped memory which the process may occupy.
+   Usually an alias of :const:`RLIMIT_AS`.
+
+   .. availability:: Solaris, FreeBSD, NetBSD.
 
 
 .. data:: RLIMIT_AS
@@ -185,7 +204,7 @@ platform.
 
    The number of bytes that can be allocated for POSIX message queues.
 
-   .. availability:: Linux 2.6.8 or later.
+   .. availability:: Linux >= 2.6.8.
 
    .. versionadded:: 3.4
 
@@ -194,7 +213,7 @@ platform.
 
    The ceiling for the process's nice level (calculated as 20 - rlim_cur).
 
-   .. availability:: Linux 2.6.12 or later.
+   .. availability:: Linux >= 2.6.12.
 
    .. versionadded:: 3.4
 
@@ -203,7 +222,7 @@ platform.
 
    The ceiling of the real-time priority.
 
-   .. availability:: Linux 2.6.12 or later.
+   .. availability:: Linux >= 2.6.12.
 
    .. versionadded:: 3.4
 
@@ -213,7 +232,7 @@ platform.
    The time limit (in microseconds) on CPU time that a process can spend
    under real-time scheduling without making a blocking syscall.
 
-   .. availability:: Linux 2.6.25 or later.
+   .. availability:: Linux >= 2.6.25.
 
    .. versionadded:: 3.4
 
@@ -222,9 +241,10 @@ platform.
 
    The number of signals which the process may queue.
 
-   .. availability:: Linux 2.6.8 or later.
+   .. availability:: Linux >= 2.6.8.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_SBSIZE
 
@@ -232,9 +252,10 @@ platform.
    This limits the amount of network memory, and hence the amount of mbufs,
    that this user may hold at any time.
 
-   .. availability:: FreeBSD 9 or later.
+   .. availability:: FreeBSD, NetBSD.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_SWAP
 
@@ -242,28 +263,70 @@ platform.
    used by all of this user id's processes.
    This limit is enforced only if bit 1 of the vm.overcommit sysctl is set.
    Please see
-   `tuning(7) <https://www.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
+   `tuning(7) <https://man.freebsd.org/cgi/man.cgi?query=tuning&sektion=7>`__
    for a complete description of this sysctl.
 
-   .. availability:: FreeBSD 9 or later.
+   .. availability:: FreeBSD >= 8.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_NPTS
 
    The maximum number of pseudo-terminals created by this user id.
 
-   .. availability:: FreeBSD 9 or later.
+   .. availability:: FreeBSD >= 8.
 
    .. versionadded:: 3.4
+
 
 .. data:: RLIMIT_KQUEUES
 
    The maximum number of kqueues this user id is allowed to create.
 
-   .. availability:: FreeBSD 11 or later.
+   .. availability:: FreeBSD >= 11.
 
    .. versionadded:: 3.10
+
+
+.. data:: RLIMIT_NTHR
+
+   The maximum number of threads for this user id, not counting the main
+   and kernel threads.
+
+   .. availability:: NetBSD >= 7.0.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_PIPEBUF
+
+   The maximum total size of in-kernel buffers for bi-directional pipes/fifos
+   that this user id is allowed to consume.
+
+   .. availability:: FreeBSD >= 14.2.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_THREADS
+
+   The maximum number of threads each process can create.
+
+   .. availability:: AIX.
+
+   .. versionadded:: next
+
+
+.. data:: RLIMIT_UMTXP
+
+   The limit of the number of process-shared Posix thread library objects
+   allocated by user id.
+
+   .. availability:: FreeBSD >= 11.
+
+   .. versionadded:: next
+
 
 Resource Usage
 --------------
@@ -275,7 +338,7 @@ These functions are used to retrieve resource usage information:
 
    This function returns an object that describes the resources consumed by either
    the current process or its children, as specified by the *who* parameter.  The
-   *who* parameter should be specified using one of the :const:`RUSAGE_\*`
+   *who* parameter should be specified using one of the :const:`!RUSAGE_\*`
    constants described below.
 
    A simple example::
@@ -301,7 +364,7 @@ These functions are used to retrieve resource usage information:
    elements.
 
    The fields :attr:`ru_utime` and :attr:`ru_stime` of the return value are
-   floating point values representing the amount of time spent executing in user
+   floating-point values representing the amount of time spent executing in user
    mode and the amount of time spent executing in system mode, respectively. The
    remaining values are integers. Consult the :manpage:`getrusage(2)` man page for
    detailed information about these values. A brief summary is presented here:
@@ -351,7 +414,7 @@ These functions are used to retrieve resource usage information:
    Returns the number of bytes in a system page. (This need not be the same as the
    hardware page size.)
 
-The following :const:`RUSAGE_\*` symbols are passed to the :func:`getrusage`
+The following :const:`!RUSAGE_\*` symbols are passed to the :func:`getrusage`
 function to specify which processes information should be provided for.
 
 

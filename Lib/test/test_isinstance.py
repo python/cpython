@@ -3,12 +3,11 @@
 # testing of error conditions uncovered when using extension types.
 
 import unittest
-import sys
 import typing
 from test import support
 
 
-
+
 class TestIsInstanceExceptions(unittest.TestCase):
     # Test to make sure that an AttributeError when accessing the instance's
     # class's bases is masked.  This was actually a bug in Python 2.2 and
@@ -97,7 +96,7 @@ class TestIsInstanceExceptions(unittest.TestCase):
         class D: pass
         self.assertRaises(RuntimeError, isinstance, c, D)
 
-
+
 # These tests are similar to above, but tickle certain code paths in
 # issubclass() instead of isinstance() -- really PyObject_IsSubclass()
 # vs. PyObject_IsInstance().
@@ -147,7 +146,7 @@ class TestIsSubclassExceptions(unittest.TestCase):
         self.assertRaises(TypeError, issubclass, B, C())
 
 
-
+
 # meta classes for creating abstract classes and instances
 class AbstractClass(object):
     def __init__(self, bases):
@@ -179,7 +178,7 @@ class Super:
 
 class Child(Super):
     pass
-
+
 class TestIsInstanceIsSubclass(unittest.TestCase):
     # Tests to ensure that isinstance and issubclass work on abstract
     # classes and instances.  Before the 2.2 release, TypeErrors were
@@ -225,7 +224,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         with self.assertRaises(TypeError):
             isinstance(2, list[int] | int)
         with self.assertRaises(TypeError):
-            isinstance(2, int | str | list[int] | float)
+            isinstance(2, float | str | list[int] | int)
 
 
 
@@ -264,17 +263,19 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(int, (int, (float, int))))
         self.assertEqual(True, issubclass(str, (str, (Child, str))))
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_subclass_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
-        with support.infinite_recursion():
-            self.assertRaises(RecursionError, blowstack, issubclass, str, str)
+        self.assertRaises(RecursionError, blowstack, issubclass, str, str)
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_isinstance_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
-        with support.infinite_recursion():
-            self.assertRaises(RecursionError, blowstack, isinstance, '', str)
+        self.assertRaises(RecursionError, blowstack, isinstance, '', str)
 
     def test_subclass_with_union(self):
         self.assertTrue(issubclass(int, int | float | int))
@@ -311,11 +312,13 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             @property
             def __bases__(self):
                 return self.__bases__
-        with support.infinite_recursion():
+        with support.infinite_recursion(25):
             self.assertRaises(RecursionError, issubclass, X(), int)
             self.assertRaises(RecursionError, issubclass, int, X())
             self.assertRaises(RecursionError, isinstance, 1, X())
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_infinite_recursion_via_bases_tuple(self):
         """Regression test for bpo-30570."""
         class Failure(object):
@@ -325,6 +328,8 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             with self.assertRaises(RecursionError):
                 issubclass(Failure(), int)
 
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def test_infinite_cycle_in_bases(self):
         """Regression test for bpo-30570."""
         class X:
@@ -345,7 +350,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
                     pass
                 A.__getattr__ = B.__getattr__ = X.__getattr__
                 return (A(), B())
-        with support.infinite_recursion():
+        with support.infinite_recursion(25):
             self.assertRaises(RecursionError, issubclass, X(), int)
 
 
@@ -353,10 +358,11 @@ def blowstack(fxn, arg, compare_to):
     # Make sure that calling isinstance with a deeply nested tuple for its
     # argument will raise RecursionError eventually.
     tuple_arg = (compare_to,)
-    for cnt in range(sys.getrecursionlimit()+5):
-        tuple_arg = (tuple_arg,)
+    while True:
+        for _ in range(100):
+            tuple_arg = (tuple_arg,)
         fxn(arg, tuple_arg)
 
-
+
 if __name__ == '__main__':
     unittest.main()

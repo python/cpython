@@ -239,7 +239,7 @@ class SimpleXMLRPCDispatcher:
 
         see http://www.xmlrpc.com/discuss/msgReader$1208"""
 
-        self.funcs.update({'system.multicall' : self.system_multicall})
+        self.funcs['system.multicall'] = self.system_multicall
 
     def _marshaled_dispatch(self, data, dispatch_method = None, path = None):
         """Dispatches an XML-RPC method from marshalled (XML) data.
@@ -578,6 +578,7 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
     """
 
     allow_reuse_address = True
+    allow_reuse_port = False
 
     # Warning: this is for debugging purposes only! Never set this to True in
     # production code, as will be sending out sensitive information (exception
@@ -720,9 +721,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?((?:\w|\.)+))\b')
-        while 1:
-            match = pattern.search(text, here)
-            if not match: break
+        while match := pattern.search(text, here):
             start, end = match.span()
             results.append(escape(text[here:start]))
 
@@ -731,10 +730,10 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
                 url = escape(all).replace('"', '&quot;')
                 results.append('<a href="%s">%s</a>' % (url, url))
             elif rfc:
-                url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
+                url = 'https://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif pep:
-                url = 'https://www.python.org/dev/peps/pep-%04d/' % int(pep)
+                url = 'https://peps.python.org/pep-%04d/' % int(pep)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
             elif text[end:end+1] == '(':
                 results.append(self.namelink(name, methods, funcs, classes))

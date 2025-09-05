@@ -1,19 +1,24 @@
 /* File object implementation (what's left of it -- see io.py) */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String()
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
+
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
-/* clang MemorySanitizer doesn't yet understand getc_unlocked. */
-#define GETC(f) getc_unlocked(f)
-#define FLOCKFILE(f) flockfile(f)
-#define FUNLOCKFILE(f) funlockfile(f)
+   /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
+#  define GETC(f) getc_unlocked(f)
+#  define FLOCKFILE(f) flockfile(f)
+#  define FUNLOCKFILE(f) funlockfile(f)
 #else
-#define GETC(f) getc(f)
-#define FLOCKFILE(f)
-#define FUNLOCKFILE(f)
+#  define GETC(f) getc(f)
+#  define FLOCKFILE(f)
+#  define FUNLOCKFILE(f)
 #endif
 
 /* Newline flags */
@@ -22,26 +27,22 @@
 #define NEWLINE_LF 2            /* \n newline seen */
 #define NEWLINE_CRLF 4          /* \r\n newline seen */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* External C interface */
 
 PyObject *
 PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding,
               const char *errors, const char *newline, int closefd)
 {
-    PyObject *io, *stream;
+    PyObject *open, *stream;
 
     /* import _io in case we are being used to open io.py */
-    io = PyImport_ImportModule("_io");
-    if (io == NULL)
+    open = PyImport_ImportModuleAttrString("_io", "open");
+    if (open == NULL)
         return NULL;
-    stream = _PyObject_CallMethod(io, &_Py_ID(open), "isisssO", fd, mode,
+    stream = PyObject_CallFunction(open, "isisssO", fd, mode,
                                   buffering, encoding, errors,
                                   newline, closefd ? Py_True : Py_False);
-    Py_DECREF(io);
+    Py_DECREF(open);
     if (stream == NULL)
         return NULL;
     /* ignore name attribute because the name attribute of _BufferedIOMixin
@@ -67,45 +68,34 @@ PyFile_GetLine(PyObject *f, int n)
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
-        Py_DECREF(result);
-        result = NULL;
-        PyErr_SetString(PyExc_TypeError,
-                   "object.readline() returned non-string");
+        PyErr_Format(PyExc_TypeError,
+                     "%T.readline() must return a str, not %T", f, result);
+        Py_SETREF(result, NULL);
     }
 
     if (n < 0 && result != NULL && PyBytes_Check(result)) {
         const char *s = PyBytes_AS_STRING(result);
         Py_ssize_t len = PyBytes_GET_SIZE(result);
         if (len == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
             PyErr_SetString(PyExc_EOFError,
                             "EOF when reading a line");
         }
         else if (s[len-1] == '\n') {
-            if (Py_REFCNT(result) == 1)
-                _PyBytes_Resize(&result, len-1);
-            else {
-                PyObject *v;
-                v = PyBytes_FromStringAndSize(s, len-1);
-                Py_DECREF(result);
-                result = v;
-            }
+            (void) _PyBytes_Resize(&result, len-1);
         }
     }
     if (n < 0 && result != NULL && PyUnicode_Check(result)) {
         Py_ssize_t len = PyUnicode_GET_LENGTH(result);
         if (len == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
             PyErr_SetString(PyExc_EOFError,
                             "EOF when reading a line");
         }
         else if (PyUnicode_READ_CHAR(result, len-1) == '\n') {
             PyObject *v;
             v = PyUnicode_Substring(result, 0, len-1);
-            Py_DECREF(result);
-            result = v;
+            Py_SETREF(result, v);
         }
     }
     return result;
@@ -180,9 +170,16 @@ PyObject_AsFileDescriptor(PyObject *o)
     PyObject *meth;
 
     if (PyLong_Check(o)) {
-        fd = _PyLong_AsInt(o);
+        if (PyBool_Check(o)) {
+            if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                    "bool is used as a file descriptor", 1))
+            {
+                return -1;
+            }
+        }
+        fd = PyLong_AsInt(o);
     }
-    else if (_PyObject_LookupAttr(o, &_Py_ID(fileno), &meth) < 0) {
+    else if (PyObject_GetOptionalAttr(o, &_Py_ID(fileno), &meth) < 0) {
         return -1;
     }
     else if (meth != NULL) {
@@ -192,12 +189,12 @@ PyObject_AsFileDescriptor(PyObject *o)
             return -1;
 
         if (PyLong_Check(fno)) {
-            fd = _PyLong_AsInt(fno);
+            fd = PyLong_AsInt(fno);
             Py_DECREF(fno);
         }
         else {
-            PyErr_SetString(PyExc_TypeError,
-                            "fileno() returned a non-integer");
+            PyErr_Format(PyExc_TypeError,
+                         "%T.fileno() must return an int, not %T", o, fno);
             Py_DECREF(fno);
             return -1;
         }
@@ -230,16 +227,8 @@ _PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
     return 1;
 }
 
-/*
-** Py_UniversalNewlineFgets is an fgets variation that understands
-** all of \r, \n and \r\n conventions.
-** The stream should be opened in binary mode.
-** The fobj parameter exists solely for legacy reasons and must be NULL.
-** Note that we need no error handling: fgets() treats error and eof
-** identically.
-*/
 char *
-Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
+_Py_UniversalNewlineFgetsWithSize(char *buf, int n, FILE *stream, PyObject *fobj, size_t* size)
 {
     char *p = buf;
     int c;
@@ -265,9 +254,26 @@ Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
     }
     FUNLOCKFILE(stream);
     *p = '\0';
-    if (p == buf)
+    if (p == buf) {
         return NULL;
+    }
+    *size = p - buf;
     return buf;
+}
+
+/*
+** Py_UniversalNewlineFgets is an fgets variation that understands
+** all of \r, \n and \r\n conventions.
+** The stream should be opened in binary mode.
+** The fobj parameter exists solely for legacy reasons and must be NULL.
+** Note that we need no error handling: fgets() treats error and eof
+** identically.
+*/
+
+char *
+Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj) {
+    size_t size;
+    return _Py_UniversalNewlineFgetsWithSize(buf, n, stream, fobj, &size);
 }
 
 /* **************************** std printer ****************************
@@ -299,8 +305,9 @@ PyFile_NewStdPrinter(int fd)
 }
 
 static PyObject *
-stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
+stdprinter_write(PyObject *op, PyObject *args)
 {
+    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
     PyObject *unicode;
     PyObject *bytes = NULL;
     const char *str;
@@ -351,27 +358,30 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 }
 
 static PyObject *
-stdprinter_fileno(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
+stdprinter_fileno(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
     return PyLong_FromLong((long) self->fd);
 }
 
 static PyObject *
-stdprinter_repr(PyStdPrinter_Object *self)
+stdprinter_repr(PyObject *op)
 {
+    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
     return PyUnicode_FromFormat("<stdprinter(fd=%d) object at %p>",
                                 self->fd, self);
 }
 
 static PyObject *
-stdprinter_noop(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
+stdprinter_noop(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_RETURN_NONE;
 }
 
 static PyObject *
-stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
+stdprinter_isatty(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
     long res;
     if (self->fd < 0) {
         Py_RETURN_FALSE;
@@ -385,36 +395,36 @@ stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef stdprinter_methods[] = {
-    {"close",           (PyCFunction)stdprinter_noop, METH_NOARGS, ""},
-    {"flush",           (PyCFunction)stdprinter_noop, METH_NOARGS, ""},
-    {"fileno",          (PyCFunction)stdprinter_fileno, METH_NOARGS, ""},
-    {"isatty",          (PyCFunction)stdprinter_isatty, METH_NOARGS, ""},
-    {"write",           (PyCFunction)stdprinter_write, METH_VARARGS, ""},
+    {"close", stdprinter_noop, METH_NOARGS, ""},
+    {"flush", stdprinter_noop, METH_NOARGS, ""},
+    {"fileno", stdprinter_fileno, METH_NOARGS, ""},
+    {"isatty", stdprinter_isatty, METH_NOARGS, ""},
+    {"write", stdprinter_write, METH_VARARGS, ""},
     {NULL,              NULL}  /*sentinel */
 };
 
 static PyObject *
-get_closed(PyStdPrinter_Object *self, void *closure)
+get_closed(PyObject *self, void *Py_UNUSED(closure))
 {
     Py_RETURN_FALSE;
 }
 
 static PyObject *
-get_mode(PyStdPrinter_Object *self, void *closure)
+get_mode(PyObject *self, void *Py_UNUSED(closure))
 {
     return PyUnicode_FromString("w");
 }
 
 static PyObject *
-get_encoding(PyStdPrinter_Object *self, void *closure)
+get_encoding(PyObject *self, void *Py_UNUSED(closure))
 {
     Py_RETURN_NONE;
 }
 
 static PyGetSetDef stdprinter_getsetlist[] = {
-    {"closed", (getter)get_closed, NULL, "True if the file is closed"},
-    {"encoding", (getter)get_encoding, NULL, "Encoding of the file"},
-    {"mode", (getter)get_mode, NULL, "String giving the file mode"},
+    {"closed", get_closed, NULL, "True if the file is closed"},
+    {"encoding", get_encoding, NULL, "Encoding of the file"},
+    {"mode", get_mode, NULL, "String giving the file mode"},
     {0},
 };
 
@@ -429,7 +439,7 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)stdprinter_repr,                  /* tp_repr */
+    stdprinter_repr,                            /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -458,7 +468,7 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     0,                                          /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    PyObject_Free,                              /* tp_free */
 };
 
 
@@ -490,7 +500,7 @@ PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction hook, void *userData) {
 PyObject *
 PyFile_OpenCodeObject(PyObject *path)
 {
-    PyObject *iomod, *f = NULL;
+    PyObject *f = NULL;
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "'path' must be 'str', not '%.200s'",
@@ -502,10 +512,10 @@ PyFile_OpenCodeObject(PyObject *path)
     if (hook) {
         f = hook(path, _PyRuntime.open_code_userdata);
     } else {
-        iomod = PyImport_ImportModule("_io");
-        if (iomod) {
-            f = _PyObject_CallMethod(iomod, &_Py_ID(open), "Os", path, "rb");
-            Py_DECREF(iomod);
+        PyObject *open = PyImport_ImportModuleAttrString("_io", "open");
+        if (open) {
+            f = PyObject_CallFunction(open, "Os", path, "rb");
+            Py_DECREF(open);
         }
     }
 
@@ -526,6 +536,13 @@ PyFile_OpenCode(const char *utf8path)
 }
 
 
-#ifdef __cplusplus
+int
+_PyFile_Flush(PyObject *file)
+{
+    PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    if (tmp == NULL) {
+        return -1;
+    }
+    Py_DECREF(tmp);
+    return 0;
 }
-#endif

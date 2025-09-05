@@ -4,7 +4,9 @@
 #include "Python.h"
 #include "posixmodule.h"
 
-#include <pwd.h>
+#include <errno.h>                // ERANGE
+#include <pwd.h>                  // getpwuid()
+#include <unistd.h>               // sysconf()
 
 #include "clinic/pwdmodule.c.h"
 /*[clinic input]
@@ -61,55 +63,59 @@ get_pwd_state(PyObject *module)
 
 static struct PyModuleDef pwdmodule;
 
-#define DEFAULT_BUFFER_SIZE 1024
+/* Mutex to protect calls to getpwuid(), getpwnam(), and getpwent().
+ * These functions return pointer to static data structure, which
+ * may be overwritten by any subsequent calls. */
+static PyMutex pwd_db_mutex = {0};
 
-static void
-sets(PyObject *v, int i, const char* val)
-{
-  if (val) {
-      PyObject *o = PyUnicode_DecodeFSDefault(val);
-      PyStructSequence_SET_ITEM(v, i, o);
-  }
-  else {
-      PyStructSequence_SET_ITEM(v, i, Py_None);
-      Py_INCREF(Py_None);
-  }
-}
+#define DEFAULT_BUFFER_SIZE 1024
 
 static PyObject *
 mkpwent(PyObject *module, struct passwd *p)
 {
-    int setIndex = 0;
     PyObject *v = PyStructSequence_New(get_pwd_state(module)->StructPwdType);
-    if (v == NULL)
-        return NULL;
-
-#define SETS(i,val) sets(v, i, val)
-
-    SETS(setIndex++, p->pw_name);
-#if defined(HAVE_STRUCT_PASSWD_PW_PASSWD) && !defined(__ANDROID__)
-    SETS(setIndex++, p->pw_passwd);
-#else
-    SETS(setIndex++, "");
-#endif
-    PyStructSequence_SET_ITEM(v, setIndex++, _PyLong_FromUid(p->pw_uid));
-    PyStructSequence_SET_ITEM(v, setIndex++, _PyLong_FromGid(p->pw_gid));
-#if defined(HAVE_STRUCT_PASSWD_PW_GECOS)
-    SETS(setIndex++, p->pw_gecos);
-#else
-    SETS(setIndex++, "");
-#endif
-    SETS(setIndex++, p->pw_dir);
-    SETS(setIndex++, p->pw_shell);
-
-#undef SETS
-
-    if (PyErr_Occurred()) {
-        Py_XDECREF(v);
+    if (v == NULL) {
         return NULL;
     }
 
+    int setIndex = 0;
+
+#define SET_STRING(VAL) \
+    SET_RESULT((VAL) ? PyUnicode_DecodeFSDefault((VAL)) : Py_NewRef(Py_None))
+
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            goto error;                                      \
+        }                                                    \
+        PyStructSequence_SetItem(v, setIndex++, item);       \
+    } while(0)
+
+    SET_STRING(p->pw_name);
+#if defined(HAVE_STRUCT_PASSWD_PW_PASSWD) && !defined(__ANDROID__)
+    SET_STRING(p->pw_passwd);
+#else
+    SET_STRING("");
+#endif
+    SET_RESULT(_PyLong_FromUid(p->pw_uid));
+    SET_RESULT(_PyLong_FromGid(p->pw_gid));
+#if defined(HAVE_STRUCT_PASSWD_PW_GECOS)
+    SET_STRING(p->pw_gecos);
+#else
+    SET_STRING("");
+#endif
+    SET_STRING(p->pw_dir);
+    SET_STRING(p->pw_shell);
+
+#undef SET_STRING
+#undef SET_RESULT
+
     return v;
+
+error:
+    Py_DECREF(v);
+    return NULL;
 }
 
 /*[clinic input]
@@ -175,9 +181,15 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
 
     Py_END_ALLOW_THREADS
 #else
+    PyMutex_Lock(&pwd_db_mutex);
+    // The getpwuid() function is not required to be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/009604499/functions/getpwuid.html
     p = getpwuid(uid);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETPWUID_R
+        PyMutex_Unlock(&pwd_db_mutex);
+#endif
         PyMem_RawFree(buf);
         if (nomem == 1) {
             return PyErr_NoMemory();
@@ -193,6 +205,8 @@ pwd_getpwuid(PyObject *module, PyObject *uidobj)
     retval = mkpwent(module, p);
 #ifdef HAVE_GETPWUID_R
     PyMem_RawFree(buf);
+#else
+    PyMutex_Unlock(&pwd_db_mutex);
 #endif
     return retval;
 }
@@ -258,9 +272,15 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
 
     Py_END_ALLOW_THREADS
 #else
+    PyMutex_Lock(&pwd_db_mutex);
+    // The getpwnam() function is not required to be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/009604599/functions/getpwnam.html
     p = getpwnam(name_chars);
 #endif
     if (p == NULL) {
+#ifndef HAVE_GETPWNAM_R
+        PyMutex_Unlock(&pwd_db_mutex);
+#endif
         if (nomem == 1) {
             PyErr_NoMemory();
         }
@@ -271,6 +291,9 @@ pwd_getpwnam_impl(PyObject *module, PyObject *name)
         goto out;
     }
     retval = mkpwent(module, p);
+#ifndef HAVE_GETPWNAM_R
+    PyMutex_Unlock(&pwd_db_mutex);
+#endif
 out:
     PyMem_RawFree(buf);
     Py_DECREF(bytes);
@@ -279,6 +302,7 @@ out:
 
 #ifdef HAVE_GETPWENT
 /*[clinic input]
+@permit_long_summary
 pwd.getpwall
 
 Return a list of all available password database entries, in arbitrary order.
@@ -288,24 +312,37 @@ See help(pwd) for more on password database entries.
 
 static PyObject *
 pwd_getpwall_impl(PyObject *module)
-/*[clinic end generated code: output=4853d2f5a0afac8a input=d7ecebfd90219b85]*/
+/*[clinic end generated code: output=4853d2f5a0afac8a input=f8145e0d9a79e32c]*/
 {
     PyObject *d;
     struct passwd *p;
     if ((d = PyList_New(0)) == NULL)
         return NULL;
+
+    PyMutex_Lock(&pwd_db_mutex);
+    int failure = 0;
+    PyObject *v = NULL;
+    // The setpwent(), getpwent() and endpwent() functions are not required to
+    // be thread-safe.
+    // https://pubs.opengroup.org/onlinepubs/009696799/functions/setpwent.html
     setpwent();
     while ((p = getpwent()) != NULL) {
-        PyObject *v = mkpwent(module, p);
+        v = mkpwent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
-            Py_XDECREF(v);
-            Py_DECREF(d);
-            endpwent();
-            return NULL;
+            /* NOTE: cannot dec-ref here, while holding the mutex. */
+            failure = 1;
+            goto done;
         }
         Py_DECREF(v);
     }
+
+done:
     endpwent();
+    PyMutex_Unlock(&pwd_db_mutex);
+    if (failure) {
+        Py_XDECREF(v);
+        Py_CLEAR(d);
+    }
     return d;
 }
 #endif
@@ -336,6 +373,8 @@ pwdmodule_exec(PyObject *module)
 
 static PyModuleDef_Slot pwdmodule_slots[] = {
     {Py_mod_exec, pwdmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

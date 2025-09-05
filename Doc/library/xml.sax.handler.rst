@@ -1,5 +1,5 @@
-:mod:`xml.sax.handler` --- Base classes for SAX handlers
-========================================================
+:mod:`!xml.sax.handler` --- Base classes for SAX handlers
+=========================================================
 
 .. module:: xml.sax.handler
    :synopsis: Base classes for SAX event handlers.
@@ -147,7 +147,7 @@ for the feature and property names.
 .. data:: property_xml_string
 
    | value: ``"http://xml.org/sax/properties/xml-string"``
-   | data type: String
+   | data type: Bytes
    | description: The literal string of characters that was the source for the
      current event.
    | access: read-only
@@ -248,8 +248,7 @@ events in the input document:
 
    The *name* parameter contains the raw XML 1.0 name of the element type as a
    string and the *attrs* parameter holds an object of the
-   :class:`~xml.sax.xmlreader.Attributes`
-   interface (see :ref:`attributes-objects`) containing the attributes of
+   :ref:`Attributes <attributes-objects>` interface containing the attributes of
    the element.  The object passed as *attrs* may be re-used by the parser; holding
    on to a reference to it is not a reliable way to keep a copy of the attributes.
    To keep a copy of the attributes, use the :meth:`copy` method of the *attrs*
@@ -271,8 +270,7 @@ events in the input document:
    The *name* parameter contains the name of the element type as a ``(uri,
    localname)`` tuple, the *qname* parameter contains the raw XML 1.0 name used in
    the source document, and the *attrs* parameter holds an instance of the
-   :class:`~xml.sax.xmlreader.AttributesNS` interface (see
-   :ref:`attributes-ns-objects`)
+   :ref:`AttributesNS <attributes-ns-objects>` interface
    containing the attributes of the element.  If no namespace is associated with
    the element, the *uri* component of *name* will be ``None``.  The object passed
    as *attrs* may be re-used by the parser; holding on to a reference to it is not
@@ -393,7 +391,7 @@ implements this interface, then register the object with your
 :class:`~xml.sax.xmlreader.XMLReader`, the parser
 will call the methods in your object to report all warnings and errors. There
 are three levels of errors available: warnings, (possibly) recoverable errors,
-and unrecoverable errors.  All methods take a :exc:`SAXParseException` as the
+and unrecoverable errors.  All methods take a :exc:`~xml.sax.SAXParseException` as the
 only parameter.  Errors and warnings may be converted to an exception by raising
 the passed-in exception object.
 

@@ -1,5 +1,6 @@
 import netrc, os, unittest, sys, textwrap
-from test.support import os_helper, run_unittest
+from test import support
+from test.support import os_helper
 
 temp_filename = os_helper.TESTFN
 
@@ -10,7 +11,7 @@ class NetrcTestCase(unittest.TestCase):
         mode = 'w'
         if sys.platform != 'cygwin':
             mode += 't'
-        with open(temp_filename, mode) as fp:
+        with open(temp_filename, mode, encoding="utf-8") as fp:
             fp.write(test_data)
         try:
             nrc = netrc.netrc(temp_filename)
@@ -264,8 +265,15 @@ class NetrcTestCase(unittest.TestCase):
             machine bar.domain.com login foo password pass
             """, '#pass')
 
+    @unittest.skipUnless(support.is_wasi, 'WASI only test')
+    def test_security_on_WASI(self):
+        self.assertFalse(netrc._can_security_check())
+        self.assertEqual(netrc._getpwuid(0), 'uid 0')
+        self.assertEqual(netrc._getpwuid(123456), 'uid 123456')
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX only test')
+    @unittest.skipUnless(hasattr(os, 'getuid'), "os.getuid is required")
+    @os_helper.skip_unless_working_chmod
     def test_security(self):
         # This test is incomplete since we are normally not run as root and
         # therefore can't test the file ownership being wrong.
@@ -301,8 +309,6 @@ class NetrcTestCase(unittest.TestCase):
             self.assertEqual(nrc.hosts['foo.domain.com'],
                              ('anonymous', '', 'pass'))
 
-def test_main():
-    run_unittest(NetrcTestCase)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

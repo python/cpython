@@ -12,7 +12,7 @@ conditions that must be applied when parsing C code:
 
 * ...
 
-(see: http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf)
+(see: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf)
 
 We have taken advantage of the elements of the C grammar that are used
 only in a few limited contexts, mostly as delimiters.  They allow us to
@@ -42,7 +42,7 @@ separators:
    + (stmt) case:  between expression and stmt
    + (stmt) default:  between "default" and stmt
 * "="
-   + (decl) delaration:  between decl and initializer
+   + (decl) declaration:  between decl and initializer
    + (decl) enumerator:  between identifier and "initializer"
    + (expr) assignment:  between "var" and expr
 
@@ -92,7 +92,7 @@ Here are the cases where we've taken shortcuts or made assumptions:
 * no "inline" type decls in function return types
 * no superfluous parentheses in declarators
 * var decls in for loops are always "simple" (e.g. no inline types)
-* only inline struct/union/enum decls may be anonymouns (without a name)
+* only inline struct/union/enum decls may be anonymous (without a name)
 * no function pointers in function pointer parameters
 * for loop "headers" do not have curly braces (e.g. compound init)
 * syntactically, variable decls do not overlap with stmts/exprs, except
@@ -115,6 +115,8 @@ TODO:
 * Parser class instead of the _iter_source() mess
 * alt impl using a state machine (& tokenizer or split on delimiters)
 """
+
+import textwrap
 
 from ..info import ParsedItem
 from ._info import SourceInfo
@@ -164,7 +166,7 @@ def _parse(srclines, anon_name, **srckwargs):
 # We use defaults that cover most files.  Files with bigger declarations
 # are covered elsewhere (MAX_SIZES in cpython/_parser.py).
 
-def _iter_source(lines, *, maxtext=10_000, maxlines=200, showtext=False):
+def _iter_source(lines, *, maxtext=11_000, maxlines=200, showtext=False):
     maxtext = maxtext if maxtext and maxtext > 0 else None
     maxlines = maxlines if maxlines and maxlines > 0 else None
     filestack = []
@@ -208,7 +210,27 @@ def _iter_source(lines, *, maxtext=10_000, maxlines=200, showtext=False):
             return
     # At this point either the file ended prematurely
     # or there's "too much" text.
-    filename, lno, text = srcinfo.filename, srcinfo._start, srcinfo.text
+    filename, lno_from, lno_to = srcinfo.filename, srcinfo.start, srcinfo.end
+    text = srcinfo.text
     if len(text) > 500:
         text = text[:500] + '...'
-    raise Exception(f'unmatched text ({filename} starting at line {lno}):\n{text}')
+
+    if srcinfo.too_much_text(maxtext):
+        msg = f'''
+            too much text, try to increase MAX_SIZES[MAXTEXT] in cpython/_parser.py
+            {filename} starting at line {lno_from} to {lno_to}
+            has code with length {len(text)} greater than {maxtext}:
+            {text}
+        '''
+        raise RuntimeError(textwrap.dedent(msg))
+
+    if srcinfo.too_many_lines(maxlines):
+        msg = f'''
+            too many lines, try to increase MAX_SIZES[MAXLINES] in cpython/_parser.py
+            {filename} starting at line {lno_from} to {lno_to}
+            has code with number of lines {lno_to - lno_from} greater than {maxlines}:
+            {text}
+        '''
+        raise RuntimeError(textwrap.dedent(msg))
+
+    raise RuntimeError(f'unmatched text ({filename} starting at line {lno_from}):\n{text}')

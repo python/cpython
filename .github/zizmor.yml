@@ -1,0 +1,10 @@
+# Configuration for the zizmor static analysis tool, run via pre-commit in CI
+# https://woodruffw.github.io/zizmor/configuration/
+rules:
+  dangerous-triggers:
+    ignore:
+      - documentation-links.yml
+  unpinned-uses:
+    config:
+      policies:
+        "*": ref-pin

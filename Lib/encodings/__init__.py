@@ -152,20 +152,26 @@ def search_function(encoding):
     # Return the registry entry
     return entry
 
-if sys.platform == 'win32':
-    def _alias_mbcs(encoding):
-        try:
-            import _winapi
-            ansi_code_page = "cp%s" % _winapi.GetACP()
-            if encoding == ansi_code_page:
-                import encodings.mbcs
-                return encodings.mbcs.getregentry()
-        except ImportError:
-            # Imports may fail while we are shutting down
-            pass
-
-    # It must be registered before search_function()
-    codecs.register(_alias_mbcs)
-
 # Register the search_function in the Python codec registry
 codecs.register(search_function)
+
+if sys.platform == 'win32':
+    from ._win_cp_codecs import create_win32_code_page_codec
+
+    def win32_code_page_search_function(encoding):
+        encoding = encoding.lower()
+        if not encoding.startswith('cp'):
+            return None
+        try:
+            cp = int(encoding[2:])
+        except ValueError:
+            return None
+        # Test if the code page is supported
+        try:
+            codecs.code_page_encode(cp, 'x')
+        except (OverflowError, OSError):
+            return None
+
+        return create_win32_code_page_codec(cp)
+
+    codecs.register(win32_code_page_search_function)

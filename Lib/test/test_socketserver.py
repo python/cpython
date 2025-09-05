@@ -8,7 +8,6 @@ import os
 import select
 import signal
 import socket
-import tempfile
 import threading
 import unittest
 import socketserver
@@ -18,9 +17,12 @@ from test.support import reap_children, verbose
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import warnings_helper
 
 
 test.support.requires("network")
+test.support.requires_working_socket(module=True)
+
 
 TEST_STR = b"hello world\n"
 HOST = socket_helper.HOST
@@ -28,13 +30,8 @@ HOST = socket_helper.HOST
 HAVE_UNIX_SOCKETS = hasattr(socket, "AF_UNIX")
 requires_unix_sockets = unittest.skipUnless(HAVE_UNIX_SOCKETS,
                                             'requires Unix sockets')
-HAVE_FORKING = hasattr(os, "fork")
+HAVE_FORKING = test.support.has_fork_support
 requires_forking = unittest.skipUnless(HAVE_FORKING, 'requires forking')
-
-def signal_alarm(n):
-    """Call signal.alarm when it exists (i.e. not on Windows)."""
-    if hasattr(signal, 'alarm'):
-        signal.alarm(n)
 
 # Remember real select() to avoid interferences with mocking
 _real_select = select.select
@@ -46,16 +43,9 @@ def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
     else:
         raise RuntimeError("timed out on %r" % (sock,))
 
-if HAVE_UNIX_SOCKETS and HAVE_FORKING:
-    class ForkingUnixStreamServer(socketserver.ForkingMixIn,
-                                  socketserver.UnixStreamServer):
-        pass
 
-    class ForkingUnixDatagramServer(socketserver.ForkingMixIn,
-                                    socketserver.UnixDatagramServer):
-        pass
-
-
+@warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+@test.support.requires_fork()
 @contextlib.contextmanager
 def simple_subprocess(testcase):
     """Tests that a custom child process is not waited on (Issue 1540386)"""
@@ -75,12 +65,10 @@ class SocketServerTest(unittest.TestCase):
     """Test all socket servers."""
 
     def setUp(self):
-        signal_alarm(60)  # Kill deadlocks after 60 seconds.
         self.port_seed = 0
         self.test_files = []
 
     def tearDown(self):
-        signal_alarm(0)  # Didn't deadlock.
         reap_children()
 
         for fn in self.test_files:
@@ -96,8 +84,7 @@ class SocketServerTest(unittest.TestCase):
         else:
             # XXX: We need a way to tell AF_UNIX to pick its own name
             # like AF_INET provides port==0.
-            dir = None
-            fn = tempfile.mktemp(prefix='unix_socket.', dir=dir)
+            fn = socket_helper.create_unix_domain_name()
             self.test_files.append(fn)
             return fn
 
@@ -188,6 +175,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.StreamRequestHandler,
                         self.stream_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_ForkingTCPServer(self):
         with simple_subprocess(self):
@@ -207,11 +195,12 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.StreamRequestHandler,
                         self.stream_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixStreamServer(self):
         with simple_subprocess(self):
-            self.run_server(ForkingUnixStreamServer,
+            self.run_server(socketserver.ForkingUnixStreamServer,
                             socketserver.StreamRequestHandler,
                             self.stream_examine)
 
@@ -225,6 +214,7 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_ForkingUDPServer(self):
         with simple_subprocess(self):
@@ -244,10 +234,11 @@ class SocketServerTest(unittest.TestCase):
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_unix_sockets
     @requires_forking
     def test_ForkingUnixDatagramServer(self):
-        self.run_server(ForkingUnixDatagramServer,
+        self.run_server(socketserver.ForkingUnixDatagramServer,
                         socketserver.DatagramRequestHandler,
                         self.dgram_examine)
 
@@ -329,11 +320,13 @@ class ErrorHandlerTest(unittest.TestCase):
 
             self.assertIs(cm.exc_type, SystemExit)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_forking_handled(self):
         ForkingErrorTestServer(ValueError)
         self.check_result(handled=True)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_forking
     def test_forking_not_handled(self):
         ForkingErrorTestServer(SystemExit)

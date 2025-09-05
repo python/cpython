@@ -12,6 +12,9 @@ from test.support import threading_helper
 from test import lock_tests
 
 
+threading_helper.requires_working_threading(module=True)
+
+
 class ModuleLockAsRLockTests:
     locktype = classmethod(lambda cls: cls.LockType("some_lock"))
 
@@ -26,9 +29,17 @@ class ModuleLockAsRLockTests:
     test_timeout = None
     # _release_save() unsupported
     test_release_save_unacquired = None
+    # _recursion_count() unsupported
+    test_recursion_count = None
     # lock status in repr unsupported
     test_repr = None
     test_locked_repr = None
+    test_repr_count = None
+
+    def tearDown(self):
+        for splitinit in init.values():
+            splitinit._bootstrap._blocking_on.clear()
+
 
 LOCK_TYPES = {kind: splitinit._bootstrap._ModuleLock
               for kind, splitinit in init.items()}
@@ -83,7 +94,8 @@ class DeadlockAvoidanceTests:
                 b.release()
             if ra:
                 a.release()
-        lock_tests.Bunch(f, NTHREADS).wait_for_finished()
+        with lock_tests.Bunch(f, NTHREADS):
+            pass
         self.assertEqual(len(results), NTHREADS)
         return results
 
@@ -146,4 +158,4 @@ def setUpModule():
 
 
 if __name__ == '__main__':
-    unittets.main()
+    unittest.main()

@@ -1,13 +1,18 @@
+# Contains code from https://github.com/MagicStack/uvloop/tree/v0.16.0
+# SPDX-License-Identifier: PSF-2.0 AND (MIT OR Apache-2.0)
+# SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
 import asyncio
-import asyncio.sslproto
 import contextlib
 import gc
 import logging
 import select
 import socket
+import sys
 import tempfile
 import threading
 import time
+import unittest.mock
 import weakref
 import unittest
 
@@ -20,8 +25,12 @@ from test import support
 from test.test_asyncio import utils as test_utils
 
 
+MACOS = (sys.platform == 'darwin')
+BUF_MULTIPLIER = 1024 if not MACOS else 64
+
+
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MyBaseProto(asyncio.Protocol):
@@ -58,11 +67,21 @@ class MyBaseProto(asyncio.Protocol):
             self.done.set_result(None)
 
 
+class MessageOutFilter(logging.Filter):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def filter(self, record):
+        if self.msg in record.msg:
+            return False
+        return True
+
+
 @unittest.skipIf(ssl is None, 'No ssl module')
 class TestSSL(test_utils.TestCase):
 
     PAYLOAD_SIZE = 1024 * 100
-    TIMEOUT = 60
+    TIMEOUT = support.LONG_TIMEOUT
 
     def setUp(self):
         super().setUp()
@@ -82,7 +101,7 @@ class TestSSL(test_utils.TestCase):
     def tcp_server(self, server_prog, *,
                    family=socket.AF_INET,
                    addr=None,
-                   timeout=5,
+                   timeout=support.SHORT_TIMEOUT,
                    backlog=1,
                    max_clients=10):
 
@@ -113,7 +132,7 @@ class TestSSL(test_utils.TestCase):
 
     def tcp_client(self, client_prog,
                    family=socket.AF_INET,
-                   timeout=10):
+                   timeout=support.SHORT_TIMEOUT):
 
         sock = socket.socket(family, socket.SOCK_STREAM)
 
@@ -149,7 +168,7 @@ class TestSSL(test_utils.TestCase):
     def _silence_eof_received_warning(self):
         # TODO This warning has to be fixed in asyncio.
         logger = logging.getLogger('asyncio')
-        filter = logging.Filter('has no effect when using ssl')
+        filter = MessageOutFilter('has no effect when using ssl')
         logger.addFilter(filter)
         try:
             yield
@@ -176,13 +195,14 @@ class TestSSL(test_utils.TestCase):
         except (BrokenPipeError, ConnectionError):
             pass
 
-    def test_create_server_ssl_1(self):
+    @support.bigmemtest(size=25, memuse=90*2**20, dry_run=False)
+    def test_create_server_ssl_1(self, size):
         CNT = 0           # number of clients that were successful
-        TOTAL_CNT = 25    # total number of clients that test will create
-        TIMEOUT = 60.0    # timeout for this test
+        TOTAL_CNT = size  # total number of clients that test will create
+        TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * BUF_MULTIPLIER
+        B_DATA = b'B' * 1024 * BUF_MULTIPLIER
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY
@@ -238,7 +258,7 @@ class TestSSL(test_utils.TestCase):
 
         async def start_server():
             extras = {}
-            extras = dict(ssl_handshake_timeout=40.0)
+            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
 
             srv = await asyncio.start_server(
                 handle_client,
@@ -277,8 +297,8 @@ class TestSSL(test_utils.TestCase):
         CNT = 0
         TOTAL_CNT = 25
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * BUF_MULTIPLIER
+        B_DATA = b'B' * 1024 * BUF_MULTIPLIER
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT,
@@ -303,7 +323,7 @@ class TestSSL(test_utils.TestCase):
 
         async def client(addr):
             extras = {}
-            extras = dict(ssl_handshake_timeout=40.0)
+            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
 
             reader, writer = await asyncio.open_connection(
                 *addr,
@@ -428,7 +448,7 @@ class TestSSL(test_utils.TestCase):
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='',
-                ssl_handshake_timeout=1.0)
+                ssl_handshake_timeout=support.SHORT_TIMEOUT)
             writer.close()
             await self.wait_closed(writer)
 
@@ -590,7 +610,7 @@ class TestSSL(test_utils.TestCase):
 
         extras = {}
         if server_ssl:
-            extras = dict(ssl_handshake_timeout=10.0)
+            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
 
         f = loop.create_task(
             loop.connect_accepted_socket(
@@ -718,7 +738,8 @@ class TestSSL(test_utils.TestCase):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
     def test_create_connection_memory_leak(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -776,7 +797,8 @@ class TestSSL(test_utils.TestCase):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left for SSL client from loop.create_connection, even
         # if user stores the SSLTransport in corresponding protocol instance
@@ -936,7 +958,8 @@ class TestSSL(test_utils.TestCase):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -1016,13 +1039,14 @@ class TestSSL(test_utils.TestCase):
 
         self.loop.run_until_complete(run_main())
 
-    def test_create_server_ssl_over_ssl(self):
+    @support.bigmemtest(size=25, memuse=90*2**20, dry_run=False)
+    def test_create_server_ssl_over_ssl(self, size):
         CNT = 0           # number of clients that were successful
-        TOTAL_CNT = 25    # total number of clients that test will create
-        TIMEOUT = 10.0    # timeout for this test
+        TOTAL_CNT = size  # total number of clients that test will create
+        TIMEOUT = support.LONG_TIMEOUT  # timeout for this test
 
-        A_DATA = b'A' * 1024 * 1024
-        B_DATA = b'B' * 1024 * 1024
+        A_DATA = b'A' * 1024 * BUF_MULTIPLIER
+        B_DATA = b'B' * 1024 * BUF_MULTIPLIER
 
         sslctx_1 = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY)
@@ -1165,7 +1189,7 @@ class TestSSL(test_utils.TestCase):
         CNT = 0
         TOTAL_CNT = 25
 
-        A_DATA = b'A' * 1024 * 1024
+        A_DATA = b'A' * 1024 * BUF_MULTIPLIER
 
         sslctx = self._create_server_ssl_context(
             test_utils.ONLYCERT, test_utils.ONLYKEY)
@@ -1186,7 +1210,7 @@ class TestSSL(test_utils.TestCase):
 
         async def client(addr):
             extras = {}
-            extras = dict(ssl_handshake_timeout=10.0)
+            extras = dict(ssl_handshake_timeout=support.SHORT_TIMEOUT)
 
             reader, writer = await asyncio.open_connection(
                 *addr,
@@ -1393,6 +1417,166 @@ class TestSSL(test_utils.TestCase):
 
             writer.close()
             await self.wait_closed(writer)
+
+        def run(meth):
+            def wrapper(sock):
+                try:
+                    meth(sock)
+                except Exception as ex:
+                    self.loop.call_soon_threadsafe(future.set_exception, ex)
+                else:
+                    self.loop.call_soon_threadsafe(future.set_result, None)
+            return wrapper
+
+        with self.tcp_server(run(server)) as srv:
+            self.loop.run_until_complete(client(srv.addr))
+
+        with self.tcp_server(run(eof_server)) as srv:
+            self.loop.run_until_complete(client(srv.addr))
+
+    def test_remote_shutdown_receives_trailing_data_on_slow_socket(self):
+        # This test is the same as test_remote_shutdown_receives_trailing_data,
+        # except it simulates a socket that is not able to write data in time,
+        # thus triggering different code path in _SelectorSocketTransport.
+        # This triggers bug gh-115514, also tested using mocks in
+        # test.test_asyncio.test_selector_events.SelectorSocketTransportTests.test_write_buffer_after_close
+        # The slow path is triggered here by setting SO_SNDBUF, see code and comment below.
+
+        CHUNK = 1024 * 128
+        SIZE = 32
+
+        sslctx = self._create_server_ssl_context(
+            test_utils.ONLYCERT,
+            test_utils.ONLYKEY
+        )
+        client_sslctx = self._create_client_ssl_context()
+        future = None
+
+        def server(sock):
+            incoming = ssl.MemoryBIO()
+            outgoing = ssl.MemoryBIO()
+            sslobj = sslctx.wrap_bio(incoming, outgoing, server_side=True)
+
+            while True:
+                try:
+                    sslobj.do_handshake()
+                except ssl.SSLWantReadError:
+                    if outgoing.pending:
+                        sock.send(outgoing.read())
+                    incoming.write(sock.recv(16384))
+                else:
+                    if outgoing.pending:
+                        sock.send(outgoing.read())
+                    break
+
+            while True:
+                try:
+                    data = sslobj.read(4)
+                except ssl.SSLWantReadError:
+                    incoming.write(sock.recv(16384))
+                else:
+                    break
+
+            self.assertEqual(data, b'ping')
+            sslobj.write(b'pong')
+            sock.send(outgoing.read())
+
+            time.sleep(0.2)  # wait for the peer to fill its backlog
+
+            # send close_notify but don't wait for response
+            with self.assertRaises(ssl.SSLWantReadError):
+                sslobj.unwrap()
+            sock.send(outgoing.read())
+
+            # should receive all data
+            data_len = 0
+            while True:
+                try:
+                    chunk = len(sslobj.read(16384))
+                    data_len += chunk
+                except ssl.SSLWantReadError:
+                    incoming.write(sock.recv(16384))
+                except ssl.SSLZeroReturnError:
+                    break
+
+            self.assertEqual(data_len, CHUNK * SIZE*2)
+
+            # verify that close_notify is received
+            sslobj.unwrap()
+
+            sock.close()
+
+        def eof_server(sock):
+            sock.starttls(sslctx, server_side=True)
+            self.assertEqual(sock.recv_all(4), b'ping')
+            sock.send(b'pong')
+
+            time.sleep(0.2)  # wait for the peer to fill its backlog
+
+            # send EOF
+            sock.shutdown(socket.SHUT_WR)
+
+            # should receive all data
+            data = sock.recv_all(CHUNK * SIZE)
+            self.assertEqual(len(data), CHUNK * SIZE)
+
+            sock.close()
+
+        async def client(addr):
+            nonlocal future
+            future = self.loop.create_future()
+
+            reader, writer = await asyncio.open_connection(
+                *addr,
+                ssl=client_sslctx,
+                server_hostname='')
+            writer.write(b'ping')
+            data = await reader.readexactly(4)
+            self.assertEqual(data, b'pong')
+
+            # fill write backlog in a hacky way - renegotiation won't help
+            for _ in range(SIZE*2):
+                writer.transport._test__append_write_backlog(b'x' * CHUNK)
+
+            try:
+                data = await reader.read()
+                self.assertEqual(data, b'')
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+            # Make sure _SelectorSocketTransport enters the delayed write
+            # path in its `write` method by wrapping socket in a fake class
+            # that acts as if there is not enough space in socket buffer.
+            # This triggers bug gh-115514, also tested using mocks in
+            # test.test_asyncio.test_selector_events.SelectorSocketTransportTests.test_write_buffer_after_close
+            socket_transport = writer.transport._ssl_protocol._transport
+
+            class SocketWrapper:
+                def __init__(self, sock) -> None:
+                    self.sock = sock
+
+                def __getattr__(self, name):
+                    return getattr(self.sock, name)
+
+                def send(self, data):
+                    # Fake that our write buffer is full, send only half
+                    to_send = len(data)//2
+                    return self.sock.send(data[:to_send])
+
+            def _fake_full_write_buffer(data):
+                if socket_transport._read_ready_cb is None and not isinstance(socket_transport._sock, SocketWrapper):
+                    socket_transport._sock = SocketWrapper(socket_transport._sock)
+                return unittest.mock.DEFAULT
+
+            with unittest.mock.patch.object(
+                socket_transport, "write",
+                wraps=socket_transport.write,
+                side_effect=_fake_full_write_buffer
+            ):
+                await future
+
+                writer.close()
+                await self.wait_closed(writer)
 
         def run(meth):
             def wrapper(sock):
@@ -1667,15 +1851,13 @@ class TestThreadedServer(SocketThread):
                     pass
         finally:
             super().stop()
-
-    def run(self):
-        try:
-            with self._sock:
-                self._sock.setblocking(0)
-                self._run()
-        finally:
+            self._sock.close()
             self._s1.close()
             self._s2.close()
+
+    def run(self):
+        self._sock.setblocking(False)
+        self._run()
 
     def _run(self):
         while self._active:

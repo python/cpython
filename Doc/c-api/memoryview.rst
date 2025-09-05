@@ -3,7 +3,7 @@
 .. _memoryview-objects:
 
 .. index::
-   object: memoryview
+   pair: object; memoryview
 
 MemoryView objects
 ------------------
@@ -19,6 +19,17 @@ any other object.
    If *obj* supports writable buffer exports, the memoryview object will be
    read/write, otherwise it may be either read-only or read/write at the
    discretion of the exporter.
+
+
+.. c:macro:: PyBUF_READ
+
+   Flag to request a readonly buffer.
+
+
+.. c:macro:: PyBUF_WRITE
+
+   Flag to request a writable buffer.
+
 
 .. c:function:: PyObject *PyMemoryView_FromMemory(char *mem, Py_ssize_t size, int flags)
 
@@ -41,6 +52,8 @@ any other object.
    original memory. Otherwise, a copy is made and the memoryview points to a
    new bytes object.
 
+   *buffertype* can be one of :c:macro:`PyBUF_READ` or :c:macro:`PyBUF_WRITE`.
+
 
 .. c:function:: int PyMemoryView_Check(PyObject *obj)
 
@@ -55,7 +68,7 @@ any other object.
    *mview* **must** be a memoryview instance; this macro doesn't check its type,
    you must do it yourself or you will risk crashes.
 
-.. c:function:: Py_buffer *PyMemoryView_GET_BASE(PyObject *mview)
+.. c:function:: PyObject *PyMemoryView_GET_BASE(PyObject *mview)
 
    Return either a pointer to the exporting object that the memoryview is based
    on or ``NULL`` if the memoryview has been created by one of the functions

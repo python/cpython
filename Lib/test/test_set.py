@@ -1,16 +1,17 @@
+import collections.abc
+import copy
+import gc
+import itertools
+import operator
+import pickle
+import re
 import unittest
+import warnings
+import weakref
+from random import randrange, shuffle
 from test import support
 from test.support import warnings_helper
-import gc
-import weakref
-import operator
-import copy
-import pickle
-from random import randrange, shuffle
-import warnings
-import collections
-import collections.abc
-import itertools
+
 
 class PassThru(Exception):
     pass
@@ -227,14 +228,17 @@ class TestJointOps:
 
     def test_pickling(self):
         for i in range(pickle.HIGHEST_PROTOCOL + 1):
+            if type(self.s) not in (set, frozenset):
+                self.s.x = ['x']
+                self.s.z = ['z']
             p = pickle.dumps(self.s, i)
             dup = pickle.loads(p)
             self.assertEqual(self.s, dup, "%s != %s" % (self.s, dup))
             if type(self.s) not in (set, frozenset):
-                self.s.x = 10
-                p = pickle.dumps(self.s, i)
-                dup = pickle.loads(p)
                 self.assertEqual(self.s.x, dup.x)
+                self.assertEqual(self.s.z, dup.z)
+                self.assertNotHasAttr(self.s, 'y')
+                del self.s.x, self.s.z
 
     def test_iterator_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -424,7 +428,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertRaises(KeyError, self.s.remove, self.thetype(self.word))
 
     def test_remove_keyerror_unpacking(self):
-        # bug:  www.python.org/sf/1576657
+        # https://bugs.python.org/issue1576657
         for v1 in ['Q', (1,)]:
             try:
                 self.s.remove(v1)
@@ -632,10 +636,45 @@ class TestSet(TestJointOps, unittest.TestCase):
         myset >= myobj
         self.assertTrue(myobj.le_called)
 
-    @unittest.skipUnless(hasattr(set, "test_c_api"),
-                         'C API test only available in a debug build')
-    def test_c_api(self):
-        self.assertEqual(set().test_c_api(), True)
+    def test_set_membership(self):
+        myfrozenset = frozenset(range(3))
+        myset = {myfrozenset, "abc", 1}
+        self.assertIn(set(range(3)), myset)
+        self.assertNotIn(set(range(1)), myset)
+        myset.discard(set(range(3)))
+        self.assertEqual(myset, {"abc", 1})
+        self.assertRaises(KeyError, myset.remove, set(range(1)))
+        self.assertRaises(KeyError, myset.remove, set(range(3)))
+
+    def test_unhashable_element(self):
+        myset = {'a'}
+        elem = [1, 2, 3]
+
+        def check_unhashable_element():
+            msg = "cannot use 'list' as a set element (unhashable type: 'list')"
+            return self.assertRaisesRegex(TypeError, re.escape(msg))
+
+        with check_unhashable_element():
+            elem in myset
+        with check_unhashable_element():
+            myset.add(elem)
+        with check_unhashable_element():
+            myset.discard(elem)
+
+        # Only TypeError exception is overriden,
+        # other exceptions are left unchanged.
+        class HashError:
+            def __hash__(self):
+                raise KeyError('error')
+
+        elem2 = HashError()
+        with self.assertRaises(KeyError):
+            elem2 in myset
+        with self.assertRaises(KeyError):
+            myset.add(elem2)
+        with self.assertRaises(KeyError):
+            myset.discard(elem2)
+
 
 class SetSubclass(set):
     pass
@@ -808,6 +847,21 @@ class TestFrozenSetSubclass(TestFrozenSet):
         # All empty frozenset subclass instances should have different ids
         self.assertEqual(len(set(map(id, efs))), len(efs))
 
+
+class SetSubclassWithSlots(set):
+    __slots__ = ('x', 'y', '__dict__')
+
+class TestSetSubclassWithSlots(unittest.TestCase):
+    thetype = SetSubclassWithSlots
+    setUp = TestJointOps.setUp
+    test_pickling = TestJointOps.test_pickling
+
+class FrozenSetSubclassWithSlots(frozenset):
+    __slots__ = ('x', 'y', '__dict__')
+
+class TestFrozenSetSubclassWithSlots(TestSetSubclassWithSlots):
+    thetype = FrozenSetSubclassWithSlots
+
 # Tests taken from test_sets.py =============================================
 
 empty_set = set()
@@ -822,8 +876,8 @@ class TestBasicOps:
 
     def check_repr_against_values(self):
         text = repr(self.set)
-        self.assertTrue(text.startswith('{'))
-        self.assertTrue(text.endswith('}'))
+        self.assertStartsWith(text, '{')
+        self.assertEndsWith(text, '}')
 
         result = text[1:-1].split(', ')
         result.sort()
@@ -1004,17 +1058,13 @@ class TestBasicOpsBytes(TestBasicOps, unittest.TestCase):
 
 class TestBasicOpsMixedStringBytes(TestBasicOps, unittest.TestCase):
     def setUp(self):
-        self._warning_filters = warnings_helper.check_warnings()
-        self._warning_filters.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.simplefilter('ignore', BytesWarning)
         self.case   = "string and bytes set"
         self.values = ["a", "b", b"a", b"b"]
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 4
-
-    def tearDown(self):
-        self._warning_filters.__exit__(None, None, None)
 
     def test_repr(self):
         self.check_repr_against_values()

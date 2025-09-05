@@ -1,6 +1,5 @@
-
-:mod:`netrc` --- netrc file processing
-======================================
+:mod:`!netrc` --- netrc file processing
+=======================================
 
 .. module:: netrc
    :synopsis: Loading of .netrc files.
@@ -25,12 +24,14 @@ the Unix :program:`ftp` program and other FTP clients.
    a :exc:`FileNotFoundError` exception will be raised.
    Parse errors will raise :exc:`NetrcParseError` with diagnostic
    information including the file name, line number, and terminating token.
+
    If no argument is specified on a POSIX system, the presence of passwords in
    the :file:`.netrc` file will raise a :exc:`NetrcParseError` if the file
    ownership or permissions are insecure (owned by a user other than the user
    running the process, or accessible for read or write by any other user).
    This implements security behavior equivalent to that of ftp and other
-   programs that use :file:`.netrc`.
+   programs that use :file:`.netrc`. Such security checks are not available
+   on platforms that do not support :func:`os.getuid`.
 
    .. versionchanged:: 3.4 Added the POSIX permission check.
 
@@ -51,9 +52,19 @@ the Unix :program:`ftp` program and other FTP clients.
 
    Exception raised by the :class:`~netrc.netrc` class when syntactical errors are
    encountered in source text.  Instances of this exception provide three
-   interesting attributes:  :attr:`msg` is a textual explanation of the error,
-   :attr:`filename` is the name of the source file, and :attr:`lineno` gives the
-   line number on which the error was found.
+   interesting attributes:
+
+   .. attribute:: msg
+
+      Textual explanation of the error.
+
+   .. attribute:: filename
+
+      The name of the source file.
+
+   .. attribute:: lineno
+
+      The line number on which the error was found.
 
 
 .. _netrc-objects:

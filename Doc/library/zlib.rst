@@ -1,5 +1,5 @@
-:mod:`zlib` --- Compression compatible with :program:`gzip`
-===========================================================
+:mod:`!zlib` --- Compression compatible with :program:`gzip`
+============================================================
 
 .. module:: zlib
    :synopsis: Low-level interface to compression and decompression routines
@@ -42,10 +42,21 @@ The available exception and functions in this module are:
    for use as a general hash algorithm.
 
    .. versionchanged:: 3.0
-      Always returns an unsigned value.
-      To generate the same numeric value across all Python versions and
-      platforms, use ``adler32(data) & 0xffffffff``.
+      The result is always unsigned.
 
+.. function:: adler32_combine(adler1, adler2, len2, /)
+
+   Combine two Adler-32 checksums into one.
+
+   Given the Adler-32 checksum *adler1* of a sequence ``A`` and the
+   Adler-32 checksum *adler2* of a sequence ``B`` of length *len2*,
+   return the Adler-32 checksum of ``A`` and ``B`` concatenated.
+
+   This function is typically useful to combine Adler-32 checksums
+   that were concurrently computed. To compute checksums sequentially, use
+   :func:`adler32` with the running checksum as the ``value`` argument.
+
+   .. versionadded:: next
 
 .. function:: compress(data, /, level=-1, wbits=MAX_WBITS)
 
@@ -137,10 +148,21 @@ The available exception and functions in this module are:
    for use as a general hash algorithm.
 
    .. versionchanged:: 3.0
-      Always returns an unsigned value.
-      To generate the same numeric value across all Python versions and
-      platforms, use ``crc32(data) & 0xffffffff``.
+      The result is always unsigned.
 
+.. function:: crc32_combine(crc1, crc2, len2, /)
+
+   Combine two CRC-32 checksums into one.
+
+   Given the CRC-32 checksum *crc1* of a sequence ``A`` and the
+   CRC-32 checksum *crc2* of a sequence ``B`` of length *len2*,
+   return the CRC-32 checksum of ``A`` and ``B`` concatenated.
+
+   This function is typically useful to combine CRC-32 checksums
+   that were concurrently computed. To compute checksums sequentially, use
+   :func:`crc32` with the running checksum as the ``value`` argument.
+
+   .. versionadded:: next
 
 .. function:: decompress(data, /, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
@@ -271,7 +293,7 @@ Decompression objects support the following methods and attributes:
    A boolean indicating whether the end of the compressed data stream has been
    reached.
 
-   This makes it possible to distinguish between a properly-formed compressed
+   This makes it possible to distinguish between a properly formed compressed
    stream, and an incomplete or truncated one.
 
    .. versionadded:: 3.3
@@ -336,6 +358,18 @@ the following constants:
    .. versionadded:: 3.3
 
 
+.. data:: ZLIBNG_VERSION
+
+   The version string of the zlib-ng library that was used for building the
+   module if zlib-ng was used. When present, the :data:`ZLIB_VERSION` and
+   :data:`ZLIB_RUNTIME_VERSION` constants reflect the version of the zlib API
+   provided by zlib-ng.
+
+   If zlib-ng was not used to build the module, this constant will be absent.
+
+   .. versionadded:: 3.14
+
+
 .. seealso::
 
    Module :mod:`gzip`
@@ -347,3 +381,8 @@ the following constants:
    http://www.zlib.net/manual.html
       The zlib manual explains  the semantics and usage of the library's many
       functions.
+
+   In case gzip (de)compression is a bottleneck, the `python-isal`_
+   package speeds up (de)compression with a mostly compatible API.
+
+   .. _python-isal: https://github.com/pycompression/python-isal
