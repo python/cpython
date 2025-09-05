@@ -121,7 +121,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
 
         self.assertIn(p.returncode, (0, 1, 120))
-        self.assertGreater(len(output), 0, f"Expected some output, got: {output}")  # At minimum, should not hang
+        self.assertGreater(len(output), 0)  # At minimum, should not hang
 
     @cpython_only
     def test_multiline_string_parsing(self):
