@@ -1675,6 +1675,7 @@ Special read-only attributes
      - The "precise instruction" of the frame object
        (this is an index into the :term:`bytecode` string of the
        :ref:`code object <code-objects>`)
+
    * - .. attribute:: frame.f_generator
      - The :term:`generator` or :term:`coroutine` object that owns this frame,
        or ``None`` if the frame is a normal function.
