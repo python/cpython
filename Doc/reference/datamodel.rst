@@ -1638,6 +1638,7 @@ and are also passed to registered trace functions.
    single: f_locals (frame attribute)
    single: f_lasti (frame attribute)
    single: f_builtins (frame attribute)
+   single: f_generator (frame attribute)
 
 Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1674,6 +1675,12 @@ Special read-only attributes
      - The "precise instruction" of the frame object
        (this is an index into the :term:`bytecode` string of the
        :ref:`code object <code-objects>`)
+
+   * - .. attribute:: frame.f_generator
+     - The :term:`generator` or :term:`coroutine` object that owns this frame,
+       or ``None`` if the frame is a normal function.
+
+       .. versionadded:: 3.14
 
 .. index::
    single: f_trace (frame attribute)
