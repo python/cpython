@@ -1000,8 +1000,6 @@ operations have the same priority as the corresponding numeric operations. [3]_
    pair: slice; operation
    pair: operator; in
    pair: operator; not in
-   single: count() (sequence method)
-   single: index() (sequence method)
 
 +--------------------------+--------------------------------+----------+
 | Operation                | Result                         | Notes    |
@@ -1217,14 +1215,6 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    pair: subscript; assignment
    pair: slice; assignment
    pair: statement; del
-   single: append() (sequence method)
-   single: clear() (sequence method)
-   single: copy() (sequence method)
-   single: extend() (sequence method)
-   single: insert() (sequence method)
-   single: pop() (sequence method)
-   single: remove() (sequence method)
-   single: reverse() (sequence method)
 
 +------------------------------+--------------------------------+---------------------+
 | Operation                    | Result                         | Notes               |
