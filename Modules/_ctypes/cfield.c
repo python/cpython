@@ -54,7 +54,6 @@ Py_ssize_t NUM_BITS(Py_ssize_t bitsize);
 static inline
 Py_ssize_t LOW_BIT(Py_ssize_t offset);
 
-
 /*[clinic input]
 @classmethod
 _ctypes.CField.__new__ as PyCField_new
@@ -114,26 +113,16 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     Py_ssize_t bit_offset = 0;
     if (bit_size_obj != Py_None) {
         // It's a bit field!
-        switch(info->ffi_type_pointer.type) {
-            case FFI_TYPE_UINT8:
-            case FFI_TYPE_UINT16:
-            case FFI_TYPE_UINT32:
-            case FFI_TYPE_SINT64:
-            case FFI_TYPE_UINT64:
-                break;
-
-            case FFI_TYPE_SINT8:
-            case FFI_TYPE_SINT16:
-            case FFI_TYPE_SINT32:
-                if (info->getfunc != c_get && info->getfunc != u_get) {
-                    break;
-                }
-                _Py_FALLTHROUGH;  /* else fall through */
-            default:
-                PyErr_Format(PyExc_TypeError,
-                             "bit fields not allowed for type %s",
-                             ((PyTypeObject*)proto)->tp_name);
-                goto error;
+        if (
+            !(info->flags & TYPEFLAG_IS_INTEGER)
+            || info->getfunc == c_get
+            || info->getfunc == u_get
+        ) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "bit fields not allowed for type %s",
+                ((PyTypeObject*)proto)->tp_name);
+            goto error;
         }
 
         if (byte_size > 100) {
