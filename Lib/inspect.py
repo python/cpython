@@ -822,7 +822,7 @@ def getfile(object):
         if object.__spec__ is not None:
             raise TypeError('{!r} is a built-in module'.format(object))
         else:
-            raise TypeError('Custom module: {!r} is can not get source'
+            raise TypeError('Custom module: {!r} cannot get source'
                             .format(object))
     if isclass(object):
         if hasattr(object, '__module__'):
