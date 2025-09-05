@@ -1517,7 +1517,7 @@ odict_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (len == -1)
         return -1;
     if (len > 1) {
-        const char *msg = "expected at most 1 arguments, got %zd";
+        const char *msg = "expected at most 1 argument, got %zd";
         PyErr_Format(PyExc_TypeError, msg, len);
         return -1;
     }
