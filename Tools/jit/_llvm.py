@@ -70,8 +70,8 @@ async def _get_brew_llvm_prefix(*, echo: bool = False) -> str | None:
 @_async_cache
 async def _find_tool(tool: str, *, echo: bool = False) -> str | None:
     # Explicitly defined LLVM installation location
-    if (llvm_root := os.getenv("LLVM_ROOT")) is not None:
-        path = os.path.join(llvm_root, "bin", tool)
+    if (llvm_tools_dir := os.getenv("LLVM_TOOLS_INSTALL_DIR")) is not None:
+        path = os.path.join(llvm_tools_dir, tool)
         if await _check_tool_version(path, echo=echo):
             return path
     # Unversioned executables:
