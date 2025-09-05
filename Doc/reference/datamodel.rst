@@ -1633,12 +1633,12 @@ and are also passed to registered trace functions.
 
 .. index::
    single: f_back (frame attribute)
-   single: f_generator (frame attribute)
    single: f_code (frame attribute)
    single: f_globals (frame attribute)
    single: f_locals (frame attribute)
    single: f_lasti (frame attribute)
    single: f_builtins (frame attribute)
+   single: f_generator (frame attribute)
 
 Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1648,10 +1648,6 @@ Special read-only attributes
    * - .. attribute:: frame.f_back
      - Points to the previous stack frame (towards the caller),
        or ``None`` if this is the bottom stack frame
-
-   * - .. attribute:: frame.f_generator
-     - Returns the generator or coroutine object that owns this frame,
-       or ``None`` if the frame is of a regular function.
 
    * - .. attribute:: frame.f_code
      - The :ref:`code object <code-objects>` being executed in this frame.
@@ -1679,6 +1675,10 @@ Special read-only attributes
      - The "precise instruction" of the frame object
        (this is an index into the :term:`bytecode` string of the
        :ref:`code object <code-objects>`)
+   
+   * - .. attribute:: frame.f_generator
+     - Returns the generator or coroutine object that owns this frame,
+       or ``None`` if the frame is of a regular function.
 
 .. index::
    single: f_trace (frame attribute)
