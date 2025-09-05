@@ -986,7 +986,6 @@ profiler_dealloc(PyObject *op)
 }
 
 /*[clinic input]
-@critical_section
 _lsprof.Profiler.__init__ as profiler_init
 
     timer: object(c_default='NULL') = None
@@ -1005,7 +1004,7 @@ is, in seconds).
 static int
 profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
                    int subcalls, int builtins)
-/*[clinic end generated code: output=ac523803ec9f9df2 input=5add5fc72beb63ba]*/
+/*[clinic end generated code: output=ac523803ec9f9df2 input=8285ca746f96a414]*/
 {
     if (setSubcalls(self, subcalls) < 0 || setBuiltins(self, builtins) < 0) {
         return -1;

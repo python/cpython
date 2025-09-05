@@ -471,11 +471,9 @@ profiler_init(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
 skip_optional_pos:
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = profiler_init_impl((ProfilerObject *)self, timer, timeunit, subcalls, builtins);
-    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=82541e3b3fe9819c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af26a0b0ddcc3351 input=a9049054013a1b77]*/
