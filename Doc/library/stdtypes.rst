@@ -1265,7 +1265,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 .. method:: sequence.append(value, /)
 
    Append *value* to the end of the sequence
-   This is equivalent to writing ``seq[len(seq):len(seq)] = value``.
+   This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
 
 .. method:: bytearray.clear()
             list.clear()
