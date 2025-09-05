@@ -1289,7 +1289,7 @@ Classes and functions
    This is an alias for :func:`annotationlib.get_annotations`; see the documentation
    of that function for more information.
 
-   .. warning::
+   .. caution::
 
       This function may execute arbitrary code contained in annotations.
       See :ref:`annotationlib-security` for more information.

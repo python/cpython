@@ -3367,7 +3367,7 @@ Introspection helpers
    See also :func:`annotationlib.get_annotations`, a lower-level function that
    returns annotations more directly.
 
-   .. warning::
+   .. caution::
 
       This function may execute arbitrary code contained in annotations.
       See :ref:`annotationlib-security` for more information.
@@ -3518,7 +3518,7 @@ Introspection helpers
    See the documentation for :meth:`annotationlib.ForwardRef.evaluate` for
    the meaning of the *owner*, *globals*, *locals*, *type_params*, and *format* parameters.
 
-   .. warning::
+   .. caution::
 
       This function may execute arbitrary code contained in annotations.
       See :ref:`annotationlib-security` for more information.
