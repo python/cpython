@@ -1638,6 +1638,7 @@ and are also passed to registered trace functions.
    single: f_locals (frame attribute)
    single: f_lasti (frame attribute)
    single: f_builtins (frame attribute)
+   single: f_generator (frame attribute)
 
 Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1674,6 +1675,12 @@ Special read-only attributes
      - The "precise instruction" of the frame object
        (this is an index into the :term:`bytecode` string of the
        :ref:`code object <code-objects>`)
+
+   * - .. attribute:: frame.f_generator
+     - The :term:`generator` or :term:`coroutine` object that owns this frame,
+       or ``None`` if the frame is a normal function.
+
+       .. versionadded:: 3.14
 
 .. index::
    single: f_trace (frame attribute)
@@ -2351,6 +2358,9 @@ Customizing module attribute access
    single: __dir__ (module attribute)
    single: __class__ (module attribute)
 
+.. method:: module.__getattr__
+            module.__dir__
+
 Special names ``__getattr__`` and ``__dir__`` can be also used to customize
 access to module attributes. The ``__getattr__`` function at the module level
 should accept one argument which is the name of an attribute and return the
@@ -2363,6 +2373,8 @@ it is called with the attribute name and the result is returned.
 The ``__dir__`` function should accept no arguments, and return an iterable of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
+
+.. attribute:: module.__class__
 
 For a more fine grained customization of the module behavior (setting
 attributes, properties, etc.), one can set the ``__class__`` attribute of

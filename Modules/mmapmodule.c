@@ -119,21 +119,15 @@ typedef struct {
 
 #ifdef UNIX
     int fd;
-    _Bool trackfd;
+    int flags;
 #endif
 
     PyObject *weakreflist;
     access_mode access;
+    _Bool trackfd;
 } mmap_object;
 
 #define mmap_object_CAST(op)    ((mmap_object *)(op))
-
-static int
-mmap_object_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
 
 static void
 mmap_object_dealloc(PyObject *op)
@@ -642,13 +636,11 @@ is_resizeable(mmap_object *self)
             "mmap can't resize with extant buffers exported.");
         return 0;
     }
-#ifdef UNIX
     if (!self->trackfd) {
         PyErr_SetString(PyExc_ValueError,
             "mmap can't resize with trackfd=False.");
         return 0;
     }
-#endif
     if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
         return 1;
     PyErr_Format(PyExc_TypeError,
@@ -740,13 +732,11 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
             return PyLong_FromLong((long)low);
         size = (((long long)high)<<32) + low;
         return PyLong_FromLongLong(size);
-    } else {
-        return PyLong_FromSsize_t(self->size);
     }
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-    {
+    if (self->fd != -1) {
         struct _Py_stat_struct status;
         if (_Py_fstat(self->fd, &status) == -1)
             return NULL;
@@ -757,6 +747,14 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 #endif
     }
 #endif /* UNIX */
+    else if (self->trackfd) {
+        return PyLong_FromSsize_t(self->size);
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+            "can't get size with trackfd=False");
+        return NULL;
+    }
 }
 
 /* This assumes that you want the entire file mapped,
@@ -889,6 +887,13 @@ mmap_resize_method(PyObject *op, PyObject *args)
 #else
         void *newmap;
 
+#ifdef __linux__
+        if (self->fd == -1 && !(self->flags & MAP_PRIVATE) && new_size > self->size) {
+            PyErr_Format(PyExc_ValueError,
+                "mmap: can't expand a shared anonymous mapping on Linux");
+            return NULL;
+        }
+#endif
         if (self->fd != -1 && ftruncate(self->fd, self->offset + new_size) == -1) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
@@ -1467,7 +1472,7 @@ static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict);
 
 PyDoc_STRVAR(mmap_doc,
-"Windows: mmap(fileno, length[, tagname[, access[, offset]]])\n\
+"Windows: mmap(fileno, length[, tagname[, access[, offset[, trackfd]]]])\n\
 \n\
 Maps length bytes from the file specified by the file handle fileno,\n\
 and returns a mmap object.  If length is larger than the current size\n\
@@ -1499,7 +1504,7 @@ static PyType_Slot mmap_object_slots[] = {
     {Py_tp_members, mmap_object_members},
     {Py_tp_getset, mmap_object_getset},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, mmap_object_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
 
     /* as sequence */
     {Py_sq_length, mmap_length},
@@ -1685,6 +1690,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     else {
         m_obj->fd = -1;
     }
+    m_obj->flags = flags;
 
     Py_BEGIN_ALLOW_THREADS
     m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
@@ -1727,16 +1733,17 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     PyObject *tagname = Py_None;
     DWORD dwErr = 0;
     int fileno;
-    HANDLE fh = 0;
+    HANDLE fh = INVALID_HANDLE_VALUE;
     int access = (access_mode)ACCESS_DEFAULT;
+    int trackfd = 1;
     DWORD flProtect, dwDesiredAccess;
     static char *keywords[] = { "fileno", "length",
                                 "tagname",
-                                "access", "offset", NULL };
+                                "access", "offset", "trackfd", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|OiL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|OiL$p", keywords,
                                      &fileno, &map_size,
-                                     &tagname, &access, &offset)) {
+                                     &tagname, &access, &offset, &trackfd)) {
         return NULL;
     }
 
@@ -1803,22 +1810,27 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->map_handle = NULL;
     m_obj->tagname = NULL;
     m_obj->offset = offset;
+    m_obj->trackfd = trackfd;
 
-    if (fh) {
-        /* It is necessary to duplicate the handle, so the
-           Python code can close it on us */
-        if (!DuplicateHandle(
-            GetCurrentProcess(), /* source process handle */
-            fh, /* handle to be duplicated */
-            GetCurrentProcess(), /* target proc handle */
-            (LPHANDLE)&m_obj->file_handle, /* result */
-            0, /* access - ignored due to options value */
-            FALSE, /* inherited by child processes? */
-            DUPLICATE_SAME_ACCESS)) { /* options */
-            dwErr = GetLastError();
-            Py_DECREF(m_obj);
-            PyErr_SetFromWindowsErr(dwErr);
-            return NULL;
+    if (fh != INVALID_HANDLE_VALUE) {
+        if (trackfd) {
+            /* It is necessary to duplicate the handle, so the
+               Python code can close it on us */
+            if (!DuplicateHandle(
+                GetCurrentProcess(), /* source process handle */
+                fh, /* handle to be duplicated */
+                GetCurrentProcess(), /* target proc handle */
+                &fh, /* result */
+                0, /* access - ignored due to options value */
+                FALSE, /* inherited by child processes? */
+                DUPLICATE_SAME_ACCESS)) /* options */
+            {
+                dwErr = GetLastError();
+                Py_DECREF(m_obj);
+                PyErr_SetFromWindowsErr(dwErr);
+                return NULL;
+            }
+            m_obj->file_handle = fh;
         }
         if (!map_size) {
             DWORD low,high;
@@ -1826,7 +1838,8 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             /* low might just happen to have the value INVALID_FILE_SIZE;
                so we need to check the last error also. */
             if (low == INVALID_FILE_SIZE &&
-                (dwErr = GetLastError()) != NO_ERROR) {
+                (dwErr = GetLastError()) != NO_ERROR)
+            {
                 Py_DECREF(m_obj);
                 return PyErr_SetFromWindowsErr(dwErr);
             }
@@ -1888,7 +1901,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     off_lo = (DWORD)(offset & 0xFFFFFFFF);
     /* For files, it would be sufficient to pass 0 as size.
        For anonymous maps, we have to pass the size explicitly. */
-    m_obj->map_handle = CreateFileMappingW(m_obj->file_handle,
+    m_obj->map_handle = CreateFileMappingW(fh,
                                            NULL,
                                            flProtect,
                                            size_hi,

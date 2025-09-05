@@ -1137,7 +1137,7 @@ Thread Safety
 -------------
 
 The logging module is intended to be thread-safe without any special work
-needing to be done by its clients. It achieves this though using threading
+needing to be done by its clients. It achieves this through using threading
 locks; there is one lock to serialize access to the module's shared data, and
 each handler also creates a lock to serialize access to its underlying I/O.
 

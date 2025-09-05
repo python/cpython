@@ -161,9 +161,11 @@ Module contents
      :class:`object`, this means it will fall back to id-based hashing).
 
    - *frozen*: If true (the default is ``False``), assigning to fields will
-     generate an exception.  This emulates read-only frozen instances.  If
-     :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class, then
-     :exc:`TypeError` is raised.  See the discussion below.
+     generate an exception.  This emulates read-only frozen instances.
+     See the :ref:`discussion <dataclasses-frozen>` below.
+
+     If :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class
+     and *frozen* is true, then :exc:`TypeError` is raised.
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
