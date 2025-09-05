@@ -540,6 +540,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             if (jarg < 0) {
                 Py_DECREF(item);
                 Py_XDECREF(tuple_args);
+                Py_DECREF(newargs);
                 return NULL;
             }
         }
