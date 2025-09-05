@@ -25,15 +25,16 @@ Options:
         Display version information and exit.
 """
 
-import os
-import sys
+import array
 import ast
 import getopt
+import os
 import struct
-import array
+import sys
 from email.parser import HeaderParser
 
 __version__ = "1.2"
+
 
 MESSAGES = {}
 
@@ -112,11 +113,12 @@ def make(filename, outfile):
     try:
         with open(infile, 'rb') as f:
             lines = f.readlines()
-    except IOError as msg:
+    except OSError as msg:
         print(msg, file=sys.stderr)
         sys.exit(1)
 
     section = msgctxt = None
+    msgid = msgstr = b''
     fuzzy = 0
 
     # Start off assuming Latin-1, so everything decodes without failure,
@@ -168,7 +170,7 @@ def make(filename, outfile):
         # This is a message with plural forms
         elif l.startswith('msgid_plural'):
             if section != ID:
-                print('msgid_plural not preceded by msgid on %s:%d' % (infile, lno),
+                print(f'msgid_plural not preceded by msgid on {infile}:{lno}',
                       file=sys.stderr)
                 sys.exit(1)
             l = l[12:]
@@ -179,7 +181,7 @@ def make(filename, outfile):
             section = STR
             if l.startswith('msgstr['):
                 if not is_plural:
-                    print('plural without msgid_plural on %s:%d' % (infile, lno),
+                    print(f'plural without msgid_plural on {infile}:{lno}',
                           file=sys.stderr)
                     sys.exit(1)
                 l = l.split(']', 1)[1]
@@ -187,7 +189,7 @@ def make(filename, outfile):
                     msgstr += b'\0' # Separator of the various plural forms
             else:
                 if is_plural:
-                    print('indexed msgstr required for plural on  %s:%d' % (infile, lno),
+                    print(f'indexed msgstr required for plural on {infile}:{lno}',
                           file=sys.stderr)
                     sys.exit(1)
                 l = l[6:]
@@ -203,8 +205,7 @@ def make(filename, outfile):
         elif section == STR:
             msgstr += l.encode(encoding)
         else:
-            print('Syntax error on %s:%d' % (infile, lno), \
-                  'before:', file=sys.stderr)
+            print(f'Syntax error on {infile}:{lno} before:', file=sys.stderr)
             print(l, file=sys.stderr)
             sys.exit(1)
     # Add last entry
@@ -217,7 +218,7 @@ def make(filename, outfile):
     try:
         with open(outfile,"wb") as f:
             f.write(output)
-    except IOError as msg:
+    except OSError as msg:
         print(msg, file=sys.stderr)
 
 
