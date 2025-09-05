@@ -3154,9 +3154,9 @@ Discontinuation of PGP signatures
 
 PGP (Pretty Good Privacy) signatures will not be provided
 for releases of Python 3.14 or future versions.
-To verify CPython artefacts, users must use `Sigstore verification materials
+To verify CPython artifacts, users must use `Sigstore verification materials
 <https://www.python.org/downloads/metadata/sigstore/>`__.
-Releases have been signed using Sigstore since Python 3.11.
+Releases have been signed using Sigstore_ since Python 3.11.
 
 This change in release process was specified in :pep:`761`.
 
