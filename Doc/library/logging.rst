@@ -671,8 +671,7 @@ Formatter Objects
        which is just the logged message.
    :type fmt: str
 
-   :param datefmt: A format string in the given *style* for
-       the date/time portion of the logged output.
+   :param datefmt: A format string for the date/time portion of the logged output.
        If not specified, the default described in :meth:`formatTime` is used.
    :type datefmt: str
 
