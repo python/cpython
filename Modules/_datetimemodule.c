@@ -3476,7 +3476,7 @@ For a list of supported format codes, see the documentation:
 static PyObject *
 datetime_date_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=454d473bee2d5161 input=001904ab34f594a1]*/
+/*[clinic end generated code: output=454d473bee2d5161 input=31d57bb789433e99]*/
 {
     PyObject *result;
 
@@ -3618,7 +3618,7 @@ For a list of supported format codes, see the documentation:
 
 static PyObject *
 datetime_date_strftime_impl(PyObject *self, PyObject *format)
-/*[clinic end generated code: output=6529b70095e16778 input=72af55077e606ed8]*/
+/*[clinic end generated code: output=6529b70095e16778 input=b6fd4a2ded27b557]*/
 {
     /* This method can be inherited, and needs to call the
      * timetuple() method appropriate to self's class.
@@ -4725,7 +4725,7 @@ For a list of supported format codes, see the documentation:
 static PyObject *
 datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=ae05a9bc0241d3bf input=6d0f263a5f94d78d]*/
+/*[clinic end generated code: output=ae05a9bc0241d3bf input=82ba425ecacc54aa]*/
 {
     PyObject *result;
 
@@ -4906,7 +4906,7 @@ For a list of supported format codes, see the documentation:
 
 static PyObject *
 datetime_time_strftime_impl(PyDateTime_Time *self, PyObject *format)
-/*[clinic end generated code: output=10f65af20e2a78c7 input=541934a2860f7db5]*/
+/*[clinic end generated code: output=10f65af20e2a78c7 input=9d15aeed1527935a]*/
 {
     PyObject *result;
     PyObject *tuple;
@@ -5798,6 +5798,7 @@ datetime.datetime.strptime
     /
 
 Parse string according to the given date and time format (like time.strptime()).
+
 For a list of supported format codes, see the documentation:
     https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
@@ -5805,7 +5806,7 @@ For a list of supported format codes, see the documentation:
 static PyObject *
 datetime_datetime_strptime_impl(PyTypeObject *type, PyObject *string,
                                 PyObject *format)
-/*[clinic end generated code: output=af2c2d024f3203f5 input=d7597c7f5327117b]*/
+/*[clinic end generated code: output=af2c2d024f3203f5 input=ef7807589f1d50e7]*/
 {
     PyObject *result;
 
