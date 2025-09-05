@@ -1,1 +1,1 @@
-Search for LLVM tools in ``LLVM_ROOT`` during the build.
+Search for LLVM tools in ``LLVM_TOOLS_INSTALL_DIR`` during the build.
