@@ -1,1 +1,1 @@
-fix in default repl exec('_testcapi.set_nomemory(0)') hang forever.
+Fix a hang when the process is out of memory inside an exception handler.
