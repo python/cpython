@@ -735,12 +735,17 @@ class CalendarTestCase(unittest.TestCase):
     def test_locale_calendar_long_weekday_names(self):
         names = (datetime.date(2001, 1, i+1).strftime('%A') for i in range(7))
         max_length = max(map(len, names))
+        abbrev_names = (datetime.date(2001, 1, i+1).strftime('%a') for i in range(7))
+        abbrev_max_length = max(map(len, abbrev_names))
+
         if max_length <= 9:
             self.skipTest('weekday names are too short')
+        if abbrev_max_length >= 9:
+            self.skipTest('abbreviated weekday names are too long')
 
         def get_weekday_names(width):
             return calendar.TextCalendar().formatweekheader(width).split()
-        self.assertEqual(get_weekday_names(4), get_weekday_names(9))
+        self.assertEqual(get_weekday_names(abbrev_max_length), get_weekday_names(max_length-1))
 
     def test_locale_calendar_formatmonthname(self):
         try:

@@ -823,8 +823,10 @@ class TestSpecifics(unittest.TestCase):
             else:
                 return "unused"
 
-        self.assertEqual(f.__code__.co_consts,
-                         (f.__doc__, "used"))
+        if f.__doc__ is None:
+            self.assertEqual(f.__code__.co_consts, (True, "used"))
+        else:
+            self.assertEqual(f.__code__.co_consts, (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -869,7 +871,11 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
+
+        if f1.__doc__ is None:
+            self.assertEqual(f1.__code__.co_consts, (42,))
+        else:
+            self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
