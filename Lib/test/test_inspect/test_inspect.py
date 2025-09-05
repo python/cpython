@@ -811,6 +811,13 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getfile(sys)
         self.assertStartsWith(str(e.exception), '<module')
 
+    def test_getfile_custom_module(self):
+        import types
+        custom_module = types.ModuleType('custom_module')
+        with self.assertRaises(TypeError) as e:
+            inspect.getfile(custom_module)
+        self.assertStartsWith(str(e.exception), 'Custom module')
+
     def test_getfile_builtin_class(self):
         with self.assertRaises(TypeError) as e:
             inspect.getfile(int)
