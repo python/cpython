@@ -3145,8 +3145,7 @@ objects.  The :mod:`collections.abc` module provides a
 Mutable sequences should provide methods :meth:`~sequence.append`,
 :meth:`~sequence.count`, :meth:`~sequence.index`, :meth:`~sequence.extend`,
 :meth:`~sequence.insert`, :meth:`~sequence.pop`, :meth:`~sequence.remove`,
-:meth:`~sequence.reverse` and :meth:`~sequence.sort`,
-like Python standard :class:`list` objects.
+and :meth:`~sequence.reverse`, like Python standard :class:`list` objects.
 Finally, sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
