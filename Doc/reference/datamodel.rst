@@ -1677,8 +1677,8 @@ Special read-only attributes
        :ref:`code object <code-objects>`)
    
    * - .. attribute:: frame.f_generator
-     - Returns the generator or coroutine object that owns this frame,
-       or ``None`` if the frame is of a regular function.
+     - The :term:`generator` or :term:`coroutine` object that owns this frame,
+       or ``None`` if the frame is a normal function.
 
 .. index::
    single: f_trace (frame attribute)
