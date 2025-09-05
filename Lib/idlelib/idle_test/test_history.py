@@ -1,14 +1,17 @@
+" Test history, coverage 100%."
+
+from idlelib.history import History
 import unittest
 from test.support import requires
 
 import tkinter as tk
 from tkinter import Text as tkText
 from idlelib.idle_test.mock_tk import Text as mkText
-from idlelib.history import History
 from idlelib.config import idleConf
 
 line1 = 'a = 7'
 line2 = 'b = a'
+
 
 class StoreTest(unittest.TestCase):
     '''Tests History.__init__ and History.store with mock Text'''
@@ -60,6 +63,7 @@ class TextWrapper:
         return getattr(self.text, name)
     def bell(self):
         self._bell = True
+
 
 class FetchTest(unittest.TestCase):
     '''Test History.fetch with wrapped tk.Text.

@@ -3,6 +3,7 @@
 This module has intimate knowledge of the format of .pyc files.
 """
 
+import enum
 import importlib._bootstrap_external
 import importlib.machinery
 import importlib.util
@@ -11,7 +12,7 @@ import os.path
 import sys
 import traceback
 
-__all__ = ["compile", "main", "PyCompileError"]
+__all__ = ["compile", "main", "PyCompileError", "PycInvalidationMode"]
 
 
 class PyCompileError(Exception):
@@ -62,7 +63,21 @@ class PyCompileError(Exception):
         return self.msg
 
 
-def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
+class PycInvalidationMode(enum.Enum):
+    TIMESTAMP = 1
+    CHECKED_HASH = 2
+    UNCHECKED_HASH = 3
+
+
+def _get_default_invalidation_mode():
+    if os.environ.get('SOURCE_DATE_EPOCH'):
+        return PycInvalidationMode.CHECKED_HASH
+    else:
+        return PycInvalidationMode.TIMESTAMP
+
+
+def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
+            invalidation_mode=None, quiet=0):
     """Byte-compile one Python source file to Python bytecode.
 
     :param file: The source file name.
@@ -79,6 +94,9 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     :param optimize: The optimization level for the compiler.  Valid values
         are -1, 0, 1 and 2.  A value of -1 means to use the optimization
         level of the current interpreter, as given by -O command line options.
+    :param invalidation_mode:
+    :param quiet: Return full output with False or 0, errors only with 1,
+        and no output with 2.
 
     :return: Path to the resulting byte compiled file.
 
@@ -103,6 +121,8 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     the resulting file would be regular and thus not the same type of file as
     it was previously.
     """
+    if invalidation_mode is None:
+        invalidation_mode = _get_default_invalidation_mode()
     if cfile is None:
         if optimize >= 0:
             optimization = optimize if optimize >= 1 else ''
@@ -125,62 +145,68 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
                                      _optimize=optimize)
     except Exception as err:
         py_exc = PyCompileError(err.__class__, err, dfile or file)
-        if doraise:
-            raise py_exc
-        else:
-            sys.stderr.write(py_exc.msg + '\n')
-            return
+        if quiet < 2:
+            if doraise:
+                raise py_exc
+            else:
+                sys.stderr.write(py_exc.msg + '\n')
+        return
     try:
         dirname = os.path.dirname(cfile)
         if dirname:
             os.makedirs(dirname)
     except FileExistsError:
         pass
-    source_stats = loader.path_stats(file)
-    bytecode = importlib._bootstrap_external._code_to_bytecode(
+    if invalidation_mode == PycInvalidationMode.TIMESTAMP:
+        source_stats = loader.path_stats(file)
+        bytecode = importlib._bootstrap_external._code_to_timestamp_pyc(
             code, source_stats['mtime'], source_stats['size'])
+    else:
+        source_hash = importlib.util.source_hash(source_bytes)
+        bytecode = importlib._bootstrap_external._code_to_hash_pyc(
+            code,
+            source_hash,
+            (invalidation_mode == PycInvalidationMode.CHECKED_HASH),
+        )
     mode = importlib._bootstrap_external._calc_mode(file)
     importlib._bootstrap_external._write_atomic(cfile, bytecode, mode)
     return cfile
 
 
-def main(args=None):
-    """Compile several source files.
+def main():
+    import argparse
 
-    The files named in 'args' (or on the command line, if 'args' is
-    not specified) are compiled and the resulting bytecode is cached
-    in the normal manner.  This function does not search a directory
-    structure to locate source files; it only compiles files named
-    explicitly.  If '-' is the only parameter in args, the list of
-    files is taken from standard input.
-
-    """
-    if args is None:
-        args = sys.argv[1:]
-    rv = 0
-    if args == ['-']:
-        while True:
-            filename = sys.stdin.readline()
-            if not filename:
-                break
-            filename = filename.rstrip('\n')
-            try:
-                compile(filename, doraise=True)
-            except PyCompileError as error:
-                rv = 1
-                sys.stderr.write("%s\n" % error.msg)
-            except OSError as error:
-                rv = 1
-                sys.stderr.write("%s\n" % error)
+    description = 'A simple command-line interface for py_compile module.'
+    parser = argparse.ArgumentParser(description=description, color=True)
+    parser.add_argument(
+        '-q', '--quiet',
+        action='store_true',
+        help='Suppress error output',
+    )
+    parser.add_argument(
+        'filenames',
+        nargs='+',
+        help='Files to compile',
+    )
+    args = parser.parse_args()
+    if args.filenames == ['-']:
+        filenames = [filename.rstrip('\n') for filename in sys.stdin.readlines()]
     else:
-        for filename in args:
-            try:
-                compile(filename, doraise=True)
-            except PyCompileError as error:
-                # return value to indicate at least one failure
-                rv = 1
-                sys.stderr.write("%s\n" % error.msg)
-    return rv
+        filenames = args.filenames
+    for filename in filenames:
+        try:
+            compile(filename, doraise=True)
+        except PyCompileError as error:
+            if args.quiet:
+                parser.exit(1)
+            else:
+                parser.exit(1, error.msg)
+        except OSError as error:
+            if args.quiet:
+                parser.exit(1)
+            else:
+                parser.exit(1, str(error))
+
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

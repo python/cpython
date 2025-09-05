@@ -1,5 +1,5 @@
-:mod:`email` --- An email and MIME handling package
-===================================================
+:mod:`!email` --- An email and MIME handling package
+====================================================
 
 .. module:: email
    :synopsis: Package supporting the parsing, manipulating, and generating
@@ -15,8 +15,8 @@
 The :mod:`email` package is a library for managing email messages.  It is
 specifically *not* designed to do any sending of email messages to SMTP
 (:rfc:`2821`), NNTP, or other servers; those are functions of modules such as
-:mod:`smtplib` and :mod:`nntplib`.  The :mod:`email` package attempts to be as
-RFC-compliant as possible, supporting :rfc:`5233` and :rfc:`6532`, as well as
+:mod:`smtplib`.  The :mod:`email` package attempts to be as
+RFC-compliant as possible, supporting :rfc:`5322` and :rfc:`6532`, as well as
 such MIME-related RFCs as :rfc:`2045`, :rfc:`2046`, :rfc:`2047`, :rfc:`2183`,
 and :rfc:`2231`.
 
@@ -87,7 +87,7 @@ to advanced applications.
 Following those is a set of examples of using the fundamental parts of the APIs
 covered in the preceding sections.
 
-The forgoing represent the modern (unicode friendly) API of the email package.
+The foregoing represent the modern (unicode friendly) API of the email package.
 The remaining sections, starting with the :class:`~email.message.Message`
 class, cover the legacy :data:`~email.policy.compat32` API that deals much more
 directly with the details of how email messages are represented.  The
@@ -126,14 +126,14 @@ Legacy API:
    email.header.rst
    email.charset.rst
    email.encoders.rst
-   email.util.rst
+   email.utils.rst
    email.iterators.rst
 
 
 .. seealso::
 
    Module :mod:`smtplib`
-      SMTP (Simple Mail Transport Protcol) client
+      SMTP (Simple Mail Transport Protocol) client
 
    Module :mod:`poplib`
       POP (Post Office Protocol) client
@@ -141,12 +141,6 @@ Legacy API:
    Module :mod:`imaplib`
       IMAP (Internet Message Access Protocol) client
 
-   Module :mod:`nntplib`
-      NNTP (Net News Transport Protocol) client
-
    Module :mod:`mailbox`
       Tools for creating, reading, and managing collections of messages on disk
       using a variety standard formats.
-
-   Module :mod:`smtpd`
-      SMTP server framework (primarily useful for testing)

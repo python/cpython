@@ -19,27 +19,40 @@ PyDoc_STRVAR(fcntl_fcntl__doc__,
 "corresponding to the return value of the fcntl call in the C code.");
 
 #define FCNTL_FCNTL_METHODDEF    \
-    {"fcntl", (PyCFunction)fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
+    {"fcntl", (PyCFunction)(void(*)(void))fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
 
 static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg);
 
 static PyObject *
-fcntl_fcntl(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
     int code;
     PyObject *arg = NULL;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|O:fcntl",
-        conv_descriptor, &fd, &code, &arg)) {
+    if (nargs < 2) {
+        PyErr_Format(PyExc_TypeError, "fcntl expected at least 2 arguments, got %zd", nargs);
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("fcntl", kwnames)) {
+    if (nargs > 3) {
+        PyErr_Format(PyExc_TypeError, "fcntl expected at most 3 arguments, got %zd", nargs);
         goto exit;
     }
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    code = PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    arg = args[2];
+skip_optional:
     return_value = fcntl_fcntl_impl(module, fd, code, arg);
 
 exit:
@@ -80,30 +93,66 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
 "code.");
 
 #define FCNTL_IOCTL_METHODDEF    \
-    {"ioctl", (PyCFunction)fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
+    {"ioctl", (PyCFunction)(void(*)(void))fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
 
 static PyObject *
-fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
-                 PyObject *ob_arg, int mutate_arg);
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
+                 int mutate_arg);
 
 static PyObject *
-fcntl_ioctl(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    unsigned int code;
-    PyObject *ob_arg = NULL;
+    unsigned long code;
+    PyObject *arg = NULL;
     int mutate_arg = 1;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&I|Op:ioctl",
-        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg)) {
+    if (nargs < 2) {
+        PyErr_Format(PyExc_TypeError, "ioctl expected at least 2 arguments, got %zd", nargs);
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("ioctl", kwnames)) {
+    if (nargs > 4) {
+        PyErr_Format(PyExc_TypeError, "ioctl expected at most 4 arguments, got %zd", nargs);
         goto exit;
     }
-    return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    if (!PyIndex_Check(args[1])) {
+        PyErr_Format(PyExc_TypeError, "ioctl() argument 2 must be int, not %T", args[1]);
+        goto exit;
+    }
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &code, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    arg = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    mutate_arg = PyObject_IsTrue(args[3]);
+    if (mutate_arg < 0) {
+        goto exit;
+    }
+skip_optional:
+    return_value = fcntl_ioctl_impl(module, fd, code, arg, mutate_arg);
 
 exit:
     return return_value;
@@ -119,24 +168,28 @@ PyDoc_STRVAR(fcntl_flock__doc__,
 "function is emulated using fcntl()).");
 
 #define FCNTL_FLOCK_METHODDEF    \
-    {"flock", (PyCFunction)fcntl_flock, METH_FASTCALL, fcntl_flock__doc__},
+    {"flock", (PyCFunction)(void(*)(void))fcntl_flock, METH_FASTCALL, fcntl_flock__doc__},
 
 static PyObject *
 fcntl_flock_impl(PyObject *module, int fd, int code);
 
 static PyObject *
-fcntl_flock(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
     int code;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:flock",
-        conv_descriptor, &fd, &code)) {
+    if (nargs != 2) {
+        PyErr_Format(PyExc_TypeError, "flock expected 2 arguments, got %zd", nargs);
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("flock", kwnames)) {
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    code = PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = fcntl_flock_impl(module, fd, code);
@@ -173,14 +226,14 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "    2 - relative to the end of the file (SEEK_END)");
 
 #define FCNTL_LOCKF_METHODDEF    \
-    {"lockf", (PyCFunction)fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
+    {"lockf", (PyCFunction)(void(*)(void))fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
 
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence);
 
 static PyObject *
-fcntl_lockf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -189,17 +242,41 @@ fcntl_lockf(PyObject *module, PyObject **args, Py_ssize_t nargs, PyObject *kwnam
     PyObject *startobj = NULL;
     int whence = 0;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i|OOi:lockf",
-        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence)) {
+    if (nargs < 2) {
+        PyErr_Format(PyExc_TypeError, "lockf expected at least 2 arguments, got %zd", nargs);
         goto exit;
     }
-
-    if (!_PyArg_NoStackKeywords("lockf", kwnames)) {
+    if (nargs > 5) {
+        PyErr_Format(PyExc_TypeError, "lockf expected at most 5 arguments, got %zd", nargs);
         goto exit;
     }
+    fd = PyObject_AsFileDescriptor(args[0]);
+    if (fd < 0) {
+        goto exit;
+    }
+    code = PyLong_AsInt(args[1]);
+    if (code == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    lenobj = args[2];
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    startobj = args[3];
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    whence = PyLong_AsInt(args[4]);
+    if (whence == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
     return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b67e9579722e6d4f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf84289b741e7cf6 input=a9049054013a1b77]*/

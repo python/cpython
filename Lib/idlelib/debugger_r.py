@@ -19,7 +19,7 @@ arguments and return values that cannot be transported through the RPC
 barrier, in particular frame and traceback objects.
 
 """
-
+import reprlib
 import types
 from idlelib import debugger
 
@@ -125,16 +125,16 @@ class IdbAdapter:
 
     def frame_globals(self, fid):
         frame = frametable[fid]
-        dict = frame.f_globals
-        did = id(dict)
-        dicttable[did] = dict
+        gdict = frame.f_globals
+        did = id(gdict)
+        dicttable[did] = gdict
         return did
 
     def frame_locals(self, fid):
         frame = frametable[fid]
-        dict = frame.f_locals
-        did = id(dict)
-        dicttable[did] = dict
+        ldict = frame.f_locals
+        did = id(ldict)
+        dicttable[did] = ldict
         return did
 
     def frame_code(self, fid):
@@ -157,21 +157,18 @@ class IdbAdapter:
     #----------called by a DictProxy----------
 
     def dict_keys(self, did):
-        raise NotImplemented("dict_keys not public or pickleable")
-##         dict = dicttable[did]
-##         return dict.keys()
+        raise NotImplementedError("dict_keys not public or pickleable")
+##         return dicttable[did].keys()
 
-    ### Needed until dict_keys is type is finished and pickealable.
+    ### Needed until dict_keys type is finished and pickleable.
+    # xxx finished. pickleable?
     ### Will probably need to extend rpc.py:SocketIO._proxify at that time.
     def dict_keys_list(self, did):
-        dict = dicttable[did]
-        return list(dict.keys())
+        return list(dicttable[did].keys())
 
     def dict_item(self, did, key):
-        dict = dicttable[did]
-        value = dict[key]
-        value = repr(value) ### can't pickle module 'builtins'
-        return value
+        value = dicttable[did][key]
+        return reprlib.repr(value) # Can't pickle module 'builtins'.
 
 #----------end class IdbAdapter----------
 
@@ -299,7 +296,7 @@ class IdbProxy:
         self.conn = conn
         self.shell = shell
 
-    def call(self, methodname, *args, **kwargs):
+    def call(self, methodname, /, *args, **kwargs):
         ##print("*** IdbProxy.call %s %s %s" % (methodname, args, kwargs))
         value = self.conn.remotecall(self.oid, methodname, args, kwargs)
         ##print("*** IdbProxy.call %s returns %r" % (methodname, value))
@@ -386,3 +383,8 @@ def restart_subprocess_debugger(rpcclt):
     idb_adap_oid_ret = rpcclt.remotecall("exec", "start_the_debugger",\
                                          (gui_adap_oid,), {})
     assert idb_adap_oid_ret == idb_adap_oid, 'Idb restarted with different oid'
+
+
+if __name__ == "__main__":
+    from unittest import main
+    main('idlelib.idle_test.test_debugger_r', verbosity=2, exit=False)

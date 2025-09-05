@@ -4,6 +4,7 @@ from collections import UserList
 from test import list_tests
 import unittest
 
+
 class UserListTest(list_tests.CommonTest):
     type2test = UserList
 
@@ -16,6 +17,12 @@ class UserListTest(list_tests.CommonTest):
             self.assertEqual(u[i:], l[i:])
             for j in range(-3, 6):
                 self.assertEqual(u[i:j], l[i:j])
+
+    def test_slice_type(self):
+        l = [0, 1, 2, 3, 4]
+        u = UserList(l)
+        self.assertIsInstance(u[:], u.__class__)
+        self.assertEqual(u[:],u)
 
     def test_add_specials(self):
         u = UserList("spam")
@@ -58,6 +65,10 @@ class UserListTest(list_tests.CommonTest):
         v = u.copy()
         self.assertEqual(u, v)
         self.assertEqual(type(u), type(v))
+
+    # Decorate existing test with recursion limit, because
+    # the test is for C structure, but `UserList` is a Python structure.
+    test_repr_deep = list_tests.CommonTest.test_repr_deep
 
 if __name__ == "__main__":
     unittest.main()

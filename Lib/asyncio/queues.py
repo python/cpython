@@ -1,35 +1,40 @@
-"""Queues"""
-
-__all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty']
+__all__ = (
+    'Queue',
+    'PriorityQueue',
+    'LifoQueue',
+    'QueueFull',
+    'QueueEmpty',
+    'QueueShutDown',
+)
 
 import collections
 import heapq
+from types import GenericAlias
 
-from . import compat
-from . import events
 from . import locks
-from .coroutines import coroutine
+from . import mixins
 
 
 class QueueEmpty(Exception):
-    """Exception raised when Queue.get_nowait() is called on a Queue object
-    which is empty.
-    """
+    """Raised when Queue.get_nowait() is called on an empty Queue."""
     pass
 
 
 class QueueFull(Exception):
-    """Exception raised when the Queue.put_nowait() method is called on a Queue
-    object which is full.
-    """
+    """Raised when the Queue.put_nowait() method is called on a full Queue."""
     pass
 
 
-class Queue:
+class QueueShutDown(Exception):
+    """Raised when putting on to or getting from a shut-down Queue."""
+    pass
+
+
+class Queue(mixins._LoopBoundMixin):
     """A queue, useful for coordinating producer and consumer coroutines.
 
     If maxsize is less than or equal to zero, the queue size is infinite. If it
-    is an integer greater than 0, then "yield from put()" will block when the
+    is an integer greater than 0, then "await put()" will block when the
     queue reaches maxsize, until an item is removed by get().
 
     Unlike the standard library Queue, you can reliably know this Queue's size
@@ -37,11 +42,7 @@ class Queue:
     interrupted between calling qsize() and doing an operation on the Queue.
     """
 
-    def __init__(self, maxsize=0, *, loop=None):
-        if loop is None:
-            self._loop = events.get_event_loop()
-        else:
-            self._loop = loop
+    def __init__(self, maxsize=0):
         self._maxsize = maxsize
 
         # Futures.
@@ -49,9 +50,10 @@ class Queue:
         # Futures.
         self._putters = collections.deque()
         self._unfinished_tasks = 0
-        self._finished = locks.Event(loop=self._loop)
+        self._finished = locks.Event()
         self._finished.set()
         self._init(maxsize)
+        self._is_shutdown = False
 
     # These three are overridable in subclasses.
 
@@ -75,22 +77,25 @@ class Queue:
                 break
 
     def __repr__(self):
-        return '<{} at {:#x} {}>'.format(
-            type(self).__name__, id(self), self._format())
+        return f'<{type(self).__name__} at {id(self):#x} {self._format()}>'
 
     def __str__(self):
-        return '<{} {}>'.format(type(self).__name__, self._format())
+        return f'<{type(self).__name__} {self._format()}>'
+
+    __class_getitem__ = classmethod(GenericAlias)
 
     def _format(self):
-        result = 'maxsize={!r}'.format(self._maxsize)
+        result = f'maxsize={self._maxsize!r}'
         if getattr(self, '_queue', None):
-            result += ' _queue={!r}'.format(list(self._queue))
+            result += f' _queue={list(self._queue)!r}'
         if self._getters:
-            result += ' _getters[{}]'.format(len(self._getters))
+            result += f' _getters[{len(self._getters)}]'
         if self._putters:
-            result += ' _putters[{}]'.format(len(self._putters))
+            result += f' _putters[{len(self._putters)}]'
         if self._unfinished_tasks:
-            result += ' tasks={}'.format(self._unfinished_tasks)
+            result += f' tasks={self._unfinished_tasks}'
+        if self._is_shutdown:
+            result += ' shutdown'
         return result
 
     def qsize(self):
@@ -117,22 +122,30 @@ class Queue:
         else:
             return self.qsize() >= self._maxsize
 
-    @coroutine
-    def put(self, item):
+    async def put(self, item):
         """Put an item into the queue.
 
         Put an item into the queue. If the queue is full, wait until a free
         slot is available before adding item.
 
-        This method is a coroutine.
+        Raises QueueShutDown if the queue has been shut down.
         """
         while self.full():
-            putter = self._loop.create_future()
+            if self._is_shutdown:
+                raise QueueShutDown
+            putter = self._get_loop().create_future()
             self._putters.append(putter)
             try:
-                yield from putter
+                await putter
             except:
                 putter.cancel()  # Just in case putter is not done yet.
+                try:
+                    # Clean self._putters from canceled putters.
+                    self._putters.remove(putter)
+                except ValueError:
+                    # The putter could be removed from self._putters by a
+                    # previous get_nowait call or a shutdown call.
+                    pass
                 if not self.full() and not putter.cancelled():
                     # We were woken up by get_nowait(), but can't take
                     # the call.  Wake up the next in line.
@@ -144,7 +157,11 @@ class Queue:
         """Put an item into the queue without blocking.
 
         If no free slot is immediately available, raise QueueFull.
+
+        Raises QueueShutDown if the queue has been shut down.
         """
+        if self._is_shutdown:
+            raise QueueShutDown
         if self.full():
             raise QueueFull
         self._put(item)
@@ -152,21 +169,30 @@ class Queue:
         self._finished.clear()
         self._wakeup_next(self._getters)
 
-    @coroutine
-    def get(self):
+    async def get(self):
         """Remove and return an item from the queue.
 
         If queue is empty, wait until an item is available.
 
-        This method is a coroutine.
+        Raises QueueShutDown if the queue has been shut down and is empty, or
+        if the queue has been shut down immediately.
         """
         while self.empty():
-            getter = self._loop.create_future()
+            if self._is_shutdown and self.empty():
+                raise QueueShutDown
+            getter = self._get_loop().create_future()
             self._getters.append(getter)
             try:
-                yield from getter
+                await getter
             except:
                 getter.cancel()  # Just in case getter is not done yet.
+                try:
+                    # Clean self._getters from canceled getters.
+                    self._getters.remove(getter)
+                except ValueError:
+                    # The getter could be removed from self._getters by a
+                    # previous put_nowait call, or a shutdown call.
+                    pass
                 if not self.empty() and not getter.cancelled():
                     # We were woken up by put_nowait(), but can't take
                     # the call.  Wake up the next in line.
@@ -178,8 +204,13 @@ class Queue:
         """Remove and return an item from the queue.
 
         Return an item if one is immediately available, else raise QueueEmpty.
+
+        Raises QueueShutDown if the queue has been shut down and is empty, or
+        if the queue has been shut down immediately.
         """
         if self.empty():
+            if self._is_shutdown:
+                raise QueueShutDown
             raise QueueEmpty
         item = self._get()
         self._wakeup_next(self._putters)
@@ -205,8 +236,7 @@ class Queue:
         if self._unfinished_tasks == 0:
             self._finished.set()
 
-    @coroutine
-    def join(self):
+    async def join(self):
         """Block until all items in the queue have been gotten and processed.
 
         The count of unfinished tasks goes up whenever an item is added to the
@@ -215,7 +245,37 @@ class Queue:
         When the count of unfinished tasks drops to zero, join() unblocks.
         """
         if self._unfinished_tasks > 0:
-            yield from self._finished.wait()
+            await self._finished.wait()
+
+    def shutdown(self, immediate=False):
+        """Shut-down the queue, making queue gets and puts raise QueueShutDown.
+
+        By default, gets will only raise once the queue is empty. Set
+        'immediate' to True to make gets raise immediately instead.
+
+        All blocked callers of put() and get() will be unblocked.
+
+        If 'immediate', the queue is drained and unfinished tasks
+        is reduced by the number of drained tasks.  If unfinished tasks
+        is reduced to zero, callers of Queue.join are unblocked.
+        """
+        self._is_shutdown = True
+        if immediate:
+            while not self.empty():
+                self._get()
+                if self._unfinished_tasks > 0:
+                    self._unfinished_tasks -= 1
+            if self._unfinished_tasks == 0:
+                self._finished.set()
+        # All getters need to re-check queue-empty to raise ShutDown
+        while self._getters:
+            getter = self._getters.popleft()
+            if not getter.done():
+                getter.set_result(None)
+        while self._putters:
+            putter = self._putters.popleft()
+            if not putter.done():
+                putter.set_result(None)
 
 
 class PriorityQueue(Queue):
@@ -245,9 +305,3 @@ class LifoQueue(Queue):
 
     def _get(self):
         return self._queue.pop()
-
-
-if not compat.PY35:
-    JoinableQueue = Queue
-    """Deprecated alias for Queue."""
-    __all__.append('JoinableQueue')

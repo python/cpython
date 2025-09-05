@@ -4,8 +4,9 @@ Interface summary:
 
         import copy
 
-        x = copy.copy(y)        # make a shallow copy of y
-        x = copy.deepcopy(y)    # make a deep copy of y
+        x = copy.copy(y)                # make a shallow copy of y
+        x = copy.deepcopy(y)            # make a deep copy of y
+        x = copy.replace(y, a=1, b=2)   # new object with fields replaced, as defined by `__replace__`
 
 For module specific errors, copy.Error is raised.
 
@@ -39,8 +40,8 @@ Python's deep copy operation avoids these problems by:
     set of components copied
 
 This version does not copy types like module, class, function, method,
-nor stack trace, stack frame, nor file, socket, window, nor array, nor
-any similar types.
+nor stack trace, stack frame, nor file, socket, window, nor any
+similar types.
 
 Classes can use the same interfaces to control copying that they use
 to control pickling: they can define methods called __getinitargs__(),
@@ -56,12 +57,7 @@ class Error(Exception):
     pass
 error = Error   # backward compatibility
 
-try:
-    from org.python.core import PyStringMap
-except ImportError:
-    PyStringMap = None
-
-__all__ = ["Error", "copy", "deepcopy"]
+__all__ = ["Error", "copy", "deepcopy", "replace"]
 
 def copy(x):
     """Shallow copy operation on arbitrary Python objects.
@@ -71,28 +67,26 @@ def copy(x):
 
     cls = type(x)
 
-    copier = _copy_dispatch.get(cls)
-    if copier:
-        return copier(x)
+    if cls in _copy_atomic_types:
+        return x
+    if cls in _copy_builtin_containers:
+        return cls.copy(x)
 
-    try:
-        issc = issubclass(cls, type)
-    except TypeError: # cls is not a class
-        issc = False
-    if issc:
+
+    if issubclass(cls, type):
         # treat it as a regular class:
-        return _copy_immutable(x)
+        return x
 
     copier = getattr(cls, "__copy__", None)
-    if copier:
+    if copier is not None:
         return copier(x)
 
     reductor = dispatch_table.get(cls)
-    if reductor:
+    if reductor is not None:
         rv = reductor(x)
     else:
         reductor = getattr(x, "__reduce_ex__", None)
-        if reductor:
+        if reductor is not None:
             rv = reductor(4)
         else:
             reductor = getattr(x, "__reduce__", None)
@@ -106,58 +100,41 @@ def copy(x):
     return _reconstruct(x, None, *rv)
 
 
-_copy_dispatch = d = {}
+_copy_atomic_types = frozenset({types.NoneType, int, float, bool, complex, str, tuple,
+          bytes, frozenset, type, range, slice, property,
+          types.BuiltinFunctionType, types.EllipsisType,
+          types.NotImplementedType, types.FunctionType, types.CodeType,
+          weakref.ref, super})
+_copy_builtin_containers = frozenset({list, dict, set, bytearray})
 
-def _copy_immutable(x):
-    return x
-for t in (type(None), int, float, bool, complex, str, tuple,
-          bytes, frozenset, type, range, slice,
-          types.BuiltinFunctionType, type(Ellipsis), type(NotImplemented),
-          types.FunctionType, weakref.ref):
-    d[t] = _copy_immutable
-t = getattr(types, "CodeType", None)
-if t is not None:
-    d[t] = _copy_immutable
-
-d[list] = list.copy
-d[dict] = dict.copy
-d[set] = set.copy
-d[bytearray] = bytearray.copy
-
-if PyStringMap is not None:
-    d[PyStringMap] = PyStringMap.copy
-
-del d, t
-
-def deepcopy(x, memo=None, _nil=[]):
+def deepcopy(x, memo=None):
     """Deep copy operation on arbitrary Python objects.
 
     See the module's __doc__ string for more info.
     """
 
-    if memo is None:
-        memo = {}
-
-    d = id(x)
-    y = memo.get(d, _nil)
-    if y is not _nil:
-        return y
-
     cls = type(x)
 
+    if cls in _atomic_types:
+        return x
+
+    d = id(x)
+    if memo is None:
+        memo = {}
+    else:
+        y = memo.get(d, None)
+        if y is not None:
+            return y
+
     copier = _deepcopy_dispatch.get(cls)
-    if copier:
+    if copier is not None:
         y = copier(x, memo)
     else:
-        try:
-            issc = issubclass(cls, type)
-        except TypeError: # cls is not a class (old Boost; see SF #502085)
-            issc = 0
-        if issc:
-            y = _deepcopy_atomic(x, memo)
+        if issubclass(cls, type):
+            y = x # atomic copy
         else:
             copier = getattr(x, "__deepcopy__", None)
-            if copier:
+            if copier is not None:
                 y = copier(memo)
             else:
                 reductor = dispatch_table.get(cls)
@@ -165,7 +142,7 @@ def deepcopy(x, memo=None, _nil=[]):
                     rv = reductor(x)
                 else:
                     reductor = getattr(x, "__reduce_ex__", None)
-                    if reductor:
+                    if reductor is not None:
                         rv = reductor(4)
                     else:
                         reductor = getattr(x, "__reduce__", None)
@@ -185,27 +162,12 @@ def deepcopy(x, memo=None, _nil=[]):
         _keep_alive(x, memo) # Make sure x lives at least as long as d
     return y
 
+_atomic_types = frozenset({types.NoneType, types.EllipsisType, types.NotImplementedType,
+          int, float, bool, complex, bytes, str, types.CodeType, type, range,
+          types.BuiltinFunctionType, types.FunctionType, weakref.ref, property})
+
 _deepcopy_dispatch = d = {}
 
-def _deepcopy_atomic(x, memo):
-    return x
-d[type(None)] = _deepcopy_atomic
-d[type(Ellipsis)] = _deepcopy_atomic
-d[type(NotImplemented)] = _deepcopy_atomic
-d[int] = _deepcopy_atomic
-d[float] = _deepcopy_atomic
-d[bool] = _deepcopy_atomic
-d[complex] = _deepcopy_atomic
-d[bytes] = _deepcopy_atomic
-d[str] = _deepcopy_atomic
-try:
-    d[types.CodeType] = _deepcopy_atomic
-except AttributeError:
-    pass
-d[type] = _deepcopy_atomic
-d[types.BuiltinFunctionType] = _deepcopy_atomic
-d[types.FunctionType] = _deepcopy_atomic
-d[weakref.ref] = _deepcopy_atomic
 
 def _deepcopy_list(x, memo, deepcopy=deepcopy):
     y = []
@@ -240,8 +202,6 @@ def _deepcopy_dict(x, memo, deepcopy=deepcopy):
         y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
 d[dict] = _deepcopy_dict
-if PyStringMap is not None:
-    d[PyStringMap] = _deepcopy_dict
 
 def _deepcopy_method(x, memo): # Copy instance methods
     return type(x)(x.__func__, deepcopy(x.__self__, memo))
@@ -267,7 +227,7 @@ def _keep_alive(x, memo):
 
 def _reconstruct(x, memo, func, args,
                  state=None, listiter=None, dictiter=None,
-                 deepcopy=deepcopy):
+                 *, deepcopy=deepcopy):
     deep = memo is not None
     if deep and args:
         args = (deepcopy(arg, memo) for arg in args)
@@ -310,4 +270,17 @@ def _reconstruct(x, memo, func, args,
                 y[key] = value
     return y
 
-del types, weakref, PyStringMap
+del types, weakref
+
+
+def replace(obj, /, **changes):
+    """Return a new object replacing specified fields with new values.
+
+    This is especially useful for immutable objects, like named tuples or
+    frozen dataclasses.
+    """
+    cls = obj.__class__
+    func = getattr(cls, '__replace__', None)
+    if func is None:
+        raise TypeError(f"replace() does not support {cls.__name__} objects")
+    return func(obj, **changes)

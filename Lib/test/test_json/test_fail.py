@@ -2,73 +2,73 @@ from test.test_json import PyTest, CTest
 
 # 2007-10-05
 JSONDOCS = [
-    # http://json.org/JSON_checker/test/fail1.json
+    # https://json.org/JSON_checker/test/fail1.json
     '"A JSON payload should be an object or array, not a string."',
-    # http://json.org/JSON_checker/test/fail2.json
+    # https://json.org/JSON_checker/test/fail2.json
     '["Unclosed array"',
-    # http://json.org/JSON_checker/test/fail3.json
+    # https://json.org/JSON_checker/test/fail3.json
     '{unquoted_key: "keys must be quoted"}',
-    # http://json.org/JSON_checker/test/fail4.json
+    # https://json.org/JSON_checker/test/fail4.json
     '["extra comma",]',
-    # http://json.org/JSON_checker/test/fail5.json
+    # https://json.org/JSON_checker/test/fail5.json
     '["double extra comma",,]',
-    # http://json.org/JSON_checker/test/fail6.json
+    # https://json.org/JSON_checker/test/fail6.json
     '[   , "<-- missing value"]',
-    # http://json.org/JSON_checker/test/fail7.json
+    # https://json.org/JSON_checker/test/fail7.json
     '["Comma after the close"],',
-    # http://json.org/JSON_checker/test/fail8.json
+    # https://json.org/JSON_checker/test/fail8.json
     '["Extra close"]]',
-    # http://json.org/JSON_checker/test/fail9.json
+    # https://json.org/JSON_checker/test/fail9.json
     '{"Extra comma": true,}',
-    # http://json.org/JSON_checker/test/fail10.json
+    # https://json.org/JSON_checker/test/fail10.json
     '{"Extra value after close": true} "misplaced quoted value"',
-    # http://json.org/JSON_checker/test/fail11.json
+    # https://json.org/JSON_checker/test/fail11.json
     '{"Illegal expression": 1 + 2}',
-    # http://json.org/JSON_checker/test/fail12.json
+    # https://json.org/JSON_checker/test/fail12.json
     '{"Illegal invocation": alert()}',
-    # http://json.org/JSON_checker/test/fail13.json
+    # https://json.org/JSON_checker/test/fail13.json
     '{"Numbers cannot have leading zeroes": 013}',
-    # http://json.org/JSON_checker/test/fail14.json
+    # https://json.org/JSON_checker/test/fail14.json
     '{"Numbers cannot be hex": 0x14}',
-    # http://json.org/JSON_checker/test/fail15.json
+    # https://json.org/JSON_checker/test/fail15.json
     '["Illegal backslash escape: \\x15"]',
-    # http://json.org/JSON_checker/test/fail16.json
+    # https://json.org/JSON_checker/test/fail16.json
     '[\\naked]',
-    # http://json.org/JSON_checker/test/fail17.json
+    # https://json.org/JSON_checker/test/fail17.json
     '["Illegal backslash escape: \\017"]',
-    # http://json.org/JSON_checker/test/fail18.json
+    # https://json.org/JSON_checker/test/fail18.json
     '[[[[[[[[[[[[[[[[[[[["Too deep"]]]]]]]]]]]]]]]]]]]]',
-    # http://json.org/JSON_checker/test/fail19.json
+    # https://json.org/JSON_checker/test/fail19.json
     '{"Missing colon" null}',
-    # http://json.org/JSON_checker/test/fail20.json
+    # https://json.org/JSON_checker/test/fail20.json
     '{"Double colon":: null}',
-    # http://json.org/JSON_checker/test/fail21.json
+    # https://json.org/JSON_checker/test/fail21.json
     '{"Comma instead of colon", null}',
-    # http://json.org/JSON_checker/test/fail22.json
+    # https://json.org/JSON_checker/test/fail22.json
     '["Colon instead of comma": false]',
-    # http://json.org/JSON_checker/test/fail23.json
+    # https://json.org/JSON_checker/test/fail23.json
     '["Bad value", truth]',
-    # http://json.org/JSON_checker/test/fail24.json
+    # https://json.org/JSON_checker/test/fail24.json
     "['single quote']",
-    # http://json.org/JSON_checker/test/fail25.json
+    # https://json.org/JSON_checker/test/fail25.json
     '["\ttab\tcharacter\tin\tstring\t"]',
-    # http://json.org/JSON_checker/test/fail26.json
+    # https://json.org/JSON_checker/test/fail26.json
     '["tab\\   character\\   in\\  string\\  "]',
-    # http://json.org/JSON_checker/test/fail27.json
+    # https://json.org/JSON_checker/test/fail27.json
     '["line\nbreak"]',
-    # http://json.org/JSON_checker/test/fail28.json
+    # https://json.org/JSON_checker/test/fail28.json
     '["line\\\nbreak"]',
-    # http://json.org/JSON_checker/test/fail29.json
+    # https://json.org/JSON_checker/test/fail29.json
     '[0e]',
-    # http://json.org/JSON_checker/test/fail30.json
+    # https://json.org/JSON_checker/test/fail30.json
     '[0e+]',
-    # http://json.org/JSON_checker/test/fail31.json
+    # https://json.org/JSON_checker/test/fail31.json
     '[0e+-1]',
-    # http://json.org/JSON_checker/test/fail32.json
+    # https://json.org/JSON_checker/test/fail32.json
     '{"Comma instead if closing brace": true,',
-    # http://json.org/JSON_checker/test/fail33.json
+    # https://json.org/JSON_checker/test/fail33.json
     '["mismatch"}',
-    # http://code.google.com/p/simplejson/issues/detail?id=3
+    # https://code.google.com/archive/p/simplejson/issues/3
     '["A\u001FZ control characters in string"]',
 ]
 
@@ -89,16 +89,38 @@ class TestFail:
             except self.JSONDecodeError:
                 pass
             else:
-                self.fail("Expected failure for fail{0}.json: {1!r}".format(idx, doc))
+                self.fail(f"Expected failure for fail{idx}.json: {doc!r}")
 
     def test_non_string_keys_dict(self):
         data = {'a' : 1, (1, 2) : 2}
+        with self.assertRaisesRegex(TypeError,
+                'keys must be str, int, float, bool or None, not tuple'):
+            self.dumps(data)
 
-        #This is for c encoder
-        self.assertRaises(TypeError, self.dumps, data)
+    def test_not_serializable(self):
+        import sys
+        with self.assertRaisesRegex(TypeError,
+                'Object of type module is not JSON serializable') as cm:
+            self.dumps(sys)
+        self.assertNotHasAttr(cm.exception, '__notes__')
 
-        #This is for python encoder
-        self.assertRaises(TypeError, self.dumps, data, indent=True)
+        with self.assertRaises(TypeError) as cm:
+            self.dumps([1, [2, 3, sys]])
+        self.assertEqual(cm.exception.__notes__,
+                         ['when serializing list item 2',
+                          'when serializing list item 1'])
+
+        with self.assertRaises(TypeError) as cm:
+            self.dumps((1, (2, 3, sys)))
+        self.assertEqual(cm.exception.__notes__,
+                         ['when serializing tuple item 2',
+                          'when serializing tuple item 1'])
+
+        with self.assertRaises(TypeError) as cm:
+            self.dumps({'a': {'b': sys}})
+        self.assertEqual(cm.exception.__notes__,
+                         ["when serializing dict item 'b'",
+                          "when serializing dict item 'a'"])
 
     def test_truncated_input(self):
         test_cases = [
@@ -140,11 +162,11 @@ class TestFail:
             ('{"spam":[}', 'Expecting value', 9),
             ('[42:', "Expecting ',' delimiter", 3),
             ('[42 "spam"', "Expecting ',' delimiter", 4),
-            ('[42,]', 'Expecting value', 4),
+            ('[42,]', "Illegal trailing comma before end of array", 3),
             ('{"spam":[42}', "Expecting ',' delimiter", 11),
             ('["]', 'Unterminated string starting at', 1),
             ('["spam":', "Expecting ',' delimiter", 7),
-            ('["spam",]', 'Expecting value', 8),
+            ('["spam",]', "Illegal trailing comma before end of array", 7),
             ('{:', 'Expecting property name enclosed in double quotes', 1),
             ('{,', 'Expecting property name enclosed in double quotes', 1),
             ('{42', 'Expecting property name enclosed in double quotes', 1),
@@ -156,7 +178,9 @@ class TestFail:
             ('[{"spam":]', 'Expecting value', 9),
             ('{"spam":42 "ham"', "Expecting ',' delimiter", 11),
             ('[{"spam":42]', "Expecting ',' delimiter", 11),
-            ('{"spam":42,}', 'Expecting property name enclosed in double quotes', 11),
+            ('{"spam":42,}', "Illegal trailing comma before end of object", 10),
+            ('{"spam":42 , }', "Illegal trailing comma before end of object", 11),
+            ('[123  , ]', "Illegal trailing comma before end of array", 6),
         ]
         for data, msg, idx in test_cases:
             with self.assertRaises(self.JSONDecodeError) as cm:

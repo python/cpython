@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2007 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -36,11 +36,11 @@ ecre = re.compile(r'''
   =\?                   # literal =?
   (?P<charset>[^?]*?)   # non-greedy up to the next ? is the charset
   \?                    # literal ?
-  (?P<encoding>[qb])    # either a "q" or a "b", case insensitive
+  (?P<encoding>[qQbB])  # either a "q" or a "b", case insensitive
   \?                    # literal ?
   (?P<encoded>.*?)      # non-greedy up to the next ?= is the encoded string
   \?=                   # literal ?=
-  ''', re.VERBOSE | re.IGNORECASE | re.MULTILINE)
+  ''', re.VERBOSE | re.MULTILINE)
 
 # Field name regexp, including trailing colon, but not separating whitespace,
 # according to RFC 2822.  Character range is from tilde to exclamation mark.
@@ -52,25 +52,29 @@ fcre = re.compile(r'[\041-\176]+:$')
 _embedded_header = re.compile(r'\n[^ \t]+:')
 
 
-
 # Helpers
 _max_append = email.quoprimime._max_append
 
 
-
 def decode_header(header):
     """Decode a message header value without converting charset.
 
-    Returns a list of (string, charset) pairs containing each of the decoded
-    parts of the header.  Charset is None for non-encoded parts of the header,
-    otherwise a lower-case string containing the name of the character set
-    specified in the encoded string.
+    For historical reasons, this function may return either:
+
+    1. A list of length 1 containing a pair (str, None).
+    2. A list of (bytes, charset) pairs containing each of the decoded
+       parts of the header.  Charset is None for non-encoded parts of the header,
+       otherwise a lower-case string containing the name of the character set
+       specified in the encoded string.
 
     header may be a string that may or may not contain RFC2047 encoded words,
     or it may be a Header object.
 
     An email.errors.HeaderParseError may be raised when certain decoding error
     occurs (e.g. a base64 decoding exception).
+
+    This function exists for backwards compatibility only. For new code, we
+    recommend using email.headerregistry.HeaderRegistry instead.
     """
     # If it is a Header object, we can just return the encoded chunks.
     if hasattr(header, '_chunks'):
@@ -152,7 +156,6 @@ def decode_header(header):
     return collapsed
 
 
-
 def make_header(decoded_seq, maxlinelen=None, header_name=None,
                 continuation_ws=' '):
     """Create a Header from a sequence of pairs as returned by decode_header()
@@ -164,6 +167,9 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
     This function takes one of those sequence of pairs and returns a Header
     instance.  Optional maxlinelen, header_name, and continuation_ws are as in
     the Header constructor.
+
+    This function exists for backwards compatibility only, and is not
+    recommended for use in new code.
     """
     h = Header(maxlinelen=maxlinelen, header_name=header_name,
                continuation_ws=continuation_ws)
@@ -175,7 +181,6 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
     return h
 
 
-
 class Header:
     def __init__(self, s=None, charset=None,
                  maxlinelen=None, header_name=None,
@@ -196,7 +201,7 @@ class Header:
 
         The maximum line length can be specified explicitly via maxlinelen. For
         splitting the first line to a shorter value (to account for the field
-        header which isn't included in s, e.g. `Subject') pass in the name of
+        header which isn't included in s, e.g. 'Subject') pass in the name of
         the field in header_name.  The default maxlinelen is 78 as recommended
         by RFC 2822.
 
@@ -280,7 +285,7 @@ class Header:
         output codec of the charset.  If the string cannot be encoded to the
         output codec, a UnicodeError will be raised.
 
-        Optional `errors' is passed as the errors argument to the decode
+        Optional 'errors' is passed as the errors argument to the decode
         call if s is a byte string.
         """
         if charset is None:
@@ -330,7 +335,7 @@ class Header:
 
         Optional splitchars is a string containing characters which should be
         given extra weight by the splitting algorithm during normal header
-        wrapping.  This is in very rough support of RFC 2822's `higher level
+        wrapping.  This is in very rough support of RFC 2822's 'higher level
         syntactic breaks':  split points preceded by a splitchar are preferred
         during line splitting, with the characters preferred in the order in
         which they appear in the string.  Space and tab may be included in the
@@ -409,7 +414,6 @@ class Header:
         self._chunks = chunks
 
 
-
 class _ValueFormatter:
     def __init__(self, headerlen, maxlen, continuation_ws, splitchars):
         self._maxlen = maxlen
@@ -431,7 +435,7 @@ class _ValueFormatter:
         if end_of_line != (' ', ''):
             self._current_line.push(*end_of_line)
         if len(self._current_line) > 0:
-            if self._current_line.is_onlyws():
+            if self._current_line.is_onlyws() and self._lines:
                 self._lines[-1] += str(self._current_line)
             else:
                 self._lines.append(str(self._current_line))

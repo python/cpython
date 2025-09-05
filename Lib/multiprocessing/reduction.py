@@ -68,12 +68,16 @@ if sys.platform == 'win32':
     __all__ += ['DupHandle', 'duplicate', 'steal_handle']
     import _winapi
 
-    def duplicate(handle, target_process=None, inheritable=False):
+    def duplicate(handle, target_process=None, inheritable=False,
+                  *, source_process=None):
         '''Duplicate a handle.  (target_process is a handle not a pid!)'''
+        current_process = _winapi.GetCurrentProcess()
+        if source_process is None:
+            source_process = current_process
         if target_process is None:
-            target_process = _winapi.GetCurrentProcess()
+            target_process = current_process
         return _winapi.DuplicateHandle(
-            _winapi.GetCurrentProcess(), handle, target_process,
+            source_process, handle, target_process,
             0, inheritable, _winapi.DUPLICATE_SAME_ACCESS)
 
     def steal_handle(source_pid, handle):
@@ -135,27 +139,27 @@ else:
     __all__ += ['DupFd', 'sendfds', 'recvfds']
     import array
 
-    # On MacOSX we should acknowledge receipt of fds -- see Issue14669
-    ACKNOWLEDGE = sys.platform == 'darwin'
-
     def sendfds(sock, fds):
         '''Send an array of fds over an AF_UNIX socket.'''
         fds = array.array('i', fds)
         msg = bytes([len(fds) % 256])
         sock.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, fds)])
-        if ACKNOWLEDGE and sock.recv(1) != b'A':
+        if sock.recv(1) != b'A':
             raise RuntimeError('did not receive acknowledgement of fd')
 
     def recvfds(sock, size):
         '''Receive an array of fds over an AF_UNIX socket.'''
         a = array.array('i')
         bytes_size = a.itemsize * size
-        msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_LEN(bytes_size))
+        msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_SPACE(bytes_size))
         if not msg and not ancdata:
             raise EOFError
         try:
-            if ACKNOWLEDGE:
-                sock.send(b'A')
+            # We send/recv an Ack byte after the fds to work around an old
+            # macOS bug; it isn't clear if this is still required but it
+            # makes unit testing fd sending easier.
+            # See: https://github.com/python/cpython/issues/58874
+            sock.send(b'A')  # Acknowledge
             if len(ancdata) != 1:
                 raise RuntimeError('received %d items of ancdata' %
                                    len(ancdata))
@@ -165,7 +169,10 @@ else:
                 if len(cmsg_data) % a.itemsize != 0:
                     raise ValueError
                 a.frombytes(cmsg_data)
-                assert len(a) % 256 == msg[0]
+                if len(a) % 256 != msg[0]:
+                    raise AssertionError(
+                        "Len is {0:n} but msg[0] is {1!r}".format(
+                            len(a), msg[0]))
                 return list(a)
         except (ValueError, IndexError):
             pass

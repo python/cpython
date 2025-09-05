@@ -1,4 +1,5 @@
 from collections import deque
+import doctest
 import unittest
 from test import support, seq_tests
 import gc
@@ -66,28 +67,9 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(list(d), [7, 8, 9])
         d = deque(range(200), maxlen=10)
         d.append(d)
-        support.unlink(support.TESTFN)
-        fo = open(support.TESTFN, "w")
-        try:
-            fo.write(str(d))
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), repr(d))
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
-
+        self.assertEqual(repr(d)[-30:], ', 198, 199, [...]], maxlen=10)')
         d = deque(range(10), maxlen=None)
         self.assertEqual(repr(d), 'deque([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])')
-        fo = open(support.TESTFN, "w")
-        try:
-            fo.write(str(d))
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), repr(d))
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
 
     def test_maxlen_zero(self):
         it = iter(range(100))
@@ -148,7 +130,8 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(d.count(None), 16)
 
     def test_comparisons(self):
-        d = deque('xabc'); d.popleft()
+        d = deque('xabc')
+        d.popleft()
         for e in [d, deque('abc'), deque('ab'), deque(), list(d)]:
             self.assertEqual(d==e, type(d)==type(e) and list(d)==list(e))
             self.assertEqual(d!=e, not(type(d)==type(e) and list(d)==list(e)))
@@ -182,6 +165,22 @@ class TestBasic(unittest.TestCase):
         d[n//2] = BadCmp()
         with self.assertRaises(RuntimeError):
             n in d
+
+    def test_contains_count_index_stop_crashes(self):
+        class A:
+            def __eq__(self, other):
+                d.clear()
+                return NotImplemented
+        d = deque([A(), A()])
+        with self.assertRaises(RuntimeError):
+            _ = 3 in d
+        d = deque([A(), A()])
+        with self.assertRaises(RuntimeError):
+            _ = d.count(3)
+
+        d = deque([A()])
+        with self.assertRaises(RuntimeError):
+            d.index(0)
 
     def test_extend(self):
         d = deque('a')
@@ -287,6 +286,14 @@ class TestBasic(unittest.TestCase):
                             d.index(element, start, stop)
                     else:
                         self.assertEqual(d.index(element, start, stop), target)
+
+        # Test large start argument
+        d = deque(range(0, 10000, 10))
+        for step in range(100):
+            i = d.index(8500, 700)
+            self.assertEqual(d[i], 8500)
+            # Repeat test with a different internal offset
+            d.rotate()
 
     def test_index_bug_24913(self):
         d = deque('A' * 3)
@@ -525,25 +532,11 @@ class TestBasic(unittest.TestCase):
         e = eval(repr(d))
         self.assertEqual(list(d), list(e))
         d.append(d)
-        self.assertIn('...', repr(d))
-
-    def test_print(self):
-        d = deque(range(200))
-        d.append(d)
-        try:
-            support.unlink(support.TESTFN)
-            fo = open(support.TESTFN, "w")
-            print(d, file=fo, end='')
-            fo.close()
-            fo = open(support.TESTFN, "r")
-            self.assertEqual(fo.read(), repr(d))
-        finally:
-            fo.close()
-            support.unlink(support.TESTFN)
+        self.assertEqual(repr(d)[-20:], '7, 198, 199, [...]])')
 
     def test_init(self):
-        self.assertRaises(TypeError, deque, 'abc', 2, 3);
-        self.assertRaises(TypeError, deque, 1);
+        self.assertRaises(TypeError, deque, 'abc', 2, 3)
+        self.assertRaises(TypeError, deque, 1)
 
     def test_hash(self):
         self.assertRaises(TypeError, hash, deque('abc'))
@@ -753,8 +746,9 @@ class TestBasic(unittest.TestCase):
 
     @support.cpython_only
     def test_sizeof(self):
+        MAXFREEBLOCKS = 16
         BLOCKLEN = 64
-        basesize = support.calcvobjsize('2P4nP')
+        basesize = support.calcvobjsize('2P5n%dPP' % MAXFREEBLOCKS)
         blocksize = struct.calcsize('P%dPP' % BLOCKLEN)
         self.assertEqual(object.__sizeof__(deque()), basesize)
         check = self.check_sizeof
@@ -791,6 +785,9 @@ class TestVariousIteratorArgs(unittest.TestCase):
 class Deque(deque):
     pass
 
+class DequeWithSlots(deque):
+    __slots__ = ('x', 'y', '__dict__')
+
 class DequeWithBadIter(deque):
     def __iter__(self):
         raise TypeError
@@ -820,40 +817,28 @@ class TestSubclass(unittest.TestCase):
         self.assertEqual(len(d), 0)
 
     def test_copy_pickle(self):
+        for cls in Deque, DequeWithSlots:
+            for d in cls('abc'), cls('abcde', maxlen=4):
+                d.x = ['x']
+                d.z = ['z']
 
-        d = Deque('abc')
+                e = d.__copy__()
+                self.assertEqual(type(d), type(e))
+                self.assertEqual(list(d), list(e))
 
-        e = d.__copy__()
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
+                e = cls(d)
+                self.assertEqual(type(d), type(e))
+                self.assertEqual(list(d), list(e))
 
-        e = Deque(d)
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(d, proto)
-            e = pickle.loads(s)
-            self.assertNotEqual(id(d), id(e))
-            self.assertEqual(type(d), type(e))
-            self.assertEqual(list(d), list(e))
-
-        d = Deque('abcde', maxlen=4)
-
-        e = d.__copy__()
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        e = Deque(d)
-        self.assertEqual(type(d), type(e))
-        self.assertEqual(list(d), list(e))
-
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            s = pickle.dumps(d, proto)
-            e = pickle.loads(s)
-            self.assertNotEqual(id(d), id(e))
-            self.assertEqual(type(d), type(e))
-            self.assertEqual(list(d), list(e))
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    s = pickle.dumps(d, proto)
+                    e = pickle.loads(s)
+                    self.assertNotEqual(id(d), id(e))
+                    self.assertEqual(type(d), type(e))
+                    self.assertEqual(list(d), list(e))
+                    self.assertEqual(e.x, d.x)
+                    self.assertEqual(e.z, d.z)
+                    self.assertNotHasAttr(e, 'y')
 
     def test_pickle_recursive(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -881,6 +866,7 @@ class TestSubclass(unittest.TestCase):
         p = weakref.proxy(d)
         self.assertEqual(str(p), str(d))
         d = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, str, p)
 
     def test_strange_subclass(self):
@@ -891,6 +877,21 @@ class TestSubclass(unittest.TestCase):
         d2 = X([4,5,6])
         d1 == d2   # not clear if this is supposed to be True or False,
                    # but it used to give a SystemError
+
+    @support.cpython_only
+    def test_bug_31608(self):
+        # The interpreter used to crash in specific cases where a deque
+        # subclass returned a non-deque.
+        class X(deque):
+            pass
+        d = X()
+        def bad___new__(cls, *args, **kwargs):
+            return [42]
+        X.__new__ = bad___new__
+        with self.assertRaises(TypeError):
+            d * 42  # shouldn't crash
+        with self.assertRaises(TypeError):
+            d + deque([1, 2, 3])  # shouldn't crash
 
 
 class SubclassWithKwargs(deque):
@@ -1028,31 +1029,10 @@ h
 
 __test__ = {'libreftest' : libreftest}
 
-def test_main(verbose=None):
-    import sys
-    test_classes = (
-        TestBasic,
-        TestVariousIteratorArgs,
-        TestSubclass,
-        TestSubclassWithKwargs,
-        TestSequence,
-    )
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
 
-    support.run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
-    # doctests
-    from test import test_deque
-    support.run_doctest(test_deque, verbose)
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

@@ -212,24 +212,43 @@ A detailed description of timsort follows.
 
 Runs
 ----
-count_run() returns the # of elements in the next run.  A run is either
-"ascending", which means non-decreasing:
+count_run() returns the # of elements in the next run, and, if it's a
+descending run, reverses it in-place. A run is either "ascending", which
+means non-decreasing:
 
     a0 <= a1 <= a2 <= ...
 
-or "descending", which means strictly decreasing:
+or "descending", which means non-increasing:
 
-    a0 > a1 > a2 > ...
+    a0 >= a1 >= a2 >= ...
 
 Note that a run is always at least 2 long, unless we start at the array's
-last element.
+last element. If all elements in the array are equal, it can be viewed as
+both ascending and descending. Upon return, the run count_run() identifies
+is always ascending.
 
-The definition of descending is strict, because the main routine reverses
-a descending run in-place, transforming a descending run into an ascending
-run.  Reversal is done via the obvious fast "swap elements starting at each
-end, and converge at the middle" method, and that can violate stability if
-the slice contains any equal elements.  Using a strict definition of
-descending ensures that a descending run contains distinct elements.
+Reversal is done via the obvious fast "swap elements starting at each
+end, and converge at the middle" method. That can violate stability if
+the slice contains any equal elements. For that reason, for a long time
+the code used strict inequality (">" rather than ">=") in its definition
+of descending.
+
+Removing that restriction required some complication: when processing a
+descending run, all-equal sub-runs of elements are reversed in-place, on the
+fly. Their original relative order is restored "by magic" via the final
+"reverse the entire run" step.
+
+This makes processing descending runs a little more costly. We only use
+`__lt__` comparisons, so that `x == y` has to be deduced from
+`not x < y and not y < x`. But so long as a run remains strictly decreasing,
+only one of those compares needs to be done per loop iteration. So the primsry
+extra cost is paid only when there are equal elements, and they get some
+compensating benefit by not needing to end the descending run.
+
+There's one more trick added since the original: after reversing a descending
+run, it's possible that it can be extended by an adjacent ascending run. For
+example, given [3, 2, 1, 3, 4, 5, 0], the 3-element descending prefix is
+reversed in-place, and then extended by [3, 4, 5].
 
 If an array is random, it's very unlikely we'll see long runs.  If a natural
 run contains less than minrun elements (see next section), the main loop
@@ -251,9 +270,9 @@ result.  This has two primary good effects:
 
 Computing minrun
 ----------------
-If N < 64, minrun is N.  IOW, binary insertion sort is used for the whole
-array then; it's hard to beat that given the overheads of trying something
-fancier (see note BINSORT).
+If N < MAX_MINRUN, minrun is N.  IOW, binary insertion sort is used for the
+whole array then; it's hard to beat that given the overheads of trying
+something fancier (see note BINSORT).
 
 When N is a power of 2, testing on random data showed that minrun values of
 16, 32, 64 and 128 worked about equally well.  At 256 the data-movement cost
@@ -269,7 +288,6 @@ that 32 isn't a good choice for the general case!  Consider N=2112:
 
 >>> divmod(2112, 32)
 (66, 0)
->>>
 
 If the data is randomly ordered, we're very likely to end up with 66 runs
 each of length 32.  The first 64 of these trigger a sequence of perfectly
@@ -282,21 +300,94 @@ to get 64 elements into place).
 If we take minrun=33 in this case, then we're very likely to end up with 64
 runs each of length 33, and then all merges are perfectly balanced.  Better!
 
-What we want to avoid is picking minrun such that in
+The original code used a cheap heuristic to pick a minrun that avoided the
+very worst cases of imbalance for the final merge, but "pretty bad" cases
+still existed.
 
-    q, r = divmod(N, minrun)
+In 2025, Stefan Pochmann found a much better approach, based on letting minrun
+vary a bit from one run to the next. Under his scheme, at _all_ levels of the
+merge tree:
 
-q is a power of 2 and r>0 (then the last merge only gets r elements into
-place, and r < minrun is small compared to N), or q a little larger than a
-power of 2 regardless of r (then we've got a case similar to "2112", again
-leaving too little work for the last merge to do).
+- The number of runs is a power of 2.
+- At most two different run lengths appear.
+- When two do appear, the smaller is one less than the larger.
+- The lengths of run pairs merged never differ by more than one.
 
-Instead we pick a minrun in range(32, 65) such that N/minrun is exactly a
-power of 2, or if that isn't possible, is close to, but strictly less than,
-a power of 2.  This is easier to do than it may sound:  take the first 6
-bits of N, and add 1 if any of the remaining bits are set.  In fact, that
-rule covers every case in this section, including small N and exact powers
-of 2; merge_compute_minrun() is a deceptively simple function.
+So, in all respects, as perfectly balanced as possible.
+
+For the 2112 case, that also keeps minrun at 33, but we were lucky there
+that 2112 is 33 times a power of 2. The new approach doesn't rely on luck.
+
+For example, with 315 random elements, the old scheme uses fixed minrun=40 and
+produces runs of length 40, except for the last. The new scheme produces a
+mix of lengths 39 and 40:
+
+old:  40 40 40 40 40 40 40 35
+new:  39 39 40 39 39 40 39 40
+
+Both schemes produce eight runs, a power of 2. That's good for a balanced
+merge tree. But the new scheme allows merges where left and right length
+never differ by more than 1:
+
+39 39 40 39 39 40 39 40
+  78   79     79   79
+    157         158
+          315
+
+(This shows merges downward, e.g., two runs of length 39 are merged and
+become a run of length 78.)
+
+With larger lists, the old scheme can get even more unbalanced. For example,
+with 32769 elements (that's 2**15 + 1), it uses minrun=33 and produces 993
+runs (of length 33). That's not even a power of 2. The new scheme instead
+produces 1024 runs, all with length 32 except for the last one with length 33.
+
+How does it work? Ideally, all runs would be exactly equally long. For the
+above example, each run would have 315/8 = 39.375 elements. Which of course
+doesn't work. But we can get close:
+
+For the first run, we'd like 39.375 elements. Since that's impossible, we
+instead use 39 (the floor) and remember the current leftover fraction 0.375.
+For the second run, we add 0.375 + 39.375 = 39.75. Again impossible, so we
+instead use 39 and remember 0.75. For the third run, we add 0.75 + 39.375 =
+40.125. This time we get 40 and remember 0.125. And so on. Here's a Python
+generator doing that:
+
+def gen_minruns_with_floats(n):
+    mr = n
+    while mr >= MAX_MINRUN:
+        mr /= 2
+
+    mr_current = 0
+    while True:
+        mr_current += mr
+        yield int(mr_current)
+        mr_current %= 1
+
+But while all arithmetic here can be done exactly using binery floating point,
+floats have less precision that a Py_ssize_t, and mixing floats with ints is
+needlessly expensive anyway.
+
+So here's an integer version, where the internal numbers are scaled up by
+2**e, or rather not divided by 2**e. Instead, only each yielded minrun gets
+divided (by right-shifting). For example instead of adding 39.375 and
+reducing modulo 1, it just adds 315 and reduces modulo 8. And always divides
+by 8 to get each actual minrun value:
+
+def gen_minruns_simpler(n):
+    e = 0
+    while (n >> e) >= MAX_MINRUN:
+        e += 1
+    mask = (1 << e) - 1
+
+    mr_current = 0
+    while True:
+        mr_current += n
+        yield mr_current >> e
+        mr_current &= mask
+
+See note MINRUN CODE for a full implementation and a driver that exhaustively
+verifies the claims above for all list lengths through 2 million.
 
 
 The Merge Pattern
@@ -318,65 +409,104 @@ merging must be done as (A+B)+C or A+(B+C) instead.
 So merging is always done on two consecutive runs at a time, and in-place,
 although this may require some temp memory (more on that later).
 
-When a run is identified, its base address and length are pushed on a stack
-in the MergeState struct.  merge_collapse() is then called to see whether it
-should merge it with preceding run(s).  We would like to delay merging as
-long as possible in order to exploit patterns that may come up later, but we
-like even more to do merging as soon as possible to exploit that the run just
-found is still high in the memory hierarchy.  We also can't delay merging
-"too long" because it consumes memory to remember the runs that are still
-unmerged, and the stack has a fixed size.
+When a run is identified, its length is passed to found_new_run() to
+potentially merge runs on a stack of pending runs.  We would like to delay
+merging as long as possible in order to exploit patterns that may come up
+later, but we like even more to do merging as soon as possible to exploit
+that the run just found is still high in the memory hierarchy.  We also can't
+delay merging "too long" because it consumes memory to remember the runs that
+are still unmerged, and the stack has a fixed size.
 
-What turned out to be a good compromise maintains two invariants on the
-stack entries, where A, B and C are the lengths of the three righmost not-yet
-merged slices:
+The original version of this code used the first thing I made up that didn't
+obviously suck ;-) It was loosely based on invariants involving the Fibonacci
+sequence.
 
-1.  A > B+C
-2.  B > C
+It worked OK, but it was hard to reason about, and was subtle enough that the
+intended invariants weren't actually preserved.  Researchers discovered that
+when trying to complete a computer-generated correctness proof.  That was
+easily-enough repaired, but the discovery spurred quite a bit of academic
+interest in truly good ways to manage incremental merging on the fly.
 
-Note that, by induction, #2 implies the lengths of pending runs form a
-decreasing sequence.  #1 implies that, reading the lengths right to left,
-the pending-run lengths grow at least as fast as the Fibonacci numbers.
-Therefore the stack can never grow larger than about log_base_phi(N) entries,
-where phi = (1+sqrt(5))/2 ~= 1.618.  Thus a small # of stack slots suffice
-for very large arrays.
+At least a dozen different approaches were developed, some provably having
+near-optimal worst case behavior with respect to the entropy of the
+distribution of run lengths.  Some details can be found in bpo-34561.
 
-If A <= B+C, the smaller of A and C is merged with B (ties favor C, for the
-freshness-in-cache reason), and the new run replaces the A,B or B,C entries;
-e.g., if the last 3 entries are
+The code now uses the "powersort" merge strategy from:
 
-    A:30  B:20  C:10
+    "Nearly-Optimal Mergesorts: Fast, Practical Sorting Methods
+     That Optimally Adapt to Existing Runs"
+    J. Ian Munro and Sebastian Wild
 
-then B is merged with C, leaving
+The code is pretty simple, but the justification is quite involved, as it's
+based on fast approximations to optimal binary search trees, which are
+substantial topics on their own.
 
-    A:30  BC:30
+Here we'll just cover some pragmatic details:
 
-on the stack.  Or if they were
+The `powerloop()` function computes a run's "power". Say two adjacent runs
+begin at index s1. The first run has length n1, and the second run (starting
+at index s1+n1, called "s2" below) has length n2. The list has total length n.
+The "power" of the first run is a small integer, the depth of the node
+connecting the two runs in an ideal binary merge tree, where power 1 is the
+root node, and the power increases by 1 for each level deeper in the tree.
 
-    A:500  B:400:  C:1000
+The power is the least integer L such that the "midpoint interval" contains
+a rational number of the form J/2**L. The midpoint interval is the semi-
+closed interval:
 
-then A is merged with B, leaving
+    ((s1 + n1/2)/n, (s2 + n2/2)/n]
 
-    AB:900  C:1000
+Yes, that's brain-busting at first ;-) Concretely, if (s1 + n1/2)/n and
+(s2 + n2/2)/n are computed to infinite precision in binary, the power L is
+the first position at which the 2**-L bit differs between the expansions.
+Since the left end of the interval is less than the right end, the first
+differing bit must be a 0 bit in the left quotient and a 1 bit in the right
+quotient.
 
-on the stack.
+`powerloop()` emulates these divisions, 1 bit at a time, using comparisons,
+subtractions, and shifts in a loop.
 
-In both examples, the stack configuration after the merge still violates
-invariant #2, and merge_collapse() goes on to continue merging runs until
-both invariants are satisfied.  As an extreme case, suppose we didn't do the
-minrun gimmick, and natural runs were of lengths 128, 64, 32, 16, 8, 4, 2,
-and 2.  Nothing would get merged until the final 2 was seen, and that would
-trigger 7 perfectly balanced merges.
+You'll notice the paper uses an O(1) method instead, but that relies on two
+things we don't have:
 
-The thrust of these rules when they trigger merging is to balance the run
-lengths as closely as possible, while keeping a low bound on the number of
-runs we have to remember.  This is maximally effective for random data,
-where all runs are likely to be of (artificially forced) length minrun, and
-then we get a sequence of perfectly balanced merges (with, perhaps, some
-oddballs at the end).
+- An O(1) "count leading zeroes" primitive. We can find such a thing as a C
+  extension on most platforms, but not all, and there's no uniform spelling
+  on the platforms that support it.
 
-OTOH, one reason this sort is so good for partly ordered data has to do
-with wildly unbalanced run lengths.
+- Integer division on an integer type twice as wide as needed to hold the
+  list length. But the latter is Py_ssize_t for us, and is typically the
+  widest native signed integer type the platform supports.
+
+But since runs in our algorithm are almost never very short, the once-per-run
+overhead of `powerloop()` seems lost in the noise.
+
+Detail: why is Py_ssize_t "wide enough" in `powerloop()`?  We do, after all,
+shift integers of that width left by 1.  How do we know that won't spill into
+the sign bit?  The trick is that we have some slop. `n` (the total list
+length) is the number of list elements, which is at most 4 times (on a 32-box,
+with 4-byte pointers) smaller than than the largest size_t. So at least the
+leading two bits of the integers we're using are clear.
+
+Since we can't compute a run's power before seeing the run that follows it,
+the most-recently identified run is never merged by `found_new_run()`.
+Instead a new run is only used to compute the 2nd-most-recent run's power.
+Then adjacent runs are merged so long as their saved power (tree depth) is
+greater than that newly computed power. When found_new_run() returns, only
+then is a new run pushed on to the stack of pending runs.
+
+A key invariant is that powers on the run stack are strictly decreasing
+(starting from the run at the top of the stack).
+
+Note that even powersort's strategy isn't always truly optimal. It can't be.
+Computing an optimal merge sequence can be done in time quadratic in the
+number of runs, which is very much slower, and also requires finding &
+remembering _all_ the runs' lengths (of which there may be billions) in
+advance.  It's remarkable, though, how close to optimal this strategy gets.
+
+Curious factoid: of all the alternatives I've seen in the literature,
+powersort's is the only one that's always truly optimal for a collection of 3
+run lengths (for three lengths A B C, it's always optimal to first merge the
+shorter of A and C with B).
 
 
 Merge Memory
@@ -739,7 +869,7 @@ slice (leaving off both endpoints) (2**(k-1)-1)+1 through (2**k-1)-1
 inclusive = 2**(k-1) through (2**k-1)-1 inclusive, which has
     (2**k-1)-1 - 2**(k-1) + 1 =
     2**k-1 - 2**(k-1) =
-    2*2**k-1 - 2**(k-1) =
+    2*2**(k-1)-1 - 2**(k-1) =
     (2-1)*2**(k-1) - 1 =
     2**(k-1) - 1
 elements.
@@ -753,3 +883,83 @@ example, with the region of uncertainty B[4], B[5], B[6], there are 4
 locations:  before B[4], between B[4] and B[5], between B[5] and B[6], and
 after B[6].  In general, across 2**(k-1)-1 elements, there are 2**(k-1)
 locations.  That's why k-1 binary searches are necessary and sufficient.
+
+OPTIMIZATION OF INDIVIDUAL COMPARISONS
+As noted above, even the simplest Python comparison triggers a large pile of
+C-level pointer dereferences, conditionals, and function calls.  This can be
+partially mitigated by pre-scanning the data to determine whether the data is
+homogeneous with respect to type.  If so, it is sometimes possible to
+substitute faster type-specific comparisons for the slower, generic
+PyObject_RichCompareBool.
+
+MINRUN CODE
+from itertools import accumulate
+try:
+    from itertools import batched
+except ImportError:
+    from itertools import islice
+    def batched(xs, k):
+        it = iter(xs)
+        while chunk := tuple(islice(it, k)):
+            yield chunk
+
+MAX_MINRUN = 64
+
+def gen_minruns(n):
+    # In listobject.c, initialization is done in merge_init(), and
+    # the body of the loop in minrun_next().
+    mr_e = 0
+    while (n >> mr_e) >= MAX_MINRUN:
+        mr_e += 1
+    mr_mask = (1 << mr_e) - 1
+
+    mr_current = 0
+    while True:
+        mr_current += n
+        yield mr_current >> mr_e
+        mr_current &= mr_mask
+
+def chew(n, show=False):
+    if n < 1:
+        return
+
+    sizes = []
+    tot = 0
+    for size in gen_minruns(n):
+        sizes.append(size)
+        tot += size
+        if tot >= n:
+            break
+    assert tot == n
+    print(n, len(sizes))
+
+    small, large = MAX_MINRUN // 2, MAX_MINRUN
+    while len(sizes) > 1:
+        assert not len(sizes) & 1
+        assert len(sizes).bit_count() == 1 # i.e., power of 2
+        assert sum(sizes) == n
+        assert min(sizes) >= min(n, small)
+        assert max(sizes) <= large
+
+        d = set(sizes)
+        assert len(d) <= 2
+        if len(d) == 2:
+            lo, hi = sorted(d)
+            assert lo + 1 == hi
+
+        mr = n / len(sizes)
+        for i, s in enumerate(accumulate(sizes, initial=0)):
+            assert int(mr * i) == s
+
+        newsizes = []
+        for a, b in batched(sizes, 2):
+            assert abs(a - b) <= 1
+            newsizes.append(a + b)
+        sizes = newsizes
+        smsll = large
+        large *= 2
+
+    assert sizes[0] == n
+
+for n in range(2_000_001):
+    chew(n)

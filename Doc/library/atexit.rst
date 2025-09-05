@@ -1,11 +1,11 @@
-:mod:`atexit` --- Exit handlers
-===============================
+:mod:`!atexit` --- Exit handlers
+================================
 
 .. module:: atexit
    :synopsis: Register and execute cleanup functions.
 
-.. moduleauthor:: Skip Montanaro <skip@pobox.com>
-.. sectionauthor:: Skip Montanaro <skip@pobox.com>
+.. moduleauthor:: Skip Montanaro <skip.montanaro@gmail.com>
+.. sectionauthor:: Skip Montanaro <skip.montanaro@gmail.com>
 
 --------------
 
@@ -20,8 +20,14 @@ at interpreter termination time they will be run in the order ``C``, ``B``,
 program is killed by a signal not handled by Python, when a Python fatal
 internal error is detected, or when :func:`os._exit` is called.
 
+**Note:** The effect of registering or unregistering functions from within
+a cleanup function is undefined.
 
-.. function:: register(func, *args, **kargs)
+.. versionchanged:: 3.7
+    When used with C-API subinterpreters, registered functions
+    are local to the interpreter they were registered in.
+
+.. function:: register(func, *args, **kwargs)
 
    Register *func* as a function to be executed at termination.  Any optional
    arguments that are to be passed to *func* must be passed as arguments to
@@ -36,20 +42,31 @@ internal error is detected, or when :func:`os._exit` is called.
 
    If an exception is raised during execution of the exit handlers, a traceback is
    printed (unless :exc:`SystemExit` is raised) and the exception information is
-   saved.  After all exit handlers have had a chance to run the last exception to
+   saved.  After all exit handlers have had a chance to run, the last exception to
    be raised is re-raised.
 
    This function returns *func*, which makes it possible to use it as a
    decorator.
 
+   .. warning::
+       Starting new threads or calling :func:`os.fork` from a registered
+       function can lead to race condition between the main Python
+       runtime thread freeing thread states while internal :mod:`threading`
+       routines or the new process try to use that state. This can lead to
+       crashes rather than clean shutdown.
+
+   .. versionchanged:: 3.12
+       Attempts to start a new thread or :func:`os.fork` a new process
+       in a registered function now leads to :exc:`RuntimeError`.
 
 .. function:: unregister(func)
 
-   Remove *func* from the list of functions to be run at interpreter
-   shutdown.  After calling :func:`unregister`, *func* is guaranteed not to be
-   called when the interpreter shuts down, even if it was registered more than
-   once.  :func:`unregister` silently does nothing if *func* was not previously
-   registered.
+   Remove *func* from the list of functions to be run at interpreter shutdown.
+   :func:`unregister` silently does nothing if *func* was not previously
+   registered.  If *func* has been registered more than once, every occurrence
+   of that function in the :mod:`atexit` call stack will be removed.  Equality
+   comparisons (``==``) are used internally during unregistration, so function
+   references do not need to have matching identities.
 
 
 .. seealso::
@@ -70,7 +87,7 @@ automatically when the program terminates without relying on the application
 making an explicit call into this module at termination. ::
 
    try:
-       with open("counterfile") as infile:
+       with open('counterfile') as infile:
            _count = int(infile.read())
    except FileNotFoundError:
        _count = 0
@@ -80,21 +97,22 @@ making an explicit call into this module at termination. ::
        _count = _count + n
 
    def savecounter():
-       with open("counterfile", "w") as outfile:
-           outfile.write("%d" % _count)
+       with open('counterfile', 'w') as outfile:
+           outfile.write('%d' % _count)
 
    import atexit
+
    atexit.register(savecounter)
 
 Positional and keyword arguments may also be passed to :func:`register` to be
 passed along to the registered function when it is called::
 
    def goodbye(name, adjective):
-       print('Goodbye, %s, it was %s to meet you.' % (name, adjective))
+       print('Goodbye %s, it was %s to meet you.' % (name, adjective))
 
    import atexit
-   atexit.register(goodbye, 'Donny', 'nice')
 
+   atexit.register(goodbye, 'Donny', 'nice')
    # or:
    atexit.register(goodbye, adjective='nice', name='Donny')
 
@@ -104,6 +122,6 @@ Usage as a :term:`decorator`::
 
    @atexit.register
    def goodbye():
-       print("You are now leaving the Python sector.")
+       print('You are now leaving the Python sector.')
 
 This only works with functions that can be called without arguments.

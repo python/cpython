@@ -11,10 +11,11 @@ Most methods calls are inherited from the Text widget; Pack, Grid and
 Place methods are redirected to the Frame widget however.
 """
 
-__all__ = ['ScrolledText']
-
 from tkinter import Frame, Text, Scrollbar, Pack, Grid, Place
 from tkinter.constants import RIGHT, LEFT, Y, BOTH
+
+__all__ = ['ScrolledText']
+
 
 class ScrolledText(Text):
     def __init__(self, master=None, **kw):
@@ -22,7 +23,7 @@ class ScrolledText(Text):
         self.vbar = Scrollbar(self.frame)
         self.vbar.pack(side=RIGHT, fill=Y)
 
-        kw.update({'yscrollcommand': self.vbar.set})
+        kw['yscrollcommand'] = self.vbar.set
         Text.__init__(self, self.frame, **kw)
         self.pack(side=LEFT, fill=BOTH, expand=True)
         self.vbar['command'] = self.yview
@@ -49,6 +50,7 @@ def example():
     stext.pack(fill=BOTH, side=LEFT, expand=True)
     stext.focus_set()
     stext.mainloop()
+
 
 if __name__ == "__main__":
     example()

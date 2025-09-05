@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""      turtle-example-suite:
-
-             tdemo_tree.py
+"""turtledemo/tree.py
 
 Displays a 'breadth-first-tree' - in contrast
 to the classical Logo tree drawing programs,
@@ -16,7 +13,7 @@ the current pen is cloned. So in the end
 there are 1024 turtles.
 """
 from turtle import Turtle, mainloop
-from time import clock
+from time import perf_counter as clock
 
 def tree(plist, l, a, f):
     """ plist is list of pens
@@ -49,7 +46,6 @@ def maketree():
     t = tree([p], 200, 65, 0.6375)
     for x in t:
         pass
-    print(len(p.getscreen().turtles()))
 
 def main():
     a=clock()

@@ -1,7 +1,8 @@
 # Python test set -- part 2, opcodes
 
 import unittest
-from test import ann_module
+from test import support
+from test.typinganndata import ann_module
 
 class OpcodeTest(unittest.TestCase):
 
@@ -24,28 +25,33 @@ class OpcodeTest(unittest.TestCase):
     def test_setup_annotations_line(self):
         # check that SETUP_ANNOTATIONS does not create spurious line numbers
         try:
-            with open(ann_module.__file__) as f:
+            with open(ann_module.__file__, encoding="utf-8") as f:
                 txt = f.read()
             co = compile(txt, ann_module.__file__, 'exec')
-            self.assertEqual(co.co_firstlineno, 8)
+            self.assertEqual(co.co_firstlineno, 1)
         except OSError:
             pass
 
-    def test_no_annotations_if_not_needed(self):
+    def test_default_annotations_exist(self):
         class C: pass
-        with self.assertRaises(AttributeError):
-            C.__annotations__
+        self.assertEqual(C.__annotations__, {})
 
     def test_use_existing_annotations(self):
         ns = {'__annotations__': {1: 2}}
         exec('x: int', ns)
-        self.assertEqual(ns['__annotations__'], {'x': int, 1: 2})
+        self.assertEqual(ns['__annotations__'], {1: 2})
 
     def test_do_not_recreate_annotations(self):
-        class C:
-            del __annotations__
-            with self.assertRaises(NameError):
+        # Don't rely on the existence of the '__annotations__' global.
+        with support.swap_item(globals(), '__annotations__', {}):
+            globals().pop('__annotations__', None)
+            class C:
+                try:
+                    del __annotations__
+                except NameError:
+                    pass
                 x: int
+            self.assertEqual(C.__annotations__, {"x": int})
 
     def test_raise_class_exceptions(self):
 

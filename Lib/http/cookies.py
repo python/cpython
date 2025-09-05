@@ -131,6 +131,7 @@ Finis.
 #
 import re
 import string
+import types
 
 __all__ = ["CookieError", "BaseCookie", "SimpleCookie"]
 
@@ -183,8 +184,13 @@ def _quote(str):
         return '"' + str.translate(_Translator) + '"'
 
 
-_OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
-_QuotePatt = re.compile(r"[\\].")
+_unquote_sub = re.compile(r'\\(?:([0-3][0-7][0-7])|(.))').sub
+
+def _unquote_replace(m):
+    if m[1]:
+        return chr(int(m[1], 8))
+    else:
+        return m[2]
 
 def _unquote(str):
     # If there aren't any doublequotes,
@@ -204,36 +210,13 @@ def _unquote(str):
     #    \012 --> \n
     #    \"   --> "
     #
-    i = 0
-    n = len(str)
-    res = []
-    while 0 <= i < n:
-        o_match = _OctalPatt.search(str, i)
-        q_match = _QuotePatt.search(str, i)
-        if not o_match and not q_match:              # Neither matched
-            res.append(str[i:])
-            break
-        # else:
-        j = k = -1
-        if o_match:
-            j = o_match.start(0)
-        if q_match:
-            k = q_match.start(0)
-        if q_match and (not o_match or k < j):     # QuotePatt matched
-            res.append(str[i:k])
-            res.append(str[k+1])
-            i = k + 2
-        else:                                      # OctalPatt matched
-            res.append(str[i:j])
-            res.append(chr(int(str[j+1:j+4], 8)))
-            i = j + 4
-    return _nulljoin(res)
+    return _unquote_sub(_unquote_replace, str)
 
 # The _getdate() routine is used to set the expiration time in the cookie's HTTP
 # header.  By default, _getdate() returns the current time in the appropriate
 # "expires" format for a Set-Cookie header.  The one optional argument is an
 # offset from now, in seconds.  For example, an offset of -3600 means "one hour
-# ago".  The offset may be a floating point number.
+# ago".  The offset may be a floating-point number.
 #
 
 _weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -256,8 +239,7 @@ class Morsel(dict):
     In a cookie, each such pair may have several attributes, so this class is
     used to keep the attributes associated with the appropriate key,value pair.
     This class also includes a coded_value attribute, which is used to hold
-    the network representation of the value.  This is most useful when Python
-    objects are pickled for network transit.
+    the network representation of the value.
     """
     # RFC 2109 lists these attributes as reserved:
     #   path       comment         domain
@@ -281,17 +263,20 @@ class Morsel(dict):
         "secure"   : "Secure",
         "httponly" : "HttpOnly",
         "version"  : "Version",
+        "samesite" : "SameSite",
+        "partitioned": "Partitioned",
     }
 
-    _flags = {'secure', 'httponly'}
+    _reserved_defaults = dict.fromkeys(_reserved, "")
+
+    _flags = {'secure', 'httponly', 'partitioned'}
 
     def __init__(self):
         # Set defaults
         self._key = self._value = self._coded_value = None
 
         # Set default attributes
-        for key in self._reserved:
-            dict.__setitem__(self, key, "")
+        dict.update(self, self._reserved_defaults)
 
     @property
     def key(self):
@@ -408,6 +393,8 @@ class Morsel(dict):
                 append("%s=%s" % (self._reserved[key], _getdate(value)))
             elif key == "max-age" and isinstance(value, int):
                 append("%s=%d" % (self._reserved[key], value))
+            elif key == "comment" and isinstance(value, str):
+                append("%s=%s" % (self._reserved[key], _quote(value)))
             elif key in self._flags:
                 if value:
                     append(str(self._reserved[key]))
@@ -416,6 +403,8 @@ class Morsel(dict):
 
         # Return the result
         return _semispacejoin(result)
+
+    __class_getitem__ = classmethod(types.GenericAlias)
 
 
 #
@@ -437,9 +426,11 @@ _CookiePattern = re.compile(r"""
     (                              # Optional group: there may not be a value.
     \s*=\s*                          # Equal Sign
     (?P<val>                         # Start of group 'val'
-    "(?:[^\\"]|\\.)*"                  # Any doublequoted string
+    "(?:\\"|.)*?"                    # Any double-quoted string
     |                                  # or
-    \w{3},\s[\w\d\s-]{9,11}\s[\d:]{8}\sGMT  # Special case for "expires" attr
+    # Special case for "expires" attr
+    (\w{3,6}day|\w{3}),\s              # Day of the week or abbreviated day
+    [\w\d\s-]{9,11}\s[\d:]{8}\sGMT     # Date and time in specific format
     |                                  # or
     [""" + _LegalValueChars + r"""]*      # Any word or empty string
     )                                # End of group 'val'

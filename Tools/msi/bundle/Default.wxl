@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WixLocalization Culture="en-us" Language="1033" xmlns="http://schemas.microsoft.com/wix/2006/localization">
   <String Id="Caption">[WixBundleName] Setup</String>
-  <String Id="Title">[WixBundleName]</String>
   <String Id="Installing">Installing</String>
   <String Id="Installation">Setup</String>
   <String Id="Modifying">Updating</String>
@@ -68,11 +67,11 @@ Select Customize to review current options.</String>
   <String Id="CustomBackButton">&amp;Back</String>
   <String Id="CustomBrowseButton">B&amp;rowse</String>
   <String Id="Include_docLabel">&amp;Documentation</String>
-  <String Id="Include_docHelpLabel">Installs the Python documentation file.</String>
+  <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
   <String Id="Include_pipLabel">&amp;pip</String>
   <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
-  <String Id="Include_tcltkLabel">tcl/tk and &amp;IDLE</String>
-  <String Id="Include_tcltkHelpLabel">Installs tkinter and the IDLE development environment.</String>
+  <String Id="Include_tcltkLabel">Tcl/Tk, turtle and &amp;IDLE</String>
+  <String Id="Include_tcltkHelpLabel">Installs tkinter, turtle and the IDLE development environment.</String>
   <String Id="Include_testLabel">Python &amp;test suite</String>
   <String Id="Include_testHelpLabel">Installs the standard library test suite.</String>
   <String Id="Include_launcherLabel">py &amp;launcher</String>
@@ -80,16 +79,20 @@ Select Customize to review current options.</String>
   <String Id="Include_launcherRemove">Use Programs and Features to remove the 'py' launcher.</String>
   <String Id="Include_launcherUpgrade">Upgrades the global 'py' launcher from the previous version.</String>
   
-  <String Id="AssociateFilesLabel">Associate &amp;files with Python (requires the py launcher)</String>
+  <String Id="AssociateFilesLabel">Associate &amp;files with Python (requires the 'py' launcher)</String>
   <String Id="ShortcutsLabel">Create shortcuts for installed applications</String>
   <String Id="PrependPathLabel">Add Python to &amp;environment variables</String>
-  <String Id="ShortPrependPathLabel">Add &amp;Python [ShortVersion] to PATH</String>
-  <String Id="InstallAllUsersLabel">Install for &amp;all users</String>
-  <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires elevation)</String>
-  <String Id="ShortInstallLauncherAllUsersLabel">Install &amp;launcher for all users (recommended)</String>
+  <String Id="ShortPrependPathLabel">Add &amp;python.exe to PATH</String>
+  <String Id="AppendPathLabel">Append Python to &amp;environment variables</String>
+  <String Id="ShortAppendPathLabel">Append &amp;python.exe to PATH</String>
+  <String Id="InstallAllUsersLabel">Install Python [ShortVersion] for &amp;all users</String>
+  <String Id="InstallLauncherAllUsersLabel">for &amp;all users (requires admin privileges)</String>
+  <String Id="ShortInstallLauncherAllUsersLabel">Use admin privi&amp;leges when installing py.exe</String>
+  <String Id="ShortInstallLauncherBlockedLabel">Python Launcher is already installed</String>
   <String Id="PrecompileLabel">&amp;Precompile standard library</String>
   <String Id="Include_symbolsLabel">Download debugging &amp;symbols</String>
-  <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2015 or later)</String>
+  <String Id="Include_debugLabel">Download debu&amp;g binaries (requires VS 2017 or later)</String>
+  <String Id="Include_freethreadedLabel">Download &amp;free-threaded binaries</String>
   
   <String Id="ProgressHeader">[ActionLikeInstallation] Progress</String>
   <String Id="ProgressLabel">[ActionLikeInstalling]:</String>
@@ -105,44 +108,26 @@ Select Customize to review current options.</String>
   <String Id="SuccessLaunchButton">&amp;Launch</String>
   <String Id="SuccessRestartText">You may need to restart your computer to finish updating files.</String>
   <String Id="SuccessRestartButton">&amp;Restart</String>
-  <String Id="SuccessInstallMessage">Special thanks to Mark Hammond, without whose years of freely shared Windows expertise, Python for Windows would still be Python for DOS.
+  <String Id="SuccessInstallMessage">New to Python? Start with the &lt;a href="https://docs.python.org/[ShortVersion]/tutorial/index.html"&gt;online tutorial&lt;/a&gt; and &lt;a href="https://docs.python.org/[ShortVersion]/index.html"&gt;documentation&lt;/a&gt;. At your terminal, type "py" to launch Python, or search for Python in your Start menu.
 
-New to Python? Start with the &lt;a href="https://docs.python.org/[ShortVersion]/tutorial/index.html"&gt;online tutorial&lt;/a&gt; and &lt;a href="https://docs.python.org/[ShortVersion]/index.html"&gt;documentation&lt;/a&gt;.
-
-See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].html"&gt;what's new&lt;/a&gt; in this release.</String>
+See &lt;a href="https://docs.python.org/[ShortVersion]/whatsnew/[ShortVersion].html"&gt;what's new&lt;/a&gt; in this release, or find more info about &lt;a href="https://docs.python.org/[ShortVersion]/using/windows.html"&gt;using Python on Windows&lt;/a&gt;.</String>
   <String Id="SuccessModifyMessage">Thank you for using [WixBundleName].</String>
   <String Id="SuccessRepairMessage">Thank you for using [WixBundleName].
 
-Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@python.org&lt;/a&gt; if you continue to encounter issues.</String>
+Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discuss.python.org&lt;/a&gt; if you continue to encounter issues.</String>
   <String Id="SuccessRemoveMessage">Thank you for using [WixBundleName].
 
-Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@python.org&lt;/a&gt; if you encountered problems.</String>
+Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discuss.python.org&lt;/a&gt; if you encountered problems.</String>
   <String Id="FailureHeader">Setup failed</String>
   <String Id="FailureHyperlinkLogText">One or more issues caused the setup to fail. Please fix the issues and then retry setup. For more information see the &lt;a href="#"&gt;log file&lt;/a&gt;.</String>
   <String Id="FailureRestartText">You must restart your computer to complete the rollback of the software.</String>
   <String Id="FailureRestartButton">&amp;Restart</String>
   <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
-  
-  <String Id="FailureWin7MissingSP1">Windows 7 Service Pack 1 and all applicable updates are required to install [WixBundleName].
+  <String Id="FailureOldOS">At least Windows 10 or Windows Server 2016 are required to install [WixBundleName]
 
-Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%207%20service%20pack%201"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
-  <String Id="FailureVistaMissingSP2">Windows Vista Service Pack 2 and all applicable updates are required to install [WixBundleName].
-
-Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20vista%20service%20pack%202"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
-  <String Id="FailureXPOrEarlier">Windows Vista or later is required to install and use [WixBundleName].
-
-Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download Python 3.4.</String>
-
-  <String Id="FailureWS2K8R2MissingSP1">Windows Server 2008 R2 Service Pack 1 and all applicable updates are required to install [WixBundleName].
-
-Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20server%202008%20r2%20service%20pack%201"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
-  <String Id="FailureWS2K8MissingSP2">Windows Server 2008 Service Pack 2 and all applicable updates are required to install [WixBundleName].
-
-Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20server%202008%20service%20pack%202"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
-  <String Id="FailureWS2K3OrEarlier">Windows Server 2008 SP2 or later is required to install and use [WixBundleName].
-
-Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download Python 3.4.</String>
-
+Visit &lt;a href="https://www.python.org/downloads/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
   <String Id="SuccessMaxPathButton">Disable path length limit</String>
   <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
+
+  <String Id="DeprecationMessage">NOTE: This installer is being retired and will no longer be available after Python 3.15. &lt;a href="https://docs.python.org/using/windows"&gt;More info&lt;/a&gt;</String>
 </WixLocalization>

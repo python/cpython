@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _embedding:
@@ -53,29 +53,49 @@ interface. This interface is intended to execute a Python script without needing
 to interact with the application directly. This can for example be used to
 perform some operation on a file. ::
 
+   #define PY_SSIZE_T_CLEAN
    #include <Python.h>
 
    int
    main(int argc, char *argv[])
    {
-       wchar_t *program = Py_DecodeLocale(argv[0], NULL);
-       if (program == NULL) {
-           fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
-           exit(1);
+       PyStatus status;
+       PyConfig config;
+       PyConfig_InitPythonConfig(&config);
+
+       /* optional but recommended */
+       status = PyConfig_SetBytesString(&config, &config.program_name, argv[0]);
+       if (PyStatus_Exception(status)) {
+           goto exception;
        }
-       Py_SetProgramName(program);  /* optional but recommended */
-       Py_Initialize();
+
+       status = Py_InitializeFromConfig(&config);
+       if (PyStatus_Exception(status)) {
+           goto exception;
+       }
+       PyConfig_Clear(&config);
+
        PyRun_SimpleString("from time import time,ctime\n"
                           "print('Today is', ctime(time()))\n");
        if (Py_FinalizeEx() < 0) {
            exit(120);
        }
-       PyMem_RawFree(program);
        return 0;
+
+     exception:
+        PyConfig_Clear(&config);
+        Py_ExitStatusException(status);
    }
 
-The :c:func:`Py_SetProgramName` function should be called before
-:c:func:`Py_Initialize` to inform the interpreter about paths to Python run-time
+.. note::
+
+   ``#define PY_SSIZE_T_CLEAN`` was used to indicate that ``Py_ssize_t`` should be
+   used in some APIs instead of ``int``.
+   It is not necessary since Python 3.13, but we keep it here for backward compatibility.
+   See :ref:`arg-parsing-string-and-buffers` for a description of this macro.
+
+Setting :c:member:`PyConfig.program_name` should be called before
+:c:func:`Py_InitializeFromConfig` to inform the interpreter about paths to Python run-time
 libraries.  Next, the Python interpreter is initialized with
 :c:func:`Py_Initialize`, followed by the execution of a hard-coded Python script
 that prints the date and time.  Afterwards, the :c:func:`Py_FinalizeEx` call shuts
@@ -176,8 +196,8 @@ interesting part with respect to embedding Python starts with ::
 
 After initializing the interpreter, the script is loaded using
 :c:func:`PyImport_Import`.  This routine needs a Python string as its argument,
-which is constructed using the :c:func:`PyUnicode_FromString` data conversion
-routine. ::
+which is constructed using the :c:func:`PyUnicode_DecodeFSDefault` data
+conversion routine. ::
 
    pFunc = PyObject_GetAttrString(pModule, argv[2]);
    /* pFunc is a new reference */
@@ -195,7 +215,7 @@ function is then made with::
 
    pValue = PyObject_CallObject(pFunc, pArgs);
 
-Upon return of the function, ``pValue`` is either *NULL* or it contains a
+Upon return of the function, ``pValue`` is either ``NULL`` or it contains a
 reference to the return value of the function.  Be sure to release the reference
 after examining the value.
 
@@ -225,21 +245,23 @@ Python extension.  For example::
        return PyLong_FromLong(numargs);
    }
 
-   static PyMethodDef EmbMethods[] = {
+   static PyMethodDef emb_module_methods[] = {
        {"numargs", emb_numargs, METH_VARARGS,
         "Return the number of arguments received by the process."},
        {NULL, NULL, 0, NULL}
    };
 
-   static PyModuleDef EmbModule = {
-       PyModuleDef_HEAD_INIT, "emb", NULL, -1, EmbMethods,
-       NULL, NULL, NULL, NULL
+   static struct PyModuleDef emb_module = {
+       .m_base = PyModuleDef_HEAD_INIT,
+       .m_name = "emb",
+       .m_size = 0,
+       .m_methods = emb_module_methods,
    };
 
    static PyObject*
    PyInit_emb(void)
    {
-       return PyModule_Create(&EmbModule);
+       return PyModuleDef_Init(&emb_module);
    }
 
 Insert the above code just above the :c:func:`main` function. Also, insert the
@@ -249,7 +271,7 @@ following two statements before the call to :c:func:`Py_Initialize`::
    PyImport_AppendInittab("emb", &PyInit_emb);
 
 These two lines initialize the ``numargs`` variable, and make the
-:func:`emb.numargs` function accessible to the embedded Python interpreter.
+:func:`!emb.numargs` function accessible to the embedded Python interpreter.
 With these extensions, the Python script can do things like
 
 .. code-block:: python
@@ -297,16 +319,16 @@ be directly useful to you:
 
   .. code-block:: shell-session
 
-     $ /opt/bin/python3.4-config --cflags
-     -I/opt/include/python3.4m -I/opt/include/python3.4m -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
+     $ /opt/bin/python3.11-config --cflags
+     -I/opt/include/python3.11 -I/opt/include/python3.11 -Wsign-compare  -DNDEBUG -g -fwrapv -O3 -Wall
 
-* ``pythonX.Y-config --ldflags`` will give you the recommended flags when
-  linking:
+* ``pythonX.Y-config --ldflags --embed`` will give you the recommended flags
+  when linking:
 
   .. code-block:: shell-session
 
-     $ /opt/bin/python3.4-config --ldflags
-     -L/opt/lib/python3.4/config-3.4m -lpthread -ldl -lutil -lm -lpython3.4m -Xlinker -export-dynamic
+     $ /opt/bin/python3.11-config --ldflags --embed
+     -L/opt/lib/python3.11/config-3.11-x86_64-linux-gnu -L/opt/lib -lpython3.11 -lpthread -ldl  -lutil -lm
 
 .. note::
    To avoid confusion between several Python installations (and especially
@@ -323,7 +345,7 @@ options.  In this case, the :mod:`sysconfig` module is a useful tool to
 programmatically extract the configuration values that you will want to
 combine together.  For example:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import sysconfig
    >>> sysconfig.get_config_var('LIBS')

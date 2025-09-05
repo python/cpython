@@ -10,6 +10,7 @@
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>py</string>
+				<string>pyi</string>
 				<string>pyw</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
@@ -36,7 +37,7 @@
 	<key>CFBundleExecutable</key>
 	<string>IDLE</string>
 	<key>CFBundleGetInfoString</key>
-	<string>%version%, © 2001-2017 Python Software Foundation</string>
+	<string>%version%, © 2001-2024 Python Software Foundation</string>
 	<key>CFBundleIconFile</key>
 	<string>IDLE.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -54,6 +55,8 @@
 	<key>CFBundleVersion</key>
 	<string>%version%</string>
 	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>CFBundleAllowMixedLocalizations</key>
 	<true/>
 </dict>
 </plist>

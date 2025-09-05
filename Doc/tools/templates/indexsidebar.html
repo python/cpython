@@ -1,18 +1,17 @@
 <h3>{% trans %}Download{% endtrans %}</h3>
 <p><a href="{{ pathto('download') }}">{% trans %}Download these documents{% endtrans %}</a></p>
-<h3>{% trans %}Docs for other versions{% endtrans %}</h3>
+<h3>{% trans %}Docs by version{% endtrans %}</h3>
 <ul>
-  <li><a href="https://docs.python.org/2.7/">{% trans %}Python 2.7 (stable){% endtrans %}</a></li>
-  <li><a href="https://docs.python.org/3.5/">{% trans %}Python 3.5 (stable){% endtrans %}</a></li>
-  <li><a href="https://docs.python.org/3.6/">{% trans %}Python 3.6 (stable){% endtrans %}</a></li>
-  <li><a href="https://www.python.org/doc/versions/">{% trans %}Old versions{% endtrans %}</a></li>
+  {# _docs_by_version.html is overwritten by build_docs.py for non-EOL versions #}
+  {% include "_docs_by_version.html" without context %}
+  <li><a href="https://www.python.org/doc/versions/">{% trans %}All versions{% endtrans %}</a></li>
 </ul>
-
 <h3>{% trans %}Other resources{% endtrans %}</h3>
 <ul>
   {# XXX: many of these should probably be merged in the main docs #}
-  <li><a href="https://www.python.org/dev/peps/">{% trans %}PEP Index{% endtrans %}</a></li>
-  <li><a href="https://wiki.python.org/moin/BeginnersGuide">{% trans %}Beginner's Guide{% endtrans %}</a></li>
-  <li><a href="https://wiki.python.org/moin/PythonBooks">{% trans %}Book List{% endtrans %}</a></li>
-  <li><a href="https://www.python.org/doc/av/">{% trans %}Audio/Visual Talks{% endtrans %}</a></li>
+  <li><a href="https://peps.python.org/">{% trans %}PEP index{% endtrans %}</a></li>
+  <li><a href="https://wiki.python.org/moin/BeginnersGuide">{% trans %}Beginner's guide{% endtrans %}</a></li>
+  <li><a href="https://wiki.python.org/moin/PythonBooks">{% trans %}Book list{% endtrans %}</a></li>
+  <li><a href="https://www.python.org/doc/av/">{% trans %}Audio/visual talks{% endtrans %}</a></li>
+  <li><a href="https://devguide.python.org/">{% trans %}Python developer’s guide{% endtrans %}</a></li>
 </ul>

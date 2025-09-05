@@ -1,5 +1,5 @@
 This file describes some special Python build types enabled via compile-time
-preprocessor defines.
+preprocessor directives.
 
 IMPORTANT: if you want to build a debug-enabled Python, it is recommended that
 you use ``./configure --with-pydebug``, rather than the options listed here.
@@ -30,6 +30,8 @@ name "_" holds a reference to the last result displayed!
 Py_REF_DEBUG also checks after every decref to verify that the refcount hasn't
 gone negative, and causes an immediate fatal error if it has.
 
+Py_DEBUG implies Py_REF_DEBUG.
+
 Special gimmicks:
 
 sys.gettotalrefcount()
@@ -39,17 +41,11 @@ sys.gettotalrefcount()
 Py_TRACE_REFS
 -------------
 
-Turn on heavy reference debugging.  This is major surgery.  Every PyObject grows
-two more pointers, to maintain a doubly-linked list of all live heap-allocated
-objects.  Most built-in type objects are not in this list, as they're statically
-allocated.  Starting in Python 2.3, if COUNT_ALLOCS (see below) is also defined,
-a static type object T does appear in this list if at least one object of type T
-has been created.
+Build option: ``./configure --with-trace-refs``.
 
-Note that because the fundamental PyObject layout changes, Python modules
-compiled with Py_TRACE_REFS are incompatible with modules compiled without it.
-
-Py_TRACE_REFS implies Py_REF_DEBUG.
+Turn on heavy reference debugging.  This is major surgery.  All live
+heap-allocated objects are traced in a hash table.  Most built-in type objects
+are not in this list, as they're statically allocated.
 
 Special gimmicks:
 
@@ -77,149 +73,21 @@ envvar PYTHONDUMPREFS
     combinerefs.py, were new in Python 2.3b1.
 
 
-PYMALLOC_DEBUG
---------------
-
-When pymalloc is enabled (WITH_PYMALLOC is defined), calls to the PyObject_
-memory routines are handled by Python's own small-object allocator, while calls
-to the PyMem_ memory routines are directed to the system malloc/ realloc/free.
-If PYMALLOC_DEBUG is also defined, calls to both PyObject_ and PyMem_ memory
-routines are directed to a special debugging mode of Python's small-object
-allocator.
-
-This mode fills dynamically allocated memory blocks with special, recognizable
-bit patterns, and adds debugging info on each end of dynamically allocated
-memory blocks.  The special bit patterns are:
-
-#define CLEANBYTE     0xCB   /* clean (newly allocated) memory */
-#define DEADBYTE      0xDB   /* dead (newly freed) memory */
-#define FORBIDDENBYTE 0xFB   /* forbidden -- untouchable bytes */
-
-Strings of these bytes are unlikely to be valid addresses, floats, or 7-bit
-ASCII strings.
-
-Let S = sizeof(size_t). 2*S bytes are added at each end of each block of N bytes
-requested.  The memory layout is like so, where p represents the address
-returned by a malloc-like or realloc-like function (p[i:j] means the slice of
-bytes from *(p+i) inclusive up to *(p+j) exclusive; note that the treatment of
-negative indices differs from a Python slice):
-
-p[-2*S:-S]
-    Number of bytes originally asked for.  This is a size_t, big-endian (easier
-    to read in a memory dump).
-p[-S]
-    API ID.  See PEP 445.  This is a character, but seems undocumented.
-p[-S+1:0]
-    Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
-p[0:N]
-    The requested memory, filled with copies of CLEANBYTE, used to catch
-    reference to uninitialized memory.  When a realloc-like function is called
-    requesting a larger memory block, the new excess bytes are also filled with
-    CLEANBYTE.  When a free-like function is called, these are overwritten with
-    DEADBYTE, to catch reference to freed memory.  When a realloc- like function
-    is called requesting a smaller memory block, the excess old bytes are also
-    filled with DEADBYTE.
-p[N:N+S]
-    Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
-p[N+S:N+2*S]
-    A serial number, incremented by 1 on each call to a malloc-like or
-    realloc-like function.  Big-endian size_t.  If "bad memory" is detected
-    later, the serial number gives an excellent way to set a breakpoint on the
-    next run, to capture the instant at which this block was passed out.  The
-    static function bumpserialno() in obmalloc.c is the only place the serial
-    number is incremented, and exists so you can set such a breakpoint easily.
-
-A realloc-like or free-like function first checks that the FORBIDDENBYTEs at
-each end are intact.  If they've been altered, diagnostic output is written to
-stderr, and the program is aborted via Py_FatalError().  The other main failure
-mode is provoking a memory error when a program reads up one of the special bit
-patterns and tries to use it as an address.  If you get in a debugger then and
-look at the object, you're likely to see that it's entirely filled with 0xDB
-(meaning freed memory is getting used) or 0xCB (meaning uninitialized memory is
-getting used).
-
-Note that PYMALLOC_DEBUG requires WITH_PYMALLOC.
-
-Special gimmicks:
-
-envvar PYTHONMALLOCSTATS
-    If this envvar exists, a report of pymalloc summary statistics is printed to
-    stderr whenever a new arena is allocated, and also by Py_FinalizeEx().
-
-Changed in 2.5:  The number of extra bytes allocated is 4*sizeof(size_t).
-Before it was 16 on all boxes, reflecting that Python couldn't make use of
-allocations >= 2**32 bytes even on 64-bit boxes before 2.5.
-
-
 Py_DEBUG
 --------
 
 This is what is generally meant by "a debug build" of Python.
 
-Py_DEBUG implies LLTRACE, Py_REF_DEBUG, Py_TRACE_REFS, and PYMALLOC_DEBUG (if
-WITH_PYMALLOC is enabled).  In addition, C assert()s are enabled (via the C way:
-by not defining NDEBUG), and some routines do additional sanity checks inside
-"#ifdef Py_DEBUG" blocks.
+Py_DEBUG implies Py_REF_DEBUG. In addition, C assert()s are enabled
+(via the C way: by not defining NDEBUG), and some routines do additional sanity
+checks inside "#ifdef Py_DEBUG" blocks.
 
-
-COUNT_ALLOCS
-------------
-
-Each type object grows three new members:
-
-    /* Number of times an object of this type was allocated. */
-    int tp_allocs;
-
-    /* Number of times an object of this type was deallocated. */
-    int tp_frees;
-
-    /* Highwater mark:  the maximum value of tp_allocs - tp_frees so
-     * far; or, IOW, the largest number of objects of this type alive at
-     * the same time.
-     */
-    int tp_maxalloc;
-
-Allocation and deallocation code keeps these counts up to date.  Py_FinalizeEx()
-displays a summary of the info returned by sys.getcounts() (see below), along
-with assorted other special allocation counts (like the number of tuple
-allocations satisfied by a tuple free-list, the number of 1-character strings
-allocated, etc).
-
-Before Python 2.2, type objects were immortal, and the COUNT_ALLOCS
-implementation relies on that.  As of Python 2.2, heap-allocated type/ class
-objects can go away.  COUNT_ALLOCS can blow up in 2.2 and 2.2.1 because of this;
-this was fixed in 2.2.2.  Use of COUNT_ALLOCS makes all heap-allocated type
-objects immortal, except for those for which no object of that type is ever
-allocated.
-
-Starting with Python 2.3, If Py_TRACE_REFS is also defined, COUNT_ALLOCS
-arranges to ensure that the type object for each allocated object appears in the
-doubly-linked list of all objects maintained by Py_TRACE_REFS.
-
-Special gimmicks:
-
-sys.getcounts()
-    Return a list of 4-tuples, one entry for each type object for which at least
-    one object of that type was allocated.  Each tuple is of the form:
-
-        (tp_name, tp_allocs, tp_frees, tp_maxalloc)
-
-    Each distinct type object gets a distinct entry in this list, even if two or
-    more type objects have the same tp_name (in which case there's no way to
-    distinguish them by looking at this list).  The list is ordered by time of
-    first object allocation: the type object for which the first allocation of
-    an object of that type occurred most recently is at the front of the list.
-
-
-LLTRACE
--------
-
-Compile in support for Low Level TRACE-ing of the main interpreter loop.
-
-When this preprocessor symbol is defined, before PyEval_EvalFrame executes a
-frame's code it checks the frame's global namespace for a variable
-"__lltrace__".  If such a variable is found, mounds of information about what
-the interpreter is doing are sprayed to stdout, such as every opcode and opcode
-argument and values pushed onto and popped off the value stack.
-
-Not useful very often, but very useful when needed.
+Also, compile in support for "lltrace" (Low Level TRACE-ing) of the main
+interpreter loop. Before _PyEval_EvalFrameDefault executes a frame's code, it
+checks the frame's global namespace for a variable "__lltrace__" (as well as for
+the environment variable PYTHON_LLTRACE"). If such a variable is found, mounds
+of information about what the interpreter is doing are sprayed to stdout, such
+as every opcode and opcode argument and values pushed onto and popped off the
+value stack. Higher integer values for the environment variable result in more
+and more detail being printed (the global __lltrace__ always enables the maximum
+output). Not useful very often, but *very* useful when needed.

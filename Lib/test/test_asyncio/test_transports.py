@@ -7,6 +7,12 @@ import asyncio
 from asyncio import transports
 
 
+def tearDownModule():
+    # not needed for the test file but added for uniformness with all other
+    # asyncio test files for the sake of unified cleanup
+    asyncio.events._set_event_loop_policy(None)
+
+
 class TransportTests(unittest.TestCase):
 
     def test_ctor_extra_is_none(self):
@@ -22,14 +28,19 @@ class TransportTests(unittest.TestCase):
         self.assertIs(default, transport.get_extra_info('unknown', default))
 
     def test_writelines(self):
-        transport = asyncio.Transport()
-        transport.write = mock.Mock()
+        writer = mock.Mock()
+
+        class MyTransport(asyncio.Transport):
+            def write(self, data):
+                writer(data)
+
+        transport = MyTransport()
 
         transport.writelines([b'line1',
                               bytearray(b'line2'),
                               memoryview(b'line3')])
-        self.assertEqual(1, transport.write.call_count)
-        transport.write.assert_called_with(b'line1line2line3')
+        self.assertEqual(1, writer.call_count)
+        writer.assert_called_with(b'line1line2line3')
 
     def test_not_implemented(self):
         transport = asyncio.Transport()
@@ -42,6 +53,7 @@ class TransportTests(unittest.TestCase):
         self.assertRaises(NotImplementedError, transport.can_write_eof)
         self.assertRaises(NotImplementedError, transport.pause_reading)
         self.assertRaises(NotImplementedError, transport.resume_reading)
+        self.assertRaises(NotImplementedError, transport.is_reading)
         self.assertRaises(NotImplementedError, transport.close)
         self.assertRaises(NotImplementedError, transport.abort)
 

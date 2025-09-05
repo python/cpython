@@ -1,11 +1,18 @@
 import unittest
+import inspect
 import pickle
 import sys
+from decimal import Decimal
+from fractions import Fraction
 
 from test import support
+from test.support import import_helper
 
-py_operator = support.import_fresh_module('operator', blocked=['_operator'])
-c_operator = support.import_fresh_module('operator', fresh=['_operator'])
+
+py_operator = import_helper.import_fresh_module('operator',
+                                                blocked=['_operator'])
+c_operator = import_helper.import_fresh_module('operator',
+                                               fresh=['_operator'])
 
 class Seq1:
     def __init__(self, lst):
@@ -35,8 +42,24 @@ class Seq2(object):
     def __rmul__(self, other):
         return other * self.lst
 
+class BadIterable:
+    def __iter__(self):
+        raise ZeroDivisionError
+
 
 class OperatorTestCase:
+    def test___all__(self):
+        operator = self.module
+        actual_all = set(operator.__all__)
+        computed_all = set()
+        for name in vars(operator):
+            if name.startswith('__'):
+                continue
+            value = getattr(operator, name)
+            if value.__module__ in ('operator', '_operator'):
+                computed_all.add(name)
+        self.assertSetEqual(computed_all, actual_all)
+
     def test_lt(self):
         operator = self.module
         self.assertRaises(TypeError, operator.lt)
@@ -142,8 +165,14 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.countOf)
         self.assertRaises(TypeError, operator.countOf, None, None)
+        self.assertRaises(ZeroDivisionError, operator.countOf, BadIterable(), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 3), 1)
         self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 5), 0)
+        # is but not ==
+        nan = float("nan")
+        self.assertEqual(operator.countOf([nan, nan, 21], nan), 2)
+        # == but not is
+        self.assertEqual(operator.countOf([{}, 1, {}, 2], {}), 2)
 
     def test_delitem(self):
         operator = self.module
@@ -176,8 +205,15 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.indexOf)
         self.assertRaises(TypeError, operator.indexOf, None, None)
+        self.assertRaises(ZeroDivisionError, operator.indexOf, BadIterable(), 1)
         self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
+        nan = float("nan")
+        self.assertEqual(operator.indexOf([nan, nan, 21], nan), 0)
+        self.assertEqual(operator.indexOf([{}, 1, {}, 2], {}), 0)
+        it = iter('leave the iterator at exactly the position after the match')
+        self.assertEqual(operator.indexOf(it, 'a'), 2)
+        self.assertEqual(next(it), 'v')
 
     def test_invert(self):
         operator = self.module
@@ -258,6 +294,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.contains)
         self.assertRaises(TypeError, operator.contains, None, None)
+        self.assertRaises(ZeroDivisionError, operator.contains, BadIterable(), 1)
         self.assertTrue(operator.contains(range(4), 2))
         self.assertFalse(operator.contains(range(4), 5))
 
@@ -309,6 +346,26 @@ class OperatorTestCase:
         self.assertRaises(TypeError, operator.is_not)
         self.assertFalse(operator.is_not(a, b))
         self.assertTrue(operator.is_not(a,c))
+
+    def test_is_none(self):
+        operator = self.module
+        a = 'xyzpdq'
+        b = ''
+        c = None
+        self.assertRaises(TypeError, operator.is_none)
+        self.assertFalse(operator.is_none(a))
+        self.assertFalse(operator.is_none(b))
+        self.assertTrue(operator.is_none(c))
+
+    def test_is_not_none(self):
+        operator = self.module
+        a = 'xyzpdq'
+        b = ''
+        c = None
+        self.assertRaises(TypeError, operator.is_not_none)
+        self.assertTrue(operator.is_not_none(a))
+        self.assertTrue(operator.is_not_none(b))
+        self.assertFalse(operator.is_not_none(c))
 
     def test_attrgetter(self):
         operator = self.module
@@ -401,6 +458,19 @@ class OperatorTestCase:
         self.assertEqual(operator.itemgetter(2,10,5)(data), ('2', '10', '5'))
         self.assertRaises(TypeError, operator.itemgetter(2, 'x', 5), data)
 
+        # interesting indices
+        t = tuple('abcde')
+        self.assertEqual(operator.itemgetter(-1)(t), 'e')
+        self.assertEqual(operator.itemgetter(slice(2, 4))(t), ('c', 'd'))
+
+        # interesting sequences
+        class T(tuple):
+            'Tuple subclass'
+            pass
+        self.assertEqual(operator.itemgetter(0)(T('abc')), 'a')
+        self.assertEqual(operator.itemgetter(0)(['a', 'b', 'c']), 'a')
+        self.assertEqual(operator.itemgetter(0)(range(100, 200)), 100)
+
     def test_methodcaller(self):
         operator = self.module
         self.assertRaises(TypeError, operator.methodcaller)
@@ -412,6 +482,8 @@ class OperatorTestCase:
                 return f
             def baz(*args, **kwds):
                 return kwds['name'], kwds['self']
+            def return_arguments(self, *args, **kwds):
+                return args, kwds
         a = A()
         f = operator.methodcaller('foo')
         self.assertRaises(IndexError, f, a)
@@ -427,6 +499,17 @@ class OperatorTestCase:
         self.assertEqual(f(a), 5)
         f = operator.methodcaller('baz', name='spam', self='eggs')
         self.assertEqual(f(a), ('spam', 'eggs'))
+
+        many_positional_arguments = tuple(range(10))
+        many_kw_arguments = dict(zip('abcdefghij', range(10)))
+        f = operator.methodcaller('return_arguments', *many_positional_arguments)
+        self.assertEqual(f(a), (many_positional_arguments, {}))
+
+        f = operator.methodcaller('return_arguments', **many_kw_arguments)
+        self.assertEqual(f(a), ((), many_kw_arguments))
+
+        f = operator.methodcaller('return_arguments', *many_positional_arguments, **many_kw_arguments)
+        self.assertEqual(f(a), (many_positional_arguments, many_kw_arguments))
 
     def test_inplace(self):
         operator = self.module
@@ -461,6 +544,44 @@ class OperatorTestCase:
         self.assertEqual(operator.ixor     (c, 5), "ixor")
         self.assertEqual(operator.iconcat  (c, c), "iadd")
 
+    def test_iconcat_without_getitem(self):
+        operator = self.module
+
+        msg = "'int' object can't be concatenated"
+        with self.assertRaisesRegex(TypeError, msg):
+            operator.iconcat(1, 0.5)
+
+    def test_index(self):
+        operator = self.module
+        class X:
+            def __index__(self):
+                return 1
+
+        self.assertEqual(operator.index(X()), 1)
+        self.assertEqual(operator.index(0), 0)
+        self.assertEqual(operator.index(1), 1)
+        self.assertEqual(operator.index(2), 2)
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(1.5)
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(Fraction(3, 7))
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(Decimal(1))
+        with self.assertRaises((AttributeError, TypeError)):
+            operator.index(None)
+
+    def test_not_(self):
+        operator = self.module
+        class C:
+            def __bool__(self):
+                raise SyntaxError
+        self.assertRaises(TypeError, operator.not_)
+        self.assertRaises(SyntaxError, operator.not_, C())
+        self.assertFalse(operator.not_(5))
+        self.assertFalse(operator.not_([0]))
+        self.assertTrue(operator.not_(0))
+        self.assertTrue(operator.not_([]))
+
     def test_length_hint(self):
         operator = self.module
         class X(object):
@@ -486,6 +607,25 @@ class OperatorTestCase:
         with self.assertRaises(LookupError):
             operator.length_hint(X(LookupError))
 
+        class Y: pass
+
+        msg = "'str' object cannot be interpreted as an integer"
+        with self.assertRaisesRegex(TypeError, msg):
+            operator.length_hint(X(2), "abc")
+        self.assertEqual(operator.length_hint(Y(), 10), 10)
+
+    def test_call(self):
+        operator = self.module
+
+        def func(*args, **kwargs): return args, kwargs
+
+        self.assertEqual(operator.call(func), ((), {}))
+        self.assertEqual(operator.call(func, 0, 1), ((0, 1), {}))
+        self.assertEqual(operator.call(func, a=2, obj=3),
+                         ((), {"a": 2, "obj": 3}))
+        self.assertEqual(operator.call(func, 0, 1, a=2, obj=3),
+                         ((0, 1), {"a": 2, "obj": 3}))
+
     def test_dunder_is_original(self):
         operator = self.module
 
@@ -496,6 +636,31 @@ class OperatorTestCase:
             if dunder:
                 self.assertIs(dunder, orig)
 
+    @support.requires_docstrings
+    def test_attrgetter_signature(self):
+        operator = self.module
+        sig = inspect.signature(operator.attrgetter)
+        self.assertEqual(str(sig), '(attr, /, *attrs)')
+        sig = inspect.signature(operator.attrgetter('x', 'z', 'y'))
+        self.assertEqual(str(sig), '(obj, /)')
+
+    @support.requires_docstrings
+    def test_itemgetter_signature(self):
+        operator = self.module
+        sig = inspect.signature(operator.itemgetter)
+        self.assertEqual(str(sig), '(item, /, *items)')
+        sig = inspect.signature(operator.itemgetter(2, 3, 5))
+        self.assertEqual(str(sig), '(obj, /)')
+
+    @support.requires_docstrings
+    def test_methodcaller_signature(self):
+        operator = self.module
+        sig = inspect.signature(operator.methodcaller)
+        self.assertEqual(str(sig), '(name, /, *args, **kwargs)')
+        sig = inspect.signature(operator.methodcaller('foo', 2, y=3))
+        self.assertEqual(str(sig), '(obj, /)')
+
+
 class PyOperatorTestCase(OperatorTestCase, unittest.TestCase):
     module = py_operator
 
@@ -504,6 +669,7 @@ class COperatorTestCase(OperatorTestCase, unittest.TestCase):
     module = c_operator
 
 
+@support.thread_unsafe("swaps global operator module")
 class OperatorPickleTestCase:
     def copy(self, obj, proto):
         with support.swap_item(sys.modules, 'operator', self.module):

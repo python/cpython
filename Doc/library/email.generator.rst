@@ -1,5 +1,5 @@
-:mod:`email.generator`: Generating MIME documents
--------------------------------------------------
+:mod:`!email.generator`: Generating MIME documents
+--------------------------------------------------
 
 .. module:: email.generator
    :synopsis: Generate flat text email messages from a message structure.
@@ -10,8 +10,8 @@
 
 One of the most common tasks is to generate the flat (serialized) version of
 the email message represented by a message object structure.  You will need to
-do this if you want to send your message via :meth:`smtplib.SMTP.sendmail` or
-the :mod:`nntplib` module, or print the message on the console.  Taking a
+do this if you want to send your message via :meth:`smtplib.SMTP.sendmail`,
+or print the message on the console.  Taking a
 message object structure and producing a serialized representation is the job
 of the generator classes.
 
@@ -36,6 +36,10 @@ something that contains only ASCII characters, using the standard email RFC
 Content Transfer Encoding techniques for encoding email messages for transport
 over channels that are not "8 bit clean".
 
+To accommodate reproducible processing of SMIME-signed messages
+:class:`Generator` disables header folding for message parts of type
+``multipart/signed`` and all subparts.
+
 
 .. class:: BytesGenerator(outfp, mangle_from_=None, maxheaderlen=None, *, \
                           policy=None)
@@ -51,9 +55,9 @@ over channels that are not "8 bit clean".
    defaults to the value of the :attr:`~email.policy.Policy.mangle_from_`
    setting of the *policy* (which is ``True`` for the
    :data:`~email.policy.compat32` policy and ``False`` for all others).
-   *mangle_from_* is intended for use when messages are stored in unix mbox
+   *mangle_from_* is intended for use when messages are stored in Unix mbox
    format (see :mod:`mailbox` and `WHY THE CONTENT-LENGTH FORMAT IS BAD
-   <http://www.jwz.org/doc/content-length.html>`_).
+   <https://www.jwz.org/doc/content-length.html>`_).
 
    If *maxheaderlen* is not ``None``, refold any header lines that are longer
    than *maxheaderlen*, or if ``0``, do not rewrap any headers.  If
@@ -152,9 +156,9 @@ to be using :class:`BytesGenerator`, and not :class:`Generator`.
    defaults to the value of the :attr:`~email.policy.Policy.mangle_from_`
    setting of the *policy* (which is ``True`` for the
    :data:`~email.policy.compat32` policy and ``False`` for all others).
-   *mangle_from_* is intended for use when messages are stored in unix mbox
+   *mangle_from_* is intended for use when messages are stored in Unix mbox
    format (see :mod:`mailbox` and `WHY THE CONTENT-LENGTH FORMAT IS BAD
-   <http://www.jwz.org/doc/content-length.html>`_).
+   <https://www.jwz.org/doc/content-length.html>`_).
 
    If *maxheaderlen* is not ``None``, refold any header lines that are longer
    than *maxheaderlen*, or if ``0``, do not rewrap any headers.  If
@@ -184,8 +188,8 @@ to be using :class:`BytesGenerator`, and not :class:`Generator`.
       (This is required because strings cannot represent non-ASCII bytes.)
       Convert any bytes with the high bit set as needed using an
       ASCII-compatible :mailheader:`Content-Transfer-Encoding`.  That is,
-      transform parts with non-ASCII :mailheader:`Cotnent-Transfer-Encoding`
-      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatibile
+      transform parts with non-ASCII :mailheader:`Content-Transfer-Encoding`
+      (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatible
       :mailheader:`Content-Transfer-Encoding`, and encode RFC-invalid non-ASCII
       bytes in headers using the MIME ``unknown-8bit`` character set, thus
       rendering them RFC-compliant.
@@ -270,9 +274,9 @@ in with information about the part.
 .. rubric:: Footnotes
 
 .. [#] This statement assumes that you use the appropriate setting for
-       ``unixfrom``, and that there are no :mod:`policy` settings calling for
+       ``unixfrom``, and that there are no :mod:`email.policy` settings calling for
        automatic adjustments (for example,
-       :attr:`~email.policy.Policy.refold_source` must be ``none``, which is
+       :attr:`~email.policy.EmailPolicy.refold_source` must be ``none``, which is
        *not* the default).  It is also not 100% true, since if the message
        does not conform to the RFC standards occasionally information about the
        exact original text is lost during parsing error recovery.  It is a goal

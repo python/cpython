@@ -1,546 +1,456 @@
 """Tests for queues.py"""
 
-import unittest
-from unittest import mock
-
 import asyncio
-from asyncio import test_utils
+import unittest
+from types import GenericAlias
 
 
-class _QueueTestBase(test_utils.TestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.loop = self.new_test_loop()
+def tearDownModule():
+    asyncio.events._set_event_loop_policy(None)
 
 
-class QueueBasicTests(_QueueTestBase):
+class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
 
-    def _test_repr_or_str(self, fn, expect_id):
+    async def _test_repr_or_str(self, fn, expect_id):
         """Test Queue's repr or str.
 
         fn is repr or str. expect_id is True if we expect the Queue's id to
         appear in fn(Queue()).
         """
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0.1, when)
-            when = yield 0.1
-            self.assertAlmostEqual(0.2, when)
-            yield 0.1
-
-        loop = self.new_test_loop(gen)
-
-        q = asyncio.Queue(loop=loop)
-        self.assertTrue(fn(q).startswith('<Queue'), fn(q))
+        q = asyncio.Queue()
+        self.assertStartsWith(fn(q), '<Queue')
         id_is_present = hex(id(q)) in fn(q)
         self.assertEqual(expect_id, id_is_present)
 
-        @asyncio.coroutine
-        def add_getter():
-            q = asyncio.Queue(loop=loop)
+        # getters
+        q = asyncio.Queue()
+        async with asyncio.TaskGroup() as tg:
             # Start a task that waits to get.
-            asyncio.Task(q.get(), loop=loop)
+            getter = tg.create_task(q.get())
             # Let it start waiting.
-            yield from asyncio.sleep(0.1, loop=loop)
+            await asyncio.sleep(0)
             self.assertTrue('_getters[1]' in fn(q))
             # resume q.get coroutine to finish generator
             q.put_nowait(0)
 
-        loop.run_until_complete(add_getter())
+        self.assertEqual(0, await getter)
 
-        @asyncio.coroutine
-        def add_putter():
-            q = asyncio.Queue(maxsize=1, loop=loop)
+        # putters
+        q = asyncio.Queue(maxsize=1)
+        async with asyncio.TaskGroup() as tg:
             q.put_nowait(1)
             # Start a task that waits to put.
-            asyncio.Task(q.put(2), loop=loop)
+            putter = tg.create_task(q.put(2))
             # Let it start waiting.
-            yield from asyncio.sleep(0.1, loop=loop)
+            await asyncio.sleep(0)
             self.assertTrue('_putters[1]' in fn(q))
             # resume q.put coroutine to finish generator
             q.get_nowait()
 
-        loop.run_until_complete(add_putter())
+        self.assertTrue(putter.done())
 
-        q = asyncio.Queue(loop=loop)
+        q = asyncio.Queue()
         q.put_nowait(1)
         self.assertTrue('_queue=[1]' in fn(q))
 
-    def test_ctor_loop(self):
-        loop = mock.Mock()
-        q = asyncio.Queue(loop=loop)
-        self.assertIs(q._loop, loop)
+    async def test_repr(self):
+        await self._test_repr_or_str(repr, True)
 
-        q = asyncio.Queue(loop=self.loop)
-        self.assertIs(q._loop, self.loop)
+    async def test_str(self):
+        await self._test_repr_or_str(str, False)
 
-    def test_ctor_noloop(self):
-        asyncio.set_event_loop(self.loop)
+    def test_generic_alias(self):
+        q = asyncio.Queue[int]
+        self.assertEqual(q.__args__, (int,))
+        self.assertIsInstance(q, GenericAlias)
+
+    async def test_empty(self):
         q = asyncio.Queue()
-        self.assertIs(q._loop, self.loop)
-
-    def test_repr(self):
-        self._test_repr_or_str(repr, True)
-
-    def test_str(self):
-        self._test_repr_or_str(str, False)
-
-    def test_empty(self):
-        q = asyncio.Queue(loop=self.loop)
         self.assertTrue(q.empty())
-        q.put_nowait(1)
+        await q.put(1)
         self.assertFalse(q.empty())
-        self.assertEqual(1, q.get_nowait())
+        self.assertEqual(1, await q.get())
         self.assertTrue(q.empty())
 
-    def test_full(self):
-        q = asyncio.Queue(loop=self.loop)
+    async def test_full(self):
+        q = asyncio.Queue()
         self.assertFalse(q.full())
 
-        q = asyncio.Queue(maxsize=1, loop=self.loop)
-        q.put_nowait(1)
+        q = asyncio.Queue(maxsize=1)
+        await q.put(1)
         self.assertTrue(q.full())
 
-    def test_order(self):
-        q = asyncio.Queue(loop=self.loop)
+    async def test_order(self):
+        q = asyncio.Queue()
         for i in [1, 3, 2]:
-            q.put_nowait(i)
+            await q.put(i)
 
-        items = [q.get_nowait() for _ in range(3)]
+        items = [await q.get() for _ in range(3)]
         self.assertEqual([1, 3, 2], items)
 
-    def test_maxsize(self):
-
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0.01, when)
-            when = yield 0.01
-            self.assertAlmostEqual(0.02, when)
-            yield 0.01
-
-        loop = self.new_test_loop(gen)
-
-        q = asyncio.Queue(maxsize=2, loop=loop)
+    async def test_maxsize(self):
+        q = asyncio.Queue(maxsize=2)
         self.assertEqual(2, q.maxsize)
         have_been_put = []
 
-        @asyncio.coroutine
-        def putter():
+        async def putter():
             for i in range(3):
-                yield from q.put(i)
+                await q.put(i)
                 have_been_put.append(i)
             return True
 
-        @asyncio.coroutine
-        def test():
-            t = asyncio.Task(putter(), loop=loop)
-            yield from asyncio.sleep(0.01, loop=loop)
+        t = asyncio.create_task(putter())
+        for i in range(2):
+            await asyncio.sleep(0)
 
-            # The putter is blocked after putting two items.
-            self.assertEqual([0, 1], have_been_put)
-            self.assertEqual(0, q.get_nowait())
+        # The putter is blocked after putting two items.
+        self.assertEqual([0, 1], have_been_put)
+        self.assertEqual(0, await q.get())
 
-            # Let the putter resume and put last item.
-            yield from asyncio.sleep(0.01, loop=loop)
-            self.assertEqual([0, 1, 2], have_been_put)
-            self.assertEqual(1, q.get_nowait())
-            self.assertEqual(2, q.get_nowait())
+        # Let the putter resume and put last item.
+        await asyncio.sleep(0)
+        self.assertEqual([0, 1, 2], have_been_put)
+        self.assertEqual(1, await q.get())
+        self.assertEqual(2, await q.get())
 
-            self.assertTrue(t.done())
-            self.assertTrue(t.result())
-
-        loop.run_until_complete(test())
-        self.assertAlmostEqual(0.02, loop.time())
+        self.assertTrue(t.done())
+        self.assertTrue(t.result())
 
 
-class QueueGetTests(_QueueTestBase):
+class QueueGetTests(unittest.IsolatedAsyncioTestCase):
 
-    def test_blocking_get(self):
-        q = asyncio.Queue(loop=self.loop)
+    async def test_blocking_get(self):
+        q = asyncio.Queue()
         q.put_nowait(1)
 
-        @asyncio.coroutine
-        def queue_get():
-            return (yield from q.get())
+        self.assertEqual(1, await q.get())
 
-        res = self.loop.run_until_complete(queue_get())
-        self.assertEqual(1, res)
+    async def test_get_with_putters(self):
+        loop = asyncio.get_running_loop()
 
-    def test_get_with_putters(self):
-        q = asyncio.Queue(1, loop=self.loop)
-        q.put_nowait(1)
+        q = asyncio.Queue(1)
+        await q.put(1)
 
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = loop.create_future()
         q._putters.append(waiter)
 
-        res = self.loop.run_until_complete(q.get())
-        self.assertEqual(1, res)
+        self.assertEqual(1, await q.get())
         self.assertTrue(waiter.done())
         self.assertIsNone(waiter.result())
 
-    def test_blocking_get_wait(self):
-
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0.01, when)
-            yield 0.01
-
-        loop = self.new_test_loop(gen)
-
-        q = asyncio.Queue(loop=loop)
-        started = asyncio.Event(loop=loop)
+    async def test_blocking_get_wait(self):
+        loop = asyncio.get_running_loop()
+        q = asyncio.Queue()
+        started = asyncio.Event()
         finished = False
 
-        @asyncio.coroutine
-        def queue_get():
+        async def queue_get():
             nonlocal finished
             started.set()
-            res = yield from q.get()
+            res = await q.get()
             finished = True
             return res
 
-        @asyncio.coroutine
-        def queue_put():
-            loop.call_later(0.01, q.put_nowait, 1)
-            queue_get_task = asyncio.Task(queue_get(), loop=loop)
-            yield from started.wait()
-            self.assertFalse(finished)
-            res = yield from queue_get_task
-            self.assertTrue(finished)
-            return res
-
-        res = loop.run_until_complete(queue_put())
+        queue_get_task = asyncio.create_task(queue_get())
+        await started.wait()
+        self.assertFalse(finished)
+        loop.call_later(0.01, q.put_nowait, 1)
+        res = await queue_get_task
+        self.assertTrue(finished)
         self.assertEqual(1, res)
-        self.assertAlmostEqual(0.01, loop.time())
 
     def test_nonblocking_get(self):
-        q = asyncio.Queue(loop=self.loop)
+        q = asyncio.Queue()
         q.put_nowait(1)
         self.assertEqual(1, q.get_nowait())
 
     def test_nonblocking_get_exception(self):
-        q = asyncio.Queue(loop=self.loop)
+        q = asyncio.Queue()
         self.assertRaises(asyncio.QueueEmpty, q.get_nowait)
 
-    def test_get_cancelled(self):
+    async def test_get_cancelled_race(self):
+        q = asyncio.Queue()
 
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0.01, when)
-            when = yield 0.01
-            self.assertAlmostEqual(0.061, when)
-            yield 0.05
+        t1 = asyncio.create_task(q.get())
+        t2 = asyncio.create_task(q.get())
 
-        loop = self.new_test_loop(gen)
-
-        q = asyncio.Queue(loop=loop)
-
-        @asyncio.coroutine
-        def queue_get():
-            return (yield from asyncio.wait_for(q.get(), 0.051, loop=loop))
-
-        @asyncio.coroutine
-        def test():
-            get_task = asyncio.Task(queue_get(), loop=loop)
-            yield from asyncio.sleep(0.01, loop=loop)  # let the task start
-            q.put_nowait(1)
-            return (yield from get_task)
-
-        self.assertEqual(1, loop.run_until_complete(test()))
-        self.assertAlmostEqual(0.06, loop.time())
-
-    def test_get_cancelled_race(self):
-        q = asyncio.Queue(loop=self.loop)
-
-        t1 = asyncio.Task(q.get(), loop=self.loop)
-        t2 = asyncio.Task(q.get(), loop=self.loop)
-
-        test_utils.run_briefly(self.loop)
+        await asyncio.sleep(0)
         t1.cancel()
-        test_utils.run_briefly(self.loop)
+        await asyncio.sleep(0)
         self.assertTrue(t1.done())
-        q.put_nowait('a')
-        test_utils.run_briefly(self.loop)
-        self.assertEqual(t2.result(), 'a')
+        await q.put('a')
+        await asyncio.sleep(0)
+        self.assertEqual('a', await t2)
 
-    def test_get_with_waiting_putters(self):
-        q = asyncio.Queue(loop=self.loop, maxsize=1)
-        asyncio.Task(q.put('a'), loop=self.loop)
-        asyncio.Task(q.put('b'), loop=self.loop)
-        test_utils.run_briefly(self.loop)
-        self.assertEqual(self.loop.run_until_complete(q.get()), 'a')
-        self.assertEqual(self.loop.run_until_complete(q.get()), 'b')
+    async def test_get_with_waiting_putters(self):
+        q = asyncio.Queue(maxsize=1)
+        asyncio.create_task(q.put('a'))
+        asyncio.create_task(q.put('b'))
+        self.assertEqual(await q.get(), 'a')
+        self.assertEqual(await q.get(), 'b')
 
-    def test_why_are_getters_waiting(self):
-        # From issue #268.
-
-        @asyncio.coroutine
-        def consumer(queue, num_expected):
+    async def test_why_are_getters_waiting(self):
+        async def consumer(queue, num_expected):
             for _ in range(num_expected):
-                yield from queue.get()
+                await queue.get()
 
-        @asyncio.coroutine
-        def producer(queue, num_items):
+        async def producer(queue, num_items):
             for i in range(num_items):
-                yield from queue.put(i)
+                await queue.put(i)
 
-        queue_size = 1
         producer_num_items = 5
-        q = asyncio.Queue(queue_size, loop=self.loop)
 
-        self.loop.run_until_complete(
-            asyncio.gather(producer(q, producer_num_items),
-                           consumer(q, producer_num_items),
-                           loop=self.loop),
-            )
+        q = asyncio.Queue(1)
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(producer(q, producer_num_items))
+            tg.create_task(consumer(q, producer_num_items))
+
+    async def test_cancelled_getters_not_being_held_in_self_getters(self):
+        queue = asyncio.Queue(maxsize=5)
+
+        with self.assertRaises(TimeoutError):
+            await asyncio.wait_for(queue.get(), 0.1)
+
+        self.assertEqual(len(queue._getters), 0)
 
 
-class QueuePutTests(_QueueTestBase):
+class QueuePutTests(unittest.IsolatedAsyncioTestCase):
 
-    def test_blocking_put(self):
-        q = asyncio.Queue(loop=self.loop)
+    async def test_blocking_put(self):
+        q = asyncio.Queue()
 
-        @asyncio.coroutine
-        def queue_put():
-            # No maxsize, won't block.
-            yield from q.put(1)
+        # No maxsize, won't block.
+        await q.put(1)
+        self.assertEqual(1, await q.get())
 
-        self.loop.run_until_complete(queue_put())
-
-    def test_blocking_put_wait(self):
-
-        def gen():
-            when = yield
-            self.assertAlmostEqual(0.01, when)
-            yield 0.01
-
-        loop = self.new_test_loop(gen)
-
-        q = asyncio.Queue(maxsize=1, loop=loop)
-        started = asyncio.Event(loop=loop)
+    async def test_blocking_put_wait(self):
+        q = asyncio.Queue(maxsize=1)
+        started = asyncio.Event()
         finished = False
 
-        @asyncio.coroutine
-        def queue_put():
+        async def queue_put():
             nonlocal finished
             started.set()
-            yield from q.put(1)
-            yield from q.put(2)
+            await q.put(1)
+            await q.put(2)
             finished = True
 
-        @asyncio.coroutine
-        def queue_get():
-            loop.call_later(0.01, q.get_nowait)
-            queue_put_task = asyncio.Task(queue_put(), loop=loop)
-            yield from started.wait()
-            self.assertFalse(finished)
-            yield from queue_put_task
-            self.assertTrue(finished)
-
-        loop.run_until_complete(queue_get())
-        self.assertAlmostEqual(0.01, loop.time())
+        loop = asyncio.get_running_loop()
+        loop.call_later(0.01, q.get_nowait)
+        queue_put_task = asyncio.create_task(queue_put())
+        await started.wait()
+        self.assertFalse(finished)
+        await queue_put_task
+        self.assertTrue(finished)
 
     def test_nonblocking_put(self):
-        q = asyncio.Queue(loop=self.loop)
+        q = asyncio.Queue()
         q.put_nowait(1)
         self.assertEqual(1, q.get_nowait())
 
-    def test_get_cancel_drop_one_pending_reader(self):
-        def gen():
-            yield 0.01
-            yield 0.1
+    async def test_get_cancel_drop_one_pending_reader(self):
+        q = asyncio.Queue()
 
-        loop = self.new_test_loop(gen)
+        reader = asyncio.create_task(q.get())
 
-        q = asyncio.Queue(loop=loop)
-
-        reader = loop.create_task(q.get())
-
-        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+        await asyncio.sleep(0)
 
         q.put_nowait(1)
         q.put_nowait(2)
         reader.cancel()
 
         try:
-            loop.run_until_complete(reader)
+            await reader
         except asyncio.CancelledError:
             # try again
-            reader = loop.create_task(q.get())
-            loop.run_until_complete(reader)
+            reader = asyncio.create_task(q.get())
+            await reader
 
         result = reader.result()
         # if we get 2, it means 1 got dropped!
         self.assertEqual(1, result)
 
-    def test_get_cancel_drop_many_pending_readers(self):
-        def gen():
-            yield 0.01
-            yield 0.1
+    async def test_get_cancel_drop_many_pending_readers(self):
+        q = asyncio.Queue()
 
-        loop = self.new_test_loop(gen)
-        loop.set_debug(True)
+        async with asyncio.TaskGroup() as tg:
+            reader1 = tg.create_task(q.get())
+            reader2 = tg.create_task(q.get())
+            reader3 = tg.create_task(q.get())
 
-        q = asyncio.Queue(loop=loop)
+            await asyncio.sleep(0)
 
-        reader1 = loop.create_task(q.get())
-        reader2 = loop.create_task(q.get())
-        reader3 = loop.create_task(q.get())
+            q.put_nowait(1)
+            q.put_nowait(2)
+            reader1.cancel()
 
-        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+            with self.assertRaises(asyncio.CancelledError):
+                await reader1
 
-        q.put_nowait(1)
-        q.put_nowait(2)
-        reader1.cancel()
-
-        try:
-            loop.run_until_complete(reader1)
-        except asyncio.CancelledError:
-            pass
-
-        loop.run_until_complete(reader3)
+            await reader3
 
         # It is undefined in which order concurrent readers receive results.
         self.assertEqual({reader2.result(), reader3.result()}, {1, 2})
 
-    def test_put_cancel_drop(self):
-
-        def gen():
-            yield 0.01
-            yield 0.1
-
-        loop = self.new_test_loop(gen)
-        q = asyncio.Queue(1, loop=loop)
+    async def test_put_cancel_drop(self):
+        q = asyncio.Queue(1)
 
         q.put_nowait(1)
 
         # putting a second item in the queue has to block (qsize=1)
-        writer = loop.create_task(q.put(2))
-        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+        writer = asyncio.create_task(q.put(2))
+        await asyncio.sleep(0)
 
         value1 = q.get_nowait()
         self.assertEqual(value1, 1)
 
         writer.cancel()
         try:
-            loop.run_until_complete(writer)
+            await writer
         except asyncio.CancelledError:
             # try again
-            writer = loop.create_task(q.put(2))
-            loop.run_until_complete(writer)
+            writer = asyncio.create_task(q.put(2))
+            await writer
 
         value2 = q.get_nowait()
         self.assertEqual(value2, 2)
         self.assertEqual(q.qsize(), 0)
 
     def test_nonblocking_put_exception(self):
-        q = asyncio.Queue(maxsize=1, loop=self.loop)
+        q = asyncio.Queue(maxsize=1, )
         q.put_nowait(1)
         self.assertRaises(asyncio.QueueFull, q.put_nowait, 2)
 
-    def test_float_maxsize(self):
-        q = asyncio.Queue(maxsize=1.3, loop=self.loop)
+    async def test_float_maxsize(self):
+        q = asyncio.Queue(maxsize=1.3, )
         q.put_nowait(1)
         q.put_nowait(2)
         self.assertTrue(q.full())
         self.assertRaises(asyncio.QueueFull, q.put_nowait, 3)
 
-        q = asyncio.Queue(maxsize=1.3, loop=self.loop)
-        @asyncio.coroutine
-        def queue_put():
-            yield from q.put(1)
-            yield from q.put(2)
-            self.assertTrue(q.full())
-        self.loop.run_until_complete(queue_put())
+        q = asyncio.Queue(maxsize=1.3, )
 
-    def test_put_cancelled(self):
-        q = asyncio.Queue(loop=self.loop)
+        await q.put(1)
+        await q.put(2)
+        self.assertTrue(q.full())
 
-        @asyncio.coroutine
-        def queue_put():
-            yield from q.put(1)
+    async def test_put_cancelled(self):
+        q = asyncio.Queue()
+
+        async def queue_put():
+            await q.put(1)
             return True
 
-        @asyncio.coroutine
-        def test():
-            return (yield from q.get())
+        t = asyncio.create_task(queue_put())
 
-        t = asyncio.Task(queue_put(), loop=self.loop)
-        self.assertEqual(1, self.loop.run_until_complete(test()))
+        self.assertEqual(1, await q.get())
         self.assertTrue(t.done())
         self.assertTrue(t.result())
 
-    def test_put_cancelled_race(self):
-        q = asyncio.Queue(loop=self.loop, maxsize=1)
+    async def test_put_cancelled_race(self):
+        q = asyncio.Queue(maxsize=1)
 
-        put_a = asyncio.Task(q.put('a'), loop=self.loop)
-        put_b = asyncio.Task(q.put('b'), loop=self.loop)
-        put_c = asyncio.Task(q.put('X'), loop=self.loop)
+        put_a = asyncio.create_task(q.put('a'))
+        put_b = asyncio.create_task(q.put('b'))
+        put_c = asyncio.create_task(q.put('X'))
 
-        test_utils.run_briefly(self.loop)
+        await asyncio.sleep(0)
         self.assertTrue(put_a.done())
         self.assertFalse(put_b.done())
 
         put_c.cancel()
-        test_utils.run_briefly(self.loop)
+        await asyncio.sleep(0)
         self.assertTrue(put_c.done())
         self.assertEqual(q.get_nowait(), 'a')
-        test_utils.run_briefly(self.loop)
+        await asyncio.sleep(0)
         self.assertEqual(q.get_nowait(), 'b')
 
-        self.loop.run_until_complete(put_b)
+        await put_b
 
-    def test_put_with_waiting_getters(self):
-        q = asyncio.Queue(loop=self.loop)
-        t = asyncio.Task(q.get(), loop=self.loop)
-        test_utils.run_briefly(self.loop)
-        self.loop.run_until_complete(q.put('a'))
-        self.assertEqual(self.loop.run_until_complete(t), 'a')
+    async def test_put_with_waiting_getters(self):
+        q = asyncio.Queue()
+        t = asyncio.create_task(q.get())
+        await asyncio.sleep(0)
+        await q.put('a')
+        self.assertEqual(await t, 'a')
 
-    def test_why_are_putters_waiting(self):
-        # From issue #265.
+    async def test_why_are_putters_waiting(self):
+        queue = asyncio.Queue(2)
 
-        queue = asyncio.Queue(2, loop=self.loop)
+        async def putter(item):
+            await queue.put(item)
 
-        @asyncio.coroutine
-        def putter(item):
-            yield from queue.put(item)
-
-        @asyncio.coroutine
-        def getter():
-            yield
+        async def getter():
+            await asyncio.sleep(0)
             num = queue.qsize()
             for _ in range(num):
-                item = queue.get_nowait()
+                queue.get_nowait()
 
-        t0 = putter(0)
-        t1 = putter(1)
-        t2 = putter(2)
-        t3 = putter(3)
-        self.loop.run_until_complete(
-            asyncio.gather(getter(), t0, t1, t2, t3, loop=self.loop))
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(getter())
+            tg.create_task(putter(0))
+            tg.create_task(putter(1))
+            tg.create_task(putter(2))
+            tg.create_task(putter(3))
+
+    async def test_cancelled_puts_not_being_held_in_self_putters(self):
+        # Full queue.
+        queue = asyncio.Queue(maxsize=1)
+        queue.put_nowait(1)
+
+        # Task waiting for space to put an item in the queue.
+        put_task = asyncio.create_task(queue.put(1))
+        await asyncio.sleep(0)
+
+        # Check that the putter is correctly removed from queue._putters when
+        # the task is canceled.
+        self.assertEqual(len(queue._putters), 1)
+        put_task.cancel()
+        with self.assertRaises(asyncio.CancelledError):
+            await put_task
+        self.assertEqual(len(queue._putters), 0)
+
+    async def test_cancelled_put_silence_value_error_exception(self):
+        # Full Queue.
+        queue = asyncio.Queue(1)
+        queue.put_nowait(1)
+
+        # Task waiting for space to put a item in the queue.
+        put_task = asyncio.create_task(queue.put(1))
+        await asyncio.sleep(0)
+
+        # get_nowait() remove the future of put_task from queue._putters.
+        queue.get_nowait()
+        # When canceled, queue.put is going to remove its future from
+        # self._putters but it was removed previously by queue.get_nowait().
+        put_task.cancel()
+
+        # The ValueError exception triggered by queue._putters.remove(putter)
+        # inside queue.put should be silenced.
+        # If the ValueError is silenced we should catch a CancelledError.
+        with self.assertRaises(asyncio.CancelledError):
+            await put_task
 
 
-class LifoQueueTests(_QueueTestBase):
+class LifoQueueTests(unittest.IsolatedAsyncioTestCase):
 
-    def test_order(self):
-        q = asyncio.LifoQueue(loop=self.loop)
+    async def test_order(self):
+        q = asyncio.LifoQueue()
         for i in [1, 3, 2]:
-            q.put_nowait(i)
+            await q.put(i)
 
-        items = [q.get_nowait() for _ in range(3)]
+        items = [await q.get() for _ in range(3)]
         self.assertEqual([2, 3, 1], items)
 
 
-class PriorityQueueTests(_QueueTestBase):
+class PriorityQueueTests(unittest.IsolatedAsyncioTestCase):
 
-    def test_order(self):
-        q = asyncio.PriorityQueue(loop=self.loop)
+    async def test_order(self):
+        q = asyncio.PriorityQueue()
         for i in [1, 3, 2]:
-            q.put_nowait(i)
+            await q.put(i)
 
-        items = [q.get_nowait() for _ in range(3)]
+        items = [await q.get() for _ in range(3)]
         self.assertEqual([1, 2, 3], items)
 
 
@@ -549,11 +459,11 @@ class _QueueJoinTestMixin:
     q_class = None
 
     def test_task_done_underflow(self):
-        q = self.q_class(loop=self.loop)
+        q = self.q_class()
         self.assertRaises(ValueError, q.task_done)
 
-    def test_task_done(self):
-        q = self.q_class(loop=self.loop)
+    async def test_task_done(self):
+        q = self.q_class()
         for i in range(100):
             q.put_nowait(i)
 
@@ -563,62 +473,251 @@ class _QueueJoinTestMixin:
         # Join the queue and assert all items have been processed.
         running = True
 
-        @asyncio.coroutine
-        def worker():
+        async def worker():
             nonlocal accumulator
 
             while running:
-                item = yield from q.get()
+                item = await q.get()
                 accumulator += item
                 q.task_done()
 
-        @asyncio.coroutine
-        def test():
-            tasks = [asyncio.Task(worker(), loop=self.loop)
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(worker())
                      for index in range(2)]
 
-            yield from q.join()
-            return tasks
+            await q.join()
+            self.assertEqual(sum(range(100)), accumulator)
 
-        tasks = self.loop.run_until_complete(test())
-        self.assertEqual(sum(range(100)), accumulator)
+            # close running generators
+            running = False
+            for i in range(len(tasks)):
+                q.put_nowait(0)
 
-        # close running generators
-        running = False
-        for i in range(len(tasks)):
-            q.put_nowait(0)
-        self.loop.run_until_complete(asyncio.wait(tasks, loop=self.loop))
-
-    def test_join_empty_queue(self):
-        q = self.q_class(loop=self.loop)
+    async def test_join_empty_queue(self):
+        q = self.q_class()
 
         # Test that a queue join()s successfully, and before anything else
         # (done twice for insurance).
 
-        @asyncio.coroutine
-        def join():
-            yield from q.join()
-            yield from q.join()
+        await q.join()
+        await q.join()
 
-        self.loop.run_until_complete(join())
-
-    def test_format(self):
-        q = self.q_class(loop=self.loop)
+    async def test_format(self):
+        q = self.q_class()
         self.assertEqual(q._format(), 'maxsize=0')
 
         q._unfinished_tasks = 2
         self.assertEqual(q._format(), 'maxsize=0 tasks=2')
 
 
-class QueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+class QueueJoinTests(_QueueJoinTestMixin, unittest.IsolatedAsyncioTestCase):
     q_class = asyncio.Queue
 
 
-class LifoQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+class LifoQueueJoinTests(_QueueJoinTestMixin, unittest.IsolatedAsyncioTestCase):
     q_class = asyncio.LifoQueue
 
 
-class PriorityQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+class PriorityQueueJoinTests(_QueueJoinTestMixin, unittest.IsolatedAsyncioTestCase):
+    q_class = asyncio.PriorityQueue
+
+
+class _QueueShutdownTestMixin:
+    q_class = None
+
+    def assertRaisesShutdown(self, msg="Didn't appear to shut-down queue"):
+        return self.assertRaises(asyncio.QueueShutDown, msg=msg)
+
+    async def test_format(self):
+        q = self.q_class()
+        q.shutdown()
+        self.assertEqual(q._format(), 'maxsize=0 shutdown')
+
+    async def test_shutdown_empty(self):
+        # Test shutting down an empty queue
+
+        # Setup empty queue, and join() and get() tasks
+        q = self.q_class()
+        loop = asyncio.get_running_loop()
+        get_task = loop.create_task(q.get())
+        await asyncio.sleep(0)  # want get task pending before shutdown
+
+        # Perform shut-down
+        q.shutdown(immediate=False)  # unfinished tasks: 0 -> 0
+
+        self.assertEqual(q.qsize(), 0)
+
+        # Ensure join() task successfully finishes
+        await q.join()
+
+        # Ensure get() task is finished, and raised ShutDown
+        await asyncio.sleep(0)
+        self.assertTrue(get_task.done())
+        with self.assertRaisesShutdown():
+            await get_task
+
+        # Ensure put() and get() raise ShutDown
+        with self.assertRaisesShutdown():
+            await q.put("data")
+        with self.assertRaisesShutdown():
+            q.put_nowait("data")
+
+        with self.assertRaisesShutdown():
+            await q.get()
+        with self.assertRaisesShutdown():
+            q.get_nowait()
+
+    async def test_shutdown_nonempty(self):
+        # Test shutting down a non-empty queue
+
+        # Setup full queue with 1 item, and join() and put() tasks
+        q = self.q_class(maxsize=1)
+        loop = asyncio.get_running_loop()
+
+        q.put_nowait("data")
+        join_task = loop.create_task(q.join())
+        put_task = loop.create_task(q.put("data2"))
+
+        # Ensure put() task is not finished
+        await asyncio.sleep(0)
+        self.assertFalse(put_task.done())
+
+        # Perform shut-down
+        q.shutdown(immediate=False)  # unfinished tasks: 1 -> 1
+
+        self.assertEqual(q.qsize(), 1)
+
+        # Ensure put() task is finished, and raised ShutDown
+        await asyncio.sleep(0)
+        self.assertTrue(put_task.done())
+        with self.assertRaisesShutdown():
+            await put_task
+
+        # Ensure get() succeeds on enqueued item
+        self.assertEqual(await q.get(), "data")
+
+        # Ensure join() task is not finished
+        await asyncio.sleep(0)
+        self.assertFalse(join_task.done())
+
+        # Ensure put() and get() raise ShutDown
+        with self.assertRaisesShutdown():
+            await q.put("data")
+        with self.assertRaisesShutdown():
+            q.put_nowait("data")
+
+        with self.assertRaisesShutdown():
+            await q.get()
+        with self.assertRaisesShutdown():
+            q.get_nowait()
+
+        # Ensure there is 1 unfinished task, and join() task succeeds
+        q.task_done()
+
+        await asyncio.sleep(0)
+        self.assertTrue(join_task.done())
+        await join_task
+
+        with self.assertRaises(
+            ValueError, msg="Didn't appear to mark all tasks done"
+        ):
+            q.task_done()
+
+    async def test_shutdown_immediate(self):
+        # Test immediately shutting down a queue
+
+        # Setup queue with 1 item, and a join() task
+        q = self.q_class()
+        loop = asyncio.get_running_loop()
+        q.put_nowait("data")
+        join_task = loop.create_task(q.join())
+
+        # Perform shut-down
+        q.shutdown(immediate=True)  # unfinished tasks: 1 -> 0
+
+        self.assertEqual(q.qsize(), 0)
+
+        # Ensure join() task has successfully finished
+        await asyncio.sleep(0)
+        self.assertTrue(join_task.done())
+        await join_task
+
+        # Ensure put() and get() raise ShutDown
+        with self.assertRaisesShutdown():
+            await q.put("data")
+        with self.assertRaisesShutdown():
+            q.put_nowait("data")
+
+        with self.assertRaisesShutdown():
+            await q.get()
+        with self.assertRaisesShutdown():
+            q.get_nowait()
+
+        # Ensure there are no unfinished tasks
+        with self.assertRaises(
+            ValueError, msg="Didn't appear to mark all tasks done"
+        ):
+            q.task_done()
+
+    async def test_shutdown_immediate_with_unfinished(self):
+        # Test immediately shutting down a queue with unfinished tasks
+
+        # Setup queue with 2 items (1 retrieved), and a join() task
+        q = self.q_class()
+        loop = asyncio.get_running_loop()
+        q.put_nowait("data")
+        q.put_nowait("data")
+        join_task = loop.create_task(q.join())
+        self.assertEqual(await q.get(), "data")
+
+        # Perform shut-down
+        q.shutdown(immediate=True)  # unfinished tasks: 2 -> 1
+
+        self.assertEqual(q.qsize(), 0)
+
+        # Ensure join() task is not finished
+        await asyncio.sleep(0)
+        self.assertFalse(join_task.done())
+
+        # Ensure put() and get() raise ShutDown
+        with self.assertRaisesShutdown():
+            await q.put("data")
+        with self.assertRaisesShutdown():
+            q.put_nowait("data")
+
+        with self.assertRaisesShutdown():
+            await q.get()
+        with self.assertRaisesShutdown():
+            q.get_nowait()
+
+        # Ensure there is 1 unfinished task
+        q.task_done()
+        with self.assertRaises(
+            ValueError, msg="Didn't appear to mark all tasks done"
+        ):
+            q.task_done()
+
+        # Ensure join() task has successfully finished
+        await asyncio.sleep(0)
+        self.assertTrue(join_task.done())
+        await join_task
+
+
+class QueueShutdownTests(
+    _QueueShutdownTestMixin, unittest.IsolatedAsyncioTestCase
+):
+    q_class = asyncio.Queue
+
+
+class LifoQueueShutdownTests(
+    _QueueShutdownTestMixin, unittest.IsolatedAsyncioTestCase
+):
+    q_class = asyncio.LifoQueue
+
+
+class PriorityQueueShutdownTests(
+    _QueueShutdownTestMixin, unittest.IsolatedAsyncioTestCase
+):
     q_class = asyncio.PriorityQueue
 
 

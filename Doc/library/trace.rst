@@ -1,5 +1,5 @@
-:mod:`trace` --- Trace or track Python statement execution
-==========================================================
+:mod:`!trace` --- Trace or track Python statement execution
+===========================================================
 
 .. module:: trace
    :synopsis: Trace or track Python statement execution.
@@ -34,13 +34,16 @@ all Python modules imported during the execution into the current directory.
 
 .. program:: trace
 
-.. cmdoption:: --help
+.. option:: --help
 
    Display usage and exit.
 
-.. cmdoption:: --version
+.. option:: --version
 
    Display the version of the module and exit.
+
+.. versionadded:: 3.8
+    Added ``--module`` option that allows to run an executable module.
 
 Main options
 ^^^^^^^^^^^^
@@ -53,28 +56,28 @@ the :option:`--trace <-t>` and :option:`--count <-c>` options. When
 
 .. program:: trace
 
-.. cmdoption:: -c, --count
+.. option:: -c, --count
 
    Produce a set of annotated listing files upon program completion that shows
    how many times each statement was executed.  See also
    :option:`--coverdir <-C>`, :option:`--file <-f>` and
    :option:`--no-report <-R>` below.
 
-.. cmdoption:: -t, --trace
+.. option:: -t, --trace
 
    Display lines as they are executed.
 
-.. cmdoption:: -l, --listfuncs
+.. option:: -l, --listfuncs
 
    Display the functions executed by running the program.
 
-.. cmdoption:: -r, --report
+.. option:: -r, --report
 
    Produce an annotated list from an earlier program run that used the
    :option:`--count <-c>` and :option:`--file <-f>` option.  This does not
    execute any code.
 
-.. cmdoption:: -T, --trackcalls
+.. option:: -T, --trackcalls
 
    Display the calling relationships exposed by running the program.
 
@@ -83,33 +86,33 @@ Modifiers
 
 .. program:: trace
 
-.. cmdoption:: -f, --file=<file>
+.. option:: -f, --file=<file>
 
    Name of a file to accumulate counts over several tracing runs.  Should be
    used with the :option:`--count <-c>` option.
 
-.. cmdoption:: -C, --coverdir=<dir>
+.. option:: -C, --coverdir=<dir>
 
    Directory where the report files go.  The coverage report for
    ``package.module`` is written to file :file:`{dir}/{package}/{module}.cover`.
 
-.. cmdoption:: -m, --missing
+.. option:: -m, --missing
 
    When generating annotated listings, mark lines which were not executed with
    ``>>>>>>``.
 
-.. cmdoption:: -s, --summary
+.. option:: -s, --summary
 
    When using :option:`--count <-c>` or :option:`--report <-r>`, write a brief
    summary to stdout for each file processed.
 
-.. cmdoption:: -R, --no-report
+.. option:: -R, --no-report
 
    Do not generate annotated listings.  This is useful if you intend to make
    several runs with :option:`--count <-c>`, and then produce a single set of
    annotated listings at the end.
 
-.. cmdoption:: -g, --timing
+.. option:: -g, --timing
 
    Prefix each line with the time since the program started.  Only used while
    tracing.
@@ -121,12 +124,12 @@ These options may be repeated multiple times.
 
 .. program:: trace
 
-.. cmdoption:: --ignore-module=<mod>
+.. option:: --ignore-module=<mod>
 
    Ignore each of the given module names and its submodules (if it is a
    package).  The argument can be a list of names separated by a comma.
 
-.. cmdoption:: --ignore-dir=<dir>
+.. option:: --ignore-dir=<dir>
 
    Ignore all modules and packages in the named directory and subdirectories.
    The argument can be a list of directories separated by :data:`os.pathsep`.
@@ -150,47 +153,55 @@ Programmatic Interface
    count information.  *timing* enables a timestamp relative to when tracing was
    started to be displayed.
 
-    .. method:: run(cmd)
+   .. method:: run(cmd)
 
-       Execute the command and gather statistics from the execution with
-       the current tracing parameters.  *cmd* must be a string or code object,
-       suitable for passing into :func:`exec`.
+      Execute the command and gather statistics from the execution with
+      the current tracing parameters.  *cmd* must be a string or code object,
+      suitable for passing into :func:`exec`.
 
-    .. method:: runctx(cmd, globals=None, locals=None)
+   .. method:: runctx(cmd, globals=None, locals=None)
 
-       Execute the command and gather statistics from the execution with the
-       current tracing parameters, in the defined global and local
-       environments.  If not defined, *globals* and *locals* default to empty
-       dictionaries.
+      Execute the command and gather statistics from the execution with the
+      current tracing parameters, in the defined global and local
+      environments.  If not defined, *globals* and *locals* default to empty
+      dictionaries.
 
-    .. method:: runfunc(func, *args, **kwds)
+   .. method:: runfunc(func, /, *args, **kwds)
 
-       Call *func* with the given arguments under control of the :class:`Trace`
-       object with the current tracing parameters.
+      Call *func* with the given arguments under control of the :class:`Trace`
+      object with the current tracing parameters.
 
-    .. method:: results()
+   .. method:: results()
 
-       Return a :class:`CoverageResults` object that contains the cumulative
-       results of all previous calls to ``run``, ``runctx`` and ``runfunc``
-       for the given :class:`Trace` instance.  Does not reset the accumulated
-       trace results.
+      Return a :class:`CoverageResults` object that contains the cumulative
+      results of all previous calls to ``run``, ``runctx`` and ``runfunc``
+      for the given :class:`Trace` instance.  Does not reset the accumulated
+      trace results.
 
 .. class:: CoverageResults
 
    A container for coverage results, created by :meth:`Trace.results`.  Should
    not be created directly by the user.
 
-    .. method:: update(other)
+   .. method:: update(other)
 
-       Merge in data from another :class:`CoverageResults` object.
+      Merge in data from another :class:`CoverageResults` object.
 
-    .. method:: write_results(show_missing=True, summary=False, coverdir=None)
+   .. method:: write_results(show_missing=True, summary=False, coverdir=None,\
+                             *, ignore_missing_files=False)
 
-       Write coverage results.  Set *show_missing* to show lines that had no
-       hits.  Set *summary* to include in the output the coverage summary per
-       module.  *coverdir* specifies the directory into which the coverage
-       result files will be output.  If ``None``, the results for each source
-       file are placed in its directory.
+      Write coverage results.  Set *show_missing* to show lines that had no
+      hits.  Set *summary* to include in the output the coverage summary per
+      module.  *coverdir* specifies the directory into which the coverage
+      result files will be output.  If ``None``, the results for each source
+      file are placed in its directory.
+
+      If *ignore_missing_files* is ``True``, coverage counts for files that no
+      longer exist are silently ignored. Otherwise, a missing file will
+      raise a :exc:`FileNotFoundError`.
+
+      .. versionchanged:: 3.13
+         Added *ignore_missing_files* parameter.
 
 A simple example demonstrating the use of the programmatic interface::
 

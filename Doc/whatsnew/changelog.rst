@@ -1,7 +1,9 @@
 .. _changelog:
 
+.. default-role:: py:obj
+
 +++++++++
 Changelog
 +++++++++
 
-.. miscnews:: ../../Misc/NEWS
+.. miscnews:: ../build/NEWS

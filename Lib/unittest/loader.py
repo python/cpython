@@ -6,9 +6,8 @@ import sys
 import traceback
 import types
 import functools
-import warnings
 
-from fnmatch import fnmatch
+from fnmatch import fnmatch, fnmatchcase
 
 from . import case, suite, util
 
@@ -57,9 +56,7 @@ def _make_skipped_test(methodname, exception, suiteClass):
     TestClass = type("ModuleSkipped", (case.TestCase,), attrs)
     return suiteClass((TestClass(methodname),))
 
-def _jython_aware_splitext(path):
-    if path.lower().endswith('$py.class'):
-        return path[:-9]
+def _splitext(path):
     return os.path.splitext(path)[0]
 
 
@@ -70,6 +67,7 @@ class TestLoader(object):
     """
     testMethodPrefix = 'test'
     sortTestMethodsUsing = staticmethod(util.three_way_cmp)
+    testNamePatterns = None
     suiteClass = suite.TestSuite
     _top_level_dir = None
 
@@ -86,40 +84,26 @@ class TestLoader(object):
             raise TypeError("Test cases should not be derived from "
                             "TestSuite. Maybe you meant to derive from "
                             "TestCase?")
-        testCaseNames = self.getTestCaseNames(testCaseClass)
-        if not testCaseNames and hasattr(testCaseClass, 'runTest'):
-            testCaseNames = ['runTest']
+        if testCaseClass in (case.TestCase, case.FunctionTestCase):
+            # We don't load any tests from base types that should not be loaded.
+            testCaseNames = []
+        else:
+            testCaseNames = self.getTestCaseNames(testCaseClass)
+            if not testCaseNames and hasattr(testCaseClass, 'runTest'):
+                testCaseNames = ['runTest']
         loaded_suite = self.suiteClass(map(testCaseClass, testCaseNames))
         return loaded_suite
 
-    # XXX After Python 3.5, remove backward compatibility hacks for
-    # use_load_tests deprecation via *args and **kws.  See issue 16662.
-    def loadTestsFromModule(self, module, *args, pattern=None, **kws):
+    def loadTestsFromModule(self, module, *, pattern=None):
         """Return a suite of all test cases contained in the given module"""
-        # This method used to take an undocumented and unofficial
-        # use_load_tests argument.  For backward compatibility, we still
-        # accept the argument (which can also be the first position) but we
-        # ignore it and issue a deprecation warning if it's present.
-        if len(args) > 0 or 'use_load_tests' in kws:
-            warnings.warn('use_load_tests is deprecated and ignored',
-                          DeprecationWarning)
-            kws.pop('use_load_tests', None)
-        if len(args) > 1:
-            # Complain about the number of arguments, but don't forget the
-            # required `module` argument.
-            complaint = len(args) + 1
-            raise TypeError('loadTestsFromModule() takes 1 positional argument but {} were given'.format(complaint))
-        if len(kws) != 0:
-            # Since the keyword arguments are unsorted (see PEP 468), just
-            # pick the alphabetically sorted first argument to complain about,
-            # if multiple were given.  At least the error message will be
-            # predictable.
-            complaint = sorted(kws)[0]
-            raise TypeError("loadTestsFromModule() got an unexpected keyword argument '{}'".format(complaint))
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
-            if isinstance(obj, type) and issubclass(obj, case.TestCase):
+            if (
+                isinstance(obj, type)
+                and issubclass(obj, case.TestCase)
+                and obj not in (case.TestCase, case.FunctionTestCase)
+            ):
                 tests.append(self.loadTestsFromTestCase(obj))
 
         load_tests = getattr(module, 'load_tests', None)
@@ -188,7 +172,11 @@ class TestLoader(object):
 
         if isinstance(obj, types.ModuleType):
             return self.loadTestsFromModule(obj)
-        elif isinstance(obj, type) and issubclass(obj, case.TestCase):
+        elif (
+            isinstance(obj, type)
+            and issubclass(obj, case.TestCase)
+            and obj not in (case.TestCase, case.FunctionTestCase)
+        ):
             return self.loadTestsFromTestCase(obj)
         elif (isinstance(obj, types.FunctionType) and
               isinstance(parent, type) and
@@ -222,11 +210,18 @@ class TestLoader(object):
     def getTestCaseNames(self, testCaseClass):
         """Return a sorted sequence of method names found within testCaseClass
         """
-        def isTestMethod(attrname, testCaseClass=testCaseClass,
-                         prefix=self.testMethodPrefix):
-            return attrname.startswith(prefix) and \
-                callable(getattr(testCaseClass, attrname))
-        testFnNames = list(filter(isTestMethod, dir(testCaseClass)))
+        def shouldIncludeMethod(attrname):
+            if not attrname.startswith(self.testMethodPrefix):
+                return False
+            testFunc = getattr(testCaseClass, attrname)
+            if not callable(testFunc):
+                return False
+            fullName = f'%s.%s.%s' % (
+                testCaseClass.__module__, testCaseClass.__qualname__, attrname
+            )
+            return self.testNamePatterns is None or \
+                any(fnmatchcase(fullName, pattern) for pattern in self.testNamePatterns)
+        testFnNames = list(filter(shouldIncludeMethod, dir(testCaseClass)))
         if self.sortTestMethodsUsing:
             testFnNames.sort(key=functools.cmp_to_key(self.sortTestMethodsUsing))
         return testFnNames
@@ -259,6 +254,7 @@ class TestLoader(object):
         Paths are sorted before being imported to ensure reproducible execution
         order even on filesystems with non-alphabetical ordering like ext3/4.
         """
+        original_top_level_dir = self._top_level_dir
         set_implicit_top = False
         if top_level_dir is None and self._top_level_dir is not None:
             # make top_level_dir optional if called from load_tests in a package
@@ -292,53 +288,55 @@ class TestLoader(object):
                 is_not_importable = True
             else:
                 the_module = sys.modules[start_dir]
-                top_part = start_dir.split('.')[0]
-                try:
-                    start_dir = os.path.abspath(
-                       os.path.dirname((the_module.__file__)))
-                except AttributeError:
+                if not hasattr(the_module, "__file__") or the_module.__file__ is None:
                     # look for namespace packages
                     try:
                         spec = the_module.__spec__
                     except AttributeError:
                         spec = None
 
-                    if spec and spec.loader is None:
-                        if spec.submodule_search_locations is not None:
-                            is_namespace = True
+                    if spec and spec.submodule_search_locations is not None:
+                        is_namespace = True
 
-                            for path in the_module.__path__:
-                                if (not set_implicit_top and
-                                    not path.startswith(top_level_dir)):
-                                    continue
-                                self._top_level_dir = \
-                                    (path.split(the_module.__name__
-                                         .replace(".", os.path.sep))[0])
-                                tests.extend(self._find_tests(path,
-                                                              pattern,
-                                                              namespace=True))
+                        for path in the_module.__path__:
+                            if (not set_implicit_top and
+                                not path.startswith(top_level_dir)):
+                                continue
+                            self._top_level_dir = \
+                                (path.split(the_module.__name__
+                                        .replace(".", os.path.sep))[0])
+                            tests.extend(self._find_tests(path, pattern, namespace=True))
                     elif the_module.__name__ in sys.builtin_module_names:
                         # builtin module
                         raise TypeError('Can not use builtin modules '
                                         'as dotted module names') from None
                     else:
                         raise TypeError(
-                            'don\'t know how to discover from {!r}'
-                            .format(the_module)) from None
+                            f"don't know how to discover from {the_module!r}"
+                            ) from None
+
+                else:
+                    top_part = start_dir.split('.')[0]
+                    start_dir = os.path.abspath(os.path.dirname((the_module.__file__)))
 
                 if set_implicit_top:
                     if not is_namespace:
-                        self._top_level_dir = \
-                           self._get_directory_containing_module(top_part)
-                        sys.path.remove(top_level_dir)
-                    else:
-                        sys.path.remove(top_level_dir)
+                        if sys.modules[top_part].__file__ is None:
+                            self._top_level_dir = os.path.dirname(the_module.__file__)
+                            if self._top_level_dir not in sys.path:
+                                sys.path.insert(0, self._top_level_dir)
+                        else:
+                            self._top_level_dir = \
+                                self._get_directory_containing_module(top_part)
+                    sys.path.remove(top_level_dir)
 
         if is_not_importable:
             raise ImportError('Start directory is not importable: %r' % start_dir)
 
         if not is_namespace:
             tests = list(self._find_tests(start_dir, pattern))
+
+        self._top_level_dir = original_top_level_dir
         return self.suiteClass(tests)
 
     def _get_directory_containing_module(self, module_name):
@@ -356,7 +354,7 @@ class TestLoader(object):
     def _get_name_from_path(self, path):
         if path == self._top_level_dir:
             return '.'
-        path = _jython_aware_splitext(os.path.normpath(path))
+        path = _splitext(os.path.normpath(path))
 
         _relpath = os.path.relpath(path, self._top_level_dir)
         assert not os.path.isabs(_relpath), "Path must be within the project"
@@ -395,7 +393,7 @@ class TestLoader(object):
         for path in paths:
             full_path = os.path.join(start_dir, path)
             tests, should_recurse = self._find_test_path(
-                full_path, pattern, namespace)
+                full_path, pattern, False)
             if tests is not None:
                 yield tests
             if should_recurse:
@@ -403,7 +401,7 @@ class TestLoader(object):
                 name = self._get_name_from_path(full_path)
                 self._loading_packages.add(name)
                 try:
-                    yield from self._find_tests(full_path, pattern, namespace)
+                    yield from self._find_tests(full_path, pattern, False)
                 finally:
                     self._loading_packages.discard(name)
 
@@ -436,13 +434,13 @@ class TestLoader(object):
             else:
                 mod_file = os.path.abspath(
                     getattr(module, '__file__', full_path))
-                realpath = _jython_aware_splitext(
+                realpath = _splitext(
                     os.path.realpath(mod_file))
-                fullpath_noext = _jython_aware_splitext(
+                fullpath_noext = _splitext(
                     os.path.realpath(full_path))
                 if realpath.lower() != fullpath_noext.lower():
                     module_dir = os.path.dirname(realpath)
-                    mod_name = _jython_aware_splitext(
+                    mod_name = _splitext(
                         os.path.basename(full_path))
                     expected_dir = os.path.dirname(full_path)
                     msg = ("%r module incorrectly imported from %r. Expected "
@@ -484,25 +482,3 @@ class TestLoader(object):
 
 
 defaultTestLoader = TestLoader()
-
-
-def _makeLoader(prefix, sortUsing, suiteClass=None):
-    loader = TestLoader()
-    loader.sortTestMethodsUsing = sortUsing
-    loader.testMethodPrefix = prefix
-    if suiteClass:
-        loader.suiteClass = suiteClass
-    return loader
-
-def getTestCaseNames(testCaseClass, prefix, sortUsing=util.three_way_cmp):
-    return _makeLoader(prefix, sortUsing).getTestCaseNames(testCaseClass)
-
-def makeSuite(testCaseClass, prefix='test', sortUsing=util.three_way_cmp,
-              suiteClass=suite.TestSuite):
-    return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromTestCase(
-        testCaseClass)
-
-def findTestCases(module, prefix='test', sortUsing=util.three_way_cmp,
-                  suiteClass=suite.TestSuite):
-    return _makeLoader(prefix, sortUsing, suiteClass).loadTestsFromModule(\
-        module)

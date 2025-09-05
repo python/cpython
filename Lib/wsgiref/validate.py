@@ -1,6 +1,6 @@
 # (c) 2005 Ian Bicking and contributors; written for Paste (http://pythonpaste.org)
-# Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
-# Also licenced under the Apache License, 2.0: http://opensource.org/licenses/apache2.0.php
+# Licensed under the MIT license: https://opensource.org/licenses/mit-license.php
+# Also licenced under the Apache License, 2.0: https://opensource.org/licenses/apache2.0.php
 # Licensed to PSF under a Contributor Agreement
 """
 Middleware to check for obedience to the WSGI specification.
@@ -77,7 +77,7 @@ Some of the things this checks:
 
 * That wsgi.input is used properly:
 
-  - .read() is called with zero or one argument
+  - .read() is called with exactly one argument
 
   - That it returns a string
 
@@ -137,7 +137,7 @@ def validator(application):
 
     """
     When applied between a WSGI server and a WSGI application, this
-    middleware will check for WSGI compliancy on a number of levels.
+    middleware will check for WSGI compliance on a number of levels.
     This middleware does not modify the request or response in any
     way, but will raise an AssertionError if anything seems off
     (except for a failure to close the application iterator, which
@@ -214,10 +214,7 @@ class InputWrapper:
         return lines
 
     def __iter__(self):
-        while 1:
-            line = self.readline()
-            if not line:
-                return
+        while line := self.readline():
             yield line
 
     def close(self):
@@ -390,7 +387,6 @@ def check_headers(headers):
     assert_(type(headers) is list,
         "Headers (%r) must be of type list: %r"
         % (headers, type(headers)))
-    header_names = {}
     for item in headers:
         assert_(type(item) is tuple,
             "Individual headers (%r) must be of type tuple: %r"
@@ -403,7 +399,6 @@ def check_headers(headers):
             "The Status header cannot be used; it conflicts with CGI "
             "script, and HTTP status is not given through headers "
             "(value: %r)." % value)
-        header_names[name.lower()] = None
         assert_('\n' not in name and ':' not in name,
             "Header names may not contain ':' or '\\n': %r" % name)
         assert_(header_re.search(name), "Bad header name: %r" % name)

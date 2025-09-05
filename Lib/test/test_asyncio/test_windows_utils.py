@@ -1,72 +1,22 @@
 """Tests for window_utils"""
 
-import socket
 import sys
 import unittest
 import warnings
-from unittest import mock
 
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
 
+import _overlapped
 import _winapi
 
-from asyncio import _overlapped
+import asyncio
 from asyncio import windows_utils
-try:
-    from test import support
-except ImportError:
-    from asyncio import test_support as support
+from test import support
 
 
-class WinsocketpairTests(unittest.TestCase):
-
-    def check_winsocketpair(self, ssock, csock):
-        csock.send(b'xxx')
-        self.assertEqual(b'xxx', ssock.recv(1024))
-        csock.close()
-        ssock.close()
-
-    def test_winsocketpair(self):
-        ssock, csock = windows_utils.socketpair()
-        self.check_winsocketpair(ssock, csock)
-
-    @unittest.skipUnless(support.IPV6_ENABLED, 'IPv6 not supported or enabled')
-    def test_winsocketpair_ipv6(self):
-        ssock, csock = windows_utils.socketpair(family=socket.AF_INET6)
-        self.check_winsocketpair(ssock, csock)
-
-    @unittest.skipIf(hasattr(socket, 'socketpair'),
-                     'socket.socketpair is available')
-    @mock.patch('asyncio.windows_utils.socket')
-    def test_winsocketpair_exc(self, m_socket):
-        m_socket.AF_INET = socket.AF_INET
-        m_socket.SOCK_STREAM = socket.SOCK_STREAM
-        m_socket.socket.return_value.getsockname.return_value = ('', 12345)
-        m_socket.socket.return_value.accept.return_value = object(), object()
-        m_socket.socket.return_value.connect.side_effect = OSError()
-
-        self.assertRaises(OSError, windows_utils.socketpair)
-
-    def test_winsocketpair_invalid_args(self):
-        self.assertRaises(ValueError,
-                          windows_utils.socketpair, family=socket.AF_UNSPEC)
-        self.assertRaises(ValueError,
-                          windows_utils.socketpair, type=socket.SOCK_DGRAM)
-        self.assertRaises(ValueError,
-                          windows_utils.socketpair, proto=1)
-
-    @unittest.skipIf(hasattr(socket, 'socketpair'),
-                     'socket.socketpair is available')
-    @mock.patch('asyncio.windows_utils.socket')
-    def test_winsocketpair_close(self, m_socket):
-        m_socket.AF_INET = socket.AF_INET
-        m_socket.SOCK_STREAM = socket.SOCK_STREAM
-        sock = mock.Mock()
-        m_socket.socket.return_value = sock
-        sock.bind.side_effect = OSError
-        self.assertRaises(OSError, windows_utils.socketpair)
-        self.assertTrue(sock.close.called)
+def tearDownModule():
+    asyncio.events._set_event_loop_policy(None)
 
 
 class PipeTests(unittest.TestCase):
@@ -157,7 +107,8 @@ class PopenTests(unittest.TestCase):
 
         events = [ovin.event, ovout.event, overr.event]
         # Super-long timeout for slow buildbots.
-        res = _winapi.WaitForMultipleObjects(events, True, 10000)
+        res = _winapi.WaitForMultipleObjects(events, True,
+                                             int(support.SHORT_TIMEOUT * 1000))
         self.assertEqual(res, _winapi.WAIT_OBJECT_0)
         self.assertFalse(ovout.pending)
         self.assertFalse(overr.pending)
@@ -170,8 +121,8 @@ class PopenTests(unittest.TestCase):
         self.assertGreater(len(out), 0)
         self.assertGreater(len(err), 0)
         # allow for partial reads...
-        self.assertTrue(msg.upper().rstrip().startswith(out))
-        self.assertTrue(b"stderr".startswith(err))
+        self.assertStartsWith(msg.upper().rstrip(), out)
+        self.assertStartsWith(b"stderr", err)
 
         # The context manager calls wait() and closes resources
         with p:

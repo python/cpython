@@ -5,7 +5,9 @@ import sys
 import unittest
 import warnings
 from unicodedata import normalize
+from test.support import is_apple, os_helper
 from test import support
+
 
 filenames = [
     '1_abc',
@@ -17,25 +19,25 @@ filenames = [
     '7_\u05d4\u05e9\u05e7\u05e6\u05e5\u05e1',
     '8_\u66e8\u66e9\u66eb',
     '9_\u66e8\u05e9\u3093\u0434\u0393\xdf',
-    # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
+    # Specific code points: fn, NFC(fn) and NFKC(fn) all different
     '10_\u1fee\u1ffd',
     ]
 
-# Mac OS X decomposes Unicode names, using Normal Form D.
+# Apple platforms decompose Unicode names, using Normal Form D.
 # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
 # "However, most volume formats do not follow the exact specification for
 # these normal forms.  For example, HFS Plus uses a variant of Normal Form D
 # in which U+2000 through U+2FFF, U+F900 through U+FAFF, and U+2F800 through
 # U+2FAFF are not decomposed."
-if sys.platform != 'darwin':
+if not is_apple:
     filenames.extend([
-        # Specific code points: NFC(fn), NFD(fn), NFKC(fn) and NFKD(fn) all differents
+        # Specific code points: NFC(fn), NFD(fn), NFKC(fn) and NFKD(fn) all different
         '11_\u0385\u03d3\u03d4',
         '12_\u00a8\u0301\u03d2\u0301\u03d2\u0308', # == NFD('\u0385\u03d3\u03d4')
         '13_\u0020\u0308\u0301\u038e\u03ab',       # == NFKC('\u0385\u03d3\u03d4')
         '14_\u1e9b\u1fc1\u1fcd\u1fce\u1fcf\u1fdd\u1fde\u1fdf\u1fed',
 
-        # Specific code points: fn, NFC(fn) and NFKC(fn) all differents
+        # Specific code points: fn, NFC(fn) and NFKC(fn) all different
         '15_\u1fee\u1ffd\ufad1',
         '16_\u2000\u2000\u2000A',
         '17_\u2001\u2001\u2001A',
@@ -62,14 +64,14 @@ class UnicodeFileTests(unittest.TestCase):
 
     def setUp(self):
         try:
-            os.mkdir(support.TESTFN)
+            os.mkdir(os_helper.TESTFN)
         except FileExistsError:
             pass
-        self.addCleanup(support.rmtree, support.TESTFN)
+        self.addCleanup(os_helper.rmtree, os_helper.TESTFN)
 
         files = set()
         for name in self.files:
-            name = os.path.join(support.TESTFN, self.norm(name))
+            name = os.path.join(os_helper.TESTFN, self.norm(name))
             with open(name, 'wb') as f:
                 f.write((name+'\n').encode("utf-8"))
             os.stat(name)
@@ -117,11 +119,15 @@ class UnicodeFileTests(unittest.TestCase):
             os.stat(name)
             self._apply_failure(os.listdir, name, self._listdir_failure)
 
-    # Skip the test on darwin, because darwin does normalize the filename to
+    # Skip the test on Apple platforms, because they don't normalize the filename to
     # NFD (a variant of Unicode NFD form). Normalize the filename to NFC, NFKC,
     # NFKD in Python is useless, because darwin will normalize it later and so
     # open(), os.stat(), etc. don't raise any exception.
-    @unittest.skipIf(sys.platform == 'darwin', 'irrelevant test on Mac OS X')
+    @unittest.skipIf(is_apple, 'irrelevant test on Apple platforms')
+    @unittest.skipIf(
+        support.is_wasi,
+        "test fails on WASI when host platform is macOS."
+    )
     def test_normalize(self):
         files = set(self.files)
         others = set()
@@ -136,17 +142,18 @@ class UnicodeFileTests(unittest.TestCase):
             self._apply_failure(os.remove, name)
             self._apply_failure(os.listdir, name)
 
-    # Skip the test on darwin, because darwin uses a normalization different
+    # Skip the test on Apple platforms, because they use a normalization different
     # than Python NFD normalization: filenames are different even if we use
     # Python NFD normalization.
-    @unittest.skipIf(sys.platform == 'darwin', 'irrelevant test on Mac OS X')
+    @unittest.skipIf(is_apple, 'irrelevant test on Apple platforms')
     def test_listdir(self):
         sf0 = set(self.files)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            f1 = os.listdir(support.TESTFN.encode(sys.getfilesystemencoding()))
-        f2 = os.listdir(support.TESTFN)
-        sf2 = set(os.path.join(support.TESTFN, f) for f in f2)
+            f1 = os.listdir(os_helper.TESTFN.encode(
+                            sys.getfilesystemencoding()))
+        f2 = os.listdir(os_helper.TESTFN)
+        sf2 = set(os.path.join(os_helper.TESTFN, f) for f in f2)
         self.assertEqual(sf0, sf2, "%a != %a" % (sf0, sf2))
         self.assertEqual(len(f1), len(f2))
 
@@ -156,9 +163,10 @@ class UnicodeFileTests(unittest.TestCase):
             os.rename("tmp", name)
 
     def test_directory(self):
-        dirname = os.path.join(support.TESTFN, 'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
+        dirname = os.path.join(os_helper.TESTFN,
+                               'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
         filename = '\xdf-\u66e8\u66e9\u66eb'
-        with support.temp_cwd(dirname):
+        with os_helper.temp_cwd(dirname):
             with open(filename, 'wb') as f:
                 f.write((filename + '\n').encode("utf-8"))
             os.access(filename,os.R_OK)
@@ -181,15 +189,5 @@ class UnicodeNFKDFileTests(UnicodeFileTests):
     normal_form = 'NFKD'
 
 
-def test_main():
-    support.run_unittest(
-        UnicodeFileTests,
-        UnicodeNFCFileTests,
-        UnicodeNFDFileTests,
-        UnicodeNFKCFileTests,
-        UnicodeNFKDFileTests,
-    )
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

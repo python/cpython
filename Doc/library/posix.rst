@@ -1,5 +1,5 @@
-:mod:`posix` --- The most common POSIX system calls
-===================================================
+:mod:`!posix` --- The most common POSIX system calls
+====================================================
 
 .. module:: posix
    :platform: Unix
@@ -11,7 +11,9 @@ This module provides access to operating system functionality that is
 standardized by the C Standard and the POSIX standard (a thinly disguised Unix
 interface).
 
-.. index:: module: os
+.. availability:: Unix.
+
+.. index:: pair: module; os
 
 **Do not import this module directly.**  Instead, import the module :mod:`os`,
 which provides a *portable* version of this interface.  On Unix, the :mod:`os`
@@ -37,18 +39,18 @@ Large File Support
 
 .. sectionauthor:: Steve Clift <clift@mail.anacapa.net>
 
-Several operating systems (including AIX, HP-UX, Irix and Solaris) provide
+Several operating systems (including AIX and Solaris) provide
 support for files that are larger than 2 GiB from a C programming model where
-:c:type:`int` and :c:type:`long` are 32-bit values. This is typically accomplished
+:c:expr:`int` and :c:expr:`long` are 32-bit values. This is typically accomplished
 by defining the relevant size and offset types as 64-bit values. Such files are
 sometimes referred to as :dfn:`large files`.
 
 Large file support is enabled in Python when the size of an :c:type:`off_t` is
-larger than a :c:type:`long` and the :c:type:`long long` type is available and is
-at least as large as an :c:type:`off_t`.
+larger than a :c:expr:`long` and the :c:expr:`long long` is at least as large
+as an :c:type:`off_t`.
 It may be necessary to configure and compile Python with certain compiler flags
-to enable this mode. For example, it is enabled by default with recent versions
-of Irix, but with Solaris 2.6 and 2.7 you need to do something like::
+to enable this mode. For example, with Solaris 2.6 and 2.7 you need to do
+something like::
 
    CFLAGS="`getconf LFS_CFLAGS`" OPT="-g -O2 $CFLAGS" \
            ./configure

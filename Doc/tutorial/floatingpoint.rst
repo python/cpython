@@ -1,26 +1,22 @@
 .. testsetup::
 
     import math
+    from fractions import Fraction
 
 .. _tut-fp-issues:
 
 **************************************************
-Floating Point Arithmetic:  Issues and Limitations
+Floating-Point Arithmetic:  Issues and Limitations
 **************************************************
 
 .. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
+.. sectionauthor:: Raymond Hettinger <python at rcn dot com>
 
 
 Floating-point numbers are represented in computer hardware as base 2 (binary)
-fractions.  For example, the decimal fraction ::
-
-   0.125
-
-has value 1/10 + 2/100 + 5/1000, and in the same way the binary fraction ::
-
-   0.001
-
-has value 0/2 + 0/4 + 1/8.  These two fractions have identical values, the only
+fractions.  For example, the **decimal** fraction ``0.625``
+has value 6/10 + 2/100 + 5/1000, and in the same way the **binary** fraction ``0.101``
+has value 1/2 + 0/4 + 1/8. These two fractions have identical values, the only
 real difference being that the first is written in base 10 fractional notation,
 and the second in base 2.
 
@@ -63,13 +59,15 @@ Many users are not aware of the approximation because of the way values are
 displayed.  Python only prints a decimal approximation to the true decimal
 value of the binary approximation stored by the machine.  On most machines, if
 Python were to print the true decimal value of the binary approximation stored
-for 0.1, it would have to display ::
+for 0.1, it would have to display::
 
    >>> 0.1
    0.1000000000000000055511151231257827021181583404541015625
 
 That is more digits than most people find useful, so Python keeps the number
-of digits manageable by displaying a rounded value instead ::
+of digits manageable by displaying a rounded value instead:
+
+.. doctest::
 
    >>> 1 / 10
    0.1
@@ -90,13 +88,16 @@ the one with 17 significant digits, ``0.10000000000000001``.   Starting with
 Python 3.1, Python (on most systems) is now able to choose the shortest of
 these and simply display ``0.1``.
 
-Note that this is in the very nature of binary floating-point: this is not a bug
+Note that this is in the very nature of binary floating point: this is not a bug
 in Python, and it is not a bug in your code either.  You'll see the same kind of
 thing in all languages that support your hardware's floating-point arithmetic
 (although some languages may not *display* the difference by default, or in all
 output modes).
 
-For more pleasant output, you may wish to use string formatting to produce a limited number of significant digits::
+For more pleasant output, you may wish to use string formatting to produce a
+limited number of significant digits:
+
+.. doctest::
 
    >>> format(math.pi, '.12g')  # give 12 significant digits
    '3.14159265359'
@@ -107,37 +108,53 @@ For more pleasant output, you may wish to use string formatting to produce a lim
    >>> repr(math.pi)
    '3.141592653589793'
 
-
 It's important to realize that this is, in a real sense, an illusion: you're
 simply rounding the *display* of the true machine value.
 
 One illusion may beget another.  For example, since 0.1 is not exactly 1/10,
-summing three values of 0.1 may not yield exactly 0.3, either::
+summing three values of 0.1 may not yield exactly 0.3, either:
 
-   >>> .1 + .1 + .1 == .3
+.. doctest::
+
+   >>> 0.1 + 0.1 + 0.1 == 0.3
    False
 
 Also, since the 0.1 cannot get any closer to the exact value of 1/10 and
 0.3 cannot get any closer to the exact value of 3/10, then pre-rounding with
-:func:`round` function cannot help::
+:func:`round` function cannot help:
 
-   >>> round(.1, 1) + round(.1, 1) + round(.1, 1) == round(.3, 1)
+.. doctest::
+
+   >>> round(0.1, 1) + round(0.1, 1) + round(0.1, 1) == round(0.3, 1)
    False
 
 Though the numbers cannot be made closer to their intended exact values,
-the :func:`round` function can be useful for post-rounding so that results
-with inexact values become comparable to one another::
+the :func:`math.isclose` function can be useful for comparing inexact values:
 
-    >>> round(.1 + .1 + .1, 10) == round(.3, 10)
-    True
+.. doctest::
+
+   >>> math.isclose(0.1 + 0.1 + 0.1, 0.3)
+   True
+
+Alternatively, the :func:`round` function can be used to compare rough
+approximations:
+
+.. doctest::
+
+   >>> round(math.pi, ndigits=2) == round(22 / 7, ndigits=2)
+   True
 
 Binary floating-point arithmetic holds many surprises like this.  The problem
 with "0.1" is explained in precise detail below, in the "Representation Error"
-section.  See `The Perils of Floating Point <http://www.lahey.com/float.htm>`_
+section.  See `Examples of Floating Point Problems
+<https://jvns.ca/blog/2023/01/13/examples-of-floating-point-problems/>`_ for
+a pleasant summary of how binary floating point works and the kinds of
+problems commonly encountered in practice.  Also see
+`The Perils of Floating Point <http://www.indowsway.com/floatingpoint.htm>`_
 for a more complete account of other common surprises.
 
 As that says near the end, "there are no easy answers."  Still, don't be unduly
-wary of floating-point!  The errors in Python float operations are inherited
+wary of floating point!  The errors in Python float operations are inherited
 from the floating-point hardware, and on most machines are on the order of no
 more than 1 part in 2\*\*53 per operation.  That's more than adequate for most
 tasks, but you do need to keep in mind that it's not decimal arithmetic and
@@ -157,33 +174,41 @@ Another form of exact arithmetic is supported by the :mod:`fractions` module
 which implements arithmetic based on rational numbers (so the numbers like
 1/3 can be represented exactly).
 
-If you are a heavy user of floating point operations you should take a look
-at the Numerical Python package and many other packages for mathematical and
+If you are a heavy user of floating-point operations you should take a look
+at the NumPy package and many other packages for mathematical and
 statistical operations supplied by the SciPy project. See <https://scipy.org>.
 
 Python provides tools that may help on those rare occasions when you really
 *do* want to know the exact value of a float.  The
 :meth:`float.as_integer_ratio` method expresses the value of a float as a
-fraction::
+fraction:
+
+.. doctest::
 
    >>> x = 3.14159
    >>> x.as_integer_ratio()
    (3537115888337719, 1125899906842624)
 
 Since the ratio is exact, it can be used to losslessly recreate the
-original value::
+original value:
+
+.. doctest::
 
     >>> x == 3537115888337719 / 1125899906842624
     True
 
 The :meth:`float.hex` method expresses a float in hexadecimal (base
-16), again giving the exact value stored by your computer::
+16), again giving the exact value stored by your computer:
+
+.. doctest::
 
    >>> x.hex()
    '0x1.921f9f01b866ep+1'
 
 This precise hexadecimal representation can be used to reconstruct
-the float value exactly::
+the float value exactly:
+
+.. doctest::
 
     >>> x == float.fromhex('0x1.921f9f01b866ep+1')
     True
@@ -192,16 +217,42 @@ Since the representation is exact, it is useful for reliably porting values
 across different versions of Python (platform independence) and exchanging
 data with other languages that support the same format (such as Java and C99).
 
-Another helpful tool is the :func:`math.fsum` function which helps mitigate
-loss-of-precision during summation.  It tracks "lost digits" as values are
-added onto a running total.  That can make a difference in overall accuracy
-so that the errors do not accumulate to the point where they affect the
-final total:
+Another helpful tool is the :func:`sum` function which helps mitigate
+loss-of-precision during summation.  It uses extended precision for
+intermediate rounding steps as values are added onto a running total.
+That can make a difference in overall accuracy so that the errors do not
+accumulate to the point where they affect the final total:
 
-   >>> sum([0.1] * 10) == 1.0
+.. doctest::
+
+   >>> 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 + 0.1 == 1.0
    False
-   >>> math.fsum([0.1] * 10) == 1.0
+   >>> sum([0.1] * 10) == 1.0
    True
+
+The :func:`math.fsum` goes further and tracks all of the "lost digits"
+as values are added onto a running total so that the result has only a
+single rounding.  This is slower than :func:`sum` but will be more
+accurate in uncommon cases where large magnitude inputs mostly cancel
+each other out leaving a final sum near zero:
+
+.. doctest::
+
+   >>> arr = [-0.10430216751806065, -266310978.67179024, 143401161448607.16,
+   ...        -143401161400469.7, 266262841.31058735, -0.003244936839808227]
+   >>> float(sum(map(Fraction, arr)))   # Exact summation with single rounding
+   8.042173697819788e-13
+   >>> math.fsum(arr)                   # Single rounding
+   8.042173697819788e-13
+   >>> sum(arr)                         # Multiple roundings in extended precision
+   8.042178034628478e-13
+   >>> total = 0.0
+   >>> for x in arr:
+   ...     total += x                   # Multiple roundings in standard precision
+   ...
+   >>> total                            # Straight addition has no correct digits!
+   -0.0051575902860057365
+
 
 .. _tut-fp-error:
 
@@ -217,12 +268,14 @@ decimal fractions cannot be represented exactly as binary (base 2) fractions.
 This is the chief reason why Python (or Perl, C, C++, Java, Fortran, and many
 others) often won't display the exact decimal number you expect.
 
-Why is that?  1/10 is not exactly representable as a binary fraction. Almost all
-machines today (November 2000) use IEEE-754 floating point arithmetic, and
-almost all platforms map Python floats to IEEE-754 "double precision".  754
-doubles contain 53 bits of precision, so on input the computer strives to
-convert 0.1 to the closest fraction it can of the form *J*/2**\ *N* where *J* is
-an integer containing exactly 53 bits.  Rewriting ::
+Why is that?  1/10 is not exactly representable as a binary fraction.  Since at
+least 2000, almost all machines use IEEE 754 binary floating-point arithmetic,
+and almost all platforms map Python floats to IEEE 754 binary64 "double
+precision" values.  IEEE 754 binary64 values contain 53 bits of precision, so
+on input the computer strives to convert 0.1 to the closest fraction it can of
+the form *J*/2**\ *N* where *J* is an integer containing exactly 53 bits.
+Rewriting
+::
 
    1 / 10 ~= J / (2**N)
 
@@ -231,25 +284,34 @@ as ::
    J ~= 2**N / 10
 
 and recalling that *J* has exactly 53 bits (is ``>= 2**52`` but ``< 2**53``),
-the best value for *N* is 56::
+the best value for *N* is 56:
+
+.. doctest::
 
     >>> 2**52 <=  2**56 // 10  < 2**53
     True
 
 That is, 56 is the only value for *N* that leaves *J* with exactly 53 bits.  The
-best possible value for *J* is then that quotient rounded::
+best possible value for *J* is then that quotient rounded:
+
+.. doctest::
 
    >>> q, r = divmod(2**56, 10)
    >>> r
    6
 
 Since the remainder is more than half of 10, the best approximation is obtained
-by rounding up::
+by rounding up:
+
+.. doctest::
+
+
 
    >>> q+1
    7205759403792794
 
-Therefore the best possible approximation to 1/10 in 754 double precision is::
+Therefore the best possible approximation to 1/10 in IEEE 754 double precision
+is::
 
    7205759403792794 / 2 ** 56
 
@@ -262,13 +324,17 @@ if we had not rounded up, the quotient would have been a little bit smaller than
 1/10.  But in no case can it be *exactly* 1/10!
 
 So the computer never "sees" 1/10:  what it sees is the exact fraction given
-above, the best 754 double approximation it can get::
+above, the best IEEE 754 double approximation it can get:
+
+.. doctest::
 
    >>> 0.1 * 2 ** 55
    3602879701896397.0
 
 If we multiply that fraction by 10\*\*55, we can see the value out to
-55 decimal digits::
+55 decimal digits:
+
+.. doctest::
 
    >>> 3602879701896397 * 10 ** 55 // 2 ** 55
    1000000000000000055511151231257827021181583404541015625
@@ -276,13 +342,17 @@ If we multiply that fraction by 10\*\*55, we can see the value out to
 meaning that the exact number stored in the computer is equal to
 the decimal value 0.1000000000000000055511151231257827021181583404541015625.
 Instead of displaying the full decimal value, many languages (including
-older versions of Python), round the result to 17 significant digits::
+older versions of Python), round the result to 17 significant digits:
+
+.. doctest::
 
    >>> format(0.1, '.17f')
    '0.10000000000000001'
 
 The :mod:`fractions` and :mod:`decimal` modules make these calculations
-easy::
+easy:
+
+.. doctest::
 
    >>> from decimal import Decimal
    >>> from fractions import Fraction
