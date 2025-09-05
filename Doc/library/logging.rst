@@ -679,7 +679,7 @@ Formatter Objects
        how the format string will be merged with its data: using one of
        :ref:`old-string-formatting` (``%``), :meth:`str.format` (``{``)
        or :class:`string.Template` (``$``). This only applies to
-       *fmt* and *datefmt* (e.g. ``'%(message)s'`` versus ``'{message}'``),
+       *fmt* (e.g. ``'%(message)s'`` versus ``'{message}'``),
        not to the actual log messages passed to the logging methods.
        However, there are :ref:`other ways <formatting-styles>`
        to use ``{``- and ``$``-formatting for log messages.
