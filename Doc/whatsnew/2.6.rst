@@ -997,9 +997,10 @@ sequence of bytes::
     u'\u31ef \u3244'
 
 Byte arrays support most of the methods of string types, such as
-:meth:`startswith`/:meth:`endswith`, :meth:`find`/:meth:`rfind`,
-and some of the methods of lists, such as :meth:`append`,
-:meth:`pop`,  and :meth:`reverse`.
+:meth:`~bytearray.startswith`/:meth:`~bytearray.endswith`,
+:meth:`~bytearray.find`/:meth:`~bytearray.rfind`,
+and some of the methods of lists, such as :meth:`~bytearray.append`,
+:meth:`~bytearray.pop`,  and :meth:`~bytearray.reverse`.
 
 ::
 
@@ -1528,8 +1529,8 @@ Some smaller changes made to the core Python language are:
   the :exc:`StopIteration` exception will be raised.  (Backported
   in :issue:`2719`.)
 
-* Tuples now have :meth:`index` and :meth:`count` methods matching the
-  list type's :meth:`index` and :meth:`count` methods::
+* Tuples now have :meth:`~tuple.index` and :meth:`~tuple.count` methods
+  matching the list type's :meth:`~list.index` and :meth:`~list.count` methods::
 
     >>> t = (0,1,2,3,4,0,1,2)
     >>> t.index(3)
