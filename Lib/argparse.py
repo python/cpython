@@ -956,7 +956,7 @@ class BooleanOptionalAction(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if '-' not in parser.prefix_chars:
             raise ValueError("BooleanOptionalAction requires '-' in parser's prefix_chars")
-        
+
         if option_string in self.option_strings:
             setattr(namespace, self.dest, not option_string.startswith('--no-'))
 
