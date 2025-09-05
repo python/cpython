@@ -135,6 +135,13 @@ class clear_screen(Command):
         r.dirty = True
 
 
+class clear_display(Command):
+    def do(self) -> None:
+        r = self.reader
+        r.console.clear_all()
+        r.dirty = True
+
+
 class refresh(Command):
     def do(self) -> None:
         self.reader.dirty = True
