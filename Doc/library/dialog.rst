@@ -27,15 +27,15 @@ functions for creating simple modal dialogs to get a value from the user.
 
    The base class for custom dialogs.
 
-    .. method:: body(master)
+   .. method:: body(master)
 
-       Override to construct the dialog's interface and return the widget that
-       should have initial focus.
+      Override to construct the dialog's interface and return the widget that
+      should have initial focus.
 
-    .. method:: buttonbox()
+   .. method:: buttonbox()
 
-       Default behaviour adds OK and Cancel buttons. Override for custom button
-       layouts.
+      Default behaviour adds OK and Cancel buttons. Override for custom button
+      layouts.
 
 
 
@@ -220,7 +220,7 @@ is the base class for dialogs defined in other supporting modules.
 
 .. class:: Dialog(master=None, **options)
 
-   .. method:: show(color=None, **options)
+   .. method:: show(**options)
 
       Render the Dialog window.
 

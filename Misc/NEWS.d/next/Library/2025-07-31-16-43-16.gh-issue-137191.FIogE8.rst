@@ -1,0 +1,4 @@
+Fix how type parameters are collected, when :class:`typing.Protocol` are
+specified with explicit parameters. Now, :class:`typing.Generic` and
+:class:`typing.Protocol` always dictate the parameter number
+and parameter ordering of types. Previous behavior was a bug.

@@ -200,6 +200,16 @@ a ``python3.x-32`` binary and use the value of ``sys.executable`` as the
 Likewise, use ``python3.x-intel64`` to force execution in ``x86_64`` mode
 with ``universal2`` binaries.
 
+3. How do I specify binary universal wheels
+-------------------------------------------
+
+Binary wheels can also be universal. The platform tag name used to identify
+universal binary wheels differs from the naming scheme used when configuring a
+universal build with ``--with-universal-archs``. See the Python Packaging User
+Guide for details on the `packaging platform compatibility tags used on macOS
+<https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#macos>`_.
+
+
 Building and using a framework-based Python on macOS
 ====================================================
 
@@ -347,9 +357,9 @@ The configure script sometimes emits warnings like the one below::
    configure: WARNING: libintl.h:     section "Present But Cannot Be Compiled"
    configure: WARNING: libintl.h: proceeding with the preprocessor's result
    configure: WARNING: libintl.h: in the future, the compiler will take precedence
-   configure: WARNING:     ## --------------------------------------- ##
-   configure: WARNING:     ## Report this to https://bugs.python.org/ ##
-   configure: WARNING:     ## --------------------------------------- ##
+   configure: WARNING:     ## -------------------------------------------------------- ##
+   configure: WARNING:     ## Report this to https://github.com/python/cpython/issues/ ##
+   configure: WARNING:     ## -------------------------------------------------------- ##
 
 This almost always means you are trying to build a universal binary for
 Python and have libraries in ``/usr/local`` that don't contain the required

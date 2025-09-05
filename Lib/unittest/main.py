@@ -3,12 +3,12 @@
 import sys
 import argparse
 import os
-import warnings
 
 from . import loader, runner
 from .signals import installHandler
 
 __unittest = True
+_NO_TESTS_EXITCODE = 5
 
 MAIN_EXAMPLES = """\
 Examples:
@@ -68,7 +68,7 @@ class TestProgram(object):
                     testRunner=None, testLoader=loader.defaultTestLoader,
                     exit=True, verbosity=1, failfast=None, catchbreak=None,
                     buffer=None, warnings=None, *, tb_locals=False,
-                    debug=False):
+                    durations=None, debug=False):
         if isinstance(module, str):
             self.module = __import__(module)
             for part in module.split('.')[1:]:
@@ -84,6 +84,7 @@ class TestProgram(object):
         self.verbosity = verbosity
         self.buffer = buffer
         self.tb_locals = tb_locals
+        self.durations = durations
         self.debug = debug
         if warnings is None and not sys.warnoptions:
             # even if DeprecationWarnings are ignored by default
@@ -103,16 +104,6 @@ class TestProgram(object):
         self.progName = os.path.basename(argv[0])
         self.parseArgs(argv)
         self.runTests()
-
-    def usageExit(self, msg=None):
-        warnings.warn("TestProgram.usageExit() is deprecated and will be"
-                      " removed in Python 3.13", DeprecationWarning)
-        if msg:
-            print(msg)
-        if self._discovery_parser is None:
-            self._initArgParsers()
-        self._print_help()
-        sys.exit(2)
 
     def _print_help(self, *args, **kwargs):
         if self.module is None:
@@ -181,6 +172,9 @@ class TestProgram(object):
         parser.add_argument('--locals', dest='tb_locals',
                             action='store_true',
                             help='Show local variables in tracebacks')
+        parser.add_argument('--durations', dest='durations', type=int,
+                            default=None, metavar="N",
+                            help='Show the N slowest test cases (N=0 for all)')
         parser.add_argument('--debug', action='store_true',
                             help='Run the given tests in debug "crash" mode')
         parser.add_argument('--pdb', action='store_true',
@@ -213,7 +207,7 @@ class TestProgram(object):
         return parser
 
     def _getMainArgParser(self, parent):
-        parser = argparse.ArgumentParser(parents=[parent])
+        parser = argparse.ArgumentParser(parents=[parent], color=True)
         parser.prog = self.progName
         parser.print_help = self._print_help
 
@@ -224,7 +218,7 @@ class TestProgram(object):
         return parser
 
     def _getDiscoveryArgParser(self, parent):
-        parser = argparse.ArgumentParser(parents=[parent])
+        parser = argparse.ArgumentParser(parents=[parent], color=True)
         parser.prog = '%s discover' % self.progName
         parser.epilog = ('For test discovery all test modules must be '
                          'importable from the top level directory of the '
@@ -269,9 +263,10 @@ class TestProgram(object):
                                                  failfast=self.failfast,
                                                  buffer=self.buffer,
                                                  warnings=self.warnings,
-                                                 tb_locals=self.tb_locals)
+                                                 tb_locals=self.tb_locals,
+                                                 durations=self.durations)
                 except TypeError:
-                    # didn't accept the tb_locals argument
+                    # didn't accept the tb_locals or durations argument
                     testRunner = self.testRunner(verbosity=self.verbosity,
                                                  failfast=self.failfast,
                                                  buffer=self.buffer,
@@ -295,6 +290,12 @@ class TestProgram(object):
         else:
             self.result = testRunner.run(self.test)
         if self.exit:
-            sys.exit(not self.result.wasSuccessful())
+            if self.result.testsRun == 0 and len(self.result.skipped) == 0:
+                sys.exit(_NO_TESTS_EXITCODE)
+            elif self.result.wasSuccessful():
+                sys.exit(0)
+            else:
+                sys.exit(1)
+
 
 main = TestProgram

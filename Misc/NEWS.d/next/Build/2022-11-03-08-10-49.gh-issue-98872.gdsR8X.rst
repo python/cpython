@@ -1,1 +1,0 @@
-Fix a possible fd leak in ``Programs/_freeze_module.c`` introduced in Python 3.11.

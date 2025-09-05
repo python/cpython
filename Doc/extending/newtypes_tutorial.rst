@@ -36,8 +36,8 @@ So, if you want to define a new extension type, you need to create a new type
 object.
 
 This sort of thing can only be explained by example, so here's a minimal, but
-complete, module that defines a new type named :class:`Custom` inside a C
-extension module :mod:`custom`:
+complete, module that defines a new type named :class:`!Custom` inside a C
+extension module :mod:`!custom`:
 
 .. note::
    What we're showing here is the traditional way of defining *static*
@@ -45,18 +45,20 @@ extension module :mod:`custom`:
    allows defining heap-allocated extension types using the
    :c:func:`PyType_FromSpec` function, which isn't covered in this tutorial.
 
-.. literalinclude:: ../includes/custom.c
+.. literalinclude:: ../includes/newtypes/custom.c
 
 Now that's quite a bit to take in at once, but hopefully bits will seem familiar
 from the previous chapter.  This file defines three things:
 
-#. What a :class:`Custom` **object** contains: this is the ``CustomObject``
-   struct, which is allocated once for each :class:`Custom` instance.
-#. How the :class:`Custom` **type** behaves: this is the ``CustomType`` struct,
+#. What a :class:`!Custom` **object** contains: this is the ``CustomObject``
+   struct, which is allocated once for each :class:`!Custom` instance.
+#. How the :class:`!Custom` **type** behaves: this is the ``CustomType`` struct,
    which defines a set of flags and function pointers that the interpreter
    inspects when specific operations are requested.
-#. How to initialize the :mod:`custom` module: this is the ``PyInit_custom``
-   function and the associated ``custommodule`` struct.
+#. How to define and execute the :mod:`!custom` module: this is the
+   ``PyInit_custom`` function and the associated ``custom_module`` struct for
+   defining the module, and the ``custom_module_exec`` function to set up
+   a fresh module object.
 
 The first bit is::
 
@@ -88,7 +90,7 @@ standard Python floats::
 The second bit is the definition of the type object. ::
 
    static PyTypeObject CustomType = {
-       PyVarObject_HEAD_INIT(NULL, 0)
+       .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
        .tp_name = "custom.Custom",
        .tp_doc = PyDoc_STR("Custom objects"),
        .tp_basicsize = sizeof(CustomObject),
@@ -109,7 +111,7 @@ common practice to not specify them explicitly unless you need them.
 
 We're going to pick it apart, one field at a time::
 
-   PyVarObject_HEAD_INIT(NULL, 0)
+   .ob_base = PyVarObject_HEAD_INIT(NULL, 0)
 
 This line is mandatory boilerplate to initialize the ``ob_base``
 field mentioned above. ::
@@ -127,8 +129,8 @@ our objects and in some error messages, for example:
    TypeError: can only concatenate str (not "custom.Custom") to str
 
 Note that the name is a dotted name that includes both the module name and the
-name of the type within the module. The module in this case is :mod:`custom` and
-the type is :class:`Custom`, so we set the type name to :class:`custom.Custom`.
+name of the type within the module. The module in this case is :mod:`!custom` and
+the type is :class:`!Custom`, so we set the type name to :class:`!custom.Custom`.
 Using the real dotted import path is important to make your type compatible
 with the :mod:`pydoc` and :mod:`pickle` modules. ::
 
@@ -136,7 +138,7 @@ with the :mod:`pydoc` and :mod:`pickle` modules. ::
    .tp_itemsize = 0,
 
 This is so that Python knows how much memory to allocate when creating
-new :class:`Custom` instances.  :c:member:`~PyTypeObject.tp_itemsize` is
+new :class:`!Custom` instances.  :c:member:`~PyTypeObject.tp_itemsize` is
 only used for variable-sized objects and should otherwise be zero.
 
 .. note::
@@ -144,14 +146,14 @@ only used for variable-sized objects and should otherwise be zero.
    If you want your type to be subclassable from Python, and your type has the same
    :c:member:`~PyTypeObject.tp_basicsize` as its base type, you may have problems with multiple
    inheritance.  A Python subclass of your type will have to list your type first
-   in its :attr:`~class.__bases__`, or else it will not be able to call your type's
-   :meth:`__new__` method without getting an error.  You can avoid this problem by
+   in its :attr:`~type.__bases__`, or else it will not be able to call your type's
+   :meth:`~object.__new__` method without getting an error.  You can avoid this problem by
    ensuring that your type has a larger value for :c:member:`~PyTypeObject.tp_basicsize` than its
    base type does.  Most of the time, this will be true anyway, because either your
    base type will be :class:`object`, or else you will be adding data members to
    your base type, and therefore increasing its size.
 
-We set the class flags to :const:`Py_TPFLAGS_DEFAULT`. ::
+We set the class flags to :c:macro:`Py_TPFLAGS_DEFAULT`. ::
 
    .tp_flags = Py_TPFLAGS_DEFAULT,
 
@@ -164,31 +166,29 @@ We provide a doc string for the type in :c:member:`~PyTypeObject.tp_doc`. ::
    .tp_doc = PyDoc_STR("Custom objects"),
 
 To enable object creation, we have to provide a :c:member:`~PyTypeObject.tp_new`
-handler.  This is the equivalent of the Python method :meth:`__new__`, but
+handler.  This is the equivalent of the Python method :meth:`~object.__new__`, but
 has to be specified explicitly.  In this case, we can just use the default
 implementation provided by the API function :c:func:`PyType_GenericNew`. ::
 
    .tp_new = PyType_GenericNew,
 
 Everything else in the file should be familiar, except for some code in
-:c:func:`PyInit_custom`::
+:c:func:`!custom_module_exec`::
 
-   if (PyType_Ready(&CustomType) < 0)
-       return;
+   if (PyType_Ready(&CustomType) < 0) {
+       return -1;
+   }
 
-This initializes the :class:`Custom` type, filling in a number of members
-to the appropriate default values, including :attr:`ob_type` that we initially
+This initializes the :class:`!Custom` type, filling in a number of members
+to the appropriate default values, including :c:member:`~PyObject.ob_type` that we initially
 set to ``NULL``. ::
 
-   Py_INCREF(&CustomType);
-   if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
-       Py_DECREF(&CustomType);
-       Py_DECREF(m);
-       return NULL;
+   if (PyModule_AddObjectRef(m, "Custom", (PyObject *) &CustomType) < 0) {
+       return -1;
    }
 
 This adds the type to the module dictionary.  This allows us to create
-:class:`Custom` instances by calling the :class:`Custom` class:
+:class:`!Custom` instances by calling the :class:`!Custom` class:
 
 .. code-block:: pycon
 
@@ -196,50 +196,46 @@ This adds the type to the module dictionary.  This allows us to create
    >>> mycustom = custom.Custom()
 
 That's it!  All that remains is to build it; put the above code in a file called
-:file:`custom.c` and:
+:file:`custom.c`,
+
+.. literalinclude:: ../includes/newtypes/pyproject.toml
+
+in a file called :file:`pyproject.toml`, and
 
 .. code-block:: python
 
-   from distutils.core import setup, Extension
-   setup(name="custom", version="1.0",
-         ext_modules=[Extension("custom", ["custom.c"])])
+   from setuptools import Extension, setup
+   setup(ext_modules=[Extension("custom", ["custom.c"])])
 
 in a file called :file:`setup.py`; then typing
 
 .. code-block:: shell-session
 
-   $ python setup.py build
+   $ python -m pip install .
 
-at a shell should produce a file :file:`custom.so` in a subdirectory; move to
-that directory and fire up Python --- you should be able to ``import custom`` and
-play around with Custom objects.
+in a shell should produce a file :file:`custom.so` in a subdirectory
+and install it; now fire up Python --- you should be able to ``import custom``
+and play around with ``Custom`` objects.
 
 That wasn't so hard, was it?
 
 Of course, the current Custom type is pretty uninteresting. It has no data and
 doesn't do anything. It can't even be subclassed.
 
-.. note::
-   While this documentation showcases the standard :mod:`distutils` module
-   for building C extensions, it is recommended in real-world use cases to
-   use the newer and better-maintained ``setuptools`` library.  Documentation
-   on how to do this is out of scope for this document and can be found in
-   the `Python Packaging User's Guide <https://packaging.python.org/tutorials/distributing-packages/>`_.
-
 
 Adding data and methods to the Basic example
 ============================================
 
 Let's extend the basic example to add some data and methods.  Let's also make
-the type usable as a base class. We'll create a new module, :mod:`custom2` that
+the type usable as a base class. We'll create a new module, :mod:`!custom2` that
 adds these capabilities:
 
-.. literalinclude:: ../includes/custom2.c
+.. literalinclude:: ../includes/newtypes/custom2.c
 
 
 This version of the module has a number of changes.
 
-The  :class:`Custom` type now has three data attributes in its C struct,
+The  :class:`!Custom` type now has three data attributes in its C struct,
 *first*, *last*, and *number*.  The *first* and *last* variables are Python
 strings containing first and last names.  The *number* attribute is a C integer.
 
@@ -256,31 +252,52 @@ Because we now have data to manage, we have to be more careful about object
 allocation and deallocation.  At a minimum, we need a deallocation method::
 
    static void
-   Custom_dealloc(CustomObject *self)
+   Custom_dealloc(PyObject *op)
    {
+       CustomObject *self = (CustomObject *) op;
        Py_XDECREF(self->first);
        Py_XDECREF(self->last);
-       Py_TYPE(self)->tp_free((PyObject *) self);
+       Py_TYPE(self)->tp_free(self);
    }
 
 which is assigned to the :c:member:`~PyTypeObject.tp_dealloc` member::
 
-   .tp_dealloc = (destructor) Custom_dealloc,
+   .tp_dealloc = Custom_dealloc,
 
 This method first clears the reference counts of the two Python attributes.
 :c:func:`Py_XDECREF` correctly handles the case where its argument is
 ``NULL`` (which might happen here if ``tp_new`` failed midway).  It then
 calls the :c:member:`~PyTypeObject.tp_free` member of the object's type
 (computed by ``Py_TYPE(self)``) to free the object's memory.  Note that
-the object's type might not be :class:`CustomType`, because the object may
+the object's type might not be :class:`!CustomType`, because the object may
 be an instance of a subclass.
 
 .. note::
-   The explicit cast to ``destructor`` above is needed because we defined
-   ``Custom_dealloc`` to take a ``CustomObject *`` argument, but the ``tp_dealloc``
-   function pointer expects to receive a ``PyObject *`` argument.  Otherwise,
-   the compiler will emit a warning.  This is object-oriented polymorphism,
-   in C!
+
+   The explicit cast to ``CustomObject *`` above is needed because we defined
+   ``Custom_dealloc`` to take a ``PyObject *`` argument, as the ``tp_dealloc``
+   function pointer expects to receive a ``PyObject *`` argument.
+   By assigning to the ``tp_dealloc`` slot of a type, we declare
+   that it can only be called with instances of our ``CustomObject``
+   class, so the cast to ``(CustomObject *)`` is safe.
+   This is object-oriented polymorphism, in C!
+
+   In existing code, or in previous versions of this tutorial,
+   you might see similar functions take a pointer to the subtype
+   object structure (``CustomObject*``) directly, like this::
+
+      Custom_dealloc(CustomObject *self)
+      {
+          Py_XDECREF(self->first);
+          Py_XDECREF(self->last);
+          Py_TYPE(self)->tp_free((PyObject *) self);
+      }
+      ...
+      .tp_dealloc = (destructor) Custom_dealloc,
+
+   This does the same thing on all architectures that CPython
+   supports, but according to the C standard, it invokes
+   undefined behavior.
 
 We want to make sure that the first and last names are initialized to empty
 strings, so we provide a ``tp_new`` implementation::
@@ -311,10 +328,10 @@ and install it in the :c:member:`~PyTypeObject.tp_new` member::
    .tp_new = Custom_new,
 
 The ``tp_new`` handler is responsible for creating (as opposed to initializing)
-objects of the type.  It is exposed in Python as the :meth:`__new__` method.
+objects of the type.  It is exposed in Python as the :meth:`~object.__new__` method.
 It is not required to define a ``tp_new`` member, and indeed many extension
 types will simply reuse :c:func:`PyType_GenericNew` as done in the first
-version of the ``Custom`` type above.  In this case, we use the ``tp_new``
+version of the :class:`!Custom` type above.  In this case, we use the ``tp_new``
 handler to initialize the ``first`` and ``last`` attributes to non-``NULL``
 default values.
 
@@ -345,7 +362,7 @@ result against ``NULL`` before proceeding.
 
 .. note::
    If you are creating a co-operative :c:member:`~PyTypeObject.tp_new` (one
-   that calls a base type's :c:member:`~PyTypeObject.tp_new` or :meth:`__new__`),
+   that calls a base type's :c:member:`~PyTypeObject.tp_new` or :meth:`~object.__new__`),
    you must *not* try to determine what method to call using method resolution
    order at runtime.  Always statically determine what type you are going to
    call, and call its :c:member:`~PyTypeObject.tp_new` directly, or via
@@ -358,8 +375,9 @@ We also define an initialization function which accepts arguments to provide
 initial values for our instance::
 
    static int
-   Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
+   Custom_init(PyObject *op, PyObject *args, PyObject *kwds)
    {
+       CustomObject *self = (CustomObject *) op;
        static char *kwlist[] = {"first", "last", "number", NULL};
        PyObject *first = NULL, *last = NULL, *tmp;
 
@@ -385,17 +403,17 @@ initial values for our instance::
 
 by filling the :c:member:`~PyTypeObject.tp_init` slot. ::
 
-   .tp_init = (initproc) Custom_init,
+   .tp_init = Custom_init,
 
 The :c:member:`~PyTypeObject.tp_init` slot is exposed in Python as the
-:meth:`__init__` method.  It is used to initialize an object after it's
+:meth:`~object.__init__` method.  It is used to initialize an object after it's
 created.  Initializers always accept positional and keyword arguments,
 and they should return either ``0`` on success or ``-1`` on error.
 
 Unlike the ``tp_new`` handler, there is no guarantee that ``tp_init``
 is called at all (for example, the :mod:`pickle` module by default
-doesn't call :meth:`__init__` on unpickled instances).  It can also be
-called multiple times.  Anyone can call the :meth:`__init__` method on
+doesn't call :meth:`~object.__init__` on unpickled instances).  It can also be
+called multiple times.  Anyone can call the :meth:`!__init__` method on
 our objects.  For this reason, we have to be extra careful when assigning
 the new attribute values.  We might be tempted, for example to assign the
 ``first`` member like this::
@@ -409,8 +427,8 @@ the new attribute values.  We might be tempted, for example to assign the
 But this would be risky.  Our type doesn't restrict the type of the
 ``first`` member, so it could be any kind of object.  It could have a
 destructor that causes code to be executed that tries to access the
-``first`` member; or that destructor could release the
-:term:`Global interpreter Lock <GIL>` and let arbitrary code run in other
+``first`` member; or that destructor could detach the
+:term:`thread state <attached thread state>` and let arbitrary code run in other
 threads that accesses and modifies our object.
 
 To be paranoid and protect ourselves against this possibility, we almost
@@ -419,8 +437,8 @@ don't we have to do this?
 
 * when we absolutely know that the reference count is greater than 1;
 
-* when we know that deallocation of the object [#]_ will neither release
-  the :term:`GIL` nor cause any calls back into our type's code;
+* when we know that deallocation of the object [#]_ will neither detach
+  the :term:`thread state <attached thread state>` nor cause any calls back into our type's code;
 
 * when decrementing a reference count in a :c:member:`~PyTypeObject.tp_dealloc`
   handler on a type which doesn't support cyclic garbage collection [#]_.
@@ -453,12 +471,13 @@ Further, the attributes can be deleted, setting the C pointers to ``NULL``.  Eve
 though we can make sure the members are initialized to non-``NULL`` values, the
 members can be set to ``NULL`` if the attributes are deleted.
 
-We define a single method, :meth:`Custom.name()`, that outputs the objects name as the
+We define a single method, :meth:`!Custom.name`, that outputs the objects name as the
 concatenation of the first and last names. ::
 
    static PyObject *
-   Custom_name(CustomObject *self, PyObject *Py_UNUSED(ignored))
+   Custom_name(PyObject *op, PyObject *Py_UNUSED(dummy))
    {
+       CustomObject *self = (CustomObject *) op;
        if (self->first == NULL) {
            PyErr_SetString(PyExc_AttributeError, "first");
            return NULL;
@@ -470,8 +489,8 @@ concatenation of the first and last names. ::
        return PyUnicode_FromFormat("%S %S", self->first, self->last);
    }
 
-The method is implemented as a C function that takes a :class:`Custom` (or
-:class:`Custom` subclass) instance as the first argument.  Methods always take an
+The method is implemented as a C function that takes a :class:`!Custom` (or
+:class:`!Custom` subclass) instance as the first argument.  Methods always take an
 instance as the first argument. Methods often take positional and keyword
 arguments as well, but in this case we don't take any and don't need to accept
 a positional argument tuple or keyword argument dictionary. This method is
@@ -482,8 +501,8 @@ equivalent to the Python method:
    def name(self):
        return "%s %s" % (self.first, self.last)
 
-Note that we have to check for the possibility that our :attr:`first` and
-:attr:`last` members are ``NULL``.  This is because they can be deleted, in which
+Note that we have to check for the possibility that our :attr:`!first` and
+:attr:`!last` members are ``NULL``.  This is because they can be deleted, in which
 case they are set to ``NULL``.  It would be better to prevent deletion of these
 attributes and to restrict the attribute values to be strings.  We'll see how to
 do that in the next section.
@@ -492,13 +511,13 @@ Now that we've defined the method, we need to create an array of method
 definitions::
 
    static PyMethodDef Custom_methods[] = {
-       {"name", (PyCFunction) Custom_name, METH_NOARGS,
+       {"name", Custom_name, METH_NOARGS,
         "Return the name, combining the first and last name"
        },
        {NULL}  /* Sentinel */
    };
 
-(note that we used the :const:`METH_NOARGS` flag to indicate that the method
+(note that we used the :c:macro:`METH_NOARGS` flag to indicate that the method
 is expecting no arguments other than *self*)
 
 and assign it to the :c:member:`~PyTypeObject.tp_methods` slot::
@@ -508,52 +527,58 @@ and assign it to the :c:member:`~PyTypeObject.tp_methods` slot::
 Finally, we'll make our type usable as a base class for subclassing.  We've
 written our methods carefully so far so that they don't make any assumptions
 about the type of the object being created or used, so all we need to do is
-to add the :const:`Py_TPFLAGS_BASETYPE` to our class flag definition::
+to add the :c:macro:`Py_TPFLAGS_BASETYPE` to our class flag definition::
 
    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 
-We rename :c:func:`PyInit_custom` to :c:func:`PyInit_custom2`, update the
+We rename :c:func:`!PyInit_custom` to :c:func:`!PyInit_custom2`, update the
 module name in the :c:type:`PyModuleDef` struct, and update the full class
 name in the :c:type:`PyTypeObject` struct.
 
-Finally, we update our :file:`setup.py` file to build the new module:
+Finally, we update our :file:`setup.py` file to include the new module,
 
 .. code-block:: python
 
-   from distutils.core import setup, Extension
-   setup(name="custom", version="1.0",
-         ext_modules=[
-            Extension("custom", ["custom.c"]),
-            Extension("custom2", ["custom2.c"]),
-            ])
+   from setuptools import Extension, setup
+   setup(ext_modules=[
+       Extension("custom", ["custom.c"]),
+       Extension("custom2", ["custom2.c"]),
+   ])
 
+and then we re-install so that we can ``import custom2``:
+
+.. code-block:: shell-session
+
+   $ python -m pip install .
 
 Providing finer control over data attributes
 ============================================
 
-In this section, we'll provide finer control over how the :attr:`first` and
-:attr:`last` attributes are set in the :class:`Custom` example. In the previous
-version of our module, the instance variables :attr:`first` and :attr:`last`
+In this section, we'll provide finer control over how the :attr:`!first` and
+:attr:`!last` attributes are set in the :class:`!Custom` example. In the previous
+version of our module, the instance variables :attr:`!first` and :attr:`!last`
 could be set to non-string values or even deleted. We want to make sure that
 these attributes always contain strings.
 
-.. literalinclude:: ../includes/custom3.c
+.. literalinclude:: ../includes/newtypes/custom3.c
 
 
-To provide greater control, over the :attr:`first` and :attr:`last` attributes,
+To provide greater control, over the :attr:`!first` and :attr:`!last` attributes,
 we'll use custom getter and setter functions.  Here are the functions for
-getting and setting the :attr:`first` attribute::
+getting and setting the :attr:`!first` attribute::
 
    static PyObject *
-   Custom_getfirst(CustomObject *self, void *closure)
+   Custom_getfirst(PyObject *op, void *closure)
    {
+       CustomObject *self = (CustomObject *) op;
        Py_INCREF(self->first);
        return self->first;
    }
 
    static int
-   Custom_setfirst(CustomObject *self, PyObject *value, void *closure)
+   Custom_setfirst(PyObject *op, PyObject *value, void *closure)
    {
+       CustomObject *self = (CustomObject *) op;
        PyObject *tmp;
        if (value == NULL) {
            PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
@@ -571,13 +596,13 @@ getting and setting the :attr:`first` attribute::
        return 0;
    }
 
-The getter function is passed a :class:`Custom` object and a "closure", which is
+The getter function is passed a :class:`!Custom` object and a "closure", which is
 a void pointer.  In this case, the closure is ignored.  (The closure supports an
 advanced usage in which definition data is passed to the getter and setter. This
 could, for example, be used to allow a single set of getter and setter functions
 that decide the attribute to get or set based on data in the closure.)
 
-The setter function is passed the :class:`Custom` object, the new value, and the
+The setter function is passed the :class:`!Custom` object, the new value, and the
 closure.  The new value may be ``NULL``, in which case the attribute is being
 deleted.  In our setter, we raise an error if the attribute is deleted or if its
 new value is not a string.
@@ -585,9 +610,9 @@ new value is not a string.
 We create an array of :c:type:`PyGetSetDef` structures::
 
    static PyGetSetDef Custom_getsetters[] = {
-       {"first", (getter) Custom_getfirst, (setter) Custom_setfirst,
+       {"first", Custom_getfirst, Custom_setfirst,
         "first name", NULL},
-       {"last", (getter) Custom_getlast, (setter) Custom_setlast,
+       {"last", Custom_getlast, Custom_setlast,
         "last name", NULL},
        {NULL}  /* Sentinel */
    };
@@ -611,8 +636,9 @@ We also need to update the :c:member:`~PyTypeObject.tp_init` handler to only
 allow strings [#]_ to be passed::
 
    static int
-   Custom_init(CustomObject *self, PyObject *args, PyObject *kwds)
+   Custom_init(PyObject *op, PyObject *args, PyObject *kwds)
    {
+       CustomObject *self = (CustomObject *) op;
        static char *kwlist[] = {"first", "last", "number", NULL};
        PyObject *first = NULL, *last = NULL, *tmp;
 
@@ -666,11 +692,11 @@ still has a reference from itself. Its reference count doesn't drop to zero.
 Fortunately, Python's cyclic garbage collector will eventually figure out that
 the list is garbage and free it.
 
-In the second version of the :class:`Custom` example, we allowed any kind of
-object to be stored in the :attr:`first` or :attr:`last` attributes [#]_.
+In the second version of the :class:`!Custom` example, we allowed any kind of
+object to be stored in the :attr:`!first` or :attr:`!last` attributes [#]_.
 Besides, in the second and third versions, we allowed subclassing
-:class:`Custom`, and subclasses may add arbitrary attributes.  For any of
-those two reasons, :class:`Custom` objects can participate in cycles:
+:class:`!Custom`, and subclasses may add arbitrary attributes.  For any of
+those two reasons, :class:`!Custom` objects can participate in cycles:
 
 .. code-block:: pycon
 
@@ -680,19 +706,20 @@ those two reasons, :class:`Custom` objects can participate in cycles:
    >>> n = Derived()
    >>> n.some_attribute = n
 
-To allow a :class:`Custom` instance participating in a reference cycle to
-be properly detected and collected by the cyclic GC, our :class:`Custom` type
+To allow a :class:`!Custom` instance participating in a reference cycle to
+be properly detected and collected by the cyclic GC, our :class:`!Custom` type
 needs to fill two additional slots and to enable a flag that enables these slots:
 
-.. literalinclude:: ../includes/custom4.c
+.. literalinclude:: ../includes/newtypes/custom4.c
 
 
 First, the traversal method lets the cyclic GC know about subobjects that could
 participate in cycles::
 
    static int
-   Custom_traverse(CustomObject *self, visitproc visit, void *arg)
+   Custom_traverse(PyObject *op, visitproc visit, void *arg)
    {
+       CustomObject *self = (CustomObject *) op;
        int vret;
        if (self->first) {
            vret = visit(self->first, arg);
@@ -708,8 +735,8 @@ participate in cycles::
    }
 
 For each subobject that can participate in cycles, we need to call the
-:c:func:`visit` function, which is passed to the traversal method. The
-:c:func:`visit` function takes as arguments the subobject and the extra argument
+:c:func:`!visit` function, which is passed to the traversal method. The
+:c:func:`!visit` function takes as arguments the subobject and the extra argument
 *arg* passed to the traversal method.  It returns an integer value that must be
 returned if it is non-zero.
 
@@ -718,8 +745,9 @@ functions.  With :c:func:`Py_VISIT`, we can minimize the amount of boilerplate
 in ``Custom_traverse``::
 
    static int
-   Custom_traverse(CustomObject *self, visitproc visit, void *arg)
+   Custom_traverse(PyObject *op, visitproc visit, void *arg)
    {
+       CustomObject *self = (CustomObject *) op;
        Py_VISIT(self->first);
        Py_VISIT(self->last);
        return 0;
@@ -733,8 +761,9 @@ Second, we need to provide a method for clearing any subobjects that can
 participate in cycles::
 
    static int
-   Custom_clear(CustomObject *self)
+   Custom_clear(PyObject *op)
    {
+       CustomObject *self = (CustomObject *) op;
        Py_CLEAR(self->first);
        Py_CLEAR(self->last);
        return 0;
@@ -767,14 +796,14 @@ Here is our reimplemented deallocator using :c:func:`PyObject_GC_UnTrack`
 and ``Custom_clear``::
 
    static void
-   Custom_dealloc(CustomObject *self)
+   Custom_dealloc(PyObject *op)
    {
-       PyObject_GC_UnTrack(self);
-       Custom_clear(self);
-       Py_TYPE(self)->tp_free((PyObject *) self);
+       PyObject_GC_UnTrack(op);
+       (void)Custom_clear(op);
+       Py_TYPE(op)->tp_free(op);
    }
 
-Finally, we add the :const:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
+Finally, we add the :c:macro:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
 
    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
 
@@ -791,9 +820,9 @@ types. It is easiest to inherit from the built in types, since an extension can
 easily use the :c:type:`PyTypeObject` it needs. It can be difficult to share
 these :c:type:`PyTypeObject` structures between extension modules.
 
-In this example we will create a :class:`SubList` type that inherits from the
+In this example we will create a :class:`!SubList` type that inherits from the
 built-in :class:`list` type. The new type will be completely compatible with
-regular lists, but will have an additional :meth:`increment` method that
+regular lists, but will have an additional :meth:`!increment` method that
 increases an internal counter:
 
 .. code-block:: pycon
@@ -808,10 +837,10 @@ increases an internal counter:
    >>> print(s.increment())
    2
 
-.. literalinclude:: ../includes/sublist.c
+.. literalinclude:: ../includes/newtypes/sublist.c
 
 
-As you can see, the source code closely resembles the :class:`Custom` examples in
+As you can see, the source code closely resembles the :class:`!Custom` examples in
 previous sections. We will break down the main differences between them. ::
 
    typedef struct {
@@ -823,19 +852,20 @@ The primary difference for derived type objects is that the base type's
 object structure must be the first value.  The base type will already include
 the :c:func:`PyObject_HEAD` at the beginning of its structure.
 
-When a Python object is a :class:`SubList` instance, its ``PyObject *`` pointer
+When a Python object is a :class:`!SubList` instance, its ``PyObject *`` pointer
 can be safely cast to both ``PyListObject *`` and ``SubListObject *``::
 
    static int
-   SubList_init(SubListObject *self, PyObject *args, PyObject *kwds)
+   SubList_init(PyObject *op, PyObject *args, PyObject *kwds)
    {
-       if (PyList_Type.tp_init((PyObject *) self, args, kwds) < 0)
+       SubListObject *self = (SubListObject *) op;
+       if (PyList_Type.tp_init(op, args, kwds) < 0)
            return -1;
        self->state = 0;
        return 0;
    }
 
-We see above how to call through to the :attr:`__init__` method of the base
+We see above how to call through to the :meth:`~object.__init__` method of the base
 type.
 
 This pattern is important when writing a type with custom
@@ -847,29 +877,22 @@ but let the base class handle it by calling its own :c:member:`~PyTypeObject.tp_
 The :c:type:`PyTypeObject` struct supports a :c:member:`~PyTypeObject.tp_base`
 specifying the type's concrete base class.  Due to cross-platform compiler
 issues, you can't fill that field directly with a reference to
-:c:type:`PyList_Type`; it should be done later in the module initialization
+:c:type:`PyList_Type`; it should be done in the :c:data:`Py_mod_exec`
 function::
 
-   PyMODINIT_FUNC
-   PyInit_sublist(void)
+   static int
+   sublist_module_exec(PyObject *m)
    {
-       PyObject* m;
        SubListType.tp_base = &PyList_Type;
-       if (PyType_Ready(&SubListType) < 0)
-           return NULL;
-
-       m = PyModule_Create(&sublistmodule);
-       if (m == NULL)
-           return NULL;
-
-       Py_INCREF(&SubListType);
-       if (PyModule_AddObject(m, "SubList", (PyObject *) &SubListType) < 0) {
-           Py_DECREF(&SubListType);
-           Py_DECREF(m);
-           return NULL;
+       if (PyType_Ready(&SubListType) < 0) {
+           return -1;
        }
 
-       return m;
+       if (PyModule_AddObjectRef(m, "SubList", (PyObject *) &SubListType) < 0) {
+           return -1;
+       }
+
+       return 0;
    }
 
 Before calling :c:func:`PyType_Ready`, the type structure must have the
@@ -879,7 +902,7 @@ slot with :c:func:`PyType_GenericNew` -- the allocation function from the base
 type will be inherited.
 
 After that, calling :c:func:`PyType_Ready` and adding the type object to the
-module is the same as with the basic :class:`Custom` examples.
+module is the same as with the basic :class:`!Custom` examples.
 
 
 .. rubric:: Footnotes

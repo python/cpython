@@ -237,6 +237,7 @@ class TestBreak(unittest.TestCase):
                 self.testRunner = FakeRunner
                 self.test = test
                 self.result = None
+                self.durations = None
 
         p = Program(False)
         p.runTests()
@@ -245,7 +246,8 @@ class TestBreak(unittest.TestCase):
                                                      'verbosity': verbosity,
                                                      'failfast': failfast,
                                                      'tb_locals': False,
-                                                     'warnings': None})])
+                                                     'warnings': None,
+                                                     'durations': None})])
         self.assertEqual(FakeRunner.runArgs, [test])
         self.assertEqual(p.result, result)
 
@@ -260,7 +262,8 @@ class TestBreak(unittest.TestCase):
                                                      'verbosity': verbosity,
                                                      'failfast': failfast,
                                                      'tb_locals': False,
-                                                     'warnings': None})])
+                                                     'warnings': None,
+                                                     'durations': None})])
         self.assertEqual(FakeRunner.runArgs, [test])
         self.assertEqual(p.result, result)
 

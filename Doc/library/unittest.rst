@@ -1,5 +1,5 @@
-:mod:`unittest` --- Unit testing framework
-==========================================
+:mod:`!unittest` --- Unit testing framework
+===========================================
 
 .. module:: unittest
    :synopsis: Unit testing framework for Python.
@@ -46,7 +46,6 @@ test runner
    a textual interface, or return a special value to indicate the results of
    executing the tests.
 
-
 .. seealso::
 
    Module :mod:`doctest`
@@ -72,7 +71,7 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://www.jenkins.io/>`_,
    `GitHub Actions <https://github.com/features/actions>`_, or
    `AppVeyor <https://www.appveyor.com/>`_.
 
@@ -110,7 +109,7 @@ Here is a short script to test three string methods::
       unittest.main()
 
 
-A testcase is created by subclassing :class:`unittest.TestCase`.  The three
+A test case is created by subclassing :class:`unittest.TestCase`.  The three
 individual tests are defined with methods whose names start with the letters
 ``test``.  This naming convention informs the test runner about which methods
 represent tests.
@@ -198,6 +197,9 @@ For a list of all the command-line options::
    In earlier versions it was only possible to run individual test methods and
    not modules or classes.
 
+.. versionadded:: 3.14
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
@@ -206,13 +208,13 @@ Command-line options
 
 .. program:: unittest
 
-.. cmdoption:: -b, --buffer
+.. option:: -b, --buffer
 
    The standard output and standard error streams are buffered during the test
    run. Output during a passing test is discarded. Output is echoed normally
    on test fail or error and is added to the failure messages.
 
-.. cmdoption:: -c, --catch
+.. option:: -c, --catch
 
    :kbd:`Control-C` during the test run waits for the current test to end and then
    reports all the results so far. A second :kbd:`Control-C` raises the normal
@@ -220,7 +222,7 @@ Command-line options
 
    See `Signal Handling`_ for the functions that provide this functionality.
 
-.. cmdoption:: --debug
+.. option:: --debug
 
    On test fail or error the test run terminates immediately with original
    exception, similar to normal script execution. Useful for seamless external
@@ -228,26 +230,26 @@ Command-line options
    exception and traceback are recycled; or explicitely before when
    ``exception.pm_teardown()`` -- a method added to the exception -- is called.
 
-.. cmdoption:: --pdb
+.. option:: --pdb
 
    Runs :func:`pdb.post_mortem` upon each error. Short for ``--pm=pdb``
 
-.. cmdoption:: --pm=<debugger>
+.. option:: --pm=<debugger>
 
    Run custom post-mortem debugger (module or class) upon each error using its
    ``post_mortem()`` function or method.
    Examples: ``--pm=pywin.debugger``, ``--pm=IPython.terminal.debugger.Pdb``
 
-.. cmdoption:: --trace
+.. option:: --trace
 
    Break at the beginning of each test using :mod:`pdb` or the debugger set by
    :option:`--pm` via its ``runcall()`` function or method.
 
-.. cmdoption:: -f, --failfast
+.. option:: -f, --failfast
 
    Stop the test run on the first error or failure.
 
-.. cmdoption:: -k
+.. option:: -k
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
@@ -263,9 +265,13 @@ Command-line options
    For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
    ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
 
-.. cmdoption:: --locals
+.. option:: --locals
 
    Show local variables in tracebacks.
+
+.. option:: --durations N
+
+   Show the N slowest test cases (N=0 for all).
 
 .. versionadded:: 3.2
    The command-line options ``-b``, ``-c`` and ``-f`` were added.
@@ -277,11 +283,13 @@ Command-line options
    The command-line option ``-k``.
 
 .. versionadded:: 3.12
+   The command-line option ``--durations``.
+
+.. versionadded:: 3.14
    The command-line options ``--debug``, ``--pdb`` and ``--pm``.
 
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
-
 
 .. _unittest-test-discovery:
 
@@ -312,19 +320,19 @@ The ``discover`` sub-command has the following options:
 
 .. program:: unittest discover
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    Verbose output
 
-.. cmdoption:: -s, --start-directory directory
+.. option:: -s, --start-directory directory
 
    Directory to start discovery (``.`` default)
 
-.. cmdoption:: -p, --pattern pattern
+.. option:: -p, --pattern pattern
 
    Pattern to match test files (``test*.py`` default)
 
-.. cmdoption:: -t, --top-level-directory directory
+.. option:: -t, --top-level-directory directory
 
    Top level directory of project (defaults to start directory)
 
@@ -360,28 +368,21 @@ Test modules and packages can customize test loading and discovery by through
 the `load_tests protocol`_.
 
 .. versionchanged:: 3.4
-   Test discovery supports :term:`namespace packages <namespace package>`
-   for the start directory. Note that you need to specify the top level
-   directory too (e.g.
-   ``python -m unittest discover -s root/namespace -t root``).
+   Test discovery supports :term:`namespace packages <namespace package>`.
 
 .. versionchanged:: 3.11
-   Python 3.11 dropped the :term:`namespace packages <namespace package>`
-   support. It has been broken since Python 3.7. Start directory and
-   subdirectories containing tests must be regular package that have
-   ``__init__.py`` file.
+   Test discovery dropped the :term:`namespace packages <namespace package>`
+   support. It has been broken since Python 3.7.
+   Start directory and its subdirectories containing tests must be regular
+   package that have ``__init__.py`` file.
 
-   Directories containing start directory still can be a namespace package.
-   In this case, you need to specify start directory as dotted package name,
-   and target directory explicitly. For example::
+   If the start directory is the dotted name of the package, the ancestor packages
+   can be namespace packages.
 
-      # proj/  <-- current directory
-      #   namespace/
-      #     mypkg/
-      #       __init__.py
-      #       test_mypkg.py
-
-      python -m unittest discover -s namespace.mypkg -t .
+.. versionchanged:: 3.14
+   Test discovery supports :term:`namespace package` as start directory again.
+   To avoid scanning directories unrelated to Python,
+   tests are not searched in subdirectories that do not contain ``__init__.py``.
 
 
 .. _organizing-tests:
@@ -410,8 +411,8 @@ testing code::
            widget = Widget('The widget')
            self.assertEqual(widget.size(), (50, 50))
 
-Note that in order to test something, we use one of the :meth:`assert\*`
-methods provided by the :class:`TestCase` base class.  If the test fails, an
+Note that in order to test something, we use one of the :ref:`assert\* methods <assert-methods>`
+provided by the :class:`TestCase` base class.  If the test fails, an
 exception will be raised with an explanatory message, and :mod:`unittest`
 will identify the test case as a :dfn:`failure`.  Any other exceptions will be
 treated as :dfn:`errors`.
@@ -908,6 +909,12 @@ Test cases
    | :meth:`assertNotIsInstance(a, b)        | ``not isinstance(a, b)``    | 3.2           |
    | <TestCase.assertNotIsInstance>`         |                             |               |
    +-----------------------------------------+-----------------------------+---------------+
+   | :meth:`assertIsSubclass(a, b)           | ``issubclass(a, b)``        | 3.14          |
+   | <TestCase.assertIsSubclass>`            |                             |               |
+   +-----------------------------------------+-----------------------------+---------------+
+   | :meth:`assertNotIsSubclass(a, b)        | ``not issubclass(a, b)``    | 3.14          |
+   | <TestCase.assertNotIsSubclass>`         |                             |               |
+   +-----------------------------------------+-----------------------------+---------------+
 
    All the assert methods accept a *msg* argument that, if specified, is used
    as the error message on failure (see also :data:`longMessage`).
@@ -985,6 +992,15 @@ Test cases
 
       .. versionadded:: 3.2
 
+
+   .. method:: assertIsSubclass(cls, superclass, msg=None)
+               assertNotIsSubclass(cls, superclass, msg=None)
+
+      Test that *cls* is (or is not) a subclass of *superclass* (which can be a
+      class or a tuple of classes, as supported by :func:`issubclass`).
+      To check for the exact type, use :func:`assertIs(cls, superclass) <assertIs>`.
+
+      .. versionadded:: 3.14
 
 
    It is also possible to check the production of exceptions, warnings, and
@@ -1141,7 +1157,7 @@ Test cases
       .. versionchanged:: 3.3
          Added the *msg* keyword argument when used as a context manager.
 
-   .. method:: assertLogs(logger=None, level=None)
+   .. method:: assertLogs(logger=None, level=None, formatter=None)
 
       A context manager to test that at least one message is logged on
       the *logger* or one of its children, with at least the given
@@ -1154,7 +1170,11 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
+
+      If given, *formatter* should be a :class:`logging.Formatter` object.
+      The default is a formatter with format string
+      ``"%(levelname)s:%(name)s:%(message)s"``
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1183,6 +1203,9 @@ Test cases
 
       .. versionadded:: 3.4
 
+      .. versionchanged:: next
+         Now accepts a *formatter* to control how messages are formatted.
+
    .. method:: assertNoLogs(logger=None, level=None)
 
       A context manager to test that no messages are logged on
@@ -1195,7 +1218,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       Unlike :meth:`assertLogs`, nothing will be returned by the context
       manager.
@@ -1234,6 +1257,24 @@ Test cases
    | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
    | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
    |                                       | regardless of their order.     |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertStartsWith(a, b)         | ``a.startswith(b)``            | 3.14         |
+   | <TestCase.assertStartsWith>`          |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotStartsWith(a, b)      | ``not a.startswith(b)``        | 3.14         |
+   | <TestCase.assertNotStartsWith>`       |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertEndsWith(a, b)           | ``a.endswith(b)``              | 3.14         |
+   | <TestCase.assertEndsWith>`            |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotEndsWith(a, b)        | ``not a.endswith(b)``          | 3.14         |
+   | <TestCase.assertNotEndsWith>`         |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertHasAttr(a, b)            | ``hastattr(a, b)``             | 3.14         |
+   | <TestCase.assertHasAttr>`             |                                |              |
+   +---------------------------------------+--------------------------------+--------------+
+   | :meth:`assertNotHasAttr(a, b)         | ``not hastattr(a, b)``         | 3.14         |
+   | <TestCase.assertNotHasAttr>`          |                                |              |
    +---------------------------------------+--------------------------------+--------------+
 
 
@@ -1302,6 +1343,34 @@ Test cases
       but works with sequences of unhashable objects as well.
 
       .. versionadded:: 3.2
+
+
+   .. method:: assertStartsWith(s, prefix, msg=None)
+   .. method:: assertNotStartsWith(s, prefix, msg=None)
+
+      Test that the Unicode or byte string *s* starts (or does not start)
+      with a *prefix*.
+      *prefix* can also be a tuple of strings to try.
+
+      .. versionadded:: 3.14
+
+
+   .. method:: assertEndsWith(s, suffix, msg=None)
+   .. method:: assertNotEndsWith(s, suffix, msg=None)
+
+      Test that the Unicode or byte string *s* ends (or does not end)
+      with a *suffix*.
+      *suffix* can also be a tuple of strings to try.
+
+      .. versionadded:: 3.14
+
+
+   .. method:: assertHasAttr(obj, name, msg=None)
+   .. method:: assertNotHasAttr(obj, name, msg=None)
+
+      Test that the object *obj* has (or has not) an attribute *name*.
+
+      .. versionadded:: 3.14
 
 
    .. _type-specific-methods:
@@ -1591,7 +1660,16 @@ Test cases
 
    .. versionadded:: 3.8
 
-   .. coroutinemethod:: asyncSetUp()
+   .. attribute:: loop_factory
+
+      The *loop_factory* passed to :class:`asyncio.Runner`. Override
+      in subclasses with :class:`asyncio.EventLoop` to avoid using the
+      asyncio policy system.
+
+      .. versionadded:: 3.13
+
+   .. method:: asyncSetUp()
+      :async:
 
       Method called to prepare the test fixture. This is called after :meth:`setUp`.
       This is called immediately before calling the test method; other than
@@ -1599,7 +1677,8 @@ Test cases
       will be considered an error rather than a test failure. The default implementation
       does nothing.
 
-   .. coroutinemethod:: asyncTearDown()
+   .. method:: asyncTearDown()
+      :async:
 
       Method called immediately after the test method has been called and the
       result recorded.  This is called before :meth:`tearDown`. This is called even if
@@ -1615,7 +1694,8 @@ Test cases
 
       This method accepts a coroutine that can be used as a cleanup function.
 
-   .. coroutinemethod:: enterAsyncContext(cm)
+   .. method:: enterAsyncContext(cm)
+      :async:
 
       Enter the supplied :term:`asynchronous context manager`.  If successful,
       also add its :meth:`~object.__aexit__` method as a cleanup function by
@@ -1745,7 +1825,7 @@ Grouping tests
    .. method:: __iter__()
 
       Tests grouped by a :class:`TestSuite` are always accessed by iteration.
-      Subclasses can lazily provide tests by overriding :meth:`__iter__`. Note
+      Subclasses can lazily provide tests by overriding :meth:`!__iter__`. Note
       that this method may be called several times on a single suite (for
       example when counting tests or comparing for equality) so the tests
       returned by repeated iterations before :meth:`TestSuite.run` must be the
@@ -1756,7 +1836,7 @@ Grouping tests
 
       .. versionchanged:: 3.2
          In earlier versions the :class:`TestSuite` accessed tests directly rather
-         than through iteration, so overriding :meth:`__iter__` wasn't sufficient
+         than through iteration, so overriding :meth:`!__iter__` wasn't sufficient
          for providing tests.
 
       .. versionchanged:: 3.4
@@ -1892,8 +1972,8 @@ Loading and running tests
       Python identifiers) will be loaded.
 
       All test modules must be importable from the top level of the project. If
-      the start directory is not the top level directory then the top level
-      directory must be specified separately.
+      the start directory is not the top level directory then *top_level_dir*
+      must be specified separately.
 
       If importing a module fails, for example due to a syntax error, then
       this will be recorded as a single error and discovery will continue.  If
@@ -1913,9 +1993,11 @@ Loading and running tests
       package.
 
       The pattern is deliberately not stored as a loader attribute so that
-      packages can continue discovery themselves. *top_level_dir* is stored so
-      ``load_tests`` does not need to pass this argument in to
-      ``loader.discover()``.
+      packages can continue discovery themselves.
+
+      *top_level_dir* is stored internally, and used as a default to any
+      nested calls to ``discover()``. That is, if a package's ``load_tests``
+      calls ``loader.discover()``, it does not need to pass this argument.
 
       *start_dir* can be a dotted module name as well as a directory.
 
@@ -1925,10 +2007,8 @@ Loading and running tests
          Modules that raise :exc:`SkipTest` on import are recorded as skips,
          not errors.
 
-      .. versionchanged:: 3.4
          *start_dir* can be a :term:`namespace packages <namespace package>`.
 
-      .. versionchanged:: 3.4
          Paths are sorted before being imported so that execution order is the
          same even if the underlying file system's ordering is not dependent
          on file name.
@@ -1940,8 +2020,13 @@ Loading and running tests
 
       .. versionchanged:: 3.11
          *start_dir* can not be a :term:`namespace packages <namespace package>`.
-         It has been broken since Python 3.7 and Python 3.11 officially remove it.
+         It has been broken since Python 3.7, and Python 3.11 officially removes it.
 
+      .. versionchanged:: 3.13
+         *top_level_dir* is only stored for the duration of *discover* call.
+
+      .. versionchanged:: 3.14
+         *start_dir* can once again be a :term:`namespace package`.
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
@@ -1952,14 +2037,14 @@ Loading and running tests
       String giving the prefix of method names which will be interpreted as test
       methods.  The default value is ``'test'``.
 
-      This affects :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*`
+      This affects :meth:`getTestCaseNames` and all the ``loadTestsFrom*``
       methods.
 
 
    .. attribute:: sortTestMethodsUsing
 
       Function to be used to compare method names when sorting them in
-      :meth:`getTestCaseNames` and all the :meth:`loadTestsFrom\*` methods.
+      :meth:`getTestCaseNames` and all the ``loadTestsFrom*`` methods.
 
 
    .. attribute:: suiteClass
@@ -1968,20 +2053,20 @@ Loading and running tests
       methods on the resulting object are needed.  The default value is the
       :class:`TestSuite` class.
 
-      This affects all the :meth:`loadTestsFrom\*` methods.
+      This affects all the ``loadTestsFrom*`` methods.
 
    .. attribute:: testNamePatterns
 
       List of Unix shell-style wildcard test name patterns that test methods
-      have to match to be included in test suites (see ``-v`` option).
+      have to match to be included in test suites (see ``-k`` option).
 
       If this attribute is not ``None`` (the default), all test methods to be
       included in test suites must match one of the patterns in this list.
       Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
-      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      so unlike patterns passed to the ``-k`` option, simple substring patterns
       will have to be converted using ``*`` wildcards.
 
-      This affects all the :meth:`loadTestsFrom\*` methods.
+      This affects all the ``loadTestsFrom*`` methods.
 
       .. versionadded:: 3.7
 
@@ -2015,7 +2100,7 @@ Loading and running tests
 
       A list containing 2-tuples of :class:`TestCase` instances and strings
       holding formatted tracebacks. Each tuple represents a test where a failure
-      was explicitly signalled using the :meth:`TestCase.assert\*` methods.
+      was explicitly signalled using the :ref:`assert\* methods <assert-methods>`.
 
    .. attribute:: skipped
 
@@ -2034,6 +2119,13 @@ Loading and running tests
 
       A list containing :class:`TestCase` instances that were marked as expected
       failures, but succeeded.
+
+   .. attribute:: collectedDurations
+
+      A list containing 2-tuples of test case names and floats
+      representing the elapsed time of each test which was run.
+
+      .. versionadded:: 3.12
 
    .. attribute:: shouldStop
 
@@ -2186,14 +2278,23 @@ Loading and running tests
 
       .. versionadded:: 3.4
 
+   .. method:: addDuration(test, elapsed)
 
-.. class:: TextTestResult(stream, descriptions, verbosity)
+      Called when the test case finishes.  *elapsed* is the time represented in
+      seconds, and it includes the execution of cleanup functions.
+
+      .. versionadded:: 3.12
+
+.. class:: TextTestResult(stream, descriptions, verbosity, *, durations=None)
 
    A concrete implementation of :class:`TestResult` used by the
-   :class:`TextTestRunner`.
+   :class:`TextTestRunner`. Subclasses should accept ``**kwargs`` to ensure
+   compatibility as the interface changes.
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.12
+      Added the *durations* keyword parameter.
 
 .. data:: defaultTestLoader
 
@@ -2203,7 +2304,8 @@ Loading and running tests
 
 
 .. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, failfast=False, \
-                          buffer=False, resultclass=None, warnings=None, *, tb_locals=False)
+                          buffer=False, resultclass=None, warnings=None, *, \
+                          tb_locals=False, durations=None)
 
    A basic test runner implementation that outputs results to a stream. If *stream*
    is ``None``, the default, :data:`sys.stderr` is used as the output stream. This class
@@ -2221,14 +2323,17 @@ Loading and running tests
    *warnings* to ``None``.
 
    .. versionchanged:: 3.2
-      Added the ``warnings`` argument.
+      Added the *warnings* parameter.
 
    .. versionchanged:: 3.2
       The default stream is set to :data:`sys.stderr` at instantiation time rather
       than import time.
 
    .. versionchanged:: 3.5
-      Added the tb_locals parameter.
+      Added the *tb_locals* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *durations* parameter.
 
    .. method:: _makeResult()
 
@@ -2282,7 +2387,8 @@ Loading and running tests
 
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
-   an exit code indicating success or failure of the tests run.
+   an exit code indicating success (0) or failure (1) of the tests run.
+   An exit code of 5 indicates that no tests were run or skipped.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.
@@ -2303,8 +2409,8 @@ Loading and running tests
    (see :ref:`Warning control <using-on-warnings>`),
    otherwise it will be set to ``'default'``.
 
-   Calling ``main`` actually returns an instance of the ``TestProgram`` class.
-   This stores the result of the tests run as the ``result`` attribute.
+   Calling ``main`` returns an object with the ``result`` attribute that contains
+   the result of the tests run as a :class:`unittest.TestResult`.
 
    When *debug* is ``True`` (corresponding to :option:`!--debug`) execution terminates
    with original exception upon the first error. When *debug* is the name of a
@@ -2326,6 +2432,8 @@ Loading and running tests
    .. versionchanged:: 3.12
       The *debug* parameter was added.
 
+
+.. _load_tests-protocol:
 
 load_tests Protocol
 ###################
@@ -2460,6 +2568,10 @@ instead of as an error.
 setUpModule and tearDownModule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. function:: setUpModule
+              tearDownModule
+   :no-typesetting:
+
 These should be implemented as functions::
 
     def setUpModule():
@@ -2491,7 +2603,7 @@ To add cleanup code that must be run even in the case of an exception, use
    .. versionadded:: 3.8
 
 
-.. classmethod:: enterModuleContext(cm)
+.. function:: enterModuleContext(cm)
 
    Enter the supplied :term:`context manager`.  If successful, also
    add its :meth:`~object.__exit__` method as a cleanup function by
@@ -2523,7 +2635,7 @@ Signal Handling
 .. versionadded:: 3.2
 
 The :option:`-c/--catch <unittest -c>` command-line option to unittest,
-along with the ``catchbreak`` parameter to :func:`unittest.main()`, provide
+along with the ``catchbreak`` parameter to :func:`unittest.main`, provide
 more friendly handling of control-C during a test run. With catch break
 behavior enabled control-C will allow the currently running test to complete,
 and the test run will then end and report all the results so far. A second

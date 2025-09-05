@@ -1,72 +1,15 @@
-
-:mod:`nis` --- Interface to Sun's NIS (Yellow Pages)
-====================================================
+:mod:`!nis` --- Interface to Sun’s NIS (Yellow Pages)
+=====================================================
 
 .. module:: nis
-   :platform: Unix
-   :synopsis: Interface to Sun's NIS (Yellow Pages) library.
+   :synopsis: Removed in 3.13.
    :deprecated:
 
-.. moduleauthor:: Fred Gansevles <Fred.Gansevles@cs.utwente.nl>
-.. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
-
 .. deprecated-removed:: 3.11 3.13
-   The :mod:`nis` module is deprecated
-   (see :pep:`PEP 594 <594#nis>` for details).
 
---------------
+This module is no longer part of the Python standard library.
+It was :ref:`removed in Python 3.13 <whatsnew313-pep594>` after
+being deprecated in Python 3.11.  The removal was decided in :pep:`594`.
 
-The :mod:`nis` module gives a thin wrapper around the NIS library, useful for
-central administration of several hosts.
-
-Because NIS exists only on Unix systems, this module is only available for Unix.
-
-.. include:: ../includes/wasm-notavail.rst
-
-The :mod:`nis` module defines the following functions:
-
-
-.. function:: match(key, mapname, domain=default_domain)
-
-   Return the match for *key* in map *mapname*, or raise an error
-   (:exc:`nis.error`) if there is none. Both should be strings, *key* is 8-bit
-   clean. Return value is an arbitrary array of bytes (may contain ``NULL`` and
-   other joys).
-
-   Note that *mapname* is first checked if it is an alias to another name.
-
-   The *domain* argument allows overriding the NIS domain used for the lookup. If
-   unspecified, lookup is in the default NIS domain.
-
-
-.. function:: cat(mapname, domain=default_domain)
-
-   Return a dictionary mapping *key* to *value* such that ``match(key,
-   mapname)==value``. Note that both keys and values of the dictionary are
-   arbitrary arrays of bytes.
-
-   Note that *mapname* is first checked if it is an alias to another name.
-
-   The *domain* argument allows overriding the NIS domain used for the lookup. If
-   unspecified, lookup is in the default NIS domain.
-
-
-.. function:: maps(domain=default_domain)
-
-   Return a list of all valid maps.
-
-   The *domain* argument allows overriding the NIS domain used for the lookup. If
-   unspecified, lookup is in the default NIS domain.
-
-
-.. function:: get_default_domain()
-
-   Return the system default NIS domain.
-
-
-The :mod:`nis` module defines the following exception:
-
-.. exception:: error
-
-   An error raised when a NIS function returns an error code.
-
+The last version of Python that provided the :mod:`!nis` module was
+`Python 3.12 <https://docs.python.org/3.12/library/nis.html>`_.

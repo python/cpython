@@ -45,7 +45,9 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         # value which causes the tracing callback to be called and then
         # it tries calling instance attributes not yet defined.
         ttk.LabeledScale(self.root, variable=myvar)
-        if hasattr(sys, 'last_type'):
+        if hasattr(sys, 'last_exc'):
+            self.assertNotEqual(type(sys.last_exc), tkinter.TclError)
+        elif hasattr(sys, 'last_type'):
             self.assertNotEqual(sys.last_type, tkinter.TclError)
 
     def test_initialization(self):
@@ -316,6 +318,12 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(textvar.get(), 'b')
         textvar.trace_remove("write", cb_name)
         optmenu.destroy()
+
+    def test_specify_name(self):
+        textvar = tkinter.StringVar(self.root)
+        widget = ttk.OptionMenu(self.root, textvar, ":)", name="option_menu_ex")
+        self.assertEqual(str(widget), ".option_menu_ex")
+        self.assertIs(self.root.children["option_menu_ex"], widget)
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
