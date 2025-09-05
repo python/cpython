@@ -102,20 +102,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
     def test_exec_set_nomemory_hang(self):
         # gh-134163: Test case that triggers no memory hang condition
         user_input = dedent("""
-            a1 = list(range(1000, 2000))
-            a2 = list(range(1000, 2000))
-            a3 = list(range(1000, 2000))
-            a4 = list(range(1000, 2000))
-            a5 = list(range(1000, 2000))
-            a6 = list(range(1000, 2000))
-            a7 = list(range(1000, 2000))
-            a8 = list(range(1000, 2000))
-            a9 = list(range(1000, 2000))
-            a10 = list(range(1000, 2000))
-            a11 = list(range(1000, 2000))
-            a12 = list(range(1000, 2000))
-            a13 = list(range(1000, 2000))
-            a14 = list(range(1000, 2000))
+            # The frame_lasti need to upper 257,
+            # because when calling PyLong_FromLong, malloc is not invoked,
+            # so no MemError is triggered
+            # we need to warm up the memory to reproduce the issue
+            "a = list(range(0, 1))\n" * 20
             try:
                 import _testcapi
                 _testcapi.set_nomemory(0)
@@ -130,12 +121,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
 
         self.assertIn(p.returncode, (0, 1, 120))
-        # The key test is that it doesn't hang - if we get output, the test passed
-        # Look for either successful execution or memory error indicators
-        has_traceback = "Traceback" in output
-        has_memory_error = "MemoryError" in output
-        # Either we get a traceback (expected) or we complete without hanging
-        self.assertTrue(len(output) > 0, f"Expected some output, got: {output}")  # At minimum, should not hang
+        self.assertGreater(len(output), 0, f"Expected some output, got: {output}")  # At minimum, should not hang
 
     @cpython_only
     def test_multiline_string_parsing(self):
