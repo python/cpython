@@ -239,9 +239,16 @@ class DisallowQueryStringTest(BaseRobotTest, unittest.TestCase):
     robots_txt = """\
 User-agent: *
 Disallow: /some/path?name=value
+Disallow: /another/path?
+Disallow: /yet/one/path?name=value&more
     """
-    good = ['/some/path']
-    bad = ['/some/path?name=value']
+    good = ['/some/path', '/some/path?',
+            '/some/path%3Fname=value', '/some/path?name%3Dvalue',
+            '/another/path', '/another/path%3F',
+            '/yet/one/path?name=value%26more']
+    bad = ['/some/path?name=value'
+           '/another/path?', '/another/path?name=value',
+           '/yet/one/path?name=value&more']
 
 
 class UseFirstUserAgentWildcardTest(BaseRobotTest, unittest.TestCase):
@@ -275,25 +282,26 @@ Disallow: /p4%2525xy # double percent-encoded percent
 Disallow: /john%20smith # space
 Disallow: /john doe
 Disallow: /trailingspace%20
-Disallow: /query?q=v # query
-Disallow: /query2?q=%3F
-Disallow: /query3?q=?
-Disallow: /emptyquery?
 Disallow: /question%3Fq=v # not query
 Disallow: /hash%23f # not fragment
 Disallow: /dollar%24
 Disallow: /asterisk%2A
 Disallow: /sub/dir
 Disallow: /slash%2F
+Disallow: /query/question?q=?
+Disallow: /query/raw/question?q=%3F
+Disallow: /query/eq?q%3Dv
+Disallow: /query/amp?q=v%26a
 """
     good = [
         '/u1/%F0', '/u1/%f0',
         '/u2/%F0', '/u2/%f0',
         '/u3/%F0', '/u3/%f0',
         '/p1%2525xy', '/p2%f0', '/p3%2525xy', '/p4%xy', '/p4%25xy',
-        '/query%3Fq=v', '/question?q=v',
-        '/emptyquery',
+        '/question?q=v',
         '/dollar', '/asterisk',
+        '/query/eq?q=v',
+        '/query/amp?q=v&a',
     ]
     bad = [
         '/a1/Z-._~', '/a1/%5A%2D%2E%5F%7E',
@@ -311,15 +319,16 @@ Disallow: /slash%2F
         '/john%20smith', '/john smith',
         '/john%20doe', '/john doe',
         '/trailingspace%20', '/trailingspace ',
-        '/query?q=v', '/question%3Fq=v',
-        '/query2?q=?', '/query2?q=%3F',
-        '/query3?q=?', '/query3?q=%3F',
-        '/emptyquery?', '/emptyquery?q=v',
+        '/question%3Fq=v',
         '/hash#f', '/hash%23f',
         '/dollar$', '/dollar%24',
         '/asterisk*', '/asterisk%2A',
         '/sub/dir', '/sub%2Fdir',
         '/slash%2F', '/slash/',
+        '/query/question?q=?', '/query/question?q=%3F',
+        '/query/raw/question?q=?', '/query/raw/question?q=%3F',
+        '/query/eq?q%3Dv',
+        '/query/amp?q=v%26a',
     ]
     # other reserved characters
     for c in ":/#[]@!$&'()*+,;=":

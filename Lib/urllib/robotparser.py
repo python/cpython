@@ -11,6 +11,7 @@
 """
 
 import collections
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -28,7 +29,8 @@ def normalize_path(path):
     path, sep, query = path.partition('?')
     path = normalize(path)
     if sep:
-        path += '?' + normalize(query)
+        query = re.sub(r'[^=&]+', lambda m: normalize(m[0]), query)
+        path += '?' + query
     return path
 
 
@@ -279,7 +281,7 @@ class Entry:
     def allowance(self, filename):
         """Preconditions:
         - our agent applies to this entry
-        - filename is URL decoded"""
+        - filename is URL encoded"""
         for line in self.rulelines:
             if line.applies_to(filename):
                 return line.allowance
