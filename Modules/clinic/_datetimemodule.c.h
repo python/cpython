@@ -980,6 +980,7 @@ PyDoc_STRVAR(datetime_time_strftime__doc__,
 "Format using strftime().\n"
 "\n"
 "The date part of the timestamp passed to underlying strftime should not be used.\n"
+"\n"
 "For a list of supported format codes, see the documentation:\n"
 "    https://docs.python.org/3/library/datetime.html#format-codes");
 
@@ -2089,4 +2090,4 @@ datetime_datetime___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return datetime_datetime___reduce___impl((PyDateTime_DateTime *)self);
 }
-/*[clinic end generated code: output=873da4353440f0d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69658acff6a43ac4 input=a9049054013a1b77]*/

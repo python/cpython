@@ -1073,6 +1073,7 @@ class date:
     @classmethod
     def strptime(cls, date_string, format):
         """Parse string according to the given date format (like time.strptime()).
+        
         For a list of supported format codes, see the documentation:
             https://docs.python.org/3/library/datetime.html#format-codes
         """
@@ -1464,6 +1465,7 @@ class time:
 
     def strptime(cls, date_string, format):
         """Parse string according to the given time format (like time.strptime()).
+
         For a list of supported format codes, see the documentation:
             https://docs.python.org/3/library/datetime.html#format-codes
         """
@@ -1659,6 +1661,7 @@ class time:
     def strftime(self, format):
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
+
         For a list of supported format codes, see the documentation:
             https://docs.python.org/3/library/datetime.html#format-codes
         """
@@ -2210,6 +2213,7 @@ class datetime(date):
     @classmethod
     def strptime(cls, date_string, format):
         """Parse string according to the given time format (like time.strptime()).
+
         For a list of supported format codes, see the documentation:
             https://docs.python.org/3/library/datetime.html#format-codes
         """

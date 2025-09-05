@@ -4900,13 +4900,14 @@ datetime.time.strftime
 Format using strftime().
 
 The date part of the timestamp passed to underlying strftime should not be used.
+
 For a list of supported format codes, see the documentation:
     https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_time_strftime_impl(PyDateTime_Time *self, PyObject *format)
-/*[clinic end generated code: output=10f65af20e2a78c7 input=9d15aeed1527935a]*/
+/*[clinic end generated code: output=10f65af20e2a78c7 input=c4a5bbecd798654b]*/
 {
     PyObject *result;
     PyObject *tuple;
