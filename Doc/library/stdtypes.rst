@@ -1264,6 +1264,8 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    :no-typesetting:
 .. method:: sequence.clear()
 
+   .. versionadded:: 3.3
+
    Remove all items from *sequence*.
    This is equivalent to writing ``del sequence[:]``.
 
@@ -1273,6 +1275,8 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    :no-index-entry:
    :no-typesetting:
 .. method:: sequence.copy()
+
+   .. versionadded:: 3.3
 
    Create a shallow copy of *sequence*.
    This is equivalent to writing ``sequence[:]``.
