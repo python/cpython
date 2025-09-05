@@ -100,7 +100,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
     def test_exec_set_nomemory_hang(self):
-        # gh-134163 Test case that triggers no memory hang condition
+        # gh-134163: Test case that triggers no memory hang condition
         user_input = dedent("""
             a1 = list(range(1000, 2000))
             a2 = list(range(1000, 2000))
