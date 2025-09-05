@@ -101,12 +101,12 @@ class TestInteractiveInterpreter(unittest.TestCase):
     @cpython_only
     def test_exec_set_nomemory_hang(self):
         # gh-134163: Test case that triggers no memory hang condition
-        user_input = dedent("""
-            # The frame_lasti need to upper 257,
-            # because when calling PyLong_FromLong, malloc is not invoked,
-            # so no MemError is triggered
-            # we need to warm up the memory to reproduce the issue
-            "a = list(range(0, 1))\n" * 20
+        # The frame_lasti need to upper 257,
+        # because when calling PyLong_FromLong, malloc is not invoked,
+        # so no MemError is triggered
+        # we need to warm up the memory to reproduce the issue
+        warmup_code = "a = list(range(0, 1))\n" * 20
+        user_input = warmup_code + dedent("""
             try:
                 import _testcapi
                 _testcapi.set_nomemory(0)
@@ -122,6 +122,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
         self.assertIn(p.returncode, (0, 1, 120))
         self.assertGreater(len(output), 0)  # At minimum, should not hang
+        self.assertIn("MemoryError", output)
 
     @cpython_only
     def test_multiline_string_parsing(self):
