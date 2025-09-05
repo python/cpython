@@ -87,6 +87,7 @@ BINARYFUNC(InPlaceOr, inplaceor)
 
 UNARYFUNC(Long, long)
 UNARYFUNC(Float, float)
+UNARYFUNC(Complex, complex)
 UNARYFUNC(Index, index)
 
 static PyObject *
@@ -160,6 +161,7 @@ static PyMethodDef test_methods[] = {
     {"number_inplaceor", number_inplaceor, METH_VARARGS},
     {"number_long", number_long, METH_O},
     {"number_float", number_float, METH_O},
+    {"number_complex", number_complex, METH_O},
     {"number_index", number_index, METH_O},
     {"number_tobase", number_tobase, METH_VARARGS},
     {"number_asssizet", number_asssizet, METH_VARARGS},

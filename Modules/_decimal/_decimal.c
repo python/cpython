@@ -5634,15 +5634,8 @@ _decimal_Decimal___ceil___impl(PyObject *self)
     return dec_as_long(self, context, MPD_ROUND_CEILING);
 }
 
-/*[clinic input]
-_decimal.Decimal.__complex__
-
-Convert this value to exact type complex.
-[clinic start generated code]*/
-
 static PyObject *
-_decimal_Decimal___complex___impl(PyObject *self)
-/*[clinic end generated code: output=c9b5b4a9fdebc912 input=6b11c6f20af7061a]*/
+dec_complex(PyObject *self)
 {
     PyObject *f;
     double x;
@@ -6008,7 +6001,6 @@ static PyMethodDef dec_methods [] =
   _DECIMAL_DECIMAL___CEIL___METHODDEF
   _DECIMAL_DECIMAL___FLOOR___METHODDEF
   _DECIMAL_DECIMAL___TRUNC___METHODDEF
-  _DECIMAL_DECIMAL___COMPLEX___METHODDEF
   _DECIMAL_DECIMAL___SIZEOF___METHODDEF
 
   { NULL, NULL, 1 }
@@ -6041,6 +6033,7 @@ static PyType_Slot dec_slots[] = {
     {Py_nb_bool, nm_nonzero},
     {Py_nb_int, nm_dec_as_long},
     {Py_nb_float, PyDec_AsFloat},
+    {Py_nb_complex, dec_complex},
     {Py_nb_floor_divide, nm_mpd_qdivint},
     {Py_nb_true_divide, nm_mpd_qdiv},
     {0, NULL},

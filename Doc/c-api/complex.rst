@@ -101,6 +101,12 @@ Complex Number Objects
    Create a new Python complex number object from a C :c:type:`Py_complex` value.
    Return ``NULL`` with an exception set on error.
 
+.. c:function:: PyObject* PyComplex_FromString(PyObject *str)
+
+   Create a Python complex number object from the string value in *str* or
+   return ``NULL`` with an exception set on error.
+
+   .. versionadded:: next
 
 .. c:function:: Py_complex PyComplex_AsCComplex(PyObject *op)
 

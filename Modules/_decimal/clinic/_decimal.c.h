@@ -3541,24 +3541,6 @@ _decimal_Decimal___ceil__(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _decimal_Decimal___ceil___impl(self);
 }
 
-PyDoc_STRVAR(_decimal_Decimal___complex____doc__,
-"__complex__($self, /)\n"
-"--\n"
-"\n"
-"Convert this value to exact type complex.");
-
-#define _DECIMAL_DECIMAL___COMPLEX___METHODDEF    \
-    {"__complex__", (PyCFunction)_decimal_Decimal___complex__, METH_NOARGS, _decimal_Decimal___complex____doc__},
-
-static PyObject *
-_decimal_Decimal___complex___impl(PyObject *self);
-
-static PyObject *
-_decimal_Decimal___complex__(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return _decimal_Decimal___complex___impl(self);
-}
-
 PyDoc_STRVAR(_decimal_Decimal___copy____doc__,
 "__copy__($self, /)\n"
 "--\n"
@@ -4900,4 +4882,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=1e10ddd6610e17dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f8904e6dd56c3a6 input=a9049054013a1b77]*/
