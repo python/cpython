@@ -153,5 +153,37 @@ class FindLibraryAndroid(unittest.TestCase):
                 self.assertIsNone(find_library(name))
 
 
+@unittest.skipUnless(test.support.is_emscripten,
+                     'Test only valid for Emscripten')
+class FindLibraryEmscripten(unittest.TestCase):
+    def test_find_on_libpath(self):
+        import tempfile
+
+        # A very simple wasm module
+        # In WAT format: (module)
+        wasm_module = b'\x00asm\x01\x00\x00\x00\x00\x08\x04name\x02\x01\x00'
+
+        with tempfile.TemporaryDirectory() as d:
+            libname = 'dummy'
+            dstname = os.path.join(d, 'lib%s.so' % libname)
+            with open(dstname, 'wb') as f:
+                f.write(wasm_module)
+
+            # now check that the .so can't be found (since not in
+            # LD_LIBRARY_PATH)
+            self.assertIsNone(find_library(libname))
+            # now add the location to LD_LIBRARY_PATH
+            with os_helper.EnvironmentVarGuard() as env:
+                KEY = 'LD_LIBRARY_PATH'
+                if KEY not in env:
+                    v = d
+                else:
+                    v = '%s:%s' % (env[KEY], d)
+                env.set(KEY, v)
+                # now check that the .so can be found (since in
+                # LD_LIBRARY_PATH)
+                self.assertEqual(find_library(libname), dstname)
+
+
 if __name__ == "__main__":
     unittest.main()
