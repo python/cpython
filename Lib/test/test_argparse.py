@@ -795,6 +795,16 @@ class TestBooleanOptionalAction(ParserTestCase):
         self.assertEqual(str(cm.exception),
                          "invalid option name '--no-foo' for BooleanOptionalAction")
 
+    def test_prefix_chars_incompatibility(self):
+        parser = argparse.ArgumentParser(prefix_chars='+')
+        parser.add_argument('++foo', action=argparse.BooleanOptionalAction)
+        
+        with self.assertRaises(ValueError) as cm:
+            parser.parse_args(['++foo'])
+        
+        self.assertIn(str(cm.exception),
+                      "BooleanOptionalAction requires '-' in parser's prefix_chars")
+
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
 
