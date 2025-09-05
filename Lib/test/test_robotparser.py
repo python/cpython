@@ -331,7 +331,7 @@ Disallow: /query/amp?q=v%26a
         '/query/amp?q=v%26a',
     ]
     # other reserved characters
-    for c in ":/#[]@!$&'()*+,;=":
+    for c in ":/[]@!$&'()*+,;=":
         robots_txt += f'Disallow: /raw{c}\nDisallow: /pc%{ord(c):02X}\n'
         bad.append(f'/raw{c}')
         bad.append(f'/raw%{ord(c):02X}')

@@ -181,10 +181,8 @@ class RobotFileParser:
             return False
         # search for given user agent matches
         # the first match counts
-        # TODO: The private API is used in order to preserve an empty query.
-        # This is temporary until the public API starts supporting this feature.
-        parsed_url = urllib.parse._urlsplit(url, '')
-        url = urllib.parse._urlunsplit(None, None, *parsed_url[2:])
+        parsed_url = urllib.parse.urlsplit(url)
+        url = urllib.parse.urlunsplit(('', '', *parsed_url[2:]))
         url = normalize_path(url)
         if not url:
             url = "/"
