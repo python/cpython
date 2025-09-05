@@ -190,7 +190,7 @@ class ForwardRef:
                 if not is_forwardref_format:
                     raise
             new_locals = _StringifierDict(
-                {**type_param_scope, **builtins.__dict__, **locals},
+                {**builtins.__dict__, **type_param_scope, **locals},
                 globals=globals,
                 owner=owner,
                 is_class=self.__forward_is_class__,
