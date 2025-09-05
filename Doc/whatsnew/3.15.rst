@@ -463,6 +463,10 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now replace slashes by backslashes in symlink targets on Windows to prevent
+  creation of corrupted links.
+  (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
 types
