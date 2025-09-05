@@ -463,6 +463,10 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now replace slashes by backslashes in symlink targets on Windows to prevent
+  creation of corrupted links.
+  (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
 types
@@ -665,6 +669,11 @@ New features
 * Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
   a string. See the documentation for caveats.
   (Contributed by Petr Viktorin in :gh:`131510`)
+
+* Add API for checking an extension module's ABI compatibility:
+  :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
+  and :c:data:`Py_mod_abi`.
+  (Contributed by Petr Viktorin in :gh:`137210`)
 
 
 Porting to Python 3.15

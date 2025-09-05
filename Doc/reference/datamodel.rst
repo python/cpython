@@ -1638,6 +1638,7 @@ and are also passed to registered trace functions.
    single: f_locals (frame attribute)
    single: f_lasti (frame attribute)
    single: f_builtins (frame attribute)
+   single: f_generator (frame attribute)
 
 Special read-only attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1674,6 +1675,12 @@ Special read-only attributes
      - The "precise instruction" of the frame object
        (this is an index into the :term:`bytecode` string of the
        :ref:`code object <code-objects>`)
+
+   * - .. attribute:: frame.f_generator
+     - The :term:`generator` or :term:`coroutine` object that owns this frame,
+       or ``None`` if the frame is a normal function.
+
+       .. versionadded:: 3.14
 
 .. index::
    single: f_trace (frame attribute)
@@ -3135,11 +3142,12 @@ objects.  The :mod:`collections.abc` module provides a
 :term:`abstract base class` to help create those methods from a base set of
 :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
 :meth:`~object.__delitem__`, and :meth:`!keys`.
-Mutable sequences should provide methods :meth:`!append`, :meth:`!count`,
-:meth:`!index`, :meth:`!extend`, :meth:`!insert`, :meth:`!pop`, :meth:`!remove`,
-:meth:`!reverse` and :meth:`!sort`, like Python standard :class:`list`
-objects. Finally,
-sequence types should implement addition (meaning concatenation) and
+Mutable sequences should provide methods :meth:`~sequence.append`,
+:meth:`~sequence.count`, :meth:`~sequence.index`, :meth:`~sequence.extend`,
+:meth:`~sequence.insert`, :meth:`~sequence.pop`, :meth:`~sequence.remove`,
+:meth:`~sequence.reverse` and :meth:`~sequence.sort`,
+like Python standard :class:`list` objects.
+Finally, sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`
