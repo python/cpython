@@ -20,9 +20,9 @@ class StringPtrTestCase(unittest.TestCase):
         # NULL pointer access
         self.assertRaises(ValueError, getattr, x.str, "contents")
         b = create_string_buffer(b"Hello, World")
-        self.assertEqual(sys.getrefcount(b), 2)
+        orig_refcount = sys.getrefcount(b)
         x.str = b
-        self.assertEqual(sys.getrefcount(b), 3)
+        self.assertEqual(sys.getrefcount(b), orig_refcount + 1)
 
         # POINTER(c_char) and Python string is NOT compatible
         # POINTER(c_char) and create_string_buffer() is compatible

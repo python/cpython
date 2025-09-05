@@ -19,13 +19,13 @@ objects:
 .. method:: list.append(x)
    :noindex:
 
-   Add an item to the end of the list.  Equivalent to ``a[len(a):] = [x]``.
+   Add an item to the end of the list.  Similar to ``a[len(a):] = [x]``.
 
 
 .. method:: list.extend(iterable)
    :noindex:
 
-   Extend the list by appending all the items from the iterable.  Equivalent to
+   Extend the list by appending all the items from the iterable.  Similar to
    ``a[len(a):] = iterable``.
 
 
@@ -56,13 +56,13 @@ objects:
 .. method:: list.clear()
    :noindex:
 
-   Remove all items from the list.  Equivalent to ``del a[:]``.
+   Remove all items from the list.  Similar to ``del a[:]``.
 
 
 .. method:: list.index(x[, start[, end]])
    :noindex:
 
-   Return zero-based index in the list of the first item whose value is equal to *x*.
+   Return zero-based index of the first occurrence of *x* in the list.
    Raises a :exc:`ValueError` if there is no such item.
 
    The optional arguments *start* and *end* are interpreted as in the slice
@@ -93,7 +93,7 @@ objects:
 .. method:: list.copy()
    :noindex:
 
-   Return a shallow copy of the list.  Equivalent to ``a[:]``.
+   Return a shallow copy of the list.  Similar to ``a[:]``.
 
 
 An example that uses most of the list methods::

@@ -410,6 +410,125 @@ pyobject_getitemdata(PyObject *self, PyObject *o)
 }
 
 
+static PyObject *
+create_type_with_token(PyObject *module, PyObject *args)
+{
+    const char *name;
+    PyObject *py_token;
+    if (!PyArg_ParseTuple(args, "sO", &name, &py_token)) {
+        return NULL;
+    }
+    void *token = PyLong_AsVoidPtr(py_token);
+    if (token == Py_TP_USE_SPEC) {
+        // Py_TP_USE_SPEC requires the spec that at least outlives the class
+        static PyType_Slot slots[] = {
+            {Py_tp_token, Py_TP_USE_SPEC},
+            {0},
+        };
+        static PyType_Spec spec = {
+            .name = "_testcapi.DefaultTokenTest",
+            .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+            .slots = slots,
+        };
+        PyObject *type = PyType_FromMetaclass(NULL, NULL, &spec, NULL);
+        if (!type) {
+            return NULL;
+        }
+        token = PyType_GetSlot((PyTypeObject *)type, Py_tp_token);
+        assert(!PyErr_Occurred());
+        Py_DECREF(type);
+        if (token != &spec) {
+            PyErr_SetString(PyExc_AssertionError,
+                            "failed to convert token from Py_TP_USE_SPEC");
+            return NULL;
+        }
+    }
+    // Test non-NULL token that must also outlive the class
+    PyType_Slot slots[] = {
+        {Py_tp_token, token},
+        {0},
+    };
+    PyType_Spec spec = {
+        .name = name,
+        .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+        .slots = slots,
+    };
+    return PyType_FromMetaclass(NULL, module, &spec, NULL);
+}
+
+static PyObject *
+get_tp_token(PyObject *self, PyObject *type)
+{
+    void *token = PyType_GetSlot((PyTypeObject *)type, Py_tp_token);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromVoidPtr(token);
+}
+
+static PyObject *
+pytype_getbasebytoken(PyObject *self, PyObject *args)
+{
+    PyTypeObject *type;
+    PyObject *py_token, *use_mro, *need_result;
+    if (!PyArg_ParseTuple(args, "OOOO",
+                          &type, &py_token, &use_mro, &need_result)) {
+        return NULL;
+    }
+
+    PyObject *mro_save = NULL;
+    if (use_mro != Py_True) {
+        // Test internal detail: PyType_GetBaseByToken works even with
+        // types that are only partially initialized (or torn down):
+        // if tp_mro=NULL we fall back to tp_bases.
+        assert(PyType_Check(type));
+        mro_save = type->tp_mro;
+        type->tp_mro = NULL;
+    }
+
+    void *token = PyLong_AsVoidPtr(py_token);
+    PyObject *result;
+    int ret;
+    if (need_result == Py_True) {
+        ret = PyType_GetBaseByToken(type, token, (PyTypeObject **)&result);
+    }
+    else {
+        result = NULL;
+        ret = PyType_GetBaseByToken(type, token, NULL);
+    }
+
+    if (use_mro != Py_True) {
+        type->tp_mro = mro_save;
+    }
+    if (ret < 0) {
+        assert(result == NULL);
+        return NULL;
+    }
+    PyObject *py_ret = PyLong_FromLong(ret);
+    if (py_ret == NULL) {
+        goto error;
+    }
+    PyObject *tuple = PyTuple_New(2);
+    if (tuple == NULL) {
+        goto error;
+    }
+    PyTuple_SET_ITEM(tuple, 0, py_ret);
+    PyTuple_SET_ITEM(tuple, 1, result ? result : Py_None);
+    return tuple;
+error:
+    Py_XDECREF(py_ret);
+    Py_XDECREF(result);
+    return NULL;
+}
+
+static PyObject *
+pytype_getmodulebydef(PyObject *self, PyObject *type)
+{
+    PyObject *mod = PyType_GetModuleByDef((PyTypeObject *)type, _testcapimodule);
+    return Py_XNewRef(mod);
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"pytype_fromspec_meta",    pytype_fromspec_meta,            METH_O},
     {"test_type_from_ephemeral_spec", test_type_from_ephemeral_spec, METH_NOARGS},
@@ -423,6 +542,10 @@ static PyMethodDef TestMethods[] = {
     {"make_immutable_type_with_base", make_immutable_type_with_base, METH_O},
     {"make_type_with_base", make_type_with_base, METH_O},
     {"pyobject_getitemdata", pyobject_getitemdata, METH_O},
+    {"create_type_with_token", create_type_with_token, METH_VARARGS},
+    {"get_tp_token", get_tp_token, METH_O},
+    {"pytype_getbasebytoken", pytype_getbasebytoken, METH_VARARGS},
+    {"pytype_getmodulebydef", pytype_getmodulebydef, METH_O},
     {NULL},
 };
 
@@ -490,15 +613,17 @@ heapctype_init(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static int
-heapgcctype_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
+heapgcctype_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-heapgcctype_dealloc(HeapCTypeObject *self)
+heapgcctype_dealloc(PyObject *op)
 {
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     PyObject_GC_Del(self);
@@ -527,8 +652,9 @@ PyDoc_STRVAR(heapctype__doc__,
 "The 'value' attribute is set to 10 in __init__.");
 
 static void
-heapctype_dealloc(HeapCTypeObject *self)
+heapctype_dealloc(PyObject *op)
 {
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -601,8 +727,9 @@ typedef struct {
 } HeapCTypeWithBufferObject;
 
 static int
-heapctypewithbuffer_getbuffer(HeapCTypeWithBufferObject *self, Py_buffer *view, int flags)
+heapctypewithbuffer_getbuffer(PyObject *op, Py_buffer *view, int flags)
 {
+    HeapCTypeWithBufferObject *self = (HeapCTypeWithBufferObject*)op;
     self->buffer[0] = '1';
     self->buffer[1] = '2';
     self->buffer[2] = '3';
@@ -612,8 +739,9 @@ heapctypewithbuffer_getbuffer(HeapCTypeWithBufferObject *self, Py_buffer *view, 
 }
 
 static void
-heapctypewithbuffer_releasebuffer(HeapCTypeWithBufferObject *self, Py_buffer *view)
+heapctypewithbuffer_releasebuffer(PyObject *op, Py_buffer *view)
 {
+    HeapCTypeWithBufferObject *self = (HeapCTypeWithBufferObject*)op;
     assert(view->obj == (void*) self);
 }
 
@@ -758,9 +886,9 @@ typedef struct {
 } HeapCTypeWithDictObject;
 
 static void
-heapctypewithdict_dealloc(HeapCTypeWithDictObject* self)
+heapctypewithdict_dealloc(PyObject *op)
 {
-
+    HeapCTypeWithDictObject *self = (HeapCTypeWithDictObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     Py_XDECREF(self->dict);
     PyObject_Free(self);
@@ -802,22 +930,23 @@ static PyType_Spec HeapCTypeWithDict2_spec = {
 };
 
 static int
-heapmanaged_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
+heapmanaged_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return PyObject_VisitManagedDict((PyObject *)self, visit, arg);
 }
 
 static int
-heapmanaged_clear(HeapCTypeObject *self)
+heapmanaged_clear(PyObject *self)
 {
-    PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict(self);
     return 0;
 }
 
 static void
-heapmanaged_dealloc(HeapCTypeObject *self)
+heapmanaged_dealloc(PyObject *op)
 {
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_ClearManagedDict((PyObject *)self);
     PyObject_GC_UnTrack(self);
@@ -901,9 +1030,9 @@ static struct PyMemberDef heapctypewithweakref_members[] = {
 };
 
 static void
-heapctypewithweakref_dealloc(HeapCTypeWithWeakrefObject* self)
+heapctypewithweakref_dealloc(PyObject *op)
 {
-
+    HeapCTypeWithWeakrefObject *self = (HeapCTypeWithWeakrefObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -956,16 +1085,18 @@ heapctypesetattr_init(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static void
-heapctypesetattr_dealloc(HeapCTypeSetattrObject *self)
+heapctypesetattr_dealloc(PyObject *op)
 {
+    HeapCTypeSetattrObject *self = (HeapCTypeSetattrObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Free(self);
     Py_DECREF(tp);
 }
 
 static int
-heapctypesetattr_setattro(HeapCTypeSetattrObject *self, PyObject *attr, PyObject *value)
+heapctypesetattr_setattro(PyObject *op, PyObject *attr, PyObject *value)
 {
+    HeapCTypeSetattrObject *self = (HeapCTypeSetattrObject*)op;
     PyObject *svalue = PyUnicode_FromString("value");
     if (svalue == NULL)
         return -1;
@@ -1122,8 +1253,9 @@ HeapCCollection_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 }
 
 static Py_ssize_t
-HeapCCollection_length(PyVarObject *self)
+HeapCCollection_length(PyObject *op)
 {
+    PyVarObject *self = (PyVarObject*)op;
     return Py_SIZE(self);
 }
 
@@ -1286,6 +1418,8 @@ _PyTestCapi_Init_Heaptype(PyObject *m) {
     PyObject *HeapCTypeMetaclassNullNew = PyType_FromMetaclass(
         &PyType_Type, m, &HeapCTypeMetaclassNullNew_spec, (PyObject *) &PyType_Type);
     ADD("HeapCTypeMetaclassNullNew", HeapCTypeMetaclassNullNew);
+
+    ADD("Py_TP_USE_SPEC", PyLong_FromVoidPtr(Py_TP_USE_SPEC));
 
     PyObject *HeapCCollection = PyType_FromMetaclass(
         NULL, m, &HeapCCollection_spec, NULL);

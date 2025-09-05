@@ -51,7 +51,7 @@ Roughly it has the following features added:
   turtle. So the turtles can more easily be used as a visual feedback
   instrument by the (beginning) programmer.
 
-- Different turtle shapes, gif-images as turtle shapes, user defined
+- Different turtle shapes, image files as turtle shapes, user defined
   and user controllable turtle shapes, among them compound
   (multicolored) shapes. Turtle shapes can be stretched and tilted, which
   makes turtles very versatile geometrical objects.
@@ -107,6 +107,7 @@ import sys
 
 from os.path import isfile, split, join
 from pathlib import Path
+from contextlib import contextmanager
 from copy import deepcopy
 from tkinter import simpledialog
 
@@ -114,23 +115,24 @@ _tg_classes = ['ScrolledCanvas', 'TurtleScreen', 'Screen',
                'RawTurtle', 'Turtle', 'RawPen', 'Pen', 'Shape', 'Vec2D']
 _tg_screen_functions = ['addshape', 'bgcolor', 'bgpic', 'bye',
         'clearscreen', 'colormode', 'delay', 'exitonclick', 'getcanvas',
-        'getshapes', 'listen', 'mainloop', 'mode', 'numinput',
+        'getshapes', 'listen', 'mainloop', 'mode', 'no_animation', 'numinput',
         'onkey', 'onkeypress', 'onkeyrelease', 'onscreenclick', 'ontimer',
         'register_shape', 'resetscreen', 'screensize', 'save', 'setup',
-        'setworldcoordinates', 'textinput', 'title', 'tracer', 'turtles', 'update',
-        'window_height', 'window_width']
+        'setworldcoordinates', 'textinput', 'title', 'tracer', 'turtles',
+        'update', 'window_height', 'window_width']
 _tg_turtle_functions = ['back', 'backward', 'begin_fill', 'begin_poly', 'bk',
         'circle', 'clear', 'clearstamp', 'clearstamps', 'clone', 'color',
         'degrees', 'distance', 'dot', 'down', 'end_fill', 'end_poly', 'fd',
-        'fillcolor', 'filling', 'forward', 'get_poly', 'getpen', 'getscreen', 'get_shapepoly',
-        'getturtle', 'goto', 'heading', 'hideturtle', 'home', 'ht', 'isdown',
-        'isvisible', 'left', 'lt', 'onclick', 'ondrag', 'onrelease', 'pd',
-        'pen', 'pencolor', 'pendown', 'pensize', 'penup', 'pos', 'position',
-        'pu', 'radians', 'right', 'reset', 'resizemode', 'rt',
-        'seth', 'setheading', 'setpos', 'setposition',
-        'setundobuffer', 'setx', 'sety', 'shape', 'shapesize', 'shapetransform', 'shearfactor', 'showturtle',
-        'speed', 'st', 'stamp', 'teleport', 'tilt', 'tiltangle', 'towards',
-        'turtlesize', 'undo', 'undobufferentries', 'up', 'width',
+        'fillcolor', 'fill', 'filling', 'forward', 'get_poly', 'getpen',
+        'getscreen', 'get_shapepoly', 'getturtle', 'goto', 'heading',
+        'hideturtle', 'home', 'ht', 'isdown', 'isvisible', 'left', 'lt',
+        'onclick', 'ondrag', 'onrelease', 'pd', 'pen', 'pencolor', 'pendown',
+        'pensize', 'penup', 'poly', 'pos', 'position', 'pu', 'radians', 'right',
+        'reset', 'resizemode', 'rt', 'seth', 'setheading', 'setpos',
+        'setposition', 'setundobuffer', 'setx', 'sety', 'shape', 'shapesize',
+        'shapetransform', 'shearfactor', 'showturtle', 'speed', 'st', 'stamp',
+        'teleport', 'tilt', 'tiltangle', 'towards', 'turtlesize', 'undo',
+        'undobufferentries', 'up', 'width',
         'write', 'xcor', 'ycor']
 _tg_utilities = ['write_docstringdict', 'done']
 
@@ -468,7 +470,7 @@ class TurtleScreenBase(object):
 
     def _image(self, filename):
         """return an image object containing the
-        imagedata from a gif-file named filename.
+        imagedata from an image file named filename.
         """
         return TK.PhotoImage(file=filename, master=self.cv)
 
@@ -872,10 +874,7 @@ class Shape(object):
             if isinstance(data, list):
                 data = tuple(data)
         elif type_ == "image":
-            if isinstance(data, str):
-                if data.lower().endswith(".gif") and isfile(data):
-                    data = TurtleScreen._image(data)
-                # else data assumed to be PhotoImage
+            assert(isinstance(data, TK.PhotoImage))
         elif type_ == "compound":
             data = []
         else:
@@ -1100,14 +1099,18 @@ class TurtleScreen(TurtleScreenBase):
         """Adds a turtle shape to TurtleScreen's shapelist.
 
         Arguments:
-        (1) name is the name of a gif-file and shape is None.
+        (1) name is the name of an image file (PNG, GIF, PGM, and PPM) and shape is None.
             Installs the corresponding image shape.
             !! Image-shapes DO NOT rotate when turning the turtle,
             !! so they do not display the heading of the turtle!
-        (2) name is an arbitrary string and shape is a tuple
+        (2) name is an arbitrary string and shape is the name of an image file (PNG, GIF, PGM, and PPM).
+            Installs the corresponding image shape.
+            !! Image-shapes DO NOT rotate when turning the turtle,
+            !! so they do not display the heading of the turtle!
+        (3) name is an arbitrary string and shape is a tuple
             of pairs of coordinates. Installs the corresponding
             polygon shape
-        (3) name is an arbitrary string and shape is a
+        (4) name is an arbitrary string and shape is a
             (compound) Shape object. Installs the corresponding
             compound shape.
         To use a shape, you have to issue the command shape(shapename).
@@ -1120,12 +1123,9 @@ class TurtleScreen(TurtleScreenBase):
 
         """
         if shape is None:
-            # image
-            if name.lower().endswith(".gif"):
-                shape = Shape("image", self._image(name))
-            else:
-                raise TurtleGraphicsError("Bad arguments for register_shape.\n"
-                                          + "Use  help(register_shape)" )
+            shape = Shape("image", self._image(name))
+        elif isinstance(shape, str):
+            shape = Shape("image", self._image(shape))
         elif isinstance(shape, tuple):
             shape = Shape("polygon", shape)
         ## else shape assumed to be Shape-instance
@@ -1276,6 +1276,26 @@ class TurtleScreen(TurtleScreenBase):
         if delay is None:
             return self._delayvalue
         self._delayvalue = int(delay)
+
+    @contextmanager
+    def no_animation(self):
+        """Temporarily turn off auto-updating the screen.
+
+        This is useful for drawing complex shapes where even the fastest setting
+        is too slow. Once this context manager is exited, the drawing will
+        be displayed.
+
+        Example (for a TurtleScreen instance named screen
+        and a Turtle instance named turtle):
+        >>> with screen.no_animation():
+        ...    turtle.circle(50)
+        """
+        tracer = self.tracer()
+        try:
+            self.tracer(0)
+            yield
+        finally:
+            self.tracer(tracer)
 
     def _incrementudc(self):
         """Increment update counter."""
@@ -1454,7 +1474,7 @@ class TurtleScreen(TurtleScreenBase):
         """Set background image or return name of current backgroundimage.
 
         Optional argument:
-        picname -- a string, name of a gif-file or "nopic".
+        picname -- a string, name of an image file (PNG, GIF, PGM, and PPM) or "nopic".
 
         If picname is a filename, set the corresponding image as background.
         If picname is "nopic", delete backgroundimage, if present.
@@ -3382,6 +3402,24 @@ class RawTurtle(TPen, TNavigator):
         """
         return isinstance(self._fillpath, list)
 
+    @contextmanager
+    def fill(self):
+        """A context manager for filling a shape.
+
+        Implicitly ensures the code block is wrapped with
+        begin_fill() and end_fill().
+
+        Example (for a Turtle instance named turtle):
+        >>> turtle.color("black", "red")
+        >>> with turtle.fill():
+        ...     turtle.circle(60)
+        """
+        self.begin_fill()
+        try:
+            yield
+        finally:
+            self.end_fill()
+
     def begin_fill(self):
         """Called just before drawing a shape to be filled.
 
@@ -3401,7 +3439,6 @@ class RawTurtle(TPen, TNavigator):
         if self.undobuffer:
             self.undobuffer.push(("beginfill", self._fillitem))
         self._update()
-
 
     def end_fill(self):
         """Fill the shape drawn after the call begin_fill().
@@ -3505,6 +3542,27 @@ class RawTurtle(TPen, TNavigator):
             self.setpos(end, y)
         if self.undobuffer:
             self.undobuffer.cumulate = False
+
+    @contextmanager
+    def poly(self):
+        """A context manager for recording the vertices of a polygon.
+
+        Implicitly ensures that the code block is wrapped with
+        begin_poly() and end_poly()
+
+        Example (for a Turtle instance named turtle) where we create a
+        triangle as the polygon and move the turtle 100 steps forward:
+        >>> with turtle.poly():
+        ...     for side in range(3)
+        ...         turtle.forward(50)
+        ...         turtle.right(60)
+        >>> turtle.forward(100)
+        """
+        self.begin_poly()
+        try:
+            yield
+        finally:
+            self.end_poly()
 
     def begin_poly(self):
         """Start recording the vertices of a polygon.

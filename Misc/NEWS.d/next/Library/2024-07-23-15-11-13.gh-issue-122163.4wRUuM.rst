@@ -1,2 +1,0 @@
-Add notes for JSON serialization errors that allow to identify the source of
-the error.

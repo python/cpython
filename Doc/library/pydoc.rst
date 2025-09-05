@@ -21,7 +21,7 @@ modules.  The documentation can be presented as pages of text on the console,
 served to a web browser, or saved to HTML files.
 
 For modules, classes, functions and methods, the displayed documentation is
-derived from the docstring (i.e. the :attr:`!__doc__` attribute) of the object,
+derived from the docstring (i.e. the :attr:`~definition.__doc__` attribute) of the object,
 and recursively of its documentable members.  If there is no docstring,
 :mod:`!pydoc` tries to obtain a description from the block of comment lines just
 above the definition of the class, function or method in the source file, or at
@@ -52,8 +52,9 @@ produced for that file.
    only execute code when a file is invoked as a script and not just imported.
 
 When printing output to the console, :program:`pydoc` attempts to paginate the
-output for easier reading.  If the :envvar:`PAGER` environment variable is set,
-:program:`pydoc` will use its value as a pagination program.
+output for easier reading.  If either the :envvar:`MANPAGER` or the
+:envvar:`PAGER` environment variable is set, :program:`pydoc` will use its
+value as a pagination program. When both are set, :envvar:`MANPAGER` is used.
 
 Specifying a ``-w`` flag before the argument will cause HTML documentation
 to be written out to a file in the current directory, instead of displaying text

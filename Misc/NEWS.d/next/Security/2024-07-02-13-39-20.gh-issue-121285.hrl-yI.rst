@@ -1,2 +1,0 @@
-Remove backtracking from tarfile header parsing for ``hdrcharset``, PAX, and
-GNU sparse headers.

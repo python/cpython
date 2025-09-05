@@ -1,1 +1,0 @@
-Fix a Makefile bug that prevented mimalloc header files from being installed.

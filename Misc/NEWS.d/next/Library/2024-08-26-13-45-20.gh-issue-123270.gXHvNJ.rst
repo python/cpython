@@ -1,3 +1,0 @@
-Applied a more surgical fix for malformed payloads in :class:`zipfile.Path`
-causing infinite loops (gh-122905) without breaking contents using
-legitimate characters.

@@ -29,9 +29,6 @@
 /* Helpers for hash functions */
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(PyObject *, double);
 
-// Kept for backward compatibility
-#define _Py_HashPointer Py_HashPointer
-
 
 /* hash function definition */
 typedef struct {
@@ -44,6 +41,14 @@ typedef struct {
 PyAPI_FUNC(PyHash_FuncDef*) PyHash_GetFuncDef(void);
 
 PyAPI_FUNC(Py_hash_t) Py_HashPointer(const void *ptr);
+
+// Deprecated alias kept for backward compatibility
+Py_DEPRECATED(3.14) static inline Py_hash_t
+_Py_HashPointer(const void *ptr)
+{
+    return Py_HashPointer(ptr);
+}
+
 PyAPI_FUNC(Py_hash_t) PyObject_GenericHash(PyObject *);
 
 PyAPI_FUNC(Py_hash_t) Py_HashBuffer(const void *ptr, Py_ssize_t len);

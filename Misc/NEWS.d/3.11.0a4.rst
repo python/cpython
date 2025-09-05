@@ -775,8 +775,8 @@ Ensure that :func:`math.expm1` does not raise on underflow.
 .. nonce: s9PuyF
 .. section: Library
 
-Adding :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` constants from FreeBSD
-into the fcntl module.
+Adding :const:`!F_DUP2FD` and :const:`!F_DUP2FD_CLOEXEC` constants from FreeBSD
+into the :mod:`fcntl` module.
 
 ..
 
@@ -1161,7 +1161,7 @@ no-op now.
 .. nonce: Lq2_gR
 .. section: C API
 
-Replaced deprecated usage of :c:func:`PyImport_ImportModuleNoBlock` with
+Replaced deprecated usage of :c:func:`!PyImport_ImportModuleNoBlock` with
 :c:func:`PyImport_ImportModule` in stdlib modules. Patch by Kumar Aditya.
 
 ..

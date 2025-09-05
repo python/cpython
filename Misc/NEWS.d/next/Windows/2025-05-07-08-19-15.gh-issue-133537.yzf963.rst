@@ -1,0 +1,1 @@
+Avoid using console I/O in WinAPI partitions that don’t support it

@@ -1,7 +1,5 @@
-import os
 import pathlib
 import py_compile
-import shutil
 import textwrap
 import unittest
 import warnings
@@ -60,6 +58,26 @@ class OpenZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
 class OpenNamespaceTests(FilesTests, util.DiskSetup, unittest.TestCase):
     MODULE = 'namespacedata01'
 
+    def test_non_paths_in_dunder_path(self):
+        """
+        Non-path items in a namespace package's ``__path__`` are ignored.
+
+        As reported in python/importlib_resources#311, some tools
+        like Setuptools, when creating editable packages, will inject
+        non-paths into a namespace package's ``__path__``, a
+        sentinel like
+        ``__editable__.sample_namespace-1.0.finder.__path_hook__``
+        to cause the ``PathEntryFinder`` to be called when searching
+        for packages. In that case, resources should still be loadable.
+        """
+        import namespacedata01
+
+        namespacedata01.__path__.append(
+            '__editable__.sample_namespace-1.0.finder.__path_hook__'
+        )
+
+        resources.files(namespacedata01)
+
 
 class OpenNamespaceZipTests(FilesTests, util.ZipSetup, unittest.TestCase):
     ZIP_MODULE = 'namespacedata01'
@@ -86,7 +104,7 @@ class ModulesFiles:
         """
         A module can have resources found adjacent to the module.
         """
-        import mod
+        import mod  # type: ignore[import-not-found]
 
         actual = resources.files(mod).joinpath('res.txt').read_text(encoding='utf-8')
         assert actual == self.spec['res.txt']
@@ -134,18 +152,17 @@ class ImplicitContextFiles:
     def _compile_importlib(self):
         """
         Make a compiled-only copy of the importlib resources package.
+
+        Currently only code is copied, as importlib resources doesn't itself
+        have any resources.
         """
         bin_site = self.fixtures.enter_context(os_helper.temp_dir())
         c_resources = pathlib.Path(bin_site, 'c_resources')
         sources = pathlib.Path(resources.__file__).parent
-        shutil.copytree(sources, c_resources, ignore=lambda *_: ['__pycache__'])
 
-        for dirpath, _, filenames in os.walk(c_resources):
-            for filename in filenames:
-                source_path = pathlib.Path(dirpath) / filename
-                cfile = source_path.with_suffix('.pyc')
-                py_compile.compile(source_path, cfile)
-                pathlib.Path.unlink(source_path)
+        for source_path in sources.glob('**/*.py'):
+            c_path = c_resources.joinpath(source_path.relative_to(sources)).with_suffix('.pyc')
+            py_compile.compile(source_path, c_path)
         self.fixtures.enter_context(import_helper.DirsOnSysPath(bin_site))
 
     def test_implicit_files_with_compiled_importlib(self):
