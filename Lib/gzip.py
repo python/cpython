@@ -573,6 +573,10 @@ class _GzipReader(_streams.DecompressReader):
             # Read a chunk of data from the file
             if self._decompressor.needs_input:
                 buf = self._fp.read(READ_BUFFER_SIZE)
+                if buf == b"":
+                    raise EOFError("Compressed file ended before the "
+                                   "end-of-stream marker was reached")
+
                 uncompress = self._decompressor.decompress(buf, size)
             else:
                 uncompress = self._decompressor.decompress(b"", size)
@@ -584,9 +588,6 @@ class _GzipReader(_streams.DecompressReader):
 
             if uncompress != b"":
                 break
-            if buf == b"":
-                raise EOFError("Compressed file ended before the "
-                               "end-of-stream marker was reached")
 
         self._crc = zlib.crc32(uncompress, self._crc)
         self._stream_size += len(uncompress)
