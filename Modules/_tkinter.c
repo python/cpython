@@ -2771,8 +2771,10 @@ static void
 Tktt_Dealloc(PyObject *op)
 {
     PyTypeObject *tp = Py_TYPE(op);
+    printf("%p\n", ((TkttObject *)op)->func);
     PyObject_GC_UnTrack(op);
-    (void)Tktt_Clear(op);
+    TkttObject *self = TkttObject_CAST(op);
+    Py_XDECREF(self->func);
     tp->tp_free(op);
     Py_DECREF(tp);
 }
@@ -3094,7 +3096,7 @@ Tkapp_Dealloc(PyObject *op)
     ENTER_TCL
     Tcl_DeleteInterp(Tkapp_Interp(self));
     LEAVE_TCL
-    (void)Tkapp_Clear(op);
+    Py_XDECREF(self->trace);
     tp->tp_free(self);
     Py_DECREF(tp);
     DisableEventHook();
@@ -3295,7 +3297,7 @@ static PyMethodDef Tktt_methods[] =
 };
 
 static PyType_Slot Tktt_Type_slots[] = {
-    {Py_tp_clear, Tktt_Clear},
+    // {Py_tp_clear, Tktt_Clear},
     {Py_tp_dealloc, Tktt_Dealloc},
     {Py_tp_traverse, Tktt_Traverse},
     {Py_tp_repr, Tktt_Repr},
@@ -3356,7 +3358,7 @@ static PyMethodDef Tkapp_methods[] =
 };
 
 static PyType_Slot Tkapp_Type_slots[] = {
-    {Py_tp_clear, Tkapp_Clear},
+    // {Py_tp_clear, Tkapp_Clear},
     {Py_tp_dealloc, Tkapp_Dealloc},
     {Py_tp_traverse, Tkapp_Traverse},
     {Py_tp_methods, Tkapp_methods},
