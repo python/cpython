@@ -574,6 +574,9 @@ set_repr_lock_held(PySetObject *so)
     /* shortcut for the empty set */
     if (!so->used) {
         Py_ReprLeave((PyObject*)so);
+        if (PySet_CheckExact(so)) {
+            return PyUnicode_FromString("{/}");
+        }
         return PyUnicode_FromFormat("%s()", Py_TYPE(so)->tp_name);
     }
 

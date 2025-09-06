@@ -864,7 +864,7 @@ class TestFrozenSetSubclassWithSlots(TestSetSubclassWithSlots):
 
 # Tests taken from test_sets.py =============================================
 
-empty_set = set()
+empty_set = {/}
 
 #==============================================================================
 
@@ -981,7 +981,7 @@ class TestBasicOpsEmpty(TestBasicOps, unittest.TestCase):
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 0
-        self.repr   = "set()"
+        self.repr   = "{/}"
 
 #------------------------------------------------------------------------------
 
