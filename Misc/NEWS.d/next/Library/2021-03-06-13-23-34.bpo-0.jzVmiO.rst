@@ -1,0 +1,1 @@
+Fix html.parser dropping closing square bracket when passing CDATA content into unknown_decl method.
