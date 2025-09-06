@@ -238,9 +238,11 @@ class TextTestRunner(object):
         else:
             self.stream.writeln("")
 
-    def run(self, test):
+    def run(self, test, debug=False):
         "Run the given test case or test suite."
         result = self._makeResult()
+        if debug:
+            result._debug = debug
         registerResult(result)
         result.failfast = self.failfast
         result.buffer = self.buffer
