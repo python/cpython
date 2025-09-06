@@ -15,6 +15,13 @@ class Point:
     y: int
 
 
+@dataclasses.dataclass
+class Point3D:
+    x: int
+    y: int
+    z: int
+
+
 class TestCompiler(unittest.TestCase):
 
     def test_refleaks(self):
@@ -2888,6 +2895,84 @@ class TestPatma(unittest.TestCase):
                         h = 1
                 self.assertEqual(h, 1)
 
+    def test_patma_union_type(self):
+        IntOrStr = int | str
+        w = None
+        match 0:
+            case IntOrStr():
+                w = 0
+        self.assertEqual(w, 0)
+
+    def test_patma_union_no_match(self):
+        StrOrBytes = str | bytes
+        w = None
+        match 0:
+            case StrOrBytes():
+                w = 0
+        self.assertIsNone(w)
+
+    def test_union_type_positional_subpattern(self):
+        IntOrStr = int | str
+        w = None
+        match 0:
+            case IntOrStr(y):
+                w = y
+        self.assertEqual(w, 0)
+
+    def test_union_type_keyword_subpattern(self):
+        EitherPoint = Point | Point3D
+        p = Point(x=1, y=2)
+        w = None
+        match p:
+            case EitherPoint(x=1, y=2):
+                w = 0
+        self.assertEqual(w, 0)
+
+    def test_patma_union_arg(self):
+        p = Point(x=1, y=2)
+        IntOrStr = int | str
+        w = None
+        match p:
+            case Point(IntOrStr(), IntOrStr()):
+                w = 0
+        self.assertEqual(w, 0)
+
+    def test_patma_union_kwarg(self):
+        p = Point(x=1, y=2)
+        IntOrStr = int | str
+        w = None
+        match p:
+            case Point(x=IntOrStr(), y=IntOrStr()):
+                w = 0
+        self.assertEqual(w, 0)
+
+    def test_patma_union_arg_no_match(self):
+        p = Point(x=1, y=2)
+        StrOrBytes = str | bytes
+        w = None
+        match p:
+            case Point(StrOrBytes(), StrOrBytes()):
+                w = 0
+        self.assertIsNone(w)
+
+    def test_patma_union_kwarg_no_match(self):
+        p = Point(x=1, y=2)
+        StrOrBytes = str | bytes
+        w = None
+        match p:
+            case Point(x=StrOrBytes(), y=StrOrBytes()):
+                w = 0
+        self.assertIsNone(w)
+
+    def test_union_type_match_second_member(self):
+        EitherPoint = Point | Point3D
+        p = Point3D(x=1, y=2, z=3)
+        w = None
+        match p:
+            case EitherPoint(x=1, y=2, z=3):
+                w = 0
+        self.assertEqual(w, 0)
+
 
 class TestSyntaxErrors(unittest.TestCase):
 
@@ -3230,7 +3315,27 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+
 class TestTypeErrors(unittest.TestCase):
+
+    def test_generic_type(self):
+        t = list[str]
+        w = None
+        with self.assertRaises(TypeError):
+            match ["s"]:
+                case t():
+                    w = 0
+        self.assertIsNone(w)
+
+    def test_legacy_generic_type(self):
+        from typing import List
+        t = List[str]
+        w = None
+        with self.assertRaises(TypeError):
+            match ["s"]:
+                case t():
+                    w = 0
+        self.assertIsNone(w)
 
     def test_accepts_positional_subpatterns_0(self):
         class Class:
@@ -3338,6 +3443,121 @@ class TestTypeErrors(unittest.TestCase):
         with self.assertRaises(TypeError):
             match 1:
                 case max(0, 1):
+                    w = 0
+        self.assertIsNone(w)
+
+    def test_class_or_union_not_specialform(self):
+        from typing import Literal
+        name = type(Literal).__name__
+        msg = rf"called match pattern must be a class or a union of classes \(got {name}\)"
+        w = None
+        with self.assertRaisesRegex(TypeError, msg):
+            match 1:
+                case Literal():
+                    w = 0
+        self.assertIsNone(w)
+
+    def test_typing_union(self):
+        from typing import Union
+        IntOrStr = Union[int, str]  # identical to int | str since gh-105499
+        w = False
+        match 1:
+            case IntOrStr():
+                w = True
+        self.assertIs(w, True)
+
+    def test_expanded_union_mirrors_isinstance_success(self):
+        ListOfInt = list[int]
+        t = int | ListOfInt
+        try:  # get the isinstance result
+            reference = isinstance(1, t)
+        except TypeError as exc:
+            reference = exc
+
+        try:  # get the match-case result
+            match 1:
+                case int() | ListOfInt():
+                    result = True
+                case _:
+                    result = False
+        except TypeError as exc:
+            result = exc
+
+        # we should ge the same result
+        self.assertIs(result, True)
+        self.assertIs(reference, True)
+
+    def test_expanded_union_mirrors_isinstance_failure(self):
+        ListOfInt = list[int]
+        t = ListOfInt | int
+
+        try:  # get the isinstance result
+            reference = isinstance(1, t)
+        except TypeError as exc:
+            reference = exc
+
+        try:  # get the match-case result
+            match 1:
+                case ListOfInt() | int():
+                    result = True
+                case _:
+                    result = False
+        except TypeError as exc:
+            result = exc
+
+        # we should ge the same result
+        self.assertIsInstance(result, TypeError)
+        self.assertIsInstance(reference, TypeError)
+
+    def test_union_type_mirrors_isinstance_success(self):
+        t = int | list[int]
+
+        try:  # get the isinstance result
+            reference = isinstance(1, t)
+        except TypeError as exc:
+            reference = exc
+
+        try:  # get the match-case result
+            match 1:
+                case t():
+                    result = True
+                case _:
+                    result = False
+        except TypeError as exc:
+            result = exc
+
+        # we should ge the same result
+        self.assertIs(result, True)
+        self.assertIs(reference, True)
+
+    def test_union_type_mirrors_isinstance_failure(self):
+        t = list[int] | int
+
+        try:  # get the isinstance result
+            reference = isinstance(1, t)
+        except TypeError as exc:
+            reference = exc
+
+        try:  # get the match-case result
+            match 1:
+                case t():
+                    result = True
+                case _:
+                    result = False
+        except TypeError as exc:
+            result = exc
+
+        # we should ge the same result
+        self.assertIsInstance(result, TypeError)
+        self.assertIsInstance(reference, TypeError)
+
+    def test_generic_union_type(self):
+        from collections.abc import Sequence, Set
+        t = Sequence[str] | Set[str]
+        w = None
+        with self.assertRaises(TypeError):
+            match ["s"]:
+                case t():
                     w = 0
         self.assertIsNone(w)
 
