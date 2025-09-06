@@ -3295,7 +3295,7 @@ static PyMethodDef Tktt_methods[] =
 };
 
 static PyType_Slot Tktt_Type_slots[] = {
-    {Py_tp_dealloc, Tktt_Clear},
+    {Py_tp_clear, Tktt_Clear},
     {Py_tp_dealloc, Tktt_Dealloc},
     {Py_tp_traverse, Tktt_Traverse},
     {Py_tp_repr, Tktt_Repr},
@@ -3356,7 +3356,7 @@ static PyMethodDef Tkapp_methods[] =
 };
 
 static PyType_Slot Tkapp_Type_slots[] = {
-    {Py_tp_dealloc, Tkapp_Clear},
+    {Py_tp_clear, Tkapp_Clear},
     {Py_tp_dealloc, Tkapp_Dealloc},
     {Py_tp_traverse, Tkapp_Traverse},
     {Py_tp_methods, Tkapp_methods},
