@@ -671,7 +671,7 @@ Allow the JIT to remove an extra ``_TO_BOOL_BOOL`` instruction after
 .. nonce: dNh64H
 .. section: Core and Builtins
 
-Fix crash when calling :meth:`!list.append` as an unbound method.
+Fix crash when calling :meth:`list.append` as an unbound method.
 
 ..
 
