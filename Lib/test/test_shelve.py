@@ -173,6 +173,8 @@ class TestCase(unittest.TestCase):
         def serializer(obj, protocol):
             if isinstance(obj, (bytes, bytearray, str)):
                 if protocol == 5:
+                    if isinstance(obj, bytearray):
+                        return bytes(obj)  # DBM backends expect bytes
                     return obj
                 return type(obj).__name__
             elif isinstance(obj, array.array):
@@ -222,21 +224,26 @@ class TestCase(unittest.TestCase):
                         s["array_data"], array_data.tobytes().decode()
                     )
 
-    def test_custom_incomplete_serializer_and_deserializer(self):
-        dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
+    def test_custom_incomplete_serializer(self):
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
 
-        with self.assertRaises(dbm_sqlite3.error):
-            def serializer(obj, protocol=None):
-                pass
+        def serializer(obj, protocol=None):
+            pass
 
-            def deserializer(data):
-                return data.decode("utf-8")
+        def deserializer(data):
+            return data.decode("utf-8")
 
+        # Since the serializer returns None, dbm.error is raised
+        # by dbm.sqlite3 and TypeError is raised by other backends.
+        with self.assertRaises((TypeError, dbm.error)):
             with shelve.open(self.fn, serializer=serializer,
                              deserializer=deserializer) as s:
                 s["foo"] = "bar"
+
+    def test_custom_incomplete_deserializer(self):
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
 
         def serializer(obj, protocol=None):
             return type(obj).__name__.encode("utf-8")
@@ -352,7 +359,7 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(s["bytearray_data"], "bytearray")
                     self.assertEqual(s["array_data"], "array")
 
-    def test_custom_incomplete_serializer_and_deserializer_bsd_db_shelf(self):
+    def test_custom_incomplete_deserializer_bsd_db_shelf(self):
         berkeleydb = import_helper.import_module("berkeleydb")
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
@@ -369,6 +376,11 @@ class TestCase(unittest.TestCase):
             s["foo"] = "bar"
             self.assertIsNone(s["foo"])
             self.assertNotEqual(s["foo"], "bar")
+
+    def test_custom_incomplete_serializer_bsd_db_shelf(self):
+        berkeleydb = import_helper.import_module("berkeleydb")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
 
         def serializer(obj, protocol=None):
             pass
