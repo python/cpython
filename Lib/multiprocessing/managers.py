@@ -524,7 +524,7 @@ class BaseManager(object):
             else:
                 raise ProcessError(
                     "Unknown state {!r}".format(self._state.value))
-        return Server(self._registry, self._address,
+        return self._Server(self._registry, self._address,
                       self._authkey, self._serializer)
 
     def connect(self):
