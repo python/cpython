@@ -3599,7 +3599,7 @@ PyOS_getsig(int sig)
 
 /*
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  */
 PyOS_sighandler_t
