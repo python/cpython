@@ -1,0 +1,4 @@
+Added most (not all) of the methods for the `Tkinter.Tk` class.
+This also includes parent class methods from the `WM` and `Misc` classes in the same module.
+
+Descriptions taken from source code docstrings.
