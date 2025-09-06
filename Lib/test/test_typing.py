@@ -5847,14 +5847,14 @@ class GenericTests(BaseTestCase):
     def test_return_non_tuple_while_unpacking(self):
         # GH-138497: GenericAlias objects didn't ensure that __typing_subst__ actually
         # returned a tuple
-        class Generic:
-            def __call__(*_):
-                return None
+        class EvilTypeVar:
+            __typing_is_unpacked_typevartuple__ = True
+            def __typing_prepare_subst__(*_):
+                return None  # any value
+            def __typing_subst__(*_):
+                return 42  # not tuple
 
-            def __getattr__(self, _):
-                return Generic()
-
-        evil = Generic()
+        evil = EvilTypeVar()
         type type_alias[*_] = 0
         with self.assertRaises(TypeError):
             type_alias[evil][0]
