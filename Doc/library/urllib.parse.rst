@@ -50,16 +50,17 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlparse(urlstring, scheme='', allow_fragments=True)
+.. function:: urlparse(url, scheme='', allow_fragments=True)
 
-   Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
-   corresponds to the general structure of a URL:
+   Parse a URL into six components, returning a 6-item :term:`named tuple`.
+   This corresponds to the general structure of a URL:
    ``scheme://netloc/path;parameters?query#fragment``.
-   Each tuple item is a string, possibly empty. The components are not broken up
-   into smaller parts (for example, the network location is a single string), and %
-   escapes are not expanded. The delimiters as shown above are not part of the
-   result, except for a leading slash in the *path* component, which is retained if
-   present.  For example:
+
+   The delimiters as shown above are not part of the result, except for a
+   leading slash in the path component, which is retained if present.
+
+
+   For example:
 
    .. doctest::
       :options: +NORMALIZE_WHITESPACE
@@ -106,7 +107,7 @@ or on combining URL components into a URL string.
 
    The *scheme* argument gives the default addressing scheme, to be
    used only if the URL does not specify one.  It should be the same type
-   (text or bytes) as *urlstring*, except that the default value ``''`` is
+   (text or bytes) as *url*, except that the default value ``''`` is
    always allowed, and is automatically converted to ``b''`` if appropriate.
 
    If the *allow_fragments* argument is false, fragment identifiers are not
@@ -296,14 +297,34 @@ or on combining URL components into a URL string.
    states that these are equivalent).
 
 
-.. function:: urlsplit(urlstring, scheme='', allow_fragments=True)
+.. function:: urlsplit(url, scheme='', allow_fragments=True)
 
-   This is similar to :func:`urlparse`, but does not split the params from the URL.
-   This should generally be used instead of :func:`urlparse` if the more recent URL
-   syntax allowing parameters to be applied to each segment of the *path* portion
-   of the URL (see :rfc:`2396`) is wanted.  A separate function is needed to
-   separate the path segments and parameters.  This function returns a 5-item
-   :term:`named tuple`::
+   Similar to :func:`urlparse`, without splitting the URL parameters.
+
+   Parse a URL into five components, returning a 5-item :term:`named tuple`.
+   This corresponds to the general structure of a URL:
+   ``scheme://netloc/path?query#fragment``.
+
+   The delimiters as shown above are not part of the result, except for a
+   leading slash in the path component, which is retained if present.
+
+   Additionally, the netloc property is broken down into these additional
+   attributes added to the returned object: username, password, hostname,
+   and port.
+
+   % escapes are not decoded.
+
+   The *scheme* argument gives the default addressing scheme, to be
+   used only if the URL does not specify one.  It should be the same type
+   (text or bytes) as *url*, except that the default value ``''`` is
+   always allowed, and is automatically converted to ``b''`` if appropriate.
+
+   If the *allow_fragments* argument is false, fragment identifiers are not
+   recognized.  Instead, they are parsed as part of the path, parameters
+   or query component, and :attr:`fragment` is set to the empty string in
+   the return value.
+
+   This function returns a 5-item :term:`named tuple`::
 
       (addressing scheme, network location, path, query, fragment identifier).
 
