@@ -639,7 +639,7 @@ the *new_callable* argument to :func:`patch`.
         This is either ``None`` (if the mock hasn't been called), or the
         arguments that the mock was last called with. This will be in the
         form of a tuple: the first member, which can also be accessed through
-        the ``args`` property, is any ordered arguments the mock was
+        the ``args`` property, is any positional arguments the mock was
         called with (or an empty tuple) and the second member, which can
         also be accessed through the ``kwargs`` property, is any keyword
         arguments (or an empty dictionary).
