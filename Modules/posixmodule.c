@@ -2616,6 +2616,7 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
                 return -1;
             }
             PyStructSequence_SET_ITEM(v, ns_index, ns_total);
+            assert(!PyErr_Occurred());
             res = 0;
         }
         else {
@@ -2637,6 +2638,7 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
                 goto exit;
             }
             PyStructSequence_SET_ITEM(v, ns_index, ns_total);
+            assert(!PyErr_Occurred());
             res = 0;
 
         exit:
@@ -2646,7 +2648,6 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
         }
     }
 
-    assert(!PyErr_Occurred());
     return res;
     #undef S_TO_NS
 }
