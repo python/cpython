@@ -40,7 +40,7 @@ class TestBytesIO(TestCase):
         def truncate(barrier, b, *ignore):
             barrier.wait()
             try: b.truncate(0)
-            except: BufferError  # ignore exported buffer
+            except BufferError: pass  # ignore exported buffer
 
         def read(barrier, b, *ignore):
             barrier.wait()
