@@ -97,7 +97,18 @@ Module contents
      the name and repr of each field, in the order they are defined in
      the class.  Fields that are marked as being excluded from the repr
      are not included.  For example:
-     ``InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)``.
+
+     .. doctest::
+
+        >>> from dataclasses import dataclass, field
+        >>> @dataclass(repr=False)
+        ... class InventoryItem:
+        ...     name: str
+        ...     unit_price: float
+        ...     quantity_on_hand: int
+        ...
+        >>> InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)  # doctest: +ELLIPSIS
+        <InventoryItem object at 0x...>
 
      If the class already defines :meth:`!__repr__`, this parameter is
      ignored.
@@ -274,6 +285,17 @@ Module contents
 
    - *repr*: If true (the default), this field is included in the
      string returned by the generated :meth:`~object.__repr__` method.
+
+     .. doctest::
+
+        >>> @dataclass
+        ... class InventoryItem:
+        ...     name: str
+        ...     unit_price: float
+        ...     quantity_on_hand: int = field(repr=False)
+        ...
+        >>> InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)
+        InventoryItem(name='widget', unit_price=3.0)
 
    - *hash*: This can be a bool or ``None``.  If true, this field is
      included in the generated :meth:`~object.__hash__` method.  If false,
