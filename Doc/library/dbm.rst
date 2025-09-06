@@ -100,7 +100,8 @@ The :meth:`!setdefault` method requires two arguments.
 
 Key and values are always stored as :class:`bytes`. This means that when
 strings are used they are implicitly converted to the default encoding before
-being stored.
+being stored. For detailed information about accepted types, see
+:ref:`dbm-key-value-types`.
 
 These objects also support being used in a :keyword:`with` statement, which
 will automatically close them when done.
@@ -119,6 +120,48 @@ will automatically close them when done.
 
 .. versionchanged:: 3.13
    :meth:`!clear` methods are now available for all :mod:`dbm` backends.
+
+
+.. _dbm-key-value-types:
+
+Key and Value Types
+-------------------
+
+The accepted types for keys and values vary by backend:
+
+**Keys:**
+
+* **All backends**: Accept :class:`str` and :class:`bytes` objects
+* **String keys** are automatically converted to bytes using the default
+  encoding
+* **Bytes keys** are stored as-is
+
+**Values:**
+
+* **Traditional backends** (``dbm.gnu``, ``dbm.ndbm``, ``dbm.dumb``): Only
+  accept :class:`str` and :class:`bytes` objects
+* **SQLite backend** (``dbm.sqlite3``): Accepts any object that can be
+  converted to bytes:
+
+  * **Accepted**: :class:`str`, :class:`bytes`, :class:`int`,
+    :class:`float`, :class:`bool`
+  * **Rejected**: :class:`None`, :class:`list`, :class:`dict`,
+    :class:`tuple`, custom objects
+
+**Storage Format:**
+
+All keys and values are stored as :class:`bytes` objects in the database.
+When retrieving, you'll always get bytes back, regardless of the original
+type stored.
+
+**Type Conversion Examples:**
+
+* ``db['key'] = 'string'`` stored as ``b'string'``
+* ``db['key'] = 42`` stored as ``b'42'`` (sqlite3 only)
+* ``db['key'] = 3.14`` stored as ``b'3.14'`` (sqlite3 only)
+* ``db['key'] = True`` stored as ``b'True'`` (sqlite3 only)
+* ``db['key'] = None`` fails on all backends
+* ``db['key'] = [1, 2, 3]`` fails on all backends
 
 
 The following example records some hostnames and a corresponding title,  and
@@ -142,8 +185,9 @@ then prints out the contents of the database::
        # Often-used methods of the dict interface work too.
        print(db.get('python.org', b'not present'))
 
-       # Storing a non-string key or value will raise an exception (most
-       # likely a TypeError).
+       # Storing a non-string key or value behavior depends on the backend:
+       # - Traditional backends (ndbm, gnu, dumb) will raise a TypeError
+       # - The sqlite3 backend accepts it and converts to bytes
        db['www.yahoo.com'] = 4
 
    # db is automatically closed when leaving the with statement.
