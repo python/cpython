@@ -511,12 +511,12 @@ _waiting_release(_waiting_t *waiting, int received)
     assert(!waiting->received);
 
     waiting->status = WAITING_RELEASING;
-    PyThread_release_lock(waiting->mutex);
     if (waiting->received != received) {
         assert(received == 1);
         waiting->received = received;
     }
     waiting->status = WAITING_RELEASED;
+    PyThread_release_lock(waiting->mutex);
 }
 
 static void
