@@ -333,7 +333,11 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
 
-        _Py_ADJUST_ERANGE2(r.real, r.imag);
+        if (isfinite(a.real) && isfinite(a.imag)
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            _Py_ADJUST_ERANGE2(r.real, r.imag);
+        }
     }
     return r;
 }
@@ -341,15 +345,19 @@ _Py_c_pow(Py_complex a, Py_complex b)
 static Py_complex
 c_powu(Py_complex x, long n)
 {
-    Py_complex r, p;
-    long mask = 1;
-    r = c_1;
-    p = x;
-    while (mask > 0 && n >= mask) {
-        if (n & mask)
-            r = _Py_c_prod(r,p);
-        mask <<= 1;
-        p = _Py_c_prod(p,p);
+    assert(n > 0);
+    while ((n & 1) == 0) {
+        x = _Py_c_prod(x, x);
+        n >>= 1;
+    }
+    Py_complex r = x;
+    n >>= 1;
+    while (n) {
+        x = _Py_c_prod(x, x);
+        if (n & 1) {
+            r = _Py_c_prod(r, x);
+        }
+        n >>= 1;
     }
     return r;
 }
@@ -358,10 +366,11 @@ static Py_complex
 c_powi(Py_complex x, long n)
 {
     if (n > 0)
-        return c_powu(x,n);
+        return c_powu(x, n);
+    else if (n < 0)
+        return _Py_rc_quot(1.0, c_powu(x, -n));
     else
-        return _Py_c_quot(c_1, c_powu(x,-n));
-
+        return c_1;
 }
 
 double
@@ -753,7 +762,9 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     // a faster and more accurate algorithm.
     if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
         p = c_powi(a, (long)b.real);
-        _Py_ADJUST_ERANGE2(p.real, p.imag);
+        if (isfinite(a.real) && isfinite(a.imag)) {
+            _Py_ADJUST_ERANGE2(p.real, p.imag);
+        }
     }
     else {
         p = _Py_c_pow(a, b);
