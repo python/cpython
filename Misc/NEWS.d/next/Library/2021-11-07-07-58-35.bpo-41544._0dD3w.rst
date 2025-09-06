@@ -1,0 +1,1 @@
+Add missing parameters to multiprocessing.dummy.DummyProcess and multiprocessing.dummy.Pool in order to match the API of multiprocessing.
