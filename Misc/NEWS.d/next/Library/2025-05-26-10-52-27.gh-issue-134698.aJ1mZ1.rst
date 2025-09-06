@@ -1,0 +1,2 @@
+Fix a crash when calling methods of :class:`ssl.SSLContext` or
+:class:`ssl.SSLSocket` across multiple threads.
