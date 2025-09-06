@@ -432,7 +432,7 @@ class ParseArgsTestCase(unittest.TestCase):
         regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
-        self.assertTrue(regrtest.randomize)
+        self.assertEqual(regrtest.fail_rerun, rerun)
         self.assertIsInstance(regrtest.random_seed, int)
         self.assertTrue(regrtest.fail_env_changed)
         self.assertTrue(regrtest.print_slowest)
