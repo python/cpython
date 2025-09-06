@@ -265,7 +265,7 @@ else:
         return False
 
 def isfunction(object):
-    """Return true if the object is a user-defined function.
+    """Return true if the object is a user-defined Python function.
 
     Function objects provide these attributes:
         __doc__         documentation string
@@ -828,9 +828,9 @@ def getfile(object):
             if object.__module__ == '__main__':
                 raise OSError('source code not available')
         raise TypeError('{!r} is a built-in class'.format(object))
-    if ismethod(object):
+    if hasattr(object, '__func__'):
         object = object.__func__
-    if isfunction(object):
+    if hasattr(object, '__code__'):
         object = object.__code__
     if istraceback(object):
         object = object.tb_frame
@@ -988,9 +988,9 @@ def findsource(object):
             raise OSError('lineno is out of bounds')
         return lines, lnum
 
-    if ismethod(object):
+    if hasattr(object, '__func__'):
         object = object.__func__
-    if isfunction(object):
+    if hasattr(object, '__code__'):
         object = object.__code__
     if istraceback(object):
         object = object.tb_frame
