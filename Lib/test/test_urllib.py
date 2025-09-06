@@ -1,7 +1,8 @@
 """Regression tests for what was in Python 2's "urllib" module"""
 
 import urllib.parse
-import urllib.request
+import urllib.request 
+import _proxy_bypass_winreg_override as proxy_bypass_winreg
 import urllib.error
 import http.client
 import email.message
@@ -1686,6 +1687,14 @@ class RequestTests(unittest.TestCase):
         request.method = 'HEAD'
         self.assertEqual(request.get_method(), 'HEAD')
 
+class ProxyBypassRegistryTests(unittest.TestCase):
+    def test_proxy_bypass_registry_trailing_semicolon(self):
+        fake_proxy_override = "localhost;*.example.com;"
+
+        # Directly test the internal function
+        self.assertFalse(proxy_bypass_winreg("notmatching.com", fake_proxy_override))
+        self.assertTrue(proxy_bypass_winreg("localhost", fake_proxy_override))
+        self.assertTrue(proxy_bypass_winreg("sub.example.com", fake_proxy_override))
 
 if __name__ == '__main__':
     unittest.main()
