@@ -640,8 +640,8 @@ static PyMethodDef descr_methods[] = {
 };
 
 static PyMemberDef descr_members[] = {
-    {"__objclass__", _Py_T_OBJECT, offsetof(PyDescrObject, d_type), Py_READONLY},
-    {"__name__", _Py_T_OBJECT, offsetof(PyDescrObject, d_name), Py_READONLY},
+    {"__objclass__", Py_T_OBJECT_EX, offsetof(PyDescrObject, d_type), Py_READONLY},
+    {"__name__", Py_T_OBJECT_EX, offsetof(PyDescrObject, d_name), Py_READONLY},
     {0}
 };
 
@@ -1382,7 +1382,7 @@ static PyMethodDef wrapper_methods[] = {
 };
 
 static PyMemberDef wrapper_members[] = {
-    {"__self__", _Py_T_OBJECT, offsetof(wrapperobject, self), Py_READONLY},
+    {"__self__", Py_T_OBJECT_EX, offsetof(wrapperobject, self), Py_READONLY},
     {0}
 };
 
@@ -1561,7 +1561,7 @@ static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
                                   PyObject *);
 
 static PyMemberDef property_members[] = {
-    {"fget", _Py_T_OBJECT, offsetof(propertyobject, prop_get), Py_READONLY},
+    {"fget", Py_T_OBJECT_EX, offsetof(propertyobject, prop_get), Py_READONLY},
     {"fset", _Py_T_OBJECT, offsetof(propertyobject, prop_set), Py_READONLY},
     {"fdel", _Py_T_OBJECT, offsetof(propertyobject, prop_del), Py_READONLY},
     {"__doc__",  _Py_T_OBJECT, offsetof(propertyobject, prop_doc), 0},
