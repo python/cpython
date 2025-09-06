@@ -38,7 +38,7 @@ int (*PyOS_InputHook)(void) = NULL;
    except if _PyOS_InterruptOccurred() returns true. */
 
 static int
-my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
+my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp, int n)
 {
 #ifdef MS_WINDOWS
     HANDLE handle;
@@ -53,7 +53,7 @@ my_fgets(PyThreadState* tstate, char *buf, int len, FILE *fp)
 #endif
 
     while (1) {
-        if (PyOS_InputHook != NULL &&
+        if (PyOS_InputHook != NULL && n == 0 &&
             // GH-104668: See PyOS_ReadlineFunctionPointer's comment below...
             _Py_IsMainInterpreter(tstate->interp))
         {
@@ -333,7 +333,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
             return NULL;
         }
         p = pr;
-        int err = my_fgets(tstate, p + n, (int)incr, sys_stdin);
+        int err = my_fgets(tstate, p + n, (int)incr, sys_stdin, n);
         if (err == 1) {
             // Interrupt
             PyMem_RawFree(p);
