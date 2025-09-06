@@ -32,10 +32,31 @@ typedef struct {
     PyTypeObject *PyCursesPanel_Type;
 } _curses_panel_state;
 
+typedef struct PyCursesPanelObject PyCursesPanelObject;
+
 static inline _curses_panel_state *
 get_curses_panel_state(PyObject *module)
 {
     void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_curses_panel_state *)state;
+}
+
+static inline _curses_panel_state *
+get_curses_panel_state_by_panel(PyCursesPanelObject *panel)
+{
+    /*
+     * Note: 'state' may be NULL if Py_TYPE(panel) is not a heap
+     * type associated with this module, but the compiler would
+     * have likely already complained with an "invalid pointer
+     * type" at compile-time.
+     *
+     * To make it more robust, all functions recovering a module's
+     * state from an object should expect to return NULL with an
+     * exception set (in contrast to functions recovering a module's
+     * state from a module itself).
+     */
+    void *state = PyType_GetModuleState(Py_TYPE(panel));
     assert(state != NULL);
     return (_curses_panel_state *)state;
 }
@@ -95,7 +116,7 @@ PyCursesCheckERR(_curses_panel_state *state, int code, const char *fname)
 
 /* Definition of the panel object and panel type */
 
-typedef struct {
+typedef struct PyCursesPanelObject {
     PyObject_HEAD
     PANEL *pan;
     PyCursesWindowObject *wo;   /* for reference counts */
@@ -262,8 +283,11 @@ static PyObject *
 PyCursesPanel_New(_curses_panel_state *state, PANEL *pan,
                   PyCursesWindowObject *wo)
 {
-    PyCursesPanelObject *po = PyObject_New(PyCursesPanelObject,
-                                           state->PyCursesPanel_Type);
+    assert(state != NULL);
+    PyTypeObject *type = state->PyCursesPanel_Type;
+    assert(type != NULL);
+    assert(type->tp_alloc != NULL);
+    PyCursesPanelObject *po = (PyCursesPanelObject *)type->tp_alloc(type, 0);
     if (po == NULL) {
         return NULL;
     }
@@ -278,25 +302,55 @@ PyCursesPanel_New(_curses_panel_state *state, PANEL *pan,
     return (PyObject *)po;
 }
 
+static int
+PyCursesPanel_Clear(PyObject *op)
+{
+    PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
+    PyObject *extra = (PyObject *)panel_userptr(self->pan);
+    if (extra != NULL) {
+        Py_DECREF(extra);
+        if (set_panel_userptr(self->pan, NULL) == ERR) {
+            _curses_panel_state *state = get_curses_panel_state_by_panel(self);
+            PyErr_SetString(state->PyCursesError,
+                            "set_panel_userptr() returned ERR");
+            return -1;
+        }
+    }
+    // self->wo should not be cleared because an associated WINDOW may exist
+    return 0;
+}
+
 static void
 PyCursesPanel_Dealloc(PyObject *self)
 {
-    PyObject *tp, *obj;
-    PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
 
-    tp = (PyObject *) Py_TYPE(po);
-    obj = (PyObject *) panel_userptr(po->pan);
-    if (obj) {
-        (void)set_panel_userptr(po->pan, NULL);
-        Py_DECREF(obj);
+    PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
+    if (PyCursesPanel_Clear(self) < 0) {
+        PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
     }
-    (void)del_panel(po->pan);
+    if (del_panel(po->pan) == ERR && !PyErr_Occurred()) {
+        _curses_panel_state *state = get_curses_panel_state_by_panel(po);
+        PyErr_SetString(state->PyCursesError, "del_panel() returned ERR");
+        PyErr_FormatUnraisable("Exception ignored in PyCursesPanel_Dealloc()");
+    }
     if (po->wo != NULL) {
         Py_DECREF(po->wo);
         remove_lop(po);
     }
-    PyObject_Free(po);
+    tp->tp_free(po);
     Py_DECREF(tp);
+}
+
+static int
+PyCursesPanel_Traverse(PyObject *op, visitproc visit, void *arg)
+{
+    PyCursesPanelObject *self = _PyCursesPanelObject_CAST(op);
+    Py_VISIT(Py_TYPE(op));
+    Py_VISIT(panel_userptr(self->pan));
+    Py_VISIT(self->wo);
+    return 0;
 }
 
 /* panel_above(NULL) returns the bottom panel in the stack. To get
@@ -520,7 +574,9 @@ static PyMethodDef PyCursesPanel_Methods[] = {
 /* -------------------------------------------------------*/
 
 static PyType_Slot PyCursesPanel_Type_slots[] = {
+    {Py_tp_clear, PyCursesPanel_Clear},
     {Py_tp_dealloc, PyCursesPanel_Dealloc},
+    {Py_tp_traverse, PyCursesPanel_Traverse},
     {Py_tp_methods, PyCursesPanel_Methods},
     {0, 0},
 };
@@ -528,7 +584,11 @@ static PyType_Slot PyCursesPanel_Type_slots[] = {
 static PyType_Spec PyCursesPanel_Type_spec = {
     .name = "_curses_panel.panel",
     .basicsize = sizeof(PyCursesPanelObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_HAVE_GC
+    ),
     .slots = PyCursesPanel_Type_slots
 };
 
