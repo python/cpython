@@ -1,1 +1,4 @@
-make the same exit behavior in repl help mode.
+In :mod:`pydoc` interactive help mode to handle empty input correctly.
+Empty lines (pressing Enter without input) now continue the help session
+instead of exiting, matching the documented behavior that only "q", "quit",
+or "exit" commands should terminate the help session.

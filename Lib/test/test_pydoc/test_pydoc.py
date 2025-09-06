@@ -2165,6 +2165,48 @@ class TestHelper(unittest.TestCase):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
 
+    def test_interact_empty_line_continues(self):
+        with captured_stdout() as output:
+            helper = pydoc.Helper(output=output)
+            input_sequence = ['', 'quit']
+            call_count = [0]
+            def mock_getline(prompt):
+                output.write(prompt)
+                result = input_sequence[call_count[0]]
+                call_count[0] += 1
+                return result
+
+            with unittest.mock.patch.object(helper, 'getline', side_effect=mock_getline):
+                helper.interact()
+
+            output_text = output.getvalue()
+            prompt_count = output_text.count('help> ')
+            self.assertEqual(prompt_count, 2)
+
+    def test_interact_quit_commands_exit(self):
+        quit_commands = ['quit', 'q', 'exit']
+
+        for quit_cmd in quit_commands:
+            with self.subTest(quit_command=quit_cmd):
+                with captured_stdout() as output:
+                    helper = pydoc.Helper(output=output)
+
+                    call_count = [0]
+
+                    def mock_getline(prompt):
+                        output.write(prompt)
+                        call_count[0] += 1
+                        return quit_cmd
+
+                    with unittest.mock.patch.object(helper, 'getline', side_effect=mock_getline):
+                        helper.interact()
+
+                    # Should only be called once before exiting
+                    self.assertEqual(call_count[0], 1)
+                    output_text = output.getvalue()
+                    prompt_count = output_text.count('help> ')
+                    self.assertEqual(prompt_count, 1)
+
 
 class PydocWithMetaClasses(unittest.TestCase):
     def tearDown(self):
