@@ -887,7 +887,7 @@ translate_bytecode_to_trace(
                                 _Py_BloomFilter_Add(dependencies, new_code);
                                 /* Set the operand to the callee's function or code object,
                                  * to assist optimization passes.
-                                 * We prefer setting it to the function (for remove_globals())
+                                 * We prefer setting it to the function
                                  * but if that's not available but the code is available,
                                  * use the code, setting the low bit so the optimizer knows.
                                  */
