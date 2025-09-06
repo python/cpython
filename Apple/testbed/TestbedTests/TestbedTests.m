@@ -1,11 +1,11 @@
 #import <XCTest/XCTest.h>
 #import <Python/Python.h>
 
-@interface iOSTestbedTests : XCTestCase
+@interface TestbedTests : XCTestCase
 
 @end
 
-@implementation iOSTestbedTests
+@implementation TestbedTests
 
 
 - (void)testPython {
@@ -41,14 +41,14 @@
     // The processInfo arguments contain the binary that is running,
     // followed by the arguments defined in the test plan. This means:
     //    run_module = test_args[1]
-    //    argv = ["iOSTestbed"] + test_args[2:]
+    //    argv = ["Testbed"] + test_args[2:]
     test_args = [[NSProcessInfo processInfo] arguments];
     if (test_args == NULL) {
         NSLog(@"Unable to identify test arguments.");
     }
     NSLog(@"Test arguments: %@", test_args);
     argv = malloc(sizeof(char *) * ([test_args count] - 1));
-    argv[0] = "iOSTestbed";
+    argv[0] = "Testbed";
     for (int i = 1; i < [test_args count] - 1; i++) {
         argv[i] = [[test_args objectAtIndex:i+1] UTF8String];
     }

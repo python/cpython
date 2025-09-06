@@ -11,7 +11,7 @@
 		607A66222B0EFA390010BFC8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607A66212B0EFA390010BFC8 /* Assets.xcassets */; };
 		607A66252B0EFA390010BFC8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607A66232B0EFA390010BFC8 /* LaunchScreen.storyboard */; };
 		607A66282B0EFA390010BFC8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 607A66272B0EFA390010BFC8 /* main.m */; };
-		607A66322B0EFA3A0010BFC8 /* iOSTestbedTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 607A66312B0EFA3A0010BFC8 /* iOSTestbedTests.m */; };
+		607A66322B0EFA3A0010BFC8 /* TestbedTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 607A66312B0EFA3A0010BFC8 /* TestbedTests.m */; };
 		607A664C2B0EFC080010BFC8 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; };
 		607A664D2B0EFC080010BFC8 /* Python.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		607A66502B0EFFE00010BFC8 /* Python.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 607A664A2B0EFB310010BFC8 /* Python.xcframework */; };
@@ -64,7 +64,7 @@
 		607A66242B0EFA390010BFC8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		607A66272B0EFA390010BFC8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		607A662D2B0EFA3A0010BFC8 /* iOSTestbedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iOSTestbedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		607A66312B0EFA3A0010BFC8 /* iOSTestbedTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iOSTestbedTests.m; sourceTree = "<group>"; };
+		607A66312B0EFA3A0010BFC8 /* TestbedTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestbedTests.m; sourceTree = "<group>"; };
 		607A664A2B0EFB310010BFC8 /* Python.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Python.xcframework; sourceTree = "<group>"; };
 		607A66572B0F079F0010BFC8 /* dylib-Info-template.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "dylib-Info-template.plist"; sourceTree = "<group>"; };
 		607A66592B0F08600010BFC8 /* iOSTestbed-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "iOSTestbed-Info.plist"; sourceTree = "<group>"; };
@@ -99,7 +99,7 @@
 				60FE0EFB2E56BB6D00524F87 /* iOSTestbed.xctestplan */,
 				607A664A2B0EFB310010BFC8 /* Python.xcframework */,
 				607A66142B0EFA380010BFC8 /* iOSTestbed */,
-				607A66302B0EFA3A0010BFC8 /* iOSTestbedTests */,
+				607A66302B0EFA3A0010BFC8 /* TestbedTests */,
 				607A66132B0EFA380010BFC8 /* Products */,
 				607A664F2B0EFFE00010BFC8 /* Frameworks */,
 			);
@@ -130,12 +130,12 @@
 			path = iOSTestbed;
 			sourceTree = "<group>";
 		};
-		607A66302B0EFA3A0010BFC8 /* iOSTestbedTests */ = {
+		607A66302B0EFA3A0010BFC8 /* TestbedTests */ = {
 			isa = PBXGroup;
 			children = (
-				607A66312B0EFA3A0010BFC8 /* iOSTestbedTests.m */,
+				607A66312B0EFA3A0010BFC8 /* TestbedTests.m */,
 			);
-			path = iOSTestbedTests;
+			path = TestbedTests;
 			sourceTree = "<group>";
 		};
 		607A664F2B0EFFE00010BFC8 /* Frameworks */ = {
@@ -303,7 +303,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				607A66322B0EFA3A0010BFC8 /* iOSTestbedTests.m in Sources */,
+				607A66322B0EFA3A0010BFC8 /* TestbedTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

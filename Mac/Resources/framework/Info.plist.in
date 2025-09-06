@@ -24,6 +24,8 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>%VERSION%</string>
+	<key>MinimumOSVersion</key>
+	<string>@MACOSX_DEPLOYMENT_TARGET@</string>
 	<key>CFBundleAllowMixedLocalizations</key>
 	<true/>
 </dict>

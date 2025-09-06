@@ -27,7 +27,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      customLLDBInitFile = "/Users/rkm/projects/pyspamsum/localtest/iOSTestbed.lldbinit"
+      customLLDBInitFile = "$(SOURCE_ROOT)/Testbed.lldbinit"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
