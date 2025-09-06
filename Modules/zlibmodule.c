@@ -2043,6 +2043,7 @@ static PyType_Spec Comptype_spec = {
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
         | Py_TPFLAGS_HAVE_GC
     ),
     .slots= Comptype_slots,
