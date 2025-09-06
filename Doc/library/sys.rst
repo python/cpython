@@ -11,6 +11,40 @@ interpreter and to functions that interact strongly with the interpreter. It is
 always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
+.. data:: abi_info
+
+   .. versionadded:: next
+
+   An object containing information about the ABI of the currently running
+   Python interpreter.
+   It should include information that affect the CPython ABI in ways that
+   require a specific build of the interpreter chosen from variants that can
+   co-exist on a single machine.
+   For example, it does not encode the base OS (Linux or Windows), but does
+   include pointer size since some systems support both 32- and 64-bit builds.
+   The available entries are the same on all platforms;
+   e.g. *pointer_size* is available even on 64-bit-only architectures.
+
+   The following attributes are available:
+
+   *pointer_bits* is the width of pointers in bits, as an integer, equivalent
+   to ``8 * sizeof(void *)``, i.e. usually ``32`` or ``64``.
+
+   *free_threaded* is a boolean indicating whether the interpreter supports
+   running in free-threaded mode (i.e. with the GIL disabled).
+   This reflects the presence of the :option:`--disable-gil` configure option,
+   or the setting of the ``DisableGil`` property on Windows, respectively.
+
+   *debug* is a boolean indicating whether the interpreter was built in
+   :ref:`debug mode <debug-build>`.
+   This reflects the presence of the :option:`--with-pydebug` configure option,
+   or the ``Debug`` configuration on Windows, respectively.
+
+   *byteorder* is a string indicating the native byte order, either ``'big'``
+   or ``'little'``.
+   This is the same as the :data:`sys.byteorder` attribute.
+
+
 .. data:: abiflags
 
    On POSIX systems where Python was built with the standard ``configure``

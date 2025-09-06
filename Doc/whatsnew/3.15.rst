@@ -443,6 +443,13 @@ ssl
   (Contributed by Ron Frederick in :gh:`137197`.)
 
 
+sys
+---
+
+* Added :data:`sys.abi_info` object to make ABI information more easily accessible.
+  (Contributed by Klaus Zimmermann in :gh:`137476`.)
+
+
 tarfile
 -------
 
