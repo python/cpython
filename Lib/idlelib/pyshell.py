@@ -933,11 +933,9 @@ class PyShell(OutputWindow):
             sys.stderr = self.stderr
             sys.stdin = self.stdin
         try:
-            # page help() text to shell.
-            import pydoc # import must be done here to capture i/o rebinding.
-            # XXX KBK 27Dec07 use text viewer someday, but must work w/o subproc
-            pydoc.pager = pydoc.plainpager
-        except:
+            import pydoc  # import must be done here to capture i/o rebinding.
+            pydoc.pager = self.pager
+        except Exception:
             sys.stderr = sys.__stderr__
             raise
         #
@@ -983,6 +981,16 @@ class PyShell(OutputWindow):
     def replace_event(self, event):
         replace.replace(self.text, insert_tags="stdin")
         return "break"
+
+    def pager(self, text):
+        """pydoc.pager compatible callback for showing help() output."""
+        import pydoc  # Import here to avoid i/o binding issues.
+        text = pydoc.plain(text)  # Remove fancy pydoc formatting.
+        try:
+            title, text = text.split(':\n\n', 1)
+        except ValueError:
+            title = "Help"
+        view_text(self.text, title, text, modal=False)
 
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(shell_only=True)
