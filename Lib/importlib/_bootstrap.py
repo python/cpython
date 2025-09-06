@@ -1307,6 +1307,7 @@ _ERR_MSG_PREFIX = 'No module named '
 
 def _find_and_load_unlocked(name, import_):
     path = None
+    sys.audit("import", name, path, sys.path, sys.meta_path, sys.path_hooks)
     parent = name.rpartition('.')[0]
     parent_spec = None
     if parent:
