@@ -576,9 +576,9 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR, (owner -- attr[1], self_or_null[oparg&1])) {
+    op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
         (void)owner;
-        *attr = sym_new_not_null(ctx);
+        attr = sym_new_not_null(ctx);
         if (oparg & 1) {
             self_or_null[0] = sym_new_unknown(ctx);
         }
