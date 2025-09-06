@@ -285,7 +285,12 @@ def main(fd):
         with open(fd, 'rb') as f:
             for line in f:
                 try:
-                    cmd, name, rtype = line.strip().decode('ascii').split(':')
+                    parts = line.strip().decode('ascii').split(':')
+                    if len(parts) < 3:
+                        raise ValueError("malformed resource_tracker message: %r" % (parts,))
+                    cmd = parts[0]
+                    rtype = parts[-1]
+                    name = ':'.join(parts[1:-1])
                     cleanup_func = _CLEANUP_FUNCS.get(rtype, None)
                     if cleanup_func is None:
                         raise ValueError(
