@@ -171,13 +171,13 @@ class Queue:
     def qsize(self):
         return _queues.get_count(self._id)
 
-    def put(self, obj, timeout=None, *,
+    def put(self, obj, block=True, timeout=None, *,
             unbounditems=None,
             _delay=10 / 1000,  # 10 milliseconds
             ):
         """Add the object to the queue.
 
-        This blocks while the queue is full.
+        If "block" is true, this blocks while the queue is full.
 
         For most objects, the object received through Queue.get() will
         be a new one, equivalent to the original and not sharing any
@@ -210,6 +210,8 @@ class Queue:
         If "unbounditems" is UNBOUND then it is returned by get() in place
         of the unbound item.
         """
+        if not block:
+            return self.put_nowait(obj, unbounditems=unbounditems)
         if unbounditems is None:
             unboundop = -1
         else:
@@ -236,17 +238,19 @@ class Queue:
             unboundop, = _serialize_unbound(unbounditems)
         _queues.put(self._id, obj, unboundop)
 
-    def get(self, timeout=None, *,
+    def get(self, block=True, timeout=None, *,
             _delay=10 / 1000,  # 10 milliseconds
             ):
         """Return the next object from the queue.
 
-        This blocks while the queue is empty.
+        If "block" is true, this blocks while the queue is empty.
 
         If the next item's original interpreter has been destroyed
         then the "next object" is determined by the value of the
         "unbounditems" argument to put().
         """
+        if not block:
+            return self.get_nowait()
         if timeout is not None:
             timeout = int(timeout)
             if timeout < 0:
