@@ -3364,9 +3364,10 @@ arbitrary binary data.
                   bytearray.maketrans(from, to, /)
 
    This static method returns a translation table usable for
-   :meth:`bytes.translate` that will map each character in *from* into the
-   character at the same position in *to*; *from* and *to* must both be
-   :term:`bytes-like objects <bytes-like object>` and have the same length.
+   :meth:`bytearray.translate` or :meth:`bytes.translate` that will map each
+   character in *from* into the character at the same position in *to*; *from*
+   and *to* must both be :term:`bytes-like objects <bytes-like object>` and
+   have the same length.
 
    .. versionadded:: 3.1
 
