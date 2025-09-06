@@ -35,6 +35,7 @@ extensions = [
     'misc_news',
     'pydoc_topics',
     'pyspecific',
+    'set_frozenset_search',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
