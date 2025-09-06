@@ -1812,5 +1812,18 @@ class TestFolding(TestHeaderBase):
             h.fold(policy=policy.default.clone(max_line_length=20)),
             'Message-ID:\n <ईमेलfromMessage@wők.com>\n')
 
+    def test_fold_references(self):
+        h = self.make_header(
+            'References',
+            '<referenceid1thatislongerthan@maxlinelength.com> '
+            '<referenceid2thatislongerthan@maxlinelength.com>'
+            )
+        self.assertEqual(
+            h.fold(policy=policy.default.clone(max_line_length=20)),
+            'References: '
+            '<referenceid1thatislongerthan@maxlinelength.com>\n'
+            ' <referenceid2thatislongerthan@maxlinelength.com>\n')
+
+
 if __name__ == '__main__':
     unittest.main()
