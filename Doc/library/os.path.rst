@@ -42,8 +42,8 @@ the :mod:`glob` module.)
    a path that is *always* in one of the different formats.  They all have the
    same interface:
 
-   * :mod:`posixpath` for UNIX-style paths
-   * :mod:`ntpath` for Windows paths
+   * :mod:`!posixpath` for UNIX-style paths
+   * :mod:`!ntpath` for Windows paths
 
 
 .. versionchanged:: 3.8
