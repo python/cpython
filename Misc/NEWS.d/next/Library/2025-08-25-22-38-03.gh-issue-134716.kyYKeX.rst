@@ -1,0 +1,2 @@
+Add support of regular expressions in the :option:`-W` option and the
+:envvar:`PYTHONWARNINGS` environment variable.

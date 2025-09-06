@@ -755,6 +755,10 @@ class WCmdLineTests(BaseTest):
                 self.module._setoption('ignore::===')
             with self.assertRaisesRegex(self.module._OptionError, 'Wärning'):
                 self.module._setoption('ignore::Wärning')
+            with self.assertRaisesRegex(self.module._OptionError, 'message'):
+                self.module._setoption('ignore:/?/:Warning')
+            with self.assertRaisesRegex(self.module._OptionError, 'module'):
+                self.module._setoption('ignore::Warning:/?/')
             self.module._setoption('error::Warning::0')
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
 
@@ -768,6 +772,31 @@ class WCmdLineTests(BaseTest):
             self.module._setoption('error::test.test_warnings.TestWarning')
             with self.assertRaises(TestWarning):
                 self.module.warn('test warning', TestWarning)
+
+    def test_message(self):
+        # Match prefix, case-insensitive.
+        with self.module.catch_warnings():
+            self.module._setoption('error:TEST WARN:UserWarning')
+            with self.assertRaises(UserWarning):
+                self.module.warn('Test Warning')
+        with self.module.catch_warnings():
+            self.module._setoption(r'error:/TE.*WARN/:UserWarning')
+            with self.assertRaises(UserWarning):
+                self.module.warn('Test Warning')
+
+    def test_module(self):
+        with self.module.catch_warnings():
+            self.module._setoption(f'error::UserWarning:{__name__}')
+            with self.assertRaises(UserWarning):
+                self.module.warn('test warning')
+            # Only full match.
+            self.module._setoption(f'ignore::UserWarning:{__name__[:-2]}')
+            with self.assertRaises(UserWarning):
+                self.module.warn('test warning')
+        with self.module.catch_warnings():
+            self.module._setoption(f'error::UserWarning:/{re.escape(__name__[:-2])}./')
+            with self.assertRaises(UserWarning):
+                self.module.warn('test warning')
 
 
 class CWCmdLineTests(WCmdLineTests, unittest.TestCase):
