@@ -3763,21 +3763,14 @@ static int
 _ctypes_CFuncPtr_argtypes_set_impl(PyCFuncPtrObject *self, PyObject *value)
 /*[clinic end generated code: output=596a36e2ae89d7d1 input=c4627573e980aa8b]*/
 {
-    PyObject *converters;
-
-    PyTypeObject *type = Py_TYPE(self);
-    ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
-
     if (value == NULL || value == Py_None) {
-        /* Verify paramflags again due to constraints with argtypes */
-        if (!_validate_paramflags(st, type, self->paramflags, value)) {
-            return -1;
-        }
-
         atomic_xsetref(&self->argtypes, NULL);
         atomic_xsetref(&self->converters, NULL);
     } else {
-        converters = converters_from_argtypes(st, value);
+        PyTypeObject *type = Py_TYPE(self);
+        ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
+
+        PyObject *converters = converters_from_argtypes(st, value);
         if (!converters)
             return -1;
 
@@ -3932,8 +3925,9 @@ _validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags,
         argtypes = info->argtypes;
     }
 
-    if (paramflags == NULL || argtypes == NULL)
+    if (paramflags == NULL || argtypes == NULL) {
         return 1;
+    }
 
     if (!PyTuple_Check(paramflags)) {
         PyErr_SetString(PyExc_TypeError,
