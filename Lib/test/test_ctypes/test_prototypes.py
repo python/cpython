@@ -93,7 +93,7 @@ class CharPointersTestCase(unittest.TestCase):
         proto = CFUNCTYPE(c_int, c_char_p, c_int)
         with self.assertRaisesRegex(TypeError, "must be a pointer type"):
             func = proto(("myprintf", testdll), ((1, "fmt"), (2, "out")))
-        
+
         proto = CFUNCTYPE(c_int, c_char_p, c_void_p)
         func = proto(("myprintf", testdll), ((1, "fmt"), (2, "out")))
         with self.assertRaisesRegex(TypeError, "must be a pointer type"):
