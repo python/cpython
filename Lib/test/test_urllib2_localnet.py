@@ -351,6 +351,12 @@ class ProxyAuthTests(unittest.TestCase):
         self.server.start()
         self.server.ready.wait()
         proxy_url = "http://127.0.0.1:%d" % self.server.port
+
+        # Set http_proxy environment variable to override system proxy settings
+        # This ensures the proxy is used even on macOS where localhost is
+        # typically in the proxy bypass list
+        os.environ['http_proxy'] = proxy_url
+
         handler = urllib.request.ProxyHandler({"http" : proxy_url})
         self.proxy_digest_handler = urllib.request.ProxyDigestAuthHandler()
         self.opener = urllib.request.build_opener(
