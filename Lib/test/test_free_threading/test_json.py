@@ -56,7 +56,7 @@ class TestJsonEncoding(CTest):
                     if len(d) > 5:
                         try:
                             key = list(d)[0]
-                            d.pop()
+                            d.pop(key)
                         except (KeyError, IndexError):
                             pass
                     else:
