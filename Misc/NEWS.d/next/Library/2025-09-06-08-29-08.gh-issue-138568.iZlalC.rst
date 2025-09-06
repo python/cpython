@@ -1,4 +1,3 @@
-In :mod:`pydoc` interactive help mode to handle empty input correctly.
-Empty lines (pressing Enter without input) now continue the help session
-instead of exiting, matching the documented behavior that only "q", "quit",
-or "exit" commands should terminate the help session.
+In :mod:`pydoc` interactive help mode to handle empty input correct as doc.
+Empty lines (pressing Enter without input) will continue in help session
+instead of exiting.
