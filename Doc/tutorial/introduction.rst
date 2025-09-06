@@ -141,10 +141,11 @@ Text
 ----
 
 Python can manipulate text (represented by type :class:`str`, so-called
-"strings") as well as numbers.  This includes characters "``!``", words
-"``rabbit``", names "``Paris``", sentences "``Got your back.``", etc.
-"``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
-quotes (``"..."``) with the same result [#]_.
+"strings") as well as numbers.  This includes characters (“``!``"), words
+(“``rabbit``"), names (“``Paris``"), sentences (“``Got your back.``"), and even
+special characters and emoticons (“``Yay! :)``"). They can be enclosed in
+single quotes (``'...'``) or double quotes (``"..."``) with the same
+result [#]_.
 
 .. code-block:: pycon
 
