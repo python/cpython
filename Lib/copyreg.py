@@ -1,8 +1,4 @@
-"""Helper to provide extensibility for pickle.
-
-This is only useful to add pickle support for extension types defined in
-C, not for instances of user-defined classes.
-"""
+"""Helper to provide extensibility for pickle."""
 
 __all__ = ["pickle", "constructor",
            "add_extension", "remove_extension", "clear_extension_cache"]
