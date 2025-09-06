@@ -1,0 +1,1 @@
+Make comparable the equivalent instances of :func:`functools.partial` objects. Patched by Shakur Shams Mullick and Furkan Onder.
