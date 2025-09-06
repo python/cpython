@@ -107,6 +107,7 @@ struct _ts {
 #  define _PyThreadState_WHENCE_THREADING 3
 #  define _PyThreadState_WHENCE_GILSTATE 4
 #  define _PyThreadState_WHENCE_EXEC 5
+#  define _PyThreadState_WHENCE_THREADING_DAEMON 6
 #endif
 
     /* Currently holds the GIL. Must be its own field to avoid data races */
