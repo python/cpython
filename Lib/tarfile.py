@@ -1540,6 +1540,12 @@ class TarInfo(object):
         except HeaderError as e:
             raise SubsequentHeaderError(str(e)) from None
 
+        # offset_data needs to be stored in case "size" is in pax_headers and
+        # the next TAR offset needs to be recomputed. next.offset_data may get
+        # overwritten when parsing sparse files and therefore cannot be used
+        # directly for the recomputation.
+        next_offset_data = next.offset_data
+
         # Process GNU sparse information.
         if "GNU.sparse.map" in pax_headers:
             # GNU extended sparse format version 0.1.
@@ -1562,9 +1568,10 @@ class TarInfo(object):
                 # If the extended header replaces the size field,
                 # we need to recalculate the offset where the next
                 # header starts.
-                offset = next.offset_data
+                offset = next_offset_data
                 if next.isreg() or next.type not in SUPPORTED_TYPES:
-                    offset += next._block(next.size)
+                    # Do not use use next.size here because it may contain the real size for sparse files.
+                    offset += next._block(int(pax_headers["size"]))
                 tarfile.offset = offset
 
         return next
