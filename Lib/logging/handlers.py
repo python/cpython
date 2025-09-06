@@ -1018,8 +1018,23 @@ class SysLogHandler(logging.Handler):
                     self.socket.close()
                     self._connect_unixsocket(self.address)
                     self.socket.send(msg)
+            # UDP socket type
             elif self.socktype == socket.SOCK_DGRAM:
                 self.socket.sendto(msg, self.address)
+            # TCP socket type
+            # This block doesn't exist in original handlers.py code for TCP
+            elif self.socktype == socket.SOCK_STREAM:
+                try:
+
+                    self.socket.sendall(msg)
+                #create new TCP socket stream, if TCP socket broken or disconnected
+                except OSError:
+                    if self.socket:
+                        self.socket.close()
+                    self.socket = socket.socket(socket.AF_INET, self.socktype)
+                    self.socket.connect(self.address)
+                    #retry sending msg after making new TCP AF_INET socket
+                    self.socket.sendall(msg)
             else:
                 self.socket.sendall(msg)
         except Exception:
