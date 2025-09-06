@@ -3,17 +3,13 @@ from io import TextIOWrapper
 
 from . import abc
 
-TYPE_CHECKING = False
-if TYPE_CHECKING:
-    from ..machinery import ModuleSpec
-
 
 class SpecLoaderAdapter:
     """
     Adapt a package spec to adapt the underlying loader.
     """
 
-    def __init__(self, spec: ModuleSpec, adapter):
+    def __init__(self, spec, adapter):
         self.spec = spec
         self.loader = adapter(spec)
 
@@ -164,7 +160,7 @@ class CompatibilityFiles:
         return CompatibilityFiles.SpecPath(self.spec, self._reader)
 
 
-def wrap_spec(spec: ModuleSpec):
+def wrap_spec(spec):
     """
     Construct a package spec with traversable compatibility
     on the spec/loader/reader.
