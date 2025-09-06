@@ -1,0 +1,1 @@
+Gzip headers are now checked for corrupted NAME, COMMENT and HCRC fields.
