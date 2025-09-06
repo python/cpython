@@ -2994,7 +2994,10 @@ static PyType_Slot RemoteUnwinder_slots[] = {
 static PyType_Spec RemoteUnwinder_spec = {
     .name = "_remote_debugging.RemoteUnwinder",
     .basicsize = sizeof(RemoteUnwinderObject),
-    .flags = Py_TPFLAGS_DEFAULT,
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
     .slots = RemoteUnwinder_slots,
 };
 
