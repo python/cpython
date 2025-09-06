@@ -204,7 +204,7 @@ keyword arguments:
     ...                           options={doctest.ELLIPSIS: True})
     >>> (example.source, example.want, example.exc_msg,
     ...  example.lineno, example.indent, example.options)
-    ('[].pop()\n', '', 'IndexError: pop from an empty list\n', 5, 4, {8: True})
+    ('[].pop()\n', '', 'IndexError: pop from an empty list\n', 5, 4, {16: True})
 
 The constructor normalizes the `source` string to end in a newline:
 
@@ -1395,6 +1395,115 @@ treated as equal:
     >>> print(list(range(20))) #doctest: +NORMALIZE_WHITESPACE
     [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
     10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+The IGNORE_LINEBREAK flag causes all sequences of newlines to be removed,
+but retains the leading whitespaces as they cannot be distinguished from
+real textual whitespaces:
+
+    >>> def f(x): pass
+    >>> f.__doc__ = '''
+    ... >>> "foobar"
+    ... 'foo
+    ... bar'
+    ... '''.strip()
+
+    >>> # Without the flag:
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line ?, in f
+    Failed example:
+        "foobar"
+    Expected:
+        'foo
+        bar'
+    Got:
+        'foobar'
+    TestResults(failed=1, attempted=1)
+
+    >>> # With the flag:
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> flags = doctest.IGNORE_LINEBREAK
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    TestResults(failed=0, attempted=1)
+
+    ... ignore surrounding new lines
+
+    >>> "foobar"  # doctest: +IGNORE_LINEBREAK
+    '
+    foo
+    bar'
+    >>> "foobar"  # doctest: +IGNORE_LINEBREAK
+    'foo
+    bar
+    '
+    >>> "foobar"  # doctest: +IGNORE_LINEBREAK
+    '
+    foo
+    bar
+    '
+
+    ... non-quoted output:
+
+    >>> import string
+    >>> print(string.ascii_letters)  # doctest: +IGNORE_LINEBREAK
+    abcdefghijklmnopqrstuvwxyz
+    ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+    ... mixing flags:
+
+    >>> import string
+    >>> print(string.ascii_letters)  # doctest: +ELLIPSIS, +IGNORE_LINEBREAK
+    abc...xyz
+    ABC...
+
+    ... mixing flags:
+
+    >>> print(list("abc123"))  # doctest: +IGNORE_LINEBREAK
+    ...                        # doctest: +ELLIPSIS
+    ...                        # doctest: +NORMALIZE_WHITESPACE
+    ['a', ..., 'c',
+     '1', ..., '3']
+
+    >>> prelude = r'''
+    ... >>> print(list("abc123"))  # doctest: +IGNORE_LINEBREAK
+    ... ...                        # doctest: +ELLIPSIS
+    ... ...                        # doctest: +NORMALIZE_WHITESPACE
+    ... '''.strip()
+
+    >>> def good(x): pass
+    >>> good.__doc__ = '\n'.join([prelude, r'''
+    ... ['a', ..., 'c',
+    ...  '1', ..., '3']
+    ... '''.lstrip()]).lstrip()
+    >>> test = doctest.DocTestFinder().find(good)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=1)
+
+    >>> def fail(x): pass
+    >>> fail.__doc__ = '\n'.join([prelude, '''
+    ... [
+    ...     'a', ..., 'c',
+    ...     '1', ..., '3'
+    ... ]\n'''.lstrip()])
+    >>> test = doctest.DocTestFinder().find(fail)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line ?, in fail
+    Failed example:
+        print(list("abc123"))  # doctest: +IGNORE_LINEBREAK
+                               # doctest: +ELLIPSIS
+                               # doctest: +NORMALIZE_WHITESPACE
+    Expected:
+        [
+            'a', ..., 'c',
+            '1', ..., '3'
+        ]
+    Got:
+        ['a', 'b', 'c', '1', '2', '3']
+    TestResults(failed=1, attempted=1)
 
 The ELLIPSIS flag causes ellipsis marker ("...") in the expected
 output to match any substring in the actual output:
