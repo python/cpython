@@ -130,9 +130,10 @@ install themselves in the built-in namespace as the function :func:`!_`.
    strings, where each string is a language code.
 
    If *localedir* is not given, then the default system locale directory is used.
-   [#]_  If *languages* is not given, then the following environment variables are
-   searched: :envvar:`LANGUAGE`, :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and
-   :envvar:`LANG`.  The first one returning a non-empty value is used for the
+   [#]_  If *languages* is not given, then the environment variable :envvar:`LANGUAGE`
+   is searched, it falls back to the current locale or to the environment
+   variables :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and
+   :envvar:`LANG` where the first one returning a non-empty value is used for the
    *languages* variable. The environment variables should contain a colon separated
    list of languages, which will be split on the colon to produce the expected list
    of language code strings.
@@ -147,6 +148,9 @@ install themselves in the built-in namespace as the function :func:`!_`.
    of all file names, in the order in which they appear in the languages list or
    the environment variables.
 
+   .. versionchanged:: next
+      :func:`locale.setlocale` is used to generate *languages* if *languages* is
+      not provided.
 
 .. function:: translation(domain, localedir=None, languages=None, class_=None, fallback=False)
 
