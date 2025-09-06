@@ -3270,11 +3270,14 @@ static PyType_Slot Tktt_Type_slots[] = {
 };
 
 static PyType_Spec Tktt_Type_spec = {
-    "_tkinter.tktimertoken",
-    sizeof(TkttObject),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    Tktt_Type_slots,
+    .name = "_tkinter.tktimertoken",
+    .basicsize = sizeof(TkttObject),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = Tktt_Type_slots,
 };
 
 
