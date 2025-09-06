@@ -69,7 +69,9 @@ copying of data.
       memory block may be larger or equal to the size requested.
       When attaching to an existing shared memory block,
       the *size* parameter is ignored.
-      On macOS, the maximum size of a shared memory block is 127 TiB (140,256,418,463,744 bytes).
+      On macOS, the theoretical addressable memory space for a 64-bit architecture
+      is limited to 128 TiB (:math:`128 \times 2^{40}` bytes). This amount
+      limits the maximum size of a shared memory block.
 
    :param bool track:
       When ``True``, register the shared memory block with a resource
