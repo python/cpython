@@ -57,6 +57,7 @@ dummy_src_name = "<timeit-src>"
 default_number = 1000000
 default_repeat = 5
 default_timer = time.perf_counter
+units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
 
 _globals = globals
 
@@ -240,6 +241,64 @@ def repeat(stmt="pass", setup="pass", timer=default_timer,
     return Timer(stmt, setup, timer, globals).repeat(repeat, number)
 
 
+def _run(t, repeat=default_repeat, number=None, time_unit=None, verbose=False, precision=3):
+    if number is None:
+        # determine number so that 0.2 <= total time < 2.0
+        callback = None
+        if verbose:
+            def callback(number, time_taken):
+                msg = "{num} loop{s} -> {secs:.{prec}g} secs"
+                plural = (number != 1)
+                print(msg.format(num=number, s='s' if plural else '',
+                                 secs=time_taken, prec=precision))
+
+        number, _ = t.autorange(callback)
+
+        if verbose:
+            print()
+
+    raw_timings = t.repeat(repeat, number)
+
+    def format_time(dt):
+        unit = time_unit
+
+        if unit is not None:
+            scale = units[unit]
+        else:
+            scales = [(scale, unit) for unit, scale in units.items()]
+            scales.sort(reverse=True)
+            for scale, unit in scales:
+                if dt >= scale:
+                    break
+
+        return "%.*g %s" % (precision, dt / scale, unit)
+
+    if verbose:
+        print("raw times: %s" % ", ".join(map(format_time, raw_timings)))
+        print()
+    timings = [dt / number for dt in raw_timings]
+
+    best = min(timings)
+    worst = max(timings)
+    print("%d loop%s, best of %d: %s per loop"
+          % (number, 's' if number != 1 else '',
+             repeat, format_time(best)))
+
+    if worst >= best * 4:
+        import warnings
+        warnings.warn_explicit("The test results are likely unreliable. "
+                               "The worst time (%s) was more than four times "
+                               "slower than the best time (%s)."
+                               % (format_time(worst), format_time(best)),
+                               UserWarning, '', 0)
+
+
+def run(stmt="pass", setup="pass", *, timer=default_timer,
+        repeat=default_repeat, number=None,
+        time_unit=None, verbose=False, precision=3):
+    return _run(Timer(stmt, setup, timer), repeat, number, time_unit, verbose, precision)
+
+
 def main(args=None, *, _wrap_timer=None):
     """Main program, used when run as a script.
 
@@ -271,13 +330,11 @@ def main(args=None, *, _wrap_timer=None):
 
     timer = default_timer
     stmt = "\n".join(args) or "pass"
-    number = 0  # auto-determine
+    number = None  # auto-determine
     setup = []
     repeat = default_repeat
     verbose = 0
     time_unit = None
-    units = {"nsec": 1e-9, "usec": 1e-6, "msec": 1e-3, "sec": 1.0}
-    precision = 3
     for o, a in opts:
         if o in ("-n", "--number"):
             number = int(a)
@@ -297,8 +354,6 @@ def main(args=None, *, _wrap_timer=None):
         if o in ("-p", "--process"):
             timer = time.process_time
         if o in ("-v", "--verbose"):
-            if verbose:
-                precision += 1
             verbose += 1
         if o in ("-h", "--help"):
             print(__doc__, end="")
@@ -314,65 +369,13 @@ def main(args=None, *, _wrap_timer=None):
         timer = _wrap_timer(timer)
 
     t = Timer(stmt, setup, timer)
-    if number == 0:
-        # determine number so that 0.2 <= total time < 2.0
-        callback = None
-        if verbose:
-            def callback(number, time_taken):
-                msg = "{num} loop{s} -> {secs:.{prec}g} secs"
-                plural = (number != 1)
-                print(msg.format(num=number, s='s' if plural else '',
-                                 secs=time_taken, prec=precision))
-        try:
-            number, _ = t.autorange(callback)
-        except:
-            t.print_exc()
-            return 1
-
-        if verbose:
-            print()
 
     try:
-        raw_timings = t.repeat(repeat, number)
-    except:
+        _run(t, repeat=repeat, number=number, time_unit=time_unit, verbose=bool(verbose), precision=verbose + 3)
+        return 0
+    except Exception:
         t.print_exc()
         return 1
-
-    def format_time(dt):
-        unit = time_unit
-
-        if unit is not None:
-            scale = units[unit]
-        else:
-            scales = [(scale, unit) for unit, scale in units.items()]
-            scales.sort(reverse=True)
-            for scale, unit in scales:
-                if dt >= scale:
-                    break
-
-        return "%.*g %s" % (precision, dt / scale, unit)
-
-    if verbose:
-        print("raw times: %s" % ", ".join(map(format_time, raw_timings)))
-        print()
-    timings = [dt / number for dt in raw_timings]
-
-    best = min(timings)
-    print("%d loop%s, best of %d: %s per loop"
-          % (number, 's' if number != 1 else '',
-             repeat, format_time(best)))
-
-    best = min(timings)
-    worst = max(timings)
-    if worst >= best * 4:
-        import warnings
-        warnings.warn_explicit("The test results are likely unreliable. "
-                               "The worst time (%s) was more than four times "
-                               "slower than the best time (%s)."
-                               % (format_time(worst), format_time(best)),
-                               UserWarning, '', 0)
-    return None
-
 
 if __name__ == "__main__":
     sys.exit(main())
