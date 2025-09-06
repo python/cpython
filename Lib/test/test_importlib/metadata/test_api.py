@@ -1,9 +1,8 @@
+import importlib
 import re
 import textwrap
 import unittest
-import importlib
 
-from . import fixtures
 from importlib.metadata import (
     Distribution,
     PackageNotFoundError,
@@ -14,6 +13,8 @@ from importlib.metadata import (
     requires,
     version,
 )
+
+from . import fixtures
 
 
 class APITests(

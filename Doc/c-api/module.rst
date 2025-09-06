@@ -388,6 +388,28 @@ The available slot types are:
 
    .. versionadded:: 3.13
 
+.. c:macro:: Py_mod_abi
+
+   A pointer to a :c:struct:`PyABIInfo` structure that describes the ABI that
+   the extension is using.
+
+   When the module is loaded, the :c:struct:`!PyABIInfo` in this slot is checked
+   using :c:func:`PyABIInfo_Check`.
+
+   A suitable :c:struct:`!PyABIInfo` variable can be defined using the
+   :c:macro:`PyABIInfo_VAR` macro, as in:
+
+   .. code-block:: c
+
+      PyABIInfo_VAR(abi_info);
+
+      static PyModuleDef_Slot mymodule_slots[] = {
+         {Py_mod_abi, &abi_info},
+         ...
+      };
+
+   .. versionadded:: 3.15
+
 
 .. _moduledef-dynamic:
 
