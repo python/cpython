@@ -65,7 +65,7 @@ Summary -- release highlights
 .. This section singles out the most important changes in Python 3.14.
    Brevity is key.
 
-Python 3.14 beta is the pre-release of the next version of the Python
+Python 3.14 will be the latest stable release of the Python
 programming language, with a mix of changes to the language, the
 implementation and the standard library.
 
@@ -635,7 +635,7 @@ Improved error messages
   misspellings may still result in regular syntax errors.
   (Contributed by Pablo Galindo in :gh:`132449`.)
 
-* When unpacking assignment fails due to incorrect number of variables, the
+* When an unpacking assignment fails due to an incorrect number of variables, the
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
 
@@ -763,7 +763,7 @@ ABI-compatible changes in the future.
 
 Complete the :pep:`587` :ref:`PyConfig C API <pyconfig_api>` by adding
 :c:func:`PyInitConfig_AddModule` which can be used to add a built-in extension
-module; feature previously referred to as the “inittab”.
+module; a feature previously referred to as the “inittab”.
 
 Add :c:func:`PyConfig_Get` and :c:func:`PyConfig_Set` functions to get and set
 the current runtime configuration.
@@ -1051,7 +1051,7 @@ Concurrent safe warnings control
 The :class:`warnings.catch_warnings` context manager will now optionally
 use a context variable for warning filters.  This is enabled by setting
 the :data:`~sys.flags.context_aware_warnings` flag, either with the ``-X``
-command-line option or an environment variable.  This gives predicable
+command-line option or an environment variable.  This gives predictable
 warnings control when using :class:`~warnings.catch_warnings` combined with
 multiple threads or asynchronous tasks. The flag defaults to true for the
 free-threaded build and false for the GIL-enabled build.
@@ -1152,7 +1152,7 @@ Other language changes
   unlike ``\Z``, which has subtly different behavior.
   (Contributed by Serhiy Storchaka in :gh:`133306`.)
 
-* ``\B`` in :mod:`regular expression <re>` now matches empty input string.
+* ``\B`` in :mod:`regular expression <re>` now matches the empty input string.
   Now it is always the opposite of ``\b``.
   (Contributed by Serhiy Storchaka in :gh:`124130`.)
 
@@ -1221,7 +1221,7 @@ PEP 765: Disallow ``return``/``break``/``continue`` that exit a ``finally`` bloc
 ---------------------------------------------------------------------------------
 
 The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
-:keyword:`continue` statements appears where it exits a :keyword:`finally` block.
+:keyword:`continue` statement appears where it exits a :keyword:`finally` block.
 This change is specified in :pep:`765`.
 
 
@@ -1278,7 +1278,7 @@ ast
   (Contributed by Irit Katriel in :gh:`130139`.)
 
 * Add new ``--feature-version``, ``--optimize``, ``--show-empty`` options to
-  command-line interface.
+  the command-line interface.
   (Contributed by Semyon Moroz in :gh:`133367`.)
 
 
@@ -2157,7 +2157,7 @@ unittest
     :meth:`~unittest.TestCase.assertNotStartsWith`,
     :meth:`~unittest.TestCase.assertEndsWith` and
     :meth:`~unittest.TestCase.assertNotEndsWith` check whether the Unicode
-    or byte string starts or ends with particular string(s).
+    or byte string starts or ends with particular strings.
 
   (Contributed by Serhiy Storchaka in :gh:`71339`.)
 
@@ -2223,7 +2223,7 @@ webbrowser
   supported browsers on macOS.
 
 
-zipinfo
+zipfile
 -------
 
 * Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
@@ -2231,7 +2231,7 @@ zipinfo
   as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
   (Contributed by Bénédikt Tran in :gh:`123424`.)
 
-* :meth:`zipfile.ZipFile.writestr` now respect ``SOURCE_DATE_EPOCH`` that
+* :meth:`zipfile.ZipFile.writestr` now respects ``SOURCE_DATE_EPOCH`` that
   distributions can set centrally and have build tools consume this in order
   to produce reproducible output.
   (Contributed by Jiahao Li in :gh:`91279`.)
@@ -2379,7 +2379,7 @@ zlib
 * On Windows, `zlib-ng <https://github.com/zlib-ng/zlib-ng>`__
   is now used as the implementation of the :mod:`zlib` module
   in the default binaries.
-  There are no known incompatabilities between ``zlib-ng``
+  There are no known incompatibilities between ``zlib-ng``
   and the previously-used ``zlib`` implementation.
   This should result in better performance at all compression levels.
 
@@ -2819,41 +2819,6 @@ CPython bytecode changes
 * Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
   (Contributed by Irit Katriel in :gh:`100239`.)
 
-Porting to Python 3.14
-======================
-
-This section lists previously described changes and other bugfixes
-that may require changes to your code.
-
-Changes in the Python API
--------------------------
-
-* :class:`functools.partial` is now a method descriptor.
-  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
-  (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
-
-* The :ref:`garbage collector is now incremental <whatsnew314-incremental-gc>`,
-  which means that the behavior of :func:`gc.collect` changes slightly:
-
-  * ``gc.collect(1)``: Performs an increment of garbage collection,
-    rather than collecting generation 1.
-  * Other calls to :func:`!gc.collect` are unchanged.
-
-* The :func:`locale.nl_langinfo` function now sets temporarily the ``LC_CTYPE``
-  locale in some cases.
-  This temporary change affects other threads.
-  (Contributed by Serhiy Storchaka in :gh:`69998`.)
-
-* :class:`types.UnionType` is now an alias for :class:`typing.Union`,
-  causing changes in some behaviors.
-  See :ref:`above <whatsnew314-typing-union>` for more details.
-  (Contributed by Jelle Zijlstra in :gh:`105499`.)
-
-* The runtime behavior of annotations has changed in various ways; see
-  :ref:`above <whatsnew314-pep649>` for details. While most code that interacts
-  with annotations should continue to work, some undocumented details may behave
-  differently.
-
 
 Build changes
 =============
@@ -3019,8 +2984,8 @@ New features
   and get an attribute of the module.
   (Contributed by Victor Stinner in :gh:`128911`.)
 
-* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue` that allows to
-  take a C integer and produce a Python :class:`bool` object. (Contributed by
+* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue` that allows
+  taking a C integer and produces a Python :class:`bool` object. (Contributed by
   Pablo Galindo in :issue:`45325`.)
 
 * Add :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` to determine if an object
@@ -3046,63 +3011,6 @@ Limited C API changes
   macros from the limited C API, since these macros never worked in the limited
   C API. Keep :c:func:`PySequence_Fast` in the limited C API.
   (Contributed by Victor Stinner in :gh:`91417`.)
-
-
-Porting to Python 3.14
-----------------------
-
-* :c:func:`Py_Finalize` now deletes all interned strings. This
-  is backwards incompatible to any C-Extension that holds onto an interned
-  string after a call to :c:func:`Py_Finalize` and is then reused after a
-  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
-  normally result in crashes during the execution of the subsequent call to
-  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
-  an address sanitizer to identify any use-after-free coming from
-  an interned string and deallocate it during module shutdown.
-  (Contributed by Eddie Elizondo in :gh:`113601`.)
-
-* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
-  now raises a :exc:`TypeError` if its exception argument is not
-  a :exc:`UnicodeError` object.
-  (Contributed by Bénédikt Tran in :gh:`127691`.)
-
-.. _whatsnew314-refcount:
-
-* The interpreter internally avoids some reference count modifications when
-  loading objects onto the operands stack by :term:`borrowing <borrowed reference>`
-  references when possible. This can lead to smaller reference count values
-  compared to previous Python versions. C API extensions that checked
-  :c:func:`Py_REFCNT` of ``1`` to determine if an function argument is not
-  referenced by any other code should instead use
-  :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` as a safer replacement.
-
-
-* Private functions promoted to public C APIs:
-
-  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`
-  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`
-  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`
-  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`
-  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`
-  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`
-  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`
-  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`
-  * ``_PyUnicodeWriter_Prepare()``: (no replacement)
-  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement)
-  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`
-  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`
-  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`
-  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`
-  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`
-  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
-  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
-  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
-  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
-
-  The `pythoncapi-compat project`_ can be used to get most of these new
-  functions on Python 3.13 and older.
-
-.. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
 
 
 .. _whatsnew314-c-api-deprecated:
@@ -3210,3 +3118,97 @@ Removed
   Please use :c:func:`Py_EnterRecursiveCall` to guard against runaway recursion
   in C code.
   (Removed in :gh:`133079`, see also :gh:`130396`.)
+
+
+Porting to Python 3.14
+======================
+
+This section lists previously described changes and other bugfixes
+that may require changes to your code.
+
+
+Changes in the Python API
+-------------------------
+
+* :class:`functools.partial` is now a method descriptor.
+  Wrap it in :func:`staticmethod` if you want to preserve the old behavior.
+  (Contributed by Serhiy Storchaka and Dominykas Grigonis in :gh:`121027`.)
+
+* The :ref:`garbage collector is now incremental <whatsnew314-incremental-gc>`,
+  which means that the behavior of :func:`gc.collect` changes slightly:
+
+  * ``gc.collect(1)``: Performs an increment of garbage collection,
+    rather than collecting generation 1.
+  * Other calls to :func:`!gc.collect` are unchanged.
+
+* The :func:`locale.nl_langinfo` function now temporarily sets the ``LC_CTYPE``
+  locale in some cases.
+  This temporary change affects other threads.
+  (Contributed by Serhiy Storchaka in :gh:`69998`.)
+
+* :class:`types.UnionType` is now an alias for :class:`typing.Union`,
+  causing changes in some behaviors.
+  See :ref:`above <whatsnew314-typing-union>` for more details.
+  (Contributed by Jelle Zijlstra in :gh:`105499`.)
+
+* The runtime behavior of annotations has changed in various ways; see
+  :ref:`above <whatsnew314-pep649>` for details. While most code that interacts
+  with annotations should continue to work, some undocumented details may behave
+  differently.
+
+
+Changes in the C API
+--------------------
+
+* :c:func:`Py_Finalize` now deletes all interned strings. This
+  is backwards incompatible to any C extension that holds onto an interned
+  string after a call to :c:func:`Py_Finalize` and is then reused after a
+  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
+  normally result in crashes during the execution of the subsequent call to
+  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
+  an address sanitizer to identify any use-after-free coming from
+  an interned string and deallocate it during module shutdown.
+  (Contributed by Eddie Elizondo in :gh:`113601`.)
+
+* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
+  now raises a :exc:`TypeError` if its exception argument is not
+  a :exc:`UnicodeError` object.
+  (Contributed by Bénédikt Tran in :gh:`127691`.)
+
+.. _whatsnew314-refcount:
+
+* The interpreter internally avoids some reference count modifications when
+  loading objects onto the operands stack by :term:`borrowing <borrowed reference>`
+  references when possible. This can lead to smaller reference count values
+  compared to previous Python versions. C API extensions that checked
+  :c:func:`Py_REFCNT` of ``1`` to determine if an function argument is not
+  referenced by any other code should instead use
+  :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` as a safer replacement.
+
+
+* Private functions promoted to public C APIs:
+
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`
+  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`
+  * ``_PyUnicodeWriter_Prepare()``: (no replacement)
+  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement)
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`
+  * ``_Py_fopen_obj()``: :c:func:`Py_fopen`
+  * ``PyMutex_IsLocked()`` : :c:func:`PyMutex_IsLocked`
+
+  The `pythoncapi-compat project`_ can be used to get most of these new
+  functions on Python 3.13 and older.
+
+.. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/

@@ -272,9 +272,17 @@ Collections Abstract Base Classes -- Detailed Descriptions
    linked list), the mixins will have quadratic performance and will
    likely need to be overridden.
 
-   .. versionchanged:: 3.5
-      The index() method added support for *stop* and *start*
-      arguments.
+   .. method:: index(value, start=0, stop=None)
+
+      Return first index of *value*.
+
+      Raises :exc:`ValueError` if the value is not present.
+
+      Supporting the *start* and *stop* arguments is optional, but recommended.
+
+      .. versionchanged:: 3.5
+         The :meth:`!index` method added support for *stop* and *start*
+         arguments.
 
 .. class:: Set
            MutableSet
