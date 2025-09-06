@@ -2776,7 +2776,6 @@ Tktt_Dealloc(PyObject *op)
 {
     PyTypeObject *tp = Py_TYPE(op);
     PyObject_GC_UnTrack(op);
-    TkttObject *self = TkttObject_CAST(op);
     (void)Tktt_Clear(op);
     tp->tp_free(op);
     Py_DECREF(tp);
