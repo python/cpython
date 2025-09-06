@@ -2059,7 +2059,7 @@ has the same effect as typing a particular string at the help> prompt.
         while True:
             try:
                 request = self.getline('help> ')
-                if not request: break
+                if not request: continue
             except (KeyboardInterrupt, EOFError):
                 break
             request = request.strip()
