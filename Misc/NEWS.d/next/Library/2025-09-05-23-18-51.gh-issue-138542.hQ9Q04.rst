@@ -1,1 +1,1 @@
-the error message when when inspect getfile a custom module
+Fix :func:`inspect.getfile` error message for custom module objects.

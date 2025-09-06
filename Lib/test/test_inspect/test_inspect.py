@@ -812,11 +812,13 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertStartsWith(str(e.exception), '<module')
 
     def test_getfile_custom_module(self):
-        import types
+        import re
         custom_module = types.ModuleType('custom_module')
-        with self.assertRaises(TypeError) as e:
+        msg = re.escape(
+             f'Custom module: {custom_module!r} cannot get source'
+        )
+        with self.assertRaisesRegex(TypeError, msg) as e:
             inspect.getfile(custom_module)
-        self.assertStartsWith(str(e.exception), 'Custom module')
 
     def test_getfile_builtin_class(self):
         with self.assertRaises(TypeError) as e:
