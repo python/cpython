@@ -723,6 +723,45 @@ parse_add_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 }
 
 static int
+parse_add_substring(ReaderObj *self, _csvstate *module_state,
+                    PyObject* lineobj, Py_ssize_t start, Py_ssize_t end)
+{
+    int kind;
+    const void *data;
+    Py_UCS4 *dest;
+    Py_ssize_t field_limit;
+
+    Py_ssize_t len = end - start;
+    if (len <= 0) {
+        return 0;
+    }
+
+    field_limit = FT_ATOMIC_LOAD_SSIZE_RELAXED(module_state->field_limit);
+    if (self->field_len + len > field_limit) {
+        PyErr_Format(module_state->error_obj,
+                     "field larger than field limit (%zd)",
+                     field_limit);
+        return -1;
+    }
+
+    while (self->field_len + len > self->field_size) {
+        if (!parse_grow_buff(self))
+            return -1;
+    }
+
+    kind = PyUnicode_KIND(lineobj);
+    data = PyUnicode_DATA(lineobj);
+    dest = self->field + self->field_len;
+
+    for (Py_ssize_t i = 0; i < len; ++i) {
+        dest[i] = PyUnicode_READ(kind, data, start + i);
+    }
+
+    self->field_len += len;
+    return 0;
+}
+
+static int
 parse_process_char(ReaderObj *self, _csvstate *module_state, Py_UCS4 c)
 {
     DialectObj *dialect = self->dialect;
@@ -924,10 +963,32 @@ Reader_iternext(PyObject *op)
 
     PyObject *fields = NULL;
     Py_UCS4 c;
-    Py_ssize_t pos, linelen;
-    int kind;
-    const void *data;
+    Py_ssize_t pos, linelen, chunk_end, p;
     PyObject *lineobj;
+
+#define FIND_AND_UPDATE_CHUNK_END(c)                           \
+    do                                                         \
+    {                                                          \
+        p = PyUnicode_FindChar(lineobj, (c), pos, linelen, 1); \
+        if (p == -2) {                                         \
+            Py_DECREF(lineobj);                                \
+            goto err;                                          \
+        }                                                      \
+        if (p >= 0 && p < chunk_end) {                         \
+            chunk_end = p;                                     \
+        }                                                      \
+    } while (0)
+
+#define PROCESS_CHAR_AND_ADVANCE()                           \
+    do                                                       \
+    {                                                        \
+        c = PyUnicode_READ_CHAR(lineobj, pos);               \
+        if (parse_process_char(self, module_state, c) < 0) { \
+            Py_DECREF(lineobj);                              \
+            goto err;                                        \
+        }                                                    \
+        pos++;                                               \
+    } while (0)
 
     _csvstate *module_state = _csv_state_from_type(Py_TYPE(self),
                                                    "Reader.__next__");
@@ -962,17 +1023,61 @@ Reader_iternext(PyObject *op)
             return NULL;
         }
         ++self->line_num;
-        kind = PyUnicode_KIND(lineobj);
-        data = PyUnicode_DATA(lineobj);
         pos = 0;
         linelen = PyUnicode_GET_LENGTH(lineobj);
-        while (linelen--) {
-            c = PyUnicode_READ(kind, data, pos);
-            if (parse_process_char(self, module_state, c) < 0) {
-                Py_DECREF(lineobj);
-                goto err;
+
+        while (pos < linelen) {
+            /* For IN_FIELD and IN_QUOTED_FIELD states, optimize by finding
+             * chunks of characters that can be processed together up to the
+             * next special character (eg: delimiter, quote, escape).
+             */
+            switch (self->state) {
+            case IN_FIELD:
+                chunk_end = linelen;
+
+                FIND_AND_UPDATE_CHUNK_END(self->dialect->delimiter);
+                if (self->dialect->escapechar != NOT_SET) {
+                    FIND_AND_UPDATE_CHUNK_END(self->dialect->escapechar);
+                }
+                FIND_AND_UPDATE_CHUNK_END('\n');
+                FIND_AND_UPDATE_CHUNK_END('\r');
+
+                if (chunk_end > pos) {
+                    if (parse_add_substring(self, module_state, lineobj, pos, chunk_end) < 0) {
+                        Py_DECREF(lineobj);
+                        goto err;
+                    }
+                }
+                pos = chunk_end;
+
+                if (pos < linelen) {
+                    PROCESS_CHAR_AND_ADVANCE();
+                }
+                break;
+            case IN_QUOTED_FIELD:
+                chunk_end = linelen;
+
+                FIND_AND_UPDATE_CHUNK_END(self->dialect->quotechar);
+                if (self->dialect->escapechar != NOT_SET) {
+                    FIND_AND_UPDATE_CHUNK_END(self->dialect->escapechar);
+                }
+
+                if (chunk_end > pos) {
+                    if (parse_add_substring(self, module_state, lineobj, pos, chunk_end) < 0) {
+                        Py_DECREF(lineobj);
+                        goto err;
+                    }
+                }
+                pos = chunk_end;
+
+                if (pos < linelen) {
+                    PROCESS_CHAR_AND_ADVANCE();
+                }
+                break;
+            default:
+                PROCESS_CHAR_AND_ADVANCE();
+                break;
             }
-            pos++;
         }
         Py_DECREF(lineobj);
         if (parse_process_char(self, module_state, EOL) < 0)
@@ -983,6 +1088,8 @@ Reader_iternext(PyObject *op)
     self->fields = NULL;
 err:
     return fields;
+#undef PROCESS_CHAR_AND_ADVANCE
+#undef FIND_AND_UPDATE_CHUNK_END
 }
 
 static void
