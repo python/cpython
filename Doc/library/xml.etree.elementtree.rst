@@ -610,8 +610,11 @@ Functions
 
 .. function:: iselement(element)
 
-   Check if an object appears to be a valid element object.  *element* is an
-   element instance.  Return ``True`` if this is an element object.
+   Check if *element* appears to be a valid element object or type. Return
+   ``True`` if this is an element object or type.
+
+   Because ``iselement`` behaves identically for both objects and types, code
+   requiring an object should check for this, see :func:`isinstance`.
 
 
 .. function:: iterparse(source, events=None, parser=None)
