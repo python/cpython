@@ -1,0 +1,2 @@
+Optimize rounding speed of :class:`int`'s for large (by magnitude) negative
+``ndigits``, when result is zero.  Patch by Sergey B Kirpichev.
