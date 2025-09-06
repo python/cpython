@@ -1,2 +1,2 @@
-Modify :func:`getpass.getpass` to accept only a single character. Patch by
+Force :func:`getpass.getpass` to accept only a single character. Patch by
 Benjamin Johnson.
