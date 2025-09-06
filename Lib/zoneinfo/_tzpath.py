@@ -57,7 +57,7 @@ def _parse_python_tzpath(env_var, stacklevel):
 
 
 def _get_invalid_paths_message(tzpaths):
-    invalid_paths = (path for path in tzpaths if not os.path.isabs(path))
+    invalid_paths = (os.fspath(path) for path in tzpaths if not os.path.isabs(path))
 
     prefix = "\n    "
     indented_str = prefix + prefix.join(invalid_paths)
