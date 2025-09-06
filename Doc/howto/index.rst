@@ -35,6 +35,7 @@ Python Library Reference.
    isolating-extensions.rst
    timerfd.rst
    mro.rst
+   multiple-interpreters.rst
    free-threading-python.rst
    free-threading-extensions.rst
    remote_debugging.rst
@@ -61,6 +62,7 @@ Advanced development:
 * :ref:`freethreading-python-howto`
 * :ref:`freethreading-extensions-howto`
 * :ref:`isolating-extensions-howto`
+* :ref:`multiple-interpreters-howto`
 * :ref:`python_2.3_mro`
 * :ref:`socket-howto`
 * :ref:`timerfd-howto`
