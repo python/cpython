@@ -689,9 +689,14 @@ callable object (normally a user-defined function).
    single: __name__ (method attribute)
    single: __module__ (method attribute)
 
-Special read-only attributes:
+Special read-only attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table::
+   :header-rows: 1
+
+   * - Attribute
+     - Meaning
 
    * - .. attribute:: method.__self__
      - Refers to the class instance object to which the method is
@@ -820,15 +825,41 @@ Built-in functions
 A built-in function object is a wrapper around a C function.  Examples of
 built-in functions are :func:`len` and :func:`math.sin` (:mod:`math` is a
 standard built-in module). The number and type of the arguments are
-determined by the C function. Special read-only attributes:
+determined by the C function.
 
-* :attr:`!__doc__` is the function's documentation string, or ``None`` if
-  unavailable. See :attr:`function.__doc__`.
-* :attr:`!__name__` is the function's name. See :attr:`function.__name__`.
-* :attr:`!__self__` is set to ``None`` (but see the next item).
-* :attr:`!__module__` is the name of
-  the module the function was defined in or ``None`` if unavailable.
-  See :attr:`function.__module__`.
+Special read-only attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+
+   * - Attribute
+     - Meaning
+
+   * - .. attribute:: builtin_function.__class__
+     - The function's class.
+
+   * - .. attribute:: builtin_function.__doc__
+     - The function's documentation string, or ``None`` if unavailable.
+       See :attr:`function.__doc__`.
+
+   * - .. attribute:: builtin_function.__module__
+     - The name of the module the function was defined in,
+       or ``None`` if unavailable. See :attr:`function.__module__`.
+
+   * - .. attribute:: builtin_function.__name__
+     - The function's name.
+       See :attr:`function.__name__`.
+
+   * - .. attribute:: builtin_function.__qualname__
+     - The function's :term:`qualified name`.
+       See also: :attr:`__qualname__ attributes <definition.__qualname__>`.
+
+   * - .. attribute:: builtin_function.__self__
+     - This is always ``None`` (but see :ref:`built-in methods <builtin-methods>`).
+
+   * - .. attribute:: builtin_function.__text_signature__
+     - The function's signature as plain text, or ``None`` if unavailable.
 
 
 .. _builtin-methods:
