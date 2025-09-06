@@ -162,6 +162,7 @@ PyAPI_FUNC(void) _PyDict_EnsureSharedOnRead(PyDictObject *mp);
 #define DKIX_DUMMY (-2)  /* Used internally */
 #define DKIX_ERROR (-3)
 #define DKIX_KEY_CHANGED (-4) /* Used internally */
+#define DKIX_TOTAL_RESERVED_VALUES (4) /* Used internally */
 
 typedef enum {
     DICT_KEYS_GENERAL = 0,
