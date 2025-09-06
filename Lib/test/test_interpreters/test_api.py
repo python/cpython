@@ -659,6 +659,43 @@ class TestInterpreterClose(TestBase):
 
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
+    def test_subthreads_raise_exception_from_atexit(self):
+        r_interp, w_interp = self.pipe()
+
+        FINISHED = b'F'
+
+        prev_excepthook = threading.excepthook
+        interp = interpreters.create()
+        interp.exec(f"""if True:
+            from io import StringIO
+            import os
+            import threading
+            import time
+
+            threading.excepthook = lambda args: args
+
+            done = False
+            def notify_fini():
+                global done
+                done = True
+
+            def raise_exception():
+                raise Exception('AtexitException')
+            threading._register_atexit(notify_fini)
+            threading._register_atexit(raise_exception)
+
+            def task():
+                while not done:
+                    time.sleep(0.1)
+                os.write({w_interp}, {FINISHED!r})
+            t = threading.Thread(target=task)
+            t.start()
+            """)
+        interp.close()
+
+        self.assertEqual(threading.excepthook, prev_excepthook)
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
+
     def test_created_with_capi(self):
         script = dedent(f"""
             import {interpreters.__name__} as interpreters
