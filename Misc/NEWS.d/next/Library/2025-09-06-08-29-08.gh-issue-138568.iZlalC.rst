@@ -1,2 +1,2 @@
-In :mod:`pydoc` interactive help mode to handle empty input correct as doc.
-press Enter without input should continue in help session instead of exiting.
+Adjusted the built-in :func:`help` function so that empty inputs are ignored in
+interactive mode.
