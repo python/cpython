@@ -1067,95 +1067,23 @@ slowpath:
     return -1;
 }
 
-/* Mostly copied from string_repr, but without the
-   "smart quote" functionality. */
 static PyObject *
 bytearray_repr_lock_held(PyObject *op)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    PyByteArrayObject *self = _PyByteArray_CAST(op);
-    const char *className = _PyType_Name(Py_TYPE(self));
-    const char *quote_prefix = "(b";
-    const char *quote_postfix = ")";
-    Py_ssize_t length = Py_SIZE(self);
-    /* 6 == strlen(quote_prefix) + 2 + strlen(quote_postfix) + 1 */
-    Py_ssize_t newsize;
-    PyObject *v;
-    Py_ssize_t i;
-    char *bytes;
-    char c;
-    char *p;
-    int quote;
-    char *test, *start;
-    char *buffer;
-
-    newsize = strlen(className);
-    if (length > (PY_SSIZE_T_MAX - 6 - newsize) / 4) {
-        PyErr_SetString(PyExc_OverflowError,
-            "bytearray object is too large to make repr");
+    const char *className = _PyType_Name(Py_TYPE(op));
+    PyObject *bytes_repr = _Py_bytes_repr(PyByteArray_AS_STRING(op),
+                                          PyByteArray_GET_SIZE(op), 1);
+    if (bytes_repr == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                "bytearray object is too large to make repr");
+        }
         return NULL;
     }
-
-    newsize += 6 + length * 4;
-    buffer = PyMem_Malloc(newsize);
-    if (buffer == NULL) {
-        PyErr_NoMemory();
-        return NULL;
-    }
-
-    /* Figure out which quote to use; single is preferred */
-    quote = '\'';
-    start = PyByteArray_AS_STRING(self);
-    for (test = start; test < start+length; ++test) {
-        if (*test == '"') {
-            quote = '\''; /* back to single */
-            break;
-        }
-        else if (*test == '\'')
-            quote = '"';
-    }
-
-    p = buffer;
-    while (*className)
-        *p++ = *className++;
-    while (*quote_prefix)
-        *p++ = *quote_prefix++;
-    *p++ = quote;
-
-    bytes = PyByteArray_AS_STRING(self);
-    for (i = 0; i < length; i++) {
-        /* There's at least enough room for a hex escape
-           and a closing quote. */
-        assert(newsize - (p - buffer) >= 5);
-        c = bytes[i];
-        if (c == '\'' || c == '\\')
-            *p++ = '\\', *p++ = c;
-        else if (c == '\t')
-            *p++ = '\\', *p++ = 't';
-        else if (c == '\n')
-            *p++ = '\\', *p++ = 'n';
-        else if (c == '\r')
-            *p++ = '\\', *p++ = 'r';
-        else if (c == 0)
-            *p++ = '\\', *p++ = 'x', *p++ = '0', *p++ = '0';
-        else if (c < ' ' || c >= 0x7f) {
-            *p++ = '\\';
-            *p++ = 'x';
-            *p++ = Py_hexdigits[(c & 0xf0) >> 4];
-            *p++ = Py_hexdigits[c & 0xf];
-        }
-        else
-            *p++ = c;
-    }
-    assert(newsize - (p - buffer) >= 1);
-    *p++ = quote;
-    while (*quote_postfix) {
-       *p++ = *quote_postfix++;
-    }
-
-    v = PyUnicode_FromStringAndSize(buffer, p - buffer);
-    PyMem_Free(buffer);
-    return v;
+    PyObject *res = PyUnicode_FromFormat("%s(%U)", className, bytes_repr);
+    Py_DECREF(bytes_repr);
+    return res;
 }
 
 static PyObject *
