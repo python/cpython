@@ -16477,14 +16477,17 @@ static PyType_Slot ScandirIteratorType_slots[] = {
 };
 
 static PyType_Spec ScandirIteratorType_spec = {
-    MODNAME ".ScandirIterator",
-    sizeof(ScandirIterator),
-    0,
+    .name = MODNAME ".ScandirIterator",
+    .basicsize = sizeof(ScandirIterator),
     // bpo-40549: Py_TPFLAGS_BASETYPE should not be used, since
     // PyType_GetModule(Py_TYPE(self)) doesn't work on a subclass instance.
-    (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE
-        | Py_TPFLAGS_DISALLOW_INSTANTIATION),
-    ScandirIteratorType_slots
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_HAVE_FINALIZE
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = ScandirIteratorType_slots
 };
 
 /*[clinic input]
