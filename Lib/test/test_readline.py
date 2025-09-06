@@ -413,6 +413,11 @@ readline.write_history_file(history_file)
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
 
+    def test_environment_is_not_modified(self):
+        original_env = dict(os.environ)
+        os.reload_environ()
+        self.assertEqual(dict(os.environ), original_env)
+
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
 class FreeThreadingTest(unittest.TestCase):
