@@ -273,6 +273,14 @@ Other language changes
   This speeds up class creation, and helps avoid reference cycles.
   (Contributed by Petr Viktorin in :gh:`135228`.)
 
+* Added support for Unicode ``U+XXXX`` notation in :func:`unicodedata.lookup`
+  and ``'\N{...}'``. For example::
+
+    >>> "\N{U+03BB}"
+    'λ'
+
+  (Contributed by Stan Ulbrych in :gh:`62814`.)
+
 
 New modules
 ===========

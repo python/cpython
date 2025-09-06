@@ -1449,6 +1449,36 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
 
 
 static int
+_parse_u_plus(const char *codepoint, int namelen, Py_UCS4 *code)
+{
+    const int hex_len = namelen - 2;
+    if (codepoint[0] != 'U' || codepoint[1] != '+') {
+        return 0;
+    }
+    if (hex_len < 4 || hex_len > 6) {
+        PyErr_SetString(PyExc_ValueError, "invalid codepoint notation length");
+        return -1;
+    }
+
+    char buf[7];
+    memcpy(buf, codepoint + 2, hex_len);
+    buf[hex_len] = '\0';
+
+    char *endptr = NULL;
+    const unsigned long v = strtoul(buf, &endptr, 16);
+
+    if (*endptr != '\0' || v > 0x10ffff) {
+        PyErr_Format(PyExc_ValueError,
+               "invalid codepoint notation '%.*s'", namelen, codepoint);
+        return -1;
+    }
+
+    *code = (Py_UCS4)v;
+    return 1;
+}
+
+
+static int
 capi_getcode(const char* name, int namelen, Py_UCS4* code,
              int with_named_seq)
 {
@@ -1456,6 +1486,12 @@ capi_getcode(const char* name, int namelen, Py_UCS4* code,
         return 0;
     }
     return _check_alias_and_seq(code, with_named_seq);
+}
+
+static int
+capi_parse_u_plus(const char* name, int namelen, Py_UCS4* code)
+{
+    return _parse_u_plus(name, namelen, code);
 }
 
 static void
@@ -1475,6 +1511,7 @@ unicodedata_create_capi(void)
     }
     capi->getname = capi_getucname;
     capi->getcode = capi_getcode;
+    capi->parse_u_plus = capi_parse_u_plus;
 
     PyObject *capsule = PyCapsule_New(capi,
                                       PyUnicodeData_CAPSULE_NAME,
@@ -1543,6 +1580,16 @@ unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
 {
     Py_UCS4 code;
     unsigned int index;
+
+    const int check = _parse_u_plus(name, (int)name_length, &code);
+    if (check == 1) {
+        return PyUnicode_FromOrdinal(code);
+    }
+    if (check == -1) {
+        /* Error set in _parse_u_plus */
+        return NULL;
+    }
+
     if (name_length > NAME_MAXLEN) {
         PyErr_SetString(PyExc_KeyError, "name too long");
         return NULL;

@@ -1,0 +1,1 @@
+:func:`unicodedata.lookup` now supports ``U+XXXXXX`` notation.

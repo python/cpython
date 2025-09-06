@@ -6783,9 +6783,21 @@ _PyUnicode_DecodeUnicodeEscapeInternal2(const char *s,
                     /* found a name.  look it up in the unicode database */
                     s++;
                     ch = 0xffffffff; /* in case 'getcode' messes up */
-                    if (namelen <= INT_MAX &&
-                        ucnhash_capi->getcode(start, (int)namelen,
-                                              &ch, 0)) {
+                    int ok = 0;
+
+                    if (namelen <= INT_MAX) {
+                        if (ucnhash_capi->getcode(start, (int)namelen, &ch, 0)) {
+                            ok = 1;
+                        }
+                        else {
+                            ok = ucnhash_capi->parse_u_plus(start, (int)namelen, &ch);
+                            if (ok == -1) {
+                                goto onError;
+                            }
+                        }
+                    }
+
+                    if (ok) {
                         assert(ch <= MAX_UNICODE);
                         WRITE_CHAR(ch);
                         continue;

@@ -26,6 +26,9 @@ typedef struct {
     int (*getcode)(const char* name, int namelen, Py_UCS4* code,
                    int with_named_seq);
 
+    /* Parse Unicode notation */
+    int (*parse_u_plus)(const char* name, int namelen, Py_UCS4* code);
+
 } _PyUnicode_Name_CAPI;
 
 extern _PyUnicode_Name_CAPI* _PyUnicode_GetNameCAPI(void);

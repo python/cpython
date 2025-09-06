@@ -200,11 +200,20 @@ class UnicodeNamesTest(unittest.TestCase):
                 with self.assertRaises(KeyError):
                     unicodedata.ucd_3_2_0.lookup(seqname)
 
+    def test_u_plus_notation(self):
+        self.assertEqual(unicodedata.lookup("U+0041"), "A")
+        self.assertEqual(unicodedata.lookup("U+00410"), "А")  # Cyrillic capital A
+        self.assertEqual(unicodedata.lookup("U+004100"), "䄀")
+        self.assertEqual(unicodedata.lookup("U+03BB"), "λ")
+
     def test_errors(self):
         self.assertRaises(TypeError, unicodedata.name)
         self.assertRaises(TypeError, unicodedata.name, 'xx')
         self.assertRaises(TypeError, unicodedata.lookup)
         self.assertRaises(KeyError, unicodedata.lookup, 'unknown')
+        self.assertRaises(ValueError, unicodedata.lookup, 'U+00')
+        self.assertRaises(ValueError, unicodedata.lookup, 'U+0000000')
+        self.assertRaises(ValueError, unicodedata.lookup, 'U+000Z')
 
     def test_strict_error_handling(self):
         # bogus character name
