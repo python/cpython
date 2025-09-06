@@ -75,8 +75,8 @@ New features
 High frequency statistical sampling profiler
 --------------------------------------------
 
-A new statistical sampling profiler has been added to the :mod:`profile` module as
-:mod:`profile.sample`. This profiler enables low-overhead performance analysis of
+A new statistical sampling profiler has been added to the new :mod:`!profiling` module as
+:mod:`!profiling.sampling`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
 
 Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
@@ -97,19 +97,19 @@ Key features include:
 
 Profile process 1234 for 10 seconds with default settings::
 
-  python -m profile.sample 1234
+  python -m profiling.sampling 1234
 
 Profile with custom interval and duration, save to file::
 
-  python -m profile.sample -i 50 -d 30 -o profile.stats 1234
+  python -m profiling.sampling -i 50 -d 30 -o profile.stats 1234
 
 Generate collapsed stacks for flamegraph::
 
-  python -m profile.sample --collapsed 1234
+  python -m profiling.sampling --collapsed 1234
 
 Profile all threads and sort by total time::
 
-  python -m profile.sample -a --sort-tottime 1234
+  python -m profiling.sampling -a --sort-tottime 1234
 
 The profiler generates statistical estimates of where time is spent::
 
@@ -358,6 +358,15 @@ math
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
+mmap
+----
+
+* :class:`mmap.mmap` now has a *trackfd* parameter on Windows;
+  if it is ``False``, the file handle corresponding to *fileno* will
+  not be duplicated.
+  (Contributed by Serhiy Storchaka in :gh:`78502`.)
+
+
 os.path
 -------
 
@@ -454,6 +463,10 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now replace slashes by backslashes in symlink targets on Windows to prevent
+  creation of corrupted links.
+  (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
 types
@@ -656,6 +669,11 @@ New features
 * Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
   a string. See the documentation for caveats.
   (Contributed by Petr Viktorin in :gh:`131510`)
+
+* Add API for checking an extension module's ABI compatibility:
+  :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
+  and :c:data:`Py_mod_abi`.
+  (Contributed by Petr Viktorin in :gh:`137210`)
 
 
 Porting to Python 3.15
