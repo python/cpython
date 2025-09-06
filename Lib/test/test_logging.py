@@ -4574,6 +4574,9 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         self.variants = {
             'custom': {
                 'custom': 1234
+            },
+            'exception': {
+                'exc_info': ZeroDivisionError()
             }
         }
 
@@ -4913,6 +4916,34 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
                 # After PR gh-102412, precision (places) increases from 3 to 7
                 self.assertAlmostEqual(relativeCreated, offset_ns / 1e6, places=7)
 
+    def test_multiple_formatters_exc_text(self):
+        # Regression test for current behavior where exc_text is only set if it is None
+        r = self.get_record()
+        r.exc_info = (ZeroDivisionError, ZeroDivisionError(), None)
+
+        f = logging.Formatter('${%(message)s}')
+        f.format(r)
+        self.assertIsNotNone(r.exc_text)
+        exc_text = r.exc_text
+
+        f = logging.Formatter('%(asctime)s')
+        f.format(r)
+        self.assertEqual(exc_text, r.exc_text)
+
+    def test_multiple_formatters_set_exc_text(self):
+        # Tests that exc_text is changed when set_exc_text option is set on the Formatter
+        r = self.get_record()
+        r.exc_info = (ZeroDivisionError, ZeroDivisionError(), None)
+
+        f = logging.Formatter('${%(message)s}')
+        f.format(r)
+        self.assertIsNotNone(r.exc_text)
+        exc_text = r.exc_text
+
+        f = logging.Formatter('%(asctime)s', set_exc_text=True)
+        f.format(r)
+        self.assertNotEqual(exc_text, r.exc_text)
+
 
 class TestBufferingFormatter(logging.BufferingFormatter):
     def formatHeader(self, records):
@@ -5014,7 +5045,6 @@ class FakeHandler:
 
 
 class RecordingHandler(logging.NullHandler):
-
     def __init__(self, *args, **kwargs):
         super(RecordingHandler, self).__init__(*args, **kwargs)
         self.records = []
