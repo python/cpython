@@ -260,6 +260,9 @@ ABC hierarchy::
       :func:`importlib.util.spec_from_loader` may be useful for implementing
       concrete ``MetaPathFinders``.
 
+      *Fullname* must be normalized in NFKC to match the normalization
+      done by the Python parser.
+
       .. versionadded:: 3.4
 
    .. method:: invalidate_caches()
@@ -293,6 +296,9 @@ ABC hierarchy::
       is a module object that the finder may use to make a more educated
       guess about what spec to return. :func:`importlib.util.spec_from_loader`
       may be useful for implementing concrete ``PathEntryFinders``.
+
+      *Fullname* must be normalized in NFKC to match the normalization
+      done by the Python parser.
 
       .. versionadded:: 3.4
 
