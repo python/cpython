@@ -323,6 +323,15 @@ class ReadTestBase:
         self.assertFalse((p / 'fileA\udfff').info.is_symlink())
         self.assertFalse((p / 'fileA\x00').info.is_symlink())
 
+    def test_info_is_junction(self):
+        p = self.root
+        self.assertFalse((p / 'fileA').info.is_junction())
+        self.assertFalse((p / 'dirA').info.is_junction())
+        self.assertFalse((p / 'non-existing').info.is_junction())
+        self.assertFalse((p / 'fileA' / 'bah').info.is_junction())
+        self.assertFalse((p / 'fileA\udfff').info.is_junction())
+        self.assertFalse((p / 'fileA\x00').info.is_junction())
+
 
 class ZipPathReadTest(ReadTestBase, unittest.TestCase):
     ground = ZipPathGround(ReadableZipPath)
