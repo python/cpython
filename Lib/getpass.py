@@ -11,6 +11,9 @@ On Windows, the msvcrt module will be used.
 
 """
 
+# fmt: off
+# isort: skip_file
+
 # Authors: Piers Lauder (original)
 #          Guido van Rossum (Windows support and cleanup)
 #          Gregory P. Smith (tty support & GetPassWarning)
@@ -33,8 +36,8 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
       prompt: Written on stream to ask for the input.  Default: 'Password: '
       stream: A writable file object to display the prompt.  Defaults to
               the tty.  If no tty is available defaults to sys.stderr.
-      echo_char: A string used to mask input (e.g., '*').  If None, input is
-                hidden.
+      echo_char: A single-character string used to mask input (e.g., '*').
+              If None, input is hidden.
     Returns:
       The seKr3t input.
     Raises:
@@ -144,10 +147,14 @@ def fallback_getpass(prompt='Password: ', stream=None, *, echo_char=None):
 
 
 def _check_echo_char(echo_char):
-    # ASCII excluding control characters
-    if echo_char and not (echo_char.isprintable() and echo_char.isascii()):
-        raise ValueError("'echo_char' must be a printable ASCII string, "
-                         f"got: {echo_char!r}")
+    # Single-character ASCII excluding control characters
+    if echo_char and not (
+            len(echo_char) == 1
+            and echo_char.isprintable()
+            and echo_char.isascii()
+        ):
+        raise ValueError("'echo_char' must be a single-character, printable "
+                         f"ASCII string, got: {echo_char!r}")
 
 
 def _raw_input(prompt="", stream=None, input=None, echo_char=None):
