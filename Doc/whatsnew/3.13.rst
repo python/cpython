@@ -2177,7 +2177,7 @@ New Features
   (Contributed by Sam Gross in :gh:`114329`.)
 
 * Add the :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions,
-  mirroring the Python :meth:`!list.extend` and :meth:`!list.clear` methods.
+  mirroring the Python :meth:`list.extend` and :meth:`list.clear` methods.
   (Contributed by Victor Stinner in :gh:`111138`.)
 
 * Add the :c:func:`PyLong_AsInt` function.
