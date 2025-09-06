@@ -16,9 +16,8 @@ Objects, values and types
    single: data
 
 :dfn:`Objects` are Python's abstraction for data.  All data in a Python program
-is represented by objects or by relations between objects. (In a sense, and in
-conformance to Von Neumann's model of a "stored program computer", code is also
-represented by objects.)
+is represented by objects or by relations between objects. Even code is
+represented by objects.
 
 .. index::
    pair: built-in function; id
@@ -28,9 +27,6 @@ represented by objects.)
    single: type of an object
    single: mutable object
    single: immutable object
-
-.. XXX it *is* now possible in some cases to change an object's
-   type, under certain controlled conditions
 
 Every object has an identity, a type and a value.  An object's *identity* never
 changes once it has been created; you may think of it as the object's address in
