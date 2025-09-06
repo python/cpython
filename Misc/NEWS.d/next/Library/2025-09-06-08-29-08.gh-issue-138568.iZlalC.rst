@@ -1,3 +1,2 @@
 In :mod:`pydoc` interactive help mode to handle empty input correct as doc.
-Empty lines (pressing Enter without input) will continue in help session
-instead of exiting.
+press Enter without input should continue in help session instead of exiting.

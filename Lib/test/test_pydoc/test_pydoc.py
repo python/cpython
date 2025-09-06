@@ -2166,6 +2166,7 @@ class TestHelper(unittest.TestCase):
                          sorted(keyword.kwlist))
 
     def test_interact_empty_line_continues(self):
+        # gh-138568: test pressing Enter without input should continue in help session
         with captured_stdout() as output:
             helper = pydoc.Helper(output=output)
             input_sequence = ['', 'quit']
@@ -2201,7 +2202,6 @@ class TestHelper(unittest.TestCase):
                     with unittest.mock.patch.object(helper, 'getline', side_effect=mock_getline):
                         helper.interact()
 
-                    # Should only be called once before exiting
                     self.assertEqual(call_count[0], 1)
                     output_text = output.getvalue()
                     prompt_count = output_text.count('help> ')
