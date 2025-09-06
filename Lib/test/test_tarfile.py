@@ -2149,6 +2149,59 @@ class CreateWithXModeTest(CreateTest):
     test_create_taropen = None
     test_create_existing_taropen = None
 
+@unittest.skipUnless(hasattr(os, 'lstat'), "missing os.lstat")
+class ChangingFileTest(TarTest, unittest.TestCase):
+
+    prefix = "w:"
+    original_lstat = os.lstat
+
+    def setUp(self):
+        self._filename = os.path.join(TEMPDIR, "tempfile")
+        self._data = b"dummydata"
+        self._create_temporary_file(self._filename, self._data)
+
+    def tearDown(self):
+        os.remove(self._filename)
+
+    @staticmethod
+    def _intercept_lstat(arg):
+        res = ChangingFileTest.original_lstat(arg)
+        return os.stat_result(
+            (
+                res.st_mode, res.st_ino, res.st_dev, res.st_nlink, res.st_uid,
+                res.st_gid, res.st_size+1, res.st_atime, res.st_mtime,
+                res.st_ctime
+            )
+        )
+
+    @staticmethod
+    def _create_temporary_file(filename, data):
+        with open(filename, "wb") as f:
+            f.write(data)
+
+    def _assert_tar_file(self):
+        with tarfile.open(tmpname) as tar:
+            members = tar.getmembers()
+            self.assertEqual(1, len(members))
+            self.assertEqual(len(self._data), members[0].size)
+            self.assertTrue(members[0].isreg())
+            self.assertFalse(members[0].isdir())
+            self.assertEqual(self._data, tar.extractfile(members[0]).read())
+
+    @unittest.mock.patch('os.lstat', side_effect=_intercept_lstat)
+    def test_file_changed_reading_block(self, _):
+        with tarfile.open(tmpname, self.mode) as tar:
+            tar.add(self._filename)
+
+        self._assert_tar_file()
+
+    @unittest.mock.patch('os.lstat', side_effect=_intercept_lstat)
+    def test_file_changed_reading_remainder(self, _):
+        with tarfile.open(tmpname, self.mode, copybufsize=5) as tar:
+            tar.add(self._filename)
+
+        self._assert_tar_file()
+
 
 @unittest.skipUnless(hasattr(os, "link"), "Missing hardlink implementation")
 class HardlinkTest(unittest.TestCase):
