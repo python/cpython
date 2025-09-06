@@ -2059,9 +2059,10 @@ has the same effect as typing a particular string at the help> prompt.
         while True:
             try:
                 request = self.getline('help> ')
-                if not request: break
             except (KeyboardInterrupt, EOFError):
                 break
+            if not request or request.isspace():
+                continue  # back to the prompt
             request = request.strip()
 
             # Make sure significant trailing quoting marks of literals don't
