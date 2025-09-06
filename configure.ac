@@ -2192,6 +2192,7 @@ then
      -reorder-blocks=ext-tsp
      -reorder-functions=cdsort
      -split-functions
+     -split-all-cold
      -icf=1
      -inline-all
      -split-eh
