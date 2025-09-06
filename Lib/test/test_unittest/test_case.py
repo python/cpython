@@ -1936,6 +1936,35 @@ test case
             self.assertEqual(cm.output, ["[No.1: the larch] INFO:foo:1"])
             self.assertLogRecords(cm.records, [{'name': 'foo'}])
 
+    def testAssertLogsWithNOTSET(self):
+        # Check that logging.NOTSET level is handled correctly
+        # (not treated as falsey and defaulted to INFO)
+        with self.assertNoStderr():
+            with self.assertLogs(level=logging.NOTSET) as cm:
+                log_foo.info("1")
+                log_foobar.debug("2")
+                log_quux.error("3")
+            self.assertEqual(cm.output, ["INFO:foo:1", "DEBUG:foo.bar:2", "ERROR:quux:3"])
+            self.assertLogRecords(cm.records, [
+                {'name': 'foo', 'levelno': logging.INFO},
+                {'name': 'foo.bar', 'levelno': logging.DEBUG},
+                {'name': 'quux', 'levelno': logging.ERROR}
+            ])
+
+    def testAssertNoLogsWithNOTSET(self):
+        # Check that logging.NOTSET level is handled correctly in assertNoLogs
+        # (not treated as falsey and defaulted to INFO)
+        with self.assertNoStderr():
+            with self.assertNoLogs(level=logging.NOTSET):
+                pass
+
+        with self.assertRaises(self.failureException) as cm:
+            with self.assertNoLogs(level=logging.NOTSET):
+                log_foo.debug("debug message")
+
+        self.assertIn("Unexpected logs found", str(cm.exception))
+        self.assertIn("DEBUG:foo:debug message", str(cm.exception))
+
     def testAssertNoLogsDefault(self):
         with self.assertRaises(self.failureException) as cm:
             with self.assertNoLogs():
