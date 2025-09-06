@@ -1457,7 +1457,7 @@ class EditorWindow:
             if c != pyparse.C_NONE:
                 # The current statement hasn't ended yet.
                 if (
-                    c == pyparse.C_STRING_FIRST_LINE 
+                    c == pyparse.C_STRING_FIRST_LINE
                     or c == pyparse.C_STRING_NEXT_LINES
                 ):
                     # Inside a string which started before this line;
