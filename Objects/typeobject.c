@@ -838,8 +838,8 @@ find_signature(const char *name, const char *doc)
     return doc;
 }
 
-#define SIGNATURE_END_MARKER         ")\n--\n\n"
-#define SIGNATURE_END_MARKER_LENGTH  6
+#define SIGNATURE_END_MARKER         "\n--\n\n"
+#define SIGNATURE_END_MARKER_LENGTH  5
 /*
  * skips past the end of the docstring's introspection signature.
  * (assumes doc starts with a valid signature prefix.)
@@ -956,11 +956,12 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
         Py_RETURN_NONE;
     }
 
-    /* back "end" up until it points just past the final ')' */
-    end -= SIGNATURE_END_MARKER_LENGTH - 1;
+    /* back "end" up until it points just to the end marker */
+    end -= SIGNATURE_END_MARKER_LENGTH;
     assert((end - start) >= 2); /* should be "()" at least */
-    assert(end[-1] == ')');
     assert(end[0] == '\n');
+    assert(end[1] == '-');
+    assert(end[2] == '-');
     return PyUnicode_FromStringAndSize(start, end - start);
 }
 
