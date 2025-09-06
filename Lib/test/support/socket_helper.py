@@ -186,6 +186,8 @@ def get_socket_conn_refused_errs():
         errors.append(errno.EHOSTUNREACH)
     if not IPV6_ENABLED:
         errors.append(errno.EAFNOSUPPORT)
+    if hasattr(errno, 'ETIMEDOUT'):
+        errors.append(errno.ETIMEDOUT)
     return errors
 
 
