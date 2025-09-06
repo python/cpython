@@ -2208,9 +2208,6 @@ codegen_return(compiler *c, stmt_ty s)
     if (!_PyST_IsFunctionLike(ste)) {
         return _PyCompile_Error(c, loc, "'return' outside function");
     }
-    if (s->v.Return.value != NULL && ste->ste_coroutine && ste->ste_generator) {
-        return _PyCompile_Error(c, loc, "'return' with value in async generator");
-    }
 
     if (preserve_tos) {
         VISIT(c, expr, s->v.Return.value);
