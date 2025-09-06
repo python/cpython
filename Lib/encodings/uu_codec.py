@@ -11,10 +11,16 @@ import codecs
 import binascii
 from io import BytesIO
 
+### Codec Helpers
+
+def _assert_strict(errors):
+    if errors != 'strict':
+        raise ValueError(f'Unsupported error handling mode: "{errors}" - must be "strict"')
+
 ### Codec APIs
 
 def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
-    assert errors == 'strict'
+    _assert_strict(errors)
     infile = BytesIO(input)
     outfile = BytesIO()
     read = infile.read
@@ -35,7 +41,7 @@ def uu_encode(input, errors='strict', filename='<data>', mode=0o666):
     return (outfile.getvalue(), len(input))
 
 def uu_decode(input, errors='strict'):
-    assert errors == 'strict'
+    _assert_strict(errors)
     infile = BytesIO(input)
     outfile = BytesIO()
     readline = infile.readline
