@@ -935,6 +935,14 @@ class SSLObject:
         """Return the currently selected key agreement group name."""
         return self._sslobj.group()
 
+    def client_sigalg(self):
+        """Return the selected client authentication signature algorithm."""
+        return self._sslobj.client_sigalg()
+
+    def server_sigalg(self):
+        """Return the selected server handshake signature algorithm."""
+        return self._sslobj.server_sigalg()
+
     def shared_ciphers(self):
         """Return a list of ciphers shared by the client during the handshake or
         None if this is not a valid server connection.
@@ -1221,6 +1229,22 @@ class SSLSocket(socket):
             return None
         else:
             return self._sslobj.group()
+
+    @_sslcopydoc
+    def client_sigalg(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.client_sigalg()
+
+    @_sslcopydoc
+    def server_sigalg(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.server_sigalg()
 
     @_sslcopydoc
     def shared_ciphers(self):
