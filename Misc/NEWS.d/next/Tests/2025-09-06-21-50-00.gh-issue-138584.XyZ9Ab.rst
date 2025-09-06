@@ -1,0 +1,1 @@
+gh-138584: Fixed list_tests.CommonTest to use type2test in test_getitem_error, test_setitem_error, and test_constructor_exception_handling in Lib/tests/list_tests.py.
