@@ -1,0 +1,1 @@
+Fix :meth:`~object.__dir__` entries of :class:`types.GenericAlias`.
