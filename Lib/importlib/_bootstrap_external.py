@@ -552,8 +552,7 @@ def decode_source(source_bytes):
     import tokenize  # To avoid bootstrap issues.
     source_bytes_readline = _io.BytesIO(source_bytes).readline
     encoding = tokenize.detect_encoding(source_bytes_readline)
-    newline_decoder = _io.IncrementalNewlineDecoder(None, True)
-    return newline_decoder.decode(source_bytes.decode(encoding[0]))
+    return _io.TextIOWrapper(_io.BytesIO(source_bytes), encoding=encoding[0], newline=None).read()
 
 
 # Module specifications #######################################################
