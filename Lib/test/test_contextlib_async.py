@@ -403,6 +403,63 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         self.assertFalse(entered)
 
     @_async_test
+    async def test_decorator_decorate_sync_function(self):
+        @asynccontextmanager
+        async def context():
+            state.append(1)
+            yield
+            state.append(999)
+
+        state = []
+        @context()
+        def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+
+        await test("something")
+        self.assertEqual(state, [1, "something", 999])
+
+    @_async_test
+    async def test_decorator_decorate_generator_function(self):
+        @asynccontextmanager
+        async def context():
+            state.append(1)
+            yield
+            state.append(999)
+
+        state = []
+        @context()
+        def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+
+        async for _ in test("something"):
+            self.assertEqual(state, [1, "something"])
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+    @_async_test
+    async def test_decorator_decorate_asyncgen_function(self):
+        @asynccontextmanager
+        async def context():
+            state.append(1)
+            yield
+            state.append(999)
+
+        state = []
+        @context()
+        async def test(x):
+            self.assertEqual(state, [1])
+            state.append(x)
+            yield
+            state.append("second item")
+
+        async for _ in test("something"):
+            self.assertEqual(state, [1, "something"])
+        self.assertEqual(state, [1, "something", "second item", 999])
+
+    @_async_test
     async def test_decorator_with_exception(self):
         entered = False
 
