@@ -2184,7 +2184,187 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_RegisterEventSource__doc__,
+"RegisterEventSource($module, unc_server_name, source_name, /)\n"
+"--\n"
+"\n"
+"Retrieves a registered handle to the specified event log.\n"
+"\n"
+"  unc_server_name\n"
+"    The UNC name of the server on which the event source should be registered.\n"
+"    If NULL, registers the event source on the local computer.\n"
+"  source_name\n"
+"    The name of the event source to register.");
+
+#define _WINAPI_REGISTEREVENTSOURCE_METHODDEF    \
+    {"RegisterEventSource", _PyCFunction_CAST(_winapi_RegisterEventSource), METH_FASTCALL, _winapi_RegisterEventSource__doc__},
+
+static HANDLE
+_winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
+                                 LPCWSTR source_name);
+
+static PyObject *
+_winapi_RegisterEventSource(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    LPCWSTR unc_server_name = NULL;
+    LPCWSTR source_name = NULL;
+    HANDLE _return_value;
+
+    if (!_PyArg_CheckPositional("RegisterEventSource", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (args[0] == Py_None) {
+        unc_server_name = NULL;
+    }
+    else if (PyUnicode_Check(args[0])) {
+        unc_server_name = PyUnicode_AsWideCharString(args[0], NULL);
+        if (unc_server_name == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("RegisterEventSource", "argument 1", "str or None", args[0]);
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("RegisterEventSource", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    source_name = PyUnicode_AsWideCharString(args[1], NULL);
+    if (source_name == NULL) {
+        goto exit;
+    }
+    _return_value = _winapi_RegisterEventSource_impl(module, unc_server_name, source_name);
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (_return_value == NULL) {
+        Py_RETURN_NONE;
+    }
+    return_value = HANDLE_TO_PYNUM(_return_value);
+
+exit:
+    /* Cleanup for unc_server_name */
+    PyMem_Free((void *)unc_server_name);
+    /* Cleanup for source_name */
+    PyMem_Free((void *)source_name);
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_DeregisterEventSource__doc__,
+"DeregisterEventSource($module, handle, /)\n"
+"--\n"
+"\n"
+"Closes the specified event log.\n"
+"\n"
+"  handle\n"
+"    The handle to the event log to be deregistered.");
+
+#define _WINAPI_DEREGISTEREVENTSOURCE_METHODDEF    \
+    {"DeregisterEventSource", (PyCFunction)_winapi_DeregisterEventSource, METH_O, _winapi_DeregisterEventSource__doc__},
+
+static PyObject *
+_winapi_DeregisterEventSource_impl(PyObject *module, HANDLE handle);
+
+static PyObject *
+_winapi_DeregisterEventSource(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    HANDLE handle;
+
+    if (!PyArg_Parse(arg, "" F_HANDLE ":DeregisterEventSource", &handle)) {
+        goto exit;
+    }
+    return_value = _winapi_DeregisterEventSource_impl(module, handle);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_ReportEvent__doc__,
+"ReportEvent($module, /, handle, type, category, event_id, strings,\n"
+"            raw_data=None)\n"
+"--\n"
+"\n"
+"Writes an entry at the end of the specified event log.\n"
+"\n"
+"  handle\n"
+"    The handle to the event log.\n"
+"  type\n"
+"    The type of event being reported.\n"
+"  category\n"
+"    The event category.\n"
+"  event_id\n"
+"    The event identifier.\n"
+"  strings\n"
+"    A list of strings to be inserted into the event message.\n"
+"  raw_data\n"
+"    The raw data for the event.");
+
+#define _WINAPI_REPORTEVENT_METHODDEF    \
+    {"ReportEvent", _PyCFunction_CAST(_winapi_ReportEvent), METH_FASTCALL|METH_KEYWORDS, _winapi_ReportEvent__doc__},
+
+static PyObject *
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int type,
+                         int category, int event_id, PyObject *strings,
+                         Py_buffer *raw_data);
+
+static PyObject *
+_winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 6
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(handle), &_Py_ID(type), &_Py_ID(category), &_Py_ID(event_id), &_Py_ID(strings), &_Py_ID(raw_data), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"handle", "type", "category", "event_id", "strings", "raw_data", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .format = "" F_HANDLE "iiiO!|y*:ReportEvent",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    HANDLE handle;
+    int type;
+    int category;
+    int event_id;
+    PyObject *strings;
+    Py_buffer raw_data = {NULL, NULL};
+
+    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
+        &handle, &type, &category, &event_id, &PyList_Type, &strings, &raw_data)) {
+        goto exit;
+    }
+    return_value = _winapi_ReportEvent_impl(module, handle, type, category, event_id, strings, &raw_data);
+
+exit:
+    /* Cleanup for raw_data */
+    if (raw_data.obj) {
+       PyBuffer_Release(&raw_data);
+    }
+
+    return return_value;
+}
+
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=4581fd481c3c6293 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9830656556b2fc9 input=a9049054013a1b77]*/
