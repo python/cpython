@@ -315,6 +315,15 @@ just past the last parse event (regardless of whether there was an associated
 callback).
 
 
+.. attribute:: xmlparser.CurrentByteCount
+
+   Number of bytes in the current event.  ``0`` if the event is for the end tag
+   event for *empty-element* tags or is inside a reference to an internal
+   entity.
+
+   .. versionadded:: 3.14
+
+
 .. attribute:: xmlparser.CurrentByteIndex
 
    Current byte index in the parser input.
