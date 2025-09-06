@@ -1,9 +1,6 @@
 import collections
 import subprocess
 import warnings
-import os
-import signal
-import sys
 
 from . import protocols
 from . import transports
@@ -150,31 +147,17 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._proc is None:
             raise ProcessLookupError()
 
-    if sys.platform == 'win32':
-        def send_signal(self, signal):
-            self._check_proc()
-            self._proc.send_signal(signal)
+    def send_signal(self, signal):
+        self._check_proc()
+        self._proc.send_signal(signal)
 
-        def terminate(self):
-            self._check_proc()
-            self._proc.terminate()
+    def terminate(self):
+        self._check_proc()
+        self._proc.terminate()
 
-        def kill(self):
-            self._check_proc()
-            self._proc.kill()
-    else:
-        def send_signal(self, signal):
-            self._check_proc()
-            try:
-                os.kill(self._proc.pid, signal)
-            except ProcessLookupError:
-                pass
-
-        def terminate(self):
-            self.send_signal(signal.SIGTERM)
-
-        def kill(self):
-            self.send_signal(signal.SIGKILL)
+    def kill(self):
+        self._check_proc()
+        self._proc.kill()
 
     async def _connect_pipes(self, waiter):
         try:
@@ -233,10 +216,6 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._loop.get_debug():
             logger.info('%r exited with return code %r', self, returncode)
         self._returncode = returncode
-        if self._proc.returncode is None:
-            # asyncio uses a child watcher: copy the status into the Popen
-            # object. On Python 3.6, it is required to avoid a ResourceWarning.
-            self._proc.returncode = returncode
         self._call(self._protocol.process_exited)
 
         self._try_finish()
