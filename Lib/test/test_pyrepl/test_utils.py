@@ -71,6 +71,7 @@ class TestUtils(TestCase):
             # highlights
             ("set", [("set", "builtin")]),
             ("list", [("list", "builtin")]),
+            ("    \n dict", [("dict", "builtin")]),
         ]
         for code, expected_highlights in cases:
             with self.subTest(code=code):
