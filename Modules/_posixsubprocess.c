@@ -630,7 +630,7 @@ reset_signal_handlers(const sigset_t *child_sigmask)
  * (v)fork to set things up and call exec().
  *
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  *
  * This restriction is documented at
