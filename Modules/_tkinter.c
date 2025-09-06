@@ -589,14 +589,10 @@ Tkapp_New(const char *screenName, const char *className,
           int interactive, int wantobjects, int wantTk, int sync,
           const char *use)
 {
-    PyTypeObject *type;
     TkappObject *v;
     char *argv0;
 
-    type = (PyTypeObject *)Tkapp_Type;
-    assert(type != NULL);
-    assert(type->tp_alloc != NULL);
-    v = (TkappObject *)type->tp_alloc(type, 0);
+    v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
     if (v == NULL)
         return NULL;
 
@@ -910,14 +906,11 @@ static PyType_Slot PyTclObject_Type_slots[] = {
 };
 
 static PyType_Spec PyTclObject_Type_spec = {
-    .name = "_tkinter.Tcl_Obj",
-    .basicsize = sizeof(PyTclObject),
-    .flags = (
-        Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_DISALLOW_INSTANTIATION
-        | Py_TPFLAGS_IMMUTABLETYPE
-    ),
-    .slots = PyTclObject_Type_slots,
+    "_tkinter.Tcl_Obj",
+    sizeof(PyTclObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    PyTclObject_Type_slots,
 };
 
 
