@@ -99,6 +99,32 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertIn(p.returncode, (1, 120))
 
     @cpython_only
+    def test_exec_set_nomemory_hang(self):
+        # gh-134163: Test case that triggers no memory hang condition
+        # The frame_lasti need to upper 257,
+        # because when calling PyLong_FromLong, malloc is not invoked,
+        # so no MemError is triggered
+        # we need to warm up the memory to reproduce the issue
+        warmup_code = "a = list(range(0, 1))\n" * 20
+        user_input = warmup_code + dedent("""
+            try:
+                import _testcapi
+                _testcapi.set_nomemory(0)
+                b = list(range(1000, 2000))
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+            """)
+        p = spawn_repl()
+        with SuppressCrashReport():
+            p.stdin.write(user_input)
+        output = kill_python(p)
+
+        self.assertIn(p.returncode, (0, 1, 120))
+        self.assertGreater(len(output), 0)  # At minimum, should not hang
+        self.assertIn("MemoryError", output)
+
+    @cpython_only
     def test_multiline_string_parsing(self):
         # bpo-39209: Multiline string tokens need to be handled in the tokenizer
         # in two places: the interactive path and the non-interactive path.
