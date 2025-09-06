@@ -62,7 +62,7 @@ objects:
 .. method:: list.index(x[, start[, end]])
    :noindex:
 
-   Return zero-based index in the list of the first item whose value is equal to *x*.
+   Return zero-based index of the first occurrence of *x* in the list.
    Raises a :exc:`ValueError` if there is no such item.
 
    The optional arguments *start* and *end* are interpreted as in the slice
