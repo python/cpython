@@ -815,7 +815,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         import re
         custom_module = types.ModuleType('custom_module')
         msg = re.escape(
-             f'Custom module: {custom_module!r} cannot get source'
+             f'Cannot get source from {custom_module!r}'
         )
         with self.assertRaisesRegex(TypeError, msg) as e:
             inspect.getfile(custom_module)
