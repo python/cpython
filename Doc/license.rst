@@ -1174,7 +1174,7 @@ contributors. The pyzstd code is distributed under the 3-Clause BSD License::
 Profiling module
 ----------------
 
-The :mod:`profile` module includes vendored third-party libraries in
+The :mod:`!profiling` module includes vendored third-party libraries in
 :file:`Lib/profile/sampling/_vendor/` with the following licenses:
 
 **d3-flamegraph**
