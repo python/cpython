@@ -159,7 +159,7 @@ class UnixConsole(Console):
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
         self._poll_lock = threading.RLock()
-        self._polling_thread = None
+        self._polling_thread: threading.Thread | None = None
         self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
 
