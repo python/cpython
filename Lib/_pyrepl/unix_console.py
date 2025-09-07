@@ -160,6 +160,7 @@ class UnixConsole(Console):
         self.pollob.register(self.input_fd, select.POLLIN)
         self._poll_lock = threading.RLock()
         self._polling_thread: threading.Thread | None = None
+        self.__svtermstate = None
         self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
 
@@ -804,7 +805,7 @@ class UnixConsole(Console):
         # using .get() means that things will blow up
         # only if the bps is actually needed (which I'm
         # betting is pretty unlkely)
-        if hasattr(self, '_UnixConsole__svtermstate'):
+        if self.__svtermstate is not None:
             bps = ratedict.get(self.__svtermstate.ospeed)
         else:
             bps = None
