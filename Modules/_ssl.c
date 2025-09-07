@@ -6336,13 +6336,12 @@ _ssl_get_default_verify_paths_impl(PyObject *module)
 }
 
 /*[clinic input]
-@critical_section
 _ssl.get_sigalgs
 [clinic start generated code]*/
 
 static PyObject *
 _ssl_get_sigalgs_impl(PyObject *module)
-/*[clinic end generated code: output=ab0791b63856854b input=bf74cdad3a19d29e]*/
+/*[clinic end generated code: output=ab0791b63856854b input=d96dd6cefec3f86b]*/
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30400000L
     const char *sigalgs;

@@ -3030,13 +3030,7 @@ _ssl_get_sigalgs_impl(PyObject *module);
 static PyObject *
 _ssl_get_sigalgs(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    Py_BEGIN_CRITICAL_SECTION(module);
-    return_value = _ssl_get_sigalgs_impl(module);
-    Py_END_CRITICAL_SECTION();
-
-    return return_value;
+    return _ssl_get_sigalgs_impl(module);
 }
 
 PyDoc_STRVAR(_ssl_txt2obj__doc__,
@@ -3328,4 +3322,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4e16f5c68d162d37 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a630a1e83927d47 input=a9049054013a1b77]*/
