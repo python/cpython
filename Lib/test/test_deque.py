@@ -9,6 +9,8 @@ import pickle
 import random
 import struct
 
+from Lib.test import test_list
+
 BIG = 100000
 
 def fail():
@@ -902,6 +904,9 @@ class TestSubclassWithKwargs(unittest.TestCase):
     def test_subclass_with_kwargs(self):
         # SF bug #1486663 -- this used to erroneously raise a TypeError
         SubclassWithKwargs(newarg=1)
+
+class TestList(test_list.ListTest):
+    type2test = deque
 
 class TestSequence(seq_tests.CommonTest):
     type2test = deque
