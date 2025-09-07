@@ -2610,6 +2610,19 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_allow_negative_accepted_by_py_ssize_t_converter_only(self):
+        errmsg = re.escape("converter_init() got an unexpected keyword argument 'allow_negative'")
+        unsupported_converters = [converter_name for converter_name in converters.keys()
+                                  if converter_name != "Py_ssize_t"]
+        for converter in unsupported_converters:
+            with self.subTest(converter=converter):
+                block = f"""
+                    module m
+                    m.func
+                        a: {converter}(allow_negative=True)
+                """
+                with self.assertRaisesRegex((AssertionError, TypeError), errmsg):
+                    self.parse_function(block)
 
 class ClinicExternalTest(TestCase):
     maxDiff = None
@@ -3194,8 +3207,12 @@ class ClinicFunctionalTest(unittest.TestCase):
             ac_tester.py_ssize_t_converter(PY_SSIZE_T_MAX + 1)
         with self.assertRaises(TypeError):
             ac_tester.py_ssize_t_converter([])
-        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56))
-        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None), (1, 2, 56))
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, -1)
+        with self.assertRaises(ValueError):
+            ac_tester.py_ssize_t_converter(12, 34, 56, 78, -1)
+        self.assertEqual(ac_tester.py_ssize_t_converter(), (12, 34, 56, 78, 90, -12, -34))
+        self.assertEqual(ac_tester.py_ssize_t_converter(1, 2, None, 3, None, 4, None), (1, 2, 56, 3, 90, 4, -34))
 
     def test_slice_index_converter(self):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
