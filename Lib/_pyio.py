@@ -266,7 +266,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
         result = text
         text.mode = mode
         return result
-    except:
+    except (ValueError, OSError, TypeError, ImportError, LookupError):
         result.close()
         raise
 
