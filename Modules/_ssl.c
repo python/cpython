@@ -3779,7 +3779,6 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
     num = sk_OPENSSL_CSTRING_num(groups);
     result = PyList_New(num);
     if (result == NULL) {
-        _setSSLError(get_state_ctx(self), "Can't allocate list", 0, __FILE__, __LINE__);
         goto error;
     }
 
@@ -3791,9 +3790,7 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
         // Group names are plain ASCII, so there's no chance of a decoding
         // error here. However, an allocation failure could occur when
         // constructing the Unicode version of the names.
-        item = PyUnicode_DecodeASCII(group, strlen(group), "strict");
-        if (item == NULL) {
-            _setSSLError(get_state_ctx(self), "Can't allocate group name", 0, __FILE__, __LINE__);
+        if ((item = PyUnicode_DecodeFSDefault(group)) == NULL) {
             goto error;
         }
 
