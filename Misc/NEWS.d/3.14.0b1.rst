@@ -1882,6 +1882,7 @@ Improve error message when :exc:`TypeError` occurs during
 .. section: Core and Builtins
 
 String arguments passed to "-c" are now automatically dedented.
+Only supports spaces and tabs and doesn't normalize empty lines.
 This allows "python -c" invocations to be indented
 in shell scripts without causing indentation errors. (Patch by Jon Crall and
 Steven Sun)

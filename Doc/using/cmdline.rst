@@ -49,7 +49,7 @@ additional methods of invocation:
   appropriately named script from that directory.
 * When called with ``-c command``, it executes the Python statement(s) given as
   *command*.  Here *command* may contain multiple statements separated by
-  newlines. Leading whitespace is significant in Python statements!
+  newlines.
 * When called with ``-m module-name``, the given module is located on the
   Python module path and executed as a script.
 
@@ -75,6 +75,7 @@ source.
 
    .. versionchanged:: 3.14
       *command* is automatically dedented before execution.
+      Only supports spaces and tabs and doesn't normalize empty lines.
 
 .. option:: -m <module-name>
 

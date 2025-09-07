@@ -1188,7 +1188,8 @@ Other language changes
   (Contributed by Tomasz Pytel in :gh:`132329`.)
 
 * The command-line option :option:`-c` now automatically dedents its code
-  argument before execution.
+  argument before execution. Only supports spaces and tabs and doesn't
+  normalize empty lines.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
 * Improve error message when an object supporting the synchronous

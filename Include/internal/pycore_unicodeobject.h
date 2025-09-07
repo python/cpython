@@ -258,6 +258,7 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
     int forward);
 
 /* Dedent a string.
+   Only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 extern PyObject* _PyUnicode_Dedent(PyObject *unicode);

@@ -14389,6 +14389,7 @@ search_longest_common_leading_whitespace(
 }
 
 /* Dedent a string.
+   Only supports spaces and tabs and doesn't normalize empty lines.
    Return a new reference on success, NULL with exception set on error.
    */
 PyObject *
