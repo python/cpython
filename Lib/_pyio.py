@@ -1619,7 +1619,7 @@ class FileIO(RawIOBase):
                 except OSError as e:
                     if e.errno != errno.ESPIPE:
                         raise
-        except:
+        except (ValueError, TypeError, IsADirectoryError, OSError):
             self._stat_atopen = None
             if owned_fd is not None:
                 os.close(owned_fd)
