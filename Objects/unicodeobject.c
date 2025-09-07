@@ -14332,6 +14332,8 @@ search_longest_common_leading_whitespace(
         // scan the whole line
         while (iter < end && *iter != '\n') {
             if (!leading_whitespace_end && !Py_ISSPACE(Py_CHARMASK(*iter))) {
+                /* `iter` points to the first non-whitespace character
+                   in this line */
                 if (iter == line_start) {
                     // some line has no indent, fast exit!
                     return 0;
@@ -14408,7 +14410,7 @@ _PyUnicode_Dedent(PyObject *unicode)
     // [whitespace_start, whitespace_start + whitespace_len)
     // describes the current longest common leading whitespace
     const char *whitespace_start = NULL;
-    const Py_ssize_t whitespace_len = search_longest_common_leading_whitespace(
+    Py_ssize_t whitespace_len = search_longest_common_leading_whitespace(
         src, end, &whitespace_start);
 
     // now we should trigger a dedent
@@ -14432,7 +14434,7 @@ _PyUnicode_Dedent(PyObject *unicode)
         }
 
         // invariant: *iter == '\n' or iter == end
-        const bool append_newline = iter < end;
+        bool append_newline = iter < end;
 
         // if this line has all white space, write '\n' and continue
         if (in_leading_space) {
@@ -14444,7 +14446,7 @@ _PyUnicode_Dedent(PyObject *unicode)
 
         /* copy [new_line_start + whitespace_len, iter) to buffer, then
             conditionally append '\n' */
-        const Py_ssize_t new_line_len = iter - line_start - whitespace_len;
+        Py_ssize_t new_line_len = iter - line_start - whitespace_len;
         assert(new_line_len >= 0);
         memcpy(dest_iter, line_start + whitespace_len, new_line_len);
 
