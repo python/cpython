@@ -14446,6 +14446,7 @@ _PyUnicode_Dedent(PyObject *unicode)
 
         /* copy [new_line_start + whitespace_len, iter) to buffer, then
             conditionally append '\n' */
+
         Py_ssize_t new_line_len = iter - line_start - whitespace_len;
         assert(new_line_len >= 0);
         memcpy(dest_iter, line_start + whitespace_len, new_line_len);
