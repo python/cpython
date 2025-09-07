@@ -1,0 +1,1 @@
+:func:`ast.literal_eval` is 10-20% faster for small inputs.
