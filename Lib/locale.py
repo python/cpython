@@ -97,6 +97,23 @@ if 'strxfrm' not in globals():
 if 'strcoll' not in globals():
     strcoll = _strcoll
 
+if sys.platform.startswith(('freebsd', 'dragonflybsd')):
+    # On FreeBSD, wcsxfrm() fails with EINVAL for
+    # 'Å' (U+00C5 LATIN CAPITAL LETTER A WITH RING ABOVE) and
+    # 'Å' (U+212B ANGSTROM SIGN) on non-C locales.
+    # As a workaround, replace them with
+    # 'å' (U+00E5 LATIN SMALL LETTER A WITH RING ABOVE).
+    # To preserve the relative order of these characters according to
+    # wcscoll(), add a digit 0-2.
+    _strxfrm = strxfrm
+    def strxfrm(string, /):
+        if (not string.isascii() and
+            _setlocale(LC_COLLATE) not in ('C', 'C.UTF-8', 'POSIX') and
+            ('\xe5' in string or '\xc5' in string or '\u212b' in string)):
+            string = string.replace('\xe5', '\xe50')
+            string = string.replace('\xc5', '\xe51')
+            string = string.replace('\u212b', '\xe52')
+        return _strxfrm(string)
 
 _localeconv = localeconv
 

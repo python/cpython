@@ -1,0 +1,3 @@
+Fix :func:`locale.strxfrm` failure on FreeBSD and DragonFlyBSD for strings
+containing characters 'Å' (U+00C5 LATIN CAPITAL LETTER A WITH RING ABOVE) or
+'Å' (U+212B ANGSTROM SIGN).
