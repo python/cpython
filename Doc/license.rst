@@ -1175,7 +1175,7 @@ Profiling module
 ----------------
 
 The :mod:`!profiling` module includes vendored third-party libraries in
-:file:`Lib/profile/sampling/_vendor/` with the following licenses:
+:file:`Lib/profiling/sampling/_vendor/` with the following licenses:
 
 **d3-flamegraph**
 
