@@ -927,13 +927,19 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         return PyObject_CallMethodNoArgs(self, &_Py_ID(readall));
     }
 
-    /* TODO: allocate a bytes object directly instead and manually construct
-       a writable memoryview pointing to it. */
-    b = PyByteArray_FromStringAndSize(NULL, n);
+    b = PyBytes_FromStringAndSize(NULL, n);
     if (b == NULL)
         return NULL;
 
-    res = PyObject_CallMethodObjArgs(self, &_Py_ID(readinto), b, NULL);
+    PyObject *mv = PyMemoryView_FromMemory(PyBytes_AS_STRING(b), n, PyBUF_WRITE);
+    if (mv == NULL) {
+        Py_DECREF(b);
+        return NULL;
+    }
+
+    res = PyObject_CallMethodObjArgs(self, &_Py_ID(readinto), mv, NULL);
+    Py_DECREF(mv);
+
     if (res == NULL || res == Py_None) {
         Py_DECREF(b);
         return res;
@@ -946,9 +952,14 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         return NULL;
     }
 
-    res = PyBytes_FromStringAndSize(PyByteArray_AsString(b), n);
-    Py_DECREF(b);
-    return res;
+    if (n != PyBytes_GET_SIZE(b)) {
+        if (_PyBytes_Resize(&b, n) < 0) {
+            Py_DECREF(b);
+            return NULL;
+        }
+    }
+
+    return b;
 }
 
 
