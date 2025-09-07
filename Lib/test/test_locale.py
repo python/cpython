@@ -370,21 +370,8 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
-
-    # @unittest.skipUnless(sys.platform == 'darwin',
-    #                  "only macOS")
-    def test_xxx(self):
-        bad = []
-        for c in map(chr, range(1, 0x1000)):
-            if c.isprintable():
-                for n in range(8):
-                    x = 'a'*n + c
-                    s = locale.strxfrm(x)
-                    if '\1' in s and s.index('\1') < len(x):
-                        bad += c
-                        print(f'{x!r} {x!a} -> {s!a}')
-                        break
-        self.fail(repr(''.join(bad)))
+        # gh-130567: Should not crash on macOS.
+        locale.strxfrm('Gwich\u02bcin')
 
 
 class NormalizeTest(unittest.TestCase):
