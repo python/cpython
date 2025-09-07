@@ -921,7 +921,7 @@ static PyObject *
 _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
 /*[clinic end generated code: output=6cdeb731e3c9f13c input=b6d0dcf6417d1374]*/
 {
-    PyObject *b, *res;
+    PyObject *b, *res, *mv;
 
     if (n < 0) {
         return PyObject_CallMethodNoArgs(self, &_Py_ID(readall));
@@ -931,7 +931,7 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
     if (b == NULL)
         return NULL;
 
-    PyObject *mv = PyMemoryView_FromMemory(PyBytes_AS_STRING(b), n, PyBUF_WRITE);
+    mv = PyMemoryView_FromMemory(PyBytes_AS_STRING(b), n, PyBUF_WRITE);
     if (mv == NULL) {
         Py_DECREF(b);
         return NULL;
@@ -952,11 +952,9 @@ _io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
         return NULL;
     }
 
-    if (n != PyBytes_GET_SIZE(b)) {
-        if (_PyBytes_Resize(&b, n) < 0) {
-            Py_DECREF(b);
-            return NULL;
-        }
+    if (_PyBytes_Resize(&b, n) < 0) {
+        Py_DECREF(b);
+        return NULL;
     }
 
     return b;
