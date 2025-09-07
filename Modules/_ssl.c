@@ -6348,49 +6348,24 @@ _ssl_get_sigalgs_impl(PyObject *module)
 /*[clinic end generated code: output=ab0791b63856854b input=bf74cdad3a19d29e]*/
 {
 #if OPENSSL_VERSION_NUMBER >= 0x30400000L
-    const char *sigalgs_list, *sigalg, *end;
-    PyObject *item, *result = NULL;
-    size_t len;
+    const char *sigalgs;
+    PyObject *sigalgs_str, *sigalgs_list;
 
-    if ((sigalgs_list = SSL_get1_builtin_sigalgs(NULL)) == NULL) {
+    if ((sigalgs = SSL_get1_builtin_sigalgs(NULL)) == NULL) {
         PyErr_NoMemory();
-        goto error;
+        return NULL;
     }
 
-    result = PyList_New(0);
-    if (result == NULL) {
-        PyErr_NoMemory();
-        goto error;
+    if ((sigalgs_str = PyUnicode_DecodeASCII(sigalgs, strlen(sigalgs),
+                                             "strict")) == NULL) {
+        OPENSSL_free((void *)sigalgs);
+        return NULL;
     }
 
-    sigalg = sigalgs_list;
-    while (sigalg) {
-        end = strchr(sigalg, ':');
-        len = end? end - sigalg : strlen(sigalg);
-
-        // Alg names are plain ASCII, so there's no chance of a decoding
-        // error here. However, an allocation failure could occur when
-        // constructing the Unicode version of the names.
-        item = PyUnicode_DecodeASCII(sigalg, len, "strict");
-        if (item == NULL) {
-            goto error;
-        }
-
-        if (PyList_Append(result, item) == -1) {
-            Py_DECREF(item);
-            goto error;
-        }
-
-        Py_DECREF(item);
-        sigalg = end? end + 1 : end;
-    }
-
-    OPENSSL_free((void *)sigalgs_list);
-    return result;
-error:
-    OPENSSL_free((void *)sigalgs_list);
-    Py_XDECREF(result);
-    return NULL;
+    OPENSSL_free((void *)sigalgs);
+    sigalgs_list = PyUnicode_Split(sigalgs_str, _Py_LATIN1_CHR(':'), -1);
+    Py_DECREF(sigalgs_str);
+    return sigalgs_list;
 #else
     PyErr_SetString(PyExc_NotImplementedError,
                     "Getting signature algorithms requires OpenSSL 3.4 or later.");

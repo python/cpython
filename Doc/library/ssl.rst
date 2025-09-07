@@ -218,7 +218,7 @@ purposes.
 Signature algorithms
 ^^^^^^^^^^^^^^^^^^^^
 
-.. function: get_sigalgs()
+.. function:: get_sigalgs()
 
    Return a list of available TLS signature algorithm names used
    by servers to complete the TLS handshake or clients requesting
