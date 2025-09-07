@@ -75,7 +75,8 @@ source.
 
    .. versionchanged:: 3.14
       *command* is automatically dedented before execution.
-      Only supports spaces and tabs and doesn't normalize empty lines.
+  The auto-dedentation behavior only supports spaces and tabs,
+  and does not normalize empty lines.
 
 .. option:: -m <module-name>
 
