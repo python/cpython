@@ -15,6 +15,7 @@ import dis
 from os.path import normcase
 import _pickle
 import pickle
+import re
 import shutil
 import stat
 import sys
@@ -6160,7 +6161,6 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(pwd)
 
     def test_re_module_has_signatures(self):
-        import re
         methods_no_signature = {'Match': {'group'}}
         self._test_module_has_signatures(re,
                 methods_no_signature=methods_no_signature,
