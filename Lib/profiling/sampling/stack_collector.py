@@ -1,8 +1,10 @@
+import base64
 import collections
 import functools
 import json
 import linecache
 import os
+import pathlib
 
 from .collector import Collector
 
@@ -198,65 +200,60 @@ class FlamegraphCollector(StackTraceCollector):
     def _create_flamegraph_html(self, data):
         data_json = json.dumps(data)
 
-        template_dir = os.path.dirname(__file__)
-        template_path = os.path.join(template_dir, "flamegraph_template.html")
-        css_path = os.path.join(template_dir, "flamegraph.css")
-        js_path = os.path.join(template_dir, "flamegraph.js")
+        template_dir = pathlib.Path(__file__).parent
+        vendor_dir = template_dir / "_vendor"
+        assets_dir = template_dir / "_assets"
 
-        try:
-            with open(template_path, "r", encoding="utf-8") as f:
-                html_template = f.read()
-            with open(css_path, "r", encoding="utf-8") as f:
-                css_content = f.read()
-            with open(js_path, "r", encoding="utf-8") as f:
-                js_content = f.read()
+        d3_path = vendor_dir / "d3" / "7.8.5" / "d3.min.js"
+        d3_flame_graph_dir = vendor_dir /  "d3-flame-graph" / "4.1.3"
+        fg_css_path = d3_flame_graph_dir / "d3-flamegraph.css"
+        fg_js_path = d3_flame_graph_dir / "d3-flamegraph.min.js"
+        fg_tooltip_js_path = d3_flame_graph_dir / "d3-flamegraph-tooltip.min.js"
 
-            html_template = html_template.replace(
-                "<!-- INLINE_CSS -->", f"<style>\n{css_content}\n</style>"
-            )
-            html_template = html_template.replace(
-                "<!-- INLINE_JS -->", f"<script>\n{js_content}\n</script>"
-            )
+        html_template = (template_dir / "flamegraph_template.html").read_text(encoding="utf-8")
+        css_content = (template_dir / "flamegraph.css").read_text(encoding="utf-8")
+        js_content = (template_dir / "flamegraph.js").read_text(encoding="utf-8")
 
-            # Replace the placeholder with actual data
-            html_content = html_template.replace(
-                "{{FLAMEGRAPH_DATA}}", data_json
-            )
+        # Inline first-party CSS/JS
+        html_template = html_template.replace(
+            "<!-- INLINE_CSS -->", f"<style>\n{css_content}\n</style>"
+        )
+        html_template = html_template.replace(
+            "<!-- INLINE_JS -->", f"<script>\n{js_content}\n</script>"
+        )
 
-            return html_content
+        png_path = assets_dir / "python-logo-only.png"
+        b64_logo = base64.b64encode(png_path.read_bytes()).decode("ascii")
 
-        except FileNotFoundError as e:
-            print(f"Error: Could not find template file: {e}")
-            return self._create_fallback_html(data_json)
-        except Exception as e:
-            print(f"Error creating flamegraph HTML: {e}")
-            return self._create_fallback_html(data_json)
+        # Let CSS control size; keep markup simple
+        logo_html = f'<img src="data:image/png;base64,{b64_logo}" alt="Python logo"/>'
+        html_template = html_template.replace("<!-- INLINE_LOGO -->", logo_html)
 
-    def _create_fallback_html(self, data_json):
-        """Create a simple fallback HTML if template files are missing"""
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Python Flamegraph</title>
-            <script src="https://d3js.org/d3.v7.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"></script>
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.css">
-        </head>
-        <body>
-            <div id="chart"></div>
-            <script>
-                const data = {data_json};
-                const chart = flamegraph()
-                    .width(window.innerWidth)
-                    .cellHeight(18)
-                    .transitionDuration(250)
-                    .minFrameSize(1);
+        d3_js = d3_path.read_text(encoding="utf-8")
+        fg_css = fg_css_path.read_text(encoding="utf-8")
+        fg_js = fg_js_path.read_text(encoding="utf-8")
+        fg_tooltip_js = fg_tooltip_js_path.read_text(encoding="utf-8")
 
-                d3.select("#chart")
-                    .datum(data)
-                    .call(chart);
-            </script>
-        </body>
-        </html>
-        """
+        html_template = html_template.replace(
+            "<!-- INLINE_VENDOR_D3_JS -->",
+            f"<script>\n{d3_js}\n</script>",
+        )
+        html_template = html_template.replace(
+            "<!-- INLINE_VENDOR_FLAMEGRAPH_CSS -->",
+            f"<style>\n{fg_css}\n</style>",
+        )
+        html_template = html_template.replace(
+            "<!-- INLINE_VENDOR_FLAMEGRAPH_JS -->",
+            f"<script>\n{fg_js}\n</script>",
+        )
+        html_template = html_template.replace(
+            "<!-- INLINE_VENDOR_FLAMEGRAPH_TOOLTIP_JS -->",
+            f"<script>\n{fg_tooltip_js}\n</script>",
+        )
+
+        # Replace the placeholder with actual data
+        html_content = html_template.replace(
+            "{{FLAMEGRAPH_DATA}}", data_json
+        )
+
+        return html_content

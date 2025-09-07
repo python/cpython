@@ -29,8 +29,8 @@ body {
 
 .python-logo {
   width: auto;
-  height: 64px;
-  margin-bottom: 16px;
+  height: 72px;
+  margin-bottom: 12px; /* tighter spacing to avoid visual gap */
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -38,9 +38,12 @@ body {
 }
 
 .python-logo img {
-  height: 64px;
+  height: 72px;
   width: auto;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+  display: block; /* avoid baseline alignment issues */
+  vertical-align: middle;
+  /* subtle shadow that does not affect layout */
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
 }
 
 .header-text h1 {
@@ -110,24 +113,26 @@ body {
 }
 
 .d3-flame-graph rect {
-  stroke: rgba(55, 118, 171, 0.3) !important;
-  stroke-width: 1px !important;
+  /* Prefer selector specificity instead of !important */
+  stroke: rgba(55, 118, 171, 0.3);
+  stroke-width: 1px;
   cursor: pointer;
   transition: all 0.1s ease;
 }
 
 .d3-flame-graph rect:hover {
-  stroke: #3776ab !important;
-  stroke-width: 2px !important;
+  stroke: #3776ab;
+  stroke-width: 2px;
   filter: brightness(1.05);
 }
 
 .d3-flame-graph text {
-  font-family: "Source Sans Pro", sans-serif !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  fill: #2e3338 !important;
-  pointer-events: none !important;
+  /* Ensure labels use our font without !important */
+  font-family: "Source Sans Pro", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  fill: #2e3338;
+  pointer-events: none;
 }
 
 .info-panel {
@@ -200,14 +205,16 @@ body {
 }
 
 @media (max-width: 600px) {
+  .python-logo { height: 48px; }
+  .python-logo img { height: 48px; }
   #show-info-btn {
-    left: 8px !important;
-    bottom: 8px !important;
+    left: 8px;
+    bottom: 8px;
   }
   .info-panel {
-    left: 60px !important; /* Still leave space for button */
-    bottom: 8px !important;
-    max-width: 90vw !important;
+    left: 60px; /* Still leave space for button */
+    bottom: 8px;
+    max-width: 90vw;
   }
 }
 
