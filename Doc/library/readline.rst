@@ -76,7 +76,7 @@ The following functions relate to the init file and user configuration:
    if given, and :code:`"<readline_init_file>"` otherwise, regardless of
    which file the library resolves.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The auditing event was added.
 
 
@@ -119,7 +119,7 @@ The following functions operate on a history file:
    and raises an :ref:`auditing event <auditing>` ``open`` with the file
    name if given and :code:`"~/.history"` otherwise.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The auditing event was added.
 
 
@@ -131,7 +131,7 @@ The following functions operate on a history file:
    :ref:`auditing event <auditing>` ``open`` with the file name if given and
    :code:`"~/.history"` otherwise.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The auditing event was added.
 
 
@@ -146,7 +146,7 @@ The following functions operate on a history file:
 
    .. versionadded:: 3.5
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       The auditing event was added.
 
 

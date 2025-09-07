@@ -225,6 +225,25 @@ bool_converter_impl(PyObject *module, int a, int b, int c)
 
 
 /*[clinic input]
+bool_converter_c_default
+
+    a: bool = True
+    b: bool = False
+    c: bool(c_default="-2") = True
+    d: bool(c_default="-3") = x
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+bool_converter_c_default_impl(PyObject *module, int a, int b, int c, int d)
+/*[clinic end generated code: output=cf204382e1e4c30c input=185786302ab84081]*/
+{
+    return Py_BuildValue("iiii", a, b, c, d);
+}
+
+
+/*[clinic input]
 char_converter
 
     a: char = b'A'
@@ -424,16 +443,21 @@ py_ssize_t_converter
     a: Py_ssize_t = 12
     b: Py_ssize_t(accept={int}) = 34
     c: Py_ssize_t(accept={int, NoneType}) = 56
+    d: Py_ssize_t(accept={int}, allow_negative=False) = 78
+    e: Py_ssize_t(accept={int, NoneType}, allow_negative=False) = 90
+    f: Py_ssize_t(accept={int}, allow_negative=False) = -12
+    g: Py_ssize_t(accept={int, NoneType}, py_default="-34", allow_negative=False) = -34
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                          Py_ssize_t c)
-/*[clinic end generated code: output=ce252143e0ed0372 input=76d0f342e9317a1f]*/
+                          Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                          Py_ssize_t f, Py_ssize_t g)
+/*[clinic end generated code: output=ecf8e1a4a9abc95e input=7b7fa954780c1cb0]*/
 {
-    RETURN_PACKED_ARGS(3, PyLong_FromSsize_t, Py_ssize_t, a, b, c);
+    RETURN_PACKED_ARGS(7, PyLong_FromSsize_t, Py_ssize_t, a, b, c, d, e, f, g);
 }
 
 
@@ -2296,6 +2320,7 @@ static PyMethodDef tester_methods[] = {
     BYTE_ARRAY_OBJECT_CONVERTER_METHODDEF
     UNICODE_CONVERTER_METHODDEF
     BOOL_CONVERTER_METHODDEF
+    BOOL_CONVERTER_C_DEFAULT_METHODDEF
     CHAR_CONVERTER_METHODDEF
     UNSIGNED_CHAR_CONVERTER_METHODDEF
     SHORT_CONVERTER_METHODDEF

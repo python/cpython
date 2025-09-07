@@ -1,6 +1,6 @@
-========================================
-:mod:`typing` --- Support for type hints
-========================================
+=========================================
+:mod:`!typing` --- Support for type hints
+=========================================
 
 .. testsetup:: *
 
@@ -45,15 +45,15 @@ provides backports of these new features to older versions of Python.
 
 .. seealso::
 
-   `"Typing cheat sheet" <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_
+   `Typing cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_
        A quick overview of type hints (hosted at the mypy docs)
 
-   "Type System Reference" section of `the mypy docs <https://mypy.readthedocs.io/en/stable/index.html>`_
+   Type System Reference section of `the mypy docs <https://mypy.readthedocs.io/en/stable/index.html>`_
       The Python typing system is standardised via PEPs, so this reference
       should broadly apply to most Python type checkers. (Some parts may still
       be specific to mypy.)
 
-   `"Static Typing with Python" <https://typing.python.org/en/latest/>`_
+   `Static Typing with Python <https://typing.python.org/en/latest/>`_
       Type-checker-agnostic documentation written by the community detailing
       type system features, useful typing related tools and typing best
       practices.
@@ -64,7 +64,7 @@ Specification for the Python Type System
 ========================================
 
 The canonical, up-to-date specification of the Python type system can be
-found at `"Specification for the Python type system" <https://typing.python.org/en/latest/spec/index.html>`_.
+found at `Specification for the Python type system <https://typing.python.org/en/latest/spec/index.html>`_.
 
 .. _type-aliases:
 
@@ -230,9 +230,11 @@ For example:
 
    callback: Callable[[str], Awaitable[None]] = on_update
 
+.. index:: single: ...; ellipsis literal
+
 The subscription syntax must always be used with exactly two values: the
 argument list and the return type.  The argument list must be a list of types,
-a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis. The return type must
+a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis (``...``). The return type must
 be a single type.
 
 If a literal ellipsis ``...`` is given as the argument list, it indicates that
@@ -375,8 +377,11 @@ accepts *any number* of type arguments::
    # but ``z`` has been assigned to a tuple of length 3
    z: tuple[int] = (1, 2, 3)
 
+.. index:: single: ...; ellipsis literal
+
 To denote a tuple which could be of *any* length, and in which all elements are
-of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
+of the same type ``T``, use the literal ellipsis ``...``: ``tuple[T, ...]``.
+To denote an empty tuple, use
 ``tuple[()]``. Using plain ``tuple`` as an annotation is equivalent to using
 ``tuple[Any, ...]``::
 
@@ -665,7 +670,7 @@ through a simple assignment::
 User-defined generics for parameter expressions are also supported via parameter
 specification variables in the form ``[**P]``.  The behavior is consistent
 with type variables' described above as parameter specification variables are
-treated by the typing module as a specialized type variable.  The one exception
+treated by the :mod:`!typing` module as a specialized type variable.  The one exception
 to this is that a list of types can be used to substitute a :class:`ParamSpec`::
 
    >>> class Z[T, **P]: ...  # T is a TypeVar; P is a ParamSpec
@@ -706,7 +711,7 @@ are intended primarily for static type checking.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
-generics is cached, and most types in the typing module are :term:`hashable` and
+generics is cached, and most types in the :mod:`!typing` module are :term:`hashable` and
 comparable for equality.
 
 
@@ -1098,6 +1103,12 @@ These can be used as types in annotations. They all support subscription using
 
        Union[Union[int, str], float] == Union[int, str, float]
 
+     However, this does not apply to unions referenced through a type
+     alias, to avoid forcing evaluation of the underlying :class:`TypeAliasType`::
+
+       type A = Union[int, str]
+       Union[A, float] != Union[int, str, float]
+
    * Unions of a single argument vanish, e.g.::
 
        Union[int] == int  # The constructor actually returns int
@@ -1155,6 +1166,8 @@ These can be used as types in annotations. They all support subscription using
 .. data:: Concatenate
 
    Special form for annotating higher-order functions.
+
+   .. index:: single: ...; ellipsis literal
 
    ``Concatenate`` can be used in conjunction with :ref:`Callable <annotating-callables>` and
    :class:`ParamSpec` to annotate a higher-order callable which adds, removes,
@@ -1229,6 +1242,32 @@ These can be used as types in annotations. They all support subscription using
    ``Literal[...]`` cannot be subclassed. At runtime, an arbitrary value
    is allowed as type argument to ``Literal[...]``, but type checkers may
    impose restrictions. See :pep:`586` for more details about literal types.
+
+   Additional details:
+
+   * The arguments must be literal values and there must be at least one.
+
+   * Nested ``Literal`` types are flattened, e.g.::
+
+      assert Literal[Literal[1, 2], 3] == Literal[1, 2, 3]
+
+     However, this does not apply to ``Literal`` types referenced through a type
+     alias, to avoid forcing evaluation of the underlying :class:`TypeAliasType`::
+
+      type A = Literal[1, 2]
+      assert Literal[A, 3] != Literal[1, 2, 3]
+
+   * Redundant arguments are skipped, e.g.::
+
+      assert Literal[1, 2, 1] == Literal[1, 2]
+
+   * When comparing literals, the argument order is ignored, e.g.::
+
+      assert Literal[1, 2] == Literal[2, 1]
+
+   * You cannot subclass or instantiate a ``Literal``.
+
+   * You cannot write ``Literal[X][Y]``.
 
    .. versionadded:: 3.8
 
@@ -1398,6 +1437,14 @@ These can be used as types in annotations. They all support subscription using
 
       assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
           int, ValueRange(3, 10), ctype("char")
+      ]
+
+   However, this does not apply to ``Annotated`` types referenced through a type
+   alias, to avoid forcing evaluation of the underlying :class:`TypeAliasType`::
+
+      type From3To10[T] = Annotated[T, ValueRange(3, 10)]
+      assert Annotated[From3To10[int], ctype("char")] != Annotated[
+         int, ValueRange(3, 10), ctype("char")
       ]
 
    Duplicated metadata elements are not removed::
@@ -2533,7 +2580,7 @@ types.
       at runtime as soon as the class has been created. Monkey-patching
       attributes onto a runtime-checkable protocol will still work, but will
       have no impact on :func:`isinstance` checks comparing objects to the
-      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      protocol. See :ref:`What's new in Python 3.12 <whatsnew-typing-py312>`
       for more details.
 
 
@@ -2787,7 +2834,7 @@ types.
 Protocols
 ---------
 
-The following protocols are provided by the typing module. All are decorated
+The following protocols are provided by the :mod:`!typing` module. All are decorated
 with :func:`@runtime_checkable <runtime_checkable>`.
 
 .. class:: SupportsAbs
@@ -3317,8 +3364,13 @@ Introspection helpers
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
 
-   See also :func:`inspect.get_annotations`, a lower-level function that
+   See also :func:`annotationlib.get_annotations`, a lower-level function that
    returns annotations more directly.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. note::
 
@@ -3460,20 +3512,16 @@ Introspection helpers
    Evaluate an :class:`annotationlib.ForwardRef` as a :term:`type hint`.
 
    This is similar to calling :meth:`annotationlib.ForwardRef.evaluate`,
-   but unlike that method, :func:`!evaluate_forward_ref` also:
-
-   * Recursively evaluates forward references nested within the type hint.
-   * Raises :exc:`TypeError` when it encounters certain objects that are
-     not valid type hints.
-   * Replaces type hints that evaluate to :const:`!None` with
-     :class:`types.NoneType`.
-   * Supports the :attr:`~annotationlib.Format.FORWARDREF` and
-     :attr:`~annotationlib.Format.STRING` formats.
+   but unlike that method, :func:`!evaluate_forward_ref` also
+   recursively evaluates forward references nested within the type hint.
 
    See the documentation for :meth:`annotationlib.ForwardRef.evaluate` for
-   the meaning of the *owner*, *globals*, *locals*, and *type_params* parameters.
-   *format* specifies the format of the annotation and is a member of
-   the :class:`annotationlib.Format` enum.
+   the meaning of the *owner*, *globals*, *locals*, *type_params*, and *format* parameters.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. versionadded:: 3.14
 
@@ -3499,28 +3547,32 @@ Constant
 .. data:: TYPE_CHECKING
 
    A special constant that is assumed to be ``True`` by 3rd party static
-   type checkers. It is ``False`` at runtime.
+   type checkers. It's ``False`` at runtime.
+
+   A module which is expensive to import, and which only contain types
+   used for typing annotations, can be safely imported inside an
+   ``if TYPE_CHECKING:`` block.  This prevents the module from actually
+   being imported at runtime; annotations aren't eagerly evaluated
+   (see :pep:`649`) so using undefined symbols in annotations is
+   harmless--as long as you don't later examine them.
+   Your static type analysis tool will set ``TYPE_CHECKING`` to
+   ``True`` during static type analysis, which means the module will
+   be imported and the types will be checked properly during such analysis.
 
    Usage::
 
       if TYPE_CHECKING:
           import expensive_mod
 
-      def fun(arg: 'expensive_mod.SomeType') -> None:
+      def fun(arg: expensive_mod.SomeType) -> None:
           local_var: expensive_mod.AnotherType = other_fun()
 
-   The first type annotation must be enclosed in quotes, making it a
-   "forward reference", to hide the ``expensive_mod`` reference from the
-   interpreter runtime.  Type annotations for local variables are not
-   evaluated, so the second annotation does not need to be enclosed in quotes.
-
-   .. note::
-
-      If ``from __future__ import annotations`` is used,
-      annotations are not evaluated at function definition time.
-      Instead, they are stored as strings in ``__annotations__``.
-      This makes it unnecessary to use quotes around the annotation
-      (see :pep:`563`).
+   If you occasionally need to examine type annotations at runtime
+   which may contain undefined symbols, use
+   :meth:`annotationlib.get_annotations` with a ``format`` parameter
+   of :attr:`annotationlib.Format.STRING` or
+   :attr:`annotationlib.Format.FORWARDREF` to safely retrieve the
+   annotations without raising :exc:`NameError`.
 
    .. versionadded:: 3.5.2
 
@@ -3531,7 +3583,7 @@ Deprecated aliases
 ------------------
 
 This module defines several deprecated aliases to pre-existing
-standard library classes. These were originally included in the typing
+standard library classes. These were originally included in the :mod:`!typing`
 module in order to support parameterizing these generic classes using ``[]``.
 However, the aliases became redundant in Python 3.9 when the
 corresponding pre-existing classes were enhanced to support ``[]`` (see
@@ -3544,7 +3596,7 @@ interpreter for these aliases.
 
 If at some point it is decided to remove these deprecated aliases, a
 deprecation warning will be issued by the interpreter for at least two releases
-prior to removal. The aliases are guaranteed to remain in the typing module
+prior to removal. The aliases are guaranteed to remain in the :mod:`!typing` module
 without deprecation warnings until at least Python 3.14.
 
 Type checkers are encouraged to flag uses of the deprecated types if the

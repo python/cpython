@@ -83,11 +83,6 @@ _TEST_PATH = os.path.normpath(os.path.join("_", "_"))[:-1]
 
 
 def _validate_tzfile_path(path, _base=_TEST_PATH):
-    if not path:
-        raise ValueError(
-            "ZoneInfo key must not be an empty string"
-        )
-
     if os.path.isabs(path):
         raise ValueError(
             f"ZoneInfo keys may not be absolute paths, got: {path}"
@@ -129,7 +124,8 @@ def available_timezones():
     # Start with loading from the tzdata package if it exists: this has a
     # pre-assembled list of zones that only requires opening one file.
     try:
-        with resources.files("tzdata").joinpath("zones").open("r") as f:
+        zones_file = resources.files("tzdata").joinpath("zones")
+        with zones_file.open("r", encoding="utf-8") as f:
             for zone in f:
                 zone = zone.strip()
                 if zone:

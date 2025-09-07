@@ -3,11 +3,12 @@ import os
 import sys
 import unittest
 from functools import partial
-from test.support import os_helper
+from test.support import os_helper, force_not_colorized_test_class
+
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY
 
-from .support import handle_all_events, code_to_events, reader_no_colors
+from .support import handle_all_events, code_to_events
 
 try:
     from _pyrepl.console import Event
@@ -15,10 +16,15 @@ try:
 except ImportError:
     pass
 
+from _pyrepl.terminfo import _TERMINAL_CAPABILITIES
+
+TERM_CAPABILITIES = _TERMINAL_CAPABILITIES["ansi"]
+
 
 def unix_console(events, **kwargs):
-    console = UnixConsole()
+    console = UnixConsole(term="xterm")
     console.get_event = MagicMock(side_effect=events)
+    console.getpending = MagicMock(return_value=Event("key", ""))
 
     height = kwargs.get("height", 25)
     width = kwargs.get("width", 80)
@@ -33,7 +39,7 @@ def unix_console(events, **kwargs):
 
 handle_events_unix_console = partial(
     handle_all_events,
-    prepare_console=partial(unix_console),
+    prepare_console=unix_console,
 )
 handle_events_narrow_unix_console = partial(
     handle_all_events,
@@ -48,41 +54,11 @@ handle_events_unix_console_height_3 = partial(
 )
 
 
-TERM_CAPABILITIES = {
-    "bel": b"\x07",
-    "civis": b"\x1b[?25l",
-    "clear": b"\x1b[H\x1b[2J",
-    "cnorm": b"\x1b[?12l\x1b[?25h",
-    "cub": b"\x1b[%p1%dD",
-    "cub1": b"\x08",
-    "cud": b"\x1b[%p1%dB",
-    "cud1": b"\n",
-    "cuf": b"\x1b[%p1%dC",
-    "cuf1": b"\x1b[C",
-    "cup": b"\x1b[%i%p1%d;%p2%dH",
-    "cuu": b"\x1b[%p1%dA",
-    "cuu1": b"\x1b[A",
-    "dch1": b"\x1b[P",
-    "dch": b"\x1b[%p1%dP",
-    "el": b"\x1b[K",
-    "hpa": b"\x1b[%i%p1%dG",
-    "ich": b"\x1b[%p1%d@",
-    "ich1": None,
-    "ind": b"\n",
-    "pad": None,
-    "ri": b"\x1bM",
-    "rmkx": b"\x1b[?1l\x1b>",
-    "smkx": b"\x1b[?1h\x1b=",
-}
-
-
 @unittest.skipIf(sys.platform == "win32", "No Unix event queue on Windows")
-@patch("_pyrepl.curses.tigetstr", lambda s: TERM_CAPABILITIES.get(s))
 @patch(
-    "_pyrepl.curses.tparm",
+    "_pyrepl.terminfo.tparm",
     lambda s, *args: s + b":" + b",".join(str(i).encode() for i in args),
 )
-@patch("_pyrepl.curses.setupterm", lambda a, b: None)
 @patch(
     "termios.tcgetattr",
     lambda _: [
@@ -118,6 +94,7 @@ TERM_CAPABILITIES = {
 )
 @patch("termios.tcsetattr", lambda a, b, c: None)
 @patch("os.write")
+@force_not_colorized_test_class
 class TestConsole(TestCase):
     def test_simple_addition(self, _os_write):
         code = "12+34"
@@ -253,9 +230,7 @@ class TestConsole(TestCase):
         # fmt: on
 
         events = itertools.chain(code_to_events(code))
-        reader, console = handle_events_short_unix_console(
-            events, prepare_reader=reader_no_colors
-        )
+        reader, console = handle_events_short_unix_console(events)
 
         console.height = 2
         console.getheightwidth = MagicMock(lambda _: (2, 80))
@@ -320,7 +295,7 @@ class TestConsole(TestCase):
 
     def test_getheightwidth_with_invalid_environ(self, _os_write):
         # gh-128636
-        console = UnixConsole()
+        console = UnixConsole(term="xterm")
         with os_helper.EnvironmentVarGuard() as env:
             env["LINES"] = ""
             self.assertIsInstance(console.getheightwidth(), tuple)
