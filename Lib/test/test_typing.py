@@ -5856,7 +5856,7 @@ class GenericTests(BaseTestCase):
 
         evil = EvilTypeVar()
         type type_alias[*_] = 0
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, ".+__typing_subst__.+tuple.+int.*"):
             type_alias[evil][0]
 
 
