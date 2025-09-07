@@ -6902,9 +6902,9 @@ class MiscTestCase(unittest.TestCase):
 
         name = os.path.join(os.path.dirname(__file__), 'mp_preload_main.py')
         _, out, err = test.support.script_helper.assert_python_ok(name)
-        self.assertFalse(err, msg=err.decode())
+        self.assertEqual(err, b'')
 
-        # TODO: Where is the extra empty line coming from?
+        # The trailing empty string comes from split() on output ending with \n
         out = out.decode().split("\n")
         self.assertEqual(out, ['__main__', '__mp_main__', 'f', 'f', ''])
 
