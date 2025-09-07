@@ -1188,8 +1188,7 @@ Other language changes
   (Contributed by Tomasz Pytel in :gh:`132329`.)
 
 * The command-line option :option:`-c` now automatically dedents its code
-  argument before execution. The auto-dedentation behavior mirrors
-  :func:`textwrap.dedent`.
+  argument before execution.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
 * Improve error message when an object supporting the synchronous

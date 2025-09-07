@@ -14389,7 +14389,6 @@ search_longest_common_leading_whitespace(
 }
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of `textwrap.dedent`.
    Return a new reference on success, NULL with exception set on error.
    */
 PyObject *
