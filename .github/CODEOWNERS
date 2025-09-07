@@ -83,6 +83,7 @@ Tools/patchcheck/             @AA-Turner
 configure*                       @erlend-aasland @corona10 @AA-Turner @emmatyping
 Makefile.pre.in                  @erlend-aasland @AA-Turner @emmatyping
 Modules/Setup*                   @erlend-aasland @AA-Turner @emmatyping
+Modules/makesetup                @emmatyping
 Tools/build/regen-configure.sh   @AA-Turner
 
 
