@@ -5,12 +5,13 @@ from .collector import Collector
 
 
 class PstatsCollector(Collector):
-    def __init__(self, sample_interval_usec):
+    def __init__(self, sample_interval_usec, filter_func=None):
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
         )
         self.stats = {}
         self.sample_interval_usec = sample_interval_usec
+        self.filter_func = filter_func  # Function that returns True if frame should be excluded
         self.callers = collections.defaultdict(
             lambda: collections.defaultdict(int)
         )
@@ -19,6 +20,19 @@ class PstatsCollector(Collector):
         for thread_id, frames in stack_frames:
             if not frames:
                 continue
+
+            # TODO: Where should we filter stack frames? RemoteUnwinder?
+            # Apply filtering if a filter function is provided
+            if self.filter_func:
+                filtered_frames = []
+                for frame in frames:
+                    if not self.filter_func(frame):  # Keep frame if filter returns False
+                        filtered_frames.append(frame)
+
+                # If entire stack is filtered out, skip
+                if not filtered_frames:
+                    continue
+                frames = filtered_frames
 
             # Process each frame in the stack to track cumulative calls
             for frame in frames:
