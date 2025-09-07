@@ -351,8 +351,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
         enc = codecs.lookup(locale.getencoding() or 'ascii').name
         if enc not in ('utf-8', 'iso8859-1', 'cp1252'):
             raise unittest.SkipTest('encoding not suitable')
-        if enc != 'iso8859-1' and (sys.platform == 'darwin' or is_android or
-                                   sys.platform.startswith('freebsd')):
+        if enc != 'iso8859-1' and is_android:
             raise unittest.SkipTest('wcscoll/wcsxfrm have known bugs')
         BaseLocalizedTest.setUp(self)
 
@@ -371,6 +370,21 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
+
+    # @unittest.skipUnless(sys.platform == 'darwin',
+    #                  "only macOS")
+    def test_xxx(self):
+        bad = []
+        for c in map(chr, range(1, 0x1000)):
+            if c.isprintable():
+                for n in range(8):
+                    x = 'a'*n + c
+                    s = locale.strxfrm(x)
+                    if '\1' in s and s.index('\1') < len(x):
+                        bad += c
+                        print(f'{x!r} {x!a} -> {s!a}')
+                        break
+        self.fail(repr(''.join(bad)))
 
 
 class NormalizeTest(unittest.TestCase):
