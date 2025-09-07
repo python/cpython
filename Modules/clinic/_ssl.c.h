@@ -3016,6 +3016,29 @@ _ssl_get_default_verify_paths(PyObject *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
+PyDoc_STRVAR(_ssl_get_sigalgs__doc__,
+"get_sigalgs($module, /)\n"
+"--\n"
+"\n");
+
+#define _SSL_GET_SIGALGS_METHODDEF    \
+    {"get_sigalgs", (PyCFunction)_ssl_get_sigalgs, METH_NOARGS, _ssl_get_sigalgs__doc__},
+
+static PyObject *
+_ssl_get_sigalgs_impl(PyObject *module);
+
+static PyObject *
+_ssl_get_sigalgs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(module);
+    return_value = _ssl_get_sigalgs_impl(module);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl_txt2obj__doc__,
 "txt2obj($module, /, txt, name=False)\n"
 "--\n"
@@ -3305,4 +3328,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=4b0a458df1a9111d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4e16f5c68d162d37 input=a9049054013a1b77]*/

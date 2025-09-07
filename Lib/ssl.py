@@ -112,6 +112,7 @@ try:
 except ImportError:
     # RAND_egd is not supported on some platforms
     pass
+from _ssl import get_sigalgs
 
 
 from _ssl import (

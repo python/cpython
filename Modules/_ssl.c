@@ -6338,6 +6338,66 @@ _ssl_get_default_verify_paths_impl(PyObject *module)
     return NULL;
 }
 
+/*[clinic input]
+@critical_section
+_ssl.get_sigalgs
+[clinic start generated code]*/
+
+static PyObject *
+_ssl_get_sigalgs_impl(PyObject *module)
+/*[clinic end generated code: output=ab0791b63856854b input=bf74cdad3a19d29e]*/
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30400000L
+    const char *sigalgs_list, *sigalg, *end;
+    PyObject *item, *result = NULL;
+    size_t len;
+
+    if ((sigalgs_list = SSL_get1_builtin_sigalgs(NULL)) == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+
+    result = PyList_New(0);
+    if (result == NULL) {
+        PyErr_NoMemory();
+        goto error;
+    }
+
+    sigalg = sigalgs_list;
+    while (sigalg) {
+        end = strchr(sigalg, ':');
+        len = end? end - sigalg : strlen(sigalg);
+
+        // Alg names are plain ASCII, so there's no chance of a decoding
+        // error here. However, an allocation failure could occur when
+        // constructing the Unicode version of the names.
+        item = PyUnicode_DecodeASCII(sigalg, len, "strict");
+        if (item == NULL) {
+            goto error;
+        }
+
+        if (PyList_Append(result, item) == -1) {
+            Py_DECREF(item);
+            goto error;
+        }
+
+        Py_DECREF(item);
+        sigalg = end? end + 1 : end;
+    }
+
+    OPENSSL_free((void *)sigalgs_list);
+    return result;
+error:
+    OPENSSL_free((void *)sigalgs_list);
+    Py_XDECREF(result);
+    return NULL;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting signature algorithms requires OpenSSL 3.4 or later.");
+    return NULL;
+#endif
+}
+
 static PyObject*
 asn1obj2py(_sslmodulestate *state, ASN1_OBJECT *obj)
 {
@@ -6741,6 +6801,7 @@ static PyMethodDef PySSL_methods[] = {
     _SSL_RAND_BYTES_METHODDEF
     _SSL_RAND_STATUS_METHODDEF
     _SSL_GET_DEFAULT_VERIFY_PATHS_METHODDEF
+    _SSL_GET_SIGALGS_METHODDEF
     _SSL_ENUM_CERTIFICATES_METHODDEF
     _SSL_ENUM_CRLS_METHODDEF
     _SSL_TXT2OBJ_METHODDEF

@@ -51,6 +51,7 @@ IS_OPENSSL_3_0_0 = ssl.OPENSSL_VERSION_INFO >= (3, 0, 0)
 CAN_GET_SELECTED_OPENSSL_GROUP = ssl.OPENSSL_VERSION_INFO >= (3, 2)
 CAN_IGNORE_UNKNOWN_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_AVAILABLE_OPENSSL_GROUPS = ssl.OPENSSL_VERSION_INFO >= (3, 5)
+CAN_GET_AVAILABLE_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 4)
 CAN_SET_CLIENT_SIGALGS = "AWS-LC" not in ssl.OPENSSL_VERSION
 CAN_IGNORE_UNKNOWN_OPENSSL_SIGALGS = ssl.OPENSSL_VERSION_INFO >= (3, 3)
 CAN_GET_SELECTED_OPENSSL_SIGALG = ssl.OPENSSL_VERSION_INFO >= (3, 5)
@@ -997,6 +998,11 @@ class ContextTests(unittest.TestCase):
         # By default, only return official IANA names.
         self.assertNotIn('P-256', ctx.get_groups())
         self.assertIn('P-256', ctx.get_groups(include_aliases=True))
+
+    @unittest.skipUnless(CAN_GET_AVAILABLE_OPENSSL_SIGALGS,
+                         "SSL library doesn't support getting sigalgs")
+    def test_get_sigalgs(self):
+        self.assertIn('rsa_pss_rsae_sha256', ssl.get_sigalgs())
 
     @unittest.skipUnless(CAN_SET_CLIENT_SIGALGS,
                          "SSL library doesn't support setting client sigalgs")

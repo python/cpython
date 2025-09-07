@@ -435,6 +435,8 @@ ssl
 
 * Added new methods for managing signature algorithms:
 
+  * :func:`ssl.get_sigalgs` returns a list of all available TLS signature
+    algorithms. This call requires OpenSSL 3.4 or later.
   * :meth:`ssl.SSLContext.set_client_sigalgs` sets the signature algorithms
     allowed for certificate-based client authentication.
   * :meth:`ssl.SSLContext.set_server_sigalgs` sets the signature algorithms
