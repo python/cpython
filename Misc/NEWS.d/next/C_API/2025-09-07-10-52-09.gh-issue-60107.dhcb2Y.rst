@@ -1,2 +1,0 @@
-Avoid :meth:`io.RawIOBase.read` from reading into a temporary :class:`bytearray`
-when calling its own :meth:`io.RawIOBase.readinto` internally.
