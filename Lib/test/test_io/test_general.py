@@ -921,6 +921,49 @@ class IOTest(unittest.TestCase):
         self.assertEqual(rawio.read(2), None)
         self.assertEqual(rawio.read(2), b"")
 
+    def test_exact_RawIOBase(self):
+        rawio = self.MockRawIOWithoutRead((b"ab", b"cd"))
+        buf = bytearray(2)
+        n = rawio.readinto(buf)
+        self.assertEqual(n, 2)
+        self.assertEqual(buf, b"ab")
+
+        n = rawio.readinto(buf)
+        self.assertEqual(n, 2)
+        self.assertEqual(buf, b"cd")
+
+        n = rawio.readinto(buf)
+        self.assertEqual(n, 0)
+        self.assertEqual(buf, b"cd")
+
+    def test_partial_readinto_write_RawIOBase(self):
+        rawio = self.MockRawIOWithoutRead((b"abcdef",))
+        buf = bytearray(3)
+        n = rawio.readinto(buf)
+        self.assertEqual(n, 3)
+        self.assertEqual(buf, b"abc")
+
+        n2 = rawio.readinto(buf)
+        self.assertEqual(n2, 3)
+        self.assertEqual(buf, b"def")
+
+    def test_readinto_none_RawIOBase(self):
+        rawio = self.MockRawIOWithoutRead((None, b"x"))
+        buf = bytearray(2)
+        n = rawio.readinto(buf)
+        self.assertIsNone(n)
+
+        n2 = rawio.readinto(buf)
+        self.assertEqual(n2, 1)
+        self.assertEqual(buf[0], ord('x'))
+
+    def test_read_default_via_readinto_RawIOBase(self):
+        rawio = self.MockRawIOWithoutRead((b"abcdef",))
+        result = rawio.read(4)
+        self.assertEqual(result, b"abcd")
+        result2 = rawio.read(4)
+        self.assertEqual(result2, b"ef")
+
     def test_types_have_dict(self):
         test = (
             self.IOBase(),
