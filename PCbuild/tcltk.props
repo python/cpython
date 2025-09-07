@@ -2,7 +2,7 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="pyproject.props" Condition="$(__PyProject_Props_Imported) != 'true'" />
   <PropertyGroup>
-    <TclVersion Condition="$(TclVersion) == ''">8.6.13.1</TclVersion>
+    <TclVersion Condition="$(TclVersion) == ''">8.6.15.0</TclVersion>
     <TkVersion Condition="$(TkVersion) == ''">$(TclVersion)</TkVersion>
     <TclMajorVersion>$([System.Version]::Parse($(TclVersion)).Major)</TclMajorVersion>
     <TclMinorVersion>$([System.Version]::Parse($(TclVersion)).Minor)</TclMinorVersion>
@@ -17,15 +17,21 @@
     <tcltkDir Condition="$(tcltkDir) == ''">$(ExternalsDir)tcltk-$(TclVersion)\$(ArchName)\</tcltkDir>
     <tclWin32Exe Condition="$(Platform) == 'Win32'">$(tcltkDir)\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
     <tclWin32Exe Condition="$(Platform) != 'Win32'">$(tcltkDir)\..\win32\bin\tclsh$(TclMajorVersion)$(TclMinorVersion)t.exe</tclWin32Exe>
+    <tclExternalTommath Condition="$(TclMajorVersion) == '9'">TCL_WITH_EXTERNAL_TOMMATH;</tclExternalTommath>
 
     <!--<TclDebugExt Condition="'$(Configuration)' == 'Debug'">g</TclDebugExt>-->
-    <tclDLLName>tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).dll</tclDLLName>
-    <tclLibName>tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib</tclLibName>
-    <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).exe</tclShExeName>
-    <tkDLLName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).dll</tkDLLName>
-    <tkLibName>tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tkLibName>
+    <tcltkSuffix Condition="'$(TclMajorVersion)' == '8'">t</tcltkSuffix>
+    <tkPrefix Condition="'$(TclMajorVersion)' == '9'">tcl9</tkPrefix>
+    <tclDLLName >tcl$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).dll</tclDLLName>
+    <tclLibName>tcl$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).lib</tclLibName>
+    <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).exe</tclShExeName>
+    <tkDLLName>$(tkPrefix)tk$(TkMajorVersion)$(TkMinorVersion)$(tcltkSuffix)$(TclDebugExt).dll</tkDLLName>
+    <tkLibName>$(tkPrefix)tk$(TclMajorVersion)$(TclMinorVersion)$(tcltkSuffix)$(TclDebugExt).lib</tkLibName>
     <tclZlibDLLName>zlib1.dll</tclZlibDLLName>
-    <tcltkLib>$(tcltkDir)lib\tcl$(TclMajorVersion)$(TclMinorVersion)t$(TclDebugExt).lib;$(tcltkDir)lib\tk$(TkMajorVersion)$(TkMinorVersion)t$(TclDebugExt).lib</tcltkLib>
+    <tommathDLLName Condition="'$(TclMajorVersion)' == '9'">libtommath.dll</tommathDLLName>
+    <tommathLibName Condition="'$(TclMajorVersion)' == '9'">tommath.lib</tommathLibName>
+    <tcltkLib>$(tcltkDir)lib\$(TclLibName);$(tcltkDir)lib\$(TkLibName);</tcltkLib>
+    <tcltkLib Condition="'$(tommathLibName)' != ''">$(tcltkLib);$(tcltkDir)lib\$(tommathLibName)</tcltkLib>
     <TclMachine>IX86</TclMachine>
     <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>
     <TclMachine Condition="'$(Platform)' == 'ARM64'">ARM64</TclMachine>
@@ -37,9 +43,6 @@
     <BuildDirTop Condition="$(Configuration) == 'Debug'">Debug</BuildDirTop>
     <BuildDirTop Condition="$(TclMachine) != 'IX86'">$(BuildDirTop)_$(TclMachine)</BuildDirTop>
     <BuildDirTop Condition="$(PlatformToolset.StartsWith('v14'))">$(BuildDirTop)_VC13</BuildDirTop>
-    <BuildDirTop Condition="$(PlatformToolset) == 'v120'">$(BuildDirTop)_VC12</BuildDirTop>
-    <BuildDirTop Condition="$(PlatformToolset) == 'v110'">$(BuildDirTop)_VC11</BuildDirTop>
-    <BuildDirTop Condition="$(PlatformToolset) == 'v100'">$(BuildDirTop)_VC10</BuildDirTop>
   </PropertyGroup>
 
   <!--

@@ -1,10 +1,7 @@
-import re
-import pickle
-import unittest
-import warnings
 import importlib
-import importlib.metadata
-import contextlib
+import pickle
+import re
+import unittest
 from test.support import os_helper
 
 try:
@@ -12,9 +9,6 @@ try:
 except ImportError:
     from .stubs import fake_filesystem_unittest as ffs
 
-from . import fixtures
-from ._context import suppress
-from ._path import Symlink
 from importlib.metadata import (
     Distribution,
     EntryPoint,
@@ -27,12 +21,9 @@ from importlib.metadata import (
     version,
 )
 
-
-@contextlib.contextmanager
-def suppress_known_deprecation():
-    with warnings.catch_warnings(record=True) as ctx:
-        warnings.simplefilter('default', category=DeprecationWarning)
-        yield ctx
+from . import fixtures
+from . import _issue138313
+from ._path import Symlink
 
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
@@ -59,9 +50,6 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
 
         assert "metadata" in str(ctx.exception)
 
-    # expected to fail until ABC is enforced
-    @suppress(AssertionError)
-    @suppress_known_deprecation()
     def test_abc_enforced(self):
         with self.assertRaises(TypeError):
             type('DistributionSubclass', (Distribution,), {})()
@@ -138,12 +126,47 @@ class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.Test
         fixtures.build_files(self.make_pkg('abc'), self.site_dir)
         before = list(_unique(distributions()))
 
-        alt_site_dir = self.fixtures.enter_context(fixtures.tempdir())
+        alt_site_dir = self.fixtures.enter_context(fixtures.tmp_path())
         self.fixtures.enter_context(self.add_sys_path(alt_site_dir))
         fixtures.build_files(self.make_pkg('ABC'), alt_site_dir)
         after = list(_unique(distributions()))
 
         assert len(after) == len(before)
+
+
+class InvalidMetadataTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
+    @staticmethod
+    def make_pkg(name, files=dict(METADATA="VERSION: 1.0")):
+        """
+        Create metadata for a dist-info package with name and files.
+        """
+        return {
+            f'{name}.dist-info': files,
+        }
+
+    def test_valid_dists_preferred(self):
+        """
+        Dists with metadata should be preferred when discovered by name.
+
+        Ref python/importlib_metadata#489.
+        """
+        # create three dists with the valid one in the middle (lexicographically)
+        # such that on most file systems, the valid one is never naturally first.
+        fixtures.build_files(self.make_pkg('foo-4.0', files={}), self.site_dir)
+        fixtures.build_files(self.make_pkg('foo-4.1'), self.site_dir)
+        fixtures.build_files(self.make_pkg('foo-4.2', files={}), self.site_dir)
+        dist = Distribution.from_name('foo')
+        assert dist.version == "1.0"
+
+    def test_missing_metadata(self):
+        """
+        Dists with a missing metadata file should return None.
+
+        Ref python/importlib_metadata#493.
+        """
+        fixtures.build_files(self.make_pkg('foo-4.3', files={}), self.site_dir)
+        assert Distribution.from_name('foo').metadata is None
+        assert metadata('foo') is None
 
 
 class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
@@ -335,6 +358,7 @@ class PackagesDistributionsPrebuiltTest(fixtures.ZipFixtures, unittest.TestCase)
         self._fixture_on_path('example-21.12-py3-none-any.whl')
         assert packages_distributions()['example'] == ['example']
 
+    @_issue138313.skip_on_buildbot
     def test_packages_distributions_example2(self):
         """
         Test packages_distributions on a wheel built

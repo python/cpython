@@ -1,0 +1,3 @@
+New variants for the critical section API that accept one or two
+:c:type:`PyMutex` pointers rather than :c:type:`PyObject` instances are now
+public in the non-limited C API.

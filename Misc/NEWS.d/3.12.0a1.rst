@@ -102,7 +102,7 @@ well as generator expressions.
 .. section: Core and Builtins
 
 Added unicode check for ``name`` attribute of ``spec`` argument passed in
-:func:`_imp.create_builtin` function.
+:func:`!_imp.create_builtin` function.
 
 ..
 
@@ -483,7 +483,7 @@ Fix case of undefined behavior in ceval.c
 .. nonce: AfCi36
 .. section: Core and Builtins
 
-Convert :mod:`_functools` to argument clinic.
+Convert :mod:`!_functools` to argument clinic.
 
 ..
 
@@ -492,7 +492,7 @@ Convert :mod:`_functools` to argument clinic.
 .. nonce: wky0Fc
 .. section: Core and Builtins
 
-Do not expose ``KeyWrapper`` in :mod:`_functools`.
+Do not expose ``KeyWrapper`` in :mod:`!_functools`.
 
 ..
 
@@ -560,7 +560,7 @@ versions prior to 3.11
 .. nonce: 9lmTCC
 .. section: Core and Builtins
 
-Remove two cases of undefined behavoir, by adding NULL checks.
+Remove two cases of undefined behavior, by adding NULL checks.
 
 ..
 
@@ -1731,7 +1731,7 @@ tracing functions implemented in C.
 .. nonce: lenv9h
 .. section: Core and Builtins
 
-:meth:`_warnings.warn_explicit` is ported to Argument Clinic.
+:meth:`!_warnings.warn_explicit` is ported to Argument Clinic.
 
 ..
 
@@ -2591,7 +2591,7 @@ Update bundled pip to 22.2.2.
 
 Fix :class:`asyncio.TaskGroup` to propagate exception when
 :exc:`asyncio.CancelledError` was replaced with another exception by a
-context manger. Patch by Kumar Aditya and Guido van Rossum.
+context manager. Patch by Kumar Aditya and Guido van Rossum.
 
 ..
 
@@ -3142,8 +3142,8 @@ test.test_codecs.EncodedFileTest`` instead.
 .. nonce: VhS1eS
 .. section: Library
 
-Made :class:`_struct.Struct` GC-tracked in order to fix a reference leak in
-the :mod:`_struct` module.
+Made :class:`!_struct.Struct` GC-tracked in order to fix a reference leak in
+the :mod:`!_struct` module.
 
 ..
 
@@ -3221,9 +3221,9 @@ Stinner.
 .. section: Library
 
 :mod:`hashlib`: Remove the pure Python implementation of
-:func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
+:func:`hashlib.pbkdf2_hmac`, deprecated in Python 3.10. Python 3.10 and
 newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides a C
-implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster. Patch by
+implementation of :func:`~hashlib.pbkdf2_hmac` which is faster. Patch by
 Victor Stinner.
 
 ..
@@ -3258,7 +3258,7 @@ on the main thread
 
 Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
 3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
-function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
+function is a built-in function. Since Python 3.10, :func:`!_pyio.open` is
 also a static method. Patch by Victor Stinner.
 
 ..
@@ -4237,8 +4237,8 @@ by :mod:`asyncio` to AIX platform only.
 .. nonce: 4dzB80
 .. section: Library
 
-Set :attr:`doctest.DocTest.lineno` to ``None`` when object does not have
-:attr:`__doc__`.
+Set :attr:`doctest.DocTest.lineno` to ``None`` when an object does not have
+:attr:`~definition.__doc__`.
 
 ..
 
@@ -4476,7 +4476,7 @@ they are deprecated. Contributed by C.A.M. Gerlach.
 .. nonce: we7AFm
 .. section: Documentation
 
-Replaced incorrectly written true/false values in documentiation. Patch by
+Replaced incorrectly written true/false values in documentation. Patch by
 Robert O'Shea
 
 ..
@@ -5610,7 +5610,7 @@ Accept os.PathLike for the argument to winsound.PlaySound
 
 Support native Windows case-insensitive path comparisons by using
 ``LCMapStringEx`` instead of :func:`str.lower` in :func:`ntpath.normcase`.
-Add ``LCMapStringEx`` to the :mod:`_winapi` module.
+Add ``LCMapStringEx`` to the :mod:`!_winapi` module.
 
 ..
 

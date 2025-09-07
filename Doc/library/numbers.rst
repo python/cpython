@@ -38,7 +38,8 @@ The numeric tower
 
       Abstract. Retrieves the imaginary component of this number.
 
-   .. abstractmethod:: conjugate()
+   .. method:: conjugate()
+      :abstractmethod:
 
       Abstract. Returns the complex conjugate. For example, ``(1+3j).conjugate()
       == (1-3j)``.
@@ -68,11 +69,11 @@ The numeric tower
 
    .. attribute:: numerator
 
-      Abstract.
+      Abstract.  The numerator of this rational number.
 
    .. attribute:: denominator
 
-      Abstract.
+      Abstract.  The denominator of this rational number.
 
 
 .. class:: Integral
@@ -84,10 +85,10 @@ The numeric tower
    ``~``.
 
 
-Notes for type implementors
+Notes for type implementers
 ---------------------------
 
-Implementors should be careful to make equal numbers equal and hash
+Implementers should be careful to make equal numbers equal and hash
 them to the same values. This may be subtle if there are two different
 extensions of the real numbers. For example, :class:`fractions.Fraction`
 implements :func:`hash` as follows::

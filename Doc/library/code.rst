@@ -18,9 +18,15 @@ build applications which provide an interactive interpreter prompt.
    This class deals with parsing and interpreter state (the user's namespace); it
    does not deal with input buffering or prompting or input file naming (the
    filename is always passed in explicitly). The optional *locals* argument
-   specifies the dictionary in which code will be executed; it defaults to a newly
-   created dictionary with key ``'__name__'`` set to ``'__console__'`` and key
-   ``'__doc__'`` set to ``None``.
+   specifies a mapping to use as the namespace in which code will be executed;
+   it defaults to a newly created dictionary with key ``'__name__'`` set to
+   ``'__console__'`` and key ``'__doc__'`` set to ``None``.
+
+   Note that functions and classes objects created under an
+   :class:`!InteractiveInterpreter` instance will belong to the namespace
+   specified by *locals*.
+   They are only pickleable if *locals* is the namespace of an existing
+   module.
 
 
 .. class:: InteractiveConsole(locals=None, filename="<console>", local_exit=False)
