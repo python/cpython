@@ -114,7 +114,10 @@ def from_package(package: types.ModuleType):
     from ._adapters import wrap_spec
 
     if package.__spec__ is None:
-        raise TypeError(f"Can't access resources on a module with no spec: {package}")
+        raise TypeError(
+            f"Cannot access resources because the code used to populate '{package.__name__}' "
+            "does not correspond directly with an importable module."
+        )
 
     spec = wrap_spec(package.__spec__)
     reader = spec.loader.get_resource_reader(spec.name)
