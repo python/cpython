@@ -1,6 +1,7 @@
 import itertools
 import os
 import sys
+import threading
 import unittest
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
@@ -303,3 +304,17 @@ class TestConsole(TestCase):
             self.assertIsInstance(console.getheightwidth(), tuple)
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
+
+    def test_wait_reentry_protection(self, _os_write):
+        # gh-130168: Test signal handler re-entry protection
+        console = UnixConsole(term="xterm")
+        console.prepare()
+
+        console._polling_thread = threading.current_thread()
+
+        with self.assertRaises(RuntimeError) as cm:
+            console.wait(timeout=0)
+        self.assertEqual(str(cm.exception), "can't re-enter readline")
+
+        console._polling_thread = None
+        console.restore()

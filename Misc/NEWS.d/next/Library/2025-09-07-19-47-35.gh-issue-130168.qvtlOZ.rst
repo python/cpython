@@ -1,0 +1,1 @@
+Fix: pyrepl messed up terminal if a signal handler expects stdin.
