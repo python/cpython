@@ -1,0 +1,2 @@
+Fix :mod:`multiprocessing` ``forkserver`` bug which prevented ``__main__``
+from being preloaded.
