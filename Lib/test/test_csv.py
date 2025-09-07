@@ -918,6 +918,13 @@ class TestDictFields(unittest.TestCase):
         reader = csv.DictReader(f, fieldnames)
         self.assertEqual(reader.fieldnames, fieldnames)
 
+    def test_dict_reader_set_fieldnames(self):
+        fieldnames = ["a", "b", "c"]
+        f = StringIO()
+        reader = csv.DictReader(f)
+        reader.fieldnames = fieldnames
+        self.assertEqual(reader.fieldnames, fieldnames)
+
     def test_dict_writer_fieldnames_rejects_iter(self):
         fieldnames = ["a", "b", "c"]
         f = StringIO()
@@ -933,6 +940,7 @@ class TestDictFields(unittest.TestCase):
     def test_dict_reader_fieldnames_is_optional(self):
         f = StringIO()
         reader = csv.DictReader(f, fieldnames=None)
+        self.assertEqual(reader.fieldnames, None)
 
     def test_read_dict_fields(self):
         with TemporaryFile("w+", encoding="utf-8") as fileobj:
@@ -951,7 +959,7 @@ class TestDictFields(unittest.TestCase):
             self.assertEqual(reader.fieldnames, ["f1", "f2", "f3"])
 
     # Two test cases to make sure existing ways of implicitly setting
-    # fieldnames continue to work.  Both arise from discussion in issue3436.
+    # fieldnames continue to work. Both arise from discussion in issue3436.
     def test_read_dict_fieldnames_from_file(self):
         with TemporaryFile("w+", encoding="utf-8") as fileobj:
             fileobj.write("f1,f2,f3\r\n1,2,abc\r\n")
@@ -1353,6 +1361,9 @@ ghijkl\0mno
 ghi\0jkl
 """
 
+    sample15 = "\n\n\n"
+    sample16 = "abc\ndef\nghi"
+
     def test_issue43625(self):
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.sample12))
@@ -1423,6 +1434,11 @@ ghi\0jkl
         self.assertEqual(dialect.quotechar, "'")
         dialect = sniffer.sniff(self.sample14)
         self.assertEqual(dialect.delimiter, '\0')
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, self.sample15)
+        self.assertRaisesRegex(csv.Error, "Could not determine delimiter",
+                               sniffer.sniff, self.sample16)
+
 
     def test_doublequote(self):
         sniffer = csv.Sniffer()
