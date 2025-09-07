@@ -329,10 +329,9 @@ class UnixConsole(Console):
         Prepare the console for input/output operations.
         """
         # gh-130168: prevents signal handlers from overwriting the original state
-        if not hasattr(self, '_UnixConsole__svtermstate'):
+        if self.__svtermstate is None:
             self.__svtermstate = tcgetattr(self.input_fd)
-
-        raw = tcgetattr(self.input_fd).copy()
+        raw = self.__svtermstate.copy()
         raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
         raw.oflag &= ~(termios.OPOST)
         raw.cflag &= ~(termios.CSIZE | termios.PARENB)
@@ -374,11 +373,10 @@ class UnixConsole(Console):
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
-
-        if hasattr(self, '_UnixConsole__svtermstate'):
+        if self.__svtermstate is not None:
             tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
-            # Clear the saved state so prepare() can save a fresh one next time
-            del self.__svtermstate
+            # Reset the state for the next prepare() call.
+            self.__svtermstate = None
 
         if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
             os.write(self.output_fd, b"\033[?7h")
@@ -429,17 +427,12 @@ class UnixConsole(Console):
         """
         if not self.event_queue.empty():
             return True
-
         current_thread = threading.current_thread()
-
         if self._polling_thread is current_thread:
-            # This is a re-entrant call from the same thread
-            # like old repl runtime error
+            # Forbid re-entrant calls and use the old REPL error message.
             raise RuntimeError("can't re-enter readline")
-
         if not self._poll_lock.acquire(blocking=False):
             return False
-
         try:
             self._polling_thread = current_thread
             return bool(self.pollob.poll(timeout))

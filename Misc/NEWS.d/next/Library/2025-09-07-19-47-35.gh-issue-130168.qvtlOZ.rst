@@ -1,1 +1,2 @@
-Fix: pyrepl messed up terminal if a signal handler expects stdin.
+Make sure that the new REPL does not get scrambled when a signal handler
+uses interactive input.
