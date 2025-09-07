@@ -1,1 +1,2 @@
-* gh-60107: avoid io.RawIOBase.read from reading into a temporary bytearray (author: taskevich)
+Avoid :meth:`io.RawIOBase.read` from reading into a temporary :class:`bytearray`
+when calling its own :meth:`io.RawIOBase.readinto` internally.
