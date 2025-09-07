@@ -1,0 +1,1 @@
+:option:`-c` now dedents like :func:`textwrap.dedent`

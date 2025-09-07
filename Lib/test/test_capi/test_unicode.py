@@ -1075,6 +1075,95 @@ class CAPITest(unittest.TestCase):
         # CRASHES transform_decimal(NULL)
 
     @support.cpython_only
+    @unittest.skipIf(_testinternalcapi is None,'need _testinternalcapi module')
+    def test_dedent(self):
+        from _testinternalcapi import _PyUnicode_Dedent as dedent
+        self.assertEqual('hello\nworld', dedent('  hello\n  world'))
+        self.assertEqual('hello\nmy\n  friend', dedent('  hello\n  my\n    friend'))
+
+        # Only spaces.
+        text = "    "
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # Only tabs.
+        text = "\t\t\t\t"
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # A mixture.
+        text = " \t  \t\t  \t "
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # ASCII whitespace.
+        text = "\f\n\r\t\v "
+        expect = "\n"
+        self.assertEqual(expect, dedent(text))
+
+        # One newline.
+        text = "\n"
+        expect = "\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Windows-style newlines.
+        text = "\r\n" * 5
+        expect = "\n" * 5
+        self.assertEqual(expect, dedent(text))
+
+        # Whitespace mixture.
+        text = "    \n\t\n  \n\t\t\n\n\n       "
+        expect = "\n\n\n\n\n\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Lines consisting only of whitespace are always normalised
+        text = "a\n \n\t\n"
+        expect = "a\n\n\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Whitespace characters on non-empty lines are retained
+        text = "a\r\n\r\n\r\n"
+        expect = "a\r\n\n\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Uneven indentation with declining indent level.
+        text = "     Foo\n    Bar\n"  # 5 spaces, then 4
+        expect = " Foo\nBar\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Declining indent level with blank line.
+        text = "     Foo\n\n    Bar\n"  # 5 spaces, blank, then 4
+        expect = " Foo\n\nBar\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Declining indent level with whitespace only line.
+        text = "     Foo\n    \n    Bar\n"  # 5 spaces, then 4, then 4
+        expect = " Foo\n\nBar\n"
+        self.assertEqual(expect, dedent(text))
+
+        text = "  hello\tthere\n  how are\tyou?"
+        expect = "hello\tthere\nhow are\tyou?"
+        self.assertEqual(expect, dedent(text))
+
+        # dedent() only removes whitespace that can be uniformly removed!
+        text = "\thello there\n\thow are you?"
+        expect = "hello there\nhow are you?"
+        self.assertEqual(expect, dedent(text))
+
+        text = '''\
+        def foo():
+            while 1:
+                return foo
+        '''
+        expect = '''\
+def foo():
+    while 1:
+        return foo
+'''
+        self.assertEqual(expect, dedent(text))
+
+
+    @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_concat(self):
         """Test PyUnicode_Concat()"""

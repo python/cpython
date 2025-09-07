@@ -34,7 +34,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
+#include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII() / _PyUnicode_Dedent()
 
 #include "clinic/_testinternalcapi.c.h"
 
@@ -1416,6 +1416,17 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
 
+/* Test _PyUnicode_Dedent() */
+static PyObject *
+unicode_dedent(PyObject *self, PyObject *arg)
+{
+    if (arg == Py_None) {
+        arg = NULL;
+    }
+    return _PyUnicode_Dedent(arg);
+}
+
+
 static PyObject *
 test_pyobject_is_freed(const char *test_name, PyObject *op)
 {
@@ -2422,6 +2433,7 @@ static PyMethodDef module_functions[] = {
     {"_PyTraceMalloc_GetTraceback", tracemalloc_get_traceback, METH_VARARGS},
     {"test_tstate_capi", test_tstate_capi, METH_NOARGS, NULL},
     {"_PyUnicode_TransformDecimalAndSpaceToASCII", unicode_transformdecimalandspacetoascii, METH_O},
+    {"_PyUnicode_Dedent", unicode_dedent, METH_O},
     {"check_pyobject_forbidden_bytes_is_freed",
                             check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
