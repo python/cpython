@@ -313,3 +313,6 @@ class TestConsole(TestCase):
         console._polling_thread = threading.current_thread()
         with self.assertRaisesRegex(RuntimeError, "can't re-enter readline"):
             console.wait(timeout=0)
+
+        console._polling_thread = None
+        console.restore()
