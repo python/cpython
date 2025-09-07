@@ -34,7 +34,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII() / _PyUnicode_Dedent()
+#include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII(), _PyUnicode_Dedent()
 
 #include "clinic/_testinternalcapi.c.h"
 
@@ -1415,6 +1415,7 @@ unicode_transformdecimalandspacetoascii(PyObject *self, PyObject *arg)
     }
     return _PyUnicode_TransformDecimalAndSpaceToASCII(arg);
 }
+
 
 /* Test _PyUnicode_Dedent() */
 static PyObject *

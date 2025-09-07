@@ -1162,7 +1162,6 @@ def foo():
 '''
         self.assertEqual(expect, dedent(text))
 
-
     @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_concat(self):

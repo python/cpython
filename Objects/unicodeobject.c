@@ -14311,7 +14311,7 @@ unicode_getnewargs(PyObject *v, PyObject *Py_UNUSED(ignored))
 /*
 This function searches the longest common leading whitespace
 of all lines in the [src, end).
-It returns the length of the common leading whitespace and sets *output* to
+It returns the length of the common leading whitespace and sets `output` to
 point to the beginning of the common leading whitespace if length > 0.
 */
 static Py_ssize_t
@@ -14389,7 +14389,7 @@ search_longest_common_leading_whitespace(
 }
 
 /* Dedent a string.
-   Behaviour is expected to be an exact match of textwrap.dedent.
+   Behaviour is expected to be an exact match of `textwrap.dedent`.
    Return a new reference on success, NULL with an exception set on error.
    */
 PyObject *

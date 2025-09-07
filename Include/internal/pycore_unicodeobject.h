@@ -261,7 +261,7 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
    Behaviour is expected to be an exact match of `textwrap.dedent`.
    Return a new reference on success, NULL with an exception set on error.
 
-   Export for test_capi.test_unicode
+   Export for '_testinternalcapi' shared extension.
    */
 PyAPI_FUNC(PyObject*) _PyUnicode_Dedent(PyObject *unicode);
 
