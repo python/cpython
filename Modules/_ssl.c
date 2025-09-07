@@ -6356,8 +6356,7 @@ _ssl_get_sigalgs_impl(PyObject *module)
         return NULL;
     }
 
-    if ((sigalgs_str = PyUnicode_DecodeASCII(sigalgs, strlen(sigalgs),
-                                             "strict")) == NULL) {
+    if ((sigalgs_str = PyUnicode_DecodeFSDefault(sigalgs)) == NULL) {
         OPENSSL_free((void *)sigalgs);
         return NULL;
     }
