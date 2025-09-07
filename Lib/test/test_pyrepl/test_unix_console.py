@@ -309,8 +309,6 @@ class TestConsole(TestCase):
         # gh-130168: Test signal handler re-entry protection
         console = UnixConsole(term="xterm")
         console.prepare()
-        self.addCleanup(console.restore)
-        self.addCleanup(setattr, console, '_polling_thread', None)
 
         console._polling_thread = threading.current_thread()
         with self.assertRaisesRegex(RuntimeError, "can't re-enter readline"):
