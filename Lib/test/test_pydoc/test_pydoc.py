@@ -2161,51 +2161,45 @@ class PydocUrlHandlerTest(PydocBaseTest):
 
 
 class TestHelper(unittest.TestCase):
+    def mock_interactive_session(self, inputs):
+        """
+        Given a list of inputs, run an interactive help session.  Returns a string
+        of what would be shown on screen.
+        """
+        input_iter = iter(inputs)
+
+        def mock_getline(prompt):
+            output.write(prompt)
+            next_input = next(input_iter)
+            output.write(next_input + os.linesep)
+            return next_input
+
+        with captured_stdout() as output:
+            helper = pydoc.Helper(output=output)
+            with unittest.mock.patch.object(helper, "getline", mock_getline):
+                helper.interact()
+
+        return output.getvalue().replace(os.linesep, "\n")
+
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
                          sorted(keyword.kwlist))
 
     def test_interact_empty_line_continues(self):
         # gh-138568: test pressing Enter without input should continue in help session
-        with captured_stdout() as output:
-            helper = pydoc.Helper(output=output)
-            input_sequence = ['', 'quit']
-            call_count = [0]
-            def mock_getline(prompt):
-                output.write(prompt)
-                result = input_sequence[call_count[0]]
-                call_count[0] += 1
-                return result
-
-            with unittest.mock.patch.object(helper, 'getline', side_effect=mock_getline):
-                helper.interact()
-
-            output_text = output.getvalue()
-            prompt_count = output_text.count('help> ')
-            self.assertEqual(prompt_count, 2)
+        self.assertEqual(
+            self.mock_interactive_session(["", "    ", "quit"]),
+            "\nhelp> \nhelp>     \nhelp> quit\n",
+        )
 
     def test_interact_quit_commands_exit(self):
-        quit_commands = ['quit', 'q', 'exit']
-
+        quit_commands = ["quit", "q", "exit"]
         for quit_cmd in quit_commands:
             with self.subTest(quit_command=quit_cmd):
-                with captured_stdout() as output:
-                    helper = pydoc.Helper(output=output)
-
-                    call_count = [0]
-
-                    def mock_getline(prompt):
-                        output.write(prompt)
-                        call_count[0] += 1
-                        return quit_cmd
-
-                    with unittest.mock.patch.object(helper, 'getline', side_effect=mock_getline):
-                        helper.interact()
-
-                    self.assertEqual(call_count[0], 1)
-                    output_text = output.getvalue()
-                    prompt_count = output_text.count('help> ')
-                    self.assertEqual(prompt_count, 1)
+                self.assertEqual(
+                    self.mock_interactive_session([quit_cmd]),
+                    f"\nhelp> {quit_cmd}\n",
+                )
 
 
 class PydocWithMetaClasses(unittest.TestCase):
