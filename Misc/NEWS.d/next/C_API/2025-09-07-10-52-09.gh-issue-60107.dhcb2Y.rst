@@ -1,1 +1,1 @@
-Read directly to bytes object
+* gh-60107: avoid io.RawIOBase.read from reading into a temporary bytearray (author: taskevich)
