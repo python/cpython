@@ -113,7 +113,7 @@ The :mod:`gc` module provides the following functions:
    been examined more than *threshold1* times since generation ``1`` has been
    examined, then generation ``1`` is examined as well.
    With the third generation, things are a bit more complicated,
-   see `Collecting the oldest generation <https://devguide.python.org/garbage_collector/#collecting-the-oldest-generation>`_ for more information.
+   see `Collecting the oldest generation <https://github.com/python/cpython/blob/ff0ef0a54bef26fc507fbf9b7a6009eb7d3f17f5/InternalDocs/garbage_collector.md#collecting-the-oldest-generation>`_ for more information.
 
 
 .. function:: get_count()
