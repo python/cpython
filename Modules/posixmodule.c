@@ -2610,7 +2610,7 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
     int res = -1;
     if (ns_index >= 0) {
         /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
-        if ((LLONG_MIN / S_TO_NS) <= sec && sec <= (LONG_MAX / S_TO_NS - 1)) {
+        if ((LLONG_MIN / S_TO_NS) <= sec && sec <= (LLONG_MAX / S_TO_NS - 1)) {
             PyObject *ns_total = PyLong_FromLongLong(sec * S_TO_NS + nsec);
             if (!ns_total) {
                 return -1;
