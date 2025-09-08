@@ -10,9 +10,9 @@ providers = provider_sect
 alg_section = algorithm_sect
 
 [provider_sect]
-base = base_sect
+null = null_sect
 
-[base_sect]
+[null_sect]
 activate = 1
 
 [algorithm_sect]
