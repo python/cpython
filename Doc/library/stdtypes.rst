@@ -58,7 +58,7 @@ objects considered false:
 * zero of any numeric type: ``0``, ``0.0``, ``0j``, ``Decimal(0)``,
   ``Fraction(0, 1)``
 
-* empty sequences and collections: ``''``, ``()``, ``[]``, ``{}``, ``set()``,
+* empty sequences and collections: ``''``, ``()``, ``[]``, ``{}``, ``{/}``,
   ``range(0)``
 
 .. index::
@@ -4739,6 +4739,7 @@ The constructors for both classes work the same:
 
    Sets can be created by several means:
 
+   * Use a slash within braces, for the empty set: ``{/}``
    * Use a comma-separated list of elements within braces: ``{'jack', 'sjoerd'}``
    * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
    * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
