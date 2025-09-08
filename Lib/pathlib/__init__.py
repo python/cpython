@@ -214,6 +214,8 @@ class PurePath:
                 hash_data = [self._drv + self._root] + self._tail
             elif self._tail and self.parser.splitdrive(self._tail[0])[0]:
                 hash_data = ['.'] + self._tail
+            if self.parser is not posixpath:
+                hash_data = [part.lower() for part in hash_data]
             self._hash = hash(tuple(hash_data))
             return self._hash
 
