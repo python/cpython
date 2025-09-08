@@ -55,13 +55,16 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     data['language']['version'] = sysconfig.get_python_version()
     data['language']['version_info'] = version_info_to_dict(sys.version_info)
 
-    data['implementation'] = vars(sys.implementation)
+    data['implementation'] = vars(sys.implementation).copy()
     data['implementation']['version'] = version_info_to_dict(sys.implementation.version)
     # Fix cross-compilation
     if '_multiarch' in data['implementation']:
         data['implementation']['_multiarch'] = sysconfig.get_config_var('MULTIARCH')
 
-    data['abi']['flags'] = list(sys.abiflags)
+    if os.name != 'nt':
+        data['abi']['flags'] = list(sys.abiflags)
+    else:
+        data['abi']['flags'] = []
 
     data['suffixes']['source'] = importlib.machinery.SOURCE_SUFFIXES
     data['suffixes']['bytecode'] = importlib.machinery.BYTECODE_SUFFIXES
@@ -104,7 +107,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
         data['abi']['extension_suffix'] = sysconfig.get_config_var('EXT_SUFFIX')
 
         # EXTENSION_SUFFIXES has been constant for a long time, and currently we
-        # don't have a better information source to find the  stable ABI suffix.
+        # don't have a better information source to find the stable ABI suffix.
         for suffix in importlib.machinery.EXTENSION_SUFFIXES:
             if suffix.startswith('.abi'):
                 data['abi']['stable_abi_suffix'] = suffix
@@ -186,8 +189,9 @@ def main() -> None:
         make_paths_relative(data, args.config_file_path)
 
     json_output = json.dumps(data, indent=2)
-    with open(args.location, 'w') as f:
-        print(json_output, file=f)
+    with open(args.location, 'w', encoding='utf-8') as f:
+        f.write(json_output)
+        f.write('\n')
 
 
 if __name__ == '__main__':
