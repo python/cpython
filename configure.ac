@@ -7268,7 +7268,6 @@ AS_CASE([$ac_sys_system],
     PY_STDLIB_MOD_SET_NA(
       [_lsprof],
       [_multiprocessing],
-      [_socket],
       [_zoneinfo],
       [audioop],
       [mmap],
