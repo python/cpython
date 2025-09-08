@@ -1364,55 +1364,14 @@ ghi\0jkl
     sample15 = "\n\n\n"
     sample16 = "abc\ndef\nghi"
 
-    sample17 = """\
-name,age
-Alice,30
-Bob,40
-Carol,50
-Dave,60
-Eve,70
-Frank,80
-Grace,90
-Heidi,100
-Ivan,110
-Judy,120
-Karl,130
-Liam,140
-Mallory,150
-Niaj,160
-Olivia,170
-Peggy,180
-Quinn,190
-Rupert,200
-Sybil,210
-Trent,220
-Victor,not_a_number
-"""
-    sample18 = """\
-name,age
-Alice,30
-Bob,40
-Carol,50
-Dave,60
-Eve,70
-Frank,80
-Grace,90
-Heidi,100
-Ivan,110
-Judy,120
-Karl,130
-Liam,140
-Mallory,150
-Niaj,160
-Olivia,170
-Peggy,180
-Quinn,190
-Rupert,200
-Sybil,210
-Trent,220
-Uma,230
-Victor,not_a_number
-"""
+    sample17 = ["letter,offset"]
+    sample17.extend(f"{chr(ord('a') + i)},{i}" for i in range(20))
+    sample17.append("v,twenty_one")
+    sample17 = '\n'.join(sample17)
+    sample18 = ["letter,offset"]
+    sample18.extend(f"{chr(ord('a') + i)},{i}" for i in range(21))
+    sample18.append("v,twenty_one")
+    sample18 = '\n'.join(sample18)
 
     def test_issue43625(self):
         sniffer = csv.Sniffer()
