@@ -1413,9 +1413,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def defaultFile(self):
         """Produce a reasonable default."""
         if self.curframe is None:
-            self.error("No current frame.")
-            return None
-        filename = self.curframe.f_code.co_filename
+            filename = '<string>'
+        else:
+            filename = self.curframe.f_code.co_filename
         if filename == '<string>' and self.mainpyfile:
             filename = self.mainpyfile
         return filename
