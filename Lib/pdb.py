@@ -1184,6 +1184,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return self.completedefault(text, line, begidx, endidx)
 
     def completedefault(self, text, line, begidx, endidx):
+        assert self.curframe is not None
         if text.startswith("$"):
             # Complete convenience variables
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
@@ -1332,9 +1333,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     if bp:
                         self.message(bp.bpformat())
             return
-        if not self.curframe:
-            self.error('No current frame.')
-            return
         # parse arguments; comma has lowest precedence
         # and cannot occur in filename
         filename = None
@@ -1414,7 +1412,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # To be overridden in derived debuggers
     def defaultFile(self):
         """Produce a reasonable default."""
-        assert self.curframe is not None
         filename = self.curframe.f_code.co_filename
         if filename == '<string>' and self.mainpyfile:
             filename = self.mainpyfile
