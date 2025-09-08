@@ -407,7 +407,7 @@ sqlite3
    * Prompts, error messages, and help text are now colored.
      This is enabled by default, see :ref:`using-on-controlling-color` for
      details.
-     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`)
+     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
 
 ssl
@@ -433,7 +433,7 @@ ssl
      agreement groups compatible with the minimum and maximum TLS versions
      currently set in the context. This call requires OpenSSL 3.5 or later.
 
-   (Contributed by Ron Frederick in :gh:`136306`)
+   (Contributed by Ron Frederick in :gh:`136306`.)
 
 * Added a new method :meth:`ssl.SSLContext.set_ciphersuites` for setting TLS 1.3
   ciphers. For TLS 1.2 or earlier, :meth:`ssl.SSLContext.set_ciphers` should
@@ -668,12 +668,12 @@ New features
 
 * Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
   a string. See the documentation for caveats.
-  (Contributed by Petr Viktorin in :gh:`131510`)
+  (Contributed by Petr Viktorin in :gh:`131510`.)
 
 * Add API for checking an extension module's ABI compatibility:
   :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
   and :c:data:`Py_mod_abi`.
-  (Contributed by Petr Viktorin in :gh:`137210`)
+  (Contributed by Petr Viktorin in :gh:`137210`.)
 
 
 Porting to Python 3.15
@@ -744,7 +744,7 @@ Removed C APIs
     Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
     may return a type other than :class:`bytes`, such as :class:`str`.
 
-  (Contributed by Stan Ulbrych in :gh:`133612`)
+  (Contributed by Stan Ulbrych in :gh:`133612`.)
 
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
