@@ -191,9 +191,16 @@ class SampleProfiler:
         if self.realtime_stats and len(self.sample_intervals) > 0:
             print()  # Add newline after real-time stats
 
+        sample_rate = num_samples / running_time
+        error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
+
         print(f"Captured {num_samples} samples in {running_time:.2f} seconds")
-        print(f"Sample rate: {num_samples / running_time:.2f} samples/sec")
-        print(f"Error rate: {(errors / num_samples) * 100:.2f}%")
+        print(f"Sample rate: {sample_rate:.2f} samples/sec")
+        print(f"Error rate: {error_rate:.2f}%")
+
+        # Pass stats to flamegraph collector if it's the right type
+        if hasattr(collector, 'set_stats'):
+            collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate)
 
         expected_samples = int(duration_sec / sample_interval_sec)
         if num_samples < expected_samples:

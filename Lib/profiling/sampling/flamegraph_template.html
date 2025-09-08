@@ -23,11 +23,46 @@
       </div>
     </div>
 
+    <div class="stats-section">
+      <div class="stats-container">
+        <div class="stat-card hotspot-card">
+          <div class="stat-icon">🥇</div>
+          <div class="stat-content">
+            <div class="stat-label">#1 Hot Spot</div>
+            <div class="stat-file" id="hotspot-file-1">--</div>
+            <div class="stat-value" id="hotspot-func-1">--</div>
+            <div class="stat-detail" id="hotspot-detail-1">--</div>
+          </div>
+        </div>
+        <div class="stat-card hotspot-card">
+          <div class="stat-icon">🥈</div>
+          <div class="stat-content">
+            <div class="stat-label">#2 Hot Spot</div>
+            <div class="stat-file" id="hotspot-file-2">--</div>
+            <div class="stat-value" id="hotspot-func-2">--</div>
+            <div class="stat-detail" id="hotspot-detail-2">--</div>
+          </div>
+        </div>
+        <div class="stat-card hotspot-card">
+          <div class="stat-icon">🥉</div>
+          <div class="stat-content">
+            <div class="stat-label">#3 Hot Spot</div>
+            <div class="stat-file" id="hotspot-file-3">--</div>
+            <div class="stat-value" id="hotspot-func-3">--</div>
+            <div class="stat-detail" id="hotspot-detail-3">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="controls">
       <div class="controls-content">
         <button onclick="resetZoom()">🏠 Reset Zoom</button>
         <button onclick="exportSVG()" class="secondary">📁 Export SVG</button>
         <button onclick="toggleLegend()">🔥 Heat Map Legend</button>
+      </div>
+      <div class="search-container">
+        <input type="text" id="search-input" placeholder="🔍 Search functions..." />
       </div>
     </div>
 

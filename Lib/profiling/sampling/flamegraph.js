@@ -211,6 +211,9 @@ function main() {
 
   // Make chart globally accessible for controls
   window.flamegraphChart = chart;
+
+  // Populate stats cards
+  populateStats(data);
 }
 
 // Wait for libraries to load
@@ -220,6 +223,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const infoBtn = document.getElementById("show-info-btn");
   const infoPanel = document.getElementById("info-panel");
   const closeBtn = document.getElementById("close-info-btn");
+  const searchInput = document.getElementById("search-input");
+  
   if (infoBtn && infoPanel) {
     infoBtn.addEventListener("click", function () {
       const isOpen = infoPanel.style.display === "block";
@@ -230,6 +235,72 @@ document.addEventListener("DOMContentLoaded", function () {
     closeBtn.addEventListener("click", function () {
       infoPanel.style.display = "none";
     });
+  }
+  
+  // Add search functionality - wait for chart to be ready
+  if (searchInput) {
+    let searchTimeout;
+    
+    function performSearch() {
+      const searchTerm = searchInput.value.trim();
+      
+      // Clear previous search highlighting
+      d3.selectAll("#chart rect")
+        .style("stroke", null)
+        .style("stroke-width", null)
+        .style("opacity", null);
+      
+      if (searchTerm && searchTerm.length > 0) {
+        // First, dim all rectangles
+        d3.selectAll("#chart rect")
+          .style("opacity", 0.3);
+          
+        // Then highlight and restore opacity for matching nodes
+        let matchCount = 0;
+        d3.selectAll("#chart rect")
+          .each(function(d) {
+            if (d && d.data) {
+              const name = d.data.name || "";
+              const funcname = d.data.funcname || "";
+              const filename = d.data.filename || "";
+              
+              const matches = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             funcname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             filename.toLowerCase().includes(searchTerm.toLowerCase());
+              
+              if (matches) {
+                matchCount++;
+                d3.select(this)
+                  .style("opacity", 1)
+                  .style("stroke", "#ff6b35")
+                  .style("stroke-width", "2px")
+                  .style("stroke-dasharray", "3,3");
+              }
+            }
+          });
+          
+        // Update search input style based on results
+        if (matchCount > 0) {
+          searchInput.style.borderColor = "#28a745";
+          searchInput.style.boxShadow = "0 0 0 3px rgba(40, 167, 69, 0.1)";
+        } else {
+          searchInput.style.borderColor = "#dc3545";
+          searchInput.style.boxShadow = "0 0 0 3px rgba(220, 53, 69, 0.1)";
+        }
+      } else {
+        // Reset search input style
+        searchInput.style.borderColor = "#e9ecef";
+        searchInput.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.06)";
+      }
+    }
+    
+    searchInput.addEventListener("input", function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(performSearch, 150);
+    });
+    
+    // Make search function globally accessible
+    window.performSearch = performSearch;
   }
 });
 
@@ -244,6 +315,81 @@ const pythonColors = [
   "#4584bb", // Very hot - medium blue (35-60%)
   "#3776ab", // Hottest - Python blue (≥60%)
 ];
+
+function populateStats(data) {
+  const totalSamples = data.value || 0;
+  
+  // Collect all functions with their metrics, aggregated by function name
+  const functionMap = new Map();
+  
+  function collectFunctions(node) {
+    if (node.filename && node.funcname) {
+      // Calculate direct samples (this node's value minus children's values)
+      let childrenValue = 0;
+      if (node.children) {
+        childrenValue = node.children.reduce((sum, child) => sum + child.value, 0);
+      }
+      const directSamples = Math.max(0, node.value - childrenValue);
+      
+      // Use file:line:funcname as key to ensure uniqueness
+      const funcKey = `${node.filename}:${node.lineno || '?'}:${node.funcname}`;
+      
+      if (functionMap.has(funcKey)) {
+        const existing = functionMap.get(funcKey);
+        existing.directSamples += directSamples;
+        existing.directPercent = (existing.directSamples / totalSamples) * 100;
+        // Keep the most representative file/line (the one with more samples)
+        if (directSamples > existing.maxSingleSamples) {
+          existing.filename = node.filename;
+          existing.lineno = node.lineno || '?';
+          existing.maxSingleSamples = directSamples;
+        }
+      } else {
+        functionMap.set(funcKey, {
+          filename: node.filename,
+          lineno: node.lineno || '?',
+          funcname: node.funcname,
+          directSamples,
+          directPercent: (directSamples / totalSamples) * 100,
+          maxSingleSamples: directSamples
+        });
+      }
+    }
+    
+    if (node.children) {
+      node.children.forEach(child => collectFunctions(child));
+    }
+  }
+  
+  collectFunctions(data);
+  
+  // Convert map to array and get top 3 hotspots
+  const hotSpots = Array.from(functionMap.values())
+    .filter(f => f.directPercent > 0.5) // At least 0.5% to be significant
+    .sort((a, b) => b.directPercent - a.directPercent)
+    .slice(0, 3);
+    
+  // Populate the 3 cards
+  for (let i = 0; i < 3; i++) {
+    const num = i + 1;
+    if (i < hotSpots.length) {
+      const hotspot = hotSpots[i];
+      const basename = hotspot.filename.split('/').pop();
+      let funcDisplay = hotspot.funcname;
+      if (funcDisplay.length > 35) {
+        funcDisplay = funcDisplay.substring(0, 32) + '...';
+      }
+      
+      document.getElementById(`hotspot-file-${num}`).textContent = `${basename}:${hotspot.lineno}`;
+      document.getElementById(`hotspot-func-${num}`).textContent = funcDisplay;
+      document.getElementById(`hotspot-detail-${num}`).textContent = `${hotspot.directPercent.toFixed(1)}% samples (${hotspot.directSamples.toLocaleString()})`;
+    } else {
+      document.getElementById(`hotspot-file-${num}`).textContent = '--';
+      document.getElementById(`hotspot-func-${num}`).textContent = '--';
+      document.getElementById(`hotspot-detail-${num}`).textContent = '--';
+    }
+  }
+}
 
 // Control functions
 function resetZoom() {
@@ -272,6 +418,16 @@ function toggleLegend() {
   const isHidden =
     legendPanel.style.display === "none" || legendPanel.style.display === "";
   legendPanel.style.display = isHidden ? "block" : "none";
+}
+
+function clearSearch() {
+  const searchInput = document.getElementById("search-input");
+  if (searchInput) {
+    searchInput.value = "";
+    if (window.flamegraphChart) {
+      window.flamegraphChart.clear();
+    }
+  }
 }
 
 // Handle window resize

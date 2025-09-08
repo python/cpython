@@ -49,6 +49,19 @@ class CollapsedStackCollector(StackTraceCollector):
 
 
 class FlamegraphCollector(StackTraceCollector):
+    def __init__(self):
+        super().__init__()
+        self.stats = {}
+
+    def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None):
+        """Set profiling statistics to include in flamegraph data."""
+        self.stats = {
+            "sample_interval_usec": sample_interval_usec,
+            "duration_sec": duration_sec,
+            "sample_rate": sample_rate,
+            "error_rate": error_rate
+        }
+
     def export(self, filename):
         flamegraph_data = self._convert_to_flamegraph_format()
 
@@ -171,9 +184,11 @@ class FlamegraphCollector(StackTraceCollector):
         if len(converted_root["children"]) == 1:
             main_child = converted_root["children"][0]
             main_child["name"] = f"Program Root: {main_child['name']}"
+            main_child["stats"] = self.stats
             return main_child
 
         converted_root["name"] = "Program Root"
+        converted_root["stats"] = self.stats
         return converted_root
 
     def _get_source_lines(self, func):
