@@ -40,10 +40,12 @@ The :mod:`getpass` module provides two functions:
       terminal you launched IDLE from rather than the idle window itself.
 
    .. note::
-      On Unix systems, when ``echo_char`` is set, ``Ctrl+U`` will not erase
-      the entire current input line, and may insert unexpected characters
-      into the input.
-      (See https://github.com/python/cpython/issues/138577 for detail)
+      On Unix systems, when *echo_char* is set, the terminal will be
+      configured to operate in `noncanonical mode 
+      <https://manpages.debian.org/termios(3)#Canonical_and_noncanonical_mode>`__.
+      In particular, this means that line editing shortcuts such as
+      :kbd:`Ctrl+U` will not work and may insert unexpected characters into
+      the input. (See :gh:`138577`)
 
    .. versionchanged:: 3.14
       Added the *echo_char* parameter for keyboard feedback.
