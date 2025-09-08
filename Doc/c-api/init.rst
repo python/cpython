@@ -1184,6 +1184,12 @@ code, or when embedding the Python interpreter:
    interpreter lock is also shared by all threads, regardless of to which
    interpreter they belong.
 
+   .. versionchanged:: 3.12
+
+      :pep:`684` introduced the possibility
+      of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
+      See :c:func:`Py_NewInterpreterFromConfig`.
+
 
 .. c:type:: PyThreadState
 
@@ -1875,6 +1881,8 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+.. _per-interpreter-gil:
+
 A Per-Interpreter GIL
 ---------------------
 
@@ -1886,7 +1894,7 @@ being blocked by other interpreters or blocking any others.  Thus a
 single Python process can truly take advantage of multiple CPU cores
 when running Python code.  The isolation also encourages a different
 approach to concurrency than that of just using threads.
-(See :pep:`554`.)
+(See :pep:`554` and :pep:`684`.)
 
 Using an isolated interpreter requires vigilance in preserving that
 isolation.  That especially means not sharing any objects or mutable
