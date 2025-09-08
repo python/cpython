@@ -1070,8 +1070,9 @@ class UtimeTests(unittest.TestCase):
             -9223372037, -9223372036, 9223372035, 9223372036,
         )
         for large in times:
-            os.utime(self.fname, (large, large))
-            self.assertEqual(os.stat(self.fname).st_mtime, large)
+            with self.subTest(large=large):
+                os.utime(self.fname, (large, large))
+                self.assertEqual(os.stat(self.fname).st_mtime, large)
 
     def test_utime_invalid_arguments(self):
         # seconds and nanoseconds parameters are mutually exclusive

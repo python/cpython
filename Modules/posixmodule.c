@@ -2588,20 +2588,20 @@ static int
 fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index, time_t sec, unsigned long nsec)
 {
     assert(!PyErr_Occurred());
-#define S_TO_NS (1000000000LL)
-    assert(nsec < S_TO_NS);
+#define SEC_TO_NS (1000000000LL)
+    assert(nsec < SEC_TO_NS);
 
     if (s_index >= 0) {
         PyObject *s = _PyLong_FromTime_t(sec);
-        if (!s) {
+        if (s == NULL) {
             return -1;
         }
         PyStructSequence_SET_ITEM(v, s_index, s);
     }
 
     if (f_index >= 0) {
-        PyObject *float_s = PyFloat_FromDouble(sec + 1e-9 * nsec);
-        if (!float_s) {
+        PyObject *float_s = PyFloat_FromDouble((double)sec + 1e-9 * nsec);
+        if (float_s == NULL) {
             return -1;
         }
         PyStructSequence_SET_ITEM(v, f_index, float_s);
@@ -2610,9 +2610,9 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
     int res = -1;
     if (ns_index >= 0) {
         /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
-        if ((LLONG_MIN / S_TO_NS) <= sec && sec <= (LLONG_MAX / S_TO_NS - 1)) {
-            PyObject *ns_total = PyLong_FromLongLong(sec * S_TO_NS + nsec);
-            if (!ns_total) {
+        if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
+            PyObject *ns_total = PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
+            if (ns_total == NULL) {
                 return -1;
             }
             PyStructSequence_SET_ITEM(v, ns_index, ns_total);
@@ -2624,17 +2624,17 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
             PyObject *ns_total = NULL;
             PyObject *s = _PyLong_FromTime_t(sec);
             PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
-            if (!(s && ns_fractional)) {
+            if (s == NULL || ns_fractional == NULL) {
                 goto exit;
             }
 
             s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
-            if (!s_in_ns) {
+            if (s_in_ns == NULL) {
                 goto exit;
             }
 
             ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-            if (!ns_total) {
+            if (ns_total == NULL) {
                 goto exit;
             }
             PyStructSequence_SET_ITEM(v, ns_index, ns_total);
@@ -2649,7 +2649,7 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
     }
 
     return res;
-    #undef S_TO_NS
+    #undef SEC_TO_NS
 }
 
 #ifdef MS_WINDOWS
