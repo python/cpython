@@ -2852,6 +2852,11 @@ class SyntaxErrorTestCase(unittest.TestCase):
         # report "cannot delete name"
         self._check_error("del a += b", "invalid syntax")
 
+    def test_parenthesized_named_expression_target(self):
+        self._check_error(
+            "((a) := 1)",
+            "cannot parenthesize target name in assignment expression")
+
     def test_global_param_err_first(self):
         source = """if 1:
             def error(a):
