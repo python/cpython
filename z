@@ -1,0 +1,403 @@
+#!/bin/bash
+
+# Copyright(c) The Maintainers of Nanvix.
+# Licensed under the MIT License.
+
+#
+# Utility for building CPython for Nanvix.
+#
+# Run './z help' for more information on how to use this utility.
+#
+
+#==================================================================================================
+
+# Fast fail on errors, unset variables, and pipe failures.
+set -euo pipefail
+
+#===================================================================================================
+# Global Constants
+#===================================================================================================
+
+# Project name
+PROJECT_NAME="CPython"
+
+# Scripts directory.
+SCRIPTS_DIR="etc/scripts"
+
+# Name of the build command.
+CMD_NAME_BUILD="build"
+# Name of the clean command.
+CMD_NAME_CLEAN="clean"
+# Name of the configure command.
+CMD_NAME_CONFIGURE="configure"
+# Name of the help command.
+CMD_NAME_HELP="help"
+# Name of the install command.
+CMD_NAME_INSTALL="install"
+
+# Name of the sysroot directory option.
+OPT_NAME_SYSROOT_PATH="--sysroot-path"
+# Name of the toolchain directory option.
+OPT_NAME_TOOLCHAIN_PATH="--toolchain-path"
+
+# Default path to the sysroot directory.
+DEFAULT_SYSROOT_PATH="${HOME}/sysroot"
+# Default path to the toolchain directory.
+DEFAULT_TOOLCHAIN_PATH="${HOME}/toolchain"
+
+# Name of cache file.
+Z_CACHE_FILE=".z.cache"
+
+#===================================================================================================
+# Global Variables
+#===================================================================================================
+
+# Path to Nanvix sysroot directory.
+SYSROOT_DIR=${DEFAULT_SYSROOT_PATH}
+# Path to the Nanvix toolchain directory.
+TOOLCHAIN_DIR=${DEFAULT_TOOLCHAIN_PATH}
+
+# Optional sccache utility (auto-detected from path or empty).
+SCCACHE=
+
+#===================================================================================================
+# Functions
+#===================================================================================================
+configure() {
+    LIBC="${TOOLCHAIN_DIR}/i686-nanvix/lib/libc.a"
+    LIBM="${TOOLCHAIN_DIR}/i686-nanvix/lib/libm.a"
+    LIBPOSIX="${SYSROOT_DIR}/lib/libposix.a"
+
+    CC="${SCCACHE:+${SCCACHE} }$TOOLCHAIN_DIR/bin/i686-nanvix-gcc" \
+    CXX="${SCCACHE:+${SCCACHE} }$TOOLCHAIN_DIR/bin/i686-nanvix-g++" \
+    LD="${TOOLCHAIN_DIR}/bin/i686-nanvix-ld" \
+    LDFLAGS="-static -T ${SYSROOT_DIR}/lib/user.ld" \
+    CFLAGS="-static -L ${SYSROOT_DIR}/lib" \
+    LIBS="-Wl,--start-group ${LIBPOSIX} ${LIBC} ${LIBM} -lsqlite3 -lssl -lcrypto -Wl,--end-group" \
+    LIBSQLITE3_LIBS="-L ${SYSROOT_DIR}/lib -lsqlite3" \
+    LIBSQLITE3_CFLAGS="-I ${SYSROOT_DIR}/include" \
+    ZLIB_LIBS="-L ${SYSROOT_DIR}/lib -lz" \
+    ZLIB_CFLAGS="-I ${SYSROOT_DIR}/include" \
+    ./configure \
+        --disable-shared \
+        --build=x86_64-pc-linux-gnux32 \
+        --host=i686-nanvix \
+        --with-build-python="${TOOLCHAIN_DIR}"/bin/python3 \
+        --disable-test-modules \
+        --with-libc="${TOOLCHAIN_DIR}"/i686-nanvix/lib/libc.a \
+        --with-libm="${TOOLCHAIN_DIR}"/i686-nanvix/lib/libm.a \
+        --prefix="${SYSROOT_DIR}" \
+        --exec-prefix="${SYSROOT_DIR}" \
+        --with-ensurepip=no \
+        --with-pkg-config=no \
+        --with-openssl="${SYSROOT_DIR}" \
+        --disable-ipv6 \
+        ac_cv_file__dev_ptmx=no \
+        ac_cv_file__dev_ptc=no \
+        ac_cv_pthread_is_default=yes \
+        ac_cv_pthread=yes \
+        ac_cv_kthread=no
+}
+
+#
+# Description
+#
+#   Builds artifacts.
+#
+# Return Value
+#
+#   - 0 if the build was successful.
+#   - Non-zero if an error occurred.
+#
+# Usage Example
+#
+#   build || echo "Build failed"
+#
+build() {
+    print_info "Building ${PROJECT_NAME} ..."
+
+    make -j "$(nproc)" all || return $?
+
+    return 0
+}
+
+#
+# Description
+#
+#   Installs build artifacts.
+#
+# Return Value
+#
+#   - 0 if the install was successful.
+#   - Non-zero if an error occurred.
+#
+# Usage Example
+#
+#   install || echo "Installation failed"
+#
+install() {
+    print_info "Installing ${PROJECT_NAME} ..."
+
+    make install || return $?
+
+    return 0
+}
+
+#
+# Description
+#
+#   Cleans build artifacts.
+#
+# Return Value
+#
+#   - 0 if the clean was successful.
+#   - Non-zero if an error occurred.
+#
+# Usage Example
+#
+#   clean || echo "Clean failed"
+#
+clean() {
+    print_info "Cleaning ${PROJECT_NAME} ..."
+
+    make clean || return $?
+
+    git clean -fdx || return $?
+
+    return 0
+}
+
+#
+# Description
+#
+#   Prints a help message.
+#
+# Usage Example
+#
+#   print_help
+#
+print_help() {
+    cat <<EOF
+
+Utility script for building ${PROJECT_NAME} for Nanvix.
+
+Usage
+  $0 COMMAND [OPTIONS]
+  $0 ${CMD_NAME_BUILD}
+  $0 ${CMD_NAME_CLEAN}
+  $0 ${CMD_NAME_CONFIGURE} [${OPT_NAME_SYSROOT_PATH}=PATH] [${OPT_NAME_TOOLCHAIN_PATH}=PATH]
+  $0 ${CMD_NAME_INSTALL}
+  $0 ${CMD_NAME_HELP}
+
+Commands
+  ${CMD_NAME_BUILD}      Build artifacts.
+  ${CMD_NAME_CLEAN}      Remove build artifacts.
+  ${CMD_NAME_CONFIGURE}  Configure the build.
+  ${CMD_NAME_INSTALL}    Install built artifacts.
+  ${CMD_NAME_HELP}       Display this help message.
+
+Options
+  ${OPT_NAME_SYSROOT_PATH}    Path to Nanvix sysroot directory (default: ${DEFAULT_SYSROOT_PATH}).
+  ${OPT_NAME_TOOLCHAIN_PATH}  Path to the Nanvix toolchain directory (default: ${DEFAULT_TOOLCHAIN_PATH}).
+
+Notes
+    - If available in PATH, 'sccache' is auto-detected and used in compiler invocations.
+EOF
+}
+
+#
+# Description
+#   Writes command line arguments to a cache file.
+#   Each argument is written on a separate line.
+#
+# Arguments
+#   $@ - The full command line arguments.
+#
+# Usage Example
+#   write_cache "${args[@]}"
+#
+write_cache() {
+    printf '%s\n' "${@}" > "${Z_CACHE_FILE}"
+}
+
+#
+# Description
+#   Reads the command line arguments from the cache file.
+#   Sets the following global variables:
+#     - TOOLCHAIN_DIR
+#     - SYSROOT_DIR
+#
+# Return Value
+#   - 0 if the cache file was successfully read.
+#   - 1 if an error occurred while reading the cache file.
+#
+# Usage Example
+#   read_cache && echo "Cache read successfully" || echo "Failed to read cache"
+#
+read_cache() {
+    # Check if the cache file exists.
+    if [[ ! -f "${Z_CACHE_FILE}" ]]; then
+        return 1
+    fi
+
+    if [[ -f "${Z_CACHE_FILE}" ]]; then
+        local cache_lines
+        mapfile -t cache_lines < "${Z_CACHE_FILE}"
+        # Check if the cache file is empty.
+        if [[ ${#cache_lines[@]} -eq 0 ]]; then
+            return 1
+        fi
+        # Process the cache lines to determine the last build options.
+        for arg in "${cache_lines[@]}"; do
+            case $arg in
+                ${OPT_NAME_SYSROOT_PATH}=*)
+                    SYSROOT_DIR="${arg#*=}"
+                    ;;
+                ${OPT_NAME_TOOLCHAIN_PATH}=*)
+                    TOOLCHAIN_DIR="${arg#*=}"
+                    ;;
+                *)
+                    print_error "Skipping unknown cached argument: ${arg}"
+                    ;;
+            esac
+        done
+    fi
+
+    return 0
+}
+
+#
+# Description
+#
+#   Detects sccache from PATH. If found, populates SCCACHE with the command to
+#   invoke it. If not found, leaves SCCACHE empty.
+#
+# Usage Example
+#   detect_sccache
+#
+detect_sccache() {
+    if command -v sccache >/dev/null 2>&1; then
+        SCCACHE="sccache"
+        print_info "Using sccache for compiler invocations."
+    fi
+}
+
+#
+# Description
+#
+#   Prints an error message and abort execution.
+#
+# Arguments
+#
+#   $1 - The panic message to print.
+#
+# Usage Example
+#
+#   panic "Something went terribly wrong"
+#
+panic() {
+    echo -e "\033[31m[PANIC] ${1}\033[0m" >&2
+    exit 1
+}
+
+#===================================================================================================
+# Main Script
+#===================================================================================================
+
+main() {
+    # Check if no arguments were provided.
+    if [ $# -eq 0 ]; then
+        panic "No command specified, run '${0} ${CMD_NAME_HELP}' for help"
+    fi
+
+    # Extract command from arguments.
+    local cmd
+    cmd="$1"
+    shift
+
+    # Parse command line arguments.
+    local args=()
+    while [[ $# -gt 0 ]]; do
+        arg="$1"
+        args+=("${arg}")
+        case $arg in
+            ${OPT_NAME_SYSROOT_PATH}=*)
+                SYSROOT_DIR="${arg#*=}"
+                ;;
+            ${OPT_NAME_TOOLCHAIN_PATH}=*)
+                TOOLCHAIN_DIR="${arg#*=}"
+                ;;
+            *)
+                panic "Unknown argument: ${arg}, run '${0} ${CMD_NAME_HELP}' for help"
+                ;;
+        esac
+        shift
+    done
+
+    # Save/restore cache as needed.
+    if [[ "${cmd}" == "${CMD_NAME_CONFIGURE}" ]]; then
+        write_cache "${args[@]}"
+    else
+        read_cache || {
+            panic "Failed to restore cache."
+        }
+    fi
+
+    # Source files in ${SYSROOT_DIR}/etc/scripts/.
+    if [ -d "${SYSROOT_DIR}/${SCRIPTS_DIR}/" ]; then
+        for script in "${SYSROOT_DIR}/${SCRIPTS_DIR}/"*.sh; do
+            if [ -f "$script" ]; then
+                # shellcheck source=/dev/null
+                source "$script"
+            fi
+        done
+    else
+        panic "Cannot source scripts in '${SYSROOT_DIR}/${SCRIPTS_DIR}/'."
+    fi
+
+    # Detect sccache utility.
+    detect_sccache
+
+    case ${cmd} in
+        "${CMD_NAME_BUILD}")
+            build || {
+                print_error "Build failed."
+                exit 1
+            }
+
+            print_success "Build complete."
+            ;;
+        "${CMD_NAME_CLEAN}")
+            clean || {
+                print_error "Clean failed."
+                exit 1
+            }
+            print_success "Clean complete."
+            ;;
+        "${CMD_NAME_CONFIGURE}")
+
+            configure || {
+                print_error "Configuration failed."
+                exit 1
+            }
+            print_success "Configuration complete."
+            ;;
+        "${CMD_NAME_INSTALL}")
+            install || {
+                print_error "Installation failed."
+                exit 1
+            }
+            print_success "Installlation complete."
+            ;;
+        "${CMD_NAME_HELP}")
+            print_help
+            ;;
+        *)
+            print_error "Unknown command: ${cmd}"
+            print_help
+            exit 1
+            ;;
+    esac
+}
+
+main "${@}"
