@@ -39,6 +39,12 @@ The :mod:`getpass` module provides two functions:
       If you call getpass from within IDLE, the input may be done in the
       terminal you launched IDLE from rather than the idle window itself.
 
+   .. note::
+      On Unix systems, when ``echo_char`` is set, ``Ctrl+U`` will not erase
+      the entire current input line, and may insert unexpected characters
+      into the input.
+      (See https://github.com/python/cpython/issues/138577 for detail)
+
    .. versionchanged:: 3.14
       Added the *echo_char* parameter for keyboard feedback.
 
