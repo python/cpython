@@ -3698,6 +3698,7 @@ error:
     return NULL;
 }
 
+
 #ifdef __EMSCRIPTEN__
 
 PyDoc_STRVAR(emscripten_info__doc__,
