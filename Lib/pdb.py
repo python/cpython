@@ -925,10 +925,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return code, buffer, is_await_code
 
     def default(self, line):
-        if line[:1] == '!': line = line[1:].strip()
         if not self.curframe:
             self.error("No current frame.")
             return
+        if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe.f_locals
         globals = self.curframe.f_globals
         try:
