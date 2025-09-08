@@ -15,10 +15,13 @@
       <div class="header-content">
         <div class="python-logo"><!-- INLINE_LOGO --></div>
         <div class="header-text">
-          <h1>Python Performance Flamegraph</h1>
+          <h1>Tachyon Profiler Performance Flamegraph</h1>
           <div class="subtitle">
             Interactive visualization of function call performance
           </div>
+        </div>
+        <div class="header-search">
+          <input type="text" id="search-input" placeholder="🔍 Search functions..." />
         </div>
       </div>
     </div>
@@ -60,9 +63,6 @@
         <button onclick="resetZoom()">🏠 Reset Zoom</button>
         <button onclick="exportSVG()" class="secondary">📁 Export SVG</button>
         <button onclick="toggleLegend()">🔥 Heat Map Legend</button>
-      </div>
-      <div class="search-container">
-        <input type="text" id="search-input" placeholder="🔍 Search functions..." />
       </div>
     </div>
 

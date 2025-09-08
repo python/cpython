@@ -281,16 +281,16 @@ document.addEventListener("DOMContentLoaded", function () {
           
         // Update search input style based on results
         if (matchCount > 0) {
-          searchInput.style.borderColor = "#28a745";
-          searchInput.style.boxShadow = "0 0 0 3px rgba(40, 167, 69, 0.1)";
+          searchInput.style.borderColor = "rgba(40, 167, 69, 0.8)";
+          searchInput.style.boxShadow = "0 6px 20px rgba(40, 167, 69, 0.2)";
         } else {
-          searchInput.style.borderColor = "#dc3545";
-          searchInput.style.boxShadow = "0 0 0 3px rgba(220, 53, 69, 0.1)";
+          searchInput.style.borderColor = "rgba(220, 53, 69, 0.8)";
+          searchInput.style.boxShadow = "0 6px 20px rgba(220, 53, 69, 0.2)";
         }
       } else {
         // Reset search input style
-        searchInput.style.borderColor = "#e9ecef";
-        searchInput.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.06)";
+        searchInput.style.borderColor = "rgba(255, 255, 255, 0.2)";
+        searchInput.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
       }
     }
     

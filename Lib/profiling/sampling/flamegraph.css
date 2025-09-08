@@ -25,6 +25,7 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
+  gap: 20px;
 }
 
 .python-logo {
@@ -59,6 +60,37 @@ body {
   font-size: 1.1em;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 300;
+}
+
+.header-search {
+  width: 100%;
+  max-width: 500px;
+}
+
+.header-search #search-input {
+  width: 100%;
+  padding: 12px 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  font-size: 16px;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.95);
+  color: #2e3338;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.header-search #search-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.header-search #search-input::placeholder {
+  color: #6c757d;
 }
 
 .stats-section {
@@ -164,32 +196,6 @@ body {
   text-align: center;
 }
 
-.search-container {
-  max-width: 1200px;
-  margin: 16px auto 0 auto;
-  padding: 0 24px;
-  text-align: center;
-}
-
-#search-input {
-  padding: 12px 20px;
-  border: 2px solid #e9ecef;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  background: white;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
-  display: inline-block;
-  width: auto;
-  min-width: 300px;
-}
-
-#search-input:focus {
-  outline: none;
-  border-color: #3776ab;
-  box-shadow: 0 4px 12px rgba(55, 118, 171, 0.2);
-}
 
 .controls button {
   background: #3776ab;
