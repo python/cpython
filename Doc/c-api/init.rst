@@ -1023,7 +1023,7 @@ code, or when embedding the Python interpreter:
    .. versionchanged:: 3.12
 
       :pep:`684` introduced the possibility
-      of a :ref:`per-interpreter <per-interpreter-gil>` GIL.
+      of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
       See :c:func:`Py_NewInterpreterFromConfig`.
 
 
