@@ -1647,16 +1647,8 @@ class ProcessTestCase(BaseTestCase):
 class RunFuncTestCase(BaseTestCase):
 
     def setUp(self):
-        # clean the environment from pre-existing PYTHONWARNINGS to make
-        # test_subprocess results consistent
-        self.pythonwarnings = os.environ.get('PYTHONWARNINGS')
-        if self.pythonwarnings:
-            del os.environ['PYTHONWARNINGS']
-
-    def tearDown(self):
-        # bring back pre-existing PYTHONWARNINGS if present
-        if self.pythonwarnings:
-            os.environ['PYTHONWARNINGS'] = self.pythonwarnings
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        del env['PYTHONWARNINGS']
 
     def run_python(self, code, **kwargs):
         """Run Python code in a subprocess using subprocess.run"""
