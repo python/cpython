@@ -1016,9 +1016,7 @@ code, or when embedding the Python interpreter:
    this structure.
 
    Threads belonging to different interpreters initially share nothing, except
-   process state like available memory, open file descriptors and such.  The global
-   interpreter lock is also shared by all threads, regardless of to which
-   interpreter they belong.
+   process state like available memory, open file descriptors and such.
 
 
 .. c:type:: PyThreadState
