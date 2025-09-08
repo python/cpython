@@ -154,7 +154,7 @@ def make_paths_relative(data: dict[str, Any], config_path: str | None = None) ->
             for part in parents:
                 container = container[part]
             if child not in container:
-                raise KeyError
+                raise KeyError(child)
             current_path = container[child]
         except KeyError:
             continue
