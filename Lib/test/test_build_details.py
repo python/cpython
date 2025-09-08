@@ -26,7 +26,7 @@ try:
     generate_build_details = importlib.util.module_from_spec(spec)
     sys.modules["generate_build_details"] = generate_build_details
     spec.loader.exec_module(generate_build_details)
-except ImportError:
+except (FileNotFoundError, ImportError):
     generate_build_details = None
 
 
@@ -178,6 +178,8 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     generate_build_details is None,
     "Failed to import generate-build-details"
 )
+@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsRelativePathsTests(unittest.TestCase):
     @property
     def build_details_absolute_paths(self):
