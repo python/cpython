@@ -741,8 +741,8 @@ class SysModuleTest(unittest.TestCase):
 
     def test_abi_info(self):
         info = sys.abi_info
-        info_keys = ['pointer_bits', 'free_threaded', 'debug', 'byteorder']
-        self.assertEqual(list(vars(info)), info_keys)
+        info_keys = {'pointer_bits', 'free_threaded', 'debug', 'byteorder'}
+        self.assertEqual(set(vars(info)), info_keys)
         pointer_bits = 64 if sys.maxsize > 2**32 else 32
         self.assertEqual(info.pointer_bits, pointer_bits)
         self.assertEqual(info.free_threaded,

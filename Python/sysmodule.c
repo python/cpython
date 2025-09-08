@@ -3656,7 +3656,7 @@ make_abi_info(void)
     if (value == NULL) {
         goto error;
     }
-    if (PyDict_SetItemString(abi_info, "pointer_bits", value) < 0) {
+    if (PyDict_SetItem(abi_info, &_Py_ID(pointer_bits), value) < 0) {
         goto error;
     }
     Py_DECREF(value);
@@ -3666,7 +3666,7 @@ make_abi_info(void)
 #else
     value = Py_False;
 #endif
-    if (PyDict_SetItemString(abi_info, "free_threaded", value) < 0) {
+    if (PyDict_SetItem(abi_info, &_Py_ID(free_threaded), value) < 0) {
         goto error;
     }
 
@@ -3675,7 +3675,7 @@ make_abi_info(void)
 #else
     value = Py_False;
 #endif
-    if (PyDict_SetItemString(abi_info, "debug", value) < 0) {
+    if (PyDict_SetItem(abi_info, &_Py_ID(debug), value) < 0) {
         goto error;
     }
 
@@ -3684,7 +3684,7 @@ make_abi_info(void)
 #else
     value = &_Py_ID(little);
 #endif
-    if (PyDict_SetItemString(abi_info, "byteorder", value) < 0) {
+    if (PyDict_SetItem(abi_info, &_Py_ID(byteorder), value) < 0) {
         goto error;
     }
 
