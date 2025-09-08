@@ -3645,7 +3645,7 @@ make_abi_info(void)
 {
     // New entries should be added when needed for a supported platform, or (for
     // enabling an unsupported one) by core dev consensus.  Entries should be removed
-    // following :pep:`387`.
+    // following PEP 387.
     int res;
     PyObject *abi_info, *value, *ns;
     abi_info = PyDict_New();
