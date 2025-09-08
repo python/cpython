@@ -1,2 +1,2 @@
 Raise error when :class:`argparse.BooleanOptionalAction` is used with
-:class:`argparse.ArgumentParser` instance whose ``prefix_chars`` has no '-'.
+:class:`argparse.ArgumentParser` instance whose ``prefix_chars`` has no dash char ``'-'``.
