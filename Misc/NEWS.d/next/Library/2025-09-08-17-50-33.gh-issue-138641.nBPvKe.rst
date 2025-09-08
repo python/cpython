@@ -1,1 +1,2 @@
-Fix: breakpoint() in pdb can cause crash.
+Prevent error when calling :func:`breakpoint` inside a :mod:`pdb` debugging session.
+Nested breakpoint calls now display a helpful error message instead of causing error.
