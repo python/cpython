@@ -1018,6 +1018,9 @@ code, or when embedding the Python interpreter:
    Threads belonging to different interpreters initially share nothing, except
    process state like available memory, open file descriptors and such.
 
+   .. versionchanged:: 3.12
+      Each subinterpreter now :ref:`has its own GIL <per-interpreter-gil>`.
+
 
 .. c:type:: PyThreadState
 
@@ -1709,6 +1712,8 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+.. _per-interpreter-gil:
+
 A Per-Interpreter GIL
 ---------------------
 
@@ -1720,7 +1725,7 @@ being blocked by other interpreters or blocking any others.  Thus a
 single Python process can truly take advantage of multiple CPU cores
 when running Python code.  The isolation also encourages a different
 approach to concurrency than that of just using threads.
-(See :pep:`554`.)
+(See :pep:`554` and :pep:`684`.)
 
 Using an isolated interpreter requires vigilance in preserving that
 isolation.  That especially means not sharing any objects or mutable
