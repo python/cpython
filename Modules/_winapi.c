@@ -3040,11 +3040,11 @@ _winapi.ReportEvent
 
     handle: HANDLE
         The handle to the event log.
-    type: int
+    type: unsigned_short(bitwise=False)
         The type of event being reported.
-    category: int
+    category: unsigned_short(bitwise=False)
         The event category.
-    event_id: int
+    event_id: unsigned_int(bitwise=False)
         The event identifier.
     strings: object(subclass_of='&PyList_Type')
         A list of strings to be inserted into the event message.
