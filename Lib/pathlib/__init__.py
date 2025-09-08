@@ -209,7 +209,12 @@ class PurePath:
         try:
             return self._hash
         except AttributeError:
-            self._hash = hash(self._str_normcase)
+            hash_data = self._tail
+            if self._drv or self._root:
+                hash_data = [self._drv + self._root] + self._tail
+            elif self._tail and self.parser.splitdrive(self._tail[0])[0]:
+                hash_data = ['.'] + self._tail
+            self._hash = hash(tuple(hash_data))
             return self._hash
 
     def __eq__(self, other):
