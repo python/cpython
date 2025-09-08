@@ -29,28 +29,30 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. attribute:: abi_info.pointer_bits
 
-      The width of pointers in bits, as an integer, equivalent
-      to ``8 * sizeof(void *)``. Usually, this is  ``32`` or ``64``.
+      The width of pointers in bits, as an integer,
+      equivalent to ``8 * sizeof(void *)``.
+      Usually, this is  ``32`` or ``64``.
 
    .. attribute:: abi_info.free_threaded
 
-      A boolean indicating whether the interpreter was built with
+      A Boolean indicating whether the interpreter was built with
       :term:`free threading` support.
-      This reflects the presence of the :option:`--disable-gil` configure
-      option, or the setting of the ``DisableGil`` property on Windows,
-      respectively.
+      This reflects either the presence of the :option:`--disable-gil`
+      :file:`configure` option (on Unix)
+      or setting the ``DisableGil`` property (on Windows).
 
    .. attribute:: abi_info.debug
 
-      A boolean indicating whether the interpreter was built in
+      A Boolean indicating whether the interpreter was built in
       :ref:`debug mode <debug-build>`.
-      This reflects the presence of the :option:`--with-pydebug` configure
-      option, or the ``Debug`` configuration on Windows, respectively.
+      This reflects either the presence of the :option:`--with-pydebug`
+      :file:`configure` option (on Unix)
+      or the ``Debug`` configuration (on Windows).
 
    .. attribute:: abi_info.byteorder
 
-      A string indicating the native byte order, either ``'big'`` or
-      ``'little'``.
+      A string indicating the native byte order,
+      either ``'big'`` or ``'little'``.
       This is the same as the :data:`byteorder` attribute.
 
 

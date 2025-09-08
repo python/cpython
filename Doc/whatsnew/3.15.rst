@@ -463,7 +463,7 @@ ssl
 sys
 ---
 
-* Added :data:`sys.abi_info` object to make ABI information more easily accessible.
+* Add :data:`sys.abi_info` namespace to improve access to ABI information.
   (Contributed by Klaus Zimmermann in :gh:`137476`.)
 
 
