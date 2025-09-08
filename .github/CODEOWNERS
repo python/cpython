@@ -8,7 +8,7 @@
 .github/**                    @ezio-melotti @hugovk @AA-Turner
 
 # pre-commit
-.pre-commit-config.yaml       @hugovk @AlexWaygood
+.pre-commit-config.yaml       @hugovk
 .ruff.toml                    @hugovk @AlexWaygood @AA-Turner
 
 # Build system

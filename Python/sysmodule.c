@@ -2641,6 +2641,47 @@ sys__baserepl_impl(PyObject *module)
 }
 
 /*[clinic input]
+sys._clear_type_descriptors
+
+    type: object(subclass_of='&PyType_Type')
+    /
+
+Private function for clearing certain descriptors from a type's dictionary.
+
+See gh-135228 for context.
+[clinic start generated code]*/
+
+static PyObject *
+sys__clear_type_descriptors_impl(PyObject *module, PyObject *type)
+/*[clinic end generated code: output=5ad17851b762b6d9 input=dc536c97fde07251]*/
+{
+    PyTypeObject *typeobj = (PyTypeObject *)type;
+    if (_PyType_HasFeature(typeobj, Py_TPFLAGS_IMMUTABLETYPE)) {
+        PyErr_SetString(PyExc_TypeError, "argument is immutable");
+        return NULL;
+    }
+    PyObject *dict = _PyType_GetDict(typeobj);
+    PyObject *dunder_dict = NULL;
+    if (PyDict_Pop(dict, &_Py_ID(__dict__), &dunder_dict) < 0) {
+        return NULL;
+    }
+    PyObject *dunder_weakref = NULL;
+    if (PyDict_Pop(dict, &_Py_ID(__weakref__), &dunder_weakref) < 0) {
+        PyType_Modified(typeobj);
+        Py_XDECREF(dunder_dict);
+        return NULL;
+    }
+    PyType_Modified(typeobj);
+    // We try to hold onto a reference to these until after we call
+    // PyType_Modified(), in case their deallocation triggers somer user code
+    // that tries to do something to the type.
+    Py_XDECREF(dunder_dict);
+    Py_XDECREF(dunder_weakref);
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 sys._is_gil_enabled -> bool
 
 Return True if the GIL is currently enabled and False otherwise.
@@ -2836,6 +2877,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_DUMP_METHODDEF
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
+    SYS__CLEAR_TYPE_DESCRIPTORS_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
     SYS__DUMP_TRACELETS_METHODDEF
     {NULL, NULL}  // sentinel

@@ -2463,12 +2463,20 @@ per-object locks for :term:`free-threaded <free threading>` CPython.  They are
 intended to replace reliance on the :term:`global interpreter lock`, and are
 no-ops in versions of Python with the global interpreter lock.
 
+Critical sections are intended to be used for custom types implemented
+in C-API extensions. They should generally not be used with built-in types like
+:class:`list` and :class:`dict` because their public C-APIs
+already use critical sections internally, with the notable
+exception of :c:func:`PyDict_Next`, which requires critical section
+to be acquired externally.
+
 Critical sections avoid deadlocks by implicitly suspending active critical
-sections and releasing the locks during calls to :c:func:`PyEval_SaveThread`.
-When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
-is resumed, and its locks reacquired.  This means the critical section API
-provides weaker guarantees than traditional locks -- they are useful because
-their behavior is similar to the :term:`GIL`.
+sections, hence, they do not provide exclusive access such as provided by
+traditional locks like :c:type:`PyMutex`.  When a critical section is started,
+the per-object lock for the object is acquired. If the code executed inside the
+critical section calls C-API functions then it can suspend the critical section thereby
+releasing the per-object lock, so other threads can acquire the per-object lock
+for the same object.
 
 Variants that accept :c:type:`PyMutex` pointers rather than Python objects are also
 available. Use these variants to start a critical section in a situation where

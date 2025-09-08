@@ -831,6 +831,9 @@ where the :keyword:`import` statement occurs.
 
 .. index:: single: __all__ (optional module attribute)
 
+.. attribute:: module.__all__
+   :no-typesetting:
+
 The *public names* defined by a module are determined by checking the module's
 namespace for a variable named ``__all__``; if defined, it must be a sequence
 of strings which are names defined or imported by that module.  The names

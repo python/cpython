@@ -290,9 +290,9 @@ Literals
    * ``conversion`` is an integer:
 
      * -1: no formatting
-     * 115 (``ord('s')``): ``!s`` string formatting
-     * 114 (``ord('r')``): ``!r`` repr formatting
-     * 97 (``ord('a')``): ``!a`` ASCII formatting
+     * 97 (``ord('a')``): ``!a`` :func:`ASCII <ascii>` formatting
+     * 114 (``ord('r')``): ``!r`` :func:`repr` formatting
+     * 115 (``ord('s')``): ``!s`` :func:`string <str>` formatting
 
    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both
@@ -326,14 +326,18 @@ Literals
                                 Constant(value='.3')]))]))
 
 
-.. class:: TemplateStr(values)
+.. class:: TemplateStr(values, /)
 
-   A t-string, comprising a series of :class:`Interpolation` and :class:`Constant`
-   nodes.
+   .. versionadded:: 3.14
+
+   Node representing a template string literal, comprising a series of
+   :class:`Interpolation` and :class:`Constant` nodes.
+   These nodes may be any order, and do not need to be interleaved.
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse('t"{name} finished {place:ordinal}"', mode='eval'), indent=4))
+        >>> expr = ast.parse('t"{name} finished {place:ordinal}"', mode='eval')
+        >>> print(ast.dump(expr, indent=4))
         Expression(
             body=TemplateStr(
                 values=[
@@ -350,28 +354,28 @@ Literals
                             values=[
                                 Constant(value='ordinal')]))]))
 
+.. class:: Interpolation(value, str, conversion, format_spec=None)
+
    .. versionadded:: 3.14
 
-
-.. class:: Interpolation(value, str, conversion, format_spec)
-
-   Node representing a single interpolation field in a t-string.
+   Node representing a single interpolation field in a template string literal.
 
    * ``value`` is any expression node (such as a literal, a variable, or a
      function call).
+     This has the same meaning as ``FormattedValue.value``.
    * ``str`` is a constant containing the text of the interpolation expression.
    * ``conversion`` is an integer:
 
      * -1: no conversion
-     * 115: ``!s`` string conversion
-     * 114: ``!r`` repr conversion
-     * 97: ``!a`` ascii conversion
+     * 97 (``ord('a')``): ``!a`` :func:`ASCII <ascii>` conversion
+     * 114 (``ord('r')``): ``!r`` :func:`repr` conversion
+     * 115 (``ord('s')``): ``!s`` :func:`string <str>` conversion
 
+     This has the same meaning as ``FormattedValue.conversion``.
    * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both
      ``conversion`` and ``format_spec`` can be set at the same time.
-
-   .. versionadded:: 3.14
+     This has the same meaning as ``FormattedValue.format_spec``.
 
 
 .. class:: List(elts, ctx)
