@@ -295,6 +295,7 @@ dbm
   This may harm performance, but improve crash tolerance.
   (Contributed by Serhiy Storchaka in :gh:`66234`.)
 
+
 difflib
 -------
 
@@ -378,6 +379,7 @@ os.path
   If used, errors other than :exc:`FileNotFoundError` will be re-raised;
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
 
 resource
 --------
@@ -725,6 +727,7 @@ Deprecated C APIs
   :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
   :c:func:`_Py_c_abs` are :term:`soft deprecated`.
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
