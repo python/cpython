@@ -2332,20 +2332,22 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        op(_LOAD_ATTR, (owner -- attr[1], self_or_null[oparg&1])) {
+        op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
                 /* Designed to work in tandem with CALL, pushes two values. */
-                *attr = PyStackRef_NULL;
-                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, attr);
+                _PyCStackRef method;
+                _PyThreadState_PushCStackRef(tstate, &method);
+                int is_meth = _PyObject_GetMethodStackRef(tstate, PyStackRef_AsPyObjectBorrow(owner), name, &method.ref);
                 if (is_meth) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
                        meth | self | arg1 | ... | argN
                      */
-                    assert(!PyStackRef_IsNull(*attr));  // No errors on this branch
+                    assert(!PyStackRef_IsNull(method.ref));  // No errors on this branch
                     self_or_null[0] = owner;  // Transfer ownership
                     DEAD(owner);
+                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
                 }
                 else {
                     /* meth is not an unbound method (but a regular attr, or
@@ -2355,8 +2357,9 @@ dummy_func(
                        meth | NULL | arg1 | ... | argN
                     */
                     PyStackRef_CLOSE(owner);
-                    ERROR_IF(PyStackRef_IsNull(*attr));
                     self_or_null[0] = PyStackRef_NULL;
+                    attr = _PyThreadState_PopCStackRefSteal(tstate, &method);
+                    ERROR_IF(PyStackRef_IsNull(attr));
                 }
             }
             else {
@@ -2364,7 +2367,7 @@ dummy_func(
                 PyObject *attr_o = PyObject_GetAttr(PyStackRef_AsPyObjectBorrow(owner), name);
                 PyStackRef_CLOSE(owner);
                 ERROR_IF(attr_o == NULL);
-                *attr = PyStackRef_FromPyObjectSteal(attr_o);
+                attr = PyStackRef_FromPyObjectSteal(attr_o);
             }
         }
 
@@ -2969,8 +2972,6 @@ dummy_func(
                 else {
                     this_instr[1].counter = initial_jump_backoff_counter();
                     assert(tstate->current_executor == NULL);
-                    assert(executor != tstate->interp->cold_executor);
-                    tstate->jit_exit = NULL;
                     TIER1_TO_TIER2(executor);
                 }
             }
@@ -3035,8 +3036,6 @@ dummy_func(
                 }
                 DISPATCH_GOTO();
             }
-            assert(executor != tstate->interp->cold_executor);
-            tstate->jit_exit = NULL;
             TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -5354,6 +5353,9 @@ dummy_func(
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
 #ifndef _Py_JIT
             assert(current_executor == (_PyExecutorObject*)executor);
+#ifdef Py_DEBUG
+            assert(STACK_LEVEL() + current_cached_values == oparg);
+#endif
 #endif
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)executor;
@@ -5379,12 +5381,16 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
+            SYNC_SP();
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            Py_UNREACHABLE();
         }
 
         tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
+            SYNC_SP();
             int err = _Py_HandlePending(tstate);
             GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            Py_UNREACHABLE();
         }
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
@@ -5406,6 +5412,9 @@ dummy_func(
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 
+        tier2 op(_SPILL_OR_RELOAD, (--)) {
+        }
+
         tier2 op(_COLD_EXIT, ( -- )) {
             _PyExitData *exit = tstate->jit_exit;
             assert(exit != NULL);
@@ -5413,9 +5422,11 @@ dummy_func(
             _Py_BackoffCounter temperature = exit->temperature;
             if (!backoff_counter_triggers(temperature)) {
                 exit->temperature = advance_backoff_counter(temperature);
+                SYNC_SP();
                 GOTO_TIER_ONE(target);
+                Py_UNREACHABLE();
             }
-            _PyExecutorObject *executor;
+            _PyExecutorObject *executor = NULL;
             if (target->op.code == ENTER_EXECUTOR) {
                 PyCodeObject *code = _PyFrame_GetCode(frame);
                 executor = code->co_executors->executors[target->op.arg];
@@ -5428,7 +5439,9 @@ dummy_func(
                 int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
                 if (optimized <= 0) {
                     exit->temperature = restart_backoff_counter(temperature);
+                    SYNC_SP();
                     GOTO_TIER_ONE(optimized < 0 ? NULL : target);
+                    Py_UNREACHABLE();
                 }
                 exit->temperature = initial_temperature_backoff_counter();
             }
