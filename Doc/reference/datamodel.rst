@@ -453,7 +453,7 @@ Sets
 
    These represent a mutable set. They are created by the built-in :func:`set`
    constructor and can be modified afterwards by several methods, such as
-   :meth:`~add <frozenset.add>`.
+   :meth:`add <frozenset.add>`.
 
 
 Frozen sets
