@@ -126,7 +126,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
         if sysconfig.is_python_build():
             projectdir = sysconfig.get_config_var('projectbase')
             pybuilddir = os.path.join(projectdir, 'pybuilddir.txt')
-                with open(pybuilddir, encoding='utf-8') as f:
+            with open(pybuilddir, encoding='utf-8') as f:
                 dirname = os.path.join(projectdir, f.read())
         else:
             dirname = sysconfig.get_path('stdlib')
