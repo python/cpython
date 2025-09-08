@@ -128,7 +128,7 @@ class Regrtest:
         self._tmp_dir: StrPath | None = ns.tempdir
 
         # Randomize
-        self.randomize: bool = bool(ns.randomize)
+        self.randomize: bool = ns.randomize
         if ('SOURCE_DATE_EPOCH' in os.environ
             # don't use the variable if empty
             and os.environ['SOURCE_DATE_EPOCH']

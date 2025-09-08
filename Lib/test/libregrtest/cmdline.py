@@ -155,7 +155,7 @@ class Namespace(argparse.Namespace):
         self.list_cases = False
         self.list_tests = False
         self.single = False
-        self.randomize = None
+        self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
         self.use_resources: list[str] = []
@@ -271,7 +271,7 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
-    group.add_argument('--no-randomize', dest='randomize', action='store_false',
+    group.add_argument('--no-randomize', dest='no_randomize', action='store_true',
                        help='do not randomize test execution order, even if '
                        'it would be implied by another option')
     group.add_argument('--prioritize', metavar='TEST1,TEST2,...',
@@ -459,8 +459,7 @@ def _parse_args(args, **kwargs):
         #   -j0 --randomize --fail-env-changed --rerun --slowest --verbose3
         if ns.use_mp is None:
             ns.use_mp = 0
-        if ns.randomize is None:
-            ns.randomize = True
+        ns.randomize = True
         ns.fail_env_changed = True
         if ns.python is None:
             ns.rerun = True
@@ -541,8 +540,10 @@ def _parse_args(args, **kwargs):
                         ns.use_resources.remove(r)
                 elif r not in ns.use_resources:
                     ns.use_resources.append(r)
-    if ns.random_seed is not None and ns.randomize is None:
+    if ns.random_seed is not None:
         ns.randomize = True
+    if ns.no_randomize:
+        ns.randomize = False
     if ns.verbose:
         ns.header = True
 

@@ -184,7 +184,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_no_randomize(self):
         ns = self.parse_args([])
-        self.assertIsNone(ns.randomize)
+        self.assertIs(ns.randomize, False)
 
         ns = self.parse_args(["--randomize"])
         self.assertIs(ns.randomize, True)
@@ -196,7 +196,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertIs(ns.randomize, False)
 
         ns = self.parse_args(["--no-randomize", "--randomize"])
-        self.assertIs(ns.randomize, True)
+        self.assertIs(ns.randomize, False)
 
     def test_randseed(self):
         ns = self.parse_args(['--randseed', '12345'])
@@ -452,6 +452,7 @@ class ParseArgsTestCase(unittest.TestCase):
         regrtest = self.create_regrtest(args)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
+        self.assertEqual(regrtest.fail_rerun, False)
         self.assertEqual(regrtest.randomize, randomize)
         self.assertIsInstance(regrtest.random_seed, int)
         self.assertTrue(regrtest.fail_env_changed)
