@@ -215,6 +215,25 @@ purposes.
       :data:`VERIFY_X509_STRICT` in its default verify flags.
 
 
+Signature algorithms
+^^^^^^^^^^^^^^^^^^^^
+
+.. function:: get_sigalgs()
+
+   Return a list of available TLS signature algorithm names used
+   by servers to complete the TLS handshake or clients requesting
+   certificate-based authentication. For example::
+
+       >>> ssl.get_sigalgs()  # doctest: +SKIP
+       ['ecdsa_secp256r1_sha256', 'ecdsa_secp384r1_sha384', ...]
+
+   These names can be used when building string values to pass to the
+   :meth:`SSLContext.set_client_sigalgs` and
+   :meth:`SSLContext.set_server_sigalgs` methods.
+
+   .. versionadded:: next
+
+
 Exceptions
 ^^^^^^^^^^
 
@@ -1297,6 +1316,22 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionadded:: next
 
+.. method:: SSLSocket.client_sigalg()
+
+   Return the signature algorithm used for performing certificate-based client
+   authentication on this connection, or ``None`` if no connection has been
+   established or client authentication didn't occur.
+
+   .. versionadded:: next
+
+.. method:: SSLSocket.server_sigalg()
+
+   Return the signature algorithm used by the server to complete the TLS
+   handshake on this connection, or ``None`` if no connection has been
+   established or the cipher suite has no signature.
+
+   .. versionadded:: next
+
 .. method:: SSLSocket.compression()
 
    Return the compression algorithm being used as a string, or ``None``
@@ -1722,6 +1757,35 @@ to speed up repeated connections from the same clients.
 
       When connected, the :meth:`SSLSocket.group` method of SSL sockets will
       return the group used for key agreement on that connection.
+
+   .. versionadded:: next
+
+.. method:: SSLContext.set_client_sigalgs(sigalgs)
+
+   Set the signature algorithms allowed for certificate-based client
+   authentication. It should be a string in the `OpenSSL client sigalgs
+   list format
+   <https://docs.openssl.org/master/man3/SSL_CTX_set1_client_sigalgs_list/>`_.
+
+   .. note::
+
+      When connected, the :meth:`SSLSocket.client_sigalg` method of SSL
+      sockets will return the signature algorithm used for performing
+      certificate-based client authentication on that connection.
+
+   .. versionadded:: next
+
+.. method:: SSLContext.set_server_sigalgs(sigalgs)
+
+   Set the signature algorithms allowed for the server to complete the TLS
+   handshake. It should be a string in the `OpenSSL sigalgs list format
+   <https://docs.openssl.org/master/man3/SSL_CTX_set1_sigalgs_list/>`_.
+
+   .. note::
+
+      When connected, the :meth:`SSLSocket.server_sigalg` method of SSL
+      sockets will return the signature algorithm used by the server to
+      complete the TLS handshake on that connection.
 
    .. versionadded:: next
 
@@ -2876,7 +2940,7 @@ of TLS/SSL. Some new TLS 1.3 features are not yet available.
   process certificate requests while they send or receive application data
   from the server.
 - TLS 1.3 features like early data, deferred TLS client cert request,
-  signature algorithm configuration, and rekeying are not supported yet.
+  and rekeying are not supported yet.
 
 
 .. seealso::
