@@ -1364,6 +1364,56 @@ ghi\0jkl
     sample15 = "\n\n\n"
     sample16 = "abc\ndef\nghi"
 
+    sample17 = """\
+name,age
+Alice,30
+Bob,40
+Carol,50
+Dave,60
+Eve,70
+Frank,80
+Grace,90
+Heidi,100
+Ivan,110
+Judy,120
+Karl,130
+Liam,140
+Mallory,150
+Niaj,160
+Olivia,170
+Peggy,180
+Quinn,190
+Rupert,200
+Sybil,210
+Trent,220
+Victor,not_a_number
+"""
+    sample18 = """\
+name,age
+Alice,30
+Bob,40
+Carol,50
+Dave,60
+Eve,70
+Frank,80
+Grace,90
+Heidi,100
+Ivan,110
+Judy,120
+Karl,130
+Liam,140
+Mallory,150
+Niaj,160
+Olivia,170
+Peggy,180
+Quinn,190
+Rupert,200
+Sybil,210
+Trent,220
+Uma,230
+Victor,not_a_number
+"""
+
     def test_issue43625(self):
         sniffer = csv.Sniffer()
         self.assertTrue(sniffer.has_header(self.sample12))
@@ -1384,6 +1434,11 @@ ghi\0jkl
         sniffer = csv.Sniffer()
         self.assertIs(sniffer.has_header(self.sample8), False)
         self.assertIs(sniffer.has_header(self.header2 + self.sample8), True)
+
+    def test_has_header_checks_20_rows(self):
+        sniffer = csv.Sniffer()
+        self.assertIs(sniffer.has_header(self.sample17), False)
+        self.assertIs(sniffer.has_header(self.sample18), True)
 
     def test_guess_quote_and_delimiter(self):
         sniffer = csv.Sniffer()
