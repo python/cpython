@@ -1195,11 +1195,11 @@ SSL sockets also have the following additional methods and attributes:
 
    Perform the SSL setup handshake.
 
-   If *block* is true and the timeout obtained by :meth:`~socket.gettimeout`
+   If *block* is true and the timeout obtained by :meth:`~socket.socket.gettimeout`
    is zero, the socket is set in blocking mode until the handshake is performed.
 
    .. versionchanged:: 3.4
-      The handshake method also performs :func:`match_hostname` when the
+      The handshake method also performs :func:`!match_hostname` when the
       :attr:`~SSLContext.check_hostname` attribute of the socket's
       :attr:`~SSLSocket.context` is true.
 
@@ -1209,7 +1209,7 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionchanged:: 3.7
       Hostname or IP address is matched by OpenSSL during handshake. The
-      function :func:`match_hostname` is no longer used. In case OpenSSL
+      function :func:`!match_hostname` is no longer used. In case OpenSSL
       refuses a hostname or IP address, the handshake is aborted early and
       a TLS alert message is sent to the peer.
 
@@ -2863,7 +2863,7 @@ This common check is automatically performed when
 
 .. versionchanged:: 3.7
    Hostname matchings is now performed by OpenSSL. Python no longer uses
-   :func:`match_hostname`.
+   :func:`!match_hostname`.
 
 In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have
