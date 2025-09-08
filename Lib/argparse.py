@@ -966,7 +966,7 @@ class BooleanOptionalAction(Action):
 
     def _check_compatibility(self, container):
         if '-' not in container.prefix_chars:
-            raise ValueError(f"BooleanOptionalAction requires '-' in prefix_chars.")
+            raise ValueError("BooleanOptionalAction requires '-' in prefix_chars.")
 
 
 class _StoreAction(Action):
