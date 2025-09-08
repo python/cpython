@@ -8,7 +8,7 @@ import string
 import unittest
 from pathlib import Path
 
-from test.support import is_android, is_apple_mobile, is_emscripten, is_wasi
+from test.support import is_android, is_apple_mobile, is_wasm32
 
 BASE_PATH = Path(
     __file__,  # Lib/test/test_build_details.py
@@ -117,7 +117,7 @@ needs_installed_python = unittest.skipIf(
 
 
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
-@unittest.skipIf(is_wasi or is_emscripten, 'Feature not available on WebAssembly builds')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     """Test CPython's install details file implementation."""
 
