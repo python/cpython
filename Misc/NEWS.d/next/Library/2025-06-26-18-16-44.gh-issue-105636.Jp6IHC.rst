@@ -1,0 +1,2 @@
+Add the :meth:`~re.Pattern.compile_template` method for the :ref:`pattern
+object <re-objects>` which allows to pre-compile replacement strings.
