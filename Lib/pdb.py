@@ -925,9 +925,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return code, buffer, is_await_code
 
     def default(self, line):
-        if not self.curframe:
-            self.error("No current frame.")
-            return
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe.f_locals
         globals = self.curframe.f_globals
@@ -1184,7 +1181,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return self.completedefault(text, line, begidx, endidx)
 
     def completedefault(self, text, line, begidx, endidx):
-        assert self.curframe is not None
         if text.startswith("$"):
             # Complete convenience variables
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
@@ -1953,9 +1949,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not arg:
             self._print_invalid_arg(arg)
             return
-        if not self.curframe:
-            self.error('No current frame.')
-            return
         self.stop_trace()
         globals = self.curframe.f_globals
         locals = self.curframe.f_locals
@@ -2118,9 +2111,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         exception was originally raised or propagated is indicated by
         ">>", if it differs from the current line.
         """
-        if not self.curframe:
-            self.error('No current frame.')
-            return
         self.lastcmd = 'list'
         last = None
         if arg and arg != '.':
@@ -2165,9 +2155,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         if arg:
             self._print_invalid_arg(arg)
-            return
-        if not self.curframe:
-            self.error('No current frame.')
             return
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
