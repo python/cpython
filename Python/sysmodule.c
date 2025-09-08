@@ -3646,12 +3646,12 @@ make_abi_info(void)
     // New entries should be added when needed for a supported platform,
     // or by core dev consensus for enabling an unsupported one.
 
+    PyObject *value;
     PyObject *abi_info = PyDict_New();
     if (abi_info == NULL) {
         return NULL;
     }
 
-    PyObject *value;
     value = PyLong_FromLong(sizeof(void *) * 8);
     if (value == NULL) {
         goto error;
