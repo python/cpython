@@ -460,6 +460,13 @@ ssl
    (Contributed by Ron Frederick in :gh:`138252`.)
 
 
+sys
+---
+
+* Add :data:`sys.abi_info` namespace to improve access to ABI information.
+  (Contributed by Klaus Zimmermann in :gh:`137476`.)
+
+
 tarfile
 -------
 
