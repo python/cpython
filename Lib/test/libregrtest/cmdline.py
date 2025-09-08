@@ -155,7 +155,7 @@ class Namespace(argparse.Namespace):
         self.list_cases = False
         self.list_tests = False
         self.single = False
-        self.randomize = False
+        self.randomize = None
         self.fromfile = None
         self.fail_env_changed = False
         self.use_resources: list[str] = []
@@ -271,6 +271,9 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
+    group.add_argument('--no-randomize', dest='randomize', action='store_false',
+                       help='do not randomize test execution order, even if '
+                       'it would be implied by another option')
     group.add_argument('--prioritize', metavar='TEST1,TEST2,...',
                        action='append', type=priority_list,
                        help='select these tests first, even if the order is'
@@ -453,13 +456,14 @@ def _parse_args(args, **kwargs):
     # Continuous Integration (CI): common options for fast/slow CI modes
     if ns.slow_ci or ns.fast_ci:
         # Similar to options:
-        #   -j0 --fail-env-changed --rerun --fail-rerun --slowest --verbose3
+        #   -j0 --randomize --fail-env-changed --rerun --slowest --verbose3
         if ns.use_mp is None:
             ns.use_mp = 0
+        if ns.randomize is None:
+            ns.randomize = True
         ns.fail_env_changed = True
         if ns.python is None:
             ns.rerun = True
-            ns.fail_rerun = True
         ns.print_slow = True
         ns.verbose3 = True
     else:
@@ -537,7 +541,7 @@ def _parse_args(args, **kwargs):
                         ns.use_resources.remove(r)
                 elif r not in ns.use_resources:
                     ns.use_resources.append(r)
-    if ns.random_seed is not None:
+    if ns.random_seed is not None and ns.randomize is None:
         ns.randomize = True
     if ns.verbose:
         ns.header = True
