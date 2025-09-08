@@ -982,6 +982,7 @@ extern "C" {
     INIT_ID(format), \
     INIT_ID(format_spec), \
     INIT_ID(frame_buffer), \
+    INIT_ID(free_threaded), \
     INIT_ID(from_param), \
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
@@ -1180,6 +1181,7 @@ extern "C" {
     INIT_ID(person), \
     INIT_ID(pi_factory), \
     INIT_ID(pid), \
+    INIT_ID(pointer_bits), \
     INIT_ID(policy), \
     INIT_ID(pos), \
     INIT_ID(pos1), \

@@ -3643,33 +3643,30 @@ error:
 static PyObject *
 make_abi_info(void)
 {
-    // New entries should be added when needed for a supported platform, or (for
-    // enabling an unsupported one) by core dev consensus.  Entries should be removed
-    // following PEP 387.
-    int res;
-    PyObject *abi_info, *value, *ns;
-    abi_info = PyDict_New();
+    // New entries should be added when needed for a supported platform,
+    // or by core dev consensus for enabling an unsupported one.
+
+    PyObject *value;
+    PyObject *abi_info = PyDict_New();
     if (abi_info == NULL) {
-        goto error;
+        return NULL;
     }
 
     value = PyLong_FromLong(sizeof(void *) * 8);
     if (value == NULL) {
         goto error;
     }
-    res = PyDict_SetItemString(abi_info, "pointer_bits", value);
-    Py_DECREF(value);
-    if (res < 0) {
+    if (PyDict_SetItem(abi_info, &_Py_ID(pointer_bits), value) < 0) {
         goto error;
     }
+    Py_DECREF(value);
 
 #ifdef Py_GIL_DISABLED
     value = Py_True;
 #else
     value = Py_False;
 #endif
-    res = PyDict_SetItemString(abi_info, "free_threaded", value);
-    if (res < 0) {
+    if (PyDict_SetItem(abi_info, &_Py_ID(free_threaded), value) < 0) {
         goto error;
     }
 
@@ -3678,33 +3675,29 @@ make_abi_info(void)
 #else
     value = Py_False;
 #endif
-    res = PyDict_SetItemString(abi_info, "debug", value);
-    if (res < 0) {
+    if (PyDict_SetItem(abi_info, &_Py_ID(debug), value) < 0) {
         goto error;
     }
 
 #if PY_BIG_ENDIAN
-    value = PyUnicode_FromString("big");
+    value = &_Py_ID(big);
 #else
-    value = PyUnicode_FromString("little");
+    value = &_Py_ID(little);
 #endif
-    if (value == NULL) {
-        goto error;
-    }
-    res = PyDict_SetItemString(abi_info, "byteorder", value);
-    Py_DECREF(value);
-    if (res < 0) {
+    if (PyDict_SetItem(abi_info, &_Py_ID(byteorder), value) < 0) {
         goto error;
     }
 
-    ns = _PyNamespace_New(abi_info);
+    PyObject *ns = _PyNamespace_New(abi_info);
     Py_DECREF(abi_info);
     return ns;
 
 error:
     Py_DECREF(abi_info);
+    Py_XDECREF(value);
     return NULL;
 }
+
 
 #ifdef __EMSCRIPTEN__
 
