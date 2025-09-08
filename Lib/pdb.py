@@ -926,6 +926,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
+        if not self.curframe:
+            self.error("No current frame.")
+            return
         locals = self.curframe.f_locals
         globals = self.curframe.f_globals
         try:
@@ -2131,6 +2134,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             first = self.lineno + 1
         if last is None:
             last = first + 10
+        if not self.curframe:
+            self.error('No current frame.')
+            return
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
@@ -2152,6 +2158,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """
         if arg:
             self._print_invalid_arg(arg)
+            return
+        if not self.curframe:
+            self.error('No current frame.')
             return
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
