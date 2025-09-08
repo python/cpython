@@ -102,7 +102,7 @@ class FormatTestsBase:
                 if key == 'version':
                     self.assertEqual(len(value), len(impl_ver))
                     for part_name, part_value in value.items():
-                        assert not isinstance(sys.implementation.version, dict)
+                        self.assertFalse(isinstance(sys.implementation.version, dict))
                         getattr(sys.implementation.version, part_name)
                         sys_implementation_value = getattr(impl_ver, part_name)
                         self.assertEqual(sys_implementation_value, part_value)
