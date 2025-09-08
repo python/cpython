@@ -41,11 +41,11 @@ The :mod:`getpass` module provides two functions:
 
    .. note::
       On Unix systems, when *echo_char* is set, the terminal will be
-      configured to operate in `noncanonical mode
-      <https://manpages.debian.org/termios(3)#Canonical_and_noncanonical_mode>`__.
+      configured to operate in
+      :manpage:`noncanonical mode <termios(3)#Canonical_and_noncanonical_mode>`.
       In particular, this means that line editing shortcuts such as
       :kbd:`Ctrl+U` will not work and may insert unexpected characters into
-      the input. (See :gh:`138577`)
+      the input.
 
    .. versionchanged:: 3.14
       Added the *echo_char* parameter for keyboard feedback.
