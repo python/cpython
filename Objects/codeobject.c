@@ -1011,9 +1011,16 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     if (addrq < 0) {
         return co->co_firstlineno;
     }
+    int lineno = -2; // -1 is a valid line number
+    Py_BEGIN_CRITICAL_SECTION(co);
     if (co->_co_monitoring && co->_co_monitoring->lines) {
-        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
+        lineno = _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
     }
+    Py_END_CRITICAL_SECTION();
+    if (lineno != -2) {
+        return lineno;
+    }
+
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
