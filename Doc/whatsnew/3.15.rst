@@ -412,7 +412,7 @@ ast
 ---
 
 * Creating instances of abstract AST nodes (such as :class:`ast.AST`
-  or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.20.
+  or :class:`!ast.expr`) is deprecated and will raise an error in Python 3.19.
   (Contributed by Brian Schubert in :gh:`116021`.)
 
 

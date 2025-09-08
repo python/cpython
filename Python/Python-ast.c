@@ -5174,7 +5174,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         if (PyErr_WarnFormat(
                 PyExc_DeprecationWarning, 1,
                 "Instantiating abstract AST node class %T is deprecated. "
-                "This will become an error in Python 3.20", self) < 0)
+                "This will become an error in Python 3.19", self) < 0)
         {
             return -1;
         }

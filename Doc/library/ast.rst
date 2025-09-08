@@ -161,13 +161,13 @@ Node classes
    match any of the fields of the AST node. This behavior is deprecated and will
    be removed in Python 3.15.
 
-.. deprecated-removed:: next 3.20
+.. deprecated-removed:: next 3.19
 
     In the :ref:`grammar above <abstract-grammar>`, the AST node classes that
     correspond to production rules with variants (aka "sums") are abstract
     classes. Previous versions of Python allowed for the creation of direct
     instances of these abstract node classes. This behavior is deprecated and
-    will be removed in Python 3.20.
+    will be removed in Python 3.19.
 
 
 .. note::

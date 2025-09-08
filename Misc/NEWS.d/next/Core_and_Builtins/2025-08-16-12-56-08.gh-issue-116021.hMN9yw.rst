@@ -1,2 +1,2 @@
 Support for creating instances of abstract AST nodes from the :mod:`ast` module
-is deprecated and scheduled for removal in Python 3.20. Patch by Brian Schubert.
+is deprecated and scheduled for removal in Python 3.19. Patch by Brian Schubert.
