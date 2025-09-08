@@ -2307,8 +2307,9 @@ PyDoc_STRVAR(_winapi_ReportEvent__doc__,
     {"ReportEvent", _PyCFunction_CAST(_winapi_ReportEvent), METH_FASTCALL|METH_KEYWORDS, _winapi_ReportEvent__doc__},
 
 static PyObject *
-_winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int type,
-                         int category, int event_id, PyObject *strings,
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
+                         unsigned short type, unsigned short category,
+                         unsigned int event_id, PyObject *strings,
                          Py_buffer *raw_data);
 
 static PyObject *
@@ -2338,19 +2339,19 @@ _winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static const char * const _keywords[] = {"handle", "type", "category", "event_id", "strings", "raw_data", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" F_HANDLE "iiiO!|y*:ReportEvent",
+        .format = "" F_HANDLE "O&O&O&O!|y*:ReportEvent",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
     HANDLE handle;
-    int type;
-    int category;
-    int event_id;
+    unsigned short type;
+    unsigned short category;
+    unsigned int event_id;
     PyObject *strings;
     Py_buffer raw_data = {NULL, NULL};
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &handle, &type, &category, &event_id, &PyList_Type, &strings, &raw_data)) {
+        &handle, _PyLong_UnsignedShort_Converter, &type, _PyLong_UnsignedShort_Converter, &category, _PyLong_UnsignedInt_Converter, &event_id, &PyList_Type, &strings, &raw_data)) {
         goto exit;
     }
     return_value = _winapi_ReportEvent_impl(module, handle, type, category, event_id, strings, &raw_data);
@@ -2367,4 +2368,4 @@ exit:
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=c9830656556b2fc9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9476451acfd0f43d input=a9049054013a1b77]*/

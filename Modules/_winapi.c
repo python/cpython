@@ -3055,10 +3055,11 @@ Writes an entry at the end of the specified event log.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_ReportEvent_impl(PyObject *module, HANDLE handle, int type,
-                         int category, int event_id, PyObject *strings,
+_winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
+                         unsigned short type, unsigned short category,
+                         unsigned int event_id, PyObject *strings,
                          Py_buffer *raw_data)
-/*[clinic end generated code: output=62348d38f92d26e8 input=4ac507ddabbf91ca]*/
+/*[clinic end generated code: output=fc3bbbde78cffd6c input=d4159129e760b095]*/
 {
     BOOL success;
     LPCWSTR *string_array = NULL;
