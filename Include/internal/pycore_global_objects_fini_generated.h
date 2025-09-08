@@ -984,6 +984,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format_spec));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(frame_buffer));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(free_threaded));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(from_param));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fromlist));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fromtimestamp));
@@ -1182,6 +1183,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(person));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pi_factory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pid));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pointer_bits));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(policy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pos));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pos1));

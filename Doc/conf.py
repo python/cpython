@@ -236,7 +236,6 @@ nitpick_ignore += [
     # Attributes/methods/etc. that definitely should be documented better,
     # but are deferred for now:
     ('py:attr', '__wrapped__'),
-    ('py:meth', 'index'),  # list.index, tuple.index, etc.
 ]
 
 # gh-106948: Copy standard C types declared in the "c:type" domain and C
