@@ -1647,6 +1647,8 @@ class ProcessTestCase(BaseTestCase):
 class RunFuncTestCase(BaseTestCase):
 
     def setUp(self):
+        # clean the environment from pre-existing PYTHONWARNINGS to make
+        # test_subprocess results consistent
         env = self.enterContext(os_helper.EnvironmentVarGuard())
         del env['PYTHONWARNINGS']
 

@@ -1228,6 +1228,8 @@ class Test_TextTestRunner(unittest.TestCase):
     """Tests for TextTestRunner."""
 
     def setUp(self):
+        # clean the environment from pre-existing PYTHONWARNINGS to make
+        # test_warnings results consistent
         env = self.enterContext(os_helper.EnvironmentVarGuard())
         del env['PYTHONWARNINGS']
 
