@@ -741,17 +741,15 @@ class SysModuleTest(unittest.TestCase):
 
     def test_abi_info(self):
         info = sys.abi_info
-        self.assertEqual(len(info.__dict__), 4)
+        info_keys = ['pointer_bits', 'free_threaded', 'debug', 'byteorder']
+        self.assertEqual(list(vars(info)), info_keys)
         pointer_bits = 64 if sys.maxsize > 2**32 else 32
         self.assertEqual(info.pointer_bits, pointer_bits)
+        self.assertEqual(info.free_threaded,
+                         bool(sysconfig.get_config_var('Py_GIL_DISABLED')))
+        self.assertEqual(info.debug,
+                         bool(sysconfig.get_config_var('Py_DEBUG')))
         self.assertEqual(info.byteorder, sys.byteorder)
-        for attr, flag in [
-            ("free_threaded", "Py_GIL_DISABLED"),
-            ("debug", "Py_DEBUG"),
-        ]:
-            self.assertEqual(getattr(info, attr, None),
-                             bool(sysconfig.get_config_var(flag)),
-                             f"for {attr}")
 
     @unittest.skipUnless(support.is_emscripten, "only available on Emscripten")
     def test_emscripten_info(self):
