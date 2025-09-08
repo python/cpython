@@ -2111,6 +2111,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         exception was originally raised or propagated is indicated by
         ">>", if it differs from the current line.
         """
+        if not self.curframe:
+            self.error('No current frame.')
+            return
         self.lastcmd = 'list'
         last = None
         if arg and arg != '.':
@@ -2134,9 +2137,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             first = self.lineno + 1
         if last is None:
             last = first + 10
-        if not self.curframe:
-            self.error('No current frame.')
-            return
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
