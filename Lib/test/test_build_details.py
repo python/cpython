@@ -179,7 +179,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     "Failed to import generate-build-details"
 )
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
-@unittest.skipIf(is_wasi or is_emscripten, 'Feature not available on WebAssembly builds')
+@unittest.skipIf(is_wasm32, 'Feature not available on WebAssembly builds')
 class BuildDetailsRelativePathsTests(unittest.TestCase):
     @property
     def build_details_absolute_paths(self):
