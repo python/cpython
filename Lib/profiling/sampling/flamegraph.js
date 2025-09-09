@@ -1,3 +1,89 @@
+function initFlamegraphUI() {
+  main();
+
+  const infoBtn = document.getElementById("show-info-btn");
+  const infoPanel = document.getElementById("info-panel");
+  const closeBtn = document.getElementById("close-info-btn");
+  const searchInput = document.getElementById("search-input");
+
+  if (infoBtn && infoPanel) {
+    infoBtn.addEventListener("click", function () {
+      const isOpen = infoPanel.style.display === "block";
+      infoPanel.style.display = isOpen ? "none" : "block";
+    });
+  }
+  if (closeBtn && infoPanel) {
+    closeBtn.addEventListener("click", function () {
+      infoPanel.style.display = "none";
+    });
+  }
+
+  // Add search functionality - wait for chart to be ready
+  if (searchInput) {
+    let searchTimeout;
+
+    function performSearch() {
+      const searchTerm = searchInput.value.trim();
+
+      // Clear previous search highlighting
+      d3.selectAll("#chart rect")
+        .style("stroke", null)
+        .style("stroke-width", null)
+        .style("opacity", null);
+
+      if (searchTerm && searchTerm.length > 0) {
+        // First, dim all rectangles
+        d3.selectAll("#chart rect")
+          .style("opacity", 0.3);
+
+        // Then highlight and restore opacity for matching nodes
+        let matchCount = 0;
+        d3.selectAll("#chart rect")
+          .each(function(d) {
+            if (d && d.data) {
+              const name = d.data.name || "";
+              const funcname = d.data.funcname || "";
+              const filename = d.data.filename || "";
+
+              const matches = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             funcname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             filename.toLowerCase().includes(searchTerm.toLowerCase());
+
+              if (matches) {
+                matchCount++;
+                d3.select(this)
+                  .style("opacity", 1)
+                  .style("stroke", "#ff6b35")
+                  .style("stroke-width", "2px")
+                  .style("stroke-dasharray", "3,3");
+              }
+            }
+          });
+
+        // Update search input style based on results
+        if (matchCount > 0) {
+          searchInput.style.borderColor = "rgba(40, 167, 69, 0.8)";
+          searchInput.style.boxShadow = "0 6px 20px rgba(40, 167, 69, 0.2)";
+        } else {
+          searchInput.style.borderColor = "rgba(220, 53, 69, 0.8)";
+          searchInput.style.boxShadow = "0 6px 20px rgba(220, 53, 69, 0.2)";
+        }
+      } else {
+        // Reset search input style
+        searchInput.style.borderColor = "rgba(255, 255, 255, 0.2)";
+        searchInput.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
+      }
+    }
+
+    searchInput.addEventListener("input", function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(performSearch, 150);
+    });
+
+    // Make search function globally accessible
+    window.performSearch = performSearch;
+  }
+}
 function main() {
   const data = {{FLAMEGRAPH_DATA}}
 
@@ -9,7 +95,6 @@ function main() {
   }
 
   const pythonTooltip = flamegraph.tooltip.defaultFlamegraphTooltip();
-
   pythonTooltip.show = function (d, element) {
     if (!this._tooltip) {
       this._tooltip = d3
@@ -232,93 +317,12 @@ function main() {
   populateStats(data);
 }
 
-// Wait for libraries to load
-document.addEventListener("DOMContentLoaded", function () {
-  main();
 
-  const infoBtn = document.getElementById("show-info-btn");
-  const infoPanel = document.getElementById("info-panel");
-  const closeBtn = document.getElementById("close-info-btn");
-  const searchInput = document.getElementById("search-input");
-  
-  if (infoBtn && infoPanel) {
-    infoBtn.addEventListener("click", function () {
-      const isOpen = infoPanel.style.display === "block";
-      infoPanel.style.display = isOpen ? "none" : "block";
-    });
-  }
-  if (closeBtn && infoPanel) {
-    closeBtn.addEventListener("click", function () {
-      infoPanel.style.display = "none";
-    });
-  }
-  
-  // Add search functionality - wait for chart to be ready
-  if (searchInput) {
-    let searchTimeout;
-    
-    function performSearch() {
-      const searchTerm = searchInput.value.trim();
-      
-      // Clear previous search highlighting
-      d3.selectAll("#chart rect")
-        .style("stroke", null)
-        .style("stroke-width", null)
-        .style("opacity", null);
-      
-      if (searchTerm && searchTerm.length > 0) {
-        // First, dim all rectangles
-        d3.selectAll("#chart rect")
-          .style("opacity", 0.3);
-          
-        // Then highlight and restore opacity for matching nodes
-        let matchCount = 0;
-        d3.selectAll("#chart rect")
-          .each(function(d) {
-            if (d && d.data) {
-              const name = d.data.name || "";
-              const funcname = d.data.funcname || "";
-              const filename = d.data.filename || "";
-              
-              const matches = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             funcname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             filename.toLowerCase().includes(searchTerm.toLowerCase());
-              
-              if (matches) {
-                matchCount++;
-                d3.select(this)
-                  .style("opacity", 1)
-                  .style("stroke", "#ff6b35")
-                  .style("stroke-width", "2px")
-                  .style("stroke-dasharray", "3,3");
-              }
-            }
-          });
-          
-        // Update search input style based on results
-        if (matchCount > 0) {
-          searchInput.style.borderColor = "rgba(40, 167, 69, 0.8)";
-          searchInput.style.boxShadow = "0 6px 20px rgba(40, 167, 69, 0.2)";
-        } else {
-          searchInput.style.borderColor = "rgba(220, 53, 69, 0.8)";
-          searchInput.style.boxShadow = "0 6px 20px rgba(220, 53, 69, 0.2)";
-        }
-      } else {
-        // Reset search input style
-        searchInput.style.borderColor = "rgba(255, 255, 255, 0.2)";
-        searchInput.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
-      }
-    }
-    
-    searchInput.addEventListener("input", function() {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(performSearch, 150);
-    });
-    
-    // Make search function globally accessible
-    window.performSearch = performSearch;
-  }
-});
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initFlamegraphUI);
+} else {
+  initFlamegraphUI();
+}
 
 // Python color palette - cold to hot
 const pythonColors = [
@@ -334,10 +338,10 @@ const pythonColors = [
 
 function populateStats(data) {
   const totalSamples = data.value || 0;
-  
+
   // Collect all functions with their metrics, aggregated by function name
   const functionMap = new Map();
-  
+
   function collectFunctions(node) {
     if (node.filename && node.funcname) {
       // Calculate direct samples (this node's value minus children's values)
@@ -346,10 +350,10 @@ function populateStats(data) {
         childrenValue = node.children.reduce((sum, child) => sum + child.value, 0);
       }
       const directSamples = Math.max(0, node.value - childrenValue);
-      
+
       // Use file:line:funcname as key to ensure uniqueness
       const funcKey = `${node.filename}:${node.lineno || '?'}:${node.funcname}`;
-      
+
       if (functionMap.has(funcKey)) {
         const existing = functionMap.get(funcKey);
         existing.directSamples += directSamples;
@@ -371,20 +375,20 @@ function populateStats(data) {
         });
       }
     }
-    
+
     if (node.children) {
       node.children.forEach(child => collectFunctions(child));
     }
   }
-  
+
   collectFunctions(data);
-  
+
   // Convert map to array and get top 3 hotspots
   const hotSpots = Array.from(functionMap.values())
     .filter(f => f.directPercent > 0.5) // At least 0.5% to be significant
     .sort((a, b) => b.directPercent - a.directPercent)
     .slice(0, 3);
-    
+
   // Populate the 3 cards
   for (let i = 0; i < 3; i++) {
     const num = i + 1;
@@ -395,7 +399,7 @@ function populateStats(data) {
       if (funcDisplay.length > 35) {
         funcDisplay = funcDisplay.substring(0, 32) + '...';
       }
-      
+
       document.getElementById(`hotspot-file-${num}`).textContent = `${basename}:${hotspot.lineno}`;
       document.getElementById(`hotspot-func-${num}`).textContent = funcDisplay;
       document.getElementById(`hotspot-detail-${num}`).textContent = `${hotspot.directPercent.toFixed(1)}% samples (${hotspot.directSamples.toLocaleString()})`;
