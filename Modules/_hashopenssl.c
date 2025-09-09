@@ -2317,7 +2317,7 @@ _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg)
 /*
  * Extract the MAC value to 'buf' and return the digest size.
  *
- * The buffer 'buf' must have at least hashlib_openssl_HMAC_digest_size(self)
+ * The buffer 'buf' must have at least _hashlib_hmac_digest_size(self)
  * bytes. Smaller buffers lead to undefined behaviors.
  *
  * On error, set an exception and return -1.
