@@ -244,6 +244,12 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   :param bool arr_oneline:
+      **New in this release.**
+      If ``True``, JSON arrays (Python lists and tuples) will be serialized
+      on a single line regardless of the specified *indent* level. This allows
+      for a more compact representation of array data while still pretty-printing
+      objects.  Default is ``False``.
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -455,8 +461,7 @@ Encoders and Decoders
       This can be used to decode a JSON document from a string that may have
       extraneous data at the end.
 
-
-.. class:: JSONEncoder(*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)
+.. class:: JSONEncoder(*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None, arr_oneline=False)
 
    Extensible JSON encoder for Python data structures.
 
@@ -523,19 +528,26 @@ Encoders and Decoders
    .. versionchanged:: 3.2
       Allow strings for *indent* in addition to integers.
 
-   If specified, *separators* should be an ``(item_separator, key_separator)``
-   tuple.  The default is ``(', ', ': ')`` if *indent* is ``None`` and
-   ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
+   If specified, *separators* should be a ``(item_separator, key_separator)``
+   tuple.  The default is ``(', ', ': ')`` if *indent* is ``None``
+   and ``(',', ': ')`` otherwise.  To get the most compact JSON representation,
    you should specify ``(',', ':')`` to eliminate whitespace.
 
    .. versionchanged:: 3.4
       Use ``(',', ': ')`` as default if *indent* is not ``None``.
-
+   
    If specified, *default* should be a function that gets called for objects that
    can't otherwise be serialized.  It should return a JSON encodable version of
    the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
    is raised.
-
+   
+   :param bool arr_oneline:
+      **New in this release.**
+      When ``True``, JSON arrays (lists and tuples) are rendered on a single line,
+      even if an *indent* level is specified. This option allows for a more compact
+      representation of array data while still enabling pretty-printing of objects.
+      Default is ``False``.
+      
    .. versionchanged:: 3.6
       All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
