@@ -10,10 +10,14 @@ from types import MappingProxyType
 
 
 def _parse_fullname(fullname, *, strict=False):
-    """Parse a fully-qualified name <module_name>.<member_name>.
+    """Parse a fully-qualified name ``<module_name>.<member_name>``.
 
     The ``module_name`` component contains one or more dots.
     The ``member_name`` component does not contain any dot.
+
+    If *strict* is true, *fullname* must be a string. Otherwise,
+    it can be None, and, ``module_name`` and ``member_name`` will
+    also be None.
     """
     if fullname is None:
         assert not strict
@@ -119,7 +123,6 @@ class _HashInfoItem:
     The object is entirely described by its fully-qualified *fullname*.
 
     *fullname* must be None or a string "<module_name>.<member_name>".
-    If *strict* is true, *fullname* cannot be None.
     """
 
     def __init__(self, fullname=None, *, strict=False):
@@ -160,6 +163,7 @@ class _HashInfoBase:
     """
 
     def __init__(self, canonical_name):
+        assert isinstance(canonical_name, _HashId), canonical_name
         self.canonical_name = canonical_name
 
     def __getitem__(self, implementation):
@@ -184,6 +188,8 @@ class _HashInfoBase:
 
 class _HashTypeInfo(_HashInfoBase):
     """Dataclass containing information for hash functions types.
+
+    - *canonical_name* must be a _HashId.
 
     - *builtin* is the fully-qualified name for the builtin HACL* type,
       e.g., "_md5.MD5Type".
@@ -243,6 +249,8 @@ class _HashTypeInfo(_HashInfoBase):
 class _HashFuncInfo(_HashInfoBase):
     """Dataclass containing information for hash functions constructors.
 
+    - *canonical_name* must be a _HashId.
+
     - *builtin* is the fully-qualified name of the HACL*
       hash constructor function, e.g., "_md5.md5".
 
@@ -289,22 +297,14 @@ class _HashFuncInfo(_HashInfoBase):
 class _HashInfo:
     """Dataclass containing information for supported hash functions.
 
-    - *builtin_object_type_fullname* is the fully-qualified name
-      for the builtin HACL* type, e.g., "_md5.MD5Type".
-
-    - *openssl_object_type_fullname* is the fully-qualified name
-      for the OpenSSL wrapper type, i.e. "_hashlib.HASH" or "_hashlib.HASHXOF".
-
-    - *builtin_method_fullname* is the fully-qualified name
-      of the HACL* hash constructor function, e.g., "_md5.md5".
-
-    - *openssl_method_fullname* is the fully-qualified name
-      of the "_hashlib" module method for the explicit OpenSSL
-      hash constructor function, e.g., "_hashlib.openssl_md5".
-
-    - *hashlib_method_fullname* is the fully-qualified name
-      of the "hashlib"  module method for the explicit hash
-      constructor function, e.g., "hashlib.md5".
+    Attributes
+    ----------
+    canonical_name : _HashId
+        The hash function canonical name.
+    type : _HashTypeInfo
+        The hash object types information.
+    func : _HashTypeInfo
+        The hash object constructors information.
     """
 
     def __init__(
@@ -316,6 +316,27 @@ class _HashInfo:
         openssl_method_fullname=None,
         hashlib_method_fullname=None,
     ):
+        """
+        - *canonical_name* must be a _HashId.
+
+        - *builtin_object_type_fullname* is the fully-qualified name
+          for the builtin HACL* type, e.g., "_md5.MD5Type".
+
+        - *openssl_object_type_fullname* is the fully-qualified name
+          for the OpenSSL wrapper type, e.g., "_hashlib.HASH".
+
+        - *builtin_method_fullname* is the fully-qualified name
+          of the HACL* hash constructor function, e.g., "_md5.md5".
+
+        - *openssl_method_fullname* is the fully-qualified name
+          of the "_hashlib" module method for the explicit OpenSSL
+          hash constructor function, e.g., "_hashlib.openssl_md5".
+
+        - *hashlib_method_fullname* is the fully-qualified name
+          of the "hashlib"  module method for the explicit hash
+          constructor function, e.g., "hashlib.md5".
+        """
+        assert isinstance(canonical_name, _HashId), canonical_name
         self.canonical_name = canonical_name
         self.type = _HashTypeInfo(
             canonical_name,
