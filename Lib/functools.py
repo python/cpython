@@ -430,10 +430,11 @@ try:
 except ImportError:
     pass
 
-_NULL = object()
 _UNKNOWN_DESCRIPTOR = object()
 _STD_METHOD_TYPES = (staticmethod, classmethod, FunctionType, partial)
 _ONE_PLACEHOLDER_TUPLE = (Placeholder,)
+_VOID_LAMBDA = lambda *_, **__: None
+
 
 # Descriptor version
 class partialmethod:
@@ -452,7 +453,7 @@ class partialmethod:
     def __init__(self, func, /, *args, **keywords):
         if isinstance(func, partialmethod):
             # Subclass optimization
-            temp = partial(lambda: None, *func.args, **func.keywords)
+            temp = partial(_VOID_LAMBDA, *func.args, **func.keywords)
             temp = partial(temp, *args, **keywords)
             func = func.func
             args = temp.args
@@ -472,12 +473,6 @@ class partialmethod:
         else:
             # Unknown descriptor
             self.method = _UNKNOWN_DESCRIPTOR
-
-    def _set_func_attrs(self, func):
-        func.__partialmethod__ = self
-        if self.__isabstractmethod__:
-            func = abstractmethod(func)
-        return func
 
     def _make_method(self):
         args = self.args
@@ -515,9 +510,12 @@ class partialmethod:
             result.__partialmethod__ = self
             if self.__isabstractmethod__:
                 result = abstractmethod(result)
-            __self__ = getattr(new_func, '__self__', _NULL)
-            if __self__ is not _NULL:
-                result.__self__ = __self__
+            try:
+                obj = new_func.__self__
+            except AttributeError:
+                pass
+            else:
+                result.__self__ = obj
             return result
         if method is None:
             # Cache method
@@ -529,6 +527,7 @@ class partialmethod:
         return getattr(self.func, "__isabstractmethod__", False)
 
     __class_getitem__ = classmethod(GenericAlias)
+
 
 # Helper functions
 
