@@ -50,8 +50,8 @@ class CollapsedStackCollector(StackTraceCollector):
 
 
 class FlamegraphCollector(StackTraceCollector):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.stats = {}
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None):

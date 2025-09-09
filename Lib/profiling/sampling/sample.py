@@ -611,7 +611,7 @@ def sample(
             collector = CollapsedStackCollector(skip_idle=skip_idle)
             filename = filename or f"collapsed.{pid}.txt"
         case "flamegraph":
-            collector = FlamegraphCollector()
+            collector = FlamegraphCollector(skip_idle=skip_idle)
             filename = filename or f"flamegraph.{pid}.html"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
