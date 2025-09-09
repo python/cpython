@@ -99,7 +99,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertIn(p.returncode, (1, 120))
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_exec_set_nomemory_hang(self):
+        import_module("_testcapi")
         # gh-134163: Test case that triggers no memory hang condition
         # The frame_lasti need to upper 257,
         # because when calling PyLong_FromLong, malloc is not invoked,
