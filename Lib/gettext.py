@@ -410,7 +410,9 @@ class GNUTranslations(NullTranslations):
                         try:
                             self._charset = v.split('charset=')[1]
                         except IndexError:
-                            raise ValueError(f"invalid content-type syntax: '{v}'. Expected 'charset='.") from None
+                            raise ValueError(
+                                f"invalid content-type syntax in '{filename}: '{v}'. Expected 'charset='."
+                            ) from None
                     elif k == 'plural-forms':
                         v = v.split(';')
                         try:
