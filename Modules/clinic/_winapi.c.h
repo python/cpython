@@ -2339,7 +2339,7 @@ _winapi_ReportEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static const char * const _keywords[] = {"handle", "type", "category", "event_id", "strings", "raw_data", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "" F_HANDLE "O&O&O&O!|y*:ReportEvent",
+        .format = "" F_HANDLE "O&O&O&O!|z*:ReportEvent",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -2368,4 +2368,4 @@ exit:
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=abf84ca3df2c8fd9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce2a43d4766a0d4c input=a9049054013a1b77]*/

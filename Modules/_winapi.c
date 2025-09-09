@@ -3048,7 +3048,7 @@ _winapi.ReportEvent
         The event identifier.
     strings: object(subclass_of='&PyList_Type')
         A list of strings to be inserted into the event message.
-    raw_data: Py_buffer = None
+    raw_data: Py_buffer(accept={str, buffer, NoneType}) = None
         The raw data for the event.
 
 Writes an entry at the end of the specified event log.
@@ -3059,7 +3059,7 @@ _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
                          unsigned short type, unsigned short category,
                          unsigned int event_id, PyObject *strings,
                          Py_buffer *raw_data)
-/*[clinic end generated code: output=fc3bbbde78cffd6c input=d4159129e760b095]*/
+/*[clinic end generated code: output=fc3bbbde78cffd6c input=abcc01d4fc284975]*/
 {
     BOOL success;
     LPCWSTR *string_array = NULL;
@@ -3080,7 +3080,7 @@ _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
         PyErr_SetString(PyExc_ValueError, "raw_data is too large");
         return NULL;
     }
-    if (raw_data->buf != NULL) {
+    if (raw_data->obj != NULL) {
         data = raw_data->buf;
         data_size = (DWORD)raw_data->len;
     }
