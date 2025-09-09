@@ -5855,6 +5855,8 @@ class GenericTests(BaseTestCase):
                 return 42  # not tuple
 
         evil = EvilTypeVar()
+        # Create a dummy TypeAlias that will be given the evil generic from
+        # above.
         type type_alias[*_] = 0
         with self.assertRaisesRegex(TypeError, ".+__typing_subst__.+tuple.+int.*"):
             type_alias[evil][0]
