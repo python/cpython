@@ -737,12 +737,10 @@ def ci(context):
             # Prove the package is self-contained by using it to run the tests.
             shutil.unpack_archive(package_path, temp_dir)
 
-            # Arguments are similar to --fast-ci, but in single-process mode.
+            # Randomization is disabled because order-dependent failures are
+            # much less likely to pass on a rerun in single-process mode.
             launcher_args = ["--managed", "maxVersion", "-v"]
-            test_args = [
-                "--single-process", "--fail-env-changed", "--rerun", "--slowest",
-                "--verbose3", "-u", "all,-cpu", "--timeout=600"
-            ]
+            test_args = ["--fast-ci", "--single-process", "--no-randomize"]
             run(
                 ["./android.py", "test", *launcher_args, "--", *test_args],
                 cwd=temp_dir
