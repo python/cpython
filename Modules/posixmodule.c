@@ -2585,7 +2585,8 @@ _posix_free(void *module)
 }
 
 static int
-fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index, time_t sec, unsigned long nsec)
+fill_time(_posixstate *state, PyObject *v, int s_index, int f_index,
+          int ns_index, time_t sec, unsigned long nsec)
 {
     assert(!PyErr_Occurred());
 #define SEC_TO_NS (1000000000LL)
@@ -2628,7 +2629,7 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
                 goto exit;
             }
 
-            s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
+            s_in_ns = PyNumber_Multiply(s, state->billion);
             if (s_in_ns == NULL) {
                 goto exit;
             }
@@ -2686,7 +2687,8 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 {
     assert(!PyErr_Occurred());
 
-    PyObject *StatResultType = get_posix_state(module)->StatResultType;
+    _posixstate *state = get_posix_state(module);
+    PyObject *StatResultType = state->StatResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
     if (v == NULL) {
         return NULL;
@@ -2740,13 +2742,13 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    if (fill_time(module, v, 7, 10, 13, st->st_atime, ansec) < 0) {
+    if (fill_time(state, v, 7, 10, 13, st->st_atime, ansec) < 0) {
         goto error;
     }
-    if (fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec) < 0) {
+    if (fill_time(state, v, 8, 11, 14, st->st_mtime, mnsec) < 0) {
         goto error;
     }
-    if (fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec) < 0) {
+    if (fill_time(state, v, 9, 12, 15, st->st_ctime, cnsec) < 0) {
         goto error;
     }
 
@@ -2774,7 +2776,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
       SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(bsec + bnsec * 1e-9));
     }
 #elif defined(MS_WINDOWS)
-    if (fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
+    if (fill_time(state, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
                   st->st_birthtime, st->st_birthtime_nsec) < 0) {
         goto error;
     }
