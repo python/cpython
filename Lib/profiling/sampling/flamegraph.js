@@ -45,69 +45,85 @@ function main() {
       const sourceLines = source
         .map(
           (line) =>
-            `<div style="font-family: 'SF Mono', 'Monaco', 'Consolas', monospace; font-size: 12px; color: ${line.startsWith("→") ? "#3776ab" : "#5a6c7d"}; white-space: pre; line-height: 1.4; padding: 2px 0;">${line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`,
+            `<div style="font-family: 'SF Mono', 'Monaco', 'Consolas', ` +
+            `monospace; font-size: 12px; color: ${
+              line.startsWith("→") ? "#3776ab" : "#5a6c7d"
+            }; white-space: pre; line-height: 1.4; padding: 2px 0;">${line
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")}</div>`,
         )
         .join("");
 
       sourceSection = `
-                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e9ecef;">
-                        <div style="color: #3776ab; font-size: 13px; margin-bottom: 8px; font-weight: 600;">📄 Source Code:</div>
-                        <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 12px; max-height: 150px; overflow-y: auto;">
-                            ${sourceLines}
-                        </div>
-                    </div>
-                `;
+        <div style="margin-top: 16px; padding-top: 12px;
+                    border-top: 1px solid #e9ecef;">
+          <div style="color: #3776ab; font-size: 13px;
+                      margin-bottom: 8px; font-weight: 600;">
+            Source Code:
+          </div>
+          <div style="background: #f8f9fa; border: 1px solid #e9ecef;
+                      border-radius: 6px; padding: 12px; max-height: 150px;
+                      overflow-y: auto;">
+            ${sourceLines}
+          </div>
+        </div>`;
     } else if (source) {
       // Show debug info if source exists but isn't an array
       sourceSection = `
-                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e9ecef;">
-                        <div style="color: #d32f2f; font-size: 13px; margin-bottom: 8px; font-weight: 600;">🐛 Debug - Source data type: ${typeof source}</div>
-                        <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 12px; max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 11px;">
-                            ${JSON.stringify(source, null, 2)}
-                        </div>
-                    </div>
-                `;
+        <div style="margin-top: 16px; padding-top: 12px;
+                    border-top: 1px solid #e9ecef;">
+          <div style="color: #d32f2f; font-size: 13px;
+                      margin-bottom: 8px; font-weight: 600;">
+            [Debug] - Source data type: ${typeof source}
+          </div>
+          <div style="background: #f8f9fa; border: 1px solid #e9ecef;
+                      border-radius: 6px; padding: 12px; max-height: 150px;
+                      overflow-y: auto; font-family: monospace; font-size: 11px;">
+            ${JSON.stringify(source, null, 2)}
+          </div>
+        </div>`;
     }
 
     const tooltipHTML = `
-                <div>
-                    <div style="color: #3776ab; font-weight: 600; font-size: 16px; margin-bottom: 8px; line-height: 1.3;">
-                        ${d.data.funcname || d.data.name}
-                    </div>
-                    <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px; font-family: monospace; background: #f8f9fa; padding: 4px 8px; border-radius: 4px;">
-                        ${d.data.filename || ""}${d.data.lineno ? ":" + d.data.lineno : ""}
-                    </div>
-                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 14px;">
-                        <span style="color: #5a6c7d; font-weight: 500;">Execution Time:</span>
-                        <strong style="color: #2e3338;">${timeMs} ms</strong>
+      <div>
+        <div style="color: #3776ab; font-weight: 600; font-size: 16px;
+                    margin-bottom: 8px; line-height: 1.3;">
+          ${d.data.funcname || d.data.name}
+        </div>
+        <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px;
+                    font-family: monospace; background: #f8f9fa;
+                    padding: 4px 8px; border-radius: 4px;">
+          ${d.data.filename || ""}${d.data.lineno ? ":" + d.data.lineno : ""}
+        </div>
+        <div style="display: grid; grid-template-columns: auto 1fr;
+                    gap: 8px 16px; font-size: 14px;">
+          <span style="color: #5a6c7d; font-weight: 500;">Execution Time:</span>
+          <strong style="color: #2e3338;">${timeMs} ms</strong>
 
-                        <span style="color: #5a6c7d; font-weight: 500;">Percentage:</span>
-                        <strong style="color: #3776ab;">${percentage}%</strong>
+          <span style="color: #5a6c7d; font-weight: 500;">Percentage:</span>
+          <strong style="color: #3776ab;">${percentage}%</strong>
 
-                        ${
-                          calls > 0
-                            ? `
-                            <span style="color: #5a6c7d; font-weight: 500;">Function Calls:</span>
-                            <strong style="color: #2e3338;">${calls.toLocaleString()}</strong>
-                        `
-                            : ""
-                        }
+          ${calls > 0 ? `
+            <span style="color: #5a6c7d; font-weight: 500;">Function Calls:</span>
+            <strong style="color: #2e3338;">${calls.toLocaleString()}</strong>
+          ` : ''}
 
-                        ${
-                          childCount > 0
-                            ? `
-                            <span style="color: #5a6c7d; font-weight: 500;">Child Functions:</span>
-                            <strong style="color: #2e3338;">${childCount}</strong>
-                        `
-                            : ""
-                        }
-                    </div>
-                    ${sourceSection}
-                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e9ecef; font-size: 13px; color: #5a6c7d; text-align: center;">
-                        ${childCount > 0 ? "👆 Click to focus on this function" : "📄 Leaf function - no children"}
-                    </div>
-                </div>
-            `;
+          ${childCount > 0 ? `
+            <span style="color: #5a6c7d; font-weight: 500;">Child Functions:</span>
+            <strong style="color: #2e3338;">${childCount}</strong>
+          ` : ''}
+        </div>
+        ${sourceSection}
+        <div style="margin-top: 16px; padding-top: 12px;
+                    border-top: 1px solid #e9ecef; font-size: 13px;
+                    color: #5a6c7d; text-align: center;">
+          ${childCount > 0 ?
+            "Click to focus on this function" :
+            "Leaf function - no children"}
+        </div>
+      </div>
+    `;
 
     // Get mouse position
     const event = d3.event || window.event;
