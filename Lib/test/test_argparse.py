@@ -795,6 +795,74 @@ class TestBooleanOptionalAction(ParserTestCase):
         self.assertEqual(str(cm.exception),
                          "invalid option name '--no-foo' for BooleanOptionalAction")
 
+class TestBooleanOptionalActionSingleDash(ParserTestCase):
+    """Tests BooleanOptionalAction with single dash"""
+
+    argument_signatures = [
+        Sig('-foo', '-x', action=argparse.BooleanOptionalAction),
+    ]
+    failures = ['--foo', '--no-foo', '-no-x']
+    successes = [
+        ('', NS(foo=None)),
+        ('-foo', NS(foo=True)),
+        ('-no-foo', NS(foo=False)),
+        ('-x', NS(foo=True)),
+    ]
+
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser()
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('-no-foo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '-no-foo' for BooleanOptionalAction")
+
+class TestBooleanOptionalActionAlternatePrefixChars(ParserTestCase):
+    """Tests BooleanOptionalAction with custom prefixes"""
+
+    parser_signature = Sig(prefix_chars='+-', add_help=False)
+    argument_signatures = [Sig('++foo', action=argparse.BooleanOptionalAction)]
+    failures = ['--foo', '--no-foo']
+    successes = [
+        ('', NS(foo=None)),
+        ('++foo', NS(foo=True)),
+        ('++no-foo', NS(foo=False)),
+    ]
+
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser(prefix_chars='+/')
+        with self.assertRaisesRegex(ValueError,
+                'BooleanOptionalAction.*is not valid for positional arguments'):
+            parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('++no-foo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '++no-foo' for BooleanOptionalAction")
+
+class TestBooleanOptionalActionSingleAlternatePrefixChar(ParserTestCase):
+    """Tests BooleanOptionalAction with single alternate prefix char"""
+
+    parser_signature = Sig(prefix_chars='+/', add_help=False)
+    argument_signatures = [
+        Sig('+foo', '+x', action=argparse.BooleanOptionalAction),
+    ]
+    failures = ['++foo', '++no-foo', '-no-foo', '+no-x', '-no-x']
+    successes = [
+        ('', NS(foo=None)),
+        ('+foo', NS(foo=True)),
+        ('+no-foo', NS(foo=False)),
+        ('+x', NS(foo=True)),
+    ]
+
+    def test_invalid_name(self):
+        parser = argparse.ArgumentParser(prefix_chars='+/')
+        with self.assertRaisesRegex(ValueError,
+                'BooleanOptionalAction.*is not valid for positional arguments'):
+            parser.add_argument('-foo', action=argparse.BooleanOptionalAction)
+        with self.assertRaises(ValueError) as cm:
+            parser.add_argument('+no-foo', action=argparse.BooleanOptionalAction)
+        self.assertEqual(str(cm.exception),
+                         "invalid option name '+no-foo' for BooleanOptionalAction")
+
 class TestBooleanOptionalActionRequired(ParserTestCase):
     """Tests BooleanOptionalAction required"""
 
