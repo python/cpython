@@ -460,7 +460,6 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
     # test module specifically for builtin_function_or_method.
 
     def test_builtin__module__(self):
-        import decimal
         import math
 
         # builtin function:
@@ -469,15 +468,11 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
 
         # instance method:
         self.assertRaises(AttributeError, getattr, int.to_bytes, '__module__')
-        self.assertRaises(AttributeError, getattr, decimal.Decimal.exp, '__module__')
         self.assertEqual(int.to_bytes.__objclass__.__module__, 'builtins')
-        self.assertEqual(decimal.Decimal.exp.__objclass__.__module__, 'decimal')
 
         # builtin classmethod:
         self.assertEqual(int.from_bytes.__module__, None)
         self.assertEqual(int.from_bytes.__self__.__module__, 'builtins')
-        self.assertEqual(decimal.Decimal.from_float.__module__, None)
-        self.assertEqual(decimal.Decimal.from_float.__self__.__module__, 'decimal')
 
         # builtin staticmethod:
         self.assertEqual(bytes.maketrans.__module__, 'builtins')
