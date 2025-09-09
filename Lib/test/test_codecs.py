@@ -3888,6 +3888,12 @@ class CodecNameNormalizationTest(unittest.TestCase):
         self.assertEqual(FOUND, codecs.lookup('AAA---8'))
         self.assertEqual(FOUND, codecs.lookup('AAA   8'))
         self.assertEqual(FOUND, codecs.lookup('aaa\xe9\u20ac-8'))
+        self.assertEqual(FOUND, codecs.lookup('aaa\xe98'))
+        self.assertEqual(FOUND, codecs.lookup('aaa\u20ac8'))
+        self.assertEqual(FOUND, codecs.lookup('aaa-\xe9-8'))
+        self.assertEqual(FOUND, codecs.lookup('aaa-\u20ac-8'))
+        self.assertEqual(FOUND, codecs.lookup('aaa-8-\xe9'))
+        self.assertEqual(FOUND, codecs.lookup('aaa-8-\u20ac'))
         self.assertEqual(NOT_FOUND, codecs.lookup('AAA.8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('AAA...8'))
         self.assertEqual(NOT_FOUND, codecs.lookup('BBB-8'))
@@ -3899,6 +3905,12 @@ class CodecNameNormalizationTest(unittest.TestCase):
         normalize = encodings.normalize_encoding
         self.assertEqual(normalize('utf_8'), 'utf_8')
         self.assertEqual(normalize('utf\xE9\u20AC\U0010ffff-8'), 'utf_8')
+        self.assertEqual(normalize('utf\xe98'), 'utf_8')
+        self.assertEqual(normalize('utf\u20ac8'), 'utf_8')
+        self.assertEqual(normalize('utf-\xe9-8'), 'utf_8')
+        self.assertEqual(normalize('utf-\u20ac-8'), 'utf_8')
+        self.assertEqual(normalize('utf-8-\xe9'), 'utf_8')
+        self.assertEqual(normalize('utf-8-\u20ac'), 'utf_8')
         self.assertEqual(normalize('utf   8'), 'utf_8')
         # encodings.normalize_encoding() doesn't convert
         # characters to lower case.
