@@ -1,2 +1,2 @@
-LLVM version can be modified during build with environment variables
-"LLVM_VERSION" and "EXTERNALS_LLVM_TAG".
+LLVM version can be modified during build with environment variable
+"LLVM_VERSION".
