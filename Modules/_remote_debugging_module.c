@@ -2498,12 +2498,6 @@ static int
 get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread_id) {
 #ifdef __APPLE__
    if (unwinder->thread_id_offset == 0) {
-        // Apple is a bit of a circus and doesn't give us a straightforward way to get thread information
-        // given a TID. What is worse is that the only way to get thread information is calling proc_pidinfo
-        // with some number obtained from a previous call to proc_pidinfo with PROC_PIDLISTTHREADS. But even
-        // after that sacrifice there is no way to know what TID or pthread id corresponds to what number.
-        // There is a constant offset between the pthread id and the number returned by proc_pidinfo so we only
-        // need to find it once.
         uint64_t *tids = (uint64_t *)PyMem_Malloc(MAX_NATIVE_THREADS * sizeof(uint64_t));
         if (!tids) {
             PyErr_NoMemory();
