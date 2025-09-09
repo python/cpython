@@ -474,9 +474,9 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
         self.assertEqual(decimal.Decimal.exp.__objclass__.__module__, 'decimal')
 
         # builtin classmethod:
-        self.assertEqual(int.from_bytes.__module__, 'builtins')
+        self.assertEqual(int.from_bytes.__module__, None)
         self.assertEqual(int.from_bytes.__self__.__module__, 'builtins')
-        self.assertEqual(decimal.Decimal.from_float.__module__, 'decimal')
+        self.assertEqual(decimal.Decimal.from_float.__module__, None)
         self.assertEqual(decimal.Decimal.from_float.__self__.__module__, 'decimal')
 
         # builtin staticmethod:

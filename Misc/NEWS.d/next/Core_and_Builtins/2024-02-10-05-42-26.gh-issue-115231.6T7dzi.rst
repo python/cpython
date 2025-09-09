@@ -1,2 +1,2 @@
-Setup ``__module__`` attribute for built-in class/static methods.  Patch by
-Sergey B Kirpichev.
+Setup ``__module__`` attribute for built-in static methods.  Patch by Sergey
+B Kirpichev.
