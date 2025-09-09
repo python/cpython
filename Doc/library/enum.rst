@@ -175,6 +175,10 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
+   .. versionadded:: 3.11
+
+      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
+
    .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
@@ -206,7 +210,7 @@ Data Types
         >>> Color.RED.value in Color
         True
 
-   .. versionchanged:: 3.12
+      .. versionchanged:: 3.12
 
          Before Python 3.12, a ``TypeError`` is raised if a
          non-Enum-member is used in a containment check.
@@ -250,20 +254,6 @@ Data Types
 
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
-
-   .. method:: EnumType._add_alias_
-
-      Adds a new name as an alias to an existing member.  Raises a
-      :exc:`NameError` if the name is already assigned to a different member.
-
-   .. method:: EnumType._add_value_alias_
-
-      Adds a new value as an alias to an existing member.  Raises a
-      :exc:`ValueError` if the value is already linked with a different member.
-
-   .. versionadded:: 3.11
-
-      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
 
 
 .. class:: Enum
@@ -469,6 +459,30 @@ Data Types
       starting with ``1``.
 
    .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
+
+   .. method:: Enum._add_alias_
+
+      Adds a new name as an alias to an existing member::
+
+         >>> Color.RED._add_alias_("ERROR")
+         >>> Color.ERROR
+         <Color.RED: 1>
+
+      Raises a :exc:`NameError` if the name is already assigned to a different member.
+
+      .. versionadded:: 3.13
+
+   .. method:: Enum._add_value_alias_
+
+      Adds a new value as an alias to an existing member::
+
+         >>> Color.RED._add_value_alias_(42)
+         >>> Color(42)
+         <Color.RED: 1>
+
+      Raises a :exc:`ValueError` if the value is already linked with a different member.
+
+      .. versionadded:: 3.13
 
 
 .. class:: IntEnum
@@ -879,10 +893,6 @@ Once all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
-  member.
-- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
-  existing member.
 - :attr:`~Enum._name_` -- name of the member
 - :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
 - :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
@@ -902,6 +912,11 @@ Supported ``_sunder_`` names
 
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
+
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+  existing member.
 
 - While ``_sunder_`` names are generally reserved for the further development
   of the :class:`Enum` class and can not be used, some are explicitly allowed:

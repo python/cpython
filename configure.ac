@@ -1636,10 +1636,9 @@ then
       HOSTRUNNER="$NODE"
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
-    dnl TODO: support other WASI runtimes
-    dnl wasmtime starts the process with "/" as CWD. For OOT builds add the
-    dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
+    [WASI], [
+      AC_MSG_ERROR([HOSTRUNNER must be set when cross-compiling to WASI])
+    ],
     [HOSTRUNNER='']
   )
 fi
@@ -1823,6 +1822,14 @@ fi],
 [AC_MSG_RESULT([no])])
 
 if test "$Py_OPT" = 'true' ; then
+  # Check for conflicting CFLAGS=-O0 and --enable-optimizations
+  case "$CFLAGS" in
+    *-O0*)
+      AC_MSG_WARN([m4_normalize([
+        CFLAGS contains -O0 which may conflict with --enable-optimizations.
+        Consider removing -O0 from CFLAGS for optimal performance.])])
+      ;;
+  esac
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
@@ -6799,57 +6806,6 @@ then
   AC_DEFINE([HAVE_STAT_TV_NSEC2], [1],
   [Define if you have struct stat.st_mtimensec])
 fi
-
-AC_CACHE_CHECK([whether year with century should be normalized for strftime], [ac_cv_normalize_century], [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char year[5];
-  struct tm date = {
-    .tm_year = -1801,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
-    return 1;
-  }
-  return 0;
-}
-]])],
-[ac_cv_normalize_century=yes],
-[ac_cv_normalize_century=no],
-[ac_cv_normalize_century=yes])])
-if test "$ac_cv_normalize_century" = yes
-then
-  AC_DEFINE([_Py_NORMALIZE_CENTURY], [1],
-  [Define if year with century should be normalized for strftime.])
-fi
-
-AC_CACHE_CHECK([whether C99-compatible strftime specifiers are supported], [ac_cv_strftime_c99_support], [
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char full_date[11];
-  struct tm date = {
-    .tm_year = 0,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(full_date, sizeof(full_date), "%F", &date) && !strcmp(full_date, "1900-01-01")) {
-    return 0;
-  }
-  return 1;
-}
-]])],
-[ac_cv_strftime_c99_support=yes],
-[AC_MSG_ERROR([Python requires C99-compatible strftime specifiers])],
-[ac_cv_strftime_c99_support=])])
 
 dnl check for ncursesw/ncurses and panelw/panel
 dnl NOTE: old curses is not detected.

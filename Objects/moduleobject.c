@@ -340,6 +340,11 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 gil_slot = cur_slot->value;
                 has_gil_slot = 1;
                 break;
+            case Py_mod_abi:
+                if (PyABIInfo_Check((PyABIInfo *)cur_slot->value, name) < 0) {
+                    goto error;
+                }
+                break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
@@ -514,6 +519,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                 break;
             case Py_mod_multiple_interpreters:
             case Py_mod_gil:
+            case Py_mod_abi:
                 /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:
@@ -1329,8 +1335,9 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                             Py_TYPE(annotations)->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                             "__annotate__() must return a dict, not %T",
+                             annotations);
                 Py_DECREF(annotate);
                 Py_DECREF(annotations);
                 Py_DECREF(dict);
