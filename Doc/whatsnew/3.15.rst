@@ -730,6 +730,13 @@ Porting to Python 3.15
 * :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
   underlying syscall, instead of raising a :exc:`SystemError`.
 
+* If a short option and a single-dash long option are passed to
+  :meth:`argparse.ArgumentParser.add_argument`, *dest* is inferred from
+  the single-dash long option. For example, in ``add_argument('-f', '-foo')``,
+  *dest* is now ``'foo'`` instead of ``'f'``.
+  Pass an explicit *dest* argument to preserve the old behavior.
+  (Contributed by Serhiy Storchaka in :gh:`138697`.)
+
 
 Deprecated C APIs
 -----------------
