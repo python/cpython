@@ -3908,7 +3908,7 @@ _validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags,
                         "abstract class");
         return 0;
     }
-    if (argtypes == NULL || argtypes == Py_None) {
+    if (argtypes == NULL) {
         argtypes = info->argtypes;
     }
 
