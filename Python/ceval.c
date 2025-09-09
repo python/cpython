@@ -275,7 +275,8 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
     }
     int r = PyDict_Contains(globals, &_Py_ID(__lltrace__));
     if (r < 0) {
-        return -1;
+        PyErr_Clear();
+        return 0;
     }
     int lltrace = r * 5;  // Levels 1-4 only trace uops
     if (!lltrace) {
@@ -1109,11 +1110,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
     }
 
-#if defined(_Py_TIER2) && !defined(_Py_JIT)
-    /* Tier 2 interpreter state */
-    _PyExecutorObject *current_executor = NULL;
-    const _PyUOpInstruction *next_uop = NULL;
-#endif
 #if Py_TAIL_CALL_INTERP
 #   if Py_STATS
         return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0, lastopcode);
@@ -1126,14 +1122,41 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
 
 
+early_exit:
+    assert(_PyErr_Occurred(tstate));
+    _Py_LeaveRecursiveCallPy(tstate);
+    assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+    // GH-99729: We need to unlink the frame *before* clearing it:
+    _PyInterpreterFrame *dying = frame;
+    frame = tstate->current_frame = dying->previous;
+    _PyEval_FrameClearAndPop(tstate, dying);
+    frame->return_offset = 0;
+    assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
+    /* Restore previous frame and exit */
+    tstate->current_frame = frame->previous;
+    return NULL;
+}
 #ifdef _Py_TIER2
-
-// Tier 2 is also here!
-enter_tier_two:
-
 #ifdef _Py_JIT
-    assert(0);
+_PyJitEntryFuncPtr _Py_jit_entry = _Py_LazyJitTrampoline;
 #else
+_PyJitEntryFuncPtr _Py_jit_entry = _PyTier2Interpreter;
+#endif
+#endif
+
+#if defined(_Py_TIER2) && !defined(_Py_JIT)
+
+_Py_CODEUNIT *
+_PyTier2Interpreter(
+    _PyExecutorObject *current_executor, _PyInterpreterFrame *frame,
+    _PyStackRef *stack_pointer, PyThreadState *tstate
+) {
+    const _PyUOpInstruction *next_uop;
+    int oparg;
+tier2_start:
+
+    next_uop = current_executor->trace;
+    assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
@@ -1151,7 +1174,6 @@ enter_tier_two:
 #undef ENABLE_SPECIALIZATION_FT
 #define ENABLE_SPECIALIZATION_FT 0
 
-    ; // dummy statement after a label, before a declaration
     uint16_t uopcode;
 #ifdef Py_STATS
     int lastuop = 0;
@@ -1225,24 +1247,9 @@ jump_to_jump_target:
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
 
-#endif  // _Py_JIT
-
+}
 #endif // _Py_TIER2
 
-early_exit:
-    assert(_PyErr_Occurred(tstate));
-    _Py_LeaveRecursiveCallPy(tstate);
-    assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-    // GH-99729: We need to unlink the frame *before* clearing it:
-    _PyInterpreterFrame *dying = frame;
-    frame = tstate->current_frame = dying->previous;
-    _PyEval_FrameClearAndPop(tstate, dying);
-    frame->return_offset = 0;
-    assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
-    /* Restore previous frame and exit */
-    tstate->current_frame = frame->previous;
-    return NULL;
-}
 
 #ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
 #  pragma optimize("", on)
@@ -2510,21 +2517,10 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    HEAD_UNLOCK(runtime);
-
-    while (ts) {
-        if (_PyEval_SetProfile(ts, func, arg) < 0) {
-            PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
-        }
-        HEAD_LOCK(runtime);
-        ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(runtime);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetProfileAllThreads(interp, func, arg) < 0) {
+        /* Log _PySys_Audit() error */
+        PyErr_FormatUnraisable("Exception ignored in PyEval_SetProfileAllThreads");
     }
 }
 
@@ -2541,21 +2537,10 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
 {
-    PyThreadState *this_tstate = _PyThreadState_GET();
-    PyInterpreterState* interp = this_tstate->interp;
-
-    _PyRuntimeState *runtime = &_PyRuntime;
-    HEAD_LOCK(runtime);
-    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    HEAD_UNLOCK(runtime);
-
-    while (ts) {
-        if (_PyEval_SetTrace(ts, func, arg) < 0) {
-            PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
-        }
-        HEAD_LOCK(runtime);
-        ts = PyThreadState_Next(ts);
-        HEAD_UNLOCK(runtime);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyEval_SetTraceAllThreads(interp, func, arg) < 0) {
+        /* Log _PySys_Audit() error */
+        PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
     }
 }
 

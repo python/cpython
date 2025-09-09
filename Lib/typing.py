@@ -453,12 +453,6 @@ def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
     warnings.warn(depr_message, category=DeprecationWarning, stacklevel=3)
 
 
-class _Sentinel:
-    __slots__ = ()
-    def __repr__(self):
-        return '<sentinel>'
-
-
 def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
                format=None, owner=None, parent_fwdref=None):
     """Evaluate all forward references in the given type t.
@@ -1033,8 +1027,10 @@ def evaluate_forward_ref(
 
 
 def _is_unpacked_typevartuple(x: Any) -> bool:
+    # Need to check 'is True' here
+    # See: https://github.com/python/cpython/issues/137706
     return ((not isinstance(x, type)) and
-            getattr(x, '__typing_is_unpacked_typevartuple__', False))
+            getattr(x, '__typing_is_unpacked_typevartuple__', False) is True)
 
 
 def _is_typevar_like(x: Any) -> bool:
@@ -2366,10 +2362,13 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 # *base_globals* first rather than *base_locals*.
                 # This only affects ForwardRefs.
                 base_globals, base_locals = base_locals, base_globals
+            type_params = base.__type_params__
+            base_globals, base_locals = _add_type_params_to_scope(
+                type_params, base_globals, base_locals, True)
             for name, value in ann.items():
                 if isinstance(value, str):
                     value = _make_forward_ref(value, is_argument=False, is_class=True)
-                value = _eval_type(value, base_globals, base_locals, base.__type_params__,
+                value = _eval_type(value, base_globals, base_locals, (),
                                    format=format, owner=obj)
                 if value is None:
                     value = type(None)
@@ -2405,6 +2404,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
     elif localns is None:
         localns = globalns
     type_params = getattr(obj, "__type_params__", ())
+    globalns, localns = _add_type_params_to_scope(type_params, globalns, localns, False)
     for name, value in hints.items():
         if isinstance(value, str):
             # class-level forward refs were handled above, this must be either
@@ -2414,11 +2414,25 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 is_argument=not isinstance(obj, types.ModuleType),
                 is_class=False,
             )
-        value = _eval_type(value, globalns, localns, type_params, format=format, owner=obj)
+        value = _eval_type(value, globalns, localns, (), format=format, owner=obj)
         if value is None:
             value = type(None)
         hints[name] = value
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
+
+
+# Add type parameters to the globals and locals scope. This is needed for
+# compatibility.
+def _add_type_params_to_scope(type_params, globalns, localns, is_class):
+    if not type_params:
+        return globalns, localns
+    globalns = dict(globalns)
+    localns = dict(localns)
+    for param in type_params:
+        if not is_class or param.__name__ not in globalns:
+            globalns[param.__name__] = param
+            localns.pop(param.__name__, None)
+    return globalns, localns
 
 
 def _strip_annotations(t):

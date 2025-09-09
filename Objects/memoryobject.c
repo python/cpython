@@ -2265,6 +2265,7 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 memoryview.tobytes
 
     order: str(accept={str, NoneType}, c_default="NULL") = 'C'
@@ -2280,7 +2281,7 @@ to C first. order=None is the same as order='C'.
 
 static PyObject *
 memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
-/*[clinic end generated code: output=1288b62560a32a23 input=0efa3ddaeda573a8]*/
+/*[clinic end generated code: output=1288b62560a32a23 input=23c9faf372cfdbcc]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';

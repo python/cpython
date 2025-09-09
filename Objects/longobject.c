@@ -3679,7 +3679,23 @@ long_hash(PyObject *obj)
     }
     i = _PyLong_DigitCount(v);
     sign = _PyLong_NonCompactSign(v);
-    x = 0;
+
+    // unroll first digit
+    Py_BUILD_ASSERT(PyHASH_BITS > PyLong_SHIFT);
+    assert(i >= 1);
+    --i;
+    x = v->long_value.ob_digit[i];
+    assert(x < PyHASH_MODULUS);
+
+#if PyHASH_BITS >= 2 * PyLong_SHIFT
+    // unroll second digit
+    assert(i >= 1);
+    --i;
+    x <<= PyLong_SHIFT;
+    x += v->long_value.ob_digit[i];
+    assert(x < PyHASH_MODULUS);
+#endif
+
     while (--i >= 0) {
         /* Here x is a quantity in the range [0, _PyHASH_MODULUS); we
            want to compute x * 2**PyLong_SHIFT + v->long_value.ob_digit[i] modulo
@@ -6296,6 +6312,7 @@ popcount_digit(digit d)
 }
 
 /*[clinic input]
+@permit_long_summary
 int.bit_count
 
 Number of ones in the binary representation of the absolute value of self.
@@ -6310,7 +6327,7 @@ Also known as the population count.
 
 static PyObject *
 int_bit_count_impl(PyObject *self)
-/*[clinic end generated code: output=2e571970daf1e5c3 input=7e0adef8e8ccdf2e]*/
+/*[clinic end generated code: output=2e571970daf1e5c3 input=f2510a306761db15]*/
 {
     assert(self != NULL);
     assert(PyLong_Check(self));
@@ -6358,7 +6375,7 @@ int_as_integer_ratio_impl(PyObject *self)
 /*[clinic input]
 int.to_bytes
 
-    length: Py_ssize_t = 1
+    length: Py_ssize_t(allow_negative=False) = 1
         Length of bytes object to use.  An OverflowError is raised if the
         integer is not representable with the given number of bytes.  Default
         is length 1.
@@ -6380,7 +6397,7 @@ Return an array of bytes representing an integer.
 static PyObject *
 int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
                   int is_signed)
-/*[clinic end generated code: output=89c801df114050a3 input=a0103d0e9ad85c2b]*/
+/*[clinic end generated code: output=89c801df114050a3 input=66f9d0c20529b44f]*/
 {
     int little_endian;
     if (byteorder == NULL)

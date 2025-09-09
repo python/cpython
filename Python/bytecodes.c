@@ -178,7 +178,15 @@ dummy_func(
         }
 
         tier1 op(_MAYBE_INSTRUMENT, (--)) {
-            if (tstate->tracing == 0) {
+            #ifdef Py_GIL_DISABLED
+            // For thread-safety, we need to check instrumentation version
+            // even when tracing. Otherwise, another thread may concurrently
+            // re-write the bytecode while we are executing this function.
+            int check_instrumentation = 1;
+            #else
+            int check_instrumentation = (tstate->tracing == 0);
+            #endif
+            if (check_instrumentation) {
                 uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
                 uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
                 if (code_version != global_version) {
@@ -803,7 +811,7 @@ dummy_func(
             assert(next_instr->op.code == STORE_FAST);
             next_oparg = next_instr->op.arg;
         #else
-            next_oparg = CURRENT_OPERAND0();
+            next_oparg = (int)CURRENT_OPERAND0();
         #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
@@ -2963,7 +2971,7 @@ dummy_func(
                     assert(tstate->current_executor == NULL);
                     assert(executor != tstate->interp->cold_executor);
                     tstate->jit_exit = NULL;
-                    GOTO_TIER_TWO(executor);
+                    TIER1_TO_TIER2(executor);
                 }
             }
             else {
@@ -3029,7 +3037,7 @@ dummy_func(
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
-            GOTO_TIER_TWO(executor);
+            TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -4713,6 +4721,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION_KW +
+            _CHECK_RECURSION_REMAINING +
             _PY_FRAME_KW +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -5241,14 +5250,14 @@ dummy_func(
             if (frame->lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %lu, temp %d, target %d -> %s]\n",
+                printf(", exit %tu, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyFrame_GetBytecode(frame)),
                     _PyOpcode_OpName[target->op.code]);
             }
         #endif
             tstate->jit_exit = exit;
-            GOTO_TIER_TWO(exit->executor);
+            TIER2_TO_TIER2(exit->executor);
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
@@ -5344,7 +5353,7 @@ dummy_func(
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
 #ifndef _Py_JIT
-            current_executor = (_PyExecutorObject*)executor;
+            assert(current_executor == (_PyExecutorObject*)executor);
 #endif
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)executor;
@@ -5425,7 +5434,7 @@ dummy_func(
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
-            GOTO_TIER_TWO(exit->executor);
+            TIER2_TO_TIER2(exit->executor);
         }
 
         label(pop_2_error) {

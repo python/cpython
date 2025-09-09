@@ -578,8 +578,8 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
             return NULL;
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "__bytes__ returned non-bytes (type %.200s)",
-                         Py_TYPE(result)->tp_name);
+                         "%T.__bytes__() must return a bytes, not %T",
+                         v, result);
             Py_DECREF(result);
             return NULL;
         }
@@ -1788,6 +1788,7 @@ bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 bytes.partition
 
     sep: Py_buffer
@@ -1805,7 +1806,7 @@ object and two empty bytes objects.
 
 static PyObject *
 bytes_partition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=f532b392a17ff695 input=61cca95519406099]*/
+/*[clinic end generated code: output=f532b392a17ff695 input=31c55a0cebaf7722]*/
 {
     return stringlib_partition(
         (PyObject*) self,
@@ -1815,6 +1816,7 @@ bytes_partition_impl(PyBytesObject *self, Py_buffer *sep)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 bytes.rpartition
 
     sep: Py_buffer
@@ -1832,7 +1834,7 @@ objects and the original bytes object.
 
 static PyObject *
 bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=191b114cbb028e50 input=d78db010c8cfdbe1]*/
+/*[clinic end generated code: output=191b114cbb028e50 input=9ea5a3ab0b02bf52]*/
 {
     return stringlib_rpartition(
         (PyObject*) self,
@@ -1842,6 +1844,7 @@ bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 bytes.rsplit = bytes.split
 
 Return a list of the sections in the bytes, using sep as the delimiter.
@@ -1851,7 +1854,7 @@ Splitting is done starting at the end of the bytes and working to the front.
 
 static PyObject *
 bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=ba698d9ea01e1c8f input=0f86c9f28f7d7b7b]*/
+/*[clinic end generated code: output=ba698d9ea01e1c8f input=55b6eaea1f3d7046]*/
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
@@ -1912,6 +1915,7 @@ PyBytes_Join(PyObject *sep, PyObject *iterable)
 }
 
 /*[clinic input]
+@permit_long_summary
 @text_signature "($self, sub[, start[, end]], /)"
 bytes.find
 
@@ -1930,13 +1934,14 @@ Return -1 on failure.
 static PyObject *
 bytes_find_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                 Py_ssize_t end)
-/*[clinic end generated code: output=d5961a1c77b472a1 input=3171e62a8ae7f240]*/
+/*[clinic end generated code: output=d5961a1c77b472a1 input=47d0929adafc6b0b]*/
 {
     return _Py_bytes_find(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                           sub, start, end);
 }
 
 /*[clinic input]
+@permit_long_summary
 bytes.index = bytes.find
 
 Return the lowest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1947,13 +1952,14 @@ Raise ValueError if the subsection is not found.
 static PyObject *
 bytes_index_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                  Py_ssize_t end)
-/*[clinic end generated code: output=0da25cc74683ba42 input=aa34ad71ba0bafe3]*/
+/*[clinic end generated code: output=0da25cc74683ba42 input=1cb45ce71456a269]*/
 {
     return _Py_bytes_index(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                            sub, start, end);
 }
 
 /*[clinic input]
+@permit_long_summary
 bytes.rfind = bytes.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1964,13 +1970,14 @@ Return -1 on failure.
 static PyObject *
 bytes_rfind_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                  Py_ssize_t end)
-/*[clinic end generated code: output=51b60fa4ad011c09 input=864c3e7f3010b33c]*/
+/*[clinic end generated code: output=51b60fa4ad011c09 input=c9473d714251f1ab]*/
 {
     return _Py_bytes_rfind(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                            sub, start, end);
 }
 
 /*[clinic input]
+@permit_long_summary
 bytes.rindex = bytes.find
 
 Return the highest index in B where subsection 'sub' is found, such that 'sub' is contained within B[start,end].
@@ -1981,7 +1988,7 @@ Raise ValueError if the subsection is not found.
 static PyObject *
 bytes_rindex_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                   Py_ssize_t end)
-/*[clinic end generated code: output=42bf674e0a0aabf6 input=21051fc5cfeacf2c]*/
+/*[clinic end generated code: output=42bf674e0a0aabf6 input=bb5f473c64610c43]*/
 {
     return _Py_bytes_rindex(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                             sub, start, end);
@@ -2067,6 +2074,7 @@ do_argstrip(PyBytesObject *self, int striptype, PyObject *bytes)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 bytes.strip
 
     bytes: object = None
@@ -2079,7 +2087,7 @@ If the argument is omitted or None, strip leading and trailing ASCII whitespace.
 
 static PyObject *
 bytes_strip_impl(PyBytesObject *self, PyObject *bytes)
-/*[clinic end generated code: output=c7c228d3bd104a1b input=8a354640e4e0b3ef]*/
+/*[clinic end generated code: output=c7c228d3bd104a1b input=71904cd278c0ee03]*/
 {
     return do_argstrip(self, BOTHSTRIP, bytes);
 }
@@ -2122,6 +2130,7 @@ bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes)
 
 
 /*[clinic input]
+@permit_long_summary
 bytes.count = bytes.find
 
 Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[start:end].
@@ -2130,7 +2139,7 @@ Return the number of non-overlapping occurrences of subsection 'sub' in bytes B[
 static PyObject *
 bytes_count_impl(PyBytesObject *self, PyObject *sub, Py_ssize_t start,
                  Py_ssize_t end)
-/*[clinic end generated code: output=9848140b9be17d0f input=b6e4a5ed515e1e59]*/
+/*[clinic end generated code: output=9848140b9be17d0f input=bb2f136f83f0d30e]*/
 {
     return _Py_bytes_count(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                            sub, start, end);
@@ -2267,6 +2276,8 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table,
 
 /*[clinic input]
 
+@permit_long_summary
+@permit_long_docstring_body
 @staticmethod
 bytes.maketrans
 
@@ -2284,13 +2295,14 @@ The bytes objects frm and to must be of the same length.
 
 static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to)
-/*[clinic end generated code: output=a36f6399d4b77f6f input=a3bd00d430a0979f]*/
+/*[clinic end generated code: output=a36f6399d4b77f6f input=a06b75f44d933fb3]*/
 {
     return _Py_bytes_maketrans(frm, to);
 }
 
 
 /*[clinic input]
+@permit_long_docstring_body
 bytes.replace
 
     old: Py_buffer
@@ -2309,7 +2321,7 @@ replaced.
 static PyObject *
 bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
                    Py_ssize_t count)
-/*[clinic end generated code: output=994fa588b6b9c104 input=b2fbbf0bf04de8e5]*/
+/*[clinic end generated code: output=994fa588b6b9c104 input=8b99a9ab32bc06a2]*/
 {
     return stringlib_replace((PyObject *)self,
                              (const char *)old->buf, old->len,
@@ -2393,6 +2405,7 @@ bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix)
 }
 
 /*[clinic input]
+@permit_long_summary
 @text_signature "($self, prefix[, start[, end]], /)"
 bytes.startswith
 
@@ -2410,13 +2423,14 @@ Return True if the bytes starts with the specified prefix, False otherwise.
 static PyObject *
 bytes_startswith_impl(PyBytesObject *self, PyObject *subobj,
                       Py_ssize_t start, Py_ssize_t end)
-/*[clinic end generated code: output=b1e8da1cbd528e8c input=8a4165df8adfa6c9]*/
+/*[clinic end generated code: output=b1e8da1cbd528e8c input=a14efd070f15be80]*/
 {
     return _Py_bytes_startswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                                 subobj, start, end);
 }
 
 /*[clinic input]
+@permit_long_summary
 @text_signature "($self, suffix[, start[, end]], /)"
 bytes.endswith
 
@@ -2434,7 +2448,7 @@ Return True if the bytes ends with the specified suffix, False otherwise.
 static PyObject *
 bytes_endswith_impl(PyBytesObject *self, PyObject *subobj, Py_ssize_t start,
                     Py_ssize_t end)
-/*[clinic end generated code: output=038b633111f3629d input=b5c3407a2a5c9aac]*/
+/*[clinic end generated code: output=038b633111f3629d input=49e383eaaf292713]*/
 {
     return _Py_bytes_endswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
                               subobj, start, end);
@@ -2466,6 +2480,7 @@ bytes_decode_impl(PyBytesObject *self, const char *encoding,
 
 
 /*[clinic input]
+@permit_long_docstring_body
 bytes.splitlines
 
     keepends: bool = False
@@ -2478,7 +2493,7 @@ true.
 
 static PyObject *
 bytes_splitlines_impl(PyBytesObject *self, int keepends)
-/*[clinic end generated code: output=3484149a5d880ffb input=5d7b898af2fe55c0]*/
+/*[clinic end generated code: output=3484149a5d880ffb input=d17968d2a355fe55]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyBytes_AS_STRING(self),
@@ -2797,8 +2812,8 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
             return NULL;
         if (!PyBytes_Check(bytes)) {
             PyErr_Format(PyExc_TypeError,
-                        "__bytes__ returned non-bytes (type %.200s)",
-                        Py_TYPE(bytes)->tp_name);
+                         "%T.__bytes__() must return a bytes, not %T",
+                         x, bytes);
             Py_DECREF(bytes);
             return NULL;
         }
