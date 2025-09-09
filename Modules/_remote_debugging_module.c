@@ -44,7 +44,6 @@
 #ifdef MS_WINDOWS
 #include <windows.h>
 #include <winternl.h>
-#include <ntifs.h>
 // ntstatus.h conflicts with windows.h so we have to define the NTSTATUS values we need
 #define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
 #define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
