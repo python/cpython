@@ -10,9 +10,10 @@ from .collector import Collector
 
 
 class StackTraceCollector(Collector):
-    def __init__(self):
+    def __init__(self, *, skip_idle=False):
         self.call_trees = []
         self.function_samples = collections.defaultdict(int)
+        self.skip_idle = skip_idle
 
     def _process_frames(self, frames):
         """Process a single thread's frame stack."""
@@ -28,7 +29,7 @@ class StackTraceCollector(Collector):
             self.function_samples[frame] += 1
 
     def collect(self, stack_frames):
-        for frames in self._iter_all_frames(stack_frames):
+        for frames in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
             self._process_frames(frames)
 
 
@@ -49,8 +50,8 @@ class CollapsedStackCollector(StackTraceCollector):
 
 
 class FlamegraphCollector(StackTraceCollector):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.stats = {}
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None):

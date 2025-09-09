@@ -34,6 +34,31 @@
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
+// Returns thread status using proc_pidinfo, caches thread_id_offset on first use (macOS only)
+#ifdef __APPLE__
+#include <libproc.h>
+#include <sys/types.h>
+#define MAX_NATIVE_THREADS 4096
+#endif
+
+#ifdef MS_WINDOWS
+#include <windows.h>
+#include <winternl.h>
+// ntstatus.h conflicts with windows.h so we have to define the NTSTATUS values we need
+#define STATUS_SUCCESS                   ((NTSTATUS)0x00000000L)
+#define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
+typedef enum _WIN32_THREADSTATE {
+    WIN32_THREADSTATE_INITIALIZED = 0,   // Recognized by the kernel
+    WIN32_THREADSTATE_READY       = 1,   // Prepared to run on the next available processor
+    WIN32_THREADSTATE_RUNNING     = 2,   // Currently executing
+    WIN32_THREADSTATE_STANDBY     = 3,   // About to run, only one thread may be in this state at a time
+    WIN32_THREADSTATE_TERMINATED  = 4,   // Finished executing
+    WIN32_THREADSTATE_WAITING     = 5,   // Not ready for the processor, when ready, it will be rescheduled
+    WIN32_THREADSTATE_TRANSITION  = 6,   // Waiting for resources other than the processor
+    WIN32_THREADSTATE_UNKNOWN     = 7    // Thread state is unknown
+} WIN32_THREADSTATE;
+#endif
+
 /* ============================================================================
  * TYPE DEFINITIONS AND STRUCTURES
  * ============================================================================ */
@@ -153,6 +178,7 @@ static PyStructSequence_Desc CoroInfo_desc = {
 // ThreadInfo structseq type - replaces 2-tuple (thread_id, frame_info)
 static PyStructSequence_Field ThreadInfo_fields[] = {
     {"thread_id", "Thread ID"},
+    {"status", "Thread status"},
     {"frame_info", "Frame information"},
     {NULL}
 };
@@ -211,6 +237,13 @@ typedef struct {
     PyTypeObject *AwaitedInfo_Type;
 } RemoteDebuggingState;
 
+enum _ThreadState {
+    THREAD_STATE_RUNNING,
+    THREAD_STATE_IDLE,
+    THREAD_STATE_GIL_WAIT,
+    THREAD_STATE_UNKNOWN
+};
+
 typedef struct {
     PyObject_HEAD
     proc_handle_t handle;
@@ -224,11 +257,19 @@ typedef struct {
     _Py_hashtable_t *code_object_cache;
     int debug;
     int only_active_thread;
+    int cpu_time;
     RemoteDebuggingState *cached_state;  // Cached module state
 #ifdef Py_GIL_DISABLED
     // TLBC cache invalidation tracking
     uint32_t tlbc_generation;  // Track TLBC index pool changes
     _Py_hashtable_t *tlbc_cache;  // Cache of TLBC arrays by code object address
+#endif
+#ifdef __APPLE__
+    uint64_t thread_id_offset;
+#endif
+#ifdef MS_WINDOWS
+    PVOID win_process_buffer;
+    ULONG win_process_buffer_size;
 #endif
 } RemoteUnwinderObject;
 
@@ -2453,10 +2494,127 @@ process_frame_chain(
     return 0;
 }
 
+static int
+get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread_id) {
+#ifdef __APPLE__
+   if (unwinder->thread_id_offset == 0) {
+        uint64_t *tids = (uint64_t *)PyMem_Malloc(MAX_NATIVE_THREADS * sizeof(uint64_t));
+        if (!tids) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        int n = proc_pidinfo(unwinder->handle.pid, PROC_PIDLISTTHREADS, 0, tids, MAX_NATIVE_THREADS * sizeof(uint64_t)) / sizeof(uint64_t);
+        if (n <= 0) {
+            PyMem_Free(tids);
+            return THREAD_STATE_UNKNOWN;
+        }
+        uint64_t min_offset = UINT64_MAX;
+        for (int i = 0; i < n; i++) {
+            uint64_t offset = tids[i] - pthread_id;
+            if (offset < min_offset) {
+                min_offset = offset;
+            }
+        }
+        unwinder->thread_id_offset = min_offset;
+        PyMem_Free(tids);
+    }
+    struct proc_threadinfo ti;
+    uint64_t tid_with_offset = pthread_id + unwinder->thread_id_offset;
+    if (proc_pidinfo(unwinder->handle.pid, PROC_PIDTHREADINFO, tid_with_offset, &ti, sizeof(ti)) != sizeof(ti)) {
+        return THREAD_STATE_UNKNOWN;
+    }
+    if (ti.pth_run_state == TH_STATE_RUNNING) {
+        return THREAD_STATE_RUNNING;
+    }
+    return THREAD_STATE_IDLE;
+#elif defined(__linux__)
+    char stat_path[256];
+    char buffer[2048] = "";
+
+    snprintf(stat_path, sizeof(stat_path), "/proc/%d/task/%lu/stat", unwinder->handle.pid, tid);
+
+    int fd = open(stat_path, O_RDONLY);
+    if (fd == -1) {
+        return THREAD_STATE_UNKNOWN;
+    }
+
+    if (read(fd, buffer, 2047) == 0) {
+        close(fd);
+        return THREAD_STATE_UNKNOWN;
+    }
+    close(fd);
+
+    char *p = strchr(buffer, ')');
+    if (!p) {
+        return THREAD_STATE_UNKNOWN;
+    }
+
+    p += 2;  // Skip ") "
+    if (*p == ' ') {
+        p++;
+    }
+
+    switch (*p) {
+        case 'R':  // Running
+            return THREAD_STATE_RUNNING;
+        case 'S':  // Interruptible sleep
+        case 'D':  // Uninterruptible sleep
+        case 'T':  // Stopped
+        case 'Z':  // Zombie
+        case 'I':  // Idle kernel thread
+            return THREAD_STATE_IDLE;
+        default:
+            return THREAD_STATE_UNKNOWN;
+    }
+#elif defined(MS_WINDOWS)
+    ULONG n;
+    NTSTATUS status = NtQuerySystemInformation(
+        SystemProcessInformation,
+        unwinder->win_process_buffer,
+        unwinder->win_process_buffer_size,
+        &n
+    );
+    if (status == STATUS_INFO_LENGTH_MISMATCH) {
+        // Buffer was too small so we reallocate a larger one and try again.
+        unwinder->win_process_buffer_size = n;
+        PVOID new_buffer = PyMem_Realloc(unwinder->win_process_buffer, n);
+        if (!new_buffer) {
+            return -1;
+        }
+        unwinder->win_process_buffer = new_buffer;
+        return get_thread_status(unwinder, tid, pthread_id);
+    }
+    if (status != STATUS_SUCCESS) {
+        return -1;
+    }
+
+    SYSTEM_PROCESS_INFORMATION *pi = (SYSTEM_PROCESS_INFORMATION *)unwinder->win_process_buffer;
+    while ((ULONG)(ULONG_PTR)pi->UniqueProcessId != unwinder->handle.pid) {
+        if (pi->NextEntryOffset == 0) {
+            // We didn't find the process
+            return -1;
+        }
+        pi = (SYSTEM_PROCESS_INFORMATION *)(((BYTE *)pi) + pi->NextEntryOffset);
+    }
+
+    SYSTEM_THREAD_INFORMATION *ti = (SYSTEM_THREAD_INFORMATION *)((char *)pi + sizeof(SYSTEM_PROCESS_INFORMATION));
+    for (Py_ssize_t i = 0; i < pi->NumberOfThreads; i++, ti++) {
+        if (ti->ClientId.UniqueThread == (HANDLE)tid) {
+            return ti->ThreadState != WIN32_THREADSTATE_RUNNING ? THREAD_STATE_IDLE : THREAD_STATE_RUNNING;
+        }
+    }
+
+    return -1;
+#else
+    return THREAD_STATE_UNKNOWN;
+#endif
+}
+
 static PyObject*
 unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
-    uintptr_t *current_tstate
+    uintptr_t *current_tstate,
+    uintptr_t gil_holder_tstate
 ) {
     PyObject *frame_info = NULL;
     PyObject *thread_id = NULL;
@@ -2484,6 +2642,20 @@ unwind_stack_for_thread(
         goto error;
     }
 
+    long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
+    int status = THREAD_STATE_UNKNOWN;
+    if (unwinder->cpu_time == 1) {
+        long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
+        status = get_thread_status(unwinder, tid, pthread_id);
+        if (status == -1) {
+            PyErr_Print();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to get thread status");
+            goto error;
+        }
+    } else {
+        status = (*current_tstate == gil_holder_tstate) ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
+    }
+
     if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to process frame chain");
         goto error;
@@ -2491,8 +2663,7 @@ unwind_stack_for_thread(
 
     *current_tstate = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.next);
 
-    thread_id = PyLong_FromLongLong(
-        GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id));
+    thread_id = PyLong_FromLongLong(tid);
     if (thread_id == NULL) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread ID");
         goto error;
@@ -2505,8 +2676,16 @@ unwind_stack_for_thread(
         goto error;
     }
 
-    PyStructSequence_SetItem(result, 0, thread_id);  // Steals reference
-    PyStructSequence_SetItem(result, 1, frame_info); // Steals reference
+    PyObject *py_status = PyLong_FromLong(status);
+    if (py_status == NULL) {
+        set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to create thread status");
+        goto error;
+    }
+    PyErr_Print();
+
+    PyStructSequence_SetItem(result, 0, thread_id);
+    PyStructSequence_SetItem(result, 1, py_status);  // Steals reference
+    PyStructSequence_SetItem(result, 2, frame_info); // Steals reference
 
     cleanup_stack_chunks(&chunks);
     return result;
@@ -2537,6 +2716,7 @@ _remote_debugging.RemoteUnwinder.__init__
     *
     all_threads: bool = False
     only_active_thread: bool = False
+    cpu_time: bool = False
     debug: bool = False
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
@@ -2546,6 +2726,7 @@ Args:
     all_threads: If True, initialize state for all threads in the process.
                 If False, only initialize for the main thread.
     only_active_thread: If True, only sample the thread holding the GIL.
+    cpu_time: If True, enable CPU time tracking for unwinder operations.
                        Cannot be used together with all_threads=True.
     debug: If True, chain exceptions to explain the sequence of events that
            lead to the exception.
@@ -2564,8 +2745,8 @@ static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
                                                int only_active_thread,
-                                               int debug)
-/*[clinic end generated code: output=13ba77598ecdcbe1 input=cfc21663fbe263c4]*/
+                                               int cpu_time, int debug)
+/*[clinic end generated code: output=2598ce54f6335ac7 input=0cf2038cc304c165]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -2584,6 +2765,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
     self->debug = debug;
     self->only_active_thread = only_active_thread;
+    self->cpu_time = cpu_time;
     self->cached_state = NULL;
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
         set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
@@ -2654,6 +2836,15 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
         set_exception_cause(self, PyExc_MemoryError, "Failed to create TLBC cache");
         return -1;
     }
+#endif
+
+#if defined(__APPLE__)
+    self->thread_id_offset = 0;
+#endif
+
+#ifdef MS_WINDOWS
+    self->win_process_buffer = NULL;
+    self->win_process_buffer_size = 0;
 #endif
 
     return 0;
@@ -2761,21 +2952,25 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
             goto exit;
         }
 
+        // Get the GIL holder for this interpreter (needed for GIL_WAIT logic)
+        uintptr_t gil_holder_tstate = 0;
+        int gil_locked = GET_MEMBER(int, interp_state_buffer,
+            self->debug_offsets.interpreter_state.gil_runtime_state_locked);
+        if (gil_locked) {
+            gil_holder_tstate = (uintptr_t)GET_MEMBER(PyThreadState*, interp_state_buffer,
+                self->debug_offsets.interpreter_state.gil_runtime_state_holder);
+        }
+
         uintptr_t current_tstate;
         if (self->only_active_thread) {
             // Find the GIL holder for THIS interpreter
-            int gil_locked = GET_MEMBER(int, interp_state_buffer,
-                self->debug_offsets.interpreter_state.gil_runtime_state_locked);
-
             if (!gil_locked) {
                 // This interpreter's GIL is not locked, skip it
                 Py_DECREF(interpreter_threads);
                 goto next_interpreter;
             }
 
-            // Get the GIL holder for this interpreter
-            current_tstate = (uintptr_t)GET_MEMBER(PyThreadState*, interp_state_buffer,
-                self->debug_offsets.interpreter_state.gil_runtime_state_holder);
+            current_tstate = gil_holder_tstate;
         } else if (self->tstate_addr == 0) {
             // Get all threads for this interpreter
             current_tstate = GET_MEMBER(uintptr_t, interp_state_buffer,
@@ -2786,7 +2981,7 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         }
 
         while (current_tstate != 0) {
-            PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate);
+            PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate, gil_holder_tstate);
             if (!frame_info) {
                 Py_DECREF(interpreter_threads);
                 set_exception_cause(self, PyExc_RuntimeError, "Failed to unwind stack for thread");
@@ -3038,6 +3233,12 @@ RemoteUnwinder_dealloc(PyObject *op)
     if (self->code_object_cache) {
         _Py_hashtable_destroy(self->code_object_cache);
     }
+#ifdef MS_WINDOWS
+    if(self->win_process_buffer != NULL) {
+        PyMem_Free(self->win_process_buffer);
+    }
+#endif
+
 #ifdef Py_GIL_DISABLED
     if (self->tlbc_cache) {
         _Py_hashtable_destroy(self->tlbc_cache);

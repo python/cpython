@@ -92,6 +92,11 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+  <Link>
+    <AdditionalDependencies>ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+  </Link>
+</ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_remote_debugging_module.c" />
   </ItemGroup>
