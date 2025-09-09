@@ -1807,7 +1807,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertTrue(self.theclass.min)
         self.assertTrue(self.theclass.max)
 
-    def test_strftime_y2k(self):
+    def check_strftime_y2k(self, specifier):
         # Test that years less than 1000 are 0-padded; note that the beginning
         # of an ISO 8601 year may fall in an ISO week of the year before, and
         # therefore needs an offset of -1 when formatting with '%G'.
@@ -1821,22 +1821,28 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (1000, 0),
             (1970, 0),
         )
-        specifiers = 'YG'
-        if _time.strftime('%F', (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == '1900-01-01':
-            specifiers += 'FC'
         for year, g_offset in dataset:
-            for specifier in specifiers:
-                with self.subTest(year=year, specifier=specifier):
-                    d = self.theclass(year, 1, 1)
-                    if specifier == 'G':
-                        year += g_offset
-                    if specifier == 'C':
-                        expected = f"{year // 100:02d}"
-                    else:
-                        expected = f"{year:04d}"
-                        if specifier == 'F':
-                            expected += f"-01-01"
-                    self.assertEqual(d.strftime(f"%{specifier}"), expected)
+            with self.subTest(year=year, specifier=specifier):
+                d = self.theclass(year, 1, 1)
+                if specifier == 'G':
+                    year += g_offset
+                if specifier == 'C':
+                    expected = f"{year // 100:02d}"
+                else:
+                    expected = f"{year:04d}"
+                    if specifier == 'F':
+                        expected += f"-01-01"
+                self.assertEqual(d.strftime(f"%{specifier}"), expected)
+
+    def test_strftime_y2k(self):
+        self.check_strftime_y2k('Y')
+        self.check_strftime_y2k('G')
+
+    def test_strftime_y2k_c99(self):
+        # CPython requires C11; specifiers new in C99 must work.
+        # (Other implementations may want to disable this test.)
+        self.check_strftime_y2k('F')
+        self.check_strftime_y2k('C')
 
     def test_replace(self):
         cls = self.theclass
@@ -2147,14 +2153,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (10000, 1, 1),
             (0, 1, 1),
             (9999999, 1, 1),
+        ]
+        for isocal in isocals:
+            with self.subTest(isocal=isocal):
+                with self.assertRaises(ValueError):
+                    self.theclass.fromisocalendar(*isocal)
+
+        isocals = [
             (2<<32, 1, 1),
             (2019, 2<<32, 1),
             (2019, 1, 2<<32),
         ]
-
         for isocal in isocals:
             with self.subTest(isocal=isocal):
-                with self.assertRaises(ValueError):
+                with self.assertRaises((ValueError, OverflowError)):
                     self.theclass.fromisocalendar(*isocal)
 
     def test_fromisocalendar_type_errors(self):
@@ -2301,7 +2313,7 @@ class TestDateTime(TestDate):
             dt = dt_base.replace(tzinfo=tzi)
             exp = exp_base + exp_tz
             with self.subTest(tzi=tzi):
-                assert dt.isoformat() == exp
+                self.assertEqual(dt.isoformat(), exp)
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10, 4, 5, 1, 123)
@@ -3349,7 +3361,7 @@ class TestDateTime(TestDate):
 
             with self.subTest(tstr=dtstr):
                 dt_rt = self.theclass.fromisoformat(dtstr)
-                assert dt == dt_rt, dt_rt
+                self.assertEqual(dt_rt, dt)
 
     def test_fromisoformat_separators(self):
         separators = [
@@ -3865,7 +3877,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             t = t_base.replace(tzinfo=tzi)
             exp = exp_base + exp_tz
             with self.subTest(tzi=tzi):
-                assert t.isoformat() == exp
+                self.assertEqual(t.isoformat(), exp)
 
     def test_1653736(self):
         # verify it doesn't accept extra keyword arguments
@@ -4350,7 +4362,7 @@ class TZInfoBase:
                     elif x is d2:
                         expected = -1
                     else:
-                        assert y is d2
+                        self.assertIs(y, d2)
                         expected = 1
                     self.assertEqual(got, expected)
 
@@ -4678,7 +4690,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
             with self.subTest(tstr=tstr):
                 t_rt = self.theclass.fromisoformat(tstr)
-                assert t == t_rt
+                self.assertEqual(t_rt, t)
 
     def test_fromisoformat_timespecs(self):
         time_bases = [
@@ -5515,7 +5527,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
                 elif x is d2:
                     expected = timedelta(minutes=(11-59)-0)
                 else:
-                    assert y is d2
+                    self.assertIs(y, d2)
                     expected = timedelta(minutes=0-(11-59))
                 self.assertEqual(got, expected)
 

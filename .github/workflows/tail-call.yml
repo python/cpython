@@ -114,8 +114,8 @@ jobs:
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          export PATH="/usr/local/opt/llvm/bin:$PATH"
-          export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+          export PATH="/usr/local/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
+          export PATH="/opt/homebrew/opt/llvm@${{ matrix.llvm }}/bin:$PATH"
           CC=clang-20 ./configure --with-tail-call-interp
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3

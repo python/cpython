@@ -636,7 +636,6 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
 
 static const char* const attr_exceptions[] = {
     "__class__",
-    "__bases__",
     "__origin__",
     "__args__",
     "__unpacked__",
@@ -645,6 +644,11 @@ static const char* const attr_exceptions[] = {
     "__mro_entries__",
     "__reduce_ex__",  // needed so we don't look up object.__reduce_ex__
     "__reduce__",
+    NULL,
+};
+
+static const char* const attr_blocked[] = {
+    "__bases__",
     "__copy__",
     "__deepcopy__",
     NULL,
@@ -655,15 +659,29 @@ ga_getattro(PyObject *self, PyObject *name)
 {
     gaobject *alias = (gaobject *)self;
     if (PyUnicode_Check(name)) {
+        // When we check blocked attrs, we don't allow to proxy them to `__origin__`.
+        // Otherwise, we can break existing code.
+        for (const char * const *p = attr_blocked; ; p++) {
+            if (*p == NULL) {
+                break;
+            }
+            if (_PyUnicode_EqualToASCIIString(name, *p)) {
+                goto generic_getattr;
+            }
+        }
+
+        // When we see own attrs, it has a priority over `__origin__`'s attr.
         for (const char * const *p = attr_exceptions; ; p++) {
             if (*p == NULL) {
                 return PyObject_GetAttr(alias->origin, name);
             }
             if (_PyUnicode_EqualToASCIIString(name, *p)) {
-                break;
+                goto generic_getattr;
             }
         }
     }
+
+generic_getattr:
     return PyObject_GenericGetAttr(self, name);
 }
 
