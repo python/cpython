@@ -2686,6 +2686,13 @@ Invalid expressions in type scopes:
     >>> f(x = 5, *:)
     Traceback (most recent call last):
     SyntaxError: Invalid star expression
+
+Invalid assignment expressions with parenthesized targets:
+
+    >>> ((a) := 1)
+    Traceback (most recent call last):
+       ...
+    SyntaxError: cannot parenthesize target name in assignment expression
 """
 
 import re
@@ -2851,11 +2858,6 @@ class SyntaxErrorTestCase(unittest.TestCase):
         # We don't have a special message for this, but make sure we don't
         # report "cannot delete name"
         self._check_error("del a += b", "invalid syntax")
-
-    def test_parenthesized_named_expression_target(self):
-        self._check_error(
-            "((a) := 1)",
-            "cannot parenthesize target name in assignment expression")
 
     def test_global_param_err_first(self):
         source = """if 1:
