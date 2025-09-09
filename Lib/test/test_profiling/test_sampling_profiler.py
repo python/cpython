@@ -1901,7 +1901,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
         valid_formats = ["pstats", "collapsed", "flamegraph"]
 
         tempdir = tempfile.TemporaryDirectory(delete=False)
-        self.addCleanup(lambda x: shutil.rmtree(x), tempdir.name)
+        self.addCleanup(shutil.rmtree, tempdir.name)
 
 
         with contextlib.chdir(tempdir.name):
