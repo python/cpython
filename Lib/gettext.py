@@ -407,7 +407,10 @@ class GNUTranslations(NullTranslations):
                     elif lastk:
                         self._info[lastk] += '\n' + item
                     if k == 'content-type':
-                        self._charset = v.split('charset=')[1]
+                        try:
+                            self._charset = v.split('charset=')[1]
+                        except IndexError:
+                            raise ValueError(f"invalid content-type syntax: '{v}'. Expected 'charset='.") from None
                     elif k == 'plural-forms':
                         v = v.split(';')
                         try:
