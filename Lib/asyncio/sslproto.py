@@ -214,12 +214,10 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         This does not block; it buffers the data and arranges for it
         to be sent out asynchronously.
         """
-        if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError(f"data: expecting a bytes-like instance, "
-                            f"got {type(data).__name__}")
         if not data:
             return
-        self._ssl_protocol._write_appdata((data,))
+        # Ensure that what we buffer is immutable.
+        self._ssl_protocol._write_appdata((bytes(data),))
 
     def writelines(self, list_of_data):
         """Write a list (or any iterable) of data bytes to the transport.
