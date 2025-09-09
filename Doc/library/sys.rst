@@ -11,6 +11,51 @@ interpreter and to functions that interact strongly with the interpreter. It is
 always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
+.. data:: abi_info
+
+   .. versionadded:: next
+
+   An object containing information about the ABI of the currently running
+   Python interpreter.
+   It should include information that affect the CPython ABI in ways that
+   require a specific build of the interpreter chosen from variants that can
+   co-exist on a single machine.
+   For example, it does not encode the base OS (Linux or Windows), but does
+   include pointer size since some systems support both 32- and 64-bit builds.
+   The available entries are the same on all platforms;
+   e.g. *pointer_size* is available even on 64-bit-only architectures.
+
+   The following attributes are available:
+
+   .. attribute:: abi_info.pointer_bits
+
+      The width of pointers in bits, as an integer,
+      equivalent to ``8 * sizeof(void *)``.
+      Usually, this is  ``32`` or ``64``.
+
+   .. attribute:: abi_info.free_threaded
+
+      A Boolean indicating whether the interpreter was built with
+      :term:`free threading` support.
+      This reflects either the presence of the :option:`--disable-gil`
+      :file:`configure` option (on Unix)
+      or setting the ``DisableGil`` property (on Windows).
+
+   .. attribute:: abi_info.debug
+
+      A Boolean indicating whether the interpreter was built in
+      :ref:`debug mode <debug-build>`.
+      This reflects either the presence of the :option:`--with-pydebug`
+      :file:`configure` option (on Unix)
+      or the ``Debug`` configuration (on Windows).
+
+   .. attribute:: abi_info.byteorder
+
+      A string indicating the native byte order,
+      either ``'big'`` or ``'little'``.
+      This is the same as the :data:`byteorder` attribute.
+
+
 .. data:: abiflags
 
    On POSIX systems where Python was built with the standard ``configure``
@@ -523,8 +568,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
-   intercepted. Cleanup actions specified by finally clauses of :keyword:`try` statements
-   are honored, and it is possible to intercept the exit attempt at an outer level.
+   intercepted. Cleanup actions specified by :keyword:`finally` clauses of
+   :keyword:`try` statements are honored, and it is possible to intercept the
+   exit attempt at an outer level.
 
    .. versionchanged:: 3.6
       If an error occurs in the cleanup after the Python interpreter

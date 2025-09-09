@@ -2891,7 +2891,7 @@ optimize_load_fast(cfg_builder *g)
                     int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
                     int net_pushed = num_pushed - num_popped;
                     assert(net_pushed >= 0);
-                    for (int i = 0; i < net_pushed; i++) {
+                    for (int j = 0; j < net_pushed; j++) {
                         PUSH_REF(i, NOT_LOCAL);
                     }
                     break;

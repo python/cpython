@@ -454,7 +454,7 @@ There are two factors that produce this result:
    (the list), and both ``x`` and ``y`` refer to it.
 2) Lists are :term:`mutable`, which means that you can change their content.
 
-After the call to :meth:`!append`, the content of the mutable object has
+After the call to :meth:`~sequence.append`, the content of the mutable object has
 changed from ``[]`` to ``[10]``.  Since both the variables refer to the same
 object, using either name accesses the modified value ``[10]``.
 
@@ -1397,9 +1397,9 @@ To see why this happens, you need to know that (a) if an object implements an
 :meth:`~object.__iadd__` magic method, it gets called when the ``+=`` augmented
 assignment
 is executed, and its return value is what gets used in the assignment statement;
-and (b) for lists, :meth:`!__iadd__` is equivalent to calling :meth:`!extend` on the list
-and returning the list.  That's why we say that for lists, ``+=`` is a
-"shorthand" for :meth:`!list.extend`::
+and (b) for lists, :meth:`!__iadd__` is equivalent to calling
+:meth:`~sequence.extend` on the list and returning the list.
+That's why we say that for lists, ``+=`` is a "shorthand" for :meth:`list.extend`::
 
     >>> a_list = []
     >>> a_list += [1]

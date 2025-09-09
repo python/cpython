@@ -88,7 +88,7 @@ and improvements in user-friendliness and correctness.
 * :ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 750: Template strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
-* :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
+* :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-no-more-pgp>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
 * :ref:`Free-threaded mode improvements <whatsnew314-free-threaded-cpython>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
@@ -2820,29 +2820,6 @@ CPython bytecode changes
   (Contributed by Irit Katriel in :gh:`100239`.)
 
 
-Build changes
-=============
-
-* GNU Autoconf 2.72 is now required to generate :file:`configure`.
-  (Contributed by Erlend Aasland in :gh:`115765`.)
-
-* ``#pragma``-based linking with ``python3*.lib`` can now be switched off
-  with :c:expr:`Py_NO_LINK_LIB`. (Contributed by Jean-Christophe
-  Fillion-Robin in :gh:`82909`.)
-
-.. _whatsnew314-pep761:
-
-PEP 761: Discontinuation of PGP signatures
-------------------------------------------
-
-PGP signatures will not be available for CPython 3.14 and onwards.
-Users verifying artifacts must use `Sigstore verification materials`_ for
-verifying CPython artifacts. This change in release process is specified
-in :pep:`761`.
-
-.. _Sigstore verification materials: https://www.python.org/downloads/metadata/sigstore/
-
-
 C API changes
 =============
 
@@ -3118,6 +3095,72 @@ Removed
   Please use :c:func:`Py_EnterRecursiveCall` to guard against runaway recursion
   in C code.
   (Removed in :gh:`133079`, see also :gh:`130396`.)
+
+
+Build Changes
+=============
+
+* GNU Autoconf 2.72 is now required to generate :file:`configure`.
+  (Contributed by Erlend Aasland in :gh:`115765`.)
+
+* ``wasm32-unknown-emscripten`` is now a :pep:`11` tier 3 platform.
+  (Contributed by R. Hood Chatham in :gh:`127146`, :gh:`127683`, and :gh:`136931`.)
+
+* ``#pragma``-based linking with ``python3*.lib`` can now be switched off
+  with :c:expr:`Py_NO_LINK_LIB`.
+  (Contributed by Jean-Christophe Fillion-Robin in :gh:`82909`.)
+
+* CPython now enables a set of recommended compiler options by default
+  for improved security.
+  Use the :option:`--disable-safety` :file:`configure` option to disable them,
+  or the :option:`--enable-slower-safety` option for a larger set
+  of compiler options, albeit with a performance cost.
+
+* The ``WITH_FREELISTS`` macro and ``--without-freelists`` :file:`configure`
+  option have been removed.
+
+* The new :file:`configure` option :option:`--with-tail-call-interp`
+  may be used to enable the experimental tail call interpreter.
+  See :ref:`whatsnew314-tail-call` for further details.
+
+* To disable the new remote debugging support, use the
+  :option:`--without-remote-debug` :file:`configure` option.
+  This may be useful for security reasons.
+
+.. _whatsnew314-build_details:
+
+:file:`build-details.json`
+--------------------------
+
+Installations of Python now contain a new file, :file:`build-details.json`.
+This is a static JSON document containing build details for CPython,
+to allow for introspection without needing to run code.
+This is helpful for use-cases such as Python launchers, cross-compilation,
+and so on.
+
+:file:`build-details.json` must be installed in the platform-independent
+standard library directory. This corresponds to the :ref:`'stdlib'
+<installation_paths>` :mod:`sysconfig` installation path,
+which can be found by running ``sysconfig.get_path('stdlib')``.
+
+.. seealso::
+   :pep:`739` -- ``build-details.json`` 1.0 -- a static description file
+   for Python build details
+
+.. _whatsnew314-no-more-pgp:
+
+Discontinuation of PGP signatures
+---------------------------------
+
+PGP (Pretty Good Privacy) signatures will not be provided
+for releases of Python 3.14 or future versions.
+To verify CPython artifacts, users must use `Sigstore verification materials
+<https://www.python.org/downloads/metadata/sigstore/>`__.
+Releases have been signed using Sigstore_ since Python 3.11.
+
+This change in release process was specified in :pep:`761`.
+
+.. _Sigstore: https://www.sigstore.dev/
 
 
 Porting to Python 3.14

@@ -3264,13 +3264,21 @@ PyUnicode_FromFormat(const char *format, ...)
 int
 PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
 {
+    va_list vargs;
+    va_start(vargs, format);
+    int res = _PyUnicodeWriter_FormatV(writer, format, vargs);
+    va_end(vargs);
+    return res;
+}
+
+int
+_PyUnicodeWriter_FormatV(PyUnicodeWriter *writer, const char *format,
+                         va_list vargs)
+{
     _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
     Py_ssize_t old_pos = _writer->pos;
 
-    va_list vargs;
-    va_start(vargs, format);
     int res = unicode_from_format(_writer, format, vargs);
-    va_end(vargs);
 
     if (res < 0) {
         _writer->pos = old_pos;

@@ -8100,6 +8100,11 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -8206,6 +8211,11 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     return_value = os_sendfile_impl(module, out_fd, in_fd, offobj, count);
 
@@ -13434,4 +13444,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=77c20b53c34ccae4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=92662828d49f5d88 input=a9049054013a1b77]*/

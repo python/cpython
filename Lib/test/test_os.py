@@ -3957,6 +3957,11 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
             await self.async_sendfile(self.sockno, self.fileno, -1, 4096)
         self.assertEqual(cm.exception.errno, errno.EINVAL)
 
+    async def test_invalid_count(self):
+        with self.assertRaises(ValueError, msg="count cannot be negative"):
+            await self.sendfile_wrapper(self.sockno, self.fileno, offset=0,
+                                        count=-1)
+
     async def test_keywords(self):
         # Keyword arguments should be supported
         await self.async_sendfile(out_fd=self.sockno, in_fd=self.fileno,

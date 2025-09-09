@@ -264,8 +264,9 @@ Collections Abstract Base Classes -- Detailed Descriptions
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
    Implementation note: Some of the mixin methods, such as
-   :meth:`~container.__iter__`, :meth:`~object.__reversed__` and :meth:`index`, make
-   repeated calls to the underlying :meth:`~object.__getitem__` method.
+   :meth:`~container.__iter__`, :meth:`~object.__reversed__`,
+   and :meth:`~sequence.index` make repeated calls to the underlying
+   :meth:`~object.__getitem__` method.
    Consequently, if :meth:`~object.__getitem__` is implemented with constant
    access speed, the mixin methods will have linear performance;
    however, if the underlying method is linear (as it would be with a
@@ -281,8 +282,8 @@ Collections Abstract Base Classes -- Detailed Descriptions
       Supporting the *start* and *stop* arguments is optional, but recommended.
 
       .. versionchanged:: 3.5
-         The :meth:`!index` method added support for *stop* and *start*
-         arguments.
+         The :meth:`~sequence.index` method gained support for
+         the *stop* and *start* arguments.
 
 .. class:: Set
            MutableSet
