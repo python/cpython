@@ -14,8 +14,9 @@ from itertools import repeat
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
            "monthcalendar", "prmonth", "month", "prcal", "calendar",
-           "timegm", "month_name", "month_abbr", "day_name", "day_abbr",
-           "Calendar", "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
+           "timegm", "month_name", "month_abbr", "standalone_month_name",
+           "standalone_month_abbr", "day_name", "day_abbr", "Calendar",
+           "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
            "LocaleHTMLCalendar", "weekheader",
            "Day", "Month", "JANUARY", "FEBRUARY", "MARCH",
            "APRIL", "MAY", "JUNE", "JULY",
@@ -138,6 +139,24 @@ day_abbr = _localized_day('%a')
 # Full and abbreviated names of months (1-based arrays!!!)
 month_name = _localized_month('%B')
 month_abbr = _localized_month('%b')
+
+# On platforms that support the %OB and %Ob specifiers, they are used
+# to get the standalone form of the month name. This is required for
+# some languages such as Greek, Slavic, and Baltic languages.
+try:
+    standalone_month_name = _localized_month('%OB')
+    standalone_month_abbr = _localized_month('%Ob')
+except ValueError:
+    standalone_month_name = month_name
+    standalone_month_abbr = month_abbr
+else:
+    # Some systems that do not support '%OB' will keep it as-is (i.e.,
+    # we get [..., '%OB', '%OB', '%OB']), so for non-distinct names,
+    # we fall back to month_name/month_abbr.
+    if len(set(standalone_month_name)) != len(set(month_name)):
+        standalone_month_name = month_name
+    if len(set(standalone_month_abbr)) != len(set(month_abbr)):
+        standalone_month_abbr = month_abbr
 
 
 def isleap(year):
@@ -359,7 +378,7 @@ class TextCalendar(Calendar):
         """
         Returns a formatted week day name.
         """
-        if width >= 9:
+        if width >= max(map(len, day_name)):
             names = day_name
         else:
             names = day_abbr
@@ -377,7 +396,7 @@ class TextCalendar(Calendar):
         """
         _validate_month(themonth)
 
-        s = month_name[themonth]
+        s = standalone_month_name[themonth]
         if withyear:
             s = "%s %r" % (s, theyear)
         return s.center(width)
@@ -510,9 +529,9 @@ class HTMLCalendar(Calendar):
         """
         _validate_month(themonth)
         if withyear:
-            s = '%s %s' % (month_name[themonth], theyear)
+            s = '%s %s' % (standalone_month_name[themonth], theyear)
         else:
-            s = '%s' % month_name[themonth]
+            s = standalone_month_name[themonth]
         return '<tr><th colspan="7" class="%s">%s</th></tr>' % (
             self.cssclass_month_head, s)
 

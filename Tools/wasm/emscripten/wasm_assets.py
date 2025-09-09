@@ -58,7 +58,6 @@ OMIT_FILES = (
 # socket.create_connection() raises an exception:
 # "BlockingIOError: [Errno 26] Operation in progress".
 OMIT_NETWORKING_FILES = (
-    "email/",
     "ftplib.py",
     "http/",
     "imaplib.py",
