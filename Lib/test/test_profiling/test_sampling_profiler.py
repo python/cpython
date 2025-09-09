@@ -447,7 +447,10 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Test collecting sample data
         test_frames = [
-            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])],
+            )
         ]
         collector.collect(test_frames)
 
@@ -473,14 +476,22 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         collector = FlamegraphCollector()
 
-        # Create some test data
+        # Create some test data (use Interpreter/Thread objects like runtime)
         test_frames1 = [
-            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])],
+            )
         ]
         test_frames2 = [
-            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])],
+            )
         ]  # Same stack
-        test_frames3 = [(1, [("other.py", 5, "other_func")])]
+        test_frames3 = [
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("other.py", 5, "other_func")])])
+        ]
 
         collector.collect(test_frames1)
         collector.collect(test_frames2)
