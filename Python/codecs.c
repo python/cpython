@@ -95,8 +95,8 @@ extern int _Py_normalize_encoding(const char *, char *, size_t);
 /* Convert a string to a normalized Python string: all ASCII letters are
    converted to lower case, spaces are replaced with hyphens. */
 
-static
-PyObject *normalizestring(const char *string)
+static PyObject*
+normalizestring(const char *string)
 {
     size_t i;
     size_t len = strlen(string);
