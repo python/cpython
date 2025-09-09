@@ -99,7 +99,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         self.assertIn(p.returncode, (1, 120))
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_exec_set_nomemory_hang(self):
+        import_module("_testcapi")
         # gh-134163: Test case that triggers no memory hang condition
         # The frame_lasti need to upper 257,
         # because when calling PyLong_FromLong, malloc is not invoked,
@@ -120,12 +124,10 @@ class TestInteractiveInterpreter(unittest.TestCase):
             p.stdin.write(user_input)
         output = kill_python(p)
 
-        # it can exit with MemoryError or Fatal Python error when --with-trace-refs
-        # it return -6 here
-        self.assertIn(p.returncode, (0, 1, 120, -6))
+        self.assertIn(p.returncode, (0, 1, 120))
         self.assertGreater(len(output), 0)  # At minimum, should not hang
         # Can result in either MemoryError exception or fatal error
-        self.assertTrue("MemoryError" in output or "Fatal Python error" in output)
+        self.assertTrue("MemoryError" in output)
 
     @cpython_only
     def test_multiline_string_parsing(self):
