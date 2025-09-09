@@ -610,7 +610,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
 
     if (last_dot == NULL) {
         /* The breakpoint is a built-in, e.g. PYTHONBREAKPOINT=int */
-        modulepath = PyUnicode_FromString("builtins");
+        modulepath = &_Py_ID(builtins);
         attrname = envar;
     }
     else if (last_dot != envar) {
@@ -3873,9 +3873,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
     SET_SYS("builtin_module_names", list_builtin_module_names());
     SET_SYS("stdlib_module_names", list_stdlib_module_names());
 #if PY_BIG_ENDIAN
-    SET_SYS_FROM_STRING("byteorder", "big");
+    SET_SYS("byteorder", &_Py_ID(big));
 #else
-    SET_SYS_FROM_STRING("byteorder", "little");
+    SET_SYS("byteorder", &_Py_ID(little));
 #endif
 
 #ifdef MS_COREDLL
@@ -3917,9 +3917,9 @@ _PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 
     /* float repr style: 0.03 (short) vs 0.029999999999999999 (legacy) */
 #if _PY_SHORT_FLOAT_REPR == 1
-    SET_SYS_FROM_STRING("float_repr_style", "short");
+    SET_SYS("float_repr_style", &_Py_ID(short));
 #else
-    SET_SYS_FROM_STRING("float_repr_style", "legacy");
+    SET_SYS("float_repr_style", &_Py_ID(legacy));
 #endif
 
     SET_SYS("thread_info", PyThread_GetInfo());
