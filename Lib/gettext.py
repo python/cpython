@@ -417,8 +417,10 @@ class GNUTranslations(NullTranslations):
                         v = v.split(';')
                         try:
                             plural = v[1].split('plural=')[1]
-                        except IndexError as e:
-                            raise ValueError('invalid plural forms syntax') from e
+                        except IndexError:
+                            raise ValueError(
+                                f"invalid plural forms syntax in '{filename}': '{v}'. Expected ';' and 'plural='."
+                            ) from None
                         self.plural = c2py(plural)
             # Note: we unconditionally convert both msgids and msgstrs to
             # Unicode using the character encoding specified in the charset
