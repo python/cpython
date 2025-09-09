@@ -859,7 +859,7 @@ _ctypes.CDataType.from_buffer as CDataType_from_buffer
     type: self
     cls: defining_class
     obj: object
-    offset: Py_ssize_t = 0
+    offset: Py_ssize_t(allow_negative=False) = 0
     /
 
 C.from_buffer(object, offset=0) -> C instance
@@ -870,7 +870,7 @@ Create a C instance from a writeable buffer.
 static PyObject *
 CDataType_from_buffer_impl(PyObject *type, PyTypeObject *cls, PyObject *obj,
                            Py_ssize_t offset)
-/*[clinic end generated code: output=57604e99635abd31 input=0f36cedd105ca28d]*/
+/*[clinic end generated code: output=57604e99635abd31 input=8f43e6bc44373180]*/
 {
     PyObject *mv;
     PyObject *result;
@@ -902,13 +902,6 @@ CDataType_from_buffer_impl(PyObject *type, PyTypeObject *cls, PyObject *obj,
     if (!PyBuffer_IsContiguous(buffer, 'C')) {
         PyErr_SetString(PyExc_TypeError,
             "underlying buffer is not C contiguous");
-        Py_DECREF(mv);
-        return NULL;
-    }
-
-    if (offset < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "offset cannot be negative");
         Py_DECREF(mv);
         return NULL;
     }
@@ -955,7 +948,7 @@ _ctypes.CDataType.from_buffer_copy as CDataType_from_buffer_copy
     type: self
     cls: defining_class
     buffer: Py_buffer
-    offset: Py_ssize_t = 0
+    offset: Py_ssize_t(allow_negative=False) = 0
     /
 
 C.from_buffer_copy(object, offset=0) -> C instance
@@ -966,7 +959,7 @@ Create a C instance from a readable buffer.
 static PyObject *
 CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
                                 Py_buffer *buffer, Py_ssize_t offset)
-/*[clinic end generated code: output=c8fc62b03e5cc6fa input=2a81e11b765a6253]*/
+/*[clinic end generated code: output=c8fc62b03e5cc6fa input=41f97f512295ceec]*/
 {
     PyObject *result;
 
@@ -977,12 +970,6 @@ CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
     }
     if (!info) {
         PyErr_SetString(PyExc_TypeError, "abstract class");
-        return NULL;
-    }
-
-    if (offset < 0) {
-        PyErr_SetString(PyExc_ValueError,
-                        "offset cannot be negative");
         return NULL;
     }
 

@@ -1000,8 +1000,6 @@ operations have the same priority as the corresponding numeric operations. [3]_
    pair: slice; operation
    pair: operator; in
    pair: operator; not in
-   single: count() (sequence method)
-   single: index() (sequence method)
 
 +--------------------------+--------------------------------+----------+
 | Operation                | Result                         | Notes    |
@@ -1018,7 +1016,7 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``s * n`` or             | equivalent to adding *s* to    | (2)(7)   |
 | ``n * s``                | itself *n* times               |          |
 +--------------------------+--------------------------------+----------+
-| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(9)   |
+| ``s[i]``                 | *i*\ th item of *s*, origin 0  | (3)(8)   |
 +--------------------------+--------------------------------+----------+
 | ``s[i:j]``               | slice of *s* from *i* to *j*   | (3)(4)   |
 +--------------------------+--------------------------------+----------+
@@ -1030,13 +1028,6 @@ operations have the same priority as the corresponding numeric operations. [3]_
 | ``min(s)``               | smallest item of *s*           |          |
 +--------------------------+--------------------------------+----------+
 | ``max(s)``               | largest item of *s*            |          |
-+--------------------------+--------------------------------+----------+
-| ``s.index(x[, i[, j]])`` | index of the first occurrence  | \(8)     |
-|                          | of *x* in *s* (at or after     |          |
-|                          | index *i* and before index *j*)|          |
-+--------------------------+--------------------------------+----------+
-| ``s.count(x)``           | total number of occurrences of |          |
-|                          | *x* in *s*                     |          |
 +--------------------------+--------------------------------+----------+
 
 Sequences of the same type also support comparisons.  In particular, tuples
@@ -1143,15 +1134,41 @@ Notes:
   concatenation or repetition.
 
 (8)
-   ``index`` raises :exc:`ValueError` when *x* is not found in *s*.
-   Not all implementations support passing the additional arguments *i* and *j*.
-   These arguments allow efficient searching of subsections of the sequence. Passing
-   the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
-   without copying any data and with the returned index being relative to
-   the start of the sequence rather than the start of the slice.
-
-(9)
    An :exc:`IndexError` is raised if *i* is outside the sequence range.
+
+.. rubric:: Sequence Methods
+
+Sequence types also support the following methods:
+
+.. method:: list.count(value, /)
+            range.count(value, /)
+            tuple.count(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.count(value, /)
+
+   Return the total number of occurrences of *value* in *sequence*.
+
+.. method:: list.index(value[, start[, stop])
+            range.index(value[, start[, stop])
+            tuple.index(value[, start[, stop])
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.index(value[, start[, stop])
+
+   Return the index of the first occurrence of *value* in *sequence*.
+
+   Raises :exc:`ValueError` if *value* is not found in *sequence*.
+
+   The *start* or *stop* arguments allow for efficient searching
+   of subsections of the sequence, beginning at *start* and ending at *stop*.
+   This is roughly equivalent to ``start + sequence[start:stop].index(value)``,
+   only without copying any data.
+
+   .. caution::
+      Not all sequence types support passing the *start* and *stop* arguments.
 
 
 .. _typesseq-immutable:
@@ -1202,14 +1219,6 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
    pair: subscript; assignment
    pair: slice; assignment
    pair: statement; del
-   single: append() (sequence method)
-   single: clear() (sequence method)
-   single: copy() (sequence method)
-   single: extend() (sequence method)
-   single: insert() (sequence method)
-   single: pop() (sequence method)
-   single: remove() (sequence method)
-   single: reverse() (sequence method)
 
 +------------------------------+--------------------------------+---------------------+
 | Operation                    | Result                         | Notes               |
@@ -1233,39 +1242,14 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``del s[i:j:k]``             | removes the elements of        |                     |
 |                              | ``s[i:j:k]`` from the list     |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.append(x)``              | appends *x* to the end of the  |                     |
-|                              | sequence (same as              |                     |
-|                              | ``s[len(s):len(s)] = [x]``)    |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.clear()``                | removes all items from *s*     | \(5)                |
-|                              | (same as ``del s[:]``)         |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.copy()``                 | creates a shallow copy of *s*  | \(5)                |
-|                              | (same as ``s[:]``)             |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.extend(t)`` or           | extends *s* with the           |                     |
-| ``s += t``                   | contents of *t* (for the       |                     |
+| ``s += t``                   | extends *s* with the           |                     |
+|                              | contents of *t* (for the       |                     |
 |                              | most part the same as          |                     |
 |                              | ``s[len(s):len(s)] = t``)      |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s *= n``                   | updates *s* with its contents  | \(6)                |
+| ``s *= n``                   | updates *s* with its contents  | \(2)                |
 |                              | repeated *n* times             |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.insert(i, x)``           | inserts *x* into *s* at the    |                     |
-|                              | index given by *i*             |                     |
-|                              | (same as ``s[i:i] = [x]``)     |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.pop()`` or ``s.pop(i)``  | retrieves the item at *i* and  | \(2)                |
-|                              | also removes it from *s*       |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.remove(x)``              | removes the first item from    | \(3)                |
-|                              | *s* where ``s[i]`` is equal to |                     |
-|                              | *x*                            |                     |
-+------------------------------+--------------------------------+---------------------+
-| ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
-|                              | place                          |                     |
-+------------------------------+--------------------------------+---------------------+
-
 
 Notes:
 
@@ -1273,32 +1257,105 @@ Notes:
    If *k* is not equal to ``1``, *t* must have the same length as the slice it is replacing.
 
 (2)
-   The optional argument *i* defaults to ``-1``, so that by default the last
-   item is removed and returned.
-
-(3)
-   :meth:`remove` raises :exc:`ValueError` when *x* is not found in *s*.
-
-(4)
-   The :meth:`reverse` method modifies the sequence in place for economy of
-   space when reversing a large sequence.  To remind users that it operates by
-   side effect, it does not return the reversed sequence.
-
-(5)
-   :meth:`clear` and :meth:`!copy` are included for consistency with the
-   interfaces of mutable containers that don't support slicing operations
-   (such as :class:`dict` and :class:`set`). :meth:`!copy` is not part of the
-   :class:`collections.abc.MutableSequence` ABC, but most concrete
-   mutable sequence classes provide it.
-
-   .. versionadded:: 3.3
-      :meth:`clear` and :meth:`!copy` methods.
-
-(6)
    The value *n* is an integer, or an object implementing
    :meth:`~object.__index__`.  Zero and negative values of *n* clear
    the sequence.  Items in the sequence are not copied; they are referenced
    multiple times, as explained for ``s * n`` under :ref:`typesseq-common`.
+
+.. rubric:: Mutable Sequence Methods
+
+Mutable sequence types also support the following methods:
+
+.. method:: bytearray.append(value, /)
+            list.append(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.append(value, /)
+
+   Append *value* to the end of the sequence
+   This is equivalent to writing ``seq[len(seq):len(seq)] = [value]``.
+
+.. method:: bytearray.clear()
+            list.clear()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.clear()
+
+   .. versionadded:: 3.3
+
+   Remove all items from *sequence*.
+   This is equivalent to writing ``del sequence[:]``.
+
+.. method:: bytearray.copy()
+            list.copy()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.copy()
+
+   .. versionadded:: 3.3
+
+   Create a shallow copy of *sequence*.
+   This is equivalent to writing ``sequence[:]``.
+
+   .. hint:: The :meth:`!copy` method is not part of the
+             :class:`~collections.abc.MutableSequence` :class:`~abc.ABC`,
+             but most concrete mutable sequence types provide it.
+
+.. method:: bytearray.extend(iterable, /)
+            list.extend(iterable, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.extend(iterable, /)
+
+   Extend *sequence* with the contents of *iterable*.
+   For the most part, this is the same as writing
+   ``seq[len(seq):len(seq)] = iterable``.
+
+.. method:: bytearray.insert(index, value, /)
+            list.insert(index, value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.insert(index, value, /)
+
+   Insert *value* into *sequence* at the given *index*.
+   This is equivalent to writing ``sequence[index:index] = [value]``.
+
+.. method:: bytearray.pop(index=-1, /)
+            list.pop(index=-1, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.pop(index=-1, /)
+
+   Retrieve the item at *index* and also removes it from *sequence*.
+   By default, the last item in *sequence* is removed and returned.
+
+.. method:: bytearray.remove(value, /)
+            list.remove(value, /)
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.remove(value, /)
+
+   Remove the first item from *sequence* where ``sequence[i] == value``.
+
+   Raises :exc:`ValueError` if *value* is not found in *sequence*.
+
+.. method:: bytearray.reverse()
+            list.reverse()
+   :no-contents-entry:
+   :no-index-entry:
+   :no-typesetting:
+.. method:: sequence.reverse()
+
+   Reverse the items of *sequence* in place.
+   This method maintains economy of space when reversing a large sequence.
+   To remind users that it operates by side-effect, it returns ``None``.
 
 
 .. _typesseq-list:
@@ -4957,13 +5014,13 @@ can be used interchangeably to index the same dictionary entry.
 
       .. index:: __missing__()
 
-      If a subclass of dict defines a method :meth:`__missing__` and *key*
+      If a subclass of dict defines a method :meth:`~object.__missing__` and *key*
       is not present, the ``d[key]`` operation calls that method with the key *key*
       as argument.  The ``d[key]`` operation then returns or raises whatever is
       returned or raised by the ``__missing__(key)`` call.
-      No other operations or methods invoke :meth:`__missing__`. If
-      :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
-      :meth:`__missing__` must be a method; it cannot be an instance variable::
+      No other operations or methods invoke :meth:`~object.__missing__`. If
+      :meth:`~object.__missing__` is not defined, :exc:`KeyError` is raised.
+      :meth:`~object.__missing__` must be a method; it cannot be an instance variable::
 
           >>> class Counter(dict):
           ...     def __missing__(self, key):
@@ -4977,7 +5034,8 @@ can be used interchangeably to index the same dictionary entry.
           1
 
       The example above shows part of the implementation of
-      :class:`collections.Counter`.  A different ``__missing__`` method is used
+      :class:`collections.Counter`.
+      A different :meth:`!__missing__` method is used
       by :class:`collections.defaultdict`.
 
    .. describe:: d[key] = value
@@ -5761,9 +5819,10 @@ Methods
 
 .. index:: pair: object; method
 
-Methods are functions that are called using the attribute notation. There are
-two flavors: :ref:`built-in methods <builtin-methods>` (such as :meth:`append`
-on lists) and :ref:`class instance method <instance-methods>`.
+Methods are functions that are called using the attribute notation.
+There are two flavors: :ref:`built-in methods <builtin-methods>`
+(such as :meth:`~list.append` on lists)
+and :ref:`class instance method <instance-methods>`.
 Built-in methods are described with the types that support them.
 
 If you access a method (a function defined in a class namespace) through an
@@ -5869,12 +5928,33 @@ It is written as ``None``.
 The Ellipsis Object
 -------------------
 
-This object is commonly used by slicing (see :ref:`slicings`).  It supports no
-special operations.  There is exactly one ellipsis object, named
+This object is commonly used used to indicate that something is omitted.
+It supports no special operations.  There is exactly one ellipsis object, named
 :const:`Ellipsis` (a built-in name).  ``type(Ellipsis)()`` produces the
 :const:`Ellipsis` singleton.
 
 It is written as ``Ellipsis`` or ``...``.
+
+In typical use, ``...`` as the ``Ellipsis`` object appears in a few different
+places, for instance:
+
+- In type annotations, such as :ref:`callable arguments <annotating-callables>`
+  or :ref:`tuple elements <annotating-tuples>`.
+
+- As the body of a function instead of a :ref:`pass statement <tut-pass>`.
+
+- In third-party libraries, such as `Numpy's slicing and striding
+  <https://numpy.org/doc/stable/user/basics.indexing.html#slicing-and-striding>`_.
+
+Python also uses three dots in ways that are not ``Ellipsis`` objects, for instance:
+
+- Doctest's :const:`ELLIPSIS <doctest.ELLIPSIS>`, as a pattern for missing content.
+
+- The default Python prompt of the :term:`interactive` shell when partial input is incomplete.
+
+Lastly, the Python documentation often uses three dots in conventional English
+usage to mean omitted content, even in code examples that also use them as the
+``Ellipsis``.
 
 
 .. _bltin-notimplemented-object:
