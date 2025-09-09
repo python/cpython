@@ -1074,7 +1074,7 @@ Function Annotations
 information about the types used by user-defined functions (see :pep:`3107` and
 :pep:`484` for more information).
 
-:term:`Annotations <function annotation>` are stored in the :attr:`!__annotations__`
+:term:`Annotations <function annotation>` are stored in the :attr:`~object.__annotations__`
 attribute of the function as a dictionary and have no effect on any other part of the
 function.  Parameter annotations are defined by a colon after the parameter name, followed
 by an expression evaluating to the value of the annotation.  Return annotations are

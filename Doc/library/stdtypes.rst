@@ -5014,13 +5014,13 @@ can be used interchangeably to index the same dictionary entry.
 
       .. index:: __missing__()
 
-      If a subclass of dict defines a method :meth:`__missing__` and *key*
+      If a subclass of dict defines a method :meth:`~object.__missing__` and *key*
       is not present, the ``d[key]`` operation calls that method with the key *key*
       as argument.  The ``d[key]`` operation then returns or raises whatever is
       returned or raised by the ``__missing__(key)`` call.
-      No other operations or methods invoke :meth:`__missing__`. If
-      :meth:`__missing__` is not defined, :exc:`KeyError` is raised.
-      :meth:`__missing__` must be a method; it cannot be an instance variable::
+      No other operations or methods invoke :meth:`~object.__missing__`. If
+      :meth:`~object.__missing__` is not defined, :exc:`KeyError` is raised.
+      :meth:`~object.__missing__` must be a method; it cannot be an instance variable::
 
           >>> class Counter(dict):
           ...     def __missing__(self, key):
@@ -5034,7 +5034,8 @@ can be used interchangeably to index the same dictionary entry.
           1
 
       The example above shows part of the implementation of
-      :class:`collections.Counter`.  A different ``__missing__`` method is used
+      :class:`collections.Counter`.
+      A different :meth:`!__missing__` method is used
       by :class:`collections.defaultdict`.
 
    .. describe:: d[key] = value
