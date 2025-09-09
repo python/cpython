@@ -171,7 +171,7 @@ attributes of their own:
 
 * :attr:`~definition.__name__` is the attribute's name.
 
-* :attr:`!__doc__` is the attribute's docstring.
+* :attr:`~definition.__doc__` is the attribute's docstring.
 
 * ``__get__(object)`` is a method that retrieves the attribute value from
   *object*.
@@ -186,7 +186,8 @@ are::
    descriptor = obj.__class__.x
    descriptor.__get__(obj)
 
-For methods, :meth:`!descriptor.__get__` returns a temporary object that's
+For methods, :meth:`descriptor.__get__ <object.__get__>` returns a temporary
+object that's
 callable, and wraps up the instance and the method to be called on it. This is
 also why static methods and class methods are now possible; they have
 descriptors that wrap up just the method, or the method and the class.  As a
@@ -1249,7 +1250,7 @@ Some of the more notable changes are:
 
 * The :func:`pow` built-in function no longer supports 3 arguments when
   floating-point numbers are supplied. ``pow(x, y, z)`` returns ``(x**y) % z``,
-  but this is never useful for floating point numbers, and the final result varies
+  but this is never useful for floating-point numbers, and the final result varies
   unpredictably depending on the platform.  A call such as ``pow(2.0, 8.0, 7.0)``
   will now raise a :exc:`TypeError` exception.
 

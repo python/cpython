@@ -1,0 +1,1 @@
+Fix compile error when using a WinAPI partition that doesn't support the RPC runtime library.

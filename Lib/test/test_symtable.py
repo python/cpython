@@ -2,6 +2,7 @@
 Test the API of the symtable module.
 """
 
+import re
 import textwrap
 import symtable
 import unittest
@@ -359,25 +360,32 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.Mine.get_name(), "Mine")
 
     def test_class_get_methods(self):
-        self.assertEqual(self.Mine.get_methods(), ('a_method',))
+        deprecation_mess = (
+            re.escape('symtable.Class.get_methods() is deprecated '
+                      'and will be removed in Python 3.16.')
+        )
+
+        with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
+            self.assertEqual(self.Mine.get_methods(), ('a_method',))
 
         top = symtable.symtable(TEST_COMPLEX_CLASS_CODE, "?", "exec")
         this = find_block(top, "ComplexClass")
 
-        self.assertEqual(this.get_methods(), (
-            'a_method', 'a_method_pep_695',
-            'an_async_method', 'an_async_method_pep_695',
-            'a_classmethod', 'a_classmethod_pep_695',
-            'an_async_classmethod', 'an_async_classmethod_pep_695',
-            'a_staticmethod', 'a_staticmethod_pep_695',
-            'an_async_staticmethod', 'an_async_staticmethod_pep_695',
-            'a_fakemethod', 'a_fakemethod_pep_695',
-            'an_async_fakemethod', 'an_async_fakemethod_pep_695',
-            'glob_unassigned_meth', 'glob_unassigned_meth_pep_695',
-            'glob_unassigned_async_meth', 'glob_unassigned_async_meth_pep_695',
-            'glob_assigned_meth', 'glob_assigned_meth_pep_695',
-            'glob_assigned_async_meth', 'glob_assigned_async_meth_pep_695',
-        ))
+        with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
+            self.assertEqual(this.get_methods(), (
+                'a_method', 'a_method_pep_695',
+                'an_async_method', 'an_async_method_pep_695',
+                'a_classmethod', 'a_classmethod_pep_695',
+                'an_async_classmethod', 'an_async_classmethod_pep_695',
+                'a_staticmethod', 'a_staticmethod_pep_695',
+                'an_async_staticmethod', 'an_async_staticmethod_pep_695',
+                'a_fakemethod', 'a_fakemethod_pep_695',
+                'an_async_fakemethod', 'an_async_fakemethod_pep_695',
+                'glob_unassigned_meth', 'glob_unassigned_meth_pep_695',
+                'glob_unassigned_async_meth', 'glob_unassigned_async_meth_pep_695',
+                'glob_assigned_meth', 'glob_assigned_meth_pep_695',
+                'glob_assigned_async_meth', 'glob_assigned_async_meth_pep_695',
+            ))
 
         # Test generator expressions that are of type TYPE_FUNCTION
         # but will not be reported by get_methods() since they are
@@ -390,7 +398,8 @@ class SymtableTest(unittest.TestCase):
             indented = textwrap.indent(body, ' ' * 4)
             top = symtable.symtable(f"class A:\n{indented}", "?", "exec")
             this = find_block(top, "A")
-            self.assertEqual(this.get_methods(), expected_methods)
+            with self.assertWarnsRegex(DeprecationWarning, deprecation_mess):
+                self.assertEqual(this.get_methods(), expected_methods)
 
         # statements with 'genexpr' inside it
         GENEXPRS = (
@@ -517,6 +526,79 @@ class SymtableTest(unittest.TestCase):
     def test_symtable_entry_repr(self):
         expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
         self.assertEqual(repr(self.top._table), expected)
+
+    def test_lambda(self):
+        st = symtable.symtable("lambda x: x", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["x"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_nested_lambda(self):
+        st = symtable.symtable("lambda x: lambda y=x: y", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["x"])
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<lambda>")
+        self.assertTrue(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), ["y"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_genexpr(self):
+        st = symtable.symtable("(x for x in a)", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "x"])
+        self.assertEqual(st.get_children(), [])
+
+    def test_nested_genexpr(self):
+        st = symtable.symtable("((y for y in x) for x in a)", "?", "exec")
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertFalse(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "x"])
+        self.assertEqual(len(st.get_children()), 1)
+        st = st.get_children()[0]
+        self.assertIs(st.get_type(), symtable.SymbolTableType.FUNCTION)
+        self.assertEqual(st.get_name(), "<genexpr>")
+        self.assertTrue(st.is_nested())
+        self.assertEqual(sorted(st.get_identifiers()), [".0", "y"])
+        self.assertEqual(st.get_children(), [])
+
+
+class ComprehensionTests(unittest.TestCase):
+    def get_identifiers_recursive(self, st, res):
+        res.extend(st.get_identifiers())
+        for ch in st.get_children():
+            self.get_identifiers_recursive(ch, res)
+
+    def test_loopvar_in_only_one_scope(self):
+        # ensure that the loop variable appears only once in the symtable
+        comps = [
+            "[x for x in [1]]",
+            "{x for x in [1]}",
+            "{x:x*x for x in [1]}",
+        ]
+        for comp in comps:
+            with self.subTest(comp=comp):
+                st = symtable.symtable(comp, "?", "exec")
+                ids = []
+                self.get_identifiers_recursive(st, ids)
+                self.assertEqual(len([x for x in ids if x == 'x']), 1)
 
 
 class CommandLineTest(unittest.TestCase):

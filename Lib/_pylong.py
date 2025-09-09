@@ -348,7 +348,7 @@ def _dec_str_to_int_inner(s, *, GUARD=8):
     # off-by-1 error too low. So we add 2 instead of 1 if chopping lost
     # a fraction > 0.9.
 
-    # The "WASI" test platfrom can complain about `len(s)` if it's too
+    # The "WASI" test platform can complain about `len(s)` if it's too
     # large to fit in its idea of "an index-sized integer".
     lenS = s.__len__()
     log_ub = lenS * _LOG_10_BASE_256
@@ -613,7 +613,7 @@ def int_divmod(a, b):
 #     ctx.prec = max(n.adjusted() - p256.adjusted(), 0) + GUARD
 #     hi = +n * +recip # unary `+` chops to ctx.prec digits
 #
-# we have 3 visible chopped operationa, but there's also a 4th:
+# we have 3 visible chopped operations, but there's also a 4th:
 # precomputing a truncated `recip` as part of setup.
 #
 # So the computed product is exactly equal to the true product times
@@ -703,7 +703,7 @@ def int_divmod(a, b):
 # Enable for brute-force testing of compute_powers(). This takes about a
 # minute, because it tries millions of cases.
 if 0:
-    def consumer(w, limir, need_hi):
+    def consumer(w, limit, need_hi):
         seen = set()
         need = set()
         def inner(w):
@@ -718,7 +718,7 @@ if 0:
             inner(lo)
             inner(hi)
         inner(w)
-        exp = compute_powers(w, 1, limir, need_hi=need_hi)
+        exp = compute_powers(w, 1, limit, need_hi=need_hi)
         assert exp.keys() == need
 
     from itertools import chain

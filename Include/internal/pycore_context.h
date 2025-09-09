@@ -5,9 +5,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _PyFreeListState
-#include "pycore_hamt.h"          // PyHamtObject
-
+#include "pycore_structs.h"
 
 extern PyTypeObject _PyContextTokenMissing_Type;
 

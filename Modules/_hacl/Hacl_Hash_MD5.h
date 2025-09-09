@@ -32,7 +32,7 @@ extern "C" {
 
 #include <string.h>
 #include "python_hacl_namespaces.h"
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 

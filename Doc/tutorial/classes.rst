@@ -276,8 +276,8 @@ definition looked like this::
 then ``MyClass.i`` and ``MyClass.f`` are valid attribute references, returning
 an integer and a function object, respectively. Class attributes can also be
 assigned to, so you can change the value of ``MyClass.i`` by assignment.
-:attr:`!__doc__` is also a valid attribute, returning the docstring belonging to
-the class: ``"A simple example class"``.
+:attr:`~type.__doc__` is also a valid attribute, returning the docstring
+belonging to the class: ``"A simple example class"``.
 
 Class *instantiation* uses function notation.  Just pretend that the class
 object is a parameterless function that returns a new instance of the class.
@@ -325,7 +325,7 @@ Now what can we do with instance objects?  The only operations understood by
 instance objects are attribute references.  There are two kinds of valid
 attribute names: data attributes and methods.
 
-*data attributes* correspond to "instance variables" in Smalltalk, and to "data
+*Data attributes* correspond to "instance variables" in Smalltalk, and to "data
 members" in C++.  Data attributes need not be declared; like local variables,
 they spring into existence when they are first assigned to.  For example, if
 ``x`` is the instance of :class:`!MyClass` created above, the following piece of
@@ -359,7 +359,7 @@ Usually, a method is called right after it is bound::
 
    x.f()
 
-In the :class:`!MyClass` example, this will return the string ``'hello world'``.
+If ``x = MyClass()``, as above, this will return the string ``'hello world'``.
 However, it is not necessary to call a method right away: ``x.f`` is a method
 object, and can be stored away and called at a later time.  For example::
 
@@ -663,6 +663,9 @@ Taken together, these properties make it possible to design reliable and
 extensible classes with multiple inheritance.  For more detail, see
 :ref:`python_2.3_mro`.
 
+In some cases multiple inheritance is not allowed; see :ref:`multiple-inheritance`
+for details.
+
 
 .. _tut-private:
 
@@ -932,6 +935,6 @@ Examples::
 
 .. [#] Except for one thing.  Module objects have a secret read-only attribute called
    :attr:`~object.__dict__` which returns the dictionary used to implement the module's
-   namespace; the name :attr:`~object.__dict__` is an attribute but not a global name.
+   namespace; the name ``__dict__`` is an attribute but not a global name.
    Obviously, using this violates the abstraction of namespace implementation, and
    should be restricted to things like post-mortem debuggers.
