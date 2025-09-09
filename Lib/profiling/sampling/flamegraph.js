@@ -1,99 +1,27 @@
-function initFlamegraphUI() {
-  main();
+const EMBEDDED_DATA = {{FLAMEGRAPH_DATA}};
 
-  const infoBtn = document.getElementById("show-info-btn");
-  const infoPanel = document.getElementById("info-panel");
-  const closeBtn = document.getElementById("close-info-btn");
-  const searchInput = document.getElementById("search-input");
+// Python color palette - cold to hot
+const pythonColors = [
+  "#fff4bf", // Coldest - light yellow (<1%)
+  "#ffec9e", // Cold - yellow (1-3%)
+  "#ffe47d", // Cool - golden yellow (3-6%)
+  "#ffdc5c", // Medium - golden (6-12%)
+  "#ffd43b", // Warm - Python gold (12-18%)
+  "#5592cc", // Hot - light blue (18-35%)
+  "#4584bb", // Very hot - medium blue (35-60%)
+  "#3776ab", // Hottest - Python blue (≥60%)
+];
 
-  if (infoBtn && infoPanel) {
-    infoBtn.addEventListener("click", function () {
-      const isOpen = infoPanel.style.display === "block";
-      infoPanel.style.display = isOpen ? "none" : "block";
-    });
-  }
-  if (closeBtn && infoPanel) {
-    closeBtn.addEventListener("click", function () {
-      infoPanel.style.display = "none";
-    });
-  }
-
-  // Add search functionality - wait for chart to be ready
-  if (searchInput) {
-    let searchTimeout;
-
-    function performSearch() {
-      const searchTerm = searchInput.value.trim();
-
-      // Clear previous search highlighting
-      d3.selectAll("#chart rect")
-        .style("stroke", null)
-        .style("stroke-width", null)
-        .style("opacity", null);
-
-      if (searchTerm && searchTerm.length > 0) {
-        // First, dim all rectangles
-        d3.selectAll("#chart rect")
-          .style("opacity", 0.3);
-
-        // Then highlight and restore opacity for matching nodes
-        let matchCount = 0;
-        d3.selectAll("#chart rect")
-          .each(function(d) {
-            if (d && d.data) {
-              const name = d.data.name || "";
-              const funcname = d.data.funcname || "";
-              const filename = d.data.filename || "";
-
-              const matches = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             funcname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                             filename.toLowerCase().includes(searchTerm.toLowerCase());
-
-              if (matches) {
-                matchCount++;
-                d3.select(this)
-                  .style("opacity", 1)
-                  .style("stroke", "#ff6b35")
-                  .style("stroke-width", "2px")
-                  .style("stroke-dasharray", "3,3");
-              }
-            }
-          });
-
-        // Update search input style based on results
-        if (matchCount > 0) {
-          searchInput.style.borderColor = "rgba(40, 167, 69, 0.8)";
-          searchInput.style.boxShadow = "0 6px 20px rgba(40, 167, 69, 0.2)";
-        } else {
-          searchInput.style.borderColor = "rgba(220, 53, 69, 0.8)";
-          searchInput.style.boxShadow = "0 6px 20px rgba(220, 53, 69, 0.2)";
-        }
-      } else {
-        // Reset search input style
-        searchInput.style.borderColor = "rgba(255, 255, 255, 0.2)";
-        searchInput.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
-      }
-    }
-
-    searchInput.addEventListener("input", function() {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(performSearch, 150);
-    });
-
-    // Make search function globally accessible
-    window.performSearch = performSearch;
-  }
-}
-function main() {
-  const data = {{FLAMEGRAPH_DATA}}
-
+function ensureLibraryLoaded() {
   if (typeof flamegraph === "undefined") {
     console.error("d3-flame-graph library not loaded");
     document.getElementById("chart").innerHTML =
       '<h2 style="text-align: center; color: #d32f2f;">Error: d3-flame-graph library failed to load</h2>';
     throw new Error("d3-flame-graph library failed to load");
   }
+}
 
+function createPythonTooltip(data) {
   const pythonTooltip = flamegraph.tooltip.defaultFlamegraphTooltip();
   pythonTooltip.show = function (d, element) {
     if (!this._tooltip) {
@@ -266,75 +194,140 @@ function main() {
       this._tooltip.transition().duration(200).style("opacity", 0);
     }
   };
+  return pythonTooltip;
+}
 
-  // Store root value globally for color mapping
-  let globalRootValue = data.value;
-  // Store data globally for resize handling
-  window.flamegraphData = data;
-
-  // Create the flamegraph with proper color mapping
+function createFlamegraph(tooltip, rootValue) {
   let chart = flamegraph()
     .width(window.innerWidth - 80)
     .cellHeight(20)
     .transitionDuration(300)
     .minFrameSize(1)
-    .tooltip(pythonTooltip)
+    .tooltip(tooltip)
     .inverted(true)
     .setColorMapper(function (d) {
-      // Use the stored global root value
-      const percentage = d.data.value / globalRootValue;
-
-      // Realistic thresholds for profiling data based on debug output
+      const percentage = d.data.value / rootValue;
       let colorIndex;
-      if (percentage >= 0.6)
-        colorIndex = 7; // Hottest - ≥60% (like your 100%, 80%)
-      else if (percentage >= 0.35)
-        colorIndex = 6; // Very hot - 35-60% (like your 50%)
-      else if (percentage >= 0.18)
-        colorIndex = 5; // Hot - 18-35% (like your 30%, 25%, 20%)
-      else if (percentage >= 0.12)
-        colorIndex = 4; // Warm - 12-18% (like your 15%)
-      else if (percentage >= 0.06)
-        colorIndex = 3; // Medium - 6-12%
-      else if (percentage >= 0.03)
-        colorIndex = 2; // Cool - 3-6% (like your 5%)
-      else if (percentage >= 0.01)
-        colorIndex = 1; // Cold - 1-3%
-      else colorIndex = 0; // Coldest - <1%
-
-      const color = pythonColors[colorIndex];
-
-      return color;
+      if (percentage >= 0.6) colorIndex = 7;
+      else if (percentage >= 0.35) colorIndex = 6;
+      else if (percentage >= 0.18) colorIndex = 5;
+      else if (percentage >= 0.12) colorIndex = 4;
+      else if (percentage >= 0.06) colorIndex = 3;
+      else if (percentage >= 0.03) colorIndex = 2;
+      else if (percentage >= 0.01) colorIndex = 1;
+      else colorIndex = 0; // <1%
+      return pythonColors[colorIndex];
     });
+  return chart;
+}
 
-  // Render the flamegraph
+function renderFlamegraph(chart, data) {
   d3.select("#chart").datum(data).call(chart);
-
-  // Make chart globally accessible for controls
-  window.flamegraphChart = chart;
-
-  // Populate stats cards
+  window.flamegraphChart = chart; // for controls
+  window.flamegraphData = data;   // for resize/search
   populateStats(data);
 }
 
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initFlamegraphUI);
-} else {
-  initFlamegraphUI();
+function attachPanelControls() {
+  const infoBtn = document.getElementById("show-info-btn");
+  const infoPanel = document.getElementById("info-panel");
+  const closeBtn = document.getElementById("close-info-btn");
+  if (infoBtn && infoPanel) {
+    infoBtn.addEventListener("click", function () {
+      const isOpen = infoPanel.style.display === "block";
+      infoPanel.style.display = isOpen ? "none" : "block";
+    });
+  }
+  if (closeBtn && infoPanel) {
+    closeBtn.addEventListener("click", function () {
+      infoPanel.style.display = "none";
+    });
+  }
 }
 
-// Python color palette - cold to hot
-const pythonColors = [
-  "#fff4bf", // Coldest - light yellow (<1%)
-  "#ffec9e", // Cold - yellow (1-3%)
-  "#ffe47d", // Cool - golden yellow (3-6%)
-  "#ffdc5c", // Medium - golden (6-12%)
-  "#ffd43b", // Warm - Python gold (12-18%)
-  "#5592cc", // Hot - light blue (18-35%)
-  "#4584bb", // Very hot - medium blue (35-60%)
-  "#3776ab", // Hottest - Python blue (≥60%)
-];
+function updateSearchHighlight(searchTerm, searchInput) {
+  d3.selectAll("#chart rect")
+    .style("stroke", null)
+    .style("stroke-width", null)
+    .style("opacity", null);
+  if (searchTerm && searchTerm.length > 0) {
+    d3.selectAll("#chart rect").style("opacity", 0.3);
+    let matchCount = 0;
+    d3.selectAll("#chart rect").each(function (d) {
+      if (d && d.data) {
+        const name = d.data.name || "";
+        const funcname = d.data.funcname || "";
+        const filename = d.data.filename || "";
+        const term = searchTerm.toLowerCase();
+        const matches =
+          name.toLowerCase().includes(term) ||
+          funcname.toLowerCase().includes(term) ||
+          filename.toLowerCase().includes(term);
+        if (matches) {
+          matchCount++;
+          d3.select(this)
+            .style("opacity", 1)
+            .style("stroke", "#ff6b35")
+            .style("stroke-width", "2px")
+            .style("stroke-dasharray", "3,3");
+        }
+      }
+    });
+    if (searchInput) {
+      if (matchCount > 0) {
+        searchInput.style.borderColor = "rgba(40, 167, 69, 0.8)";
+        searchInput.style.boxShadow = "0 6px 20px rgba(40, 167, 69, 0.2)";
+      } else {
+        searchInput.style.borderColor = "rgba(220, 53, 69, 0.8)";
+        searchInput.style.boxShadow = "0 6px 20px rgba(220, 53, 69, 0.2)";
+      }
+    }
+  } else if (searchInput) {
+    searchInput.style.borderColor = "rgba(255, 255, 255, 0.2)";
+    searchInput.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
+  }
+}
+
+function initSearchHandlers() {
+  const searchInput = document.getElementById("search-input");
+  if (!searchInput) return;
+  let searchTimeout;
+  function performSearch() {
+    const term = searchInput.value.trim();
+    updateSearchHighlight(term, searchInput);
+  }
+  searchInput.addEventListener("input", function () {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(performSearch, 150);
+  });
+  window.performSearch = performSearch;
+}
+
+function handleResize(chart, data) {
+  window.addEventListener("resize", function () {
+    if (chart && data) {
+      const newWidth = window.innerWidth - 80;
+      chart.width(newWidth);
+      d3.select("#chart").datum(data).call(chart);
+    }
+  });
+}
+
+function initFlamegraph() {
+  ensureLibraryLoaded();
+  const tooltip = createPythonTooltip(EMBEDDED_DATA);
+  const chart = createFlamegraph(tooltip, EMBEDDED_DATA.value);
+  renderFlamegraph(chart, EMBEDDED_DATA);
+  attachPanelControls();
+  initSearchHandlers();
+  handleResize(chart, EMBEDDED_DATA);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initFlamegraph);
+} else {
+  initFlamegraph();
+}
 
 function populateStats(data) {
   const totalSamples = data.value || 0;
@@ -450,13 +443,3 @@ function clearSearch() {
   }
 }
 
-// Handle window resize
-window.addEventListener("resize", function () {
-  if (window.flamegraphChart && window.flamegraphData) {
-    const newWidth = window.innerWidth - 80;
-    window.flamegraphChart.width(newWidth);
-    d3.select("#chart")
-      .datum(window.flamegraphData)
-      .call(window.flamegraphChart);
-  }
-});
