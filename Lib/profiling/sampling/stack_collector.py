@@ -85,8 +85,9 @@ class FlamegraphCollector(StackTraceCollector):
 
         print(f"Flamegraph saved to: {filename}")
 
+    @staticmethod
     @functools.lru_cache(maxsize=None)
-    def _format_function_name(self, func):
+    def _format_function_name(func):
         filename, lineno, funcname = func
 
         if len(filename) > 50:
