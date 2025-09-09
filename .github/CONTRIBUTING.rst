@@ -4,7 +4,7 @@ Contributing to Python
 Build Status
 ------------
 
-- `Buildbot status overview <https://buildbot.python.org/all/#/release_status>`_
+- `Buildbot status overview <https://buildbot.python.org/#/release_status>`_
 
 - `GitHub Actions status <https://github.com/python/cpython/actions/workflows/build.yml>`_
 

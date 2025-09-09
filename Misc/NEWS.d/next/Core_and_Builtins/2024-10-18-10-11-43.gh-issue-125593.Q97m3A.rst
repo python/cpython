@@ -1,1 +1,0 @@
-Use color to highlight error locations in traceback from exception group

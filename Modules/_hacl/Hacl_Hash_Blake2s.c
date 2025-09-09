@@ -25,6 +25,9 @@
 
 #include "internal/Hacl_Hash_Blake2s.h"
 
+#include "Hacl_Streaming_Types.h"
+#include "Hacl_Hash_Blake2b.h"
+#include "internal/Hacl_Streaming_Types.h"
 #include "internal/Hacl_Impl_Blake2_Constants.h"
 #include "internal/Hacl_Hash_Blake2b.h"
 #include "lib_memzero0.h"
@@ -540,13 +543,13 @@ void Hacl_Hash_Blake2s_init(uint32_t *hash, uint32_t kk, uint32_t nn)
     uint32_t x = r;
     os[i] = x;);
   tmp[0U] =
-    (uint32_t)(uint8_t)nn
-    ^ ((uint32_t)(uint8_t)kk << 8U ^ ((uint32_t)p.fanout << 16U ^ (uint32_t)p.depth << 24U));
+    (uint32_t)(uint8_t)nn ^
+      ((uint32_t)(uint8_t)kk << 8U ^ ((uint32_t)p.fanout << 16U ^ (uint32_t)p.depth << 24U));
   tmp[1U] = p.leaf_length;
   tmp[2U] = (uint32_t)p.node_offset;
   tmp[3U] =
-    (uint32_t)(p.node_offset >> 32U)
-    ^ ((uint32_t)p.node_depth << 16U ^ (uint32_t)p.inner_length << 24U);
+    (uint32_t)(p.node_offset >> 32U) ^
+      ((uint32_t)p.node_depth << 16U ^ (uint32_t)p.inner_length << 24U);
   uint32_t tmp0 = tmp[0U];
   uint32_t tmp1 = tmp[1U];
   uint32_t tmp2 = tmp[2U];
@@ -685,124 +688,210 @@ void Hacl_Hash_Blake2s_finish(uint32_t nn, uint8_t *output, uint32_t *hash)
   Lib_Memzero0_memzero(b, 32U, uint8_t, void *);
 }
 
+typedef struct option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t____s
+{
+  Hacl_Streaming_Types_optional tag;
+  Hacl_Hash_Blake2s_block_state_t v;
+}
+option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___;
+
 static Hacl_Hash_Blake2s_state_t
 *malloc_raw(Hacl_Hash_Blake2b_index kk, Hacl_Hash_Blake2b_params_and_key key)
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(64U, sizeof (uint8_t));
-  uint32_t *wv = (uint32_t *)KRML_HOST_CALLOC(16U, sizeof (uint32_t));
-  uint32_t *b = (uint32_t *)KRML_HOST_CALLOC(16U, sizeof (uint32_t));
-  Hacl_Hash_Blake2s_block_state_t
-  block_state =
-    {
-      .fst = kk.key_length,
-      .snd = kk.digest_length,
-      .thd = kk.last_node,
-      .f3 = { .fst = wv, .snd = b }
-    };
-  uint8_t kk10 = kk.key_length;
-  uint32_t ite;
-  if (kk10 != 0U)
+  if (buf == NULL)
   {
-    ite = 64U;
+    return NULL;
+  }
+  uint8_t *buf1 = buf;
+  uint32_t *wv0 = (uint32_t *)KRML_HOST_CALLOC(16U, sizeof (uint32_t));
+  option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___ block_state;
+  if (wv0 == NULL)
+  {
+    block_state =
+      (
+        (option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___){
+          .tag = Hacl_Streaming_Types_None
+        }
+      );
   }
   else
   {
-    ite = 0U;
+    uint32_t *b = (uint32_t *)KRML_HOST_CALLOC(16U, sizeof (uint32_t));
+    if (b == NULL)
+    {
+      KRML_HOST_FREE(wv0);
+      block_state =
+        (
+          (option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___){
+            .tag = Hacl_Streaming_Types_None
+          }
+        );
+    }
+    else
+    {
+      block_state =
+        (
+          (option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___){
+            .tag = Hacl_Streaming_Types_Some,
+            .v = {
+              .fst = kk.key_length,
+              .snd = kk.digest_length,
+              .thd = kk.last_node,
+              .f3 = { .fst = wv0, .snd = b }
+            }
+          }
+        );
+    }
   }
-  Hacl_Hash_Blake2s_state_t
-  s = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)ite };
-  Hacl_Hash_Blake2s_state_t
-  *p = (Hacl_Hash_Blake2s_state_t *)KRML_HOST_MALLOC(sizeof (Hacl_Hash_Blake2s_state_t));
-  p[0U] = s;
-  Hacl_Hash_Blake2b_blake2_params *p1 = key.fst;
-  uint8_t kk1 = p1->key_length;
-  uint8_t nn = p1->digest_length;
-  bool last_node = block_state.thd;
-  Hacl_Hash_Blake2b_index i = { .key_length = kk1, .digest_length = nn, .last_node = last_node };
-  uint32_t *h = block_state.f3.snd;
-  uint32_t kk2 = (uint32_t)i.key_length;
-  uint8_t *k_1 = key.snd;
-  if (!(kk2 == 0U))
+  if (block_state.tag == Hacl_Streaming_Types_None)
   {
-    uint8_t *sub_b = buf + kk2;
-    memset(sub_b, 0U, (64U - kk2) * sizeof (uint8_t));
-    memcpy(buf, k_1, kk2 * sizeof (uint8_t));
+    KRML_HOST_FREE(buf1);
+    return NULL;
   }
-  Hacl_Hash_Blake2b_blake2_params pv = p1[0U];
-  uint32_t tmp[8U] = { 0U };
-  uint32_t *r0 = h;
-  uint32_t *r1 = h + 4U;
-  uint32_t *r2 = h + 8U;
-  uint32_t *r3 = h + 12U;
-  uint32_t iv0 = Hacl_Hash_Blake2b_ivTable_S[0U];
-  uint32_t iv1 = Hacl_Hash_Blake2b_ivTable_S[1U];
-  uint32_t iv2 = Hacl_Hash_Blake2b_ivTable_S[2U];
-  uint32_t iv3 = Hacl_Hash_Blake2b_ivTable_S[3U];
-  uint32_t iv4 = Hacl_Hash_Blake2b_ivTable_S[4U];
-  uint32_t iv5 = Hacl_Hash_Blake2b_ivTable_S[5U];
-  uint32_t iv6 = Hacl_Hash_Blake2b_ivTable_S[6U];
-  uint32_t iv7 = Hacl_Hash_Blake2b_ivTable_S[7U];
-  r2[0U] = iv0;
-  r2[1U] = iv1;
-  r2[2U] = iv2;
-  r2[3U] = iv3;
-  r3[0U] = iv4;
-  r3[1U] = iv5;
-  r3[2U] = iv6;
-  r3[3U] = iv7;
-  KRML_MAYBE_FOR2(i0,
-    0U,
-    2U,
-    1U,
-    uint32_t *os = tmp + 4U;
-    uint8_t *bj = pv.salt + i0 * 4U;
-    uint32_t u = load32_le(bj);
-    uint32_t r4 = u;
-    uint32_t x = r4;
-    os[i0] = x;);
-  KRML_MAYBE_FOR2(i0,
-    0U,
-    2U,
-    1U,
-    uint32_t *os = tmp + 6U;
-    uint8_t *bj = pv.personal + i0 * 4U;
-    uint32_t u = load32_le(bj);
-    uint32_t r4 = u;
-    uint32_t x = r4;
-    os[i0] = x;);
-  tmp[0U] =
-    (uint32_t)pv.digest_length
-    ^ ((uint32_t)pv.key_length << 8U ^ ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
-  tmp[1U] = pv.leaf_length;
-  tmp[2U] = (uint32_t)pv.node_offset;
-  tmp[3U] =
-    (uint32_t)(pv.node_offset >> 32U)
-    ^ ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
-  uint32_t tmp0 = tmp[0U];
-  uint32_t tmp1 = tmp[1U];
-  uint32_t tmp2 = tmp[2U];
-  uint32_t tmp3 = tmp[3U];
-  uint32_t tmp4 = tmp[4U];
-  uint32_t tmp5 = tmp[5U];
-  uint32_t tmp6 = tmp[6U];
-  uint32_t tmp7 = tmp[7U];
-  uint32_t iv0_ = iv0 ^ tmp0;
-  uint32_t iv1_ = iv1 ^ tmp1;
-  uint32_t iv2_ = iv2 ^ tmp2;
-  uint32_t iv3_ = iv3 ^ tmp3;
-  uint32_t iv4_ = iv4 ^ tmp4;
-  uint32_t iv5_ = iv5 ^ tmp5;
-  uint32_t iv6_ = iv6 ^ tmp6;
-  uint32_t iv7_ = iv7 ^ tmp7;
-  r0[0U] = iv0_;
-  r0[1U] = iv1_;
-  r0[2U] = iv2_;
-  r0[3U] = iv3_;
-  r1[0U] = iv4_;
-  r1[1U] = iv5_;
-  r1[2U] = iv6_;
-  r1[3U] = iv7_;
-  return p;
+  if (block_state.tag == Hacl_Streaming_Types_Some)
+  {
+    Hacl_Hash_Blake2s_block_state_t block_state1 = block_state.v;
+    Hacl_Streaming_Types_optional k_ = Hacl_Streaming_Types_Some;
+    switch (k_)
+    {
+      case Hacl_Streaming_Types_None:
+        {
+          return NULL;
+        }
+      case Hacl_Streaming_Types_Some:
+        {
+          uint8_t kk10 = kk.key_length;
+          uint32_t ite;
+          if (kk10 != 0U)
+          {
+            ite = 64U;
+          }
+          else
+          {
+            ite = 0U;
+          }
+          Hacl_Hash_Blake2s_state_t
+          s = { .block_state = block_state1, .buf = buf1, .total_len = (uint64_t)ite };
+          Hacl_Hash_Blake2s_state_t
+          *p = (Hacl_Hash_Blake2s_state_t *)KRML_HOST_MALLOC(sizeof (Hacl_Hash_Blake2s_state_t));
+          if (p != NULL)
+          {
+            p[0U] = s;
+          }
+          if (p == NULL)
+          {
+            uint32_t *b = block_state1.f3.snd;
+            uint32_t *wv = block_state1.f3.fst;
+            KRML_HOST_FREE(wv);
+            KRML_HOST_FREE(b);
+            KRML_HOST_FREE(buf1);
+            return NULL;
+          }
+          Hacl_Hash_Blake2b_blake2_params *p1 = key.fst;
+          uint8_t kk1 = p1->key_length;
+          uint8_t nn = p1->digest_length;
+          bool last_node = block_state1.thd;
+          Hacl_Hash_Blake2b_index
+          i = { .key_length = kk1, .digest_length = nn, .last_node = last_node };
+          uint32_t *h = block_state1.f3.snd;
+          uint32_t kk2 = (uint32_t)i.key_length;
+          uint8_t *k_2 = key.snd;
+          if (!(kk2 == 0U))
+          {
+            uint8_t *sub_b = buf1 + kk2;
+            memset(sub_b, 0U, (64U - kk2) * sizeof (uint8_t));
+            memcpy(buf1, k_2, kk2 * sizeof (uint8_t));
+          }
+          Hacl_Hash_Blake2b_blake2_params pv = p1[0U];
+          uint32_t tmp[8U] = { 0U };
+          uint32_t *r0 = h;
+          uint32_t *r1 = h + 4U;
+          uint32_t *r2 = h + 8U;
+          uint32_t *r3 = h + 12U;
+          uint32_t iv0 = Hacl_Hash_Blake2b_ivTable_S[0U];
+          uint32_t iv1 = Hacl_Hash_Blake2b_ivTable_S[1U];
+          uint32_t iv2 = Hacl_Hash_Blake2b_ivTable_S[2U];
+          uint32_t iv3 = Hacl_Hash_Blake2b_ivTable_S[3U];
+          uint32_t iv4 = Hacl_Hash_Blake2b_ivTable_S[4U];
+          uint32_t iv5 = Hacl_Hash_Blake2b_ivTable_S[5U];
+          uint32_t iv6 = Hacl_Hash_Blake2b_ivTable_S[6U];
+          uint32_t iv7 = Hacl_Hash_Blake2b_ivTable_S[7U];
+          r2[0U] = iv0;
+          r2[1U] = iv1;
+          r2[2U] = iv2;
+          r2[3U] = iv3;
+          r3[0U] = iv4;
+          r3[1U] = iv5;
+          r3[2U] = iv6;
+          r3[3U] = iv7;
+          KRML_MAYBE_FOR2(i0,
+            0U,
+            2U,
+            1U,
+            uint32_t *os = tmp + 4U;
+            uint8_t *bj = pv.salt + i0 * 4U;
+            uint32_t u = load32_le(bj);
+            uint32_t r4 = u;
+            uint32_t x = r4;
+            os[i0] = x;);
+          KRML_MAYBE_FOR2(i0,
+            0U,
+            2U,
+            1U,
+            uint32_t *os = tmp + 6U;
+            uint8_t *bj = pv.personal + i0 * 4U;
+            uint32_t u = load32_le(bj);
+            uint32_t r4 = u;
+            uint32_t x = r4;
+            os[i0] = x;);
+          tmp[0U] =
+            (uint32_t)pv.digest_length ^
+              ((uint32_t)pv.key_length << 8U ^
+                ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
+          tmp[1U] = pv.leaf_length;
+          tmp[2U] = (uint32_t)pv.node_offset;
+          tmp[3U] =
+            (uint32_t)(pv.node_offset >> 32U) ^
+              ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
+          uint32_t tmp0 = tmp[0U];
+          uint32_t tmp1 = tmp[1U];
+          uint32_t tmp2 = tmp[2U];
+          uint32_t tmp3 = tmp[3U];
+          uint32_t tmp4 = tmp[4U];
+          uint32_t tmp5 = tmp[5U];
+          uint32_t tmp6 = tmp[6U];
+          uint32_t tmp7 = tmp[7U];
+          uint32_t iv0_ = iv0 ^ tmp0;
+          uint32_t iv1_ = iv1 ^ tmp1;
+          uint32_t iv2_ = iv2 ^ tmp2;
+          uint32_t iv3_ = iv3 ^ tmp3;
+          uint32_t iv4_ = iv4 ^ tmp4;
+          uint32_t iv5_ = iv5 ^ tmp5;
+          uint32_t iv6_ = iv6 ^ tmp6;
+          uint32_t iv7_ = iv7 ^ tmp7;
+          r0[0U] = iv0_;
+          r0[1U] = iv1_;
+          r0[2U] = iv2_;
+          r0[3U] = iv3_;
+          r1[0U] = iv4_;
+          r1[1U] = iv5_;
+          r1[2U] = iv6_;
+          r1[3U] = iv7_;
+          return p;
+        }
+      default:
+        {
+          KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+          KRML_HOST_EXIT(253U);
+        }
+    }
+  }
+  KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
+    __FILE__,
+    __LINE__,
+    "unreachable (pattern matches are exhaustive in F*)");
+  KRML_HOST_EXIT(255U);
 }
 
 /**
@@ -951,13 +1040,13 @@ static void reset_raw(Hacl_Hash_Blake2s_state_t *state, Hacl_Hash_Blake2b_params
     uint32_t x = r;
     os[i0] = x;);
   tmp[0U] =
-    (uint32_t)pv.digest_length
-    ^ ((uint32_t)pv.key_length << 8U ^ ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
+    (uint32_t)pv.digest_length ^
+      ((uint32_t)pv.key_length << 8U ^ ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
   tmp[1U] = pv.leaf_length;
   tmp[2U] = (uint32_t)pv.node_offset;
   tmp[3U] =
-    (uint32_t)(pv.node_offset >> 32U)
-    ^ ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
+    (uint32_t)(pv.node_offset >> 32U) ^
+      ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
   uint32_t tmp0 = tmp[0U];
   uint32_t tmp1 = tmp[1U];
   uint32_t tmp2 = tmp[2U];
@@ -1011,7 +1100,8 @@ Hacl_Hash_Blake2s_reset_with_key_and_params(
   uint8_t *k
 )
 {
-  index_of_state(s);
+  Hacl_Hash_Blake2b_index i1 = index_of_state(s);
+  KRML_MAYBE_UNUSED_VAR(i1);
   reset_raw(s, ((Hacl_Hash_Blake2b_params_and_key){ .fst = p, .snd = k }));
 }
 
@@ -1090,8 +1180,7 @@ Hacl_Hash_Blake2s_update(Hacl_Hash_Blake2s_state_t *state, uint8_t *chunk, uint3
     uint8_t *buf2 = buf + sz1;
     memcpy(buf2, chunk, chunk_len * sizeof (uint8_t));
     uint64_t total_len2 = total_len1 + (uint64_t)chunk_len;
-    *state
-    =
+    *state =
       (
         (Hacl_Hash_Blake2s_state_t){
           .block_state = block_state1,
@@ -1145,8 +1234,7 @@ Hacl_Hash_Blake2s_update(Hacl_Hash_Blake2s_state_t *state, uint8_t *chunk, uint3
     Hacl_Hash_Blake2s_update_multi(data1_len, wv, hash, total_len1, data1, nb);
     uint8_t *dst = buf;
     memcpy(dst, data2, data2_len * sizeof (uint8_t));
-    *state
-    =
+    *state =
       (
         (Hacl_Hash_Blake2s_state_t){
           .block_state = block_state1,
@@ -1176,8 +1264,7 @@ Hacl_Hash_Blake2s_update(Hacl_Hash_Blake2s_state_t *state, uint8_t *chunk, uint3
     uint8_t *buf2 = buf0 + sz10;
     memcpy(buf2, chunk1, diff * sizeof (uint8_t));
     uint64_t total_len2 = total_len10 + (uint64_t)diff;
-    *state
-    =
+    *state =
       (
         (Hacl_Hash_Blake2s_state_t){
           .block_state = block_state10,
@@ -1229,8 +1316,7 @@ Hacl_Hash_Blake2s_update(Hacl_Hash_Blake2s_state_t *state, uint8_t *chunk, uint3
     Hacl_Hash_Blake2s_update_multi(data1_len, wv, hash, total_len1, data1, nb);
     uint8_t *dst = buf;
     memcpy(dst, data2, data2_len * sizeof (uint8_t));
-    *state
-    =
+    *state =
       (
         (Hacl_Hash_Blake2s_state_t){
           .block_state = block_state1,
@@ -1361,26 +1447,102 @@ Hacl_Hash_Blake2s_state_t *Hacl_Hash_Blake2s_copy(Hacl_Hash_Blake2s_state_t *sta
   uint8_t kk1 = block_state0.fst;
   Hacl_Hash_Blake2b_index i = { .key_length = kk1, .digest_length = nn, .last_node = last_node };
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(64U, sizeof (uint8_t));
+  if (buf == NULL)
+  {
+    return NULL;
+  }
   memcpy(buf, buf0, 64U * sizeof (uint8_t));
-  uint32_t *wv = (uint32_t *)KRML_HOST_CALLOC(16U, sizeof (uint32_t));
-  uint32_t *b = (uint32_t *)KRML_HOST_CALLOC(16U, sizeof (uint32_t));
-  Hacl_Hash_Blake2s_block_state_t
-  block_state =
+  uint32_t *wv0 = (uint32_t *)KRML_HOST_CALLOC(16U, sizeof (uint32_t));
+  option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___ block_state;
+  if (wv0 == NULL)
+  {
+    block_state =
+      (
+        (option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___){
+          .tag = Hacl_Streaming_Types_None
+        }
+      );
+  }
+  else
+  {
+    uint32_t *b = (uint32_t *)KRML_HOST_CALLOC(16U, sizeof (uint32_t));
+    if (b == NULL)
     {
-      .fst = i.key_length,
-      .snd = i.digest_length,
-      .thd = i.last_node,
-      .f3 = { .fst = wv, .snd = b }
-    };
-  uint32_t *src_b = block_state0.f3.snd;
-  uint32_t *dst_b = block_state.f3.snd;
-  memcpy(dst_b, src_b, 16U * sizeof (uint32_t));
-  Hacl_Hash_Blake2s_state_t
-  s = { .block_state = block_state, .buf = buf, .total_len = total_len0 };
-  Hacl_Hash_Blake2s_state_t
-  *p = (Hacl_Hash_Blake2s_state_t *)KRML_HOST_MALLOC(sizeof (Hacl_Hash_Blake2s_state_t));
-  p[0U] = s;
-  return p;
+      KRML_HOST_FREE(wv0);
+      block_state =
+        (
+          (option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___){
+            .tag = Hacl_Streaming_Types_None
+          }
+        );
+    }
+    else
+    {
+      block_state =
+        (
+          (option___uint8_t___uint8_t___bool_____uint32_t_____uint32_t___){
+            .tag = Hacl_Streaming_Types_Some,
+            .v = {
+              .fst = i.key_length,
+              .snd = i.digest_length,
+              .thd = i.last_node,
+              .f3 = { .fst = wv0, .snd = b }
+            }
+          }
+        );
+    }
+  }
+  if (block_state.tag == Hacl_Streaming_Types_None)
+  {
+    KRML_HOST_FREE(buf);
+    return NULL;
+  }
+  if (block_state.tag == Hacl_Streaming_Types_Some)
+  {
+    Hacl_Hash_Blake2s_block_state_t block_state1 = block_state.v;
+    uint32_t *src_b = block_state0.f3.snd;
+    uint32_t *dst_b = block_state1.f3.snd;
+    memcpy(dst_b, src_b, 16U * sizeof (uint32_t));
+    Hacl_Streaming_Types_optional k_ = Hacl_Streaming_Types_Some;
+    switch (k_)
+    {
+      case Hacl_Streaming_Types_None:
+        {
+          return NULL;
+        }
+      case Hacl_Streaming_Types_Some:
+        {
+          Hacl_Hash_Blake2s_state_t
+          s = { .block_state = block_state1, .buf = buf, .total_len = total_len0 };
+          Hacl_Hash_Blake2s_state_t
+          *p = (Hacl_Hash_Blake2s_state_t *)KRML_HOST_MALLOC(sizeof (Hacl_Hash_Blake2s_state_t));
+          if (p != NULL)
+          {
+            p[0U] = s;
+          }
+          if (p == NULL)
+          {
+            uint32_t *b = block_state1.f3.snd;
+            uint32_t *wv = block_state1.f3.fst;
+            KRML_HOST_FREE(wv);
+            KRML_HOST_FREE(b);
+            KRML_HOST_FREE(buf);
+            return NULL;
+          }
+          return p;
+        }
+      default:
+        {
+          KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+          KRML_HOST_EXIT(253U);
+        }
+    }
+  }
+  KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
+    __FILE__,
+    __LINE__,
+    "unreachable (pattern matches are exhaustive in F*)");
+  KRML_HOST_EXIT(255U);
 }
 
 /**
@@ -1471,16 +1633,14 @@ Hacl_Hash_Blake2s_hash_with_key_and_params(
     uint32_t x = r;
     os[i] = x;);
   tmp[0U] =
-    (uint32_t)params.digest_length
-    ^
-      ((uint32_t)params.key_length
-      << 8U
-      ^ ((uint32_t)params.fanout << 16U ^ (uint32_t)params.depth << 24U));
+    (uint32_t)params.digest_length ^
+      ((uint32_t)params.key_length << 8U ^
+        ((uint32_t)params.fanout << 16U ^ (uint32_t)params.depth << 24U));
   tmp[1U] = params.leaf_length;
   tmp[2U] = (uint32_t)params.node_offset;
   tmp[3U] =
-    (uint32_t)(params.node_offset >> 32U)
-    ^ ((uint32_t)params.node_depth << 16U ^ (uint32_t)params.inner_length << 24U);
+    (uint32_t)(params.node_offset >> 32U) ^
+      ((uint32_t)params.node_depth << 16U ^ (uint32_t)params.inner_length << 24U);
   uint32_t tmp0 = tmp[0U];
   uint32_t tmp1 = tmp[1U];
   uint32_t tmp2 = tmp[2U];

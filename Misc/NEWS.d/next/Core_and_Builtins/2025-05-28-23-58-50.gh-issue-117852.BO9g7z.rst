@@ -1,0 +1,1 @@
+Fix argument checking of :meth:`~agen.athrow`.

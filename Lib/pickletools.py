@@ -312,7 +312,7 @@ uint8 = ArgumentDescriptor(
             doc="Eight-byte unsigned integer, little-endian.")
 
 
-def read_stringnl(f, decode=True, stripquotes=True):
+def read_stringnl(f, decode=True, stripquotes=True, *, encoding='latin-1'):
     r"""
     >>> import io
     >>> read_stringnl(io.BytesIO(b"'abcd'\nefg\n"))
@@ -356,7 +356,7 @@ def read_stringnl(f, decode=True, stripquotes=True):
             raise ValueError("no string quotes around %r" % data)
 
     if decode:
-        data = codecs.escape_decode(data)[0].decode("ascii")
+        data = codecs.escape_decode(data)[0].decode(encoding)
     return data
 
 stringnl = ArgumentDescriptor(
@@ -370,7 +370,7 @@ stringnl = ArgumentDescriptor(
                    """)
 
 def read_stringnl_noescape(f):
-    return read_stringnl(f, stripquotes=False)
+    return read_stringnl(f, stripquotes=False, encoding='utf-8')
 
 stringnl_noescape = ArgumentDescriptor(
                         name='stringnl_noescape',
@@ -2509,7 +2509,10 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
             # make a mild effort to align arguments
             line += ' ' * (10 - len(opcode.name))
             if arg is not None:
-                line += ' ' + repr(arg)
+                if opcode.name in ("STRING", "BINSTRING", "SHORT_BINSTRING"):
+                    line += ' ' + ascii(arg)
+                else:
+                    line += ' ' + repr(arg)
             if markmsg:
                 line += ' ' + markmsg
         if annotate:
@@ -2835,17 +2838,16 @@ __test__ = {'disassembler_test': _dis_test,
             'disassembler_memo_test': _memo_test,
            }
 
-def _test():
-    import doctest
-    return doctest.testmod()
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(
-        description='disassemble one or more pickle files')
+        description='disassemble one or more pickle files',
+        color=True,
+    )
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
+        nargs='+', help='the pickle file')
     parser.add_argument(
         '-o', '--output',
         help='the file where the output should be written')
@@ -2862,36 +2864,24 @@ if __name__ == "__main__":
         '-p', '--preamble', default="==> {name} <==",
         help='if more than one pickle file is specified, print this before'
         ' each disassembly')
-    parser.add_argument(
-        '-t', '--test', action='store_true',
-        help='run self-test suite')
-    parser.add_argument(
-        '-v', action='store_true',
-        help='run verbosely; only affects self-test run')
     args = parser.parse_args()
-    if args.test:
-        _test()
+    annotate = 30 if args.annotate else 0
+    memo = {} if args.memo else None
+    if args.output is None:
+        output = sys.stdout
     else:
-        if not args.pickle_file:
-            parser.print_help()
-        else:
-            annotate = 30 if args.annotate else 0
-            memo = {} if args.memo else None
-            if args.output is None:
-                output = sys.stdout
+        output = open(args.output, 'w')
+    try:
+        for arg in args.pickle_file:
+            if len(args.pickle_file) > 1:
+                name = '<stdin>' if arg == '-' else arg
+                preamble = args.preamble.format(name=name)
+                output.write(preamble + '\n')
+            if arg == '-':
+                dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
             else:
-                output = open(args.output, 'w')
-            try:
-                for arg in args.pickle_file:
-                    if len(args.pickle_file) > 1:
-                        name = '<stdin>' if arg == '-' else arg
-                        preamble = args.preamble.format(name=name)
-                        output.write(preamble + '\n')
-                    if arg == '-':
-                        dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
-                    else:
-                        with open(arg, 'rb') as f:
-                            dis(f, output, memo, args.indentlevel, annotate)
-            finally:
-                if output is not sys.stdout:
-                    output.close()
+                with open(arg, 'rb') as f:
+                    dis(f, output, memo, args.indentlevel, annotate)
+    finally:
+        if output is not sys.stdout:
+            output.close()

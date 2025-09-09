@@ -12,9 +12,7 @@ PyDoc_STRVAR(_csv_list_dialects__doc__,
 "list_dialects($module, /)\n"
 "--\n"
 "\n"
-"Return a list of all known dialect names.\n"
-"\n"
-"    names = csv.list_dialects()");
+"Return a list of all known dialect names.");
 
 #define _CSV_LIST_DIALECTS_METHODDEF    \
     {"list_dialects", (PyCFunction)_csv_list_dialects, METH_NOARGS, _csv_list_dialects__doc__},
@@ -32,9 +30,7 @@ PyDoc_STRVAR(_csv_unregister_dialect__doc__,
 "unregister_dialect($module, /, name)\n"
 "--\n"
 "\n"
-"Delete the name/dialect mapping associated with a string name.\n"
-"\n"
-"    csv.unregister_dialect(name)");
+"Delete the name/dialect mapping associated with a string name.");
 
 #define _CSV_UNREGISTER_DIALECT_METHODDEF    \
     {"unregister_dialect", _PyCFunction_CAST(_csv_unregister_dialect), METH_FASTCALL|METH_KEYWORDS, _csv_unregister_dialect__doc__},
@@ -52,9 +48,11 @@ _csv_unregister_dialect(PyObject *module, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -74,7 +72,8 @@ _csv_unregister_dialect(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *argsbuf[1];
     PyObject *name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -89,9 +88,7 @@ PyDoc_STRVAR(_csv_get_dialect__doc__,
 "get_dialect($module, /, name)\n"
 "--\n"
 "\n"
-"Return the dialect instance associated with name.\n"
-"\n"
-"    dialect = csv.get_dialect(name)");
+"Return the dialect instance associated with name.");
 
 #define _CSV_GET_DIALECT_METHODDEF    \
     {"get_dialect", _PyCFunction_CAST(_csv_get_dialect), METH_FASTCALL|METH_KEYWORDS, _csv_get_dialect__doc__},
@@ -109,9 +106,11 @@ _csv_get_dialect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), },
     };
     #undef NUM_KEYWORDS
@@ -131,7 +130,8 @@ _csv_get_dialect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *argsbuf[1];
     PyObject *name;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -147,8 +147,6 @@ PyDoc_STRVAR(_csv_field_size_limit__doc__,
 "--\n"
 "\n"
 "Sets an upper limit on parsed fields.\n"
-"\n"
-"    csv.field_size_limit([limit])\n"
 "\n"
 "Returns old limit. If limit is not given, no new limit is set and\n"
 "the old limit is returned");
@@ -169,9 +167,11 @@ _csv_field_size_limit(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(new_limit), },
     };
     #undef NUM_KEYWORDS
@@ -192,7 +192,8 @@ _csv_field_size_limit(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *new_limit = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -206,4 +207,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9ec59717f5414d8b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ed77cb69fad9f3b4 input=a9049054013a1b77]*/

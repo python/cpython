@@ -90,9 +90,22 @@ known_alt_digits = {
     'bn_IN': (100, {0: '\u09e6', 10: '\u09e7\u09e6', 99: '\u09ef\u09ef'}),
 }
 
+known_era = {
+    'C': (0, ''),
+    'en_US': (0, ''),
+    'ja_JP': (11, '+:1:2019/05/01:2019/12/31:令和:%EC元年'),
+    'zh_TW': (3, '+:1:1912/01/01:1912/12/31:民國:%EC元年'),
+    'th_TW': (1, '+:1:-543/01/01:+*:พ.ศ.:%EC %Ey'),
+}
+
 if sys.platform == 'win32':
     # ps_AF doesn't work on Windows: see bpo-38324 (msg361830)
     del known_numerics['ps_AF']
+
+if sys.platform == 'sunos5':
+    # On Solaris, Japanese ERAs start with the year 1927,
+    # and thus there's less of them.
+    known_era['ja_JP'] = (5, '+:1:2019/05/01:2019/12/31:令和:%EC元年')
 
 class _LocaleTests(unittest.TestCase):
 
@@ -124,10 +137,7 @@ class _LocaleTests(unittest.TestCase):
             return True
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_lc_numeric_nl_langinfo(self):
         # Test nl_langinfo against known values
         tested = False
@@ -145,10 +155,7 @@ class _LocaleTests(unittest.TestCase):
         if not tested:
             self.skipTest('no suitable locales')
 
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_lc_numeric_localeconv(self):
         # Test localeconv against known values
         tested = False
@@ -197,10 +204,7 @@ class _LocaleTests(unittest.TestCase):
 
     @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
     @unittest.skipUnless(hasattr(locale, 'ALT_DIGITS'), "requires locale.ALT_DIGITS")
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     def test_alt_digits_nl_langinfo(self):
         # Test nl_langinfo(ALT_DIGITS)
         tested = False
@@ -226,6 +230,40 @@ class _LocaleTests(unittest.TestCase):
                         self.assertEqual(len(alt_digits), count, alt_digits)
                         for i in samples:
                             self.assertEqual(alt_digits[i], samples[i])
+                    tested = True
+        if not tested:
+            self.skipTest('no suitable locales')
+
+    @unittest.skipUnless(nl_langinfo, "nl_langinfo is not available")
+    @unittest.skipUnless(hasattr(locale, 'ERA'), "requires locale.ERA")
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
+    def test_era_nl_langinfo(self):
+        # Test nl_langinfo(ERA)
+        tested = False
+        for loc in candidate_locales:
+            with self.subTest(locale=loc):
+                try:
+                    setlocale(LC_TIME, loc)
+                except Error:
+                    self.skipTest(f'no locale {loc!r}')
+                    continue
+
+                with self.subTest(locale=loc):
+                    era = nl_langinfo(locale.ERA)
+                    self.assertIsInstance(era, str)
+                    if era:
+                        self.assertEqual(era.count(':'), (era.count(';') + 1) * 5, era)
+
+                    loc1 = loc.split('.', 1)[0]
+                    if loc1 in known_era:
+                        count, sample = known_era[loc1]
+                        if count:
+                            if not era:
+                                self.skipTest(f'ERA is not set for locale {loc!r} on this platform')
+                            self.assertGreaterEqual(era.count(';') + 1, count)
+                            self.assertIn(sample, era)
+                        else:
+                            self.assertEqual(era, '')
                     tested = True
         if not tested:
             self.skipTest('no suitable locales')
