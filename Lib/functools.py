@@ -474,7 +474,7 @@ class partialmethod:
             # Unknown descriptor
             self.method = _UNKNOWN_DESCRIPTOR
 
-    def _make_method(self):
+    def __make_method(self):
         args = self.args
         func = self.func
 
@@ -519,7 +519,7 @@ class partialmethod:
             return result
         if method is None:
             # Cache method
-            self.method = method = self._make_method()
+            self.method = method = self.__make_method()
         return method.__get__(obj, cls)
 
     @property
