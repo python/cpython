@@ -2686,6 +2686,13 @@ Invalid expressions in type scopes:
     >>> f(x = 5, *:)
     Traceback (most recent call last):
     SyntaxError: Invalid star expression
+
+Invalid assignment expressions with parenthesized targets:
+
+    >>> ((a) := 1)
+    Traceback (most recent call last):
+       ...
+    SyntaxError: cannot parenthesize target name in assignment expression
 """
 
 import re

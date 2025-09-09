@@ -21587,6 +21587,7 @@ invalid_expression_rule(Parser *p)
 }
 
 // invalid_named_expression:
+//     | '(' NAME ')' ':=' expression
 //     | expression ':=' expression
 //     | NAME '=' bitwise_or !('=' | ':=')
 //     | !(list | tuple | genexp | 'True' | 'None' | 'False') bitwise_or '=' bitwise_or !('=' | ':=')
@@ -21606,6 +21607,42 @@ invalid_named_expression_rule(Parser *p)
         return _res;
     }
     int _mark = p->mark;
+    { // '(' NAME ')' ':=' expression
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> invalid_named_expression[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'(' NAME ')' ':=' expression"));
+        Token * _literal;
+        Token * _literal_1;
+        Token * _literal_2;
+        expr_ty a;
+        expr_ty expression_var;
+        if (
+            (_literal = _PyPegen_expect_token(p, 7))  // token='('
+            &&
+            (a = _PyPegen_name_token(p))  // NAME
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 8))  // token=')'
+            &&
+            (_literal_2 = _PyPegen_expect_token(p, 53))  // token=':='
+            &&
+            (expression_var = expression_rule(p))  // expression
+        )
+        {
+            D(fprintf(stderr, "%*c+ invalid_named_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'(' NAME ')' ':=' expression"));
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot parenthesize target name in assignment expression" );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s invalid_named_expression[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'(' NAME ')' ':=' expression"));
+    }
     { // expression ':=' expression
         if (p->error_indicator) {
             p->level--;
