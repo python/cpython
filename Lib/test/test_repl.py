@@ -120,9 +120,12 @@ class TestInteractiveInterpreter(unittest.TestCase):
             p.stdin.write(user_input)
         output = kill_python(p)
 
-        self.assertIn(p.returncode, (0, 1, 120))
+        # it can exit with MemoryError or Fatal Python error when --with-trace-refs
+        # it return -6 here
+        self.assertIn(p.returncode, (0, 1, 120, -6))
         self.assertGreater(len(output), 0)  # At minimum, should not hang
-        self.assertIn("MemoryError", output)
+        # Can result in either MemoryError exception or fatal error
+        self.assertTrue("MemoryError" in output or "Fatal Python error" in output)
 
     @cpython_only
     def test_multiline_string_parsing(self):

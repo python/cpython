@@ -912,13 +912,6 @@ exception_unwind:
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
                 PyObject *lasti = PyLong_FromLong(frame_lasti);
                 if (lasti == NULL) {
-                    // gh-134163: If we can't allocate memory for lasti during exception handling,
-                    // this likely means we're in a severe memory shortage situation.
-                    if (!_PyErr_Occurred(tstate)) {
-                        // PyLong_FromLong should have set an exception
-                        // like _testcapi.set_nomemory(0), it might not. Ensure one is set.
-                        PyErr_NoMemory();
-                    }
                     // Instead of going back to exception_unwind (which would cause
                     // infinite recursion), directly exit to let the original exception
                     // propagate up and hopefully be handled at a higher level.
