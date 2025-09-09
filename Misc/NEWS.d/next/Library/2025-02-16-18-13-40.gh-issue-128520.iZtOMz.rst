@@ -1,5 +1,0 @@
-Apply type conversion consistently in :class:`pathlib.PurePath` and
-:class:`~pathlib.Path` methods can accept a path object as an argument, such
-as :meth:`~pathlib.PurePath.match` and :meth:`~pathlib.Path.rename`. The
-argument is now converted to path object if it lacks a
-:meth:`~pathlib.PurePath.with_segments` attribute, and not otherwise.

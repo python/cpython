@@ -1,3 +1,0 @@
-Fixed failure to raise :exc:`TypeError` in :meth:`inspect.Signature.bind`
-for positional-only arguments provided by keyword when a variadic keyword
-argument (e.g. ``**kwargs``) is present.

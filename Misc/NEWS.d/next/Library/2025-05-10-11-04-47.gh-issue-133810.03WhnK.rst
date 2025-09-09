@@ -1,0 +1,3 @@
+Remove :class:`!http.server.CGIHTTPRequestHandler` and ``--cgi`` flag from the
+:program:`python -m http.server` command-line interface. They were
+deprecated in Python 3.13. Patch by Bénédikt Tran.

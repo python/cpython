@@ -7,6 +7,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_parking_lot.h"
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
@@ -221,9 +222,7 @@ simplequeue_dealloc(PyObject *op)
 
     PyObject_GC_UnTrack(self);
     (void)simplequeue_clear(op);
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -272,8 +271,10 @@ typedef struct {
 } HandoffData;
 
 static void
-maybe_handoff_item(HandoffData *data, PyObject **item, int has_more_waiters)
+maybe_handoff_item(void *arg, void *park_arg, int has_more_waiters)
 {
+    HandoffData *data = (HandoffData*)arg;
+    PyObject **item = (PyObject**)park_arg;
     if (item == NULL) {
         // No threads were waiting
         data->handed_off = false;
@@ -313,7 +314,7 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
     if (self->has_threads_waiting) {
         // Try to hand the item off directly if there are threads waiting
         _PyParkingLot_Unpark(&self->has_threads_waiting,
-                             (_Py_unpark_fn_t *)maybe_handoff_item, &data);
+                             maybe_handoff_item, &data);
     }
     if (!data.handed_off) {
         if (RingBuf_Put(&self->buf, item) < 0) {

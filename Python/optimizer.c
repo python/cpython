@@ -6,11 +6,16 @@
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
+#include "pycore_code.h"            // _Py_GetBaseCodeUnit
+#include "pycore_function.h"        // _PyFunction_LookupByVersion()
+#include "pycore_interpframe.h"
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tuple.h" // _PyTuple_FromArraySteal
+#include "pycore_unicodeobject.h" // _PyUnicode_FromASCII
 #include "pycore_uop_ids.h"
 #include "pycore_jit.h"
 #include <stdbool.h>
@@ -22,6 +27,8 @@
 #undef NEED_OPCODE_METADATA
 
 #define MAX_EXECUTORS_SIZE 256
+
+#define _PyExecutorObject_CAST(op)  ((_PyExecutorObject *)(op))
 
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
@@ -102,7 +109,8 @@ uop_optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *instr,
 /* Returns 1 if optimized, 0 if not optimized, and -1 for an error.
  * If optimized, *executor_ptr contains a new reference to the executor
  */
-int
+// gh-137573: inlining this function causes stack overflows
+Py_NO_INLINE int
 _PyOptimizer_Optimize(
     _PyInterpreterFrame *frame, _Py_CODEUNIT *start,
     _PyExecutorObject **executor_ptr, int chain_depth)
@@ -194,18 +202,77 @@ get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
-static int executor_clear(_PyExecutorObject *executor);
+static int executor_clear(PyObject *executor);
 static void unlink_executor(_PyExecutorObject *executor);
 
-static void
-uop_dealloc(_PyExecutorObject *self) {
-    _PyObject_GC_UNTRACK(self);
-    assert(self->vm_data.code == NULL);
-    unlink_executor(self);
+
+void
+_PyExecutor_Free(_PyExecutorObject *self)
+{
 #ifdef _Py_JIT
     _PyJIT_Free(self);
 #endif
     PyObject_GC_Del(self);
+}
+
+void
+_Py_ClearExecutorDeletionList(PyInterpreterState *interp)
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    HEAD_LOCK(runtime);
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    HEAD_UNLOCK(runtime);
+    while (ts) {
+        _PyExecutorObject *current = (_PyExecutorObject *)ts->current_executor;
+        if (current != NULL) {
+            /* Anything in this list will be unlinked, so we can reuse the
+             * linked field as a reachability marker. */
+            current->vm_data.linked = 1;
+        }
+        HEAD_LOCK(runtime);
+        ts = PyThreadState_Next(ts);
+        HEAD_UNLOCK(runtime);
+    }
+    _PyExecutorObject **prev_to_next_ptr = &interp->executor_deletion_list_head;
+    _PyExecutorObject *exec = *prev_to_next_ptr;
+    while (exec != NULL) {
+        if (exec->vm_data.linked) {
+            // This executor is currently executing
+            exec->vm_data.linked = 0;
+            prev_to_next_ptr = &exec->vm_data.links.next;
+        }
+        else {
+            *prev_to_next_ptr = exec->vm_data.links.next;
+            _PyExecutor_Free(exec);
+        }
+        exec = *prev_to_next_ptr;
+    }
+    interp->executor_deletion_list_remaining_capacity = EXECUTOR_DELETE_LIST_MAX;
+}
+
+static void
+add_to_pending_deletion_list(_PyExecutorObject *self)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    self->vm_data.links.next = interp->executor_deletion_list_head;
+    interp->executor_deletion_list_head = self;
+    if (interp->executor_deletion_list_remaining_capacity > 0) {
+        interp->executor_deletion_list_remaining_capacity--;
+    }
+    else {
+        _Py_ClearExecutorDeletionList(interp);
+    }
+}
+
+static void
+uop_dealloc(PyObject *op) {
+    _PyExecutorObject *self = _PyExecutorObject_CAST(op);
+    _PyObject_GC_UNTRACK(self);
+    assert(self->vm_data.code == NULL);
+    unlink_executor(self);
+    // Once unlinked it becomes impossible to invalidate an executor, so do it here.
+    self->vm_data.valid = 0;
+    add_to_pending_deletion_list(self);
 }
 
 const char *
@@ -230,16 +297,18 @@ _PyUOpPrint(const _PyUOpInstruction *uop)
     }
     switch(uop->format) {
         case UOP_FORMAT_TARGET:
-            printf(" (%d, target=%d, operand=%#" PRIx64,
+            printf(" (%d, target=%d, operand0=%#" PRIx64 ", operand1=%#" PRIx64,
                 uop->oparg,
                 uop->target,
-                (uint64_t)uop->operand0);
+                (uint64_t)uop->operand0,
+                (uint64_t)uop->operand1);
             break;
         case UOP_FORMAT_JUMP:
-            printf(" (%d, jump_target=%d, operand=%#" PRIx64,
+            printf(" (%d, jump_target=%d, operand0=%#" PRIx64 ", operand1=%#" PRIx64,
                 uop->oparg,
                 uop->jump_target,
-                (uint64_t)uop->operand0);
+                (uint64_t)uop->operand0,
+                (uint64_t)uop->operand1);
             break;
         default:
             printf(" (%d, Unknown format)", uop->oparg);
@@ -253,15 +322,17 @@ _PyUOpPrint(const _PyUOpInstruction *uop)
 #endif
 
 static Py_ssize_t
-uop_len(_PyExecutorObject *self)
+uop_len(PyObject *op)
 {
+    _PyExecutorObject *self = _PyExecutorObject_CAST(op);
     return self->code_size;
 }
 
 static PyObject *
-uop_item(_PyExecutorObject *self, Py_ssize_t index)
+uop_item(PyObject *op, Py_ssize_t index)
 {
-    Py_ssize_t len = uop_len(self);
+    _PyExecutorObject *self = _PyExecutorObject_CAST(op);
+    Py_ssize_t len = uop_len(op);
     if (index < 0 || index >= len) {
         PyErr_SetNone(PyExc_IndexError);
         return NULL;
@@ -297,14 +368,14 @@ uop_item(_PyExecutorObject *self, Py_ssize_t index)
 }
 
 PySequenceMethods uop_as_sequence = {
-    .sq_length = (lenfunc)uop_len,
-    .sq_item = (ssizeargfunc)uop_item,
+    .sq_length = uop_len,
+    .sq_item = uop_item,
 };
 
 static int
 executor_traverse(PyObject *o, visitproc visit, void *arg)
 {
-    _PyExecutorObject *executor = (_PyExecutorObject *)o;
+    _PyExecutorObject *executor = _PyExecutorObject_CAST(o);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_VISIT(executor->exits[i].executor);
     }
@@ -318,7 +389,7 @@ get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyErr_SetString(PyExc_RuntimeError, "JIT support not enabled.");
     return NULL;
 #else
-    _PyExecutorObject *executor = (_PyExecutorObject *)self;
+    _PyExecutorObject *executor = _PyExecutorObject_CAST(self);
     if (executor->jit_code == NULL || executor->jit_size == 0) {
         Py_RETURN_NONE;
     }
@@ -346,11 +417,11 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_basicsize = offsetof(_PyExecutorObject, exits),
     .tp_itemsize = 1,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
-    .tp_dealloc = (destructor)uop_dealloc,
+    .tp_dealloc = uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
     .tp_methods = uop_executor_methods,
     .tp_traverse = executor_traverse,
-    .tp_clear = (inquiry)executor_clear,
+    .tp_clear = executor_clear,
     .tp_is_gc = executor_is_gc,
 };
 
@@ -361,6 +432,8 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
+    [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
+    [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
 };
 
 static const uint8_t
@@ -518,9 +591,8 @@ translate_bytecode_to_trace(
 
     for (;;) {
         target = INSTR_IP(instr, code);
-        // Need space for _DEOPT
-        max_length--;
-
+        // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
+        max_length-=2;
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
 
@@ -556,13 +628,11 @@ translate_bytecode_to_trace(
             goto done;
         }
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
-        if (OPCODE_HAS_NO_SAVE_IP(opcode)) {
-            RESERVE_RAW(2, "_CHECK_VALIDITY");
-            ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
-        }
-        else {
-            RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
-            ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
+        RESERVE_RAW(2, "_CHECK_VALIDITY");
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+        if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
+            RESERVE_RAW(2, "_SET_IP");
+            ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)instr, target);
         }
 
         /* Special case the first instruction,
@@ -682,7 +752,7 @@ translate_bytecode_to_trace(
                         // Add one to account for the actual opcode/oparg pair:
                         int offset = expansion->uops[i].offset + 1;
                         switch (expansion->uops[i].size) {
-                            case OPARG_FULL:
+                            case OPARG_SIMPLE:
                                 assert(opcode != JUMP_BACKWARD_NO_INTERRUPT && opcode != JUMP_BACKWARD);
                                 break;
                             case OPARG_CACHE_1:
@@ -707,15 +777,33 @@ translate_bytecode_to_trace(
                             case OPARG_REPLACED:
                                 uop = _PyUOp_Replacements[uop];
                                 assert(uop != 0);
+                                uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + (oparg > 255);
+                                if (uop == _TIER2_RESUME_CHECK) {
+                                    target = next_inst;
+                                }
 #ifdef Py_DEBUG
-                                {
-                                    uint32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + (oparg > 255);
+                                else {
                                     uint32_t jump_target = next_inst + oparg;
                                     assert(_Py_GetBaseCodeUnit(code, jump_target).op.code == END_FOR);
                                     assert(_Py_GetBaseCodeUnit(code, jump_target+1).op.code == POP_ITER);
                                 }
 #endif
                                 break;
+                            case OPERAND1_1:
+                                assert(trace[trace_length-1].opcode == uop);
+                                operand = read_u16(&instr[offset].cache);
+                                trace[trace_length-1].operand1 = operand;
+                                continue;
+                            case OPERAND1_2:
+                                assert(trace[trace_length-1].opcode == uop);
+                                operand = read_u32(&instr[offset].cache);
+                                trace[trace_length-1].operand1 = operand;
+                                continue;
+                            case OPERAND1_4:
+                                assert(trace[trace_length-1].opcode == uop);
+                                operand = read_u64(&instr[offset].cache);
+                                trace[trace_length-1].operand1 = operand;
+                                continue;
                             default:
                                 fprintf(stderr,
                                         "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
@@ -959,9 +1047,15 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
         _PyUOpInstruction *inst = &buffer[i];
         int opcode = inst->opcode;
         int32_t target = (int32_t)uop_get_target(inst);
-        if (_PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG)) {
-            uint16_t exit_op = (_PyUop_Flags[opcode] & HAS_EXIT_FLAG) ?
-                _EXIT_TRACE : _DEOPT;
+        uint16_t exit_flags = _PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG | HAS_PERIODIC_FLAG);
+        if (exit_flags) {
+            uint16_t exit_op = _EXIT_TRACE;
+            if (exit_flags & HAS_DEOPT_FLAG) {
+                exit_op = _DEOPT;
+            }
+            else if (exit_flags & HAS_PERIODIC_FLAG) {
+                exit_op = _HANDLE_PENDING_AND_DEOPT;
+            }
             int32_t jump_target = target;
             if (is_for_iter_test[opcode]) {
                 /* Target the POP_TOP immediately after the END_FOR,
@@ -1045,7 +1139,7 @@ sanity_check(_PyExecutorObject *executor)
     }
     bool ended = false;
     uint32_t i = 0;
-    CHECK(executor->trace[0].opcode == _START_EXECUTOR);
+    CHECK(executor->trace[0].opcode == _START_EXECUTOR || executor->trace[0].opcode == _COLD_EXIT);
     for (; i < executor->code_size; i++) {
         const _PyUOpInstruction *inst = &executor->trace[i];
         uint16_t opcode = inst->opcode;
@@ -1075,6 +1169,7 @@ sanity_check(_PyExecutorObject *executor)
         uint16_t opcode = inst->opcode;
         CHECK(
             opcode == _DEOPT ||
+            opcode == _HANDLE_PENDING_AND_DEOPT ||
             opcode == _EXIT_TRACE ||
             opcode == _ERROR_POP_N);
     }
@@ -1098,9 +1193,11 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
     }
 
     /* Initialize exits */
+    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
     for (int i = 0; i < exit_count; i++) {
-        executor->exits[i].executor = NULL;
+        executor->exits[i].index = i;
         executor->exits[i].temperature = initial_temperature_backoff_counter();
+        executor->exits[i].executor = cold;
     }
     int next_exit = exit_count-1;
     _PyUOpInstruction *dest = (_PyUOpInstruction *)&executor->trace[length];
@@ -1140,7 +1237,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 #endif
 #ifdef _Py_JIT
     executor->jit_code = NULL;
-    executor->jit_side_entry = NULL;
     executor->jit_size = 0;
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.
@@ -1186,6 +1282,11 @@ uop_optimize(
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
     OPT_STAT_INC(attempts);
+    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
+    bool is_noopt = true;
+    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+        is_noopt = false;
+    }
     int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed);
     if (length <= 0) {
         // Error or nothing translated
@@ -1193,8 +1294,7 @@ uop_optimize(
     }
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
-    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+    if (!is_noopt) {
         length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            length,
                                            curr_stackentries, &dependencies);
@@ -1208,12 +1308,8 @@ uop_optimize(
     for (int pc = 0; pc < length; pc++) {
         int opcode = buffer[pc].opcode;
         int oparg = buffer[pc].oparg;
-        if (_PyUop_Flags[opcode] & HAS_OPARG_AND_1_FLAG) {
-            buffer[pc].opcode = opcode + 1 + (oparg & 1);
-            assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
-        }
-        else if (oparg < _PyUop_Replication[opcode]) {
-            buffer[pc].opcode = opcode + oparg + 1;
+        if (oparg < _PyUop_Replication[opcode].stop && oparg >= _PyUop_Replication[opcode].start) {
+            buffer[pc].opcode = opcode + oparg + 1 - _PyUop_Replication[opcode].start;
             assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
         }
         else if (is_terminator(&buffer[pc])) {
@@ -1382,6 +1478,45 @@ _Py_ExecutorInit(_PyExecutorObject *executor, const _PyBloomFilter *dependency_s
     link_executor(executor);
 }
 
+_PyExecutorObject *
+_PyExecutor_GetColdExecutor(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->cold_executor != NULL) {
+        return interp->cold_executor;
+    }
+    _PyExecutorObject *cold = allocate_executor(0, 1);
+    if (cold == NULL) {
+        Py_FatalError("Cannot allocate core JIT code");
+    }
+    ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT;
+#ifdef _Py_JIT
+    cold->jit_code = NULL;
+    cold->jit_size = 0;
+    // This is initialized to true so we can prevent the executor
+    // from being immediately detected as cold and invalidated.
+    cold->vm_data.warm = true;
+    if (_PyJIT_Compile(cold, cold->trace, 1)) {
+        Py_DECREF(cold);
+        Py_FatalError("Cannot allocate core JIT code");
+    }
+#endif
+    _Py_SetImmortal((PyObject *)cold);
+    interp->cold_executor = cold;
+    return cold;
+}
+
+void
+_PyExecutor_ClearExit(_PyExitData *exit)
+{
+    if (exit == NULL) {
+        return;
+    }
+    _PyExecutorObject *old = exit->executor;
+    exit->executor = _PyExecutor_GetColdExecutor();
+    Py_DECREF(old);
+}
+
 /* Detaches the executor from the code object (if any) that
  * holds a reference to it */
 void
@@ -1403,22 +1538,27 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
 }
 
 static int
-executor_clear(_PyExecutorObject *executor)
+executor_clear(PyObject *op)
 {
+    _PyExecutorObject *executor = _PyExecutorObject_CAST(op);
     if (!executor->vm_data.valid) {
         return 0;
     }
     assert(executor->vm_data.valid == 1);
     unlink_executor(executor);
     executor->vm_data.valid = 0;
+
     /* It is possible for an executor to form a reference
      * cycle with itself, so decref'ing a side exit could
      * free the executor unless we hold a strong reference to it
      */
+    _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
     Py_INCREF(executor);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         executor->exits[i].temperature = initial_unreachable_backoff_counter();
-        Py_CLEAR(executor->exits[i].executor);
+        _PyExecutorObject *e = executor->exits[i].executor;
+        executor->exits[i].executor = cold;
+        Py_DECREF(e);
     }
     _Py_ExecutorDetach(executor);
     Py_DECREF(executor);
@@ -1460,7 +1600,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
         exec = next;
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
-        _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+        PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);
@@ -1487,7 +1627,7 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
             _PyCode_Clear_Executors(executor->vm_data.code);
         }
         else {
-            executor_clear(executor);
+            executor_clear((PyObject *)executor);
         }
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);
@@ -1521,7 +1661,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         exec = next;
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
-        _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+        PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
     }
     Py_DECREF(invalidate);
@@ -1658,6 +1798,13 @@ _PyDumpExecutors(FILE *out)
 {
     PyErr_SetString(PyExc_NotImplementedError, "No JIT available");
     return -1;
+}
+
+void
+_PyExecutor_Free(struct _PyExecutorObject *self)
+{
+    /* This should never be called */
+    Py_UNREACHABLE();
 }
 
 #endif /* _Py_TIER2 */

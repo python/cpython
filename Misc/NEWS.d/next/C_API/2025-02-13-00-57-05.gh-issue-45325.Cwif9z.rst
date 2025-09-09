@@ -1,3 +1,0 @@
-Add a new ``p`` format parameter to :c:func:`Py_BuildValue` that allows to
-take a C integer and produce a Python :class:`bool` object. Patch by Pablo
-Galindo.
