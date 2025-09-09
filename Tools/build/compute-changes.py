@@ -57,7 +57,7 @@ class Outputs:
 
 def compute_changes() -> None:
     target_branch, head_ref = git_refs()
-    if target_branch and head_ref:
+    if os.environ.get("GITHUB_EVENT_NAME", "") == "pull_request":
         # Getting changed files only makes sense on a pull request
         files = get_changed_files(target_branch, head_ref)
         outputs = process_changed_files(files)

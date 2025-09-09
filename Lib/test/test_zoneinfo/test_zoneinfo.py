@@ -22,6 +22,7 @@ from test.support.os_helper import EnvironmentVarGuard
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module, CleanImport
+from test.support.script_helper import assert_python_ok
 
 lzma = import_module('lzma')
 py_zoneinfo, c_zoneinfo = test_support.get_modules()
@@ -56,6 +57,10 @@ def setUpModule():
 
 def tearDownModule():
     shutil.rmtree(TEMP_DIR)
+
+
+class CustomError(Exception):
+    pass
 
 
 class TzPathUserMixin:
@@ -403,6 +408,25 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertEqual(t.tzname(), offset.tzname)
                 self.assertEqual(t.utcoffset(), offset.utcoffset)
                 self.assertEqual(t.dst(), offset.dst)
+
+    def test_cache_exception(self):
+        class Incomparable(str):
+            eq_called = False
+            def __eq__(self, other):
+                self.eq_called = True
+                raise CustomError
+            __hash__ = str.__hash__
+
+        key = "America/Los_Angeles"
+        tz1 = self.klass(key)
+        key = Incomparable(key)
+        try:
+            tz2 = self.klass(key)
+        except CustomError:
+            self.assertTrue(key.eq_called)
+        else:
+            self.assertFalse(key.eq_called)
+            self.assertIs(tz2, tz1)
 
 
 class CZoneInfoTest(ZoneInfoTest):
@@ -1507,6 +1531,26 @@ class ZoneInfoCacheTest(TzPathUserMixin, ZoneInfoTestBase):
         self.assertIsNot(dub0, dub1)
         self.assertIs(tok0, tok1)
 
+    def test_clear_cache_refleak(self):
+        class Stringy(str):
+            allow_comparisons = True
+            def __eq__(self, other):
+                if not self.allow_comparisons:
+                    raise CustomError
+                return super().__eq__(other)
+            __hash__ = str.__hash__
+
+        key = Stringy("America/Los_Angeles")
+        self.klass(key)
+        key.allow_comparisons = False
+        try:
+            # Note: This is try/except rather than assertRaises because
+            # there is no guarantee that the key is even still in the cache,
+            # or that the key for the cache is the original `key` object.
+            self.klass.clear_cache(only_keys="America/Los_Angeles")
+        except CustomError:
+            pass
+
 
 class CZoneInfoCacheTest(ZoneInfoCacheTest):
     module = c_zoneinfo
@@ -1903,6 +1947,26 @@ class CTestModule(TestModule):
     module = c_zoneinfo
 
 
+class MiscTests(unittest.TestCase):
+    def test_pydatetime(self):
+        # Test that zoneinfo works if the C implementation of datetime
+        # is not available and the Python implementation of datetime is used.
+        # The Python implementation of zoneinfo should be used in thet case.
+        #
+        # Run the test in a subprocess, as importing _zoneinfo with
+        # _datettime disabled causes crash in the previously imported
+        # _zoneinfo.
+        assert_python_ok('-c', '''if 1:
+            import sys
+            sys.modules['_datetime'] = None
+            import datetime
+            import zoneinfo
+            tzinfo = zoneinfo.ZoneInfo('Europe/London')
+            datetime.datetime(2025, 10, 26, 2, 0, tzinfo=tzinfo)
+            ''',
+            PYTHONTZPATH=str(ZONEINFO_DATA.tzpath))
+
+
 class ExtensionBuiltTest(unittest.TestCase):
     """Smoke test to ensure that the C and Python extensions are both tested.
 
@@ -1915,8 +1979,8 @@ class ExtensionBuiltTest(unittest.TestCase):
     def test_cache_location(self):
         # The pure Python version stores caches on attributes, but the C
         # extension stores them in C globals (at least for now)
-        self.assertFalse(hasattr(c_zoneinfo.ZoneInfo, "_weak_cache"))
-        self.assertTrue(hasattr(py_zoneinfo.ZoneInfo, "_weak_cache"))
+        self.assertNotHasAttr(c_zoneinfo.ZoneInfo, "_weak_cache")
+        self.assertHasAttr(py_zoneinfo.ZoneInfo, "_weak_cache")
 
     def test_gc_tracked(self):
         import gc

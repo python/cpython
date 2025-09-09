@@ -1,0 +1,2 @@
+Fix a bug that was causing the ``get_async_stack_trace`` function to miss
+some frames in the stack trace.

@@ -1,8 +1,10 @@
 import codecs
 import contextlib
 import copy
+import importlib
 import io
 import pickle
+import os
 import sys
 import unittest
 import encodings
@@ -1196,22 +1198,38 @@ class EscapeDecodeTest(unittest.TestCase):
         check(br"[\1010]", b"[A0]")
         check(br"[\x41]", b"[A]")
         check(br"[\x410]", b"[A0]")
+
+    def test_warnings(self):
+        decode = codecs.escape_decode
+        check = coding_checker(self, decode)
         for i in range(97, 123):
             b = bytes([i])
             if b not in b'abfnrtvx':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r'"\\%c" is an invalid escape sequence' % i):
                     check(b"\\" + b, b"\\" + b)
-            with self.assertWarns(DeprecationWarning):
+            with self.assertWarnsRegex(DeprecationWarning,
+                    r'"\\%c" is an invalid escape sequence' % (i-32)):
                 check(b"\\" + b.upper(), b"\\" + b.upper())
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\8" is an invalid escape sequence'):
             check(br"\8", b"\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", b"\\9")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\\xfa" is an invalid escape sequence') as cm:
             check(b"\\\xfa", b"\\\xfa")
         for i in range(0o400, 0o1000):
-            with self.assertWarns(DeprecationWarning):
+            with self.assertWarnsRegex(DeprecationWarning,
+                    r'"\\%o" is an invalid octal escape sequence' % i):
                 check(rb'\%o' % i, bytes([i & 0o377]))
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\z" is an invalid escape sequence'):
+            self.assertEqual(decode(br'\x\z', 'ignore'), (b'\\z', 4))
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\501" is an invalid octal escape sequence'):
+            self.assertEqual(decode(br'\x\501', 'ignore'), (b'A', 6))
 
     def test_errors(self):
         decode = codecs.escape_decode
@@ -2661,23 +2679,39 @@ class UnicodeEscapeTest(ReadTest, unittest.TestCase):
         check(br"[\x410]", "[A0]")
         check(br"\u20ac", "\u20ac")
         check(br"\U0001d120", "\U0001d120")
+
+    def test_decode_warnings(self):
+        decode = codecs.unicode_escape_decode
+        check = coding_checker(self, decode)
         for i in range(97, 123):
             b = bytes([i])
             if b not in b'abfnrtuvx':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r'"\\%c" is an invalid escape sequence' % i):
                     check(b"\\" + b, "\\" + chr(i))
             if b.upper() not in b'UN':
-                with self.assertWarns(DeprecationWarning):
+                with self.assertWarnsRegex(DeprecationWarning,
+                        r'"\\%c" is an invalid escape sequence' % (i-32)):
                     check(b"\\" + b.upper(), "\\" + chr(i-32))
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\8" is an invalid escape sequence'):
             check(br"\8", "\\8")
         with self.assertWarns(DeprecationWarning):
             check(br"\9", "\\9")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\\xfa" is an invalid escape sequence') as cm:
             check(b"\\\xfa", "\\\xfa")
         for i in range(0o400, 0o1000):
-            with self.assertWarns(DeprecationWarning):
+            with self.assertWarnsRegex(DeprecationWarning,
+                    r'"\\%o" is an invalid octal escape sequence' % i):
                 check(rb'\%o' % i, chr(i))
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\z" is an invalid escape sequence'):
+            self.assertEqual(decode(br'\x\z', 'ignore'), ('\\z', 4))
+        with self.assertWarnsRegex(DeprecationWarning,
+                r'"\\501" is an invalid octal escape sequence'):
+            self.assertEqual(decode(br'\x\501', 'ignore'), ('\u0141', 6))
 
     def test_decode_errors(self):
         decode = codecs.unicode_escape_decode
@@ -3075,6 +3109,13 @@ class TransformCodecTest(unittest.TestCase):
                     info = codecs.lookup(alias)
                     self.assertEqual(info.name, expected_name)
 
+    def test_alias_modules_exist(self):
+        encodings_dir = os.path.dirname(encodings.__file__)
+        for value in encodings.aliases.aliases.values():
+            codec_mod = f"encodings.{value}"
+            self.assertIsNotNone(importlib.util.find_spec(codec_mod),
+                                 f"Codec module not found: {codec_mod}")
+
     def test_quopri_stateless(self):
         # Should encode with quotetabs=True
         encoded = codecs.encode(b"space tab\teol \n", "quopri-codec")
@@ -3252,7 +3293,7 @@ class CodePageTest(unittest.TestCase):
             codecs.code_page_encode, 932, '\xff')
         self.assertRaisesRegex(UnicodeDecodeError, 'cp932',
             codecs.code_page_decode, 932, b'\x81\x00', 'strict', True)
-        self.assertRaisesRegex(UnicodeDecodeError, 'CP_UTF8',
+        self.assertRaisesRegex(UnicodeDecodeError, 'cp65001',
             codecs.code_page_decode, self.CP_UTF8, b'\xff', 'strict', True)
 
     def check_decode(self, cp, tests):
@@ -3762,7 +3803,7 @@ class LocaleCodecTest(unittest.TestCase):
                     with self.assertRaises(RuntimeError) as cm:
                         self.decode(encoded, errors)
                     errmsg = str(cm.exception)
-                    self.assertTrue(errmsg.startswith("decode error: "), errmsg)
+                    self.assertStartsWith(errmsg, "decode error: ")
                 else:
                     decoded = self.decode(encoded, errors)
                     self.assertEqual(decoded, expected)

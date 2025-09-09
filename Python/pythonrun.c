@@ -114,7 +114,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
     }
 
     PyObject *v;
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps1), &v) < 0) {
         PyErr_Print();
         return -1;
     }
@@ -128,7 +128,7 @@ _PyRun_InteractiveLoopObject(FILE *fp, PyObject *filename, PyCompilerFlags *flag
         }
     }
     Py_XDECREF(v);
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps2), &v) < 0) {
         PyErr_Print();
         return -1;
     }
@@ -206,7 +206,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     PyObject *encoding_obj = NULL;
     const char *encoding = NULL;
     if (fp == stdin) {
-        if (_PySys_GetOptionalAttr(&_Py_ID(stdin), &attr) < 0) {
+        if (PySys_GetOptionalAttr(&_Py_ID(stdin), &attr) < 0) {
             PyErr_Clear();
         }
         else if (attr != NULL && attr != Py_None) {
@@ -226,7 +226,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     // Get sys.ps1 (as UTF-8)
     PyObject *ps1_obj = NULL;
     const char *ps1 = "";
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps1), &attr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps1), &attr) < 0) {
         PyErr_Clear();
     }
     else if (attr != NULL) {
@@ -247,7 +247,7 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     // Get sys.ps2 (as UTF-8)
     PyObject *ps2_obj = NULL;
     const char *ps2 = "";
-    if (_PySys_GetOptionalAttr(&_Py_ID(ps2), &attr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(ps2), &attr) < 0) {
         PyErr_Clear();
     }
     else if (attr != NULL) {
@@ -658,7 +658,7 @@ _Py_HandleSystemExitAndKeyboardInterrupt(int *exitcode_p)
     }
 
     PyObject *sys_stderr;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &sys_stderr) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &sys_stderr) < 0) {
         PyErr_Clear();
     }
     else if (sys_stderr != NULL && sys_stderr != Py_None) {
@@ -722,7 +722,7 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
             _PyErr_Clear(tstate);
         }
     }
-    if (_PySys_GetOptionalAttr(&_Py_ID(excepthook), &hook) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(excepthook), &hook) < 0) {
         PyErr_Clear();
     }
     if (_PySys_Audit(tstate, "sys.excepthook", "OOOO", hook ? hook : Py_None,
@@ -1197,7 +1197,7 @@ void
 PyErr_Display(PyObject *unused, PyObject *value, PyObject *tb)
 {
     PyObject *file;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         PyObject *exc = PyErr_GetRaisedException();
         _PyObject_Dump(value);
         fprintf(stderr, "lost sys.stderr\n");
@@ -1321,7 +1321,7 @@ static void
 flush_io_stream(PyThreadState *tstate, PyObject *name)
 {
     PyObject *f;
-    if (_PySys_GetOptionalAttr(name, &f) < 0) {
+    if (PySys_GetOptionalAttr(name, &f) < 0) {
         PyErr_Clear();
     }
     if (f != NULL) {
@@ -1366,6 +1366,29 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 }
 
 static PyObject *
+get_interactive_filename(PyObject *filename, Py_ssize_t count)
+{
+    PyObject *result;
+    Py_ssize_t len = PyUnicode_GET_LENGTH(filename);
+
+    if (len >= 2
+            && PyUnicode_ReadChar(filename, 0) == '<'
+            && PyUnicode_ReadChar(filename, len - 1) == '>') {
+        PyObject *middle = PyUnicode_Substring(filename, 1, len-1);
+        if (middle == NULL) {
+            return NULL;
+        }
+        result = PyUnicode_FromFormat("<%U-%d>", middle, count);
+        Py_DECREF(middle);
+    } else {
+        result = PyUnicode_FromFormat(
+            "%U-%d", filename, count);
+    }
+    return result;
+
+}
+
+static PyObject *
 run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena, PyObject* interactive_src,
             int generate_new_source)
@@ -1375,8 +1398,8 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
     if (interactive_src) {
         PyInterpreterState *interp = tstate->interp;
         if (generate_new_source) {
-            interactive_filename = PyUnicode_FromFormat(
-                "%U-%d", filename, interp->_interactive_src_count++);
+            interactive_filename = get_interactive_filename(
+                filename, interp->_interactive_src_count++);
         } else {
             Py_INCREF(interactive_filename);
         }
@@ -1522,6 +1545,26 @@ Py_CompileStringExFlags(const char *str, const char *filename_str, int start,
     co = Py_CompileStringObject(str, filename, start, flags, optimize);
     Py_DECREF(filename);
     return co;
+}
+
+int
+_PyObject_SupportedAsScript(PyObject *cmd)
+{
+    if (PyUnicode_Check(cmd)) {
+        return 1;
+    }
+    else if (PyBytes_Check(cmd)) {
+        return 1;
+    }
+    else if (PyByteArray_Check(cmd)) {
+        return 1;
+    }
+    else if (PyObject_CheckBuffer(cmd)) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 const char *

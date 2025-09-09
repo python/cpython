@@ -1178,7 +1178,7 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual("line1\nline2\nline3\nline4\nline5\n", stdout)
         # Python debug build push something like "[42442 refs]\n"
         # to stderr at exit of subprocess.
-        self.assertTrue(stderr.startswith("eline2\neline6\neline7\n"))
+        self.assertStartsWith(stderr, "eline2\neline6\neline7\n")
 
     def test_universal_newlines_communicate_encodings(self):
         # Check that universal newlines mode works for various encodings,
@@ -1510,7 +1510,7 @@ class ProcessTestCase(BaseTestCase):
                 "[sys.executable, '-c', 'print(\"Hello World!\")'])",
             'assert retcode == 0'))
         output = subprocess.check_output([sys.executable, '-c', code])
-        self.assertTrue(output.startswith(b'Hello World!'), ascii(output))
+        self.assertStartsWith(output, b'Hello World!')
 
     def test_handles_closed_on_exception(self):
         # If CreateProcess exits with an error, ensure the
@@ -1835,8 +1835,8 @@ class RunFuncTestCase(BaseTestCase):
                             capture_output=True)
         lines = cp.stderr.splitlines()
         self.assertEqual(len(lines), 2, lines)
-        self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
-        self.assertTrue(lines[1].startswith(b"<string>:3: EncodingWarning: "))
+        self.assertStartsWith(lines[0], b"<string>:2: EncodingWarning: ")
+        self.assertStartsWith(lines[1], b"<string>:3: EncodingWarning: ")
 
 
 def _get_test_grp_name():

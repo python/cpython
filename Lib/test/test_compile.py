@@ -823,8 +823,10 @@ class TestSpecifics(unittest.TestCase):
             else:
                 return "unused"
 
-        self.assertEqual(f.__code__.co_consts,
-                         (f.__doc__, "used"))
+        if f.__doc__ is None:
+            self.assertEqual(f.__code__.co_consts, (True, "used"))
+        else:
+            self.assertEqual(f.__code__.co_consts, (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -869,7 +871,11 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
+
+        if f1.__doc__ is None:
+            self.assertEqual(f1.__code__.co_consts, (42,))
+        else:
+            self.assertEqual(f1.__code__.co_consts, (f1.__doc__,))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -1722,6 +1728,21 @@ class TestBooleanExpression(unittest.TestCase):
         res = v[0] or v[1] and v[2] or v[3] or v[4]
         self.assertIs(res, v[3])
         self.assertEqual([e.called for e in v], [1, 1, 0, 1, 0])
+
+    def test_exception(self):
+        # See gh-137288
+        class Foo:
+            def __bool__(self):
+                raise NotImplementedError()
+
+        a = Foo()
+        b = Foo()
+
+        with self.assertRaises(NotImplementedError):
+            bool(a)
+
+        with self.assertRaises(NotImplementedError):
+            c = a or b
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):

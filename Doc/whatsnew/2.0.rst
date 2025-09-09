@@ -656,7 +656,8 @@ break.
 The change which will probably break the most code is tightening up the
 arguments accepted by some methods.  Some methods would take multiple arguments
 and treat them as a tuple, particularly various list methods such as
-:meth:`!append` and :meth:`!insert`. In earlier versions of Python, if ``L`` is
+:meth:`~list.append` and :meth:`~list.insert`.
+In earlier versions of Python, if ``L`` is
 a list, ``L.append( 1,2 )`` appends the tuple ``(1,2)`` to the list.  In Python
 2.0 this causes a :exc:`TypeError` exception to be raised, with the message:
 'append requires exactly 1 argument; 2 given'.  The fix is to simply add an

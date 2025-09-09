@@ -679,7 +679,7 @@ class AssignmentTargetTestCase(unittest.TestCase):
         class C: pass
         blah = C()
         with mock_contextmanager_generator() as blah.foo:
-            self.assertEqual(hasattr(blah, "foo"), True)
+            self.assertHasAttr(blah, "foo")
 
     def testMultipleComplexTargets(self):
         class C:

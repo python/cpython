@@ -102,7 +102,7 @@ class PublicAPITests(BaseTest):
     """
 
     def test_module_all_attribute(self):
-        self.assertTrue(hasattr(self.module, '__all__'))
+        self.assertHasAttr(self.module, '__all__')
         target_api = ["warn", "warn_explicit", "showwarning",
                       "formatwarning", "filterwarnings", "simplefilter",
                       "resetwarnings", "catch_warnings", "deprecated"]
@@ -555,13 +555,7 @@ class WarnTests(BaseTest):
         with self.module.catch_warnings(record=True) as w:
             self.module.resetwarnings()
             self.module.filterwarnings("always", category=UserWarning)
-            filenames = ["nonascii\xe9\u20ac"]
-            if not support.is_emscripten:
-                # JavaScript does not like surrogates.
-                # Invalid UTF-8 leading byte 0x80 encountered when
-                # deserializing a UTF-8 string in wasm memory to a JS
-                # string!
-                filenames.append("surrogate\udc80")
+            filenames = ["nonascii\xe9\u20ac", "surrogate\udc80"]
             for filename in filenames:
                 try:
                     os.fsencode(filename)
@@ -602,25 +596,19 @@ class WarnTests(BaseTest):
         class MyWarningClass(Warning):
             pass
 
-        class NonWarningSubclass:
-            pass
-
         # passing a non-subclass of Warning should raise a TypeError
-        with self.assertRaises(TypeError) as cm:
+        expected = "category must be a Warning subclass, not 'str'"
+        with self.assertRaisesRegex(TypeError, expected):
             self.module.warn('bad warning category', '')
-        self.assertIn('category must be a Warning subclass, not ',
-                      str(cm.exception))
 
-        with self.assertRaises(TypeError) as cm:
-            self.module.warn('bad warning category', NonWarningSubclass)
-        self.assertIn('category must be a Warning subclass, not ',
-                      str(cm.exception))
+        expected = "category must be a Warning subclass, not class 'int'"
+        with self.assertRaisesRegex(TypeError, expected):
+            self.module.warn('bad warning category', int)
 
         # check that warning instances also raise a TypeError
-        with self.assertRaises(TypeError) as cm:
+        expected = "category must be a Warning subclass, not '.*MyWarningClass'"
+        with self.assertRaisesRegex(TypeError, expected):
             self.module.warn('bad warning category', MyWarningClass())
-        self.assertIn('category must be a Warning subclass, not ',
-                      str(cm.exception))
 
         with self.module.catch_warnings():
             self.module.resetwarnings()
@@ -735,7 +723,7 @@ class CWarnTests(WarnTests, unittest.TestCase):
     # test.import_helper.import_fresh_module utility function
     def test_accelerated(self):
         self.assertIsNot(original_warnings, self.module)
-        self.assertFalse(hasattr(self.module.warn, '__code__'))
+        self.assertNotHasAttr(self.module.warn, '__code__')
 
 class PyWarnTests(WarnTests, unittest.TestCase):
     module = py_warnings
@@ -744,7 +732,7 @@ class PyWarnTests(WarnTests, unittest.TestCase):
     # test.import_helper.import_fresh_module utility function
     def test_pure_python(self):
         self.assertIsNot(original_warnings, self.module)
-        self.assertTrue(hasattr(self.module.warn, '__code__'))
+        self.assertHasAttr(self.module.warn, '__code__')
 
 
 class WCmdLineTests(BaseTest):
@@ -1528,12 +1516,12 @@ a=A()
         # (_warnings will try to import it)
         code = "f = open(%a)" % __file__
         rc, out, err = assert_python_ok("-Wd", "-c", code)
-        self.assertTrue(err.startswith(expected), ascii(err))
+        self.assertStartsWith(err, expected)
 
         # import the warnings module
         code = "import warnings; f = open(%a)" % __file__
         rc, out, err = assert_python_ok("-Wd", "-c", code)
-        self.assertTrue(err.startswith(expected), ascii(err))
+        self.assertStartsWith(err, expected)
 
 
 class AsyncTests(BaseTest):
@@ -1874,6 +1862,25 @@ class DeprecatedTests(PyPublicAPITests):
                 pass
 
         self.assertEqual(D.inited, 3)
+
+    def test_existing_init_subclass_in_sibling_base(self):
+        @deprecated("A will go away soon")
+        class A:
+            pass
+        class B:
+            def __init_subclass__(cls, x):
+                super().__init_subclass__()
+                cls.inited = x
+
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            class C(A, B, x=42):
+                pass
+        self.assertEqual(C.inited, 42)
+
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            class D(B, A, x=42):
+                pass
+        self.assertEqual(D.inited, 42)
 
     def test_init_subclass_has_correct_cls(self):
         init_subclass_saw = None

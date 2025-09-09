@@ -3,7 +3,6 @@
 # Keep lines sorted lexicographically to help avoid merge conflicts.
 # Format example:
 # /path/to/file (number of warnings in file)
-Modules/_sqlite/clinic/connection.c.h 6
 Modules/expat/siphash.h 7
 Modules/expat/xmlparse.c 13
 Modules/expat/xmltok.c 3

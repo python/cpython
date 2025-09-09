@@ -412,7 +412,13 @@ def _init_non_posix(vars):
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
-    vars['TZPATH'] = ''
+    # No standard path exists on Windows for this, but we'll check
+    # whether someone is imitating a POSIX-like layout
+    check_tzpath = os.path.join(vars['prefix'], 'share', 'zoneinfo')
+    if os.path.exists(check_tzpath):
+        vars['TZPATH'] = check_tzpath
+    else:
+        vars['TZPATH'] = ''
 
 #
 # public APIs
@@ -457,7 +463,7 @@ def get_config_h_filename():
     """Return the path of pyconfig.h."""
     if _PYTHON_BUILD:
         if os.name == "nt":
-            inc_dir = os.path.dirname(sys._base_executable)
+            inc_dir = os.path.join(_PROJECT_BASE, 'PC')
         else:
             inc_dir = _PROJECT_BASE
     else:

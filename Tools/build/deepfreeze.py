@@ -2,9 +2,12 @@
 
 The script may be executed by _bootstrap_python interpreter.
 Shared library extension modules are not available in that case.
-On Windows, and in cross-compilation cases, it is executed
-by Python 3.10, and 3.11 features are not available.
+Requires 3.11+ to be executed,
+because relies on `code.co_qualname` and `code.co_exceptiontable`.
 """
+
+from __future__ import annotations
+
 import argparse
 import builtins
 import collections
@@ -13,9 +16,13 @@ import os
 import re
 import time
 import types
-from typing import TextIO
 
 import umarshal
+
+TYPE_CHECKING = False
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from typing import Any, TextIO
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -45,8 +52,8 @@ CO_FAST_FREE = 0x80
 
 next_code_version = 1
 
-def get_localsplus(code: types.CodeType):
-    a = collections.defaultdict(int)
+def get_localsplus(code: types.CodeType) -> tuple[tuple[str, ...], bytes]:
+    a: collections.defaultdict[str, int] = collections.defaultdict(int)
     for name in code.co_varnames:
         a[name] |= CO_FAST_LOCAL
     for name in code.co_cellvars:
@@ -136,7 +143,7 @@ class Printer:
         return identifiers, strings
 
     @contextlib.contextmanager
-    def indent(self) -> None:
+    def indent(self) -> Iterator[None]:
         save_level = self.level
         try:
             self.level += 1
@@ -148,7 +155,7 @@ class Printer:
         self.file.writelines(("    "*self.level, arg, "\n"))
 
     @contextlib.contextmanager
-    def block(self, prefix: str, suffix: str = "") -> None:
+    def block(self, prefix: str, suffix: str = "") -> Iterator[None]:
         self.write(prefix + " {")
         with self.indent():
             yield
@@ -250,9 +257,17 @@ class Printer:
         co_names = self.generate(name + "_names", code.co_names)
         co_filename = self.generate(name + "_filename", code.co_filename)
         co_name = self.generate(name + "_name", code.co_name)
-        co_qualname = self.generate(name + "_qualname", code.co_qualname)
         co_linetable = self.generate(name + "_linetable", code.co_linetable)
-        co_exceptiontable = self.generate(name + "_exceptiontable", code.co_exceptiontable)
+        # We use 3.10 for type checking, but this module requires 3.11
+        # TODO: bump python version for this script.
+        co_qualname = self.generate(
+            name + "_qualname",
+            code.co_qualname,  # type: ignore[attr-defined]
+        )
+        co_exceptiontable = self.generate(
+            name + "_exceptiontable",
+            code.co_exceptiontable,  # type: ignore[attr-defined]
+        )
         # These fields are not directly accessible
         localsplusnames, localspluskinds = get_localsplus(code)
         co_localsplusnames = self.generate(name + "_localsplusnames", localsplusnames)
@@ -379,13 +394,13 @@ class Printer:
             self.write(f".cval = {{ {z.real}, {z.imag} }},")
         return f"&{name}.ob_base"
 
-    def generate_frozenset(self, name: str, fs: frozenset[object]) -> str:
+    def generate_frozenset(self, name: str, fs: frozenset[Any]) -> str:
         try:
-            fs = sorted(fs)
+            fs_sorted = sorted(fs)
         except TypeError:
             # frozen set with incompatible types, fallback to repr()
-            fs = sorted(fs, key=repr)
-        ret = self.generate_tuple(name, tuple(fs))
+            fs_sorted = sorted(fs, key=repr)
+        ret = self.generate_tuple(name, tuple(fs_sorted))
         self.write("// TODO: The above tuple should be a frozenset")
         return ret
 
@@ -402,7 +417,7 @@ class Printer:
             # print(f"Cache hit {key!r:.40}: {self.cache[key]!r:.40}")
             return self.cache[key]
         self.misses += 1
-        if isinstance(obj, (types.CodeType, umarshal.Code)) :
+        if isinstance(obj, types.CodeType) :
             val = self.generate_code(name, obj)
         elif isinstance(obj, tuple):
             val = self.generate_tuple(name, obj)
@@ -458,7 +473,7 @@ def decode_frozen_data(source: str) -> types.CodeType:
         if re.match(FROZEN_DATA_LINE, line):
             values.extend([int(x) for x in line.split(",") if x.strip()])
     data = bytes(values)
-    return umarshal.loads(data)
+    return umarshal.loads(data)  # type: ignore[no-any-return]
 
 
 def generate(args: list[str], output: TextIO) -> None:
@@ -494,12 +509,12 @@ group.add_argument('args', nargs="*", default=(),
                    help="Input file and module name (required) in file:modname format")
 
 @contextlib.contextmanager
-def report_time(label: str):
-    t0 = time.time()
+def report_time(label: str) -> Iterator[None]:
+    t0 = time.perf_counter()
     try:
         yield
     finally:
-        t1 = time.time()
+        t1 = time.perf_counter()
     if verbose:
         print(f"{label}: {t1-t0:.3f} sec")
 

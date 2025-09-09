@@ -81,7 +81,7 @@ and a piece of C code describing its semantics:
     (definition | family | pseudo)+
 
   definition:
-    "inst" "(" NAME ["," stack_effect] ")" "{" C-code "}"
+    "inst" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
     "op" "(" NAME "," stack_effect ")" "{" C-code "}"
     |
@@ -174,7 +174,13 @@ list of annotations and their meanings are as follows:
 * `override`. For external use by other interpreter definitions to override the current
    instruction definition.
 * `pure`. This instruction has no side effects.
-* 'tierN'. This instruction is only used by the tier N interpreter.
+* `tierN`. This instruction is only used by the tier N interpreter.
+* `specializing`. A prefix for an instructions related to adaptive interpreter.
+* `replaced`. This instruction will be replaced in the final bytecode by its directed
+   version (either forward or backward).
+* `register`. Currently does nothing.
+* `replicate(N)`. Replicate the instruction N times to store the oparg "inside" the instruction.
+* `no_save_ip`. This instruction does not affect the instruction pointer.
 
 ### Special functions/macros
 
