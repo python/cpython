@@ -1,10 +1,10 @@
 import base64
 import collections
 import functools
+import importlib.resources
 import json
 import linecache
 import os
-import pathlib
 
 from .collector import Collector
 
@@ -215,7 +215,7 @@ class FlamegraphCollector(StackTraceCollector):
     def _create_flamegraph_html(self, data):
         data_json = json.dumps(data)
 
-        template_dir = pathlib.Path(__file__).parent
+        template_dir = importlib.resources.files(__package__)
         vendor_dir = template_dir / "_vendor"
         assets_dir = template_dir / "_assets"
 
