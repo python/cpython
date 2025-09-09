@@ -2083,7 +2083,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     PyObject *format = NULL;
     struct unpacker *x = NULL;
 
-    Struct = _PyImport_GetModuleAttrString("struct", "Struct");
+    Struct = PyImport_ImportModuleAttrString("struct", "Struct");
     if (Struct == NULL)
         return NULL;
 
@@ -2265,6 +2265,7 @@ memoryview_tolist_impl(PyMemoryViewObject *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 memoryview.tobytes
 
     order: str(accept={str, NoneType}, c_default="NULL") = 'C'
@@ -2280,7 +2281,7 @@ to C first. order=None is the same as order='C'.
 
 static PyObject *
 memoryview_tobytes_impl(PyMemoryViewObject *self, const char *order)
-/*[clinic end generated code: output=1288b62560a32a23 input=0efa3ddaeda573a8]*/
+/*[clinic end generated code: output=1288b62560a32a23 input=23c9faf372cfdbcc]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     char ord = 'C';
@@ -2781,8 +2782,8 @@ Count the number of occurrences of a value.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_count(PyMemoryViewObject *self, PyObject *value)
-/*[clinic end generated code: output=e2c255a8d54eaa12 input=e3036ce1ed7d1823]*/
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=a15cb19311985063 input=e3036ce1ed7d1823]*/
 {
     PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
     if (iter == NULL) {

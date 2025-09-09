@@ -1,2 +1,0 @@
-Disable ``test_embed`` test cases that segfault on BOLT instrument binaries.
-The tests are only disabled when BOLT is enabled.

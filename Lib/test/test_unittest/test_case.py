@@ -795,7 +795,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         with self.assertRaises(self.failureException) as cm:
             self.assertHasAttr(a, 'y')
         self.assertEqual(str(cm.exception),
-                "List instance has no attribute 'y'")
+                "'List' object has no attribute 'y'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(List, 'spam')
+        self.assertEqual(str(cm.exception),
+                "type object 'List' has no attribute 'spam'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(sys, 'nonexistent')
+        self.assertEqual(str(cm.exception),
+                "module 'sys' has no attribute 'nonexistent'")
 
         with self.assertRaises(self.failureException) as cm:
             self.assertHasAttr(a, 'y', 'ababahalamaha')
@@ -811,7 +819,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         with self.assertRaises(self.failureException) as cm:
             self.assertNotHasAttr(a, 'x')
         self.assertEqual(str(cm.exception),
-                "List instance has unexpected attribute 'x'")
+                "'List' object has unexpected attribute 'x'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(List, 'append')
+        self.assertEqual(str(cm.exception),
+                "type object 'List' has unexpected attribute 'append'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(sys, 'modules')
+        self.assertEqual(str(cm.exception),
+                "module 'sys' has unexpected attribute 'modules'")
 
         with self.assertRaises(self.failureException) as cm:
             self.assertNotHasAttr(a, 'x', 'ababahalamaha')
@@ -1904,6 +1920,22 @@ test case
             with self.assertLogs():
                 raise ZeroDivisionError("Unexpected")
 
+    def testAssertLogsWithFormatter(self):
+        # Check alternative formats will be respected
+        format = "[No.1: the larch] %(levelname)s:%(name)s:%(message)s"
+        formatter = logging.Formatter(format)
+        with self.assertNoStderr():
+            with self.assertLogs() as cm:
+                log_foo.info("1")
+                log_foobar.debug("2")
+            self.assertEqual(cm.output, ["INFO:foo:1"])
+            self.assertLogRecords(cm.records, [{'name': 'foo'}])
+            with self.assertLogs(formatter=formatter) as cm:
+                log_foo.info("1")
+                log_foobar.debug("2")
+            self.assertEqual(cm.output, ["[No.1: the larch] INFO:foo:1"])
+            self.assertLogRecords(cm.records, [{'name': 'foo'}])
+
     def testAssertNoLogsDefault(self):
         with self.assertRaises(self.failureException) as cm:
             with self.assertNoLogs():
@@ -1973,7 +2005,7 @@ test case
             pass
         self.assertIsNone(value)
 
-    def testAssertStartswith(self):
+    def testAssertStartsWith(self):
         self.assertStartsWith('ababahalamaha', 'ababa')
         self.assertStartsWith('ababahalamaha', ('x', 'ababa', 'y'))
         self.assertStartsWith(UserString('ababahalamaha'), 'ababa')
@@ -2018,7 +2050,7 @@ test case
             self.assertStartsWith('ababahalamaha', 'amaha', msg='abracadabra')
         self.assertIn('ababahalamaha', str(cm.exception))
 
-    def testAssertNotStartswith(self):
+    def testAssertNotStartsWith(self):
         self.assertNotStartsWith('ababahalamaha', 'amaha')
         self.assertNotStartsWith('ababahalamaha', ('x', 'amaha', 'y'))
         self.assertNotStartsWith(UserString('ababahalamaha'), 'amaha')
@@ -2063,7 +2095,7 @@ test case
             self.assertNotStartsWith('ababahalamaha', 'ababa', msg='abracadabra')
         self.assertIn('ababahalamaha', str(cm.exception))
 
-    def testAssertEndswith(self):
+    def testAssertEndsWith(self):
         self.assertEndsWith('ababahalamaha', 'amaha')
         self.assertEndsWith('ababahalamaha', ('x', 'amaha', 'y'))
         self.assertEndsWith(UserString('ababahalamaha'), 'amaha')
@@ -2108,7 +2140,7 @@ test case
             self.assertEndsWith('ababahalamaha', 'ababa', msg='abracadabra')
         self.assertIn('ababahalamaha', str(cm.exception))
 
-    def testAssertNotEndswith(self):
+    def testAssertNotEndsWith(self):
         self.assertNotEndsWith('ababahalamaha', 'ababa')
         self.assertNotEndsWith('ababahalamaha', ('x', 'ababa', 'y'))
         self.assertNotEndsWith(UserString('ababahalamaha'), 'ababa')

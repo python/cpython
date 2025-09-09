@@ -11,10 +11,6 @@ extern "C" {
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 
 
-/* Trace memory blocks allocated by PyMem_RawMalloc() */
-#define TRACE_RAW_MALLOC
-
-
 struct _PyTraceMalloc_Config {
     /* Module initialized?
        Variable protected by the GIL */
@@ -74,9 +70,7 @@ struct _tracemalloc_runtime_state {
         PyMemAllocatorEx obj;
     } allocators;
 
-#if defined(TRACE_RAW_MALLOC)
-    PyThread_type_lock tables_lock;
-#endif
+    PyMutex tables_lock;
     /* Size in bytes of currently traced memory.
        Protected by TABLES_LOCK(). */
     size_t traced_memory;
