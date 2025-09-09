@@ -433,6 +433,7 @@ except ImportError:
 _NULL = object()
 _UNKNOWN_DESCRIPTOR = object()
 _STD_METHOD_TYPES = (staticmethod, classmethod, FunctionType, partial)
+_ONE_PLACEHOLDER_TUPLE = (Placeholder,)
 
 # Descriptor version
 class partialmethod:
@@ -482,20 +483,19 @@ class partialmethod:
         args = self.args
         func = self.func
 
-        # 4 cases
         if isinstance(func, staticmethod):
             deco = staticmethod
             method = partial(func.__wrapped__, *args, **self.keywords)
         elif isinstance(func, classmethod):
             deco = classmethod
-            ph_args = (Placeholder,) if args else ()
+            ph_args = _ONE_PLACEHOLDER_TUPLE if args else ()
             method = partial(func.__wrapped__, *ph_args, *args, **self.keywords)
         else:
             # instance method. 2 cases:
             #   a) FunctionType | partial
             #   b) callable object without __get__
             deco = None
-            ph_args = (Placeholder,) if args else ()
+            ph_args = _ONE_PLACEHOLDER_TUPLE if args else ()
             method = partial(func, *ph_args, *args, **self.keywords)
 
         method.__partialmethod__ = self
