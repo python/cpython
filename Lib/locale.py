@@ -375,12 +375,14 @@ def _replace_encoding(code, encoding):
 def _append_modifier(code, modifier):
     if modifier == 'euro':
         if '.' not in code:
-            return code + '.ISO8859-15'
+            # Linux appears to require keeping the "@euro" modifier in place,
+            # even when using the ".ISO8859-15" encoding.
+            return code + '.ISO8859-15@euro'
         _, _, encoding = code.partition('.')
-        if encoding in ('ISO8859-15', 'UTF-8'):
+        if encoding == 'UTF-8':
             return code
         if encoding == 'ISO8859-1':
-            return _replace_encoding(code, 'ISO8859-15')
+            code = _replace_encoding(code, 'ISO8859-15')
     return code + '@' + modifier
 
 def normalize(localename):
@@ -485,13 +487,18 @@ def _parse_localename(localename):
         # Deal with locale modifiers
         code, modifier = code.split('@', 1)
         if modifier == 'euro' and '.' not in code:
-            # Assume Latin-9 for @euro locales. This is bogus,
-            # since some systems may use other encodings for these
-            # locales. Also, we ignore other modifiers.
-            return code, 'iso-8859-15'
+            # Assume ISO8859-15 for @euro locales. Do note that some systems
+            # may use other encodings for these locales, so this may not always
+            # be correct.
+            return code + '@euro', 'ISO8859-15'
+    else:
+        modifier = ''
 
     if '.' in code:
-        return tuple(code.split('.')[:2])
+        code, encoding = code.split('.')[:2]
+        if modifier:
+            code += '@' + modifier
+        return code, encoding
     elif code == 'C':
         return None, None
     elif code == 'UTF-8':
@@ -516,7 +523,14 @@ def _build_localename(localetuple):
         if encoding is None:
             return language
         else:
-            return language + '.' + encoding
+            if '@' in language:
+                language, modifier = language.split('@', 1)
+            else:
+                modifier = ''
+            localename = language + '.' + encoding
+            if modifier:
+                localename += '@' + modifier
+            return localename
     except (TypeError, ValueError):
         raise TypeError('Locale must be None, a string, or an iterable of '
                         'two strings -- language code, encoding.') from None
@@ -651,7 +665,8 @@ else:
         if sys.flags.warn_default_encoding:
             import warnings
             warnings.warn(
-                "UTF-8 Mode affects locale.getpreferredencoding(). Consider locale.getencoding() instead.",
+                "UTF-8 Mode affects locale.getpreferredencoding(). "
+                "Consider locale.getencoding() instead.",
                 EncodingWarning, 2)
         if sys.flags.utf8_mode:
             return 'utf-8'
@@ -883,6 +898,16 @@ del k, v
 #    updated 'sr@latn' -> 'sr_CS.UTF-8@latin' to 'sr_RS.UTF-8@latin'
 #    removed 'univ'
 #    removed 'universal'
+#
+# SS 2025-06-10:
+# Remove 'c.utf8' -> 'en_US.UTF-8' because 'en_US.UTF-8' does not exist
+# on all platforms.
+#
+# SS 2025-07-30:
+# Remove conflicts with GNU libc.
+#
+#    removed 'el_gr@euro'
+#    removed 'uz_uz@cyrillic'
 
 locale_alias = {
     'a3':                                   'az_AZ.KOI8-C',
@@ -962,7 +987,6 @@ locale_alias = {
     'c.ascii':                              'C',
     'c.en':                                 'C',
     'c.iso88591':                           'en_US.ISO8859-1',
-    'c.utf8':                               'en_US.UTF-8',
     'c_c':                                  'C',
     'c_c.c':                                'C',
     'ca':                                   'ca_ES.ISO8859-1',
@@ -1017,7 +1041,6 @@ locale_alias = {
     'el':                                   'el_GR.ISO8859-7',
     'el_cy':                                'el_CY.ISO8859-7',
     'el_gr':                                'el_GR.ISO8859-7',
-    'el_gr@euro':                           'el_GR.ISO8859-15',
     'en':                                   'en_US.ISO8859-1',
     'en_ag':                                'en_AG.UTF-8',
     'en_au':                                'en_AU.ISO8859-1',
@@ -1452,7 +1475,6 @@ locale_alias = {
     'ur_pk':                                'ur_PK.CP1256',
     'uz':                                   'uz_UZ.UTF-8',
     'uz_uz':                                'uz_UZ.UTF-8',
-    'uz_uz@cyrillic':                       'uz_UZ.UTF-8',
     've':                                   've_ZA.UTF-8',
     've_za':                                've_ZA.UTF-8',
     'vi':                                   'vi_VN.TCVN',

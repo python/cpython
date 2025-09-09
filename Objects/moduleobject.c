@@ -13,6 +13,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include "osdefs.h"               // MAXPATHLEN
 
@@ -339,6 +340,11 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 gil_slot = cur_slot->value;
                 has_gil_slot = 1;
                 break;
+            case Py_mod_abi:
+                if (PyABIInfo_Check((PyABIInfo *)cur_slot->value, name) < 0) {
+                    goto error;
+                }
+                break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
@@ -513,6 +519,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                 break;
             case Py_mod_multiple_interpreters:
             case Py_mod_gil:
+            case Py_mod_abi:
                 /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:
@@ -826,8 +833,7 @@ module_dealloc(PyObject *self)
     if (verbose && m->md_name) {
         PySys_FormatStderr("# destroy %U\n", m->md_name);
     }
-    if (m->md_weaklist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) m);
+    FT_CLEAR_WEAKREFS(self, m->md_weaklist);
 
     /* bpo-39824: Don't call m_free() if m_size > 0 and md_state=NULL */
     if (m->md_def && m->md_def->m_free
@@ -1329,8 +1335,9 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                             Py_TYPE(annotations)->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                             "__annotate__() must return a dict, not %T",
+                             annotations);
                 Py_DECREF(annotate);
                 Py_DECREF(annotations);
                 Py_DECREF(dict);

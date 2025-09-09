@@ -199,8 +199,10 @@ basicblock_addop(basicblock *b, int opcode, int oparg, location loc)
     cfg_instr *i = &b->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = oparg;
-    i->i_target = NULL;
     i->i_loc = loc;
+    // memory is already zero initialized
+    assert(i->i_target == NULL);
+    assert(i->i_except == NULL);
 
     return SUCCESS;
 }
@@ -1104,6 +1106,7 @@ basicblock_remove_redundant_nops(basicblock *bb) {
     assert(dest <= bb->b_iused);
     int num_removed = bb->b_iused - dest;
     bb->b_iused = dest;
+    memset(&bb->b_instr[dest], 0, sizeof(cfg_instr) * num_removed);
     return num_removed;
 }
 
@@ -1892,6 +1895,10 @@ eval_const_unaryop(PyObject *operand, int opcode, int oparg)
             result = PyNumber_Negative(operand);
             break;
         case UNARY_INVERT:
+            // XXX: This should be removed once the ~bool depreciation expires.
+            if (PyBool_Check(operand)) {
+                return NULL;
+            }
             result = PyNumber_Invert(operand);
             break;
         case UNARY_NOT: {
@@ -2870,9 +2877,11 @@ optimize_load_fast(cfg_builder *g)
                 // how many inputs should be left on the stack.
 
                 // Opcodes that consume no inputs
+                case FORMAT_SIMPLE:
                 case GET_ANEXT:
                 case GET_ITER:
                 case GET_LEN:
+                case GET_YIELD_FROM_ITER:
                 case IMPORT_FROM:
                 case MATCH_KEYS:
                 case MATCH_MAPPING:
@@ -2882,7 +2891,7 @@ optimize_load_fast(cfg_builder *g)
                     int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
                     int net_pushed = num_pushed - num_popped;
                     assert(net_pushed >= 0);
-                    for (int i = 0; i < net_pushed; i++) {
+                    for (int j = 0; j < net_pushed; j++) {
                         PUSH_REF(i, NOT_LOCAL);
                     }
                     break;
@@ -2904,6 +2913,16 @@ optimize_load_fast(cfg_builder *g)
                     for (int i = 0; i < net_popped; i++) {
                         ref_stack_pop(&refs);
                     }
+                    break;
+                }
+
+                case END_SEND:
+                case SET_FUNCTION_ATTRIBUTE: {
+                    assert(_PyOpcode_num_popped(opcode, oparg) == 2);
+                    assert(_PyOpcode_num_pushed(opcode, oparg) == 1);
+                    ref tos = ref_stack_pop(&refs);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(tos.instr, tos.local);
                     break;
                 }
 
@@ -2933,6 +2952,14 @@ optimize_load_fast(cfg_builder *g)
                         // back onto the stack
                         PUSH_REF(self.instr, self.local);
                     }
+                    break;
+                }
+
+                case LOAD_SPECIAL:
+                case PUSH_EXC_INFO: {
+                    ref tos = ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    PUSH_REF(tos.instr, tos.local);
                     break;
                 }
 
@@ -2966,11 +2993,8 @@ optimize_load_fast(cfg_builder *g)
         }
 
         // Push fallthrough block
-        cfg_instr *term = basicblock_last_instr(block);
-        if (term != NULL && block->b_next != NULL &&
-            !(IS_UNCONDITIONAL_JUMP_OPCODE(term->i_opcode) ||
-              IS_SCOPE_EXIT_OPCODE(term->i_opcode))) {
-            assert(BB_HAS_FALLTHROUGH(block));
+        if (BB_HAS_FALLTHROUGH(block)) {
+            assert(block->b_next != NULL);
             load_fast_push_block(&sp, block->b_next, refs.size);
         }
 
@@ -3448,11 +3472,13 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                 instr->i_opcode = instr->i_opcode == JUMP_IF_FALSE ?
                                           POP_JUMP_IF_FALSE : POP_JUMP_IF_TRUE;
                 location loc = instr->i_loc;
+                basicblock *except = instr->i_except;
                 cfg_instr copy = {
                             .i_opcode = COPY,
                             .i_oparg = 1,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &copy));
                 cfg_instr to_bool = {
@@ -3460,6 +3486,7 @@ convert_pseudo_conditional_jumps(cfg_builder *g)
                             .i_oparg = 0,
                             .i_loc = loc,
                             .i_target = NULL,
+                            .i_except = except,
                 };
                 RETURN_IF_ERROR(basicblock_insert_instruction(b, i++, &to_bool));
             }
@@ -3702,6 +3729,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = 0,
             .i_loc = loc,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
@@ -3709,6 +3737,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = 0,
             .i_loc = loc,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));
     }
@@ -3739,6 +3768,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
                 .i_oparg = oldindex,
                 .i_loc = NO_LOCATION,
                 .i_target = NULL,
+                .i_except = NULL,
             };
             if (basicblock_insert_instruction(entryblock, ncellsused, &make_cell) < 0) {
                 PyMem_RawFree(sorted);
@@ -3755,6 +3785,7 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
             .i_oparg = nfreevars,
             .i_loc = NO_LOCATION,
             .i_target = NULL,
+            .i_except = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &copy_frees));
     }

@@ -5,14 +5,11 @@
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
 __all__ = (
-    "_AbstractEventLoopPolicy",
     "AbstractEventLoop",
     "AbstractServer",
     "Handle",
     "TimerHandle",
-    "_get_event_loop_policy",
     "get_event_loop_policy",
-    "_set_event_loop_policy",
     "set_event_loop_policy",
     "get_event_loop",
     "set_event_loop",
@@ -791,7 +788,10 @@ def _init_event_loop_policy():
     global _event_loop_policy
     with _lock:
         if _event_loop_policy is None:  # pragma: no branch
-            from . import _DefaultEventLoopPolicy
+            if sys.platform == 'win32':
+                from .windows_events import _DefaultEventLoopPolicy
+            else:
+                from .unix_events import _DefaultEventLoopPolicy
             _event_loop_policy = _DefaultEventLoopPolicy()
 
 

@@ -1,0 +1,4 @@
+:mod:`hashlib`: reject negative digest lengths in OpenSSL-based SHAKE objects
+by raising a :exc:`ValueError`. Previously, negative lengths were implicitly
+rejected by raising a :exc:`MemoryError` or a :exc:`SystemError`.
+Patch by Bénédikt Tran.

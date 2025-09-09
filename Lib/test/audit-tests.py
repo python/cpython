@@ -643,6 +643,34 @@ def test_assert_unicode():
     else:
         raise RuntimeError("Expected sys.audit(9) to fail.")
 
+def test_sys_remote_exec():
+    import tempfile
+
+    pid = os.getpid()
+    event_pid = -1
+    event_script_path = ""
+    remote_event_script_path = ""
+    def hook(event, args):
+        if event not in ["sys.remote_exec", "cpython.remote_debugger_script"]:
+            return
+        print(event, args)
+        match event:
+            case "sys.remote_exec":
+                nonlocal event_pid, event_script_path
+                event_pid = args[0]
+                event_script_path = args[1]
+            case "cpython.remote_debugger_script":
+                nonlocal remote_event_script_path
+                remote_event_script_path = args[0]
+
+    sys.addaudithook(hook)
+    with tempfile.NamedTemporaryFile(mode='w+', delete=True) as tmp_file:
+        tmp_file.write("a = 1+1\n")
+        tmp_file.flush()
+        sys.remote_exec(pid, tmp_file.name)
+        assertEqual(event_pid, pid)
+        assertEqual(event_script_path, tmp_file.name)
+        assertEqual(remote_event_script_path, tmp_file.name)
 
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts

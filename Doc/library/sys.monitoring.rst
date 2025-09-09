@@ -137,7 +137,8 @@ The following events are supported:
 
 .. monitoring-event:: PY_UNWIND
 
-   Exit from a Python function during exception unwinding.
+   Exit from a Python function during exception unwinding. This includes exceptions raised directly within the
+   function and that are allowed to continue to propagate.
 
 .. monitoring-event:: PY_YIELD
 
@@ -171,7 +172,7 @@ events, use the expression ``PY_RETURN | PY_START``.
       if get_events(DEBUGGER_ID) == NO_EVENTS:
           ...
 
-Events are divided into three groups:
+    Setting this event deactivates all events.
 
 .. _monitoring-event-local:
 
@@ -243,20 +244,23 @@ raise an exception unless it would be visible to other code.
 
 To allow tools to monitor for real exceptions without slowing down generators
 and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
-:monitoring-event:`STOP_ITERATION` can be locally disabled, unlike :monitoring-event:`RAISE`.
+:monitoring-event:`STOP_ITERATION` can be locally disabled, unlike
+:monitoring-event:`RAISE`.
 
-Note that the :monitoring-event:`STOP_ITERATION` event and the :monitoring-event:`RAISE`
-event for a :exc:`StopIteration` exception are equivalent, and are treated as interchangeable
-when generating events. Implementations will favor :monitoring-event:`STOP_ITERATION` for
-performance reasons, but may generate a :monitoring-event:`RAISE` event with a :exc:`StopIteration`.
+Note that the :monitoring-event:`STOP_ITERATION` event and the
+:monitoring-event:`RAISE` event for a :exc:`StopIteration` exception are
+equivalent, and are treated as interchangeable when generating events.
+Implementations will favor :monitoring-event:`STOP_ITERATION` for performance
+reasons, but may generate a :monitoring-event:`RAISE` event with a
+:exc:`StopIteration`.
 
 Turning events on and off
 -------------------------
 
 In order to monitor an event, it must be turned on and a corresponding callback
-must be registered.
-Events can be turned on or off by setting the events either globally or
-for a particular code object.
+must be registered. Events can be turned on or off by setting the events either
+globally and/or for a particular code object. An event will trigger only once,
+even if it is turned on both globally and locally.
 
 
 Setting events globally
@@ -292,10 +296,6 @@ in Python (see :ref:`c-api-monitoring`).
    Activates all the local events for *code* which are set in *event_set*.
    Raises a :exc:`ValueError` if *tool_id* is not in use.
 
-Local events add to global events, but do not mask them.
-In other words, all global events will trigger for a code object,
-regardless of the local events.
-
 
 Disabling events
 ''''''''''''''''
@@ -325,8 +325,6 @@ except for a few breakpoints.
 Registering callback functions
 ------------------------------
 
-To register a callable for events call
-
 .. function:: register_callback(tool_id: int, event: int, func: Callable | None, /) -> Callable | None
 
    Registers the callable *func* for the *event* with the given *tool_id*
@@ -335,13 +333,17 @@ To register a callable for events call
    it is unregistered and returned.
    Otherwise :func:`register_callback` returns ``None``.
 
+   .. audit-event:: sys.monitoring.register_callback func sys.monitoring.register_callback
 
 Functions can be unregistered by calling
 ``sys.monitoring.register_callback(tool_id, event, None)``.
 
 Callback functions can be registered and unregistered at any time.
 
-Registering or unregistering a callback function will generate a :func:`sys.audit` event.
+Callbacks are called only once regardless if the event is turned on both
+globally and locally. As such, if an event could be turned on for both global
+and local events by your code then the callback needs to be written to handle
+either trigger.
 
 
 Callback function arguments
@@ -353,37 +355,46 @@ Callback function arguments
    that there are no arguments to the call.
 
 When an active event occurs, the registered callback function is called.
+Callback functions returning an object other than :data:`DISABLE` will have no effect.
 Different events will provide the callback function with different arguments, as follows:
 
 * :monitoring-event:`PY_START` and :monitoring-event:`PY_RESUME`::
 
-    func(code: CodeType, instruction_offset: int) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int) -> object
 
 * :monitoring-event:`PY_RETURN` and :monitoring-event:`PY_YIELD`::
 
-    func(code: CodeType, instruction_offset: int, retval: object) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int, retval: object) -> object
 
-* :monitoring-event:`CALL`, :monitoring-event:`C_RAISE` and :monitoring-event:`C_RETURN`::
+* :monitoring-event:`CALL`, :monitoring-event:`C_RAISE` and :monitoring-event:`C_RETURN`
+  (*arg0* can be :data:`MISSING` specifically)::
 
-    func(code: CodeType, instruction_offset: int, callable: object, arg0: object | MISSING) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int, callable: object, arg0: object) -> object
 
+  *code* represents the code object where the call is being made, while
+  *callable* is the object that is about to be called (and thus
+  triggered the event).
   If there are no arguments, *arg0* is set to :data:`sys.monitoring.MISSING`.
+
+  For instance methods, *callable* will be the function object as found on the
+  class with *arg0* set to the instance (i.e. the ``self`` argument to the
+  method).
 
 * :monitoring-event:`RAISE`, :monitoring-event:`RERAISE`, :monitoring-event:`EXCEPTION_HANDLED`,
   :monitoring-event:`PY_UNWIND`, :monitoring-event:`PY_THROW` and :monitoring-event:`STOP_ITERATION`::
 
-    func(code: CodeType, instruction_offset: int, exception: BaseException) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int, exception: BaseException) -> object
 
 * :monitoring-event:`LINE`::
 
-    func(code: CodeType, line_number: int) -> DISABLE | Any
+    func(code: CodeType, line_number: int) -> object
 
 * :monitoring-event:`BRANCH_LEFT`, :monitoring-event:`BRANCH_RIGHT` and :monitoring-event:`JUMP`::
 
-    func(code: CodeType, instruction_offset: int, destination_offset: int) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int, destination_offset: int) -> object
 
   Note that the *destination_offset* is where the code will next execute.
 
 * :monitoring-event:`INSTRUCTION`::
 
-    func(code: CodeType, instruction_offset: int) -> DISABLE | Any
+    func(code: CodeType, instruction_offset: int) -> object
