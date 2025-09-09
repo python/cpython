@@ -2982,7 +2982,7 @@ _winapi.RegisterEventSource -> HANDLE
 
     unc_server_name: LPCWSTR(accept={str, NoneType})
         The UNC name of the server on which the event source should be registered.
-        If NULL, registers the event source on the local computer.
+        If None, registers the event source on the local computer.
     source_name: LPCWSTR
         The name of the event source to register.
     /
@@ -2993,7 +2993,7 @@ Retrieves a registered handle to the specified event log.
 static HANDLE
 _winapi_RegisterEventSource_impl(PyObject *module, LPCWSTR unc_server_name,
                                  LPCWSTR source_name)
-/*[clinic end generated code: output=e376c8950a89ae8f input=9642e69236d0a14e]*/
+/*[clinic end generated code: output=e376c8950a89ae8f input=9d01059ac2156d0c]*/
 {
     HANDLE handle;
 
@@ -3068,40 +3068,58 @@ _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
     DWORD data_size = 0;
 
     // Handle strings list
-    if (strings != Py_None && PyList_Check(strings)) {
-        Py_ssize_t size = PyList_Size(strings);
-        num_strings = (WORD)size;
-
-        if (num_strings > 0) {
-            string_array = (LPCWSTR *)PyMem_Malloc(num_strings * sizeof(LPCWSTR));
-            if (!string_array) {
-                return PyErr_NoMemory();
-            }
-
-            for (WORD i = 0; i < num_strings; i++) {
-                PyObject *item = PyList_GetItem(strings, i);
-                if (!PyUnicode_Check(item)) {
-                    PyMem_Free(string_array);
-                    PyErr_SetString(PyExc_TypeError, "All strings must be unicode");
-                    return NULL;
-                }
-                string_array[i] = PyUnicode_AsWideCharString(item, NULL);
-                if (!string_array[i]) {
-                    // Clean up already allocated strings
-                    for (WORD j = 0; j < i; j++) {
-                        PyMem_Free((void *)string_array[j]);
-                    }
-                    PyMem_Free(string_array);
-                    return NULL;
-                }
-            }
-        }
+    Py_ssize_t size = PyList_Size(strings);
+    if (size > USHRT_MAX) {
+        PyErr_SetString(PyExc_ValueError, "strings is too long");
+        return NULL;
     }
+    num_strings = (WORD)size;
 
     // Handle raw data
+    if (raw_data->len > PY_DWORD_MAX) {
+        PyErr_SetString(PyExc_ValueError, "raw_data is too large");
+        return NULL;
+    }
     if (raw_data->buf != NULL) {
         data = raw_data->buf;
-        data_size = (DWORD) raw_data->len;
+        data_size = (DWORD)raw_data->len;
+    }
+
+    if (num_strings > 0) {
+        string_array = (LPCWSTR *)PyMem_New(LPCWSTR, num_strings);
+        if (string_array == NULL) {
+            return PyErr_NoMemory();
+        }
+
+        for (WORD i = 0; i < num_strings; i++) {
+            PyObject *item = PyList_GetItemRef(strings, i);
+            if (item == NULL) {
+                // Clean up already allocated strings
+                for (WORD j = 0; j < i; j++) {
+                    PyMem_Free((void *)string_array[j]);
+                }
+                PyMem_Free(string_array);
+                return NULL;
+            }
+            if (!PyUnicode_Check(item)) {
+                for (WORD j = 0; j < i; j++) {
+                    PyMem_Free((void *)string_array[j]);
+                }
+                PyMem_Free(string_array);
+                PyErr_Format(PyExc_TypeError,
+                             "expected a list of strings, not %T", item);
+                return NULL;
+            }
+            string_array[i] = PyUnicode_AsWideCharString(item, NULL);
+            Py_DECREF(item);
+            if (!string_array[i]) {
+                for (WORD j = 0; j < i; j++) {
+                    PyMem_Free((void *)string_array[j]);
+                }
+                PyMem_Free(string_array);
+                return NULL;
+            }
+        }
     }
 
     Py_BEGIN_ALLOW_THREADS
@@ -3110,6 +3128,7 @@ _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
                           string_array, data);
     Py_END_ALLOW_THREADS
 
+    int ret = GetLastError();
     // Clean up allocated strings
     if (string_array) {
         for (WORD i = 0; i < num_strings; i++) {
@@ -3119,7 +3138,7 @@ _winapi_ReportEvent_impl(PyObject *module, HANDLE handle,
     }
 
     if (!success)
-        return PyErr_SetFromWindowsErr(0);
+        return PyErr_SetFromWindowsErr(ret);
 
     Py_RETURN_NONE;
 }

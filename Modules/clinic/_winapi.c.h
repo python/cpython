@@ -2192,7 +2192,7 @@ PyDoc_STRVAR(_winapi_RegisterEventSource__doc__,
 "\n"
 "  unc_server_name\n"
 "    The UNC name of the server on which the event source should be registered.\n"
-"    If NULL, registers the event source on the local computer.\n"
+"    If None, registers the event source on the local computer.\n"
 "  source_name\n"
 "    The name of the event source to register.");
 
@@ -2368,4 +2368,4 @@ exit:
 #ifndef _WINAPI_GETSHORTPATHNAME_METHODDEF
     #define _WINAPI_GETSHORTPATHNAME_METHODDEF
 #endif /* !defined(_WINAPI_GETSHORTPATHNAME_METHODDEF) */
-/*[clinic end generated code: output=9476451acfd0f43d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=abf84ca3df2c8fd9 input=a9049054013a1b77]*/

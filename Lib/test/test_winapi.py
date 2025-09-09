@@ -185,6 +185,6 @@ class WinAPITests(unittest.TestCase):
         # Test with empty strings list
         _winapi.ReportEvent(handle, _winapi.EVENTLOG_AUDIT_FAILURE, 2, 1003, [])
 
-        with self.assertRaisesRegex(TypeError, 'All strings must be unicode'):
+        with self.assertRaisesRegex(TypeError, 'expected a list of strings, not int'):
             _winapi.ReportEvent(handle, _winapi.EVENTLOG_ERROR_TYPE, 0, 1001,
                                 ["string", 123])
