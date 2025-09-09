@@ -42,7 +42,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. impl-detail::
 
-      The CPython keeps an array of integer objects for all integers
+      CPython keeps an array of integer objects for all integers
       between ``-5`` and ``256``.  When you create an int in that range
       you actually just get back a reference to the existing object.
 
