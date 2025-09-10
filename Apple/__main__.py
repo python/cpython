@@ -225,7 +225,7 @@ def build_python_path() -> Path:
 
 @contextmanager
 def group(text: str):
-    """A context manager that ouptut a log marker around a section of a build.
+    """A context manager that output a log marker around a section of a build.
 
     If running in a GitHub Actions environment, the GitHub syntax for
     collapsible log sections is used.
@@ -438,7 +438,7 @@ def framework_path(host_triple: str, multiarch: str) -> Path:
 
 
 def package_version(prefix_path: Path) -> str:
-    """Extract the Python version being build from patchlevel.h."""
+    """Extract the Python version being built from patchlevel.h."""
     for path in prefix_path.glob("**/patchlevel.h"):
         text = path.read_text(encoding="utf-8")
         if match := re.search(
@@ -823,8 +823,8 @@ def parse_args() -> argparse.Namespace:
             "A tool for managing the build, package and test process of "
             "CPython on Apple platforms."
         ),
-        suggest_on_error=True,
     )
+    parser.suggest_on_error = True
     subcommands = parser.add_subparsers(dest="subcommand", required=True)
 
     clean = subcommands.add_parser(

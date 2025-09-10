@@ -56,7 +56,7 @@ The `Apple` subfolder of the Python repository acts as a build script that
 can be used to coordinate the compilation of a complete iOS XCframework. To use
 it, run::
 
-  python Apple iOS build
+  python Apple build iOS
 
 This will:
 
@@ -222,7 +222,7 @@ simulator build with a deployment target of 15.4.
 
 Once you have a built an XCframework, you can test that framework by running:
 
-  $ python Apple iOS test
+  $ python Apple test iOS
 
 ### Testing a single-architecture framework
 
@@ -258,7 +258,7 @@ project, and then boot and prepare the iOS simulator.
 
 ### Debugging test failures
 
-Running `python Apple iOS test` generates a standalone version of the
+Running `python Apple test iOS` generates a standalone version of the
 `Apple/testbed` project, and runs the full test suite. It does this using
 `Apple/testbed` itself - the folder is an executable module that can be used
 to create and run a clone of the testbed project. The standalone version of the
