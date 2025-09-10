@@ -1,0 +1,1 @@
+tarfile: Fix parsing of GNU sparse headers by disallowing negative values for offset and numbytes.
