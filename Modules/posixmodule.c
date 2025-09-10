@@ -429,7 +429,7 @@ extern char *ctermid_r(char *);
 #  ifndef STATX_DIO_READ_ALIGN
 #    define STATX_DIO_READ_ALIGN 0x00020000U
 #  endif
-# define _Py_STATX_KNOWN (STATX_BASIC_STATS | STATX_MNT_ID | STATX_DIOALIGN | STATX_MNT_ID_UNIQUE | STATX_SUBVOL | STATX_WRITE_ATOMIC | STATX_DIO_READ_ALIGN)
+# define _Py_STATX_KNOWN (STATX_BASIC_STATS | STATX_BTIME | STATX_MNT_ID | STATX_DIOALIGN | STATX_MNT_ID_UNIQUE | STATX_SUBVOL | STATX_WRITE_ATOMIC | STATX_DIO_READ_ALIGN)
 #endif /* HAVE_LINUX_STATX */
 
 
@@ -1183,6 +1183,9 @@ typedef struct {
 #endif
     newfunc statresult_new_orig;
     PyObject *StatResultType;
+#ifdef HAVE_LINUX_STATX
+    PyObject *StatxResultType;
+#endif
     PyObject *StatVFSResultType;
     PyObject *TerminalSizeType;
     PyObject *TimesResultType;
@@ -2392,20 +2395,6 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
     {"st_reparse_tag", "Windows reparse tag"},
 #endif
-#ifdef HAVE_LINUX_STATX
-    {"stx_mask", "Linux member validity bitmask"},
-    {"stx_attributes", "Linux file attribute bits"},
-    {"stx_attributes_mask", "Linux file attribute bits supported by this file"},
-    {"stx_mnt_id", "Linux mount ID"},
-    {"stx_dio_mem_align", "Linux direct IO buffer alignment"},
-    {"stx_dio_offset_align", "Linux direct IO file offset alignment"},
-    {"stx_subvol", "Linux subvolume identifier"},
-    {"stx_atomic_write_unit_min", "Linux atomic write unit minimum"},
-    {"stx_atomic_write_unit_max", "Linux atomic write unit maximum"},
-    {"stx_atomic_write_segments_max", "Linux atomic write segment maximum"},
-    {"stx_dio_read_offset_align", "Linux direct IO buffer and offset alignment for reads"},
-    {"stx_atomic_write_unit_max", "Linux atomic write unit optimized maximum"},
-#endif
     {0}
 };
 
@@ -2467,21 +2456,6 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_REPARSE_TAG_IDX (ST_FSTYPE_IDX+1)
 #else
 #define ST_REPARSE_TAG_IDX ST_FSTYPE_IDX
-#endif
-
-#ifdef HAVE_LINUX_STATX
-#define STX_MASK_IDX (ST_REPARSE_TAG_IDX+1)
-#define STX_ATTRIBUTES_IDX (STX_MASK_IDX+1)
-#define STX_ATTRIBUTES_MASK_IDX (STX_ATTRIBUTES_IDX+1)
-#define STX_MNT_ID_IDX (STX_ATTRIBUTES_MASK_IDX+1)
-#define STX_DIO_MEM_ALIGN_IDX (STX_MNT_ID_IDX+1)
-#define STX_DIO_OFFSET_ALIGN_IDX (STX_DIO_MEM_ALIGN_IDX+1)
-#define STX_SUBVOL_IDX (STX_DIO_OFFSET_ALIGN_IDX+1)
-#define STX_ATOMIC_WRITE_UNIT_MIN_IDX (STX_SUBVOL_IDX+1)
-#define STX_ATOMIC_WRITE_UNIT_MAX_IDX (STX_ATOMIC_WRITE_UNIT_MIN_IDX+1)
-#define STX_ATOMIC_WRITE_SEGMENTS_MAX_IDX (STX_ATOMIC_WRITE_UNIT_MAX_IDX+1)
-#define STX_DIO_READ_OFFSET_ALIGN_IDX (STX_ATOMIC_WRITE_SEGMENTS_MAX_IDX+1)
-#define STX_ATOMIC_WRITE_UNIT_MAX_OPT_IDX (STX_DIO_READ_OFFSET_ALIGN_IDX+1)
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2592,6 +2566,9 @@ _posix_clear(PyObject *module)
     Py_CLEAR(state->SchedParamType);
 #endif
     Py_CLEAR(state->StatResultType);
+#ifdef HAVE_LINUX_STATX
+    Py_CLEAR(state->StatxResultType);
+#endif
     Py_CLEAR(state->StatVFSResultType);
     Py_CLEAR(state->TerminalSizeType);
     Py_CLEAR(state->TimesResultType);
@@ -2617,6 +2594,9 @@ _posix_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->SchedParamType);
 #endif
     Py_VISIT(state->StatResultType);
+#ifdef HAVE_LINUX_STATX
+    Py_VISIT(state->StatxResultType);
+#endif
     Py_VISIT(state->StatVFSResultType);
     Py_VISIT(state->TerminalSizeType);
     Py_VISIT(state->TimesResultType);
@@ -2637,12 +2617,45 @@ _posix_free(void *module)
    _posix_clear((PyObject *)module);
 }
 
+#define SEC_TO_NS (1000000000LL)
+static PyObject *
+nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec) {
+    /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
+    if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
+        return PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
+    }
+    else {
+        PyObject *s_in_ns = NULL;
+        PyObject *s = _PyLong_FromTime_t(sec);
+        PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+        if (s == NULL || ns_fractional == NULL) {
+            goto exit;
+        }
+
+        s_in_ns = PyNumber_Multiply(s, state->billion);
+        if (s_in_ns == NULL) {
+            goto exit;
+        }
+
+        PyObject *ns_total = PyNumber_Add(s_in_ns, ns_fractional);
+        if (ns_total == NULL) {
+            goto exit;
+        }
+        return ns_total;
+
+    exit:
+        Py_XDECREF(s);
+        Py_XDECREF(ns_fractional);
+        Py_XDECREF(s_in_ns);
+        return NULL;
+    }
+}
+
 static int
 fill_time(_posixstate *state, PyObject *v, int s_index, int f_index,
           int ns_index, time_t sec, unsigned long nsec)
 {
     assert(!PyErr_Occurred());
-#define SEC_TO_NS (1000000000LL)
     assert(nsec < SEC_TO_NS);
 
     if (s_index >= 0) {
@@ -2661,50 +2674,18 @@ fill_time(_posixstate *state, PyObject *v, int s_index, int f_index,
         PyStructSequence_SET_ITEM(v, f_index, float_s);
     }
 
-    int res = -1;
     if (ns_index >= 0) {
-        /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
-        if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
-            PyObject *ns_total = PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
-            if (ns_total == NULL) {
-                return -1;
-            }
-            PyStructSequence_SET_ITEM(v, ns_index, ns_total);
-            assert(!PyErr_Occurred());
-            res = 0;
+        PyObject *ns_total = nanosecond_timestamp(state, sec, nsec);
+        if (ns_total == NULL) {
+            return -1;
         }
-        else {
-            PyObject *s_in_ns = NULL;
-            PyObject *ns_total = NULL;
-            PyObject *s = _PyLong_FromTime_t(sec);
-            PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
-            if (s == NULL || ns_fractional == NULL) {
-                goto exit;
-            }
-
-            s_in_ns = PyNumber_Multiply(s, state->billion);
-            if (s_in_ns == NULL) {
-                goto exit;
-            }
-
-            ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-            if (ns_total == NULL) {
-                goto exit;
-            }
-            PyStructSequence_SET_ITEM(v, ns_index, ns_total);
-            assert(!PyErr_Occurred());
-            res = 0;
-
-        exit:
-            Py_XDECREF(s);
-            Py_XDECREF(ns_fractional);
-            Py_XDECREF(s_in_ns);
-        }
+        PyStructSequence_SET_ITEM(v, ns_index, ns_total);
     }
 
-    return res;
-    #undef SEC_TO_NS
+    assert(!PyErr_Occurred());
+    return 0;
 }
+#undef SEC_TO_NS
 
 #ifdef MS_WINDOWS
 static PyObject*
@@ -2853,20 +2834,6 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
     SET_ITEM(ST_REPARSE_TAG_IDX, PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
-#ifdef HAVE_LINUX_STATX
-    SET_ITEM(STX_MASK_IDX, PyLong_FromUnsignedLong(STATX_BASIC_STATS));
-    SET_ITEM(STX_ATTRIBUTES_IDX, Py_None);
-    SET_ITEM(STX_ATTRIBUTES_MASK_IDX, Py_None);
-    SET_ITEM(STX_MNT_ID_IDX, Py_None);
-    SET_ITEM(STX_DIO_MEM_ALIGN_IDX, Py_None);
-    SET_ITEM(STX_DIO_OFFSET_ALIGN_IDX, Py_None);
-    SET_ITEM(STX_SUBVOL_IDX, Py_None);
-    SET_ITEM(STX_ATOMIC_WRITE_UNIT_MIN_IDX, Py_None);
-    SET_ITEM(STX_ATOMIC_WRITE_UNIT_MAX_IDX, Py_None);
-    SET_ITEM(STX_ATOMIC_WRITE_SEGMENTS_MAX_IDX, Py_None);
-    SET_ITEM(STX_DIO_READ_OFFSET_ALIGN_IDX, Py_None);
-    SET_ITEM(STX_ATOMIC_WRITE_UNIT_MAX_OPT_IDX, Py_None);
-#endif
 
     assert(!PyErr_Occurred());
     return v;
@@ -2878,11 +2845,12 @@ error:
 
 #ifdef HAVE_LINUX_STATX
 static PyObject*
-_pystat_fromstructstatx(PyObject *module, struct statx *st, unsigned int mask)
+_pystat_fromstructstatx(PyObject *module, struct statx *st)
 {
     assert(!PyErr_Occurred());
 
-    PyObject *StatResultType = get_posix_state(module)->StatResultType;
+    _posixstate *state = get_posix_state(module);
+    PyObject *StatResultType = state->StatResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
     if (v == NULL) {
         return NULL;
@@ -2891,101 +2859,43 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st, unsigned int mask)
     /* Per the comment in /usr/include/linux/stat.h, even if a bit is cleared
        in stx_mask, the corresponding field is "set to an appropriate
        fabricated value" or cleared, never left uninitialized. */
-#define SET_ITEM_IF(pos, bit, expr) \
-    do { \
-        PyObject *obj = mask & (bit) ? (expr) : Py_None; \
-        if (obj == NULL) { \
-            goto error; \
-        } \
-        PyStructSequence_SET_ITEM(v, (pos), obj); \
-    } while (0)
-
-    SET_ITEM_IF(0, STATX_TYPE | STATX_MODE,
-                PyLong_FromLong((long)st->stx_mode));
+    SET_ITEM(0, PyLong_FromLong((long)st->stx_mode));
     static_assert(sizeof(unsigned long long) >= sizeof(st->stx_ino),
-                  "statx.stx_ino is larger than unsigned long long");
-    SET_ITEM_IF(1, STATX_INO, PyLong_FromUnsignedLongLong(st->stx_ino));
+                  "stat.st_ino is larger than unsigned long long");
+    SET_ITEM(1, PyLong_FromUnsignedLongLong(st->stx_ino));
+
     dev_t dev = makedev(st->stx_dev_major, st->stx_dev_minor);
     SET_ITEM(2, _PyLong_FromDev(dev));
 
-    SET_ITEM_IF(3, STATX_NLINK, PyLong_FromLong((long)st->stx_nlink));
-    SET_ITEM_IF(4, STATX_UID, _PyLong_FromUid(st->stx_uid));
-    SET_ITEM_IF(5, STATX_GID, _PyLong_FromGid(st->stx_gid));
+    SET_ITEM(3, PyLong_FromLong((long)st->stx_nlink));
+    SET_ITEM(4, _PyLong_FromUid(st->stx_uid));
+    SET_ITEM(5, _PyLong_FromGid(st->stx_gid));
     static_assert(sizeof(long long) >= sizeof(st->stx_size),
-                  "statx.stx_size is larger than long long");
-    SET_ITEM_IF(6, STATX_SIZE, PyLong_FromLongLong(st->stx_size));
+                  "stat.st_size is larger than long long");
+    SET_ITEM(6, PyLong_FromLongLong(st->stx_size));
 
-    if (mask & STATX_ATIME) {
-        if (fill_time(module, v, 7, 10, 13, st->stx_atime.tv_sec,
+    if (fill_time(state, v, 7, 10, 13, st->stx_atime.tv_sec,
                   st->stx_atime.tv_nsec) < 0) {
-            goto error;
-        }
+        goto error;
     }
-    else {
-        SET_ITEM(7, Py_None);
-        SET_ITEM(10, Py_None);
-        SET_ITEM(13, Py_None);
-    }
-    if (mask & STATX_MTIME) {
-        if (fill_time(module, v, 8, 11, 14, st->stx_mtime.tv_sec,
+    if (fill_time(state, v, 8, 11, 14, st->stx_mtime.tv_sec,
                     st->stx_mtime.tv_nsec) < 0) {
-            goto error;
-        }
+        goto error;
     }
-    else {
-        SET_ITEM(8, Py_None);
-        SET_ITEM(11, Py_None);
-        SET_ITEM(14, Py_None);
-    }
-    if (mask & STATX_CTIME) {
-        if (fill_time(module, v, 9, 12, 15, st->stx_ctime.tv_sec,
+    if (fill_time(state, v, 9, 12, 15, st->stx_ctime.tv_sec,
                     st->stx_ctime.tv_nsec) < 0) {
-            goto error;
-        }
+        goto error;
     }
-    else {
-        SET_ITEM(9, Py_None);
-        SET_ITEM(12, Py_None);
-        SET_ITEM(15, Py_None);
-    }
-    if (mask & STATX_BTIME) {
-        if (fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
-                      st->stx_btime.tv_sec, st->stx_btime.tv_nsec) < 0) {
-            goto error;
-        }
-    }
-    else {
-        SET_ITEM(ST_BIRTHTIME_IDX, Py_None);
-        SET_ITEM(ST_BIRTHTIME_NS_IDX, Py_None);
+    if (fill_time(state, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
+                  st->stx_btime.tv_sec, st->stx_btime.tv_nsec) < 0) {
+        goto error;
     }
 
     SET_ITEM(ST_BLKSIZE_IDX, PyLong_FromLong((long)st->stx_blksize));
-    SET_ITEM_IF(ST_BLOCKS_IDX, STATX_BLOCKS,
-                PyLong_FromLong((long)st->stx_blocks));
+    SET_ITEM(ST_BLOCKS_IDX, PyLong_FromLong((long)st->stx_blocks));
+
     dev_t rdev = makedev(st->stx_rdev_major, st->stx_rdev_minor);
     SET_ITEM(ST_RDEV_IDX, _PyLong_FromDev(rdev));
-
-    SET_ITEM(STX_MASK_IDX, PyLong_FromUnsignedLong(st->stx_mask & mask));
-    SET_ITEM(STX_ATTRIBUTES_IDX, PyLong_FromUnsignedLong(st->stx_attributes));
-    SET_ITEM(STX_ATTRIBUTES_MASK_IDX, PyLong_FromLong(st->stx_attributes_mask));
-#define SET_ITEM_IF_OFFSET(pos, bit, offset, len) \
-    do { \
-        void *addr = ((unsigned char*)st) + offset; \
-        PyObject *obj = mask & (bit) ? PyLong_FromUnsignedNativeBytes(addr, len, -1) : Py_None; \
-        if (obj == NULL) { \
-            goto error; \
-        } \
-        PyStructSequence_SET_ITEM(v, (pos), obj); \
-    } while (0)
-    SET_ITEM_IF_OFFSET(STX_MNT_ID_IDX, STATX_MNT_ID | STATX_MNT_ID_UNIQUE, 144, 8);
-    SET_ITEM_IF_OFFSET(STX_DIO_MEM_ALIGN_IDX, STATX_DIOALIGN, 152, 4);
-    SET_ITEM_IF_OFFSET(STX_DIO_OFFSET_ALIGN_IDX, STATX_DIOALIGN, 156, 4);
-    SET_ITEM_IF_OFFSET(STX_SUBVOL_IDX, STATX_SUBVOL, 160, 8);
-    SET_ITEM_IF_OFFSET(STX_ATOMIC_WRITE_UNIT_MIN_IDX, STATX_WRITE_ATOMIC, 168, 4);
-    SET_ITEM_IF_OFFSET(STX_ATOMIC_WRITE_UNIT_MAX_IDX, STATX_WRITE_ATOMIC, 172, 4);
-    SET_ITEM_IF_OFFSET(STX_ATOMIC_WRITE_SEGMENTS_MAX_IDX, STATX_WRITE_ATOMIC, 176, 4);
-    SET_ITEM_IF_OFFSET(STX_DIO_READ_OFFSET_ALIGN_IDX, STATX_DIO_READ_ALIGN, 180, 4);
-    SET_ITEM_IF_OFFSET(STX_ATOMIC_WRITE_UNIT_MAX_OPT_IDX, STATX_WRITE_ATOMIC, 184, 4);
 
     assert(!PyErr_Occurred());
     return v;
@@ -2993,9 +2903,6 @@ _pystat_fromstructstatx(PyObject *module, struct statx *st, unsigned int mask)
 error:
     Py_DECREF(v);
     return NULL;
-
-#undef SET_ITEM_IF_OFFSET
-#undef SET_ITEM_IF
 }
 #endif /* HAVE_LINUX_STATX */
 #undef SET_ITEM
@@ -3051,7 +2958,7 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
             }
         }
         else {
-            return _pystat_fromstructstatx(module, &stx, mask);
+            return _pystat_fromstructstatx(module, &stx);
         }
     }
 #endif /* HAVE_LINUX_STATX */
@@ -3506,6 +3413,31 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 
 #ifdef HAVE_LINUX_STATX
 static int
+statx_result_traverse(PyObject *self, visitproc visit, void *arg) {
+    Py_VISIT(Py_TYPE(self));
+    return PyObject_VisitManagedDict((PyObject*)self, visit, arg);
+}
+
+static int
+statx_result_clear(PyObject *self) {
+    PyObject_ClearManagedDict(self);
+    return 0;
+}
+
+static PyType_Slot statx_result_slots[] = {
+    {Py_tp_traverse, statx_result_traverse},
+    {Py_tp_clear, statx_result_clear},
+    {0, NULL},
+};
+
+static PyType_Spec statx_result_spec = {
+    .name = "statx_result",
+    .basicsize = sizeof(PyObject),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = statx_result_slots,
+};
+
+static int
 optional_bool_converter(PyObject *arg, void *addr) {
     int value;
     if (arg == Py_None) {
@@ -3600,7 +3532,86 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
     if (result != 0) {
         return path_error(path);
     }
-    return _pystat_fromstructstatx(module, &stx, raw ? _Py_STATX_KNOWN : mask & stx.stx_mask);
+
+    unsigned int fill_mask = raw ? _Py_STATX_KNOWN : mask & stx.stx_mask;
+
+    _posixstate *state = get_posix_state(module);
+    PyTypeObject *tp = (PyTypeObject *)state->StatxResultType;
+    PyObject *v = tp->tp_alloc(tp, 0);
+
+#define SET_ATTR_IF(name, cond, expr) \
+    do { \
+        PyObject *obj = (cond) ? (expr) : Py_None; \
+        if (obj == NULL) { \
+            goto error; \
+        } \
+        if (PyObject_SetAttrString(v, (name), obj) == -1) { \
+            Py_DECREF(obj); \
+            goto error; \
+        } \
+    } while (0)
+#define SET_ATTR(name, expr) SET_ATTR_IF((name), true, (expr))
+#define SET_ATTR_IF_BIT(name, bit, expr) SET_ATTR_IF((name), fill_mask & (bit), (expr))
+
+    SET_ATTR("stx_mask", PyLong_FromUnsignedLong(stx.stx_mask));
+    SET_ATTR("st_blksize", PyLong_FromUnsignedLong(stx.stx_blksize));
+    SET_ATTR("stx_attributes", PyLong_FromUnsignedLongLong(stx.stx_attributes));
+    SET_ATTR_IF_BIT("st_nlink", STATX_NLINK, PyLong_FromUnsignedLong(stx.stx_nlink));
+    SET_ATTR_IF_BIT("st_uid", STATX_UID, _PyLong_FromUid(stx.stx_uid));
+    SET_ATTR_IF_BIT("st_gid", STATX_GID, _PyLong_FromUid(stx.stx_gid));
+    SET_ATTR_IF_BIT("st_mode", STATX_TYPE | STATX_MODE, PyLong_FromUnsignedLong(stx.stx_mode));
+    SET_ATTR_IF_BIT("st_ino", STATX_INO, PyLong_FromUnsignedLongLong(stx.stx_ino));
+    SET_ATTR_IF_BIT("st_size", STATX_SIZE, PyLong_FromUnsignedLongLong(stx.stx_size));
+    SET_ATTR_IF_BIT("st_blocks", STATX_BLOCKS, PyLong_FromUnsignedLongLong(stx.stx_blocks));
+    SET_ATTR("stx_attributes_mask", PyLong_FromUnsignedLongLong(stx.stx_attributes_mask));
+
+#define SET_ATTR_IF_BIT_TS(name, bit, ts) \
+    do { \
+        if (fill_mask & (bit)) { \
+            SET_ATTR((name), PyFloat_FromDouble((double)(ts).tv_sec + 1e-9 * (ts).tv_nsec)); \
+            SET_ATTR(name "_ns", nanosecond_timestamp(state, (ts).tv_sec, (ts).tv_nsec)); \
+        } \
+        else { \
+            SET_ATTR((name), Py_None); \
+            SET_ATTR(name "_ns", Py_None); \
+        } \
+    } while (0)
+    SET_ATTR_IF_BIT_TS("st_atime", STATX_ATIME, stx.stx_atime);
+    SET_ATTR_IF_BIT_TS("st_mtime", STATX_MTIME, stx.stx_mtime);
+    SET_ATTR_IF_BIT_TS("st_ctime", STATX_CTIME, stx.stx_ctime);
+    SET_ATTR_IF_BIT_TS("st_birthtime", STATX_BTIME, stx.stx_btime);
+
+    bool rdev_relevant = (stx.stx_mask & STATX_TYPE) && (S_ISBLK(stx.stx_mode) || S_ISCHR(stx.stx_mode));
+    SET_ATTR_IF("st_rdev", rdev_relevant || raw, _PyLong_FromDev(makedev(stx.stx_rdev_major, stx.stx_rdev_minor)));
+    SET_ATTR("st_dev", _PyLong_FromDev(makedev(stx.stx_dev_major, stx.stx_dev_minor)));
+
+#define SET_ATTR_IF_BIT_OFFSET(name, bit, offset, length) \
+    do { \
+        void *addr = (unsigned char *)&stx + (offset); \
+        SET_ATTR_IF_BIT((name), (bit), PyLong_FromUnsignedNativeBytes(addr, (length), -1)); \
+    } while (0)
+    SET_ATTR_IF_BIT_OFFSET("stx_mnt_id", STATX_MNT_ID | STATX_MNT_ID_UNIQUE, 144, 8);
+    SET_ATTR_IF_BIT_OFFSET("stx_dio_mem_align", STATX_DIOALIGN, 152, 4);
+    SET_ATTR_IF_BIT_OFFSET("stx_dio_offset_align", STATX_DIOALIGN, 156, 4);
+    SET_ATTR_IF_BIT_OFFSET("stx_subvol", STATX_SUBVOL, 160, 8);
+    SET_ATTR_IF_BIT_OFFSET("stx_atomic_write_unit_min", STATX_WRITE_ATOMIC, 168, 4);
+    SET_ATTR_IF_BIT_OFFSET("stx_atomic_write_unit_max", STATX_WRITE_ATOMIC, 172, 4);
+    SET_ATTR_IF_BIT_OFFSET("stx_atomic_write_segments_max", STATX_WRITE_ATOMIC, 176, 4);
+    SET_ATTR_IF_BIT_OFFSET("stx_dio_read_offset_align", STATX_DIO_READ_ALIGN, 180, 4);
+    SET_ATTR_IF_BIT_OFFSET("stx_atomic_write_unit_max_opt", STATX_WRITE_ATOMIC, 184, 4);
+
+#undef SET_ATTR_IF_BIT_OFFSET
+#undef SET_ATTR_IF_BIT_TS
+#undef SET_ATTR_IF_BIT
+#undef SET_ATTR
+#undef SET_ATTR_IF
+
+    assert(!PyErr_Occurred());
+    return v;
+
+error:
+    Py_DECREF(v);
+    return Py_None;
 }
 #endif
 
@@ -18518,6 +18529,13 @@ posixmodule_exec(PyObject *m)
             return -1;
         }
         if (PyDict_PopString(dct, "statx", NULL) < 0) {
+            return -1;
+        }
+    }
+    else {
+        statx_result_spec.name = "os.statx_result";
+        state->StatxResultType = PyType_FromModuleAndSpec(m, &statx_result_spec, NULL);
+        if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
             return -1;
         }
     }
