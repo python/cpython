@@ -14,7 +14,7 @@ from test.support import (
     SuppressCrashReport,
     SHORT_TIMEOUT,
 )
-from test.support.script_helper import kill_python
+from test.support.script_helper import kill_python, spawn_python
 from test.support.import_helper import import_module
 
 try:
@@ -119,14 +119,13 @@ class TestInteractiveInterpreter(unittest.TestCase):
                 import traceback
                 traceback.print_exc()
             """)
-        p = spawn_repl()
         with SuppressCrashReport():
-            p.stdin.write(user_input)
+            p = spawn_python('-c', user_input)
         output = kill_python(p)
 
         self.assertIn(p.returncode, (0, 1, 120))
         self.assertGreater(len(output), 0)  # At minimum, should not hang
-        self.assertIn("MemoryError", output)
+        self.assertIn(b"MemoryError", output)
 
     @cpython_only
     def test_multiline_string_parsing(self):
