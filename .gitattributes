@@ -104,3 +104,6 @@ Tools/peg_generator/pegen/grammar_parser.py         generated
 aclocal.m4                                          generated
 configure                                           generated
 *.min.js                                            generated
+Modules/unicodedata_db.h                            generated
+Modules/unicodename_db.h                            generated
+Modules/unicodetype_db.h                            generated
