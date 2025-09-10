@@ -5500,10 +5500,12 @@ codegen_annassign(compiler *c, stmt_ty s)
                 RETURN_IF_ERROR(_PyCompile_AddDeferredAnnotation(
                     c, s, &conditional_annotation_index));
                 if (conditional_annotation_index != NULL) {
-                    ADDOP_NAME(
-                        c, loc,
-                        SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS ? LOAD_DEREF : LOAD_NAME,
-                        &_Py_ID(__conditional_annotations__), cellvars);
+                    if (SCOPE_TYPE(c) == COMPILE_SCOPE_CLASS) {
+                        ADDOP_NAME(c, loc, LOAD_DEREF, &_Py_ID(__conditional_annotations__), cellvars);
+                    }
+                    else {
+                        ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__conditional_annotations__), names);
+                    }
                     ADDOP_LOAD_CONST_NEW(c, loc, conditional_annotation_index);
                     ADDOP_I(c, loc, SET_ADD, 1);
                     ADDOP(c, loc, POP_TOP);
