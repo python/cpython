@@ -202,12 +202,6 @@ enum _GCPhase {
 #define NUM_GENERATIONS 3
 
 struct _gc_runtime_state {
-    /* List of objects that still need to be cleaned up, singly linked
-     * via their gc headers' gc_prev pointers.  */
-    PyObject *trash_delete_later;
-    /* Current call-stack depth of tp_dealloc calls. */
-    int trash_delete_nesting;
-
     /* Is automatic collection enabled? */
     int enabled;
     int debug;
