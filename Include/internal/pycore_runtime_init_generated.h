@@ -982,6 +982,7 @@ extern "C" {
     INIT_ID(format), \
     INIT_ID(format_spec), \
     INIT_ID(frame_buffer), \
+    INIT_ID(free_threaded), \
     INIT_ID(from_param), \
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
@@ -1077,6 +1078,7 @@ extern "C" {
     INIT_ID(last_value), \
     INIT_ID(latin1), \
     INIT_ID(leaf_size), \
+    INIT_ID(legacy), \
     INIT_ID(len), \
     INIT_ID(length), \
     INIT_ID(level), \
@@ -1180,6 +1182,7 @@ extern "C" {
     INIT_ID(person), \
     INIT_ID(pi_factory), \
     INIT_ID(pid), \
+    INIT_ID(pointer_bits), \
     INIT_ID(policy), \
     INIT_ID(pos), \
     INIT_ID(pos1), \
@@ -1249,6 +1252,7 @@ extern "C" {
     INIT_ID(setstate), \
     INIT_ID(shape), \
     INIT_ID(shared), \
+    INIT_ID(short), \
     INIT_ID(show_cmd), \
     INIT_ID(signed), \
     INIT_ID(signum), \

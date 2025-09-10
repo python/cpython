@@ -75,8 +75,8 @@ New features
 High frequency statistical sampling profiler
 --------------------------------------------
 
-A new statistical sampling profiler has been added to the :mod:`profile` module as
-:mod:`profile.sample`. This profiler enables low-overhead performance analysis of
+A new statistical sampling profiler has been added to the new :mod:`!profiling` module as
+:mod:`!profiling.sampling`. This profiler enables low-overhead performance analysis of
 running Python processes without requiring code modification or process restart.
 
 Unlike deterministic profilers (:mod:`cProfile` and :mod:`profile`) that instrument
@@ -97,19 +97,19 @@ Key features include:
 
 Profile process 1234 for 10 seconds with default settings::
 
-  python -m profile.sample 1234
+  python -m profiling.sampling 1234
 
 Profile with custom interval and duration, save to file::
 
-  python -m profile.sample -i 50 -d 30 -o profile.stats 1234
+  python -m profiling.sampling -i 50 -d 30 -o profile.stats 1234
 
 Generate collapsed stacks for flamegraph::
 
-  python -m profile.sample --collapsed 1234
+  python -m profiling.sampling --collapsed 1234
 
 Profile all threads and sort by total time::
 
-  python -m profile.sample -a --sort-tottime 1234
+  python -m profiling.sampling -a --sort-tottime 1234
 
 The profiler generates statistical estimates of where time is spent::
 
@@ -295,6 +295,7 @@ dbm
   This may harm performance, but improve crash tolerance.
   (Contributed by Serhiy Storchaka in :gh:`66234`.)
 
+
 difflib
 -------
 
@@ -358,6 +359,15 @@ math
   (Contributed by Bénédikt Tran in :gh:`135853`.)
 
 
+mmap
+----
+
+* :class:`mmap.mmap` now has a *trackfd* parameter on Windows;
+  if it is ``False``, the file handle corresponding to *fileno* will
+  not be duplicated.
+  (Contributed by Serhiy Storchaka in :gh:`78502`.)
+
+
 os.path
 -------
 
@@ -369,6 +379,7 @@ os.path
   If used, errors other than :exc:`FileNotFoundError` will be re-raised;
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
+
 
 resource
 --------
@@ -398,7 +409,7 @@ sqlite3
    * Prompts, error messages, and help text are now colored.
      This is enabled by default, see :ref:`using-on-controlling-color` for
      details.
-     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`)
+     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
 
 ssl
@@ -424,7 +435,38 @@ ssl
      agreement groups compatible with the minimum and maximum TLS versions
      currently set in the context. This call requires OpenSSL 3.5 or later.
 
-   (Contributed by Ron Frederick in :gh:`136306`)
+   (Contributed by Ron Frederick in :gh:`136306`.)
+
+* Added a new method :meth:`ssl.SSLContext.set_ciphersuites` for setting TLS 1.3
+  ciphers. For TLS 1.2 or earlier, :meth:`ssl.SSLContext.set_ciphers` should
+  continue to be used. Both calls can be made on the same context and the
+  selected cipher suite will depend on the TLS version negotiated when a
+  connection is made.
+  (Contributed by Ron Frederick in :gh:`137197`.)
+
+* Added new methods for managing signature algorithms:
+
+  * :func:`ssl.get_sigalgs` returns a list of all available TLS signature
+    algorithms. This call requires OpenSSL 3.4 or later.
+  * :meth:`ssl.SSLContext.set_client_sigalgs` sets the signature algorithms
+    allowed for certificate-based client authentication.
+  * :meth:`ssl.SSLContext.set_server_sigalgs` sets the signature algorithms
+    allowed for the server to complete the TLS handshake.
+  * :meth:`ssl.SSLSocket.client_sigalg` returns the signature algorithm
+    selected for client authentication on the current connection. This call
+    requires OpenSSL 3.5 or later.
+  * :meth:`ssl.SSLSocket.server_sigalg` returns the signature algorithm
+    selected for the server to complete the TLS handshake on the current
+    connection. This call requires OpenSSL 3.5 or later.
+
+   (Contributed by Ron Frederick in :gh:`138252`.)
+
+
+sys
+---
+
+* Add :data:`sys.abi_info` namespace to improve access to ABI information.
+  (Contributed by Klaus Zimmermann in :gh:`137476`.)
 
 
 tarfile
@@ -447,6 +489,10 @@ tarfile
   :func:`~tarfile.TarFile.errorlevel` is zero.
   (Contributed by Matt Prodani and Petr Viktorin in :gh:`112887`
   and :cve:`2025-4435`.)
+* :func:`~tarfile.TarFile.extract` and :func:`~tarfile.TarFile.extractall`
+  now replace slashes by backslashes in symlink targets on Windows to prevent
+  creation of corrupted links.
+  (Contributed by Christoph Walcher in :gh:`57911`.)
 
 
 types
@@ -611,6 +657,14 @@ wave
   (Contributed by Bénédikt Tran in :gh:`133873`.)
 
 
+zipimport
+---------
+
+* Remove deprecated :meth:`!zipimport.zipimporter.load_module`.
+  Use :meth:`zipimport.zipimporter.exec_module` instead.
+  (Contributed by Jiahao Li in :gh:`133656`.)
+
+
 Porting to Python 3.15
 ======================
 
@@ -640,7 +694,12 @@ New features
 
 * Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
   a string. See the documentation for caveats.
-  (Contributed by Petr Viktorin in :gh:`131510`)
+  (Contributed by Petr Viktorin in :gh:`131510`.)
+
+* Add API for checking an extension module's ABI compatibility:
+  :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
+  and :c:data:`Py_mod_abi`.
+  (Contributed by Petr Viktorin in :gh:`137210`.)
 
 
 Porting to Python 3.15
@@ -668,6 +727,9 @@ Porting to Python 3.15
   :func:`resource.setrlimit` and :func:`resource.prlimit` is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`137044`.)
 
+* :meth:`~mmap.mmap.resize` has been removed on platforms that don't support the
+  underlying syscall, instead of raising a :exc:`SystemError`.
+
 
 Deprecated C APIs
 -----------------
@@ -690,6 +752,7 @@ Deprecated C APIs
   :c:func:`_Py_c_abs` are :term:`soft deprecated`.
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
 
+
 .. Add C API deprecations above alphabetically, not here at the end.
 
 Removed C APIs
@@ -708,7 +771,7 @@ Removed C APIs
     Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
     may return a type other than :class:`bytes`, such as :class:`str`.
 
-  (Contributed by Stan Ulbrych in :gh:`133612`)
+  (Contributed by Stan Ulbrych in :gh:`133612`.)
 
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.

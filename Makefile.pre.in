@@ -2565,6 +2565,10 @@ LIBSUBDIRS=	asyncio \
 		multiprocessing multiprocessing/dummy \
 		pathlib \
 		profile \
+		profiling profiling/sampling profiling/tracing \
+		profiling/sampling/_assets \
+		profiling/sampling/_vendor/d3/7.8.5 \
+		profiling/sampling/_vendor/d3-flame-graph/4.1.3 \
 		pydoc_data \
 		re \
 		site-packages \
@@ -2647,6 +2651,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
+		test/test_importlib/namespace_pkgs/foo \
 		test/test_importlib/namespace_pkgs/module_and_namespace_package \
 		test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg \
@@ -2669,6 +2674,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/source \
 		test/test_inspect \
 		test/test_interpreters \
+		test/test_io \
 		test/test_json \
 		test/test_module \
 		test/test_multiprocessing_fork \
@@ -2677,6 +2683,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_pathlib \
 		test/test_pathlib/support \
 		test/test_peg_generator \
+		test/test_profiling \
 		test/test_pydoc \
 		test/test_pyrepl \
 		test/test_string \
@@ -3355,7 +3362,7 @@ MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/uni
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
-MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
+MODULE__DECIMAL_DEPS=@LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
