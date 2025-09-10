@@ -286,8 +286,8 @@ Improved modules
 collections
 -----------
 
-* Added :meth:`collections.Counter.__xor__` and
-  :meth:`collections.Counter.__ixor__` to compute the symmetric difference
+* Added :meth:`!collections.Counter.__xor__` and
+  :meth:`!collections.Counter.__ixor__` to compute the symmetric difference
   between Counter objects.
   (Contributed by Raymond Hettinger in :gh:`138682`.)
 
