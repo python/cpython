@@ -36,6 +36,12 @@ class ReadTestBase:
             self.assertIsInstance(f, io.TextIOBase)
             self.assertEqual(f.read(), 'this is file A\n')
 
+    def test_open_r_buffering_error(self):
+        p = self.root / 'fileA'
+        self.assertRaises(ValueError, vfsopen, p, 'r', buffering=0)
+        self.assertRaises(ValueError, vfsopen, p, 'r', buffering=1)
+        self.assertRaises(ValueError, vfsopen, p, 'r', buffering=1024)
+
     @unittest.skipIf(
         not getattr(sys.flags, 'warn_default_encoding', 0),
         "Requires warn_default_encoding",

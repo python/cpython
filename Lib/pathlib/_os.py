@@ -219,7 +219,7 @@ def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
     text = 'b' not in mode
     if buffering != -1:
         raise ValueError("buffer size can't be customized")
-    elif text:
+    if text:
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = text_encoding(encoding)

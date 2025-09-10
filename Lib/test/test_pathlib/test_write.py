@@ -36,6 +36,12 @@ class WriteTestBase:
             f.write('this is file A\n')
         self.assertEqual(self.ground.readtext(p), 'this is file A\n')
 
+    def test_open_w_buffering_error(self):
+        p = self.root / 'fileA'
+        self.assertRaises(ValueError, vfsopen, p, 'w', buffering=0)
+        self.assertRaises(ValueError, vfsopen, p, 'w', buffering=1)
+        self.assertRaises(ValueError, vfsopen, p, 'w', buffering=1024)
+
     @unittest.skipIf(
         not getattr(sys.flags, 'warn_default_encoding', 0),
         "Requires warn_default_encoding",
