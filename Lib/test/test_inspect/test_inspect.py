@@ -1778,39 +1778,60 @@ class TestClassesAndFunctions(unittest.TestCase):
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
-        from test.typinganndata.ann_module9 import ann, ann1
+        from test.typinganndata.ann_module9 import A, ann, ann1
         self.assertEqual(inspect.formatannotation(ann), 'List[str] | int')
         self.assertEqual(inspect.formatannotation(ann1), 'List[testModule.typing.A] | int')
+
+        self.assertEqual(inspect.formatannotation(A, 'testModule.typing'), 'A')
+        self.assertEqual(inspect.formatannotation(A, 'other'), 'testModule.typing.A')
+        self.assertEqual(
+            inspect.formatannotation(ann1, 'testModule.typing'),
+            'List[testModule.typing.A] | int',
+        )
 
     def test_forwardref(self):
         fwdref = ForwardRef('fwdref')
         self.assertEqual(inspect.formatannotation(fwdref), 'fwdref')
 
     def test_formatannotationrelativeto(self):
-        import typing
-        from test.typinganndata.ann_module9 import A
+        from test.typinganndata.ann_module9 import A, ann1
 
-        class B: ...
+        # Builtin types:
+        self.assertEqual(
+            inspect.formatannotationrelativeto(object)(type),
+            'type',
+        )
 
+        # Custom types:
         self.assertEqual(
             inspect.formatannotationrelativeto(None)(A),
             'testModule.typing.A',
         )
         self.assertEqual(
-            inspect.formatannotationrelativeto(inspect)(A),
-            'testModule.typing.A',
-        )
-        self.assertEqual(
-            inspect.formatannotationrelativeto(typing.Literal)(A),
-            'testModule.typing.A',
-        )
-        self.assertEqual(
-            inspect.formatannotationrelativeto(B)(A),
-            'testModule.typing.A',
-        )
-        self.assertEqual(
             inspect.formatannotationrelativeto(A)(A),
             'A',
+        )
+
+        class B: ...
+        B.__module__ = 'testModule.typing'
+
+        self.assertEqual(
+            inspect.formatannotationrelativeto(B)(A),
+            'A',
+        )
+
+        class C: ...
+        C.__module__ = 'other'
+
+        self.assertEqual(
+            inspect.formatannotationrelativeto(C)(A),
+            'testModule.typing.A',
+        )
+
+        # Not an instance of "type":
+        self.assertEqual(
+            inspect.formatannotationrelativeto(A)(ann1),
+            'List[testModule.typing.A] | int',
         )
 
 
