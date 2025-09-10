@@ -1,0 +1,3 @@
+Fix an issue where :meth:`~BufferedIOBase.close` would think the I/O object was
+open and call :meth:`~BufferedIOBase.flush` but flush would error that the
+file was already closed by making the two functions use the same logic.
