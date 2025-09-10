@@ -149,10 +149,10 @@ def fallback_getpass(prompt='Password: ', stream=None, *, echo_char=None):
 def _check_echo_char(echo_char):
     # Single-character ASCII excluding control characters
     if echo_char and not (
-            len(echo_char) == 1
-            and echo_char.isprintable()
-            and echo_char.isascii()
-        ):
+        len(echo_char) == 1
+        and echo_char.isprintable()
+        and echo_char.isascii()
+    ):
         raise ValueError("'echo_char' must be a single printable ASCII "
                          f"character got: {echo_char!r}")
 
