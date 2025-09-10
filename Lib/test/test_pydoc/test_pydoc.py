@@ -2179,7 +2179,8 @@ class TestHelper(unittest.TestCase):
             with unittest.mock.patch.object(helper, "getline", mock_getline):
                 helper.interact()
 
-        return output.getvalue().split(os.linesep)
+        # handle different line endings across platforms consistently
+        return output.getvalue().splitlines(keepends=False) + ['']
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
