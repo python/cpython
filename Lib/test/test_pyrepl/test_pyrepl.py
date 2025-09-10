@@ -1787,3 +1787,33 @@ class TestMain(ReplTestCase):
                     " outside of the Python REPL"
                 )
                 self.assertIn(hint, output)
+
+    @force_not_colorized
+    def test_no_newline(self):
+        env = os.environ.copy()
+        env.pop("PYTHON_BASIC_REPL", "")
+        env["PYTHON_BASIC_REPL"] = "1"
+        expected_output_sequence = "Something pretty long>>> exit()"
+        basic_output, basic_exit_code = self.run_repl("print('Something pretty long', end='')\nexit()\n", env=env)
+        self.assertEqual(basic_exit_code, 0)
+        self.assertIn(expected_output_sequence, basic_output)
+
+        output, exit_code = self.run_repl("print('Something pretty long', end='')\nexit()\n")
+        self.assertEqual(exit_code, 0)
+
+        # Define escape sequences that don't affect cursor position or visual output
+        bracketed_paste_mode = r'\x1b\[\?2004[hl]'  # Enable/disable bracketed paste
+        application_cursor_keys = r'\x1b\[\?1[hl]'   # Enable/disable application cursor keys
+        application_keypad_mode = r'\x1b[=>]'         # Enable/disable application keypad
+        insert_character = r'\x1b\[\d+@'             # Insert character sequences
+        cursor_visibility = r'\x1b\[\?25[hl]'        # Show/hide cursor
+        cursor_blinking = r'\x1b\[\?12[hl]'          # Start/stop cursor blinking
+
+        # Remove only non-visual terminal control sequences (NOT cursor movement)
+        cleaned_output = re.sub(
+            f'{bracketed_paste_mode}|{application_cursor_keys}|{application_keypad_mode}|{insert_character}|{cursor_visibility}|{cursor_blinking}',
+            '',
+            output
+        )
+
+        self.assertIn(expected_output_sequence, cleaned_output)
