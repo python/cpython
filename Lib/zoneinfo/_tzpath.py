@@ -13,6 +13,14 @@ def _reset_tzpath(to=None, stacklevel=4):
                 + f"not {type(tzpaths)}: {tzpaths!r}"
             )
 
+        tzpaths = [os.fspath(p) for p in tzpaths]
+        nonstr_paths = [p for p in tzpaths if not isinstance(p, str)]
+        if nonstr_paths:
+            raise TypeError(
+                "All elements of a tzpath sequence must be strings or "
+                "os.PathLike objects which convert to strings."
+            )
+
         if not all(map(os.path.isabs, tzpaths)):
             raise ValueError(_get_invalid_paths_message(tzpaths))
         base_tzpath = tzpaths
@@ -57,7 +65,7 @@ def _parse_python_tzpath(env_var, stacklevel):
 
 
 def _get_invalid_paths_message(tzpaths):
-    invalid_paths = (os.fspath(path) for path in tzpaths if not os.path.isabs(path))
+    invalid_paths = (path for path in tzpaths if not os.path.isabs(path))
 
     prefix = "\n    "
     indented_str = prefix + prefix.join(invalid_paths)
