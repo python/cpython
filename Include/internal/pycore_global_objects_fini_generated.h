@@ -984,6 +984,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(format_spec));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(frame_buffer));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(free_threaded));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(from_param));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fromlist));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fromtimestamp));
@@ -1079,6 +1080,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last_value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(latin1));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(leaf_size));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(legacy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(len));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(length));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(level));
@@ -1182,6 +1184,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(person));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pi_factory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pid));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pointer_bits));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(policy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pos));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pos1));
@@ -1251,6 +1254,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(setstate));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(shape));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(shared));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(short));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(show_cmd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(signed));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(signum));
