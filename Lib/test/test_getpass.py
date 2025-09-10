@@ -203,7 +203,7 @@ class UnixGetpassTest(unittest.TestCase):
 
 class GetpassEchoCharTest(unittest.TestCase):
     # Tests for the `echo_char` parameter of `getpass.getpass()`
-    # Successful Validation Cases
+    # Successful Validation Case(s)
     def test_accepts_none(self):
         getpass._check_echo_char(None)
 
