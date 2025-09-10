@@ -1,1 +1,1 @@
-Move Include/dynamic_annotations.h to be outside extern "C"
+Fix linking of the free-threaded build with C++ compiler.
