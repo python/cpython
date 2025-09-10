@@ -1,14 +1,15 @@
 #ifndef Py_INTERNAL_PYTHREAD_H
 #define Py_INTERNAL_PYTHREAD_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
 #include "dynamic_annotations.h"     // _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "pycore_llist.h"            // struct llist_node
 
 // Get _POSIX_THREADS and _POSIX_SEMAPHORES macros if available
