@@ -893,7 +893,7 @@ Primaries represent the most tightly bound operations of the language. Their
 syntax is:
 
 .. productionlist:: python-grammar
-   primary: `atom` | `attributeref` | `subscription` | `slicing` | `call`
+   primary: `atom` | `attributeref` | `subscription` | `call`
 
 
 .. _attribute-references:
@@ -931,9 +931,10 @@ If an :exc:`AttributeError` is raised and the object has a :meth:`!__getattr__`
 method, that method is called as a fallback.
 
 .. _subscriptions:
+.. _slicings:
 
-Subscriptions
--------------
+Subscriptions and slicing
+-------------------------
 
 .. index::
    single: subscription
@@ -949,62 +950,138 @@ Subscriptions
    pair: sequence; item
 
 The subscription of an instance of a :ref:`container class <sequence-types>`
-will generally select an element from the container. The subscription of a
-:term:`generic class <generic type>` will generally return a
-:ref:`GenericAlias <types-genericalias>` object.
+will generally select an element from the container.
+Subscripting a mapping will select a value using a key::
 
-.. productionlist:: python-grammar
-   subscription: `primary` "[" `flexible_expression_list` "]"
+   >>> digits_by_name = {'one': 1, 'two': 2}
+   >>> digits_by_name['two']
+   2
 
-When an object is subscripted, the interpreter will evaluate the primary and
-the expression list.
+Subscripting a sequence will select an item using an index::
 
-The primary must evaluate to an object that supports subscription. An object
-may support subscription through defining one or both of
-:meth:`~object.__getitem__` and :meth:`~object.__class_getitem__`. When the
-primary is subscripted, the evaluated result of the expression list will be
-passed to one of these methods. For more details on when ``__class_getitem__``
-is called instead of ``__getitem__``, see :ref:`classgetitem-versus-getitem`.
+   >>> number_names = ['zero', 'one', 'two', 'three', 'four', 'five']
+   >>> number_names[2]
+   'two'
+   >>> number_names[-2]
+   'four'
 
-If the expression list contains at least one comma, or if any of the expressions
-are starred, the expression list will evaluate to a :class:`tuple` containing
-the items of the expression list. Otherwise, the expression list will evaluate
-to the value of the list's sole member.
+The subscription of a :term:`generic class <generic type>` will generally
+return a :ref:`GenericAlias <types-genericalias>` object::
+
+   >>> list[str]
+   list[str]
+
+At the syntax level, all of these operations are equivalent.
+The object being subscribed must be a :ref:`primary <primaries>`.
+When it is subscripted, the interpreter will evaluate the primary and
+the the contents of the square brackets.
+
+The primary must evaluate to an object that supports subscription.
+An object may support subscription through defining one or both of
+:meth:`~object.__getitem__` and :meth:`~object.__class_getitem__`.
+For more details on when ``__class_getitem__`` is called instead of
+``__getitem__``, see :ref:`classgetitem-versus-getitem`.
+
+In its simplest form, square brackets contain a single expression.
+The evaluated result of this expression will be passed to the
+:meth:`~object.__getitem__` or :meth:`~object.__getitem__` method.
+
+The square brackets can also contain up to three expressions separated by
+colons::
+
+   >>> number_names = ['zero', 'one', 'two', 'three', 'four', 'five']
+   >>> number_names[1:3]
+   ['one', 'two']
+
+This form of subscription is called :term:`slicing`.
+Any of the expressions may be omitted, but at least one colon is necessary
+for this form::
+
+   >>> number_names[1:]
+   ['one', two', 'three', 'four', 'five']
+   >>> number_names[:3]
+   ['zero', 'one', 'two']
+   >>> number_names[:]
+   ['zero', 'one', 'two']
+   >>> number_names[::2]
+   ['zero', 'two', 'four']
+
+When such a :term:`slice` is evaluated, the interpreter constructs a
+:class:`slice` objects whose :attr:`~slice.start`, :attr:`~slice.stop` and
+:attr:`~slice.step` attributes, respectively, are the results of the
+expressions between the colons.
+Any missing expression evaluates to :const:`None`.
+This :class:`!slice` object is then passed to the :meth:`~object.__getitem__`
+or :meth:`~object.__getitem__` method, as above.
+
+For clarity, here is a custom object that prints out the key it was subscripted
+with::
+
+   >>> class SubscriptionDemo:
+   ...     def __getitem__(self, key):
+   ...         print(f'subscripted with: {key!r}')
+   ...
+   >>> demo = SubscriptionDemo()
+   >>> demo[1]
+   subscripted with: 1
+   >>> demo[2:3]
+   subscripted with: slice(2, 3, None)
+   >>> demo[::'spam']
+   subscripted with slice(None, None, 'spam')
+
+The square brackets used for slicing can also contain two or more
+comma-separated expressions or slices, or one expression or slice followed
+by a comma.
+In this case, the interpreter constructs a tuple of the results of the
+expressions or slices, and passes this tuple to the :meth:`~object.__getitem__`
+or :meth:`~object.__getitem__` method, as above::
+
+   >>> demo[1, 2, 3]
+   subscripted with (1, 2, 3)
+   >>> demo['spam',]
+   subscripted with ('spam',)
+
+The square brackets can also contain a starred expression.
+In this case, the interpreter unpacks the result into a tuple, and passes
+this tuple to :meth:`~object.__getitem__` or :meth:`~object.__getitem__`::
+
+   >>> demo[*range(10)]
+   subscripted with (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   subscription: `primary` '[' `slices` ']'
+   slices:       `slice` | `tuple_slices`
+   tuple_slices: ','.(slice | starred_expression)+ [',']
+
+   slice:
+      | proper_slice
+      | assignment_expression
+
+
+If *slices* contains ony one unstarred *slice* without a trailing comma,
+it will evaluate to the value of that *slice*.
+Otherwise, *slices* will evaluate to a :class:`tuple` containing
+the items of *slices*
+
+.. grammar-snippet::
+   :group: python-grammar
+
+   proper_slice: [`lower_bound`] ":" [`upper_bound`] [ ":" [`stride`] ]
+   lower_bound: `expression`
+   upper_bound: `expression`
+   stride: `expression`
 
 .. versionchanged:: 3.11
-   Expressions in an expression list may be starred. See :pep:`646`.
+   Expressions in *tuple_slices* may be starred. See :pep:`646`.
 
-For built-in objects, there are two types of objects that support subscription
-via :meth:`~object.__getitem__`:
+See :meth:`~object.__getitem__` documentation for how built-in types handle
+subscription, including support for negative indices.
 
-1. Mappings. If the primary is a :term:`mapping`, the expression list must
-   evaluate to an object whose value is one of the keys of the mapping, and the
-   subscription selects the value in the mapping that corresponds to that key.
-   An example of a builtin mapping class is the :class:`dict` class.
-2. Sequences. If the primary is a :term:`sequence`, the expression list must
-   evaluate to an :class:`int` or a :class:`slice` (as discussed in the
-   following section). Examples of builtin sequence classes include the
-   :class:`str`, :class:`list` and :class:`tuple` classes.
-
-The formal syntax makes no special provision for negative indices in
-:term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
-method that interprets negative indices by adding the length of the sequence
-to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
-resulting value must be a nonnegative integer less than the number of items in
-the sequence, and the subscription selects the item whose index is that value
-(counting from zero). Since the support for negative indices and slicing
-occurs in the object's :meth:`~object.__getitem__` method, subclasses overriding
-this method will need to explicitly add that support.
-
-.. index::
-   single: character
-   pair: string; item
-
-A :class:`string <str>` is a special kind of sequence whose items are
-*characters*. A character is not a separate data type but a
-string of exactly one character.
-
-
+<<<
 .. _slicings:
 
 Slicings
@@ -1022,43 +1099,7 @@ Slicings
    pair: object; tuple
    pair: object; list
 
-A slicing selects a range of items in a sequence object (e.g., a string, tuple
-or list).  Slicings may be used as expressions or as targets in assignment or
-:keyword:`del` statements.  The syntax for a slicing:
-
-.. productionlist:: python-grammar
-   slicing: `primary` "[" `slice_list` "]"
-   slice_list: `slice_item` ("," `slice_item`)* [","]
-   slice_item: `expression` | `proper_slice`
-   proper_slice: [`lower_bound`] ":" [`upper_bound`] [ ":" [`stride`] ]
-   lower_bound: `expression`
-   upper_bound: `expression`
-   stride: `expression`
-
-There is ambiguity in the formal syntax here: anything that looks like an
-expression list also looks like a slice list, so any subscription can be
-interpreted as a slicing.  Rather than further complicating the syntax, this is
-disambiguated by defining that in this case the interpretation as a subscription
-takes priority over the interpretation as a slicing (this is the case if the
-slice list contains no proper slice).
-
-.. index::
-   single: start (slice object attribute)
-   single: stop (slice object attribute)
-   single: step (slice object attribute)
-
-The semantics for a slicing are as follows.  The primary is indexed (using the
-same :meth:`~object.__getitem__` method as
-normal subscription) with a key that is constructed from the slice list, as
-follows.  If the slice list contains at least one comma, the key is a tuple
-containing the conversion of the slice items; otherwise, the conversion of the
-lone slice item is the key.  The conversion of a slice item that is an
-expression is that expression.  The conversion of a proper slice is a slice
-object (see section :ref:`types`) whose :attr:`~slice.start`,
-:attr:`~slice.stop` and :attr:`~slice.step` attributes are the values of the
-expressions given as lower bound, upper bound and stride, respectively,
-substituting ``None`` for missing expressions.
-
+>>>
 
 .. index::
    pair: object; callable

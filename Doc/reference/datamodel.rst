@@ -3202,6 +3202,66 @@ through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__getitem__(self, key)
 
+<<<<
+
+For built-in objects, there are two types of objects that support subscription
+via :meth:`~object.__getitem__`:
+
+1. Mappings. If the primary is a :term:`mapping`, the expression list must
+   evaluate to an object whose value is one of the keys of the mapping, and the
+   subscription selects the value in the mapping that corresponds to that key.
+   An example of a builtin mapping class is the :class:`dict` class.
+2. Sequences. If the primary is a :term:`sequence`, the expression list must
+   evaluate to an :class:`int` or a :class:`slice` (as discussed in the
+   following section). Examples of builtin sequence classes include the
+   :class:`str`, :class:`list` and :class:`tuple` classes.
+
+The formal syntax makes no special provision for negative indices in
+:term:`sequences <sequence>`. However, built-in sequences all provide a :meth:`~object.__getitem__`
+method that interprets negative indices by adding the length of the sequence
+to the index so that, for example, ``x[-1]`` selects the last item of ``x``. The
+resulting value must be a nonnegative integer less than the number of items in
+the sequence, and the subscription selects the item whose index is that value
+(counting from zero). Since the support for negative indices and slicing
+occurs in the object's :meth:`~object.__getitem__` method, subclasses overriding
+this method will need to explicitly add that support.
+
+.. index::
+   single: character
+   pair: string; item
+
+A :class:`string <str>` is a special kind of sequence whose items are
+*characters*. A character is not a separate data type but a
+string of exactly one character.
+
+...
+
+
+A slicing selects a range of items in a sequence object (e.g., a string, tuple
+or list).  Slicings may be used as expressions or as targets in assignment or
+:keyword:`del` statements.  The syntax for a slicing:
+
+
+.. index::
+   single: start (slice object attribute)
+   single: stop (slice object attribute)
+   single: step (slice object attribute)
+
+The semantics for a slicing are as follows.  The primary is indexed (using the
+same :meth:`~object.__getitem__` method as
+normal subscription) with a key that is constructed from the slice list, as
+follows.  If the slice list contains at least one comma, the key is a tuple
+containing the conversion of the slice items; otherwise, the conversion of the
+lone slice item is the key.  The conversion of a slice item that is an
+expression is that expression.  The conversion of a proper slice is a slice
+object (see section :ref:`types`) whose :attr:`~slice.start`,
+:attr:`~slice.stop` and :attr:`~slice.step` attributes are the values of the
+expressions given as lower bound, upper bound and stride, respectively,
+substituting ``None`` for missing expressions.
+
+
+====
+
    Called to implement evaluation of ``self[key]``. For :term:`sequence` types,
    the accepted keys should be integers. Optionally, they may support
    :class:`slice` objects as well.  Negative index support is also optional.
@@ -3211,6 +3271,8 @@ through the object's keys; for sequences, it should iterate through the values.
    interpretation of negative values), :exc:`IndexError` should be raised. For
    :term:`mapping` types, if *key* is missing (not in the container),
    :exc:`KeyError` should be raised.
+
+>>>>>>
 
    .. note::
 
