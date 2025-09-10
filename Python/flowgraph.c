@@ -3617,7 +3617,10 @@ propagate_line_numbers(basicblock *entryblock) {
         }
         if (is_jump(last)) {
             basicblock *target = last->i_target;
-            if (target->b_predecessors == 1) {
+            while (target->b_iused == 0 && target->b_predecessors == 1) {
+                target = target->b_next;
+            }
+            if (target->b_predecessors == 1 && target->b_iused > 0) {
                 if (target->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
                     target->b_instr[0].i_loc = prev_location;
                 }
