@@ -11,9 +11,6 @@ On Windows, the msvcrt module will be used.
 
 """
 
-# fmt: off
-# isort: skip_file
-
 # Authors: Piers Lauder (original)
 #          Guido van Rossum (Windows support and cleanup)
 #          Gregory P. Smith (tty support & GetPassWarning)
