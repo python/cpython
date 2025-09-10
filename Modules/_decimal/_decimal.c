@@ -1651,7 +1651,7 @@ error:
 }
 
 static PyObject *
-context_copy(PyObject *self, decimal_state *state)
+context_copy(decimal_state *state, PyObject *v)
 {
     PyObject *copy =
         PyObject_CallObject((PyObject *)state->PyDecContext_Type, NULL);
@@ -1660,9 +1660,9 @@ context_copy(PyObject *self, decimal_state *state)
         return NULL;
     }
 
-    *CTX(copy) = *CTX(self);
+    *CTX(copy) = *CTX(v);
     CTX(copy)->newtrap = 0;
-    CtxCaps(copy) = CtxCaps(self);
+    CtxCaps(copy) = CtxCaps(v);
 
     return copy;
 }
@@ -1681,7 +1681,7 @@ _decimal_Context_copy_impl(PyObject *self, PyTypeObject *cls)
 {
     decimal_state *state = PyType_GetModuleState(cls);
 
-    return context_copy(self, state);
+    return context_copy(state, self);
 }
 
 /*[clinic input]
@@ -1695,7 +1695,7 @@ _decimal_Context___copy___impl(PyObject *self, PyTypeObject *cls)
 {
     decimal_state *state = PyType_GetModuleState(cls);
 
-    return context_copy(self, state);
+    return context_copy(state, self);
 }
 
 /*[clinic input]
@@ -1814,7 +1814,7 @@ current_context_from_dict(decimal_state *modstate)
         }
 
         /* Set up a new thread local context. */
-        tl_context = context_copy(modstate->default_context_template, modstate);
+        tl_context = context_copy(modstate, modstate->default_context_template);
         if (tl_context == NULL) {
             return NULL;
         }
@@ -1890,7 +1890,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
     if (v == state->default_context_template ||
         v == state->basic_context_template ||
         v == state->extended_context_template) {
-        v = context_copy(v, state);
+        v = context_copy(state, v);
         if (v == NULL) {
             return NULL;
         }
@@ -1913,7 +1913,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
 static PyObject *
 init_current_context(decimal_state *state)
 {
-    PyObject *tl_context = context_copy(state->default_context_template, state);
+    PyObject *tl_context = context_copy(state, state->default_context_template);
     if (tl_context == NULL) {
         return NULL;
     }
@@ -1974,7 +1974,7 @@ PyDec_SetCurrentContext(PyObject *self, PyObject *v)
     if (v == state->default_context_template ||
         v == state->basic_context_template ||
         v == state->extended_context_template) {
-        v = context_copy(v, state);
+        v = context_copy(state, v);
         if (v == NULL) {
             return NULL;
         }
@@ -2071,7 +2071,7 @@ _decimal_localcontext_impl(PyObject *module, PyObject *local, PyObject *prec,
         return NULL;
     }
 
-    PyObject *local_copy = context_copy(local, state);
+    PyObject *local_copy = context_copy(state, local);
     if (local_copy == NULL) {
         return NULL;
     }
