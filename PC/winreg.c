@@ -2020,6 +2020,45 @@ winreg_EnableReflectionKey_impl(PyObject *module, HKEY key)
 }
 
 /*[clinic input]
+winreg.DeleteTree
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType}) = None
+        A string that names the subkey to delete. If None, deletes all subkeys
+        and values of the specified key.
+    /
+
+Deletes the specified key and all its subkeys and values recursively.
+
+This function deletes a key and all its descendants. If sub_key is None,
+all subkeys and values of the specified key are deleted.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key)
+/*[clinic end generated code: output=c34395ee59290501 input=419ef9bb8b06e4bf]*/
+{
+    LONG rc;
+
+    if (PySys_Audit("winreg.DeleteTree", "nu",
+                    (Py_ssize_t)key, sub_key) < 0) {
+        return NULL;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    rc = RegDeleteTreeW(key, sub_key);
+    Py_END_ALLOW_THREADS
+
+    if (rc != ERROR_SUCCESS) {
+        PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteTreeW");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
 winreg.QueryReflectionKey
 
     key: HKEY
@@ -2077,6 +2116,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_DELETEKEY_METHODDEF
     WINREG_DELETEKEYEX_METHODDEF
     WINREG_DELETEVALUE_METHODDEF
+    WINREG_DELETETREE_METHODDEF
     WINREG_DISABLEREFLECTIONKEY_METHODDEF
     WINREG_ENABLEREFLECTIONKEY_METHODDEF
     WINREG_ENUMKEY_METHODDEF

@@ -429,7 +429,7 @@ zlib.decompress
     /
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
         The window buffer size and container format.
-    bufsize: Py_ssize_t(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
+    bufsize: Py_ssize_t(c_default="DEF_BUF_SIZE", allow_negative=False) = DEF_BUF_SIZE
         The initial output buffer size.
 
 Returns a bytes object containing the uncompressed data.
@@ -438,7 +438,7 @@ Returns a bytes object containing the uncompressed data.
 static PyObject *
 zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
-/*[clinic end generated code: output=77c7e35111dc8c42 input=a9ac17beff1f893f]*/
+/*[clinic end generated code: output=77c7e35111dc8c42 input=530077065b3a2233]*/
 {
     PyObject *return_value;
     Byte *ibuf;
@@ -450,10 +450,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
 
     zlibstate *state = get_zlib_state(module);
 
-    if (bufsize < 0) {
-        PyErr_SetString(PyExc_ValueError, "bufsize must be non-negative");
-        return NULL;
-    } else if (bufsize == 0) {
+    if (bufsize == 0) {
         bufsize = 1;
     }
 
@@ -879,7 +876,7 @@ zlib.Decompress.decompress
     data: Py_buffer
         The binary data to decompress.
     /
-    max_length: Py_ssize_t = 0
+    max_length: Py_ssize_t(allow_negative=False) = 0
         The maximum allowable length of the decompressed data.
         Unconsumed input data will be stored in
         the unconsumed_tail attribute.
@@ -894,7 +891,7 @@ Call the flush() method to clear these buffers.
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=b024a93c2c922d57 input=205667f8c387fce4]*/
+/*[clinic end generated code: output=b024a93c2c922d57 input=77de124bd2a2ecc0]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
@@ -906,10 +903,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
         return NULL;
 
     zlibstate *state = get_zlib_state(module);
-    if (max_length < 0) {
-        PyErr_SetString(PyExc_ValueError, "max_length must be non-negative");
-        return NULL;
-    } else if (max_length == 0) {
+    if (max_length == 0) {
         max_length = -1;
     }
 

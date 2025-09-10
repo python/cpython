@@ -7903,8 +7903,10 @@ then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
 fi
      ;; #(
-              WASI) :
-    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
+  WASI) :
+
+      as_fn_error $? "HOSTRUNNER must be set when cross-compiling to WASI" "$LINENO" 5
+     ;; #(
   *) :
     HOSTRUNNER=''
    ;;
