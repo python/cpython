@@ -200,6 +200,7 @@ class UnixGetpassTest(unittest.TestCase):
         self.assertEqual(result, expect_result)
         self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
 
+
 class GetpassEchoCharValidationTest(unittest.TestCase):
     def test_accepts_none(self):
         getpass._check_echo_char(None)
