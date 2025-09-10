@@ -1,2 +1,2 @@
-Force :func:`getpass.getpass` to accept only a single character. Patch by
-Benjamin Johnson.
+Raise :exc:`ValueError` when a multi-character string is passed to the
+*echo_char* parameter of :func:`getpass.getpass`. Patch by Benjamin Johnson.
