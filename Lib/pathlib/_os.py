@@ -205,8 +205,8 @@ def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
     Open the file pointed to by this path and return a file object, as
     the built-in open() function does.
 
-    Unlike the built-in open() function, this function accepts 'openable'
-    objects, which are objects with any of these special methods:
+    Unlike the built-in open() function, this function additionally accepts
+    'openable' objects, which are objects with any of these special methods:
 
         __open_reader__()
         __open_writer__(mode)
@@ -216,19 +216,24 @@ def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
     and 'x' modes; and '__open_updater__' for 'r+' and 'w+' modes. If text
     mode is requested, the result is wrapped in an io.TextIOWrapper object.
     """
-    text = 'b' not in mode
     if buffering != -1:
         raise ValueError("buffer size can't be customized")
+    text = 'b' not in mode
     if text:
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
         encoding = text_encoding(encoding)
-    elif encoding is not None:
-        raise ValueError("binary mode doesn't take an encoding argument")
-    elif errors is not None:
-        raise ValueError("binary mode doesn't take an errors argument")
-    elif newline is not None:
-        raise ValueError("binary mode doesn't take a newline argument")
+    try:
+        return open(obj, mode, buffering, encoding, errors, newline)
+    except TypeError:
+        pass
+    if not text:
+        if encoding is not None:
+            raise ValueError("binary mode doesn't take an encoding argument")
+        if errors is not None:
+            raise ValueError("binary mode doesn't take an errors argument")
+        if newline is not None:
+            raise ValueError("binary mode doesn't take a newline argument")
     mode = ''.join(sorted(c for c in mode if c not in 'bt'))
     if mode == 'r':
         stream = _open_reader(obj)

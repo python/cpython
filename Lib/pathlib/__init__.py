@@ -754,27 +754,6 @@ class Path(PurePath):
         return (st.st_ino == other_st.st_ino and
                 st.st_dev == other_st.st_dev)
 
-    def __open_reader__(self):
-        """
-        Open the file pointed to by this path for reading in binary mode and
-        return a file object.
-        """
-        return io.open(self, 'rb')
-
-    def __open_writer__(self, mode):
-        """
-        Open the file pointed to by this path for writing in binary mode and
-        return a file object.
-        """
-        return io.open(self, f'{mode}b')
-
-    def __open_updater__(self, mode):
-        """
-        Open the file pointed to by this path for updating in binary mode and
-        return a file object.
-        """
-        return io.open(self, f'{mode}+b')
-
     def open(self, mode='r', buffering=-1, encoding=None,
              errors=None, newline=None):
         """
