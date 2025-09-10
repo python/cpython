@@ -632,6 +632,8 @@ class TestFindLongest(unittest.TestCase):
 
 
 class TestCloseMatches(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.get_close_matches`.
+
     def test_invalid_inputs(self):
         self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=0)
         self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=-1)
@@ -640,6 +642,8 @@ class TestCloseMatches(unittest.TestCase):
 
 
 class TestRestore(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.restore`.
+
     def test_invalid_input(self):
         with self.assertRaises(ValueError):
             ''.join(difflib.restore([], 0))
