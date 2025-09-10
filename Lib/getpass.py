@@ -148,8 +148,8 @@ def _check_echo_char(echo_char):
     if echo_char is None:
         return
     if not isinstance(echo_char, str):
-        raise TypeError("'echo_char' must be type 'str' or 'None', got: "
-                        f"{echo_char!r} (type: {type(echo_char).__name__})")
+        raise TypeError("'echo_char' must be str or None, not "
+                        f"{type(echo_char).__name__}")
     if not (
         len(echo_char) == 1
         and echo_char.isprintable()
