@@ -1385,6 +1385,8 @@ class LongTest(unittest.TestCase):
         self.assertEqual((-1).to_bytes(5, 'big', signed=True),
                          b'\xff\xff\xff\xff\xff')
         self.assertRaises(OverflowError, (1).to_bytes, 0, 'big')
+        self.assertRaises(OverflowError, (-1).to_bytes, 0, 'big', signed=True)
+        self.assertRaises(OverflowError, (-1).to_bytes, 0, 'little', signed=True)
 
         # gh-98783
         class SubStr(str):
