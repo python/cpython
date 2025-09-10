@@ -3050,7 +3050,7 @@ finally:
 
 /* Trashcan support. */
 
-/* Add op to the gcstate->trash_delete_later list.  Called when the current
+/* Add op to the tstate->delete_later list.  Called when the current
  * call-stack depth gets large.  op must be a gc'ed object, with refcount 0.
  *  Py_DECREF must already have been called on it.
  */
@@ -3076,7 +3076,7 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
     tstate->delete_later = op;
 }
 
-/* Deallocate all the objects in the gcstate->trash_delete_later list.
+/* Deallocate all the objects in the tstate->delete_later list.
  * Called when the call-stack unwinds again. */
 void
 _PyTrash_thread_destroy_chain(PyThreadState *tstate)
