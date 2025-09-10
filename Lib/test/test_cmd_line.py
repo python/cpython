@@ -32,12 +32,6 @@ def _kill_python_and_exit_code(p):
     return data, returncode
 
 
-b_deprecation_msg = (
-    '-b option is deprecated since Python 3.15 '
-    'and will be removed in Python 3.17'
-)
-
-
 class CmdLineTest(unittest.TestCase):
     def test_directories(self):
         assert_python_failure('.')
@@ -712,7 +706,7 @@ class CmdLineTest(unittest.TestCase):
                               env=env)
         if check_exitcode:
             self.assertEqual(proc.returncode, 0, proc)
-        return self.maybe_remove_b_deprecation_msg(proc.stdout)
+        return proc.stdout.rstrip()
 
     @support.cpython_only
     def test_xdev(self):
@@ -795,22 +789,7 @@ class CmdLineTest(unittest.TestCase):
                               universal_newlines=True,
                               env=env)
         self.assertEqual(proc.returncode, 0, proc)
-        return self.maybe_remove_b_deprecation_msg(proc.stdout)
-
-    def maybe_remove_b_deprecation_msg(self, output):
-        return output.replace(b_deprecation_msg + '\n', '').rstrip()
-
-    def test_b_deprecation_msg_stderr(self):
-        for arg in ['-b', '-bb']:
-            with self.subTest(arg=arg):
-                args = (sys.executable, arg, '-c', '')
-                proc = subprocess.run(args,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE,
-                                      universal_newlines=True)
-                self.assertEqual(proc.returncode, 0, proc)
-                self.assertEqual(proc.stdout, '')
-                self.assertEqual(proc.stderr.rstrip(), b_deprecation_msg)
+        return proc.stdout.rstrip()
 
     def test_warnings_filter_precedence(self):
         expected_filters = ("error::BytesWarning "

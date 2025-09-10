@@ -1280,6 +1280,10 @@ PyConfig
 
       Default: ``0``.
 
+      .. deprecated:: 3.15
+
+         Deprecated, will become no-op in 3.17.
+
    .. c:member:: int warn_default_encoding
 
       If non-zero, emit a :exc:`EncodingWarning` warning when :class:`io.TextIOWrapper`

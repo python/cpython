@@ -256,12 +256,11 @@ Miscellaneous options
 
    .. deprecated-removed:: 3.15 3.17
 
-      Deprecate :option:`-b` and :option:`-bb`
-      and schedule them for removal in Python 3.17.
-      They were mainly a transition helpers for Python2 -> Python3 era.
-      In 3.17 no :exc:`BytesWarning` won't be raised for these cases.
-      If you want to check for the same things in the future,
-      use any type-checker of your choice.
+      Deprecate :option:`-b` and :option:`!-bb`
+      and schedule them to become no-op in Python 3.17.
+      These were primarily helpers for the Python 2 -> 3 transition.
+      Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+      for these cases; use a type checker instead.
 
 
 .. option:: -B
