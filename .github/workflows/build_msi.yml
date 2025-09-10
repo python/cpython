@@ -23,7 +23,7 @@ on:
 jobs:
   build_win32:
     name: 'Windows (x86) Installer'
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
     - uses: actions/checkout@v4
     - name: Build CPython installer
@@ -31,7 +31,7 @@ jobs:
 
   build_win_amd64:
     name: 'Windows (x64) Installer'
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
     - uses: actions/checkout@v4
     - name: Build CPython installer

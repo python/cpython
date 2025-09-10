@@ -131,7 +131,7 @@ jobs:
 
   build_win32:
     name: 'Windows (x86)'
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
@@ -145,7 +145,7 @@ jobs:
 
   build_win_amd64:
     name: 'Windows (x64)'
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
