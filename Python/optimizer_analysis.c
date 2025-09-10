@@ -484,13 +484,10 @@ optimize_uops(
     _Py_uop_abstractcontext_init(ctx);
     _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
-        return -1;
+        return 0;
     }
     ctx->curr_frame_depth++;
     ctx->frame = frame;
-    ctx->done = false;
-    ctx->out_of_space = false;
-    ctx->contradiction = false;
 
     _PyUOpInstruction *this_instr = NULL;
     for (int i = 0; !ctx->done; i++) {
@@ -645,7 +642,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                         opcode = buffer[pc].opcode = op_without_pop[opcode];
                         if (op_without_pop[last->opcode]) {
                             opcode = last->opcode;
-                            pc = last - buffer;
+                            pc = (int)(last - buffer);
                         }
                     }
                     else if (last->opcode == _PUSH_NULL) {

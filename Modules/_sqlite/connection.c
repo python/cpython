@@ -1566,6 +1566,7 @@ pysqlite_connection_set_authorizer_impl(pysqlite_Connection *self,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _sqlite3.Connection.set_progress_handler as pysqlite_connection_set_progress_handler
 
     cls: defining_class
@@ -1587,7 +1588,7 @@ static PyObject *
 pysqlite_connection_set_progress_handler_impl(pysqlite_Connection *self,
                                               PyTypeObject *cls,
                                               PyObject *callable, int n)
-/*[clinic end generated code: output=0739957fd8034a50 input=74c943f1ae7d8880]*/
+/*[clinic end generated code: output=0739957fd8034a50 input=3ecce6c915922ad4]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2215,6 +2216,7 @@ pysqlite_connection_create_collation_impl(pysqlite_Connection *self,
 
 #ifdef PY_SQLITE_HAVE_SERIALIZE
 /*[clinic input]
+@permit_long_docstring_body
 _sqlite3.Connection.serialize as serialize
 
     *
@@ -2231,7 +2233,7 @@ were backed up to disk.
 
 static PyObject *
 serialize_impl(pysqlite_Connection *self, const char *name)
-/*[clinic end generated code: output=97342b0e55239dd3 input=d2eb5194a65abe2b]*/
+/*[clinic end generated code: output=97342b0e55239dd3 input=963e617cdf75c747]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2265,6 +2267,7 @@ serialize_impl(pysqlite_Connection *self, const char *name)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _sqlite3.Connection.deserialize as deserialize
 
     data: Py_buffer(accept={buffer, str})
@@ -2287,7 +2290,7 @@ currently in a read transaction or is involved in a backup operation.
 static PyObject *
 deserialize_impl(pysqlite_Connection *self, Py_buffer *data,
                  const char *name)
-/*[clinic end generated code: output=e394c798b98bad89 input=1be4ca1faacf28f2]*/
+/*[clinic end generated code: output=e394c798b98bad89 input=037e94599aaa5b5c]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -2401,6 +2404,7 @@ pysqlite_connection_exit_impl(pysqlite_Connection *self, PyObject *exc_type,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _sqlite3.Connection.setlimit as setlimit
 
     category: int
@@ -2419,7 +2423,7 @@ the prior value of the limit is returned.
 
 static PyObject *
 setlimit_impl(pysqlite_Connection *self, int category, int limit)
-/*[clinic end generated code: output=0d208213f8d68ccd input=9bd469537e195635]*/
+/*[clinic end generated code: output=0d208213f8d68ccd input=bf06e06a21eb37e2]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;

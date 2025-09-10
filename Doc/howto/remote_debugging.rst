@@ -374,13 +374,13 @@ To locate a thread:
    reliable thread to target.
 
 3. Optionally, use the offset ``interpreter_state.threads_head`` to iterate
-through the linked list of all thread states. Each ``PyThreadState`` structure
-contains a ``native_thread_id`` field, which may be compared to a target thread
-ID to find a specific thread.
+   through the linked list of all thread states. Each ``PyThreadState``
+   structure contains a ``native_thread_id`` field, which may be compared to
+   a target thread ID to find a specific thread.
 
-1. Once a valid ``PyThreadState`` has been found, its address can be used in
-later steps of the protocol, such as writing debugger control fields and
-scheduling execution.
+4. Once a valid ``PyThreadState`` has been found, its address can be used in
+   later steps of the protocol, such as writing debugger control fields and
+   scheduling execution.
 
 The following is an example implementation that locates the main thread state::
 
@@ -454,15 +454,15 @@ its fields are defined by the ``_Py_DebugOffsets`` structure and include the
 following:
 
 - ``debugger_script_path``: A fixed-size buffer that holds the full path to a
-   Python source file (``.py``).  This file must be accessible and readable by
-   the target process when execution is triggered.
+  Python source file (``.py``).  This file must be accessible and readable by
+  the target process when execution is triggered.
 
 - ``debugger_pending_call``: An integer flag. Setting this to ``1`` tells the
-   interpreter that a script is ready to be executed.
+  interpreter that a script is ready to be executed.
 
 - ``eval_breaker``: A field checked by the interpreter during execution.
-   Setting bit 5 (``_PY_EVAL_PLEASE_STOP_BIT``, value ``1U << 5``) in this
-   field causes the interpreter to pause and check for debugger activity.
+  Setting bit 5 (``_PY_EVAL_PLEASE_STOP_BIT``, value ``1U << 5``) in this
+  field causes the interpreter to pause and check for debugger activity.
 
 To complete the injection, the debugger must perform the following steps:
 
