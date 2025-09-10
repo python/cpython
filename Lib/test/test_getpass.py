@@ -201,36 +201,43 @@ class UnixGetpassTest(unittest.TestCase):
         self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
 
 
-class GetpassEchoCharValidationTest(unittest.TestCase):
+class GetpassEchoCharTest(unittest.TestCase):
+    # Successful Validation Cases
     def test_accepts_none(self):
         getpass._check_echo_char(None)
 
     def test_accepts_single_printable_ascii(self):
         for ch in ["*", "A", " "]:
-            getpass._check_echo_char(ch)
+            with self.subTest(echo_char=ch):
+                getpass._check_echo_char(ch)
+
+    # Rejected `echo_char` Cases
+    def test_rejects_empty_string(self):
+        self.assertRaises(ValueError, getpass.getpass, echo_char="")
 
     def test_rejects_multi_character_strings(self):
         for s in ["***", "AA", "aA*!"]:
-            with self.assertRaises(ValueError):
-                getpass._check_echo_char(s)
+            with self.subTest(echo_char=s):
+                with self.assertRaises(ValueError):
+                    getpass.getpass(echo_char=s)
 
     def test_rejects_non_ascii(self):
-        for s in ["Æ", "❤️", "🐍"]:
-            with self.assertRaises(ValueError):
-                getpass._check_echo_char(s)
+        for ch in ["Æ", "❤️", "🐍"]:
+            with self.subTest(echo_char=ch):
+                with self.assertRaises(ValueError):
+                    getpass.getpass(echo_char=ch)
 
     def test_rejects_control_characters(self):
         for ch in ["\n", "\t", "\r", "\x00", "\x7f", "\x07"]:
-            with self.assertRaises(ValueError):
-                getpass._check_echo_char(ch)
+            with self.subTest(echo_char=ch):
+                with self.assertRaises(ValueError):
+                    getpass.getpass(echo_char=ch)
 
     def test_rejects_non_string(self):
-        for item in [b"*", 0]:
-            with self.assertRaises(TypeError):
-                getpass._check_echo_char(item)
-
-    def test_rejects_empty_string(self):
-        self.assertRaises(ValueError, getpass.getpass, echo_char="")
+        for item in [b"*", 0, 0.0, [], {}]:
+            with self.subTest(echo_char=item):
+                with self.assertRaises(TypeError):
+                    getpass.getpass(echo_char=item)
 
 
 if __name__ == "__main__":
