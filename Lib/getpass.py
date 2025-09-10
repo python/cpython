@@ -33,7 +33,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echo_char=None):
       prompt: Written on stream to ask for the input.  Default: 'Password: '
       stream: A writable file object to display the prompt.  Defaults to
               the tty.  If no tty is available defaults to sys.stderr.
-      echo_char: A single-character string used to mask input (e.g., '*').
+      echo_char: A single ASCII character to mask input (e.g., '*').
               If None, input is hidden.
     Returns:
       The seKr3t input.
