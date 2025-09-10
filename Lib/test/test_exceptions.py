@@ -1849,11 +1849,13 @@ class ExceptionTests(unittest.TestCase):
     @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_exec_set_nomemory_hang(self):
         import_module("_testcapi")
-        # gh-134163: Test case that triggers no memory hang condition
-        # The frame_lasti need to upper 257,
-        # because when calling PyLong_FromLong, malloc is not invoked,
-        # so no MemError is triggered
-        # we need to warm up the memory to reproduce the issue
+        # gh-134163: A MemoryError inside code that was wrapped by a try/except
+        # block would lead to an infinite loop.
+
+        # The frame_lasti needs to be greater than 257 to prevent
+        # PyLong_FromLong() from returning cached integers, which
+        # don't require a memory allocation. Prepend some dummy code
+        # to artificially increase the instruction index.
         warmup_code = "a = list(range(0, 1))\n" * 20
         user_input = warmup_code + dedent("""
             try:
