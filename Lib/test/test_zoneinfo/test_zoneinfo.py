@@ -1797,7 +1797,6 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             b"/etc/zoneinfo:/usr/share/zoneinfo",
             0,
             (b"/bytes/path", "/valid/path"),
-            (pathlib.Path(b"/bytes/path"),)
         ]
 
         for bad_value in bad_values:
@@ -1821,7 +1820,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
 
         self.assertSequenceEqual(tzpath_0, query_0)
         self.assertSequenceEqual(tzpath_1, query_1)
-        self.assertSequenceEqual(tzpath_pathlike, query_pathlike)
+        self.assertSequenceEqual(tuple([os.fspath(p) for p in tzpath_pathlike]), query_pathlike)
 
 
 class CTzPathTest(TzPathTest):
