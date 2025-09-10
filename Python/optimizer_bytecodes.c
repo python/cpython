@@ -316,7 +316,7 @@ dummy_func(void) {
             assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
             long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
             assert(index >= 0);
-            int tuple_length = sym_tuple_length(tuple_st);
+            Py_ssize_t tuple_length = sym_tuple_length(tuple_st);
             if (tuple_length == -1) {
                 // Unknown length
                 res = sym_new_not_null(ctx);
@@ -430,31 +430,17 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
-                                                 sym_get_const(ctx, right),
-                                                 oparg >> 5);
-            if (tmp == NULL) {
-                goto error;
-            }
-            assert(PyBool_Check(tmp));
-            assert(_Py_IsImmortal(tmp));
-            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
-            res = sym_new_const(ctx, tmp);
-            Py_DECREF(tmp);
-        }
-        else {
-            res = sym_new_type(ctx, &PyBool_Type);
-        }
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
+        res = sym_new_type(ctx, &PyBool_Type);
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
     op(_COMPARE_OP_STR, (left, right -- res)) {
+        REPLACE_OPCODE_IF_EVALUATES_PURE(left, right);
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
@@ -776,9 +762,8 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
-        // We wrap and unwrap the value to mimic PyStackRef_MakeHeapSafe
-        // in bytecodes.c
-        JitOptRef temp = PyJitRef_Wrap(PyJitRef_Unwrap(retval));
+        // Mimics PyStackRef_MakeHeapSafe in the interpreter.
+        JitOptRef temp = PyJitRef_StripReferenceInfo(retval);
         DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
@@ -939,7 +924,9 @@ dummy_func(void) {
     op(_CALL_STR_1, (unused, unused, arg -- res)) {
         if (sym_matches_type(arg, &PyUnicode_Type)) {
             // e.g. str('foo') or str(foo) where foo is known to be a string
-            res = arg;
+            // Note: we must strip the reference information because it goes
+            // through str() which strips the reference information from it.
+            res = PyJitRef_StripReferenceInfo(arg);
         }
         else {
             res = sym_new_type(ctx, &PyUnicode_Type);
@@ -1079,7 +1066,9 @@ dummy_func(void) {
     op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
         if (sym_matches_type(arg, &PyTuple_Type)) {
             // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple
-            res = arg;
+            // Note: we must strip the reference information because it goes
+            // through tuple() which strips the reference information from it.
+            res = PyJitRef_StripReferenceInfo(arg);
         }
         else {
             res = sym_new_type(ctx, &PyTuple_Type);
@@ -1180,9 +1169,9 @@ dummy_func(void) {
 
     op(_CALL_LEN, (callable, null, arg -- res)) {
         res = sym_new_type(ctx, &PyLong_Type);
-        int tuple_length = sym_tuple_length(arg);
+        Py_ssize_t tuple_length = sym_tuple_length(arg);
         if (tuple_length >= 0) {
-            PyObject *temp = PyLong_FromLong(tuple_length);
+            PyObject *temp = PyLong_FromSsize_t(tuple_length);
             if (temp == NULL) {
                 goto error;
             }
@@ -1196,13 +1185,13 @@ dummy_func(void) {
     }
 
     op(_GET_LEN, (obj -- obj, len)) {
-        int tuple_length = sym_tuple_length(obj);
+        Py_ssize_t tuple_length = sym_tuple_length(obj);
         if (tuple_length == -1) {
             len = sym_new_type(ctx, &PyLong_Type);
         }
         else {
             assert(tuple_length >= 0);
-            PyObject *temp = PyLong_FromLong(tuple_length);
+            PyObject *temp = PyLong_FromSsize_t(tuple_length);
             if (temp == NULL) {
                 goto error;
             }

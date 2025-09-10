@@ -834,7 +834,7 @@ dbm
   (Contributed by Raymond Hettinger and Erlend E. Aasland in :gh:`100414`.)
 
 * Allow removing all items from the database through
-  the new :meth:`.gdbm.clear` and :meth:`.ndbm.clear` methods.
+  the new :meth:`!clear` methods of the GDBM and NDBM database objects.
   (Contributed by Donghee Na in :gh:`107122`.)
 
 
@@ -1917,7 +1917,7 @@ New Deprecations
 
 * :mod:`pathlib`:
 
-  * Deprecate :meth:`.PurePath.is_reserved`,
+  * Deprecate :meth:`!.PurePath.is_reserved`,
     to be removed in Python 3.15.
     Use :func:`os.path.isreserved` to detect reserved paths on Windows.
     (Contributed by Barney Gale in :gh:`88569`.)
@@ -2176,7 +2176,7 @@ New Features
   (Contributed by Sam Gross in :gh:`114329`.)
 
 * Add the :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions,
-  mirroring the Python :meth:`!list.extend` and :meth:`!list.clear` methods.
+  mirroring the Python :meth:`list.extend` and :meth:`list.clear` methods.
   (Contributed by Victor Stinner in :gh:`111138`.)
 
 * Add the :c:func:`PyLong_AsInt` function.

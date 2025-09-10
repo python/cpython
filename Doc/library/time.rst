@@ -935,7 +935,7 @@ These constants are used as parameters for :func:`clock_getres` and
 
 .. data:: CLOCK_TAI
 
-   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/nist-time-frequently-asked-questions-faq#tai>`_
+   `International Atomic Time <https://www.nist.gov/pml/time-and-frequency-division/how-utcnist-related-coordinated-universal-time-utc-international>`_
 
    The system must have a current leap second table in order for this to give
    the correct answer.  PTP or NTP software can maintain a leap second table.
