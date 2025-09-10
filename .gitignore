@@ -80,7 +80,6 @@ iOS/testbed/Python.xcframework/ios-*/lib
 iOS/testbed/Python.xcframework/ios-*/Python.framework
 iOS/testbed/iOSTestbed.xcodeproj/project.xcworkspace
 iOS/testbed/iOSTestbed.xcodeproj/xcuserdata
-iOS/testbed/iOSTestbed.xcodeproj/xcshareddata
 Mac/Makefile
 Mac/PythonLauncher/Info.plist
 Mac/PythonLauncher/Makefile

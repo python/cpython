@@ -1,0 +1,4 @@
+:mod:`hashlib`: improve exception messages when a hash algorithm is not
+recognized, blocked by the current security policy or incompatible with
+the desired operation (for instance, using HMAC with SHAKE).
+Patch by Bénédikt Tran.
