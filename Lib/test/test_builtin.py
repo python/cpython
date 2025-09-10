@@ -2993,7 +2993,7 @@ class TestType(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     import doctest
-    if sys.float_repr_style == 'short':
+    if sys.float_repr_style == 'short' and not support.is_wasi:
         tests.addTest(doctest.DocTestSuite(builtins))
         lib_tests = os.path.join(support.REPO_ROOT, 'Doc/library/stdtypes.rst')
         if os.path.exists(lib_tests):
