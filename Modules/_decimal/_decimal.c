@@ -1814,7 +1814,7 @@ current_context_from_dict(decimal_state *modstate)
         }
 
         /* Set up a new thread local context. */
-        tl_context = context_copy(modstate->default_context_template, odstate);
+        tl_context = context_copy(modstate->default_context_template, modstate);
         if (tl_context == NULL) {
             return NULL;
         }
