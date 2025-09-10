@@ -907,13 +907,9 @@ unsignal_pending_calls(PyThreadState *tstate, PyInterpreterState *interp)
 static void
 clear_pending_handling_thread(struct _pending_calls *pending)
 {
-#ifdef Py_GIL_DISABLED
-    PyMutex_Lock(&pending->mutex);
+    FT_MUTEX_LOCK(&pending->mutex);
     pending->handling_thread = NULL;
-    PyMutex_Unlock(&pending->mutex);
-#else
-    pending->handling_thread = NULL;
-#endif
+    FT_MUTEX_UNLOCK(&pending->mutex);
 }
 
 static int

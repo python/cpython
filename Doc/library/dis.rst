@@ -1086,6 +1086,11 @@ iterations of the loop.
    Pushes ``co_consts[consti]`` onto the stack.
 
 
+.. opcode:: LOAD_CONST_IMMORTAL (consti)
+
+   Works as :opcode:`LOAD_CONST`, but is more efficient for immortal objects.
+
+
 .. opcode:: LOAD_SMALL_INT (i)
 
    Pushes the integer ``i`` onto the stack.
@@ -1122,8 +1127,8 @@ iterations of the loop.
 
 .. opcode:: BUILD_TEMPLATE
 
-   Constructs a new :class:`~string.templatelib.Template` from a tuple
-   of strings and a tuple of interpolations and pushes the resulting instance
+   Constructs a new :class:`~string.templatelib.Template` instance from a tuple
+   of strings and a tuple of interpolations and pushes the resulting object
    onto the stack::
 
       interpolations = STACK.pop()
@@ -1135,8 +1140,8 @@ iterations of the loop.
 
 .. opcode:: BUILD_INTERPOLATION (format)
 
-   Constructs a new :class:`~string.templatelib.Interpolation` from a
-   value and its source expression and pushes the resulting instance onto the
+   Constructs a new :class:`~string.templatelib.Interpolation` instance from a
+   value and its source expression and pushes the resulting object onto the
    stack.
 
    If no conversion or format specification is present, ``format`` is set to

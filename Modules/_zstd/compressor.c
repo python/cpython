@@ -583,6 +583,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _zstd.ZstdCompressor.compress
 
     data: Py_buffer
@@ -600,7 +601,7 @@ the compression process.
 static PyObject *
 _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
                                    int mode)
-/*[clinic end generated code: output=ed7982d1cf7b4f98 input=ac2c21d180f579ea]*/
+/*[clinic end generated code: output=ed7982d1cf7b4f98 input=6018ed6cc729cea6]*/
 {
     PyObject *ret;
 
@@ -642,6 +643,7 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _zstd.ZstdCompressor.flush
 
     mode: int(c_default="ZSTD_e_end") = ZstdCompressor.FLUSH_FRAME
@@ -657,7 +659,7 @@ be used after this method is called.
 
 static PyObject *
 _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
-/*[clinic end generated code: output=b7cf2c8d64dcf2e3 input=0ab19627f323cdbc]*/
+/*[clinic end generated code: output=b7cf2c8d64dcf2e3 input=a9871ec742d79003]*/
 {
     PyObject *ret;
 
@@ -691,6 +693,7 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _zstd.ZstdCompressor.set_pledged_input_size
 
     size: zstd_contentsize
@@ -711,7 +714,7 @@ final chunk written may be lost.
 static PyObject *
 _zstd_ZstdCompressor_set_pledged_input_size_impl(ZstdCompressor *self,
                                                  unsigned long long size)
-/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=afd8a7d78cff2eb5]*/
+/*[clinic end generated code: output=3a09e55cc0e3b4f9 input=b4c87bcbd5ce6111]*/
 {
     // Error occured while converting argument, should be unreachable
     assert(size != ZSTD_CONTENTSIZE_ERROR);
