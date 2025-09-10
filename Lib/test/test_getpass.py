@@ -218,26 +218,22 @@ class GetpassEchoCharTest(unittest.TestCase):
     def test_rejects_multi_character_strings(self):
         for s in ["***", "AA", "aA*!"]:
             with self.subTest(echo_char=s):
-                with self.assertRaises(ValueError):
-                    getpass.getpass(echo_char=s)
+                self.assertRaises(ValueError, getpass.getpass, echo_char=s)
 
     def test_rejects_non_ascii(self):
         for ch in ["Æ", "❤️", "🐍"]:
             with self.subTest(echo_char=ch):
-                with self.assertRaises(ValueError):
-                    getpass.getpass(echo_char=ch)
+                self.assertRaises(ValueError, getpass.getpass, echo_char=ch)
 
     def test_rejects_control_characters(self):
         for ch in ["\n", "\t", "\r", "\x00", "\x7f", "\x07"]:
             with self.subTest(echo_char=ch):
-                with self.assertRaises(ValueError):
-                    getpass.getpass(echo_char=ch)
+                self.assertRaises(ValueError, getpass.getpass, echo_char=ch)
 
     def test_rejects_non_string(self):
         for item in [b"*", 0, 0.0, [], {}]:
             with self.subTest(echo_char=item):
-                with self.assertRaises(TypeError):
-                    getpass.getpass(echo_char=item)
+                self.assertRaises(TypeError, getpass.getpass, echo_char=item)
 
 
 if __name__ == "__main__":
