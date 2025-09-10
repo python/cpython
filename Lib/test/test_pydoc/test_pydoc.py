@@ -2179,7 +2179,7 @@ class TestHelper(unittest.TestCase):
             with unittest.mock.patch.object(helper, "getline", mock_getline):
                 helper.interact()
 
-        return output.getvalue().replace(os.linesep, "\n")
+        return output.getvalue().split(os.linesep)
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
