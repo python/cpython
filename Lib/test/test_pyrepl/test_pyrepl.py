@@ -1805,13 +1805,13 @@ class TestMain(ReplTestCase):
         self.assertEqual(exit_code, 0)
 
         # Define escape sequences that don't affect cursor position or visual output
-        bracketed_paste_mode = r'\x1b\[\?2004[hl]'   # Enable/disable bracketed paste
-        application_cursor_keys = r'\x1b\[\?1[hl]'   # Enable/disable application cursor keys
-        application_keypad_mode = r'\x1b[=>]'        # Enable/disable application keypad
-        insert_character = r'\x1b\[1@(?=[ -~])'      # Insert exactly 1 char (safe form)
-        cursor_visibility = r'\x1b\[\?25[hl]'        # Show/hide cursor
-        cursor_blinking = r'\x1b\[\?12[hl]'          # Start/stop cursor blinking
-        device_attributes = r'\x1b\[\?[01]c'         # Device Attributes (DA) queries/responses
+        bracketed_paste_mode = r'\x1b\[\?2004[hl]'     # Enable/disable bracketed paste
+        application_cursor_keys = r'\x1b\[\?1[hl]'     # Enable/disable application cursor keys
+        application_keypad_mode = r'\x1b[=>]'          # Enable/disable application keypad
+        insert_character = r'\x1b\[(?:1)?@(?=[ -~])'   # Insert exactly 1 char (safe form)
+        cursor_visibility = r'\x1b\[\?25[hl]'          # Show/hide cursor
+        cursor_blinking = r'\x1b\[\?12[hl]'            # Start/stop cursor blinking
+        device_attributes = r'\x1b\[\?[01]c'           # Device Attributes (DA) queries/responses
 
         safe_escapes = re.compile(
             f'{bracketed_paste_mode}|'
