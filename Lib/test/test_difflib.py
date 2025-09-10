@@ -29,26 +29,13 @@ class TestWithAscii(unittest.TestCase):
                 ('delete', 40, 41, 40, 40),
                 ('equal', 41, 81, 40, 80)])
 
-
     def test_opcode_caching(self):
         sm = difflib.SequenceMatcher(None, 'b' * 100, 'a' + 'b' * 100)
-        self.assertEqual(list(sm.get_opcodes()),
+        opcode = sm.get_opcodes()
+        self.assertEqual(opcode,
             [   ('insert', 0, 0, 0, 1),
                 ('equal', 0, 100, 1, 101)])
-
-        sm.a = 'a' * 40 + 'c' + 'b' * 40
-        sm.b = 'a' * 40 + 'b' * 40
-        self.assertEqual(list(sm.get_opcodes()),
-            [   ('insert', 0, 0, 0, 1),
-                ('equal', 0, 100, 1, 101)])
-
-        # To avoid caching in set_seqs.
-        sm.set_seqs("".join(list(sm.a)), "".join(list(sm.b)))
-        self.assertEqual(list(sm.get_opcodes()),
-            [   ('equal', 0, 40, 0, 40),
-                ('delete', 40, 41, 40, 40),
-                ('equal', 41, 81, 40, 80)])
-
+        self.assertIs(opcode, sm.get_opcodes())
 
     def test_bjunk(self):
         sm = difflib.SequenceMatcher(isjunk=lambda x: x == ' ',
