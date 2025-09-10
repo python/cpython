@@ -54,8 +54,6 @@ Doc/library/xml.sax.rst
 Doc/library/xmlrpc.client.rst
 Doc/library/xmlrpc.server.rst
 Doc/library/zlib.rst
-Doc/reference/compound_stmts.rst
-Doc/reference/datamodel.rst
 Doc/whatsnew/2.4.rst
 Doc/whatsnew/2.5.rst
 Doc/whatsnew/2.6.rst

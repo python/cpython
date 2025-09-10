@@ -15,6 +15,7 @@ from unittest import mock
 from profiling.sampling.pstats_collector import PstatsCollector
 from profiling.sampling.stack_collector import (
     CollapsedStackCollector,
+    FlamegraphCollector,
 )
 
 from test.support.os_helper import unlink
@@ -47,6 +48,28 @@ class MockFrameInfo:
 
     def __repr__(self):
         return f"MockFrameInfo(filename='{self.filename}', lineno={self.lineno}, funcname='{self.funcname}')"
+
+
+class MockThreadInfo:
+    """Mock ThreadInfo for testing since the real one isn't accessible."""
+
+    def __init__(self, thread_id, frame_info):
+        self.thread_id = thread_id
+        self.frame_info = frame_info
+
+    def __repr__(self):
+        return f"MockThreadInfo(thread_id={self.thread_id}, frame_info={self.frame_info})"
+
+
+class MockInterpreterInfo:
+    """Mock InterpreterInfo for testing since the real one isn't accessible."""
+
+    def __init__(self, interpreter_id, threads):
+        self.interpreter_id = interpreter_id
+        self.threads = threads
+
+    def __repr__(self):
+        return f"MockInterpreterInfo(interpreter_id={self.interpreter_id}, threads={self.threads})"
 
 
 skip_if_not_supported = unittest.skipIf(
@@ -152,19 +175,22 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(len(collector.result), 0)
 
         # Test collecting frames with None thread id
-        test_frames = [(None, [MockFrameInfo("file.py", 10, "func")])]
+        test_frames = [MockInterpreterInfo(0, [MockThreadInfo(None, [MockFrameInfo("file.py", 10, "func")])])]
         collector.collect(test_frames)
         # Should still process the frames
         self.assertEqual(len(collector.result), 1)
 
         # Test collecting duplicate frames in same sample
         test_frames = [
-            (
-                1,
-                [
-                    MockFrameInfo("file.py", 10, "func1"),
-                    MockFrameInfo("file.py", 10, "func1"),  # Duplicate
-                ],
+            MockInterpreterInfo(
+                0,  # interpreter_id
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("file.py", 10, "func1"),
+                        MockFrameInfo("file.py", 10, "func1"),  # Duplicate
+                    ],
+                )]
             )
         ]
         collector = PstatsCollector(sample_interval_usec=1000)
@@ -179,7 +205,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector = PstatsCollector(sample_interval_usec=1000)
 
         # Test with exactly one frame (should trigger the <= 1 condition)
-        single_frame = [(1, [MockFrameInfo("single.py", 10, "single_func")])]
+        single_frame = [MockInterpreterInfo(0, [MockThreadInfo(1, [MockFrameInfo("single.py", 10, "single_func")])])]
         collector.collect(single_frame)
 
         # Should record the single frame with inline call
@@ -190,7 +216,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(collector.result[single_key]["cumulative_calls"], 1)
 
         # Test with empty frames (should also trigger <= 1 condition)
-        empty_frames = [(1, [])]
+        empty_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, [])])]
         collector.collect(empty_frames)
 
         # Should not add any new entries
@@ -200,16 +226,21 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Test mixed single and multi-frame stacks
         mixed_frames = [
-            (
-                1,
-                [MockFrameInfo("single2.py", 20, "single_func2")],
-            ),  # Single frame
-            (
-                2,
-                [  # Multi-frame stack
-                    MockFrameInfo("multi.py", 30, "multi_func1"),
-                    MockFrameInfo("multi.py", 40, "multi_func2"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [
+                    MockThreadInfo(
+                        1,
+                        [MockFrameInfo("single2.py", 20, "single_func2")],
+                    ),  # Single frame
+                    MockThreadInfo(
+                        2,
+                        [  # Multi-frame stack
+                            MockFrameInfo("multi.py", 30, "multi_func1"),
+                            MockFrameInfo("multi.py", 40, "multi_func2"),
+                        ],
+                    ),
+                ]
             ),
         ]
         collector.collect(mixed_frames)
@@ -244,14 +275,14 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertEqual(len(collector.call_trees), 0)
 
         # Test with single frame stack
-        test_frames = [(1, [("file.py", 10, "func")])]
+        test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func")])])]
         collector.collect(test_frames)
         self.assertEqual(len(collector.call_trees), 1)
         self.assertEqual(collector.call_trees[0], [("file.py", 10, "func")])
 
         # Test with very deep stack
         deep_stack = [(f"file{i}.py", i, f"func{i}") for i in range(100)]
-        test_frames = [(1, deep_stack)]
+        test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, deep_stack)])]
         collector = CollapsedStackCollector()
         collector.collect(test_frames)
         self.assertEqual(len(collector.call_trees[0]), 100)
@@ -271,12 +302,15 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Test collecting sample data
         test_frames = [
-            (
-                1,
-                [
-                    MockFrameInfo("file.py", 10, "func1"),
-                    MockFrameInfo("file.py", 20, "func2"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("file.py", 10, "func1"),
+                        MockFrameInfo("file.py", 20, "func2"),
+                    ],
+                )]
             )
         ]
         collector.collect(test_frames)
@@ -309,12 +343,15 @@ class TestSampleProfilerComponents(unittest.TestCase):
         )  # 1 second intervals
 
         test_frames = [
-            (
-                1,
-                [
-                    MockFrameInfo("file.py", 10, "func1"),
-                    MockFrameInfo("file.py", 20, "func2"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("file.py", 10, "func1"),
+                        MockFrameInfo("file.py", 20, "func2"),
+                    ],
+                )]
             )
         ]
         collector.collect(test_frames)
@@ -350,7 +387,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Test collecting sample data
         test_frames = [
-            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])])
         ]
         collector.collect(test_frames)
 
@@ -374,12 +411,12 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector = CollapsedStackCollector()
 
         test_frames1 = [
-            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])])
         ]
         test_frames2 = [
-            (1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])])
         ]  # Same stack
-        test_frames3 = [(1, [("other.py", 5, "other_func")])]
+        test_frames3 = [MockInterpreterInfo(0, [MockThreadInfo(1, [("other.py", 5, "other_func")])])]
 
         collector.collect(test_frames1)
         collector.collect(test_frames2)
@@ -400,30 +437,118 @@ class TestSampleProfilerComponents(unittest.TestCase):
         self.assertIn(stack1_expected, lines)
         self.assertIn(stack2_expected, lines)
 
+    def test_flamegraph_collector_basic(self):
+        """Test basic FlamegraphCollector functionality."""
+        collector = FlamegraphCollector()
+
+        # Test empty state (inherits from StackTraceCollector)
+        self.assertEqual(len(collector.call_trees), 0)
+        self.assertEqual(len(collector.function_samples), 0)
+
+        # Test collecting sample data
+        test_frames = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])],
+            )
+        ]
+        collector.collect(test_frames)
+
+        # Should store call tree (reversed)
+        self.assertEqual(len(collector.call_trees), 1)
+        expected_tree = [("file.py", 20, "func2"), ("file.py", 10, "func1")]
+        self.assertEqual(collector.call_trees[0], expected_tree)
+
+        # Should count function samples
+        self.assertEqual(
+            collector.function_samples[("file.py", 10, "func1")], 1
+        )
+        self.assertEqual(
+            collector.function_samples[("file.py", 20, "func2")], 1
+        )
+
+    def test_flamegraph_collector_export(self):
+        """Test flamegraph HTML export functionality."""
+        flamegraph_out = tempfile.NamedTemporaryFile(
+            suffix=".html", delete=False
+        )
+        self.addCleanup(close_and_unlink, flamegraph_out)
+
+        collector = FlamegraphCollector()
+
+        # Create some test data (use Interpreter/Thread objects like runtime)
+        test_frames1 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])],
+            )
+        ]
+        test_frames2 = [
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(1, [("file.py", 10, "func1"), ("file.py", 20, "func2")])],
+            )
+        ]  # Same stack
+        test_frames3 = [
+            MockInterpreterInfo(0, [MockThreadInfo(1, [("other.py", 5, "other_func")])])
+        ]
+
+        collector.collect(test_frames1)
+        collector.collect(test_frames2)
+        collector.collect(test_frames3)
+
+        # Export flamegraph
+        collector.export(flamegraph_out.name)
+
+        # Verify file was created and contains valid data
+        self.assertTrue(os.path.exists(flamegraph_out.name))
+        self.assertGreater(os.path.getsize(flamegraph_out.name), 0)
+
+        # Check file contains HTML content
+        with open(flamegraph_out.name, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Should be valid HTML
+        self.assertIn("<!doctype html>", content.lower())
+        self.assertIn("<html", content)
+        self.assertIn("Python Performance Flamegraph", content)
+        self.assertIn("d3-flame-graph", content)
+
+        # Should contain the data
+        self.assertIn('"name":', content)
+        self.assertIn('"value":', content)
+        self.assertIn('"children":', content)
+
     def test_pstats_collector_export(self):
         collector = PstatsCollector(
             sample_interval_usec=1000000
         )  # 1 second intervals
 
         test_frames1 = [
-            (
-                1,
-                [
-                    MockFrameInfo("file.py", 10, "func1"),
-                    MockFrameInfo("file.py", 20, "func2"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("file.py", 10, "func1"),
+                        MockFrameInfo("file.py", 20, "func2"),
+                    ],
+                )]
             )
         ]
         test_frames2 = [
-            (
-                1,
-                [
-                    MockFrameInfo("file.py", 10, "func1"),
-                    MockFrameInfo("file.py", 20, "func2"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("file.py", 10, "func1"),
+                        MockFrameInfo("file.py", 20, "func2"),
+                    ],
+                )]
             )
         ]  # Same stack
-        test_frames3 = [(1, [MockFrameInfo("other.py", 5, "other_func")])]
+        test_frames3 = [MockInterpreterInfo(0, [MockThreadInfo(1, [MockFrameInfo("other.py", 5, "other_func")])])]
 
         collector.collect(test_frames1)
         collector.collect(test_frames2)
@@ -1138,34 +1263,43 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
 
         # Simulate a recursive call pattern: fibonacci(5) calling itself
         recursive_frames = [
-            (
-                1,
-                [  # First sample: deep in recursion
-                    MockFrameInfo("fib.py", 10, "fibonacci"),
-                    MockFrameInfo("fib.py", 10, "fibonacci"),  # recursive call
-                    MockFrameInfo(
-                        "fib.py", 10, "fibonacci"
-                    ),  # deeper recursion
-                    MockFrameInfo("fib.py", 10, "fibonacci"),  # even deeper
-                    MockFrameInfo("main.py", 5, "main"),  # main caller
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [  # First sample: deep in recursion
+                        MockFrameInfo("fib.py", 10, "fibonacci"),
+                        MockFrameInfo("fib.py", 10, "fibonacci"),  # recursive call
+                        MockFrameInfo(
+                            "fib.py", 10, "fibonacci"
+                        ),  # deeper recursion
+                        MockFrameInfo("fib.py", 10, "fibonacci"),  # even deeper
+                        MockFrameInfo("main.py", 5, "main"),  # main caller
+                    ],
+                )]
             ),
-            (
-                1,
-                [  # Second sample: different recursion depth
-                    MockFrameInfo("fib.py", 10, "fibonacci"),
-                    MockFrameInfo("fib.py", 10, "fibonacci"),  # recursive call
-                    MockFrameInfo("main.py", 5, "main"),  # main caller
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [  # Second sample: different recursion depth
+                        MockFrameInfo("fib.py", 10, "fibonacci"),
+                        MockFrameInfo("fib.py", 10, "fibonacci"),  # recursive call
+                        MockFrameInfo("main.py", 5, "main"),  # main caller
+                    ],
+                )]
             ),
-            (
-                1,
-                [  # Third sample: back to deeper recursion
-                    MockFrameInfo("fib.py", 10, "fibonacci"),
-                    MockFrameInfo("fib.py", 10, "fibonacci"),
-                    MockFrameInfo("fib.py", 10, "fibonacci"),
-                    MockFrameInfo("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [  # Third sample: back to deeper recursion
+                        MockFrameInfo("fib.py", 10, "fibonacci"),
+                        MockFrameInfo("fib.py", 10, "fibonacci"),
+                        MockFrameInfo("fib.py", 10, "fibonacci"),
+                        MockFrameInfo("main.py", 5, "main"),
+                    ],
+                )]
             ),
         ]
 
@@ -1202,27 +1336,33 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
 
         # Simulate a deep call hierarchy
         deep_call_frames = [
-            (
-                1,
-                [
-                    MockFrameInfo("level1.py", 10, "level1_func"),
-                    MockFrameInfo("level2.py", 20, "level2_func"),
-                    MockFrameInfo("level3.py", 30, "level3_func"),
-                    MockFrameInfo("level4.py", 40, "level4_func"),
-                    MockFrameInfo("level5.py", 50, "level5_func"),
-                    MockFrameInfo("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("level1.py", 10, "level1_func"),
+                        MockFrameInfo("level2.py", 20, "level2_func"),
+                        MockFrameInfo("level3.py", 30, "level3_func"),
+                        MockFrameInfo("level4.py", 40, "level4_func"),
+                        MockFrameInfo("level5.py", 50, "level5_func"),
+                        MockFrameInfo("main.py", 5, "main"),
+                    ],
+                )]
             ),
-            (
-                1,
-                [  # Same hierarchy sampled again
-                    MockFrameInfo("level1.py", 10, "level1_func"),
-                    MockFrameInfo("level2.py", 20, "level2_func"),
-                    MockFrameInfo("level3.py", 30, "level3_func"),
-                    MockFrameInfo("level4.py", 40, "level4_func"),
-                    MockFrameInfo("level5.py", 50, "level5_func"),
-                    MockFrameInfo("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [  # Same hierarchy sampled again
+                        MockFrameInfo("level1.py", 10, "level1_func"),
+                        MockFrameInfo("level2.py", 20, "level2_func"),
+                        MockFrameInfo("level3.py", 30, "level3_func"),
+                        MockFrameInfo("level4.py", 40, "level4_func"),
+                        MockFrameInfo("level5.py", 50, "level5_func"),
+                        MockFrameInfo("main.py", 5, "main"),
+                    ],
+                )]
             ),
         ]
 
@@ -1260,40 +1400,52 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         # Simulate alternating execution paths
         pattern_frames = [
             # Pattern A: path through func_a
-            (
-                1,
-                [
-                    MockFrameInfo("module.py", 10, "func_a"),
-                    MockFrameInfo("module.py", 30, "shared_func"),
-                    MockFrameInfo("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("module.py", 10, "func_a"),
+                        MockFrameInfo("module.py", 30, "shared_func"),
+                        MockFrameInfo("main.py", 5, "main"),
+                    ],
+                )]
             ),
             # Pattern B: path through func_b
-            (
-                1,
-                [
-                    MockFrameInfo("module.py", 20, "func_b"),
-                    MockFrameInfo("module.py", 30, "shared_func"),
-                    MockFrameInfo("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("module.py", 20, "func_b"),
+                        MockFrameInfo("module.py", 30, "shared_func"),
+                        MockFrameInfo("main.py", 5, "main"),
+                    ],
+                )]
             ),
             # Pattern A again
-            (
-                1,
-                [
-                    MockFrameInfo("module.py", 10, "func_a"),
-                    MockFrameInfo("module.py", 30, "shared_func"),
-                    MockFrameInfo("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("module.py", 10, "func_a"),
+                        MockFrameInfo("module.py", 30, "shared_func"),
+                        MockFrameInfo("main.py", 5, "main"),
+                    ],
+                )]
             ),
             # Pattern B again
-            (
-                1,
-                [
-                    MockFrameInfo("module.py", 20, "func_b"),
-                    MockFrameInfo("module.py", 30, "shared_func"),
-                    MockFrameInfo("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        MockFrameInfo("module.py", 20, "func_b"),
+                        MockFrameInfo("module.py", 30, "shared_func"),
+                        MockFrameInfo("main.py", 5, "main"),
+                    ],
+                )]
             ),
         ]
 
@@ -1328,22 +1480,28 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
 
         # Recursive call pattern
         recursive_frames = [
-            (
-                1,
-                [
-                    ("factorial.py", 10, "factorial"),
-                    ("factorial.py", 10, "factorial"),  # recursive
-                    ("factorial.py", 10, "factorial"),  # deeper
-                    ("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        ("factorial.py", 10, "factorial"),
+                        ("factorial.py", 10, "factorial"),  # recursive
+                        ("factorial.py", 10, "factorial"),  # deeper
+                        ("main.py", 5, "main"),
+                    ],
+                )]
             ),
-            (
-                1,
-                [
-                    ("factorial.py", 10, "factorial"),
-                    ("factorial.py", 10, "factorial"),  # different depth
-                    ("main.py", 5, "main"),
-                ],
+            MockInterpreterInfo(
+                0,
+                [MockThreadInfo(
+                    1,
+                    [
+                        ("factorial.py", 10, "factorial"),
+                        ("factorial.py", 10, "factorial"),  # different depth
+                        ("main.py", 5, "main"),
+                    ],
+                )]
             ),
         ]
 
@@ -1749,6 +1907,27 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
             with self.assertRaises(ProcessLookupError):
                 unwinder.get_stack_trace()
 
+    def test_valid_output_formats(self):
+        """Test that all valid output formats are accepted."""
+        valid_formats = ["pstats", "collapsed", "flamegraph"]
+
+        tempdir = tempfile.TemporaryDirectory(delete=False)
+        self.addCleanup(shutil.rmtree, tempdir.name)
+
+
+        with contextlib.chdir(tempdir.name):
+            for fmt in valid_formats:
+                try:
+                    # This will likely fail with permissions, but the format should be valid
+                    profiling.sampling.sample.sample(
+                        os.getpid(),
+                        duration_sec=0.1,
+                        output_format=fmt,
+                        filename=f"test_{fmt}.out",
+                    )
+                except (OSError, RuntimeError, PermissionError):
+                    # Expected errors - we just want to test format validation
+                    pass
 
 
 class TestSampleProfilerCLI(unittest.TestCase):

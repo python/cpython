@@ -453,7 +453,7 @@ Sets
 
    These represent a mutable set. They are created by the built-in :func:`set`
    constructor and can be modified afterwards by several methods, such as
-   :meth:`~set.add`.
+   :meth:`add <frozenset.add>`.
 
 
 Frozen sets
@@ -1272,7 +1272,7 @@ Special attributes
    * - .. attribute:: type.__firstlineno__
      - The line number of the first line of the class definition,
        including decorators.
-       Setting the :attr:`__module__` attribute removes the
+       Setting the :attr:`~type.__module__` attribute removes the
        :attr:`!__firstlineno__` item from the type's dictionary.
 
        .. versionadded:: 3.13
@@ -1903,9 +1903,9 @@ falling back to :meth:`~object.__getitem__`). [#]_
 When implementing a class that emulates any built-in type, it is important that
 the emulation only be implemented to the degree that it makes sense for the
 object being modelled.  For example, some sequences may work well with retrieval
-of individual elements, but extracting a slice may not make sense.  (One example
-of this is the :class:`~xml.dom.NodeList` interface in the W3C's Document
-Object Model.)
+of individual elements, but extracting a slice may not make sense.
+(One example of this is the :ref:`NodeList <dom-nodelist-objects>` interface
+in the W3C's Document Object Model.)
 
 
 .. _customization:
@@ -2697,7 +2697,7 @@ class defining the method.
    .. versionadded:: 3.6
 
 
-When a class is created, :meth:`type.__new__` scans the class variables
+When a class is created, :meth:`!type.__new__` scans the class variables
 and makes callbacks to those with a :meth:`~object.__set_name__` hook.
 
 .. method:: object.__set_name__(self, owner, name)
