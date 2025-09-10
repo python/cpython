@@ -757,11 +757,22 @@ class PosixTester(unittest.TestCase):
             self.assertRaises((ValueError, OverflowError), posix.makedev, x, minor)
             self.assertRaises((ValueError, OverflowError), posix.makedev, major, x)
 
-        if sys.platform == 'linux' and not support.linked_to_musl():
-            NODEV = -1
+        if (hasattr(posix, 'NODEV') and
+            sys.platform.startswith(('linux', 'macos', 'freebsd', 'dragonfly',
+                                     'sunos'))):
+            NODEV = posix.NODEV
             self.assertEqual(posix.major(NODEV), NODEV)
             self.assertEqual(posix.minor(NODEV), NODEV)
             self.assertEqual(posix.makedev(NODEV, NODEV), NODEV)
+
+    def test_nodev(self):
+        if (not hasattr(posix, 'NODEV')
+            and (not sys.platform.startswith(('linux', 'macos', 'freebsd',
+                                              'dragonfly', 'netbsd', 'openbsd',
+                                              'sunos'))
+                 or support.linked_to_musl())):
+            self.skipTest('not defined on this platform')
+        self.assertHasAttr(posix, 'NODEV')
 
     def _test_all_chown_common(self, chown_func, first_param, stat_func):
         """Common code for chown, fchown and lchown tests."""
