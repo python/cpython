@@ -1437,7 +1437,7 @@ class TarInfo(object):
                     numbytes = nti(buf[pos + 12:pos + 24])
                 except ValueError:
                     break
-                if offset and numbytes:
+                if offset >= 0 and numbytes >= 0:
                     structs.append((offset, numbytes))
                 pos += 24
             isextended = bool(buf[504])
