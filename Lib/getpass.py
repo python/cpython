@@ -145,7 +145,12 @@ def fallback_getpass(prompt='Password: ', stream=None, *, echo_char=None):
 
 def _check_echo_char(echo_char):
     # Single-character ASCII excluding control characters
-    if echo_char and not (
+    if echo_char is None:
+        return
+    if not isinstance(echo_char, str):
+        raise TypeError("'echo_char' must be type 'str' or 'None', got: "
+                        f"{echo_char!r} (type: {type(echo_char).__name__})")
+    if not (
         len(echo_char) == 1
         and echo_char.isprintable()
         and echo_char.isascii()
