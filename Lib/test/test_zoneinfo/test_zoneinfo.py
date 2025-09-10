@@ -1796,6 +1796,8 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             "/etc/zoneinfo:/usr/share/zoneinfo",
             b"/etc/zoneinfo:/usr/share/zoneinfo",
             0,
+            (b"/bytes/path", "/valid/path"),
+            (pathlib.Path(b"/bytes/path"),)
         ]
 
         for bad_value in bad_values:
