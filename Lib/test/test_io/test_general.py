@@ -27,7 +27,7 @@ from test.support import (
     import_helper, is_apple, os_helper, threading_helper, warnings_helper,
 )
 from test.support.os_helper import FakePath
-from .util import byteslike, CTestCase, PyTestCase
+from .utils import byteslike, CTestCase, PyTestCase
 
 import codecs
 import io  # C implementation of io
