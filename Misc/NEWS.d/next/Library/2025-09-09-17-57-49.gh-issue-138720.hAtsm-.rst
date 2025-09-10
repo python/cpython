@@ -1,4 +1,4 @@
-Fix an issue where the :class:`BufferedIOBase` implementation of
-:meth:`~IOBase.close` would think the I/O object was open and call
-:meth:`~IOBase.flush` which would error that the file was already closed by
+Fix an issue where the :class:`io.BufferedIOBase` implementation of
+:meth:`~io.IOBase.close` would think the I/O object was open and call
+:meth:`~io.IOBase.flush` which would error that the file was already closed by
 making the two implementations use the same logic.
