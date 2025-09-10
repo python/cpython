@@ -40,9 +40,11 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Return a new :c:type:`PyLongObject` object from *v*, or ``NULL`` on failure.
 
-   The current implementation keeps an array of integer objects for all integers
-   between ``-5`` and ``256``. When you create an int in that range you actually
-   just get back a reference to the existing object.
+   .. impl-detail::
+
+      CPython keeps an array of integer objects for all integers
+      between ``-5`` and ``256``.  When you create an int in that range
+      you actually just get back a reference to the existing object.
 
 
 .. c:function:: PyObject* PyLong_FromUnsignedLong(unsigned long v)
@@ -371,6 +373,10 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    Set *\*value* to a signed C :c:expr:`int32_t` or :c:expr:`int64_t`
    representation of *obj*.
+
+   If *obj* is not an instance of :c:type:`PyLongObject`, first call its
+   :meth:`~object.__index__` method (if present) to convert it to a
+   :c:type:`PyLongObject`.
 
    If the *obj* value is out of range, raise an :exc:`OverflowError`.
 
