@@ -447,7 +447,11 @@ def package_version(prefix_path: Path) -> str:
             version = match[1]
             # If not building against a tagged commit, add a timestamp to the
             # version. Follow the PyPA version number rules, as this will make
-            # it easier to process with other tools.
+            # it easier to process with other tools. The version will have a
+            # `+` suffix once any official release has been made; a freshly
+            # forked main branch will have a version of 3.X.0a0.
+            if version.endswith("a0"):
+                version += "+"
             if version.endswith("+"):
                 version += datetime.now(timezone.utc).strftime("%Y%m%d.%H%M%S")
 
