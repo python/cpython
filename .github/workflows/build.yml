@@ -208,20 +208,20 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - windows-latest
+          - windows-2022
         arch:
           - x64
         free-threading:
           - false
           - true
         include:
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+          - os: windows-2022 # FIXME(diegorusso): change to os: windows-aarch64
             arch: arm64
             free-threading: false
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+          - os: windows-2022 # FIXME(diegorusso): change to os: windows-aarch64
             arch: arm64
             free-threading: true
-          - os: windows-latest
+          - os: windows-2022
             arch: Win32
             free-threading: false
     uses: ./.github/workflows/reusable-windows.yml
