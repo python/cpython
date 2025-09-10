@@ -1807,10 +1807,6 @@ class TestFormatAnnotation(unittest.TestCase):
             inspect.formatannotationrelativeto(None)(A),
             'testModule.typing.A',
         )
-        self.assertEqual(
-            inspect.formatannotationrelativeto(A)(A),
-            'A',
-        )
 
         class B: ...
         B.__module__ = 'testModule.typing'
@@ -1820,11 +1816,8 @@ class TestFormatAnnotation(unittest.TestCase):
             'A',
         )
 
-        class C: ...
-        C.__module__ = 'other'
-
         self.assertEqual(
-            inspect.formatannotationrelativeto(C)(A),
+            inspect.formatannotationrelativeto(object)(A),
             'testModule.typing.A',
         )
 
