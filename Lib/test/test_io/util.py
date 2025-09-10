@@ -13,6 +13,9 @@ except ImportError:
     def byteslike(*pos, **kw):
         return array.array("b", bytes(*pos, **kw))
 else:
+    class EmptyStruct(ctypes.Structure):
+        pass
+
     def byteslike(*pos, **kw):
         """Create a bytes-like object having no string or sequence methods"""
         data = bytes(*pos, **kw)
@@ -20,8 +23,6 @@ else:
         ctypes.resize(obj, len(data))
         memoryview(obj).cast("B")[:] = data
         return obj
-    class EmptyStruct(ctypes.Structure):
-        pass
 
 
 class MockRawIOWithoutRead:
