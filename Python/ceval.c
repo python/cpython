@@ -912,7 +912,11 @@ exception_unwind:
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
                 PyObject *lasti = PyLong_FromLong(frame_lasti);
                 if (lasti == NULL) {
-                    goto exception_unwind;
+                    // Instead of going back to exception_unwind (which would cause
+                    // infinite recursion), directly exit to let the original exception
+                    // propagate up and hopefully be handled at a higher level.
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    goto exit_unwind;
                 }
                 PUSH(lasti);
             }
