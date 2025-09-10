@@ -1255,8 +1255,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
             )
 
         annotate.assert_has_calls([
-            unittest.mock.Call(Format.FORWARDREF),
-            unittest.mock.Call(Format.VALUE_WITH_FAKE_GLOBALS),
+            unittest.mock.call(Format.FORWARDREF),
+            unittest.mock.call(Format.VALUE_WITH_FAKE_GLOBALS),
         ])
 
     def test_user_annotate_string(self):
@@ -1269,8 +1269,8 @@ class TestCallAnnotateFunction(unittest.TestCase):
             )
 
         annotate.assert_has_calls([
-            unittest.mock.Call(Format.STRING),
-            unittest.mock.Call(Format.VALUE_WITH_FAKE_GLOBALS),
+            unittest.mock.call(Format.STRING),
+            unittest.mock.call(Format.VALUE_WITH_FAKE_GLOBALS),
         ])
 
 
