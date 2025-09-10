@@ -156,7 +156,7 @@ def _check_echo_char(echo_char):
         and echo_char.isascii()
     ):
         raise ValueError("'echo_char' must be a single printable ASCII "
-                         f"character got: {echo_char!r}")
+                         f"character, got: {echo_char!r}")
 
 
 def _raw_input(prompt="", stream=None, input=None, echo_char=None):
