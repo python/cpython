@@ -27,7 +27,7 @@ The :mod:`getpass` module provides two functions:
 
    The *echo_char* argument controls how user input is displayed while typing.
    If *echo_char* is ``None`` (default), input remains hidden. Otherwise,
-   *echo_char* must be a single-character, printable ASCII string and each
+   *echo_char* must be a single printable ASCII character and each
    typed character is replaced by it. For example, ``echo_char='*'`` will
    display asterisks instead of the actual input.
 
