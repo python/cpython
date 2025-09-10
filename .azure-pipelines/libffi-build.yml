@@ -13,7 +13,7 @@ jobs:
 - job: Build_LibFFI
   displayName: LibFFI
   pool:
-    vmImage: windows-latest
+    vmImage: windows-2022
 
   workspace:
     clean: all
