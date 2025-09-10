@@ -7260,6 +7260,8 @@ case $host/$ac_cv_cc_name in #(
     PY_SUPPORT_TIER=3 ;; #(
     x86_64-*-linux-android/clang) :
     PY_SUPPORT_TIER=3 ;; #(
+    wasm32-*-emscripten/emcc) :
+    PY_SUPPORT_TIER=3 ;; #(
   *) :
 
   PY_SUPPORT_TIER=0
@@ -7907,8 +7909,10 @@ then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
 fi
      ;; #(
-              WASI) :
-    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
+  WASI) :
+
+      as_fn_error $? "HOSTRUNNER must be set when cross-compiling to WASI" "$LINENO" 5
+     ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -8411,6 +8415,13 @@ fi
 
 
 if test "$Py_OPT" = 'true' ; then
+  # Check for conflicting CFLAGS=-O0 and --enable-optimizations
+  case "$CFLAGS" in
+    *-O0*)
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: CFLAGS contains -O0 which may conflict with --enable-optimizations. Consider removing -O0 from CFLAGS for optimal performance." >&5
+printf "%s\n" "$as_me: WARNING: CFLAGS contains -O0 which may conflict with --enable-optimizations. Consider removing -O0 from CFLAGS for optimal performance." >&2;}
+      ;;
+  esac
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
@@ -9622,9 +9633,10 @@ fi
         as_fn_append LDFLAGS_NODIST " -sWASM_BIGINT"
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
-    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
+    as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"
     as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
+        as_fn_append LINKFORSHARED " -sTEXTDECODER=2"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
 then :
@@ -13860,6 +13872,8 @@ case $PLATFORM_TRIPLET in #(
   x86_64-linux-gnu) :
     perf_trampoline=yes ;; #(
   aarch64-linux-gnu) :
+    perf_trampoline=yes ;; #(
+  darwin) :
     perf_trampoline=yes ;; #(
   *) :
     perf_trampoline=no
@@ -19080,15 +19094,27 @@ printf "%s\n" "#define WITH_DTRACE 1" >>confdefs.h
     # linked into the binary. Correspondingly, dtrace(1) is missing the ELF
     # generation flag '-G'. We check for presence of this flag, rather than
     # hardcoding support by OS, in the interest of robustness.
+    #
+    # NetBSD DTrace requires the -x nolibs flag to avoid system library conflicts
+    # and uses header generation for testing instead of object generation.
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether DTrace probes require linking" >&5
 printf %s "checking whether DTrace probes require linking... " >&6; }
 if test ${ac_cv_dtrace_link+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e)             ac_cv_dtrace_link=no
+  e)
+            ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" $DFLAGS -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            case $host in
+                *netbsd*)
+                    DTRACE_TEST_FLAGS="-x nolibs -h"
+                    ;;
+                *)
+                    DTRACE_TEST_FLAGS="-G"
+                    ;;
+            esac
+            "$DTRACE" $DFLAGS $DTRACE_TEST_FLAGS -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
        ;;
 esac
@@ -19098,6 +19124,12 @@ printf "%s\n" "$ac_cv_dtrace_link" >&6; }
     if test "$ac_cv_dtrace_link" = "yes"; then
         DTRACE_OBJS="Python/pydtrace.o"
     fi
+    # Set NetBSD-specific DTrace flags in DFLAGS
+    case $host in
+        *netbsd*)
+            DFLAGS="$DFLAGS -x nolibs"
+            ;;
+    esac
 fi
 
 PLATFORM_HEADERS=
@@ -19106,7 +19138,7 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_syscalls.o'
     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
   *) :
@@ -28215,110 +28247,6 @@ printf "%s\n" "#define HAVE_STAT_TV_NSEC2 1" >>confdefs.h
 
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether year with century should be normalized for strftime" >&5
-printf %s "checking whether year with century should be normalized for strftime... " >&6; }
-if test ${ac_cv_normalize_century+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-if test "$cross_compiling" = yes
-then :
-  ac_cv_normalize_century=yes
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char year[5];
-  struct tm date = {
-    .tm_year = -1801,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(year, sizeof(year), "%Y", &date) && !strcmp(year, "0099")) {
-    return 1;
-  }
-  return 0;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  ac_cv_normalize_century=yes
-else case e in #(
-  e) ac_cv_normalize_century=no ;;
-esac
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
- ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_normalize_century" >&5
-printf "%s\n" "$ac_cv_normalize_century" >&6; }
-if test "$ac_cv_normalize_century" = yes
-then
-
-printf "%s\n" "#define Py_NORMALIZE_CENTURY 1" >>confdefs.h
-
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C99-compatible strftime specifiers are supported" >&5
-printf %s "checking whether C99-compatible strftime specifiers are supported... " >&6; }
-if test ${ac_cv_strftime_c99_support+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-if test "$cross_compiling" = yes
-then :
-  ac_cv_strftime_c99_support=
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-#include <time.h>
-#include <string.h>
-
-int main(void)
-{
-  char full_date[11];
-  struct tm date = {
-    .tm_year = 0,
-    .tm_mon = 0,
-    .tm_mday = 1
-  };
-  if (strftime(full_date, sizeof(full_date), "%F", &date) && !strcmp(full_date, "1900-01-01")) {
-    return 0;
-  }
-  return 1;
-}
-
-_ACEOF
-if ac_fn_c_try_run "$LINENO"
-then :
-  ac_cv_strftime_c99_support=yes
-else case e in #(
-  e) as_fn_error $? "Python requires C99-compatible strftime specifiers" "$LINENO" 5 ;;
-esac
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
- ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_strftime_c99_support" >&5
-printf "%s\n" "$ac_cv_strftime_c99_support" >&6; }
-
 have_curses=no
 have_panel=no
 
@@ -30894,8 +30822,8 @@ main (void)
 
       OBJ_nid2sn(NID_md5);
       OBJ_nid2sn(NID_sha1);
+      OBJ_nid2sn(NID_sha512);
       OBJ_nid2sn(NID_sha3_512);
-      OBJ_nid2sn(NID_blake2b512);
       EVP_PBE_scrypt(NULL, 0, NULL, 0, 2, 8, 1, 0, NULL, 0);
 
   ;
@@ -31277,9 +31205,7 @@ case $ac_sys_system in #(
 
 
 
-    py_cv_module_fcntl=n/a
     py_cv_module_readline=n/a
-    py_cv_module_termios=n/a
     py_cv_module_=n/a
 
    ;; #(

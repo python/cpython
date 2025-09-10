@@ -449,9 +449,12 @@ def warn(message, category=None, stacklevel=1, source=None,
     # Check category argument
     if category is None:
         category = UserWarning
-    if not (isinstance(category, type) and issubclass(category, Warning)):
-        raise TypeError("category must be a Warning subclass, "
-                        "not '{:s}'".format(type(category).__name__))
+    elif not isinstance(category, type):
+        raise TypeError(f"category must be a Warning subclass, not "
+                        f"'{type(category).__name__}'")
+    elif not issubclass(category, Warning):
+        raise TypeError(f"category must be a Warning subclass, not "
+                        f"class '{category.__name__}'")
     if not isinstance(skip_file_prefixes, tuple):
         # The C version demands a tuple for implementation performance.
         raise TypeError('skip_file_prefixes must be a tuple of strs.')
@@ -762,27 +765,27 @@ class deprecated:
 
             arg.__new__ = staticmethod(__new__)
 
-            original_init_subclass = arg.__init_subclass__
-            # We need slightly different behavior if __init_subclass__
-            # is a bound method (likely if it was implemented in Python)
-            if isinstance(original_init_subclass, MethodType):
-                original_init_subclass = original_init_subclass.__func__
+            if "__init_subclass__" in arg.__dict__:
+                # __init_subclass__ is directly present on the decorated class.
+                # Synthesize a wrapper that calls this method directly.
+                original_init_subclass = arg.__init_subclass__
+                # We need slightly different behavior if __init_subclass__
+                # is a bound method (likely if it was implemented in Python).
+                # Otherwise, it likely means it's a builtin such as
+                # object's implementation of __init_subclass__.
+                if isinstance(original_init_subclass, MethodType):
+                    original_init_subclass = original_init_subclass.__func__
 
                 @functools.wraps(original_init_subclass)
                 def __init_subclass__(*args, **kwargs):
                     _wm.warn(msg, category=category, stacklevel=stacklevel + 1)
                     return original_init_subclass(*args, **kwargs)
-
-                arg.__init_subclass__ = classmethod(__init_subclass__)
-            # Or otherwise, which likely means it's a builtin such as
-            # object's implementation of __init_subclass__.
             else:
-                @functools.wraps(original_init_subclass)
-                def __init_subclass__(*args, **kwargs):
+                def __init_subclass__(cls, *args, **kwargs):
                     _wm.warn(msg, category=category, stacklevel=stacklevel + 1)
-                    return original_init_subclass(*args, **kwargs)
+                    return super(arg, cls).__init_subclass__(*args, **kwargs)
 
-                arg.__init_subclass__ = __init_subclass__
+            arg.__init_subclass__ = classmethod(__init_subclass__)
 
             arg.__deprecated__ = __new__.__deprecated__ = msg
             __init_subclass__.__deprecated__ = msg

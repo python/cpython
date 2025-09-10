@@ -474,19 +474,19 @@ class CommonTests(TestBase):
 
     def test_signatures(self):
         # See https://github.com/python/cpython/issues/126654
-        msg = r'_interpreters.exec\(\) argument 3 must be dict, not int'
+        msg = r"exec\(\) argument 'shared' must be dict, not int"
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.exec(self.id, 'a', 1)
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.exec(self.id, 'a', shared=1)
-        msg = r'_interpreters.run_string\(\) argument 3 must be dict, not int'
+        msg = r"run_string\(\) argument 'shared' must be dict, not int"
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.run_string(self.id, 'a', shared=1)
-        msg = r'_interpreters.run_func\(\) argument 3 must be dict, not int'
+        msg = r"run_func\(\) argument 'shared' must be dict, not int"
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.run_func(self.id, lambda: None, shared=1)
         # See https://github.com/python/cpython/issues/135855
-        msg = r'_interpreters.set___main___attrs\(\) argument 2 must be dict, not int'
+        msg = r"set___main___attrs\(\) argument 'updates' must be dict, not int"
         with self.assertRaisesRegex(TypeError, msg):
             _interpreters.set___main___attrs(self.id, 1)
 

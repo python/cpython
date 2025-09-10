@@ -746,12 +746,19 @@ unsigned_char_converter(PyObject *module, PyObject *const *args, Py_ssize_t narg
         goto skip_optional;
     }
     {
-        unsigned long ival = PyLong_AsUnsignedLongMask(args[2]);
-        if (ival == (unsigned long)-1 && PyErr_Occurred()) {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned char),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
             goto exit;
         }
-        else {
-            c = (unsigned char) ival;
+        if ((size_t)_bytes > sizeof(unsigned char)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
         }
     }
 skip_optional:
@@ -848,9 +855,21 @@ unsigned_short_converter(PyObject *module, PyObject *const *args, Py_ssize_t nar
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = (unsigned short)PyLong_AsUnsignedLongMask(args[2]);
-    if (c == (unsigned short)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned short),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned short)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = unsigned_short_converter_impl(module, a, b, c);
@@ -955,9 +974,21 @@ unsigned_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = (unsigned int)PyLong_AsUnsignedLongMask(args[2]);
-    if (c == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = unsigned_int_converter_impl(module, a, b, c);
@@ -1042,7 +1073,22 @@ unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t narg
         _PyArg_BadArgument("unsigned_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
-    c = PyLong_AsUnsignedLongMask(args[2]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
 skip_optional:
     return_value = unsigned_long_converter_impl(module, a, b, c);
 
@@ -1126,7 +1172,22 @@ unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
         _PyArg_BadArgument("unsigned_long_long_converter", "argument 3", "int", args[2]);
         goto exit;
     }
-    c = PyLong_AsUnsignedLongLongMask(args[2]);
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long long),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned long long)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
+    }
 skip_optional:
     return_value = unsigned_long_long_converter_impl(module, a, b, c);
 
@@ -1135,7 +1196,8 @@ exit:
 }
 
 PyDoc_STRVAR(py_ssize_t_converter__doc__,
-"py_ssize_t_converter($module, a=12, b=34, c=56, /)\n"
+"py_ssize_t_converter($module, a=12, b=34, c=56, d=78, e=90, f=-12,\n"
+"                     g=-34, /)\n"
 "--\n"
 "\n");
 
@@ -1144,7 +1206,8 @@ PyDoc_STRVAR(py_ssize_t_converter__doc__,
 
 static PyObject *
 py_ssize_t_converter_impl(PyObject *module, Py_ssize_t a, Py_ssize_t b,
-                          Py_ssize_t c);
+                          Py_ssize_t c, Py_ssize_t d, Py_ssize_t e,
+                          Py_ssize_t f, Py_ssize_t g);
 
 static PyObject *
 py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -1153,8 +1216,12 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     Py_ssize_t a = 12;
     Py_ssize_t b = 34;
     Py_ssize_t c = 56;
+    Py_ssize_t d = 78;
+    Py_ssize_t e = 90;
+    Py_ssize_t f = -12;
+    Py_ssize_t g = -34;
 
-    if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 3)) {
+    if (!_PyArg_CheckPositional("py_ssize_t_converter", nargs, 0, 7)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -1193,8 +1260,60 @@ py_ssize_t_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_Py_convert_optional_to_ssize_t(args[2], &c)) {
         goto exit;
     }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[3]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        d = ival;
+        if (d < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "d cannot be negative");
+            goto exit;
+        }
+    }
+    if (nargs < 5) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_non_negative_ssize_t(args[4], &e)) {
+        goto exit;
+    }
+    if (nargs < 6) {
+        goto skip_optional;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[5]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        f = ival;
+        if (f < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "f cannot be negative");
+            goto exit;
+        }
+    }
+    if (nargs < 7) {
+        goto skip_optional;
+    }
+    if (!_Py_convert_optional_to_non_negative_ssize_t(args[6], &g)) {
+        goto exit;
+    }
 skip_optional:
-    return_value = py_ssize_t_converter_impl(module, a, b, c);
+    return_value = py_ssize_t_converter_impl(module, a, b, c, d, e, f, g);
 
 exit:
     return return_value;
@@ -4481,4 +4600,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=84ffc31f27215baa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0764e6f8c9d94057 input=a9049054013a1b77]*/
