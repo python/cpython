@@ -6307,6 +6307,7 @@ class TestSignatureDefinitions(unittest.TestCase):
         sig = inspect.signature(func)
         self.assertIsNotNone(sig)
         self.assertEqual(str(sig), '(self, /, x) -> fractions.Fraction')
+        self.assertEqual(sig.return_annotation, fractions.Fraction)
 
 
 class NTimesUnwrappable:
