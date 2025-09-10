@@ -2180,7 +2180,7 @@ class TestHelper(unittest.TestCase):
                 helper.interact()
 
         # handle different line endings across platforms consistently
-        return output.getvalue().splitlines(keepends=False) + ['']
+        return output.getvalue().strip().splitlines(keepends=False)
 
     def test_keywords(self):
         self.assertEqual(sorted(pydoc.Helper.keywords),
@@ -2190,7 +2190,7 @@ class TestHelper(unittest.TestCase):
         # gh-138568: test pressing Enter without input should continue in help session
         self.assertEqual(
             self.mock_interactive_session(["", "    ", "quit"]),
-            ["", "help> ", "help>     ", "help> quit", ""],
+            ["help> ", "help>     ", "help> quit"],
         )
 
     def test_interact_quit_commands_exit(self):
@@ -2199,7 +2199,7 @@ class TestHelper(unittest.TestCase):
             with self.subTest(quit_command=quit_cmd):
                 self.assertEqual(
                     self.mock_interactive_session([quit_cmd]),
-                    ["", f"help> {quit_cmd}", ""],
+                    [f"help> {quit_cmd}"],
                 )
 
 
