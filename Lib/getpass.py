@@ -148,7 +148,7 @@ def _check_echo_char(echo_char):
     if echo_char is None:
         return
     if not isinstance(echo_char, str):
-        raise TypeError("'echo_char' must be type str or None, not "
+        raise TypeError("'echo_char' must be a str or None, not "
                         f"{type(echo_char).__name__}")
     if not (
         len(echo_char) == 1
