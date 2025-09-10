@@ -202,38 +202,36 @@ class UnixGetpassTest(unittest.TestCase):
 
 
 class GetpassEchoCharTest(unittest.TestCase):
+    # Tests for the `echo_char` parameter of `getpass.getpass()`
     # Successful Validation Cases
     def test_accepts_none(self):
         getpass._check_echo_char(None)
 
-    def test_accepts_single_printable_ascii(self):
-        for ch in ["*", "A", " "]:
-            with self.subTest(echo_char=ch):
-                getpass._check_echo_char(ch)
+    @support.subTests('echo_char', ["*", "A", " "])
+    def test_accepts_single_printable_ascii(self, echo_char):
+        getpass._check_echo_char(echo_char)
 
     # Rejected `echo_char` Cases
+    # ValueError Rejection(s)
     def test_rejects_empty_string(self):
         self.assertRaises(ValueError, getpass.getpass, echo_char="")
 
-    def test_rejects_multi_character_strings(self):
-        for s in ["***", "AA", "aA*!"]:
-            with self.subTest(echo_char=s):
-                self.assertRaises(ValueError, getpass.getpass, echo_char=s)
+    @support.subTests('echo_char', ["***", "AA", "aA*!"])
+    def test_rejects_multi_character_strings(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
 
-    def test_rejects_non_ascii(self):
-        for ch in ["Æ", "❤️", "🐍"]:
-            with self.subTest(echo_char=ch):
-                self.assertRaises(ValueError, getpass.getpass, echo_char=ch)
+    @support.subTests('echo_char', ["Æ", "❤️", "🐍"])
+    def test_rejects_non_ascii(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
 
-    def test_rejects_control_characters(self):
-        for ch in ["\n", "\t", "\r", "\x00", "\x7f", "\x07"]:
-            with self.subTest(echo_char=ch):
-                self.assertRaises(ValueError, getpass.getpass, echo_char=ch)
+    @support.subTests('echo_char', ["\n", "\t", "\r", "\x00", "\x7f", "\x07"])
+    def test_rejects_control_characters(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
 
-    def test_rejects_non_string(self):
-        for item in [b"*", 0, 0.0, [], {}]:
-            with self.subTest(echo_char=item):
-                self.assertRaises(TypeError, getpass.getpass, echo_char=item)
+    # TypeError Rejection(s)
+    @support.subTests('echo_char', [b"*", 0, 0.0, [], {}])
+    def test_rejects_non_string(self, echo_char):
+        self.assertRaises(TypeError, getpass.getpass, echo_char=echo_char)
 
 
 if __name__ == "__main__":
