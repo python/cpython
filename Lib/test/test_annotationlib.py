@@ -1254,10 +1254,9 @@ class TestCallAnnotateFunction(unittest.TestCase):
                 Format.FORWARDREF,
             )
 
-        annotate.assert_has_calls([
-            unittest.mock.call(Format.FORWARDREF),
-            unittest.mock.call(Format.VALUE_WITH_FAKE_GLOBALS),
-        ])
+        # The annotate function itself is not called the second time
+        # A new function built from the code is called instead
+        annotate.assert_called_once_with(Format.FORWARDREF)
 
     def test_user_annotate_string(self):
         annotate = self._annotate_mock()
@@ -1272,7 +1271,6 @@ class TestCallAnnotateFunction(unittest.TestCase):
             unittest.mock.call(Format.STRING),
             unittest.mock.call(Format.VALUE_WITH_FAKE_GLOBALS),
         ])
-
 
 
 class MetaclassTests(unittest.TestCase):
