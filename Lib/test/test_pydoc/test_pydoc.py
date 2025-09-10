@@ -2189,7 +2189,7 @@ class TestHelper(unittest.TestCase):
         # gh-138568: test pressing Enter without input should continue in help session
         self.assertEqual(
             self.mock_interactive_session(["", "    ", "quit"]),
-            "\nhelp> \nhelp>     \nhelp> quit\n",
+            ["", "help> ", "help>     ", "help> quit", ""],
         )
 
     def test_interact_quit_commands_exit(self):
@@ -2198,7 +2198,7 @@ class TestHelper(unittest.TestCase):
             with self.subTest(quit_command=quit_cmd):
                 self.assertEqual(
                     self.mock_interactive_session([quit_cmd]),
-                    f"\nhelp> {quit_cmd}\n",
+                    ["", f"help> {quit_cmd}", ""],
                 )
 
 
