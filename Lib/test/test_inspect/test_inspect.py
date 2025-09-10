@@ -1786,6 +1786,33 @@ class TestFormatAnnotation(unittest.TestCase):
         fwdref = ForwardRef('fwdref')
         self.assertEqual(inspect.formatannotation(fwdref), 'fwdref')
 
+    def test_formatannotationrelativeto(self):
+        import typing
+        from test.typinganndata.ann_module9 import A
+
+        class B: ...
+
+        self.assertEqual(
+            inspect.formatannotationrelativeto(None)(A),
+            'testModule.typing.A',
+        )
+        self.assertEqual(
+            inspect.formatannotationrelativeto(inspect)(A),
+            'testModule.typing.A',
+        )
+        self.assertEqual(
+            inspect.formatannotationrelativeto(typing.Literal)(A),
+            'testModule.typing.A',
+        )
+        self.assertEqual(
+            inspect.formatannotationrelativeto(B)(A),
+            'testModule.typing.A',
+        )
+        self.assertEqual(
+            inspect.formatannotationrelativeto(A)(A),
+            'A',
+        )
+
 
 class TestIsMethodDescriptor(unittest.TestCase):
 
