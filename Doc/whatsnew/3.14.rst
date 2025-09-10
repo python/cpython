@@ -455,7 +455,7 @@ to attach to the remote process and send the PDB commands to it.
 
 .. _whatsnew314-pep758:
 
-PEP 758 – Allow except and except* expressions without parentheses
+PEP 758: Allow except and except* expressions without parentheses
 ------------------------------------------------------------------
 
 The :keyword:`except` and :keyword:`except* <except_star>` expressions now allow
