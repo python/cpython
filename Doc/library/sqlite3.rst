@@ -632,7 +632,7 @@ Connection objects
           The name of the column where the blob is located.
 
       :param int row:
-          Row id of the row that contains the blob.
+          The index of the row where the blob is located.
 
       :param bool readonly:
           Set to ``True`` if the blob should be opened without write
