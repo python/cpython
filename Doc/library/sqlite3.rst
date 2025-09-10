@@ -631,7 +631,7 @@ Connection objects
       :param str column:
           The name of the column where the blob is located.
 
-      :param str row:
+      :param int row:
           The name of the row where the blob is located.
 
       :param bool readonly:
