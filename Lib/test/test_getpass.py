@@ -232,5 +232,6 @@ class GetpassEchoCharValidationTest(unittest.TestCase):
     def test_rejects_empty_string(self):
         self.assertRaises(ValueError, getpass.getpass, echo_char="")
 
+
 if __name__ == "__main__":
     unittest.main()
