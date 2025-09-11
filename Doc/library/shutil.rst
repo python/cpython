@@ -867,7 +867,7 @@ In the final archive, :file:`please_add.txt` should be included, but
     ...     root_dir='tmp/root',
     ...     base_dir='structure/content',
     ... )
-    '/Users/tarek/my_archive.tar'
+    '/Users/tarek/myarchive.tar'
 
 Listing the files in the resulting archive gives us:
 
