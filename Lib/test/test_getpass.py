@@ -210,8 +210,6 @@ class GetpassEchoCharTest(unittest.TestCase):
     def test_accepts_single_printable_ascii(self, echo_char):
         getpass._check_echo_char(echo_char)
 
-    # Rejected `echo_char` Case(s)
-    # ValueError Rejection(s)
     def test_rejects_empty_string(self):
         self.assertRaises(ValueError, getpass.getpass, echo_char="")
 
