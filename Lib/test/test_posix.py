@@ -757,6 +757,12 @@ class PosixTester(unittest.TestCase):
             self.assertRaises((ValueError, OverflowError), posix.makedev, x, minor)
             self.assertRaises((ValueError, OverflowError), posix.makedev, major, x)
 
+        # The following tests are needed to test functions accepting or
+        # returning the special value NODEV (if it is defined). major(), minor()
+        # and makefile() are the only easily reproducible examples, but that
+        # behavior is platform specific -- on some platforms their code has
+        # a special case for NODEV, on others this is just an implementation
+        # artifact.
         if (hasattr(posix, 'NODEV') and
             sys.platform.startswith(('linux', 'macos', 'freebsd', 'dragonfly',
                                      'sunos'))):
@@ -766,6 +772,7 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(posix.makedev(NODEV, NODEV), NODEV)
 
     def test_nodev(self):
+        # NODEV is not a part of Posix, but is defined on many systems.
         if (not hasattr(posix, 'NODEV')
             and (not sys.platform.startswith(('linux', 'macos', 'freebsd',
                                               'dragonfly', 'netbsd', 'openbsd',

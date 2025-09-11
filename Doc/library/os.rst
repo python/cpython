@@ -2634,6 +2634,8 @@ features:
 
    Non-existent device.
 
+   .. versionadded:: next
+
 
 .. function:: pathconf(path, name)
 
