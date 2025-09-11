@@ -1,0 +1,1 @@
+Check argument passed to ``shlex.quote`` to be a string

@@ -319,6 +319,9 @@ def join(split_command):
 
 def quote(s):
     """Return a shell-escaped version of the string *s*."""
+    if not isinstance(s, str):
+        raise TypeError(f"expected str, not {type(s)!r}")
+
     if not s:
         return "''"
 
