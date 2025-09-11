@@ -1374,9 +1374,7 @@ class LongTest(unittest.TestCase):
         check(tests4, 'little', signed=False)
 
         self.assertRaises(OverflowError, (256).to_bytes, 1, 'big', signed=False)
-        self.assertRaises(OverflowError, (256).to_bytes, 1, 'big', signed=True)
         self.assertRaises(OverflowError, (256).to_bytes, 1, 'little', signed=False)
-        self.assertRaises(OverflowError, (256).to_bytes, 1, 'little', signed=True)
         self.assertRaises(OverflowError, (128).to_bytes, 1, 'big', signed=True)
         self.assertRaises(OverflowError, (128).to_bytes, 1, 'little', signed=True)
         self.assertRaises(OverflowError, (-129).to_bytes, 1, 'big', signed=True)
@@ -1384,6 +1382,7 @@ class LongTest(unittest.TestCase):
         self.assertRaises(OverflowError, (-1).to_bytes, 2, 'big', signed=False)
         self.assertRaises(OverflowError, (-1).to_bytes, 2, 'little', signed=False)
         self.assertEqual((0).to_bytes(0, 'big'), b'')
+        self.assertEqual((0).to_bytes(0, 'big'), b'', signed=True)
         self.assertEqual((1).to_bytes(5, 'big'), b'\x00\x00\x00\x00\x01')
         self.assertEqual((0).to_bytes(5, 'big'), b'\x00\x00\x00\x00\x00')
         self.assertEqual((-1).to_bytes(5, 'big', signed=True),
