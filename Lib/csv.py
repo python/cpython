@@ -373,7 +373,7 @@ class Sniffer:
         iteration = 0
         num_lines = 0
         # {char -> {count_per_line -> num_lines_with_that_count}}
-        charFrequency = defaultdict(Counter)
+        char_frequency = defaultdict(Counter)
         modes = {}
         delims = {}
         start, end = 0, chunkLength
@@ -383,9 +383,9 @@ class Sniffer:
                 num_lines += 1
                 for char, count in Counter(line).items():
                     if char.isascii():
-                        charFrequency[char][count] += 1
+                        char_frequency[char][count] += 1
 
-            for char, counts in charFrequency.items():
+            for char, counts in char_frequency.items():
                 items = list(counts.items())
                 missed_lines = num_lines - sum(counts.values())
                 if missed_lines:
