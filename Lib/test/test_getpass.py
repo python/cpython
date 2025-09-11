@@ -217,7 +217,10 @@ class GetpassEchoCharTest(unittest.TestCase):
     def test_rejects_multi_character_strings(self, echo_char):
         self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
 
-    @support.subTests('echo_char', ["Æ", "❤️", "🐍"])
+    @support.subTests('echo_char', [
+        '\N{LATIN CAPITAL LETTER AE}',  # non-ASCII single character
+        '\N{HEAVY BLACK HEART}',        # non-ASCII multibyte character 
+   ])
     def test_rejects_non_ascii(self, echo_char):
         self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
 
