@@ -28,6 +28,8 @@ typedef struct {
     PyObject            *x_attr;        /* Attributes dictionary */
 } ExampleObject;
 
+#define ExampleObject_CAST(op)  ((ExampleObject *)(op))
+
 typedef struct {
     PyObject *integer;
 } testmultiphase_state;
@@ -39,20 +41,22 @@ typedef struct {
 /* Example methods */
 
 static int
-Example_traverse(ExampleObject *self, visitproc visit, void *arg)
+Example_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ExampleObject *self = ExampleObject_CAST(op);
     Py_VISIT(self->x_attr);
     return 0;
 }
 
 static void
-Example_finalize(ExampleObject *self)
+Example_finalize(PyObject *op)
 {
+    ExampleObject *self = ExampleObject_CAST(op);
     Py_CLEAR(self->x_attr);
 }
 
 static PyObject *
-Example_demo(ExampleObject *self, PyObject *args)
+Example_demo(PyObject *op, PyObject *args)
 {
     PyObject *o = NULL;
     if (!PyArg_ParseTuple(args, "|O:demo", &o))
@@ -66,14 +70,15 @@ Example_demo(ExampleObject *self, PyObject *args)
 #include "clinic/_testmultiphase.c.h"
 
 static PyMethodDef Example_methods[] = {
-    {"demo",            (PyCFunction)Example_demo,  METH_VARARGS,
+    {"demo",            Example_demo,  METH_VARARGS,
         PyDoc_STR("demo() -> None")},
     {NULL,              NULL}           /* sentinel */
 };
 
 static PyObject *
-Example_getattro(ExampleObject *self, PyObject *name)
+Example_getattro(PyObject *op, PyObject *name)
 {
+    ExampleObject *self = ExampleObject_CAST(op);
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
@@ -87,8 +92,9 @@ Example_getattro(ExampleObject *self, PyObject *name)
 }
 
 static int
-Example_setattr(ExampleObject *self, const char *name, PyObject *v)
+Example_setattr(PyObject *op, char *name, PyObject *v)
 {
+    ExampleObject *self = ExampleObject_CAST(op);
     if (self->x_attr == NULL) {
         self->x_attr = PyDict_New();
         if (self->x_attr == NULL)
@@ -212,7 +218,7 @@ PyDoc_STRVAR(_StateAccessType_decrement_count__doc__,
 
 // Intentionally does not use Argument Clinic
 static PyObject *
-_StateAccessType_increment_count_noclinic(StateAccessTypeObject *self,
+_StateAccessType_increment_count_noclinic(PyObject *self,
                                           PyTypeObject *defining_class,
                                           PyObject *const *args,
                                           Py_ssize_t nargs,
@@ -968,4 +974,22 @@ PyMODINIT_FUNC
 PyInit__test_shared_gil_only(void)
 {
     return PyModuleDef_Init(&shared_gil_only_def);
+}
+
+
+static PyModuleDef_Slot no_multiple_interpreter_slot_slots[] = {
+    {Py_mod_exec, execfunc},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
+static PyModuleDef no_multiple_interpreter_slot_def = TEST_MODULE_DEF(
+    "_test_no_multiple_interpreter_slot",
+    no_multiple_interpreter_slot_slots,
+    testexport_methods);
+
+PyMODINIT_FUNC
+PyInit__test_no_multiple_interpreter_slot(void)
+{
+    return PyModuleDef_Init(&no_multiple_interpreter_slot_def);
 }

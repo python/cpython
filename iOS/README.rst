@@ -196,7 +196,7 @@ simulator build with a deployment target of 15.4.
 Merge thin frameworks into fat frameworks
 -----------------------------------------
 
-Once you've built a ``Python.framework`` for each ABI and and architecture, you
+Once you've built a ``Python.framework`` for each ABI and architecture, you
 must produce a "fat" framework for each ABI that contains all the architectures
 for that ABI.
 
@@ -285,52 +285,56 @@ This will:
 * Install the Python iOS framework into the copy of the testbed project; and
 * Run the test suite on an "iPhone SE (3rd generation)" simulator.
 
-While the test suite is running, Xcode does not display any console output.
-After showing some Xcode build commands, the console output will print ``Testing
-started``, and then appear to stop. It will remain in this state until the test
-suite completes. On a 2022 M1 MacBook Pro, the test suite takes approximately 12
-minutes to run; a couple of extra minutes is required to boot and prepare the
-iOS simulator.
-
 On success, the test suite will exit and report successful completion of the
-test suite. No output of the Python test suite will be displayed.
-
-On failure, the output of the Python test suite *will* be displayed. This will
-show the details of the tests that failed.
+test suite. On a 2022 M1 MacBook Pro, the test suite takes approximately 15
+minutes to run; a couple of extra minutes is required to compile the testbed
+project, and then boot and prepare the iOS simulator.
 
 Debugging test failures
 -----------------------
 
-The easiest way to diagnose a single test failure is to open the testbed project
-in Xcode and run the tests from there using the "Product > Test" menu item.
+Running ``make testios`` generates a standalone version of the ``iOS/testbed``
+project, and runs the full test suite. It does this using ``iOS/testbed``
+itself - the folder is an executable module that can be used to create and run
+a clone of the testbed project.
 
-To test in Xcode, you must ensure the testbed project has a copy of a compiled
-framework. If you've configured your build with the default install location of
-``iOS/Frameworks``, you can copy from that location into the test project. To
-test on an ARM64 simulator, run::
+You can generate your own standalone testbed instance by running::
 
-    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/*
-    $ cp -r iOS/Frameworks/arm64-iphonesimulator/* iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+    $ python iOS/testbed clone --framework iOS/Frameworks/arm64-iphonesimulator my-testbed
 
-To test on an x86-64 simulator, run::
+This invocation assumes that ``iOS/Frameworks/arm64-iphonesimulator`` is the
+path to the iOS simulator framework for your platform (ARM64 in this case);
+``my-testbed`` is the name of the folder for the new testbed clone.
 
-    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator/*
-    $ cp -r iOS/Frameworks/x86_64-iphonesimulator/* iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+You can then use the ``my-testbed`` folder to run the Python test suite,
+passing in any command line arguments you may require. For example, if you're
+trying to diagnose a failure in the ``os`` module, you might run::
 
-To test on a physical device::
+    $ python my-testbed run -- test -W test_os
 
-    $ rm -rf iOS/testbed/Python.xcframework/ios-arm64/*
-    $ cp -r iOS/Frameworks/arm64-iphoneos/* iOS/testbed/Python.xcframework/ios-arm64
+This is the equivalent of running ``python -m test -W test_os`` on a desktop
+Python build. Any arguments after the ``--`` will be passed to testbed as if
+they were arguments to ``python -m`` on a desktop machine.
 
-Alternatively, you can configure your build to install directly into the
-testbed project. For a simulator, use::
+Testing in Xcode
+^^^^^^^^^^^^^^^^
 
-    --enable-framework=$(pwd)/iOS/testbed/Python.xcframework/ios-arm64_x86_64-simulator
+You can also open the testbed project in Xcode by running::
 
-For a physical device, use::
+    $ open my-testbed/iOSTestbed.xcodeproj
 
-    --enable-framework=$(pwd)/iOS/testbed/Python.xcframework/ios-arm64
+This will allow you to use the full Xcode suite of tools for debugging.
 
+The arguments used to run the test suite are defined as part of the test plan.
+To modify the test plan, select the test plan node of the project tree (it
+should be the first child of the root node), and select the "Configurations"
+tab. Modify the "Arguments Passed On Launch" value to change the testing
+arguments.
+
+The test plan also disables parallel testing, and specifies the use of the
+``iOSTestbed.lldbinit`` file for providing configuration of the debugger. The
+default debugger configuration disables automatic breakpoints on the
+``SIGINT``, ``SIGUSR1``, ``SIGUSR2``, and ``SIGXFSZ`` signals.
 
 Testing on an iOS device
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -346,40 +350,3 @@ select the root node of the project tree (labeled "iOSTestbed"), then the
 (this will likely be your own name), and plug in a physical device to your
 macOS machine with a USB cable. You should then be able to select your physical
 device from the list of targets in the pulldown in the Xcode titlebar.
-
-Running specific tests
-^^^^^^^^^^^^^^^^^^^^^^
-
-As the test suite is being executed on an iOS simulator, it is not possible to
-pass in command line arguments to configure test suite operation. To work
-around this limitation, the arguments that would normally be passed as command
-line arguments are configured as part of the ``iOSTestbed-Info.plist`` file
-that is used to configure the iOS testbed app. In this file, the ``TestArgs``
-key is an array containing the arguments that would be passed to ``python -m``
-on the command line (including ``test`` in position 0, the name of the test
-module to be executed).
-
-Disabling automated breakpoints
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-By default, Xcode will inserts an automatic breakpoint whenever a signal is
-raised. The Python test suite raises many of these signals as part of normal
-operation; unless you are trying to diagnose an issue with signals, the
-automatic breakpoints can be inconvenient. However, they can be disabled by
-creating a symbolic breakpoint that is triggered at the start of the test run.
-
-Select "Debug > Breakpoints > Create Symbolic Breakpoint" from the Xcode menu, and
-populate the new brewpoint with the following details:
-
-* **Name**: IgnoreSignals
-* **Symbol**: UIApplicationMain
-* **Action**: Add debugger commands for:
-  - ``process handle SIGINT -n true -p true -s false``
-  - ``process handle SIGUSR1 -n true -p true -s false``
-  - ``process handle SIGUSR2 -n true -p true -s false``
-  - ``process handle SIGXFSZ -n true -p true -s false``
-* Check the "Automatically continue after evaluating" box.
-
-All other details can be left blank. When the process executes the
-``UIApplicationMain`` entry point, the breakpoint will trigger, run the debugger
-commands to disable the automatic breakpoints, and automatically resume.

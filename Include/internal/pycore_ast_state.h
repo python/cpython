@@ -3,7 +3,7 @@
 #ifndef Py_INTERNAL_AST_STATE_H
 #define Py_INTERNAL_AST_STATE_H
 
-#include "pycore_lock.h"    // _PyOnceFlag
+#include "pycore_lock.h"          // _PyOnceFlag
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,6 +75,7 @@ struct ast_state {
     PyObject *In_singleton;
     PyObject *In_type;
     PyObject *Interactive_type;
+    PyObject *Interpolation_type;
     PyObject *Invert_singleton;
     PyObject *Invert_type;
     PyObject *IsNot_singleton;
@@ -137,6 +138,7 @@ struct ast_state {
     PyObject *Sub_singleton;
     PyObject *Sub_type;
     PyObject *Subscript_type;
+    PyObject *TemplateStr_type;
     PyObject *TryStar_type;
     PyObject *Try_type;
     PyObject *Tuple_type;
@@ -242,6 +244,7 @@ struct ast_state {
     PyObject *slice;
     PyObject *step;
     PyObject *stmt_type;
+    PyObject *str;
     PyObject *subject;
     PyObject *tag;
     PyObject *target;
