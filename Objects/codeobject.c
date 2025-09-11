@@ -1005,15 +1005,14 @@ failed:
  * source location tracking (co_lines/co_positions)
  ******************/
 
-int _PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq){
+int
+_PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq){
     if (addrq < 0) {
         return co->co_firstlineno;
     }
-
     if (co->_co_monitoring && co->_co_monitoring->lines) {
         return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
     }
-
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
