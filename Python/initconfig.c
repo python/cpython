@@ -4110,7 +4110,7 @@ static void
 initconfig_free_wstr_list(PyWideStringList *list)
 {
     for (Py_ssize_t i = 0; i < list->length; i++) {
-        initconfig_free_wstr(list->items[i]);
+        free(list->items[i]);
     }
     free(list->items);
 }
