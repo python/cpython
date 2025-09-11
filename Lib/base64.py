@@ -601,13 +601,17 @@ def main():
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)
     else:
-        # Read all input data at once when reading from stdin
-        # This allows proper handling of EOF (Ctrl+D)
-        input_data = sys.stdin.buffer.read()
-        if input_data:
-            import io
-            input_buffer = io.BytesIO(input_data)
-            func(input_buffer, sys.stdout.buffer)
+        if sys.stdin.isatty():
+            # gh-gh-138775: read input data at once when reading from stdin
+            # This allows proper handling of EOF (Ctrl+D)
+            input_data = sys.stdin.buffer.read()
+            if input_data:
+                import io
+                input_buffer = io.BytesIO(input_data)
+                func(input_buffer, sys.stdout.buffer)
+        else:
+            # keep the old behaviour for non-interactive input
+            func(sys.stdin.buffer, sys.stdout.buffer)
 
 
 if __name__ == '__main__':
