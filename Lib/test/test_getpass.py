@@ -224,8 +224,11 @@ class GetpassEchoCharTest(unittest.TestCase):
     def test_rejects_non_ascii(self, echo_char):
         self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
 
-    @support.subTests('echo_char', ["\n", "\t", "\r", "\x00", "\x7f", "\x07"])
-    def test_rejects_control_characters(self, echo_char):
+    @support.subTests('echo_char', [
+        ch for ch in map(chr, range(0, 128))
+        if not ch.isprintable()
+    ])
+    def test_rejects_non_printable_characters(self, echo_char):
         self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
 
     # TypeError Rejection(s)
