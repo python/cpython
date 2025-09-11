@@ -9,7 +9,7 @@ on:
 jobs:
   build_win32:
     name: 'build and test (x86)'
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 60
     env:
       IncludeUwp: 'true'
@@ -24,7 +24,7 @@ jobs:
 
   build_win_amd64:
     name: 'build and test (x64)'
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 60
     env:
        IncludeUwp: 'true'
@@ -41,7 +41,7 @@ jobs:
 
   build_win_arm64:
     name: 'build (arm64)'
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 60
     env:
       IncludeUwp: 'true'
