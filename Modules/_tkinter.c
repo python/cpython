@@ -589,13 +589,10 @@ Tkapp_New(const char *screenName, const char *className,
           int interactive, int wantobjects, int wantTk, int sync,
           const char *use)
 {
-    PyTypeObject *type;
+    PyTypeObject *type = (PyTypeObject *)Tkapp_Type;
     TkappObject *v;
     char *argv0;
 
-    type = (PyTypeObject *)Tkapp_Type;
-    assert(type != NULL);
-    assert(type->tp_alloc != NULL);
     v = (TkappObject *)type->tp_alloc(type, 0);
     if (v == NULL)
         return NULL;
@@ -2746,12 +2743,9 @@ _tkinter_tktimertoken_deletetimerhandler_impl(TkttObject *self)
 static TkttObject *
 Tktt_New(PyObject *func)
 {
-    PyTypeObject *type;
+    PyTypeObject *type = (PyTypeObject *)Tktt_Type;
     TkttObject *v;
 
-    type = (PyTypeObject *)Tktt_Type;
-    assert(type != NULL);
-    assert(type->tp_alloc != NULL);
     v = (TkttObject *)type->tp_alloc(type, 0);
     if (v == NULL)
         return NULL;
