@@ -2764,7 +2764,14 @@ static int
 Tktt_Clear(PyObject *op)
 {
     TkttObject *self = TkttObject_CAST(op);
-    Py_CLEAR(self->func);
+    if (self->token != NULL) {
+        Tcl_DeleteTimerHandler(self->token);
+        self->token = NULL;
+    }
+    if (self->func != NULL) {
+        Py_CLEAR(self->func);
+        Py_DECREF(op); /* See Tktt_New() */
+    }
     return 0;
 }
 
@@ -2783,6 +2790,9 @@ Tktt_Traverse(PyObject *op, visitproc visit, void *arg)
 {
     TkttObject *self = TkttObject_CAST(op);
     Py_VISIT(Py_TYPE(op));
+    if (self->token != NULL) {
+        Py_VISIT(op); /* See Tktt_New() */
+    }
     Py_VISIT(self->func);
     return 0;
 }
