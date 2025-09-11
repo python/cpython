@@ -1,7 +1,7 @@
 import os
 import sys
 from test.support import import_helper, load_package_tests
-import unittest
+
 
 if sys.platform != "win32":
     import_helper.import_module("termios")
