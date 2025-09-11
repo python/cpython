@@ -2,6 +2,7 @@
 
 import asyncio
 import argparse
+import json
 import os
 import platform
 import re
@@ -546,27 +547,22 @@ async def gradle_task(context):
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
 
-    if context.command:
-        mode = "-c"
-        module = context.command
-    else:
-        mode = "-m"
-        module = context.module or "test"
+    if not any(arg in context.args for arg in ["-c", "-m"]):
+        context.args[0:0] = ["-m", "test"]
 
     args = [
         gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest",
     ] + [
-        # Build-time properties
-        f"-Ppython.{name}={value}"
+        f"-P{name}={value}"
         for name, value in [
-            ("sitePackages", context.site_packages), ("cwd", context.cwd)
-        ] if value
-    ] + [
-        # Runtime properties
-        f"-Pandroid.testInstrumentationRunnerArguments.python{name}={value}"
-        for name, value in [
-            ("Mode", mode), ("Module", module), ("Args", join_command(context.args))
-        ] if value
+            ("python.sitePackages", context.site_packages),
+            ("python.cwd", context.cwd),
+            (
+                "android.testInstrumentationRunnerArguments.pythonArgs",
+                json.dumps(context.args),
+            ),
+        ]
+        if value
     ]
     if context.verbose >= 2:
         args.append("--info")
@@ -734,13 +730,19 @@ def ci(context):
     else:
         with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
             print("::group::Tests")
+
             # Prove the package is self-contained by using it to run the tests.
             shutil.unpack_archive(package_path, temp_dir)
 
-            # Randomization is disabled because order-dependent failures are
-            # much less likely to pass on a rerun in single-process mode.
             launcher_args = ["--managed", "maxVersion", "-v"]
-            test_args = ["--fast-ci", "--single-process", "--no-randomize"]
+            test_args = [
+                # See _add_ci_python_opts in libregrtest/main.py.
+                "-W", "error", "-bb", "-E",
+
+                # Randomization is disabled because order-dependent failures are
+                # much less likely to pass on a rerun in single-process mode.
+                "-m", "test", "--fast-ci", "--single-process", "--no-randomize"
+            ]
             run(
                 ["./android.py", "test", *launcher_args, "--", *test_args],
                 cwd=temp_dir
@@ -825,18 +827,11 @@ def parse_args():
     test.add_argument(
         "--cwd", metavar="DIR", type=abspath,
         help="Directory to copy as the app's working directory.")
-
-    mode_group = test.add_mutually_exclusive_group()
-    mode_group.add_argument(
-        "-c", dest="command", help="Execute the given Python code.")
-    mode_group.add_argument(
-        "-m", dest="module", help="Execute the module with the given name.")
-    test.epilog = (
-        "If neither -c nor -m are passed, the default is '-m test', which will "
-        "run Python's own test suite.")
     test.add_argument(
-        "args", nargs="*", help=f"Arguments to add to sys.argv. "
-        f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
+        "args", nargs="*", help=f"Python command-line arguments. "
+        f"Separate them from {SCRIPT_NAME}'s own arguments with `--`. "
+        f"If neither -c nor -m are included, `-m test` will be prepended, "
+        f"which will run Python's own test suite.")
 
     # Package arguments.
     for subcommand in [package, ci]:
