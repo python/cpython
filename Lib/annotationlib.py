@@ -671,7 +671,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         try:
             annotate(Format.VALUE_WITH_FAKE_GLOBALS)
         except NotImplementedError:
-            raise
+            # Both STRING and VALUE_WITH_FAKE_GLOBALS are not implemented fallback to VALUE
+            return annotations_to_string(annotate(Format.VALUE))
         except Exception:
             pass
 
@@ -734,9 +735,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         try:
             result = func(Format.VALUE_WITH_FAKE_GLOBALS)
         except NotImplementedError:
-            # If NotImplementedError is raised, don't try to call again with
-            # no globals.
-            raise
+            # FORWARDREF and VALUE_WITH_FAKE_GLOBALS not supported, fall back to VALUE
+            return annotate(Format.VALUE)
         except Exception:
             pass
         else:

@@ -8,6 +8,7 @@ import functools
 import itertools
 import pickle
 from string.templatelib import Template
+import types
 import typing
 import unittest
 import unittest.mock
@@ -1248,29 +1249,48 @@ class TestCallAnnotateFunction(unittest.TestCase):
     def test_user_annotate_forwardref(self):
         annotate = self._annotate_mock()
 
-        with self.assertRaises(NotImplementedError):
+        new_annotate = None
+        functype = types.FunctionType
+
+        def functiontype(*args, **kwargs):
+            nonlocal new_annotate
+            new_func = unittest.mock.MagicMock(wraps=functype(*args, **kwargs))
+            new_annotate = new_func
+            return new_func
+
+        with unittest.mock.patch("types.FunctionType", new=functiontype):
             annotations = annotationlib.call_annotate_function(
                 annotate,
                 Format.FORWARDREF,
             )
 
-        # The annotate function itself is not called the second time
-        # A new function built from the code is called instead
-        annotate.assert_called_once_with(Format.FORWARDREF)
+        # The call with Format.VALUE_WITH_FAKE_GLOBALS is not
+        # on the original function.
+        annotate.assert_has_calls([
+            unittest.mock.call(Format.FORWARDREF),
+            unittest.mock.call(Format.VALUE),
+        ])
+
+        new_annotate.assert_called_once_with(Format.VALUE_WITH_FAKE_GLOBALS)
+
+        self.assertEqual(annotations, {"x": str})
+
 
     def test_user_annotate_string(self):
         annotate = self._annotate_mock()
 
-        with self.assertRaises(NotImplementedError):
-            annotations = annotationlib.call_annotate_function(
-                annotate,
-                Format.STRING,
-            )
+        annotations = annotationlib.call_annotate_function(
+            annotate,
+            Format.STRING,
+        )
 
         annotate.assert_has_calls([
             unittest.mock.call(Format.STRING),
             unittest.mock.call(Format.VALUE_WITH_FAKE_GLOBALS),
+            unittest.mock.call(Format.VALUE),
         ])
+
+        self.assertEqual(annotations, {"x": "str"})
 
 
 class MetaclassTests(unittest.TestCase):
