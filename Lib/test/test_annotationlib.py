@@ -8,6 +8,7 @@ import functools
 import itertools
 import pickle
 from string.templatelib import Template
+import types
 import typing
 import unittest
 import unittest.mock
@@ -1248,15 +1249,27 @@ class TestCallAnnotateFunction(unittest.TestCase):
     def test_user_annotate_forwardref(self):
         annotate = self._annotate_mock()
 
-        with self.assertRaises(NotImplementedError):
-            annotations = annotationlib.call_annotate_function(
-                annotate,
-                Format.FORWARDREF,
-            )
+        new_annotate = None
+        functype = types.FunctionType
 
-        # The annotate function itself is not called the second time
-        # A new function built from the code is called instead
+        def functiontype_mock(*args, **kwargs):
+            nonlocal new_annotate
+            new_func = unittest.mock.MagicMock(wraps=functype(*args, **kwargs))
+            new_annotate = new_func
+            return new_func
+
+        with unittest.mock.patch("types.FunctionType", new=functiontype_mock):
+            with self.assertRaises(NotImplementedError):
+                annotations = annotationlib.call_annotate_function(
+                    annotate,
+                    Format.FORWARDREF,
+                )
+
+        # Test the direct call
         annotate.assert_called_once_with(Format.FORWARDREF)
+
+        # Test the call on the function with fake globals
+        new_annotate.assert_called_once_with(Format.VALUE_WITH_FAKE_GLOBALS)
 
     def test_user_annotate_string(self):
         annotate = self._annotate_mock()
