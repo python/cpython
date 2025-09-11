@@ -4112,6 +4112,7 @@ initconfig_free_wstr_list(PyWideStringList *list)
     for (Py_ssize_t i = 0; i < list->length; i++) {
         initconfig_free_wstr(list->items[i]);
     }
+    free(list->items);
 }
 
 
@@ -4140,7 +4141,7 @@ initconfig_set_str_list(PyInitConfig *config, PyWideStringList *list,
 {
     PyWideStringList wlist = _PyWideStringList_INIT;
     size_t size = sizeof(wchar_t*) * length;
-    wlist.items = (wchar_t **)PyMem_RawMalloc(size);
+    wlist.items = (wchar_t **)malloc(size);
     if (wlist.items == NULL) {
         config->status = _PyStatus_NO_MEMORY();
         return -1;
