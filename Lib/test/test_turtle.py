@@ -652,8 +652,6 @@ class TestTurtle(unittest.TestCase):
         self.turtle.dot()
         self.turtle.dot(10)
         self.turtle.dot(size=10)
-        # self.assertRaises(ValueError, self.turtle.dot, 0)
-        # self.assertRaises(ValueError, self.turtle.dot, -1)
         self.turtle.dot((0, 0, 0))
         self.turtle.dot(size=(0, 0, 0))
         self.turtle.dot("blue")
