@@ -254,9 +254,9 @@ Miscellaneous options
    .. versionchanged:: 3.5
       Affects also comparisons of :class:`bytes` with :class:`int`.
 
-   .. deprecated-removed:: 3.15 3.17
+   .. deprecated:: 3.15
 
-      Deprecate :option:`-b` and :option:`!-bb`
+      Deprecate :option:`-b` and :option:`!-bb` command line options
       and schedule them to become no-op in Python 3.17.
       These were primarily helpers for the Python 2 -> 3 transition.
       Starting with Python 3.17, no :exc:`BytesWarning` will be raised
