@@ -35,6 +35,8 @@ class TestWithAscii(unittest.TestCase):
         self.assertEqual(opcode,
             [   ('insert', 0, 0, 0, 1),
                 ('equal', 0, 100, 1, 101)])
+        # Implementation detail: opcodes are cached;
+        # `get_opcodes()` returns the same object
         self.assertIs(opcode, sm.get_opcodes())
 
     def test_bjunk(self):
