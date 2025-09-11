@@ -3298,6 +3298,7 @@ PyRefTracer PyRefTracer_GetTracer(void** data) {
     if (data != NULL) {
         *data = _PyRuntime.ref_tracer.tracer_data;
     }
+    _PyEval_StopTheWorldAll(&_PyRuntime);
     PyRefTracer tracer = _PyRuntime.ref_tracer.tracer_func;
     _PyEval_StartTheWorldAll(&_PyRuntime);
     return tracer;
