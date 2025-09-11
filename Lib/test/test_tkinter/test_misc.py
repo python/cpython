@@ -508,6 +508,23 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         widget.selection_range(0, 'end')
         self.assertEqual(widget.selection_get(), '\u20ac\0abc\x00def')
 
+    def test_settrace_gc(self):
+        # Regression test for https://github.com/python/cpython/issues/138791.
+        root = tkinter.Tk()
+        trace = lambda *_, **__: None
+        trace.evil = type(root.tk)
+        root.tk.settrace(trace)
+        root.destroy()
+
+    def test_createtimerhandler_gc(self):
+        # Regression test for https://github.com/python/cpython/issues/138791.
+        root = tkinter.Tk()
+        func = lambda *_, **__: None
+        func.evil = type(root.tk.createtimerhandler(0, print))
+        # Large timeout (in ms) so that the object is destroyed before.
+        root.tk.createtimerhandler(1234567, func)
+        root.destroy()
+
 
 class WmTest(AbstractTkTest, unittest.TestCase):
 
