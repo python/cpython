@@ -713,6 +713,12 @@ unicodedata
 * The Unicode database has been updated to Unicode 17.0.0.
 
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 17.0.0.
+
+
 wave
 ----
 
