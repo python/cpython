@@ -3295,7 +3295,6 @@ int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
 
 PyRefTracer PyRefTracer_GetTracer(void** data) {
     _Py_AssertHoldsTstate();
-    _PyEval_StopTheWorldAll(&_PyRuntime);
     if (data != NULL) {
         *data = _PyRuntime.ref_tracer.tracer_data;
     }
