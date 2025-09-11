@@ -1006,7 +1006,8 @@ failed:
  ******************/
 
 int
-_PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq){
+_PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq)
+{
     if (addrq < 0) {
         return co->co_firstlineno;
     }
