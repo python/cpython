@@ -80,6 +80,12 @@ class AllTest(unittest.TestCase):
                 self.assertEqual(keys, all_set, "in module {}".format(modname))
 
     def walk_modules(self, basedir, modpath):
+        if modpath == 'distutils.':
+            # gh-135374: when setuptools ins installed, it now replaces
+            # 'distutils' with its own version.
+            # In a security-fix only branch of CPython,
+            # skip the __all__ test rather than deal with the fallout.
+            return
         for fn in sorted(os.listdir(basedir)):
             path = os.path.join(basedir, fn)
             if os.path.isdir(path):
