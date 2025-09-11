@@ -1,0 +1,1 @@
+Fix: handle "python -m base64" stdin correct with EOF single.
