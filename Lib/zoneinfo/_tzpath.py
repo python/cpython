@@ -14,8 +14,7 @@ def _reset_tzpath(to=None, stacklevel=4):
             )
 
         tzpaths = [os.fspath(p) for p in tzpaths]
-        nonstr_paths = [p for p in tzpaths if not isinstance(p, str)]
-        if nonstr_paths:
+        if not all(isinstance(p, str) for p in tzpaths):
             raise TypeError(
                 "All elements of a tzpath sequence must be strings or "
                 "os.PathLike objects which convert to strings."
