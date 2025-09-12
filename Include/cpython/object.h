@@ -463,6 +463,7 @@ PyAPI_FUNC(int) PyUnstable_Type_AssignVersionTag(PyTypeObject *type);
 typedef enum {
     PyRefTracer_CREATE = 0,
     PyRefTracer_DESTROY = 1,
+    PyRefTracer_TRACKER_REMOVED = 2,
 } PyRefTracerEvent;
 
 typedef int (*PyRefTracer)(PyObject *, PyRefTracerEvent event, void *);

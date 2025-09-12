@@ -2011,6 +2011,11 @@ Reference tracing
    is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer
    that was provided when :c:func:`PyRefTracer_SetTracer` was called.
 
+   If a new tracing function is registered replacing the current a call to the
+   trace function will be made with the object set to **NULL** and **event** set to
+   :c:data:`PyRefTracer_TRACKER_REMOVED`. This will happen just before the new
+   function is registered.
+
 .. versionadded:: 3.13
 
 .. c:var:: int PyRefTracer_CREATE
@@ -2022,6 +2027,13 @@ Reference tracing
 
    The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
    object has been destroyed.
+
+.. c:var:: int PyRefTracer_TRACKER_REMOVED
+
+   The value for the *event* parameter to :c:type:`PyRefTracer` functions when the
+   current tracer is about to be replaced by a new one.
+
+   .. versionadded:: 3.14
 
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
 
@@ -2037,6 +2049,10 @@ Reference tracing
    every time the tracer function is called.
 
    There must be an :term:`attached thread state` when calling this function.
+
+   If another tracer function was already registered, the old function will be
+   called with **event** set to :c:data:`PyRefTracer_TRACKER_REMOVED` just before
+   the new function is registered.
 
 .. versionadded:: 3.13
 
