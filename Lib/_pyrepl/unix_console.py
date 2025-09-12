@@ -419,8 +419,7 @@ class UnixConsole(Console):
                         else:
                             continue
                     elif err.errno == errno.EIO:
-                        import sys
-                        sys.exit(errno.EIO)
+                        raise SystemExit(errno.EIO)
                     else:
                         raise
                 else:
