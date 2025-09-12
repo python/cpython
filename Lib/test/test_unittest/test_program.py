@@ -1,8 +1,12 @@
 import os
 import sys
+import io
+import traceback
+import gc
 import subprocess
 from test import support
 import unittest
+import unittest.mock
 import test.test_unittest
 from test.test_unittest.test_result import BufferedWriter
 
@@ -32,7 +36,7 @@ class Test_TestProgram(unittest.TestCase):
         test = object()
 
         class FakeRunner(object):
-            def run(self, test):
+            def run(self, test, debug=False):
                 self.test = test
                 return result
 
@@ -91,7 +95,7 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_defaultTest_with_string(self):
         class FakeRunner(object):
-            def run(self, test):
+            def run(self, test, debug=False):
                 self.test = test
                 return True
 
@@ -106,7 +110,7 @@ class Test_TestProgram(unittest.TestCase):
 
     def test_defaultTest_with_iterable(self):
         class FakeRunner(object):
-            def run(self, test):
+            def run(self, test, debug=False):
                 self.test = test
                 return True
 
@@ -191,6 +195,131 @@ class Test_TestProgram(unittest.TestCase):
         out = stream.getvalue()
         self.assertIn('\nNO TESTS RAN\n', out)
 
+    class TestRaise(unittest.TestCase):
+        td_log = ''
+        class Error(Exception):
+            pass
+        def test_raise(self):
+            self = self
+            raise self.Error
+        def setUp(self):
+            self.addCleanup(self.clInstance)
+            self.addClassCleanup(self.clClass)
+            unittest.case.addModuleCleanup(self.clModule)
+        def tearDown(self):
+            __class__.td_log += 't'
+            1 / 0  # should not block further cleanups
+        def clInstance(self):
+            __class__.td_log += 'c'
+        @classmethod
+        def tearDownClass(cls):
+            __class__.td_log += 'T'
+        @classmethod
+        def clClass(cls):
+            __class__.td_log += 'C'
+            2 / 0
+        @staticmethod
+        def clModule():
+            __class__.td_log += 'M'
+
+    class TestRaiseLoader(unittest.TestLoader):
+        def loadTestsFromModule(self, module):
+            return self.suiteClass(
+                [self.loadTestsFromTestCase(Test_TestProgram.TestRaise)])
+
+        def loadTestsFromNames(self, names, module):
+            return self.suiteClass(
+                [self.loadTestsFromTestCase(Test_TestProgram.TestRaise)])
+
+    def test_debug(self):
+        self.TestRaise.td_log = ''
+        try:
+            unittest.main(
+                argv=["TestRaise", "--debug"],
+                testRunner=unittest.TextTestRunner(stream=io.StringIO()),
+                testLoader=self.TestRaiseLoader())
+        except self.TestRaise.Error as e:
+            # outer pm handling of original exception
+            assert self.TestRaise.td_log == ''  # still set up!
+        else:
+            self.fail("TestRaise not raised")
+        # test delayed automatic teardown after leaving outer exception
+        # handling. Note, the explicit e.pm_teardown() variant is tested below
+        # in test_inline_debugging().
+        if not hasattr(sys, 'getrefcount'):
+            # PyPy etc.
+            gc.collect()
+        assert self.TestRaise.td_log == 'tcTCM', self.TestRaise.td_log
+
+    def test_no_debug(self):
+        self.assertRaises(
+            SystemExit,
+            unittest.main,
+            argv=["TestRaise"],
+            testRunner=unittest.TextTestRunner(stream=io.StringIO()),
+            testLoader=self.TestRaiseLoader())
+
+    def test_inline_debugging(self):
+        from test.test_pdb import PdbTestInput
+        # post-mortem --pdb
+        out, err = io.StringIO(), io.StringIO()
+        try:
+            with unittest.mock.patch('sys.stdout', out),\
+                    unittest.mock.patch('sys.stderr', err),\
+                    PdbTestInput(['c'] * 3):
+                unittest.main(
+                    argv=["TestRaise", "--pdb"],
+                    testRunner=unittest.TextTestRunner(stream=err),
+                    testLoader=self.TestRaiseLoader())
+        except SystemExit:
+            assert '-> raise self.Error\n(Pdb)' in out.getvalue(), 'out:' + out.getvalue()
+            assert '-> 2 / 0\n(Pdb)' in out.getvalue(), 'out:' + out.getvalue()
+            assert 'FAILED (errors=3)' in err.getvalue(), 'err:' + err.getvalue()
+        else:
+            self.fail("SystemExit not raised")
+
+        # post-mortem --pm=<DebuggerClass>, early user debugger quit
+        out, err = io.StringIO(), io.StringIO()
+        self.TestRaise.td_log = ''
+        try:
+            with unittest.mock.patch('sys.stdout', out),\
+                    unittest.mock.patch('sys.stderr', err),\
+                    PdbTestInput(['q']):
+                unittest.main(
+                    argv=["TestRaise", "--pm=pdb.Pdb"],
+                    testRunner=unittest.TextTestRunner(stream=err),
+                    testLoader=self.TestRaiseLoader())
+        except unittest.case.DebuggerQuit as e:
+            assert e.__context__.__class__ == self.TestRaise.Error
+            assert self.TestRaise.td_log == ''  # still set up!
+            assert out.getvalue().endswith('-> raise self.Error\n(Pdb) q\n'), 'out:' + out.getvalue()
+            # test explicit pm teardown variant.
+            e.pm_teardown()
+            assert self.TestRaise.td_log == 'tcTCM', self.TestRaise.td_log
+            assert e.pm_teardown.result.testsRun == 1
+            e_hold = e  # noqa
+        else:
+            self.fail("DebuggerQuit not raised")
+        # delayed teardowns must not be repeated
+        e_hold.pm_teardown()
+        del e_hold
+        gc.collect()
+        assert self.TestRaise.td_log == 'tcTCM', self.TestRaise.td_log
+
+        # --trace
+        out, err = io.StringIO(), io.StringIO()
+        try:
+            with unittest.mock.patch('sys.stdout', out), PdbTestInput(['c']):
+                unittest.main(
+                    argv=["TestRaise", "--trace"],
+                    testRunner=unittest.TextTestRunner(stream=err),
+                    testLoader=self.TestRaiseLoader())
+        except SystemExit:
+            assert '-> self = self\n(Pdb)' in out.getvalue(), 'out:' + out.getvalue()
+            assert 'FAILED (errors=3)' in err.getvalue(), 'err:' + err.getvalue()
+        else:
+            self.fail("SystemExit not raised")
+
 
 class InitialisableProgram(unittest.TestProgram):
     exit = False
@@ -198,6 +327,7 @@ class InitialisableProgram(unittest.TestProgram):
     verbosity = 1
     defaultTest = None
     tb_locals = False
+    debug = False
     testRunner = None
     testLoader = unittest.defaultTestLoader
     module = '__main__'
@@ -219,7 +349,7 @@ class FakeRunner(object):
             FakeRunner.raiseError -= 1
             raise TypeError
 
-    def run(self, test):
+    def run(self, test, debug=False):
         FakeRunner.test = test
         return RESULT
 
@@ -354,6 +484,19 @@ class TestCommandLineArgs(unittest.TestCase):
                                                'verbosity': 1,
                                                'warnings': None,
                                                'durations': None})
+
+    def test_debug(self):
+        program = self.program
+        program.testRunner = FakeRunner
+        program.parseArgs([None, '--debug'])
+        self.assertTrue(program.debug)
+        program.parseArgs([None, '--pdb'])
+        self.assertTrue(program.pdb)
+        program.parseArgs([None, '--pm=pdb'])
+        self.assertEqual(program.pm, 'pdb')
+        program.parseArgs([None, '--trace'])
+        self.assertTrue(program.trace)
+
 
     def testRunTestsOldRunnerClass(self):
         program = self.program
