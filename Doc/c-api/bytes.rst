@@ -219,3 +219,153 @@ called with a non-bytes parameter.
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
+
+PyBytesWriter
+-------------
+
+The :c:type:`PyBytesWriter` API can be used to create a Python :class:`bytes`
+object.
+
+.. versionadded:: next
+
+.. c:type:: PyBytesWriter
+
+   A bytes writer instance.
+
+   The API is **not thread safe**: a writer should only be used by a single
+   thread at the same time.
+
+   The instance must be destroyed by :c:func:`PyBytesWriter_Finish` on
+   success, or :c:func:`PyBytesWriter_Discard` on error.
+
+
+Create, Finish, Discard
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. c:function:: PyBytesWriter* PyBytesWriter_Create(Py_ssize_t size)
+
+   Create a :c:type:`PyBytesWriter` to write *size* bytes.
+
+   If *size* is greater than zero, allocate *size* bytes, and set the
+   writer size to *size*. The caller is responsible to write *size*
+   bytes using :c:func:`PyBytesWriter_GetData`.
+
+   On error, set an exception and return NULL.
+
+   *size* must be positive or zero.
+
+.. c:function:: PyObject* PyBytesWriter_Finish(PyBytesWriter *writer)
+
+   Finish a :c:type:`PyBytesWriter` created by
+   :c:func:`PyBytesWriter_Create`.
+
+   On success, return a Python :class:`bytes` object.
+   On error, set an exception and return ``NULL``.
+
+   The writer instance is invalid after the call in any case.
+   No API can be called on the writer after :c:func:`PyBytesWriter_Finish`.
+
+.. c:function:: PyObject* PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
+
+   Similar to :c:func:`PyBytesWriter_Finish`, but resize the writer
+   to *size* bytes before creating the :class:`bytes` object.
+
+.. c:function:: PyObject* PyBytesWriter_FinishWithPointer(PyBytesWriter *writer, void *buf)
+
+   Similar to :c:func:`PyBytesWriter_Finish`, but resize the writer
+   using *buf* pointer before creating the :class:`bytes` object.
+
+   Set an exception and return ``NULL`` if *buf* pointer is outside the
+   internal buffer bounds.
+
+   Function pseudo-code::
+
+       Py_ssize_t size = (char*)buf - (char*)PyBytesWriter_GetData(writer);
+       return PyBytesWriter_FinishWithSize(writer, size);
+
+.. c:function:: void PyBytesWriter_Discard(PyBytesWriter *writer)
+
+   Discard a :c:type:`PyBytesWriter` created by :c:func:`PyBytesWriter_Create`.
+
+   Do nothing if *writer* is ``NULL``.
+
+   The writer instance is invalid after the call.
+   No API can be called on the writer after :c:func:`PyBytesWriter_Discard`.
+
+High-level API
+^^^^^^^^^^^^^^
+
+.. c:function:: int PyBytesWriter_WriteBytes(PyBytesWriter *writer, const void *bytes, Py_ssize_t size)
+
+   Grow the *writer* internal buffer by *size* bytes,
+   write *size* bytes of *bytes* at the *writer* end,
+   and add *size* to the *writer* size.
+
+   If *size* is equal to ``-1``, call ``strlen(bytes)`` to get the
+   string length.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+
+Getters
+^^^^^^^
+
+.. c:function:: Py_ssize_t PyBytesWriter_GetSize(PyBytesWriter *writer)
+
+   Get the writer size.
+
+.. c:function:: void* PyBytesWriter_GetData(PyBytesWriter *writer)
+
+   Get the writer data: start of the internal buffer.
+
+   The pointer is valid until :c:func:`PyBytesWriter_Finish` or
+   :c:func:`PyBytesWriter_Discard` is called on *writer*.
+
+
+Low-level API
+^^^^^^^^^^^^^
+
+.. c:function:: int PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
+
+   Resize the writer to *size* bytes. It can be used to enlarge or to
+   shrink the writer.
+
+   Newly allocated bytes are left uninitialized.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+   *size* must be positive or zero.
+
+.. c:function:: int PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t grow)
+
+   Resize the writer by adding *grow* bytes to the current writer size.
+
+   Newly allocated bytes are left uninitialized.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
+   *size* can be negative to shrink the writer.
+
+.. c:function:: void* PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size, void *buf)
+
+   Similar to :c:func:`PyBytesWriter_Grow`, but update also the *buf*
+   pointer.
+
+   The *buf* pointer is moved if the internal buffer is moved in memory.
+   The *buf* relative position within the internal buffer is left
+   unchanged.
+
+   On error, set an exception and return ``NULL``.
+
+   *buf* must not be ``NULL``.
+
+   Function pseudo-code::
+
+       Py_ssize_t pos = (char*)buf - (char*)PyBytesWriter_GetData(writer);
+       if (PyBytesWriter_Grow(writer, size) < 0) {
+           return NULL;
+       }
+       return (char*)PyBytesWriter_GetData(writer) + pos;
