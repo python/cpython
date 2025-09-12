@@ -156,7 +156,7 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
 
 def _stable_abi_annotation(
     record: StableABIEntry,
-    is_corresponding_slot: bool=False,
+    is_corresponding_slot: bool = False,
 ) -> nodes.emphasis:
     """Create the Stable ABI annotation.
 
@@ -314,8 +314,8 @@ class CorrespondingTypeSlot(SphinxDirective):
         except LookupError:
             raise LookupError(
                 f"{name} is not part of stable ABI. "
-                + f"Document it as `c:macro::` rather than "
-                + f"`corresponding-type-slot::`."
+                + "Document it as `c:macro::` rather than "
+                + "`corresponding-type-slot::`."
             )
 
         annotation = _stable_abi_annotation(record, is_corresponding_slot=True)
