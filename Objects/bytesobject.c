@@ -7,6 +7,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_format.h"        // F_LJUST
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE()
 #include "pycore_global_objects.h"// _Py_GET_GLOBAL_OBJECT()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_DigitValue
@@ -3747,3 +3748,303 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     }
 }
 
+
+// --- PyBytesWriter API -----------------------------------------------------
+
+struct PyBytesWriter {
+    char small_buffer[256];
+    PyObject *obj;
+    Py_ssize_t size;
+    int use_bytearray;
+};
+
+
+static inline char*
+byteswriter_data(PyBytesWriter *writer)
+{
+    if (writer->obj == NULL) {
+        return writer->small_buffer;
+    }
+    else if (writer->use_bytearray) {
+        return PyByteArray_AS_STRING(writer->obj);
+    }
+    else {
+        return PyBytes_AS_STRING(writer->obj);
+    }
+}
+
+
+static inline Py_ssize_t
+byteswriter_allocated(PyBytesWriter *writer)
+{
+    if (writer->obj == NULL) {
+        return sizeof(writer->small_buffer);
+    }
+    else if (writer->use_bytearray) {
+        return PyByteArray_GET_SIZE(writer->obj);
+    }
+    else {
+        return PyBytes_GET_SIZE(writer->obj);
+    }
+}
+
+
+#ifdef MS_WINDOWS
+   /* On Windows, overallocate by 50% is the best factor */
+#  define OVERALLOCATE_FACTOR 2
+#else
+   /* On Linux, overallocate by 25% is the best factor */
+#  define OVERALLOCATE_FACTOR 4
+#endif
+
+
+static inline int
+byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
+{
+    assert(size >= 0);
+
+    if (size <= byteswriter_allocated(writer)) {
+        return 0;
+    }
+
+    if (overallocate && !writer->use_bytearray) {
+        if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
+            size += size / OVERALLOCATE_FACTOR;
+        }
+    }
+
+    if (writer->obj != NULL) {
+        if (writer->use_bytearray) {
+            if (PyByteArray_Resize(writer->obj, size)) {
+                return -1;
+            }
+        }
+        else {
+            if (_PyBytes_Resize(&writer->obj, size)) {
+                return -1;
+            }
+        }
+        assert(writer->obj != NULL);
+    }
+    else if (writer->use_bytearray) {
+        writer->obj = PyByteArray_FromStringAndSize(NULL, size);
+        if (writer->obj == NULL) {
+            return -1;
+        }
+        assert((size_t)size > sizeof(writer->small_buffer));
+        memcpy(PyByteArray_AS_STRING(writer->obj),
+               writer->small_buffer,
+               sizeof(writer->small_buffer));
+    }
+    else {
+        writer->obj = PyBytes_FromStringAndSize(NULL, size);
+        if (writer->obj == NULL) {
+            return -1;
+        }
+        assert((size_t)size > sizeof(writer->small_buffer));
+        memcpy(PyBytes_AS_STRING(writer->obj),
+               writer->small_buffer,
+               sizeof(writer->small_buffer));
+    }
+    return 0;
+}
+
+
+static PyBytesWriter*
+byteswriter_create(Py_ssize_t size, int use_bytearray)
+{
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        return NULL;
+    }
+
+    PyBytesWriter *writer = _Py_FREELIST_POP_MEM(bytes_writers);
+    if (writer == NULL) {
+        writer = (PyBytesWriter *)PyMem_Malloc(sizeof(PyBytesWriter));
+        if (writer == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+    writer->obj = NULL;
+    writer->size = 0;
+    writer->use_bytearray = use_bytearray;
+
+    if (size >= 1) {
+        if (byteswriter_resize(writer, size, 0) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
+        writer->size = size;
+    }
+    return writer;
+}
+
+PyBytesWriter*
+PyBytesWriter_Create(Py_ssize_t size)
+{
+    return byteswriter_create(size, 0);
+}
+
+PyBytesWriter*
+_PyBytesWriter_CreateByteArray(Py_ssize_t size)
+{
+    return byteswriter_create(size, 1);
+}
+
+
+void
+PyBytesWriter_Discard(PyBytesWriter *writer)
+{
+    if (writer == NULL) {
+        return;
+    }
+
+    Py_XDECREF(writer->obj);
+    _Py_FREELIST_FREE(bytes_writers, writer, PyMem_Free);
+}
+
+
+PyObject*
+PyBytesWriter_FinishWithSize(PyBytesWriter *writer, Py_ssize_t size)
+{
+    PyObject *result;
+    if (size == 0) {
+        result = bytes_get_empty();
+    }
+    else if (writer->obj != NULL) {
+        if (writer->use_bytearray) {
+            if (size != PyByteArray_GET_SIZE(writer->obj)) {
+                if (PyByteArray_Resize(writer->obj, size)) {
+                    goto error;
+                }
+            }
+        }
+        else {
+            if (size != PyBytes_GET_SIZE(writer->obj)) {
+                if (_PyBytes_Resize(&writer->obj, size)) {
+                    goto error;
+                }
+            }
+        }
+        result = writer->obj;
+        writer->obj = NULL;
+    }
+    else if (writer->use_bytearray) {
+        result = PyByteArray_FromStringAndSize(writer->small_buffer, size);
+    }
+    else {
+        result = PyBytes_FromStringAndSize(writer->small_buffer, size);
+    }
+    PyBytesWriter_Discard(writer);
+    return result;
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
+}
+
+PyObject*
+PyBytesWriter_Finish(PyBytesWriter *writer)
+{
+    return PyBytesWriter_FinishWithSize(writer, writer->size);
+}
+
+
+PyObject*
+PyBytesWriter_FinishWithPointer(PyBytesWriter *writer, void *buf)
+{
+    Py_ssize_t size = (char*)buf - byteswriter_data(writer);
+    if (size < 0 || size > byteswriter_allocated(writer)) {
+        PyBytesWriter_Discard(writer);
+        PyErr_SetString(PyExc_ValueError, "invalid end pointer");
+        return NULL;
+    }
+
+    return PyBytesWriter_FinishWithSize(writer, size);
+}
+
+
+void*
+PyBytesWriter_GetData(PyBytesWriter *writer)
+{
+    return byteswriter_data(writer);
+}
+
+
+Py_ssize_t
+PyBytesWriter_GetSize(PyBytesWriter *writer)
+{
+    return writer->size;
+}
+
+
+int
+PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
+{
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        return -1;
+    }
+    if (byteswriter_resize(writer, size, 1) < 0) {
+        return -1;
+    }
+    writer->size = size;
+    return 0;
+}
+
+
+int
+PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t size)
+{
+    if (size < 0 && writer->size + size < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid size");
+        return -1;
+    }
+    if (size > PY_SSIZE_T_MAX - writer->size) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    size = writer->size + size;
+
+    if (byteswriter_resize(writer, size, 1) < 0) {
+        return -1;
+    }
+    writer->size = size;
+    return 0;
+}
+
+
+void*
+PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
+                                   void *buf)
+{
+    Py_ssize_t pos = (char*)buf - byteswriter_data(writer);
+    if (PyBytesWriter_Grow(writer, size) < 0) {
+        return NULL;
+    }
+    return byteswriter_data(writer) + pos;
+}
+
+
+int
+PyBytesWriter_WriteBytes(PyBytesWriter *writer,
+                         const void *bytes, Py_ssize_t size)
+{
+    if (size < 0) {
+        size_t len = strlen(bytes);
+        if (len > (size_t)PY_SSIZE_T_MAX) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        size = (Py_ssize_t)len;
+    }
+
+    Py_ssize_t pos = writer->size;
+    if (PyBytesWriter_Grow(writer, size) < 0) {
+        return -1;
+    }
+    char *buf = byteswriter_data(writer);
+    memcpy(buf + pos, bytes, size);
+    return 0;
+}
