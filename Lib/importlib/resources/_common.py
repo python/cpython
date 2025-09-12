@@ -113,7 +113,13 @@ def from_package(package: types.ModuleType):
     # deferred for performance (python/cpython#109829)
     from ._adapters import wrap_spec
 
-    spec = wrap_spec(package)
+    if package.__spec__ is None:
+        raise TypeError(
+            f"Cannot access resources because the code used to populate '{package.__name__}' "
+            "does not correspond directly with an importable module."
+        )
+
+    spec = wrap_spec(package.__spec__)
     reader = spec.loader.get_resource_reader(spec.name)
     return reader.files()
 
