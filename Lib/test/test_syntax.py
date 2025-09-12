@@ -382,6 +382,22 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
+>>> case 1: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case 1 | 2: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case klass(attr=1) | {}: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case [] if x > 1: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
 # But prefixes of soft keywords should
 # still raise specialized errors
 
