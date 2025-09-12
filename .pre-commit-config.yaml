@@ -91,6 +91,12 @@ repos:
         args: [--enable=default-role]
         files: ^Doc/|^Misc/NEWS.d/
 
+  - repo: https://github.com/oxipng/oxipng
+    rev: v9.1.5
+    hooks:
+      - id: oxipng
+        args: [ "-o", "2", "--strip", "safe", "--alpha" ]
+
   - repo: local
     hooks:
       - id: blurb-no-space-c-api
