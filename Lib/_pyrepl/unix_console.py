@@ -28,6 +28,7 @@ import select
 import signal
 import struct
 import termios
+import threading
 import time
 import types
 import platform
@@ -157,6 +158,9 @@ class UnixConsole(Console):
 
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
+        self._poll_lock = threading.RLock()
+        self._polling_thread: threading.Thread | None = None
+        self.__svtermstate = None
         self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
 
@@ -325,7 +329,9 @@ class UnixConsole(Console):
         """
         Prepare the console for input/output operations.
         """
-        self.__svtermstate = tcgetattr(self.input_fd)
+        # gh-130168: prevents signal handlers from overwriting the original state
+        if self.__svtermstate is None:
+            self.__svtermstate = tcgetattr(self.input_fd)
         raw = self.__svtermstate.copy()
         raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
         raw.oflag &= ~(termios.OPOST)
@@ -368,7 +374,10 @@ class UnixConsole(Console):
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
-        tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+        if self.__svtermstate is not None:
+            tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+            # Reset the state for the next prepare() call.
+            self.__svtermstate = None
 
         if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
             os.write(self.output_fd, b"\033[?7h")
@@ -417,10 +426,20 @@ class UnixConsole(Console):
         """
         Wait for events on the console.
         """
-        return (
-            not self.event_queue.empty()
-            or bool(self.pollob.poll(timeout))
-        )
+        if not self.event_queue.empty():
+            return True
+        current_thread = threading.current_thread()
+        if self._polling_thread is current_thread:
+            # Forbid re-entrant calls and use the old REPL error message.
+            raise RuntimeError("can't re-enter readline")
+        if not self._poll_lock.acquire(blocking=False):
+            return False
+        try:
+            self._polling_thread = current_thread
+            return bool(self.pollob.poll(timeout))
+        finally:
+            self._polling_thread = None
+            self._poll_lock.release()
 
     def set_cursor_vis(self, visible):
         """
@@ -786,7 +805,10 @@ class UnixConsole(Console):
         # using .get() means that things will blow up
         # only if the bps is actually needed (which I'm
         # betting is pretty unlkely)
-        bps = ratedict.get(self.__svtermstate.ospeed)
+        if self.__svtermstate is not None:
+            bps = ratedict.get(self.__svtermstate.ospeed)
+        else:
+            bps = None
         while True:
             m = prog.search(fmt)
             if not m:
