@@ -1,0 +1,1 @@
+Add :py:class:`multiprocessing.Queue` termination with :py:meth:`~multiprocessing.Queue.shutdown` method.
