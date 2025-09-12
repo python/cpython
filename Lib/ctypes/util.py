@@ -187,10 +187,7 @@ elif sys.platform == "emscripten":
             for name in candidates:
                 libfile = os.path.join(libdir, name)
 
-                if os.path.isfile(libfile):
-                    if not _is_wasm(libfile):
-                        continue
-
+                if os.path.isfile(libfile) and _is_wasm(libfile):
                     return libfile
 
         return None

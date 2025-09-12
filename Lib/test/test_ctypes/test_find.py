@@ -156,33 +156,70 @@ class FindLibraryAndroid(unittest.TestCase):
 @unittest.skipUnless(test.support.is_emscripten,
                      'Test only valid for Emscripten')
 class FindLibraryEmscripten(unittest.TestCase):
-    def test_find_on_libpath(self):
+    @classmethod
+    def setUpClass(cls):
         import tempfile
-
+        
         # A very simple wasm module
         # In WAT format: (module)
-        wasm_module = b'\x00asm\x01\x00\x00\x00\x00\x08\x04name\x02\x01\x00'
+        cls.wasm_module = b'\x00asm\x01\x00\x00\x00\x00\x08\x04name\x02\x01\x00'
+        
+        cls.non_wasm_content = b'This is not a WASM file'
+        
+        cls.temp_dir = tempfile.mkdtemp()
+        cls.libdummy_so_path = os.path.join(cls.temp_dir, 'libdummy.so')
+        with open(cls.libdummy_so_path, 'wb') as f:
+            f.write(cls.wasm_module)
 
-        with tempfile.TemporaryDirectory() as d:
-            libname = 'dummy'
-            dstname = os.path.join(d, 'lib%s.so' % libname)
-            with open(dstname, 'wb') as f:
-                f.write(wasm_module)
+        cls.libother_wasm_path = os.path.join(cls.temp_dir, 'libother.wasm')
+        with open(cls.libother_wasm_path, 'wb') as f:
+            f.write(cls.wasm_module)
+        
+        cls.libnowasm_so_path = os.path.join(cls.temp_dir, 'libnowasm.so')
+        with open(cls.libnowasm_so_path, 'wb') as f:
+            f.write(cls.non_wasm_content)
+    
+    @classmethod
+    def tearDownClass(cls):
+        import shutil
+        shutil.rmtree(cls.temp_dir)
 
-            # now check that the .so can't be found (since not in
-            # LD_LIBRARY_PATH)
-            self.assertIsNone(find_library(libname))
-            # now add the location to LD_LIBRARY_PATH
+    def test_find_wasm_file_with_so_extension(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.set('LD_LIBRARY_PATH', self.temp_dir)
+            result = find_library('dummy')
+            self.assertEqual(result, self.libdummy_so_path)
+
+    def test_find_wasm_file_with_wasm_extension(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.set('LD_LIBRARY_PATH', self.temp_dir)
+            result = find_library('other')
+            self.assertEqual(result, self.libother_wasm_path)
+
+    def test_ignore_non_wasm_file(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env.set('LD_LIBRARY_PATH', self.temp_dir)
+            result = find_library('nowasm')
+            self.assertIsNone(result)
+
+    def test_find_nothing_without_ld_library_path(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            if 'LD_LIBRARY_PATH' in env:
+                del env['LD_LIBRARY_PATH']
+            result = find_library('dummy')
+            self.assertIsNone(result)
+            result = find_library('other')
+            self.assertIsNone(result)
+
+    def test_find_nothing_with_wrong_ld_library_path(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as empty_dir:
             with os_helper.EnvironmentVarGuard() as env:
-                KEY = 'LD_LIBRARY_PATH'
-                if KEY not in env:
-                    v = d
-                else:
-                    v = '%s:%s' % (env[KEY], d)
-                env.set(KEY, v)
-                # now check that the .so can be found (since in
-                # LD_LIBRARY_PATH)
-                self.assertEqual(find_library(libname), dstname)
+                env.set('LD_LIBRARY_PATH', empty_dir)
+                result = find_library('dummy')
+                self.assertIsNone(result)
+                result = find_library('other')
+                self.assertIsNone(result)
 
 
 if __name__ == "__main__":
