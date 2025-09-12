@@ -1,4 +1,3 @@
-
 /* Error handling */
 
 #include "Python.h"
@@ -2082,4 +2081,74 @@ PyObject *
 PyErr_ProgramTextObject(PyObject *filename, int lineno)
 {
     return _PyErr_ProgramDecodedTextObject(filename, lineno, NULL);
+}
+
+/* Error codes for the parser */
+
+#define E_SYNTAX 1
+#define E_INDENTATION 2
+#define E_UNTERMINATED_STRING 3
+#define E_UNTERMINATED_COMMENT 4
+#define E_BAD_CHARACTER 5
+#define E_EOF_IN_STRING 6
+#define E_EOF_IN_COMMENT 7
+#define E_MULTILINE_COMMENT 8
+#define E_BACKSLASH 9
+#define E_CONTINUED 10
+#define E_INVALID_ESCAPE_SEQUENCE 11
+#define E_INVALID_SYNTAX 12
+#define E_INVALID_CASE_OUTSIDE_MATCH 13
+
+/* Error messages for the parser */
+
+static PyObject *
+parser_error_msg(PyThreadState *tstate, int error)
+{
+    switch (error) {
+    case E_SYNTAX:
+        return PyUnicode_FromString("invalid syntax");
+    case E_INDENTATION:
+        return PyUnicode_FromString("unexpected indent");
+    case E_UNTERMINATED_STRING:
+        return PyUnicode_FromString("unterminated string literal");
+    case E_UNTERMINATED_COMMENT:
+        return PyUnicode_FromString("unterminated comment");
+    case E_BAD_CHARACTER:
+        return PyUnicode_FromString("invalid character in identifier");
+    case E_EOF_IN_STRING:
+        return PyUnicode_FromString("eof in multi-line string");
+    case E_EOF_IN_COMMENT:
+        return PyUnicode_FromString("eof in multi-line comment");
+    case E_MULTILINE_COMMENT:
+        return PyUnicode_FromString("multi-line comment not terminated");
+    case E_BACKSLASH:
+        return PyUnicode_FromString("unexpected character after line continuation character");
+    case E_CONTINUED:
+        return PyUnicode_FromString("unexpected EOF while parsing");
+    case E_INVALID_ESCAPE_SEQUENCE:
+        return PyUnicode_FromString("invalid escape sequence");
+    case E_INVALID_SYNTAX:
+        return PyUnicode_FromString("invalid syntax");
+    case E_INVALID_CASE_OUTSIDE_MATCH:
+        return PyUnicodeFromFormat("case statement must be inside match statement");
+    }
+    return NULL;
+}
+
+/* Parser error reporting */
+
+void
+_PyErr_SetParserError(PyThreadState *tstate, int error)
+{
+    PyObject *msg = parser_error_msg(tstate, error);
+    if (msg == NULL) {
+        return;
+    }
+    PyObject *exc = PyObject_CallFunctionObjArgs(PyExc_SyntaxError, msg, NULL);
+    Py_DECREF(msg);
+    if (exc == NULL) {
+        return;
+    }
+    _PyErr_SetRaisedException(tstate, exc);
+    Py_DECREF(exc);
 }

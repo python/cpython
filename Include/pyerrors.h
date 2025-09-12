@@ -274,7 +274,7 @@ PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetObject(PyObject *);
 PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_GetObject(PyObject *);
 PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_GetObject(PyObject *);
 
-/* get the value of the start attribute (the int * may not be NULL)
+/* get the value of the start attribute (the int *may not be NULL)
    return 0 on success, -1 on failure */
 PyAPI_FUNC(int) PyUnicodeEncodeError_GetStart(PyObject *, Py_ssize_t *);
 PyAPI_FUNC(int) PyUnicodeDecodeError_GetStart(PyObject *, Py_ssize_t *);
