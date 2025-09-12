@@ -833,22 +833,24 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
            input data in self->unused_data. */
         if (self->zst.avail_in > 0) {
             Py_ssize_t old_size = PyBytes_GET_SIZE(self->unused_data);
-            Py_ssize_t new_size, left_size;
-            PyObject *new_data;
+            Py_ssize_t left_size;
             left_size = (Byte *)data->buf + data->len - self->zst.next_in;
             if (left_size > (PY_SSIZE_T_MAX - old_size)) {
                 PyErr_NoMemory();
                 return -1;
             }
-            new_size = old_size + left_size;
-            new_data = PyBytes_FromStringAndSize(NULL, new_size);
-            if (new_data == NULL)
+            PyBytesWriter *writer = PyBytesWriter_Create(old_size + left_size);
+            if (writer == NULL) {
                 return -1;
-            memcpy(PyBytes_AS_STRING(new_data),
-                      PyBytes_AS_STRING(self->unused_data), old_size);
-            memcpy(PyBytes_AS_STRING(new_data) + old_size,
-                      self->zst.next_in, left_size);
-            Py_SETREF(self->unused_data, new_data);
+            }
+            char *new_data = PyBytesWriter_GetData(writer);
+            memcpy(new_data, PyBytes_AS_STRING(self->unused_data), old_size);
+            memcpy(new_data + old_size, self->zst.next_in, left_size);
+            PyObject *new_unused_data = PyBytesWriter_Finish(writer);
+            if (new_unused_data == NULL) {
+                return -1;
+            }
+            Py_SETREF(self->unused_data, new_unused_data);
             self->zst.avail_in = 0;
         }
     }
