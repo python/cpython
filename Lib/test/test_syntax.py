@@ -398,6 +398,16 @@ SyntaxError: case statement must be inside match statement
 Traceback (most recent call last):
 SyntaxError: case statement must be inside match statement
 
+>>> if some:
+...     case 1: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case some:
+...     case 1: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
 # But prefixes of soft keywords should
 # still raise specialized errors
 
