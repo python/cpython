@@ -1477,11 +1477,15 @@ bytes_concat(PyObject *a, PyObject *b)
         goto done;
     }
 
-    result = PyBytes_FromStringAndSize(NULL, va.len + vb.len);
-    if (result != NULL) {
-        memcpy(PyBytes_AS_STRING(result), va.buf, va.len);
-        memcpy(PyBytes_AS_STRING(result) + va.len, vb.buf, vb.len);
+    PyBytesWriter *writer = PyBytesWriter_Create(va.len + vb.len);
+    if (writer == NULL) {
+        goto done;
     }
+
+    char *data = PyBytesWriter_GetData(writer);
+    memcpy(data, va.buf, va.len);
+    memcpy(data + va.len, vb.buf, vb.len);
+    result = PyBytesWriter_Finish(writer);
 
   done:
     if (va.len != -1)
@@ -1659,8 +1663,6 @@ bytes_subscript(PyObject *op, PyObject* item)
         Py_ssize_t start, stop, step, slicelength, i;
         size_t cur;
         const char* source_buf;
-        char* result_buf;
-        PyObject* result;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
@@ -1683,17 +1685,18 @@ bytes_subscript(PyObject *op, PyObject* item)
         }
         else {
             source_buf = PyBytes_AS_STRING(self);
-            result = PyBytes_FromStringAndSize(NULL, slicelength);
-            if (result == NULL)
+            PyBytesWriter *writer = PyBytesWriter_Create(slicelength);
+            if (writer == NULL) {
                 return NULL;
+            }
+            char *buf = PyBytesWriter_GetData(writer);
 
-            result_buf = PyBytes_AS_STRING(result);
             for (cur = start, i = 0; i < slicelength;
                  cur += step, i++) {
-                result_buf[i] = source_buf[cur];
+                buf[i] = source_buf[cur];
             }
 
-            return result;
+            return PyBytesWriter_Finish(writer);
         }
     }
     else {
