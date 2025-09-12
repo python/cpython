@@ -1090,22 +1090,16 @@ PyObject *_PyBytes_DecodeEscape2(const char *s,
                                 int *first_invalid_escape_char,
                                 const char **first_invalid_escape_ptr)
 {
-    int c;
-    char *p;
-    const char *end;
-    _PyBytesWriter writer;
-
-    _PyBytesWriter_Init(&writer);
-
-    p = _PyBytesWriter_Alloc(&writer, len);
-    if (p == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
+    if (writer == NULL) {
         return NULL;
-    writer.overallocate = 1;
+    }
+    char *p = PyBytesWriter_GetData(writer);
 
     *first_invalid_escape_char = -1;
     *first_invalid_escape_ptr = NULL;
 
-    end = s + len;
+    const char *end = s + len;
     while (s < end) {
         if (*s != '\\') {
             *p++ = *s++;
@@ -1134,7 +1128,8 @@ PyObject *_PyBytes_DecodeEscape2(const char *s,
         case 'a': *p++ = '\007'; break; /* BEL, not classic C */
         case '0': case '1': case '2': case '3':
         case '4': case '5': case '6': case '7':
-            c = s[-1] - '0';
+        {
+            int c = s[-1] - '0';
             if (s < end && '0' <= *s && *s <= '7') {
                 c = (c<<3) + *s++ - '0';
                 if (s < end && '0' <= *s && *s <= '7')
@@ -1149,6 +1144,7 @@ PyObject *_PyBytes_DecodeEscape2(const char *s,
             }
             *p++ = c;
             break;
+        }
         case 'x':
             if (s+1 < end) {
                 int digit1, digit2;
@@ -1195,10 +1191,10 @@ PyObject *_PyBytes_DecodeEscape2(const char *s,
         }
     }
 
-    return _PyBytesWriter_Finish(&writer, p);
+    return PyBytesWriter_FinishWithPointer(writer, p);
 
   failed:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
