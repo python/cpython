@@ -67,14 +67,13 @@ Python in one of various formats, follow one of links in this table.{% endtrans 
   </tr>
 </table>
 
-{% set archives = pathto('archives')|replace('.html', '/') %}
 <p>{% trans archives = archives %}These archives contain all the content in the
 documentation.
-See the <a href="{{ archives }}">directory listing</a> for accurate size
+See the <a href="https://docs.python.org/{{ version }}/archives/">directory listing</a> for accurate size
 information.{% endtrans %}</p>
 
 <h2>{% trans %}Problems{% endtrans %}</h2>
 {% set bugs = pathto('bugs') %}
-<p>{% trans bugs = bugs %}See <a href="{{ bugs }}">this page</a> if you
-have comments or suggestions for the Python documentation.{% endtrans %}</p>
+<p>{% trans bugs = bugs %}See <a href="{{ bugs }}">this page on reporting bugs</a>
+if you have comments or suggestions for the Python documentation.{% endtrans %}</p>
 {% endblock %}
