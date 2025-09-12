@@ -4,7 +4,6 @@ import os
 import signal
 import subprocess
 import sys
-import termios
 import unittest
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
@@ -314,8 +313,10 @@ class TestUnixConsoleEIOHandling(TestCase):
 
     @patch('_pyrepl.unix_console.tcsetattr')
     @patch('_pyrepl.unix_console.tcgetattr')
+    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_eio_error_handling_in_restore(self, mock_tcgetattr, mock_tcsetattr):
 
+        import termios
         mock_termios = Mock()
         mock_termios.iflag = 0
         mock_termios.oflag = 0
