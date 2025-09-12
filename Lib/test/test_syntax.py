@@ -382,7 +382,7 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: invalid syntax
 
->>> case 1: ...
+>>> case "pattern": ...
 Traceback (most recent call last):
 SyntaxError: case statement must be inside match statement
 
