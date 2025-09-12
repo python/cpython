@@ -1114,7 +1114,6 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
     temp_ctx = py_wrapper_EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
         PyBytesWriter_Discard(writer);
-        PyErr_NoMemory();
         return NULL;
     }
 
