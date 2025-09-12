@@ -808,11 +808,6 @@ dbmopen_impl(PyObject *module, PyObject *filename, const char *flags,
                 iflags |= GDBM_NOLOCK;
                 break;
 #endif
-#ifdef GDBM_NOMMAP
-            case 'm':
-                iflags |= GDBM_NOMMAP;
-                break;
-#endif
             default:
                 PyErr_Format(state->gdbm_error,
                              "Flag '%c' is not supported.", (unsigned char)*flags);
@@ -845,9 +840,6 @@ static const char gdbmmodule_open_flags[] = "rwcn"
 #endif
 #ifdef GDBM_NOLOCK
                                      "u"
-#endif
-#ifdef GDBM_NOMMAP
-                                     "m"
 #endif
                                      ;
 
