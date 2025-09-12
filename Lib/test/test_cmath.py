@@ -318,22 +318,23 @@ class CMathTests(ComplexesAreIdenticalMixin, unittest.TestCase):
             if 'divide-by-zero' in flags or 'invalid' in flags:
                 try:
                     actual = function(arg)
-                except ValueError:
-                    continue
+                except ValueError as exc:
+                    actual = exc.value
                 else:
                     self.fail('ValueError not raised in test '
                           '{}: {}(complex({!r}, {!r}))'.format(id, fn, ar, ai))
 
-            if 'overflow' in flags:
+            elif 'overflow' in flags:
                 try:
                     actual = function(arg)
-                except OverflowError:
-                    continue
+                except OverflowError as exc:
+                    actual = exc.value if fn != 'polar' else complex(*exc.value)
                 else:
                     self.fail('OverflowError not raised in test '
                           '{}: {}(complex({!r}, {!r}))'.format(id, fn, ar, ai))
 
-            actual = function(arg)
+            else:
+                actual = function(arg)
 
             if 'ignore-real-sign' in flags:
                 actual = complex(abs(actual.real), actual.imag)
