@@ -187,6 +187,7 @@ class Difflib(ThemeSection):
 class Syntax(ThemeSection):
     prompt: str = ANSIColors.BOLD_MAGENTA
     keyword: str = ANSIColors.BOLD_BLUE
+    keyword_constant: str = ANSIColors.BOLD_BLUE
     builtin: str = ANSIColors.CYAN
     comment: str = ANSIColors.RED
     string: str = ANSIColors.GREEN
