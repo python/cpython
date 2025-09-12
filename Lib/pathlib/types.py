@@ -356,7 +356,7 @@ class _ReadablePath(_JoinablePath):
         Recursively copy this file or directory tree to the given destination.
         """
         ensure_distinct_paths(self, target)
-        target._copy_from(self, **kwargs)
+        list(target._copy_from(self, **kwargs))  # Consume generator.
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):
@@ -425,23 +425,27 @@ class _WritablePath(_JoinablePath):
 
     def _copy_from(self, source, follow_symlinks=True):
         """
-        Recursively copy the given path to this path.
+        Recursively copy the given path to this path. This a generator
+        function that yields (target, source, sent) tuples as the copying
+        operation progresses.
         """
-        stack = [(source, self)]
+        stack = [(self, source)]
         while stack:
-            src, dst = stack.pop()
+            dst, src = stack.pop()
+            yield dst, src, 0
             if not follow_symlinks and src.info.is_symlink():
                 dst.symlink_to(vfspath(src.readlink()), src.info.is_dir())
             elif src.info.is_dir():
                 children = src.iterdir()
                 dst.mkdir()
                 for child in children:
-                    stack.append((child, dst.joinpath(child.name)))
+                    stack.append((dst.joinpath(child.name), child))
             else:
                 ensure_different_files(src, dst)
                 with magic_open(src, 'rb') as source_f:
                     with magic_open(dst, 'wb') as target_f:
-                        copyfileobj(source_f, target_f)
+                        for sent in copyfileobj(source_f, target_f):
+                            yield dst, src, sent
 
 
 _JoinablePath.register(PurePath)
