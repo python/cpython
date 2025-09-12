@@ -1101,20 +1101,20 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
 /*[clinic end generated code: output=dcb09335dd2fe908 input=224d047da2c12a42]*/
 {
     EVP_MD_CTX *temp_ctx;
-    PyObject *retval;
 
     if (length == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
-    retval = PyBytes_FromStringAndSize(NULL, length);
-    if (retval == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
     }
 
     temp_ctx = py_wrapper_EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
-        Py_DECREF(retval);
+        PyBytesWriter_Discard(writer);
+        PyErr_NoMemory();
         return NULL;
     }
 
@@ -1122,7 +1122,7 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
         goto error;
     }
     if (!EVP_DigestFinalXOF(temp_ctx,
-                            (unsigned char*)PyBytes_AS_STRING(retval),
+                            (unsigned char*)PyBytesWriter_GetData(writer),
                             length))
     {
         notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_DigestFinalXOF));
@@ -1130,10 +1130,10 @@ _hashlib_HASHXOF_digest_impl(HASHobject *self, Py_ssize_t length)
     }
 
     EVP_MD_CTX_free(temp_ctx);
-    return retval;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_DECREF(retval);
+    PyBytesWriter_Discard(writer);
     EVP_MD_CTX_free(temp_ctx);
     return NULL;
 }
@@ -1750,7 +1750,6 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
                      long maxmem, long dklen)
 /*[clinic end generated code: output=d424bc3e8c6b9654 input=bdeac9628d07f7a1]*/
 {
-    PyObject *key = NULL;
     int retval;
 
     if (password->len > INT_MAX) {
@@ -1791,8 +1790,8 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         return NULL;
    }
 
-    key = PyBytes_FromStringAndSize(NULL, dklen);
-    if (key == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(dklen);
+    if (writer == NULL) {
         return NULL;
     }
 
@@ -1801,16 +1800,16 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         (const char *)password->buf, (size_t)password->len,
         (const unsigned char *)salt->buf, (size_t)salt->len,
         (uint64_t)n, (uint64_t)r, (uint64_t)p, (uint64_t)maxmem,
-        (unsigned char *)PyBytes_AS_STRING(key), (size_t)dklen
+        PyBytesWriter_GetData(writer), (size_t)dklen
     );
     Py_END_ALLOW_THREADS
 
     if (!retval) {
-        Py_DECREF(key);
+        PyBytesWriter_Discard(writer);
         notify_ssl_error_occurred_in(Py_STRINGIFY(EVP_PBE_scrypt));
         return NULL;
     }
-    return key;
+    return PyBytesWriter_Finish(writer);
 }
 
 #undef HASHLIB_SCRYPT_MAX_DKLEN
