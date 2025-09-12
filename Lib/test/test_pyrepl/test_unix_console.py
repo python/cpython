@@ -1,15 +1,14 @@
 import errno
 import itertools
 import os
+import signal
+import subprocess
 import sys
-import unittest
 import termios
+import unittest
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
 from test.support import script_helper
-import subprocess
-import signal
-import textwrap
 
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY, Mock
@@ -331,115 +330,16 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         mock_tcsetattr.side_effect = termios.error(errno.EIO, "Input/output error")
 
-        try:
-            console.restore()
-        except termios.error as e:
-            if e.args[0] == errno.EIO:
-                self.fail("EIO error should have been handled gracefully in restore()")
-            raise
+        # EIO error should be handled gracefully in restore()
+        console.restore()
 
     @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_repl_eio(self):
         # Use the pty-based approach to simulate EIO error
-        child_code = textwrap.dedent("""
-            import os, sys, pty, fcntl, termios, signal, time, errno
-
-            def handler(sig, f):
-                pass
-
-            def create_eio_condition():
-                try:
-                    # Try to create a condition that will actually produce EIO
-                    # Method: Use your original script's approach with modifications
-                    master_fd, slave_fd = pty.openpty()
-                    # Fork a child that will manipulate the pty
-                    child_pid = os.fork()
-                    if child_pid == 0:
-                        # Child process
-                        try:
-                            # Set up session and control terminal like your script
-                            os.setsid()
-                            fcntl.ioctl(slave_fd, termios.TIOCSCTTY, 0)
-                            # Get process group
-                            p2_pgid = os.getpgrp()
-                            # Fork grandchild
-                            grandchild_pid = os.fork()
-                            if grandchild_pid == 0:
-                                # Grandchild - set up process group
-                                os.setpgid(0, 0)
-                                # Redirect stdin to slave
-                                os.dup2(slave_fd, 0)
-                                if slave_fd > 2:
-                                    os.close(slave_fd)
-                                # Fork great-grandchild for terminal control manipulation
-                                ggc_pid = os.fork()
-                                if ggc_pid == 0:
-                                    # Great-grandchild - just exit quickly
-                                    sys.exit(0)
-                                else:
-                                    # Back to grandchild
-                                    try:
-                                        os.tcsetpgrp(0, p2_pgid)
-                                    except:
-                                        pass
-                                    sys.exit(0)
-                            else:
-                                # Back to child
-                                try:
-                                    os.setpgid(grandchild_pid, grandchild_pid)
-                                except ProcessLookupError:
-                                    pass
-                                os.tcsetpgrp(slave_fd, grandchild_pid)
-                                if slave_fd > 2:
-                                    os.close(slave_fd)
-                                os.waitpid(grandchild_pid, 0)
-                                # Manipulate terminal control to create EIO condition
-                                os.tcsetpgrp(master_fd, p2_pgid)
-                                # Now try to read from master - this might cause EIO
-                                try:
-                                    os.read(master_fd, 1)
-                                except OSError as e:
-                                    if e.errno == errno.EIO:
-                                        print(f"Setup created EIO condition: {e}", file=sys.stderr)
-                                sys.exit(0)
-                        except Exception as setup_e:
-                            print(f"Setup error: {setup_e}", file=sys.stderr)
-                            sys.exit(1)
-                    else:
-                        # Parent process
-                        os.close(slave_fd)
-                        os.waitpid(child_pid, 0)
-                        # Now replace stdin with master_fd and try to read
-                        os.dup2(master_fd, 0)
-                        os.close(master_fd)
-                        # This should now trigger EIO
-                        result = input()
-                        print(f"Unexpectedly got input: {repr(result)}", file=sys.stderr)
-                        sys.exit(0)
-                except OSError as e:
-                    if e.errno == errno.EIO:
-                        print(f"Got EIO: {e}", file=sys.stderr)
-                        sys.exit(1)
-                    elif e.errno == errno.ENXIO:
-                        print(f"Got ENXIO (no such device): {e}", file=sys.stderr)
-                        sys.exit(1)  # Treat ENXIO as success too
-                    else:
-                        print(f"Got other OSError: errno={e.errno} {e}", file=sys.stderr)
-                        sys.exit(2)
-                except EOFError as e:
-                    print(f"Got EOFError: {e}", file=sys.stderr)
-                    sys.exit(3)
-                except Exception as e:
-                    print(f"Got unexpected error: {type(e).__name__}: {e}", file=sys.stderr)
-                    sys.exit(4)
-            # Set up signal handler for coordination
-            signal.signal(signal.SIGUSR1, lambda *a: create_eio_condition())
-            print("READY", flush=True)
-            signal.pause()
-        """).strip()
+        script_path = os.path.join(os.path.dirname(__file__), "eio_test_script.py")
 
         proc = script_helper.spawn_python(
-            "-S", "-c", child_code,
+            "-S", script_path,
             stderr=subprocess.PIPE,
             text=True
         )
