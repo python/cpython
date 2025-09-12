@@ -21,12 +21,11 @@
 #endif
 
 #include "Python.h"
-#include "pycore_moduleobject.h"        // _PyModule_GetState()
-#include "pycore_strhex.h"              // _Py_strhex()
-#include "pycore_typeobject.h"          // _PyType_GetModuleState()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_strhex.h"        // _Py_strhex()
 
-#include "_hashlib/hashlib_buffer.h"
-#include "_hashlib/hashlib_mutex.h"
+#include "hashlib.h"
 
 #include "_hacl/Hacl_Hash_SHA2.h"
 
@@ -165,14 +164,6 @@ newSHA512object(sha2_state *state)
 }
 
 /* Internal methods for our hash objects. */
-
-static int
-SHA2_traverse(PyObject *ptr, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(ptr));
-    return 0;
-}
-
 static void
 SHA256_dealloc(PyObject *op)
 {
@@ -520,7 +511,7 @@ static PyType_Slot sha256_types_slots[] = {
     {Py_tp_dealloc, SHA256_dealloc},
     {Py_tp_methods, SHA256_methods},
     {Py_tp_getset, SHA256_getseters},
-    {Py_tp_traverse, SHA2_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0,0}
 };
 
@@ -528,7 +519,7 @@ static PyType_Slot sha512_type_slots[] = {
     {Py_tp_dealloc, SHA512_dealloc},
     {Py_tp_methods, SHA512_methods},
     {Py_tp_getset, SHA512_getseters},
-    {Py_tp_traverse, SHA2_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0,0}
 };
 

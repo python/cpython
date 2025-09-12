@@ -596,25 +596,19 @@ class WarnTests(BaseTest):
         class MyWarningClass(Warning):
             pass
 
-        class NonWarningSubclass:
-            pass
-
         # passing a non-subclass of Warning should raise a TypeError
-        with self.assertRaises(TypeError) as cm:
+        expected = "category must be a Warning subclass, not 'str'"
+        with self.assertRaisesRegex(TypeError, expected):
             self.module.warn('bad warning category', '')
-        self.assertIn('category must be a Warning subclass, not ',
-                      str(cm.exception))
 
-        with self.assertRaises(TypeError) as cm:
-            self.module.warn('bad warning category', NonWarningSubclass)
-        self.assertIn('category must be a Warning subclass, not ',
-                      str(cm.exception))
+        expected = "category must be a Warning subclass, not class 'int'"
+        with self.assertRaisesRegex(TypeError, expected):
+            self.module.warn('bad warning category', int)
 
         # check that warning instances also raise a TypeError
-        with self.assertRaises(TypeError) as cm:
+        expected = "category must be a Warning subclass, not '.*MyWarningClass'"
+        with self.assertRaisesRegex(TypeError, expected):
             self.module.warn('bad warning category', MyWarningClass())
-        self.assertIn('category must be a Warning subclass, not ',
-                      str(cm.exception))
 
         with self.module.catch_warnings():
             self.module.resetwarnings()
@@ -1868,6 +1862,25 @@ class DeprecatedTests(PyPublicAPITests):
                 pass
 
         self.assertEqual(D.inited, 3)
+
+    def test_existing_init_subclass_in_sibling_base(self):
+        @deprecated("A will go away soon")
+        class A:
+            pass
+        class B:
+            def __init_subclass__(cls, x):
+                super().__init_subclass__()
+                cls.inited = x
+
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            class C(A, B, x=42):
+                pass
+        self.assertEqual(C.inited, 42)
+
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            class D(B, A, x=42):
+                pass
+        self.assertEqual(D.inited, 42)
 
     def test_init_subclass_has_correct_cls(self):
         init_subclass_saw = None

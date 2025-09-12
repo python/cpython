@@ -1849,6 +1849,7 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 @getter
 frame.f_trace as frame_trace
@@ -1858,7 +1859,7 @@ Return the trace function for this frame, or None if no trace function is set.
 
 static PyObject *
 frame_trace_get_impl(PyFrameObject *self)
-/*[clinic end generated code: output=5475cbfce07826cd input=f382612525829773]*/
+/*[clinic end generated code: output=5475cbfce07826cd input=e4eacf2c68cac577]*/
 {
     PyObject* trace = self->f_trace;
     if (trace == NULL) {
@@ -1868,6 +1869,7 @@ frame_trace_get_impl(PyFrameObject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 @setter
 frame.f_trace as frame_trace
@@ -1875,7 +1877,7 @@ frame.f_trace as frame_trace
 
 static int
 frame_trace_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=d6fe08335cf76ae4 input=d96a18bda085707f]*/
+/*[clinic end generated code: output=d6fe08335cf76ae4 input=e57380734815dac5]*/
 {
     if (value == Py_None) {
         value = NULL;

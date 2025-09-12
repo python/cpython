@@ -227,7 +227,6 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
-LIBHASHLIB_INTERNAL_A=Modules/_hashlib/libhashlib.a
 
 # HACL* build configuration
 LIBHACL_CFLAGS=@LIBHACL_CFLAGS@
@@ -761,17 +760,6 @@ LIBHACL_HMAC_HEADERS= \
 		$(LIBHACL_SHA3_HEADERS) \
 		$(LIBHACL_BLAKE2_HEADERS) \
 		$(LIBHACL_HEADERS)
-
-##########################################################################
-# Internal library for cryptographic primitives
-
-LIBHASHLIB_INTERNAL_OBJS= \
-		Modules/_hashlib/hashlib_buffer.o
-
-LIBHASHLIB_INTERNAL_HEADERS= \
-		Modules/_hashlib/hashlib_buffer.h \
-		Modules/_hashlib/hashlib_fetch.h \
-		Modules/_hashlib/hashlib_mutex.h
 
 #########################################################################
 # Rules
@@ -1528,17 +1516,6 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 ##########################################################################
-# '_hashlib', '_hmac' and HACL*-based modules helpers
-LIBHASHLIB_INTERNAL_CFLAGS=@LIBHASHLIB_INTERNAL_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
-
-Modules/_hashlib/hashlib_buffer.o: Modules/_hashlib/hashlib_buffer.c $(LIBHASHLIB_INTERNAL_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -I$(srcdir)/Modules/_hashlib -c $(LIBHASHLIB_INTERNAL_CFLAGS) -o $@ $(srcdir)/Modules/_hashlib/hashlib_buffer.c
-
-$(LIBHASHLIB_INTERNAL_A): $(LIBHASHLIB_INTERNAL_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHASHLIB_INTERNAL_OBJS)
-
-##########################################################################
 # HACL* library build
 #
 # The HACL* modules are dynamically compiled and linked with the
@@ -2253,7 +2230,7 @@ Python/frozen.o: $(FROZEN_FILES_OUT)
 # an include guard, so we can't use a pipeline to transform its output.
 Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	$(MKDIR_P) Include
-	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -h -s $<
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -h -s $(srcdir)/Include/pydtrace.d
 	: sed in-place edit with POSIX-only tools
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
@@ -2263,7 +2240,7 @@ Python/gc.o: $(srcdir)/Include/pydtrace.h
 Python/import.o: $(srcdir)/Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
-	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
 
 Objects/typeobject.o: Objects/typeslots.inc
 
@@ -2588,6 +2565,10 @@ LIBSUBDIRS=	asyncio \
 		multiprocessing multiprocessing/dummy \
 		pathlib \
 		profile \
+		profiling profiling/sampling profiling/tracing \
+		profiling/sampling/_assets \
+		profiling/sampling/_vendor/d3/7.8.5 \
+		profiling/sampling/_vendor/d3-flame-graph/4.1.3 \
 		pydoc_data \
 		re \
 		site-packages \
@@ -2670,6 +2651,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/namespace_pkgs \
 		test/test_importlib/namespace_pkgs/both_portions \
 		test/test_importlib/namespace_pkgs/both_portions/foo \
+		test/test_importlib/namespace_pkgs/foo \
 		test/test_importlib/namespace_pkgs/module_and_namespace_package \
 		test/test_importlib/namespace_pkgs/module_and_namespace_package/a_test \
 		test/test_importlib/namespace_pkgs/not_a_namespace_pkg \
@@ -2692,6 +2674,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/source \
 		test/test_inspect \
 		test/test_interpreters \
+		test/test_io \
 		test/test_json \
 		test/test_module \
 		test/test_multiprocessing_fork \
@@ -2700,6 +2683,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_pathlib \
 		test/test_pathlib/support \
 		test/test_peg_generator \
+		test/test_profiling \
 		test/test_pydoc \
 		test/test_pyrepl \
 		test/test_string \
@@ -3378,23 +3362,23 @@ MODULE_UNICODEDATA_DEPS=$(srcdir)/Modules/unicodedata_db.h $(srcdir)/Modules/uni
 MODULE__CTYPES_DEPS=$(srcdir)/Modules/_ctypes/ctypes.h
 MODULE__CTYPES_TEST_DEPS=$(srcdir)/Modules/_ctypes/_ctypes_test_generated.c.h
 MODULE__CTYPES_MALLOC_CLOSURE=@MODULE__CTYPES_MALLOC_CLOSURE@
-MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
+MODULE__DECIMAL_DEPS=@LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
-MODULE__HASHLIB_DEPS=@LIBHASHLIB_INTERNAL@
+MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
 
 # HACL*-based cryptographic primitives
-MODULE__MD5_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__MD5_LDEPS=$(LIBHACL_MD5_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA1_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__SHA1_LDEPS=$(LIBHACL_SHA1_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA2_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__SHA2_LDEPS=$(LIBHACL_SHA2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__SHA3_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__SHA3_LDEPS=$(LIBHACL_SHA3_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__BLAKE2_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__BLAKE2_LDEPS=$(LIBHACL_BLAKE2_LIB_@LIBHACL_LDEPS_LIBTYPE@)
-MODULE__HMAC_DEPS=$(MODULE__HASHLIB_DEPS) $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
+MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 MODULE__HMAC_LDEPS=$(LIBHACL_HMAC_LIB_@LIBHACL_LDEPS_LIBTYPE@)
 
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
