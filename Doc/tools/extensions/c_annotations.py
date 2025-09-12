@@ -298,6 +298,7 @@ class CorrespondingTypeSlot(SphinxDirective):
     If there is no corresponding field, these should be documented as normal
     macros.
     """
+
     has_content = False
     option_spec = {}
 
