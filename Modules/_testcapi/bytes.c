@@ -164,6 +164,27 @@ writer_write_bytes(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_format_i(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    char *format;
+    int value;
+    if (!PyArg_ParseTuple(args, "yi", &format, &value)) {
+        return NULL;
+    }
+
+    if (PyBytesWriter_Format(self->writer, format, value) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_resize(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -241,6 +262,7 @@ writer_finish_with_size(PyObject *self_raw, PyObject *args)
 
 static PyMethodDef writer_methods[] = {
     {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
+    {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
@@ -309,11 +331,33 @@ byteswriter_resize(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+byteswriter_highlevel(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyBytesWriter *writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    if (PyBytesWriter_WriteBytes(writer, "Hello", -1) < 0) {
+        goto error;
+    }
+    if (PyBytesWriter_Format(writer, " %s!", "World") < 0) {
+        goto error;
+    }
+    return PyBytesWriter_Finish(writer);
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
     {"byteswriter_abc", byteswriter_abc, METH_NOARGS},
     {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
+    {"byteswriter_highlevel", byteswriter_highlevel, METH_NOARGS},
     {NULL},
 };
 

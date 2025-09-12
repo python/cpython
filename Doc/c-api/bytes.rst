@@ -307,6 +307,15 @@ High-level API
    On success, return ``0``.
    On error, set an exception and return ``-1``.
 
+.. c:function:: int PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
+
+   Similar to :c:func:`PyBytes_FromFormat`, but write the output directly at
+   the writer end. Grow the writer internal buffer on demand. Then add the
+   written size to the writer size.
+
+   On success, return ``0``.
+   On error, set an exception and return ``-1``.
+
 
 Getters
 ^^^^^^^
