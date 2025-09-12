@@ -115,7 +115,11 @@ PyFloat_GetInfo(void)
     SetDblFlag(DBL_EPSILON);
     SetIntFlag(FLT_RADIX);
     SetIntFlag(FLT_ROUNDS);
-    SetFlag(PyBool_FromLong(__STDC_IEC_559__));
+#ifdef __STDC_IEC_559__
+    SetFlag(PyBool_FromLong(1));
+#else
+    SetFlag(PyBool_FromLong(0));
+#endif
 #undef SetIntFlag
 #undef SetDblFlag
 #undef SetFlag
