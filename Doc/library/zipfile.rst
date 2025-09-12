@@ -830,7 +830,10 @@ Instances have the following methods and attributes:
 .. attribute:: ZipInfo.date_time
 
    The time and date of the last modification to the archive member.  This is a
-   tuple of six values:
+   tuple of six values representing the "last [modified] file time" and "last [modified] file date"
+   fields from the ZIP file's central directory.
+
+   The tuple contains:
 
    +-------+--------------------------+
    | Index | Value                    |
@@ -850,7 +853,15 @@ Instances have the following methods and attributes:
 
    .. note::
 
-      The ZIP file format does not support timestamps before 1980.
+      The ZIP format supports multiple timestamp fields in different locations
+      (central directory, extra fields for NTFS/UNIX systems, etc.). This attribute
+      specifically returns the timestamp from the central directory. The central
+      directory timestamp format in ZIP files does not support timestamps before
+      1980. While some extra field formats (such as UNIX timestamps) can represent
+      earlier dates, this attribute only returns the central directory timestamp.
+
+      The central directory timestamp is interpreted as representing local
+      time, rather than UTC time, to match the behavior of other zip tools.
 
 
 .. attribute:: ZipInfo.compress_type

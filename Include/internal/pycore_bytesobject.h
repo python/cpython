@@ -143,6 +143,10 @@ PyAPI_FUNC(void*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
     const void *bytes,
     Py_ssize_t size);
 
+// Export for '_testcapi' shared extension.
+PyAPI_FUNC(PyBytesWriter*) _PyBytesWriter_CreateByteArray(
+    Py_ssize_t size);
+
 #ifdef __cplusplus
 }
 #endif
