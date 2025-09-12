@@ -311,12 +311,12 @@ class CorrespondingTypeSlot(SphinxDirective):
 
         try:
             record = stable_abi_data[name]
-        except LookupError:
+        except LookupError as err:
             raise LookupError(
                 f"{name} is not part of stable ABI. "
                 + "Document it as `c:macro::` rather than "
                 + "`corresponding-type-slot::`."
-            )
+            ) from err
 
         annotation = _stable_abi_annotation(record, is_corresponding_slot=True)
 
