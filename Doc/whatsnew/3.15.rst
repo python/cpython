@@ -648,6 +648,12 @@ typing
   (Contributed by Nikita Sobolev in :gh:`137191`.)
 
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 17.0.0.
+
+
 wave
 ----
 
@@ -700,6 +706,23 @@ New features
   :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
   and :c:data:`Py_mod_abi`.
   (Contributed by Petr Viktorin in :gh:`137210`.)
+
+* Implement :pep:`782`, the :c:type:`PyBytesWriter` API. Add functions:
+
+  * :c:func:`PyBytesWriter_Create`
+  * :c:func:`PyBytesWriter_Discard`
+  * :c:func:`PyBytesWriter_FinishWithPointer`
+  * :c:func:`PyBytesWriter_FinishWithSize`
+  * :c:func:`PyBytesWriter_Finish`
+  * :c:func:`PyBytesWriter_Format`
+  * :c:func:`PyBytesWriter_GetData`
+  * :c:func:`PyBytesWriter_GetSize`
+  * :c:func:`PyBytesWriter_GrowAndUpdatePointer`
+  * :c:func:`PyBytesWriter_Grow`
+  * :c:func:`PyBytesWriter_Resize`
+  * :c:func:`PyBytesWriter_WriteBytes`
+
+  (Contributed by Victor Stinner in :gh:`129813`.)
 
 
 Porting to Python 3.15
