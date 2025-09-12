@@ -1186,6 +1186,25 @@ class TestGetAnnotations(unittest.TestCase):
             },
         )
 
+    def test_raises_error_from_value(self):
+        # test that if VALUE is the only supported format, but raises an error
+        # that error is propagated from get_annotations
+        class DemoException(Exception): ...
+
+        def annotate(format, /):
+            if format == Format.VALUE:
+                raise DemoException()
+            else:
+                raise NotImplementedError(format)
+
+        def f(): ...
+
+        f.__annotate__ = annotate
+
+        for fmt in [Format.VALUE, Format.FORWARDREF, Format.STRING]:
+            with self.assertRaises(DemoException):
+                get_annotations(f, format=fmt)
+
 
 class TestCallEvaluateFunction(unittest.TestCase):
     def test_evaluation(self):
@@ -1344,7 +1363,23 @@ class TestCallAnnotateFunction(unittest.TestCase):
                 raise NotImplementedError(format)
 
         with self.assertRaises(NotImplementedError):
-            _ = annotationlib.call_annotate_function(annotate, Format.STRING)
+            annotationlib.call_annotate_function(annotate, Format.STRING)
+
+    def test_error_from_value_raised(self):
+        # Test that the error from format.VALUE is raised
+        # if all formats fail
+
+        class DemoException(Exception): ...
+
+        def annotate(format, /):
+            if format == Format.VALUE:
+                raise DemoException()
+            else:
+                raise NotImplementedError(format)
+
+        for fmt in [Format.VALUE, Format.FORWARDREF, Format.STRING]:
+            with self.assertRaises(DemoException):
+                annotationlib.call_annotate_function(annotate, format=fmt)
 
 
 class MetaclassTests(unittest.TestCase):
