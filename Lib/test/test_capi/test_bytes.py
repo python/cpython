@@ -361,11 +361,25 @@ class BytesWriterTest(unittest.TestCase):
         writer.resize(len(b'number=123456'), b'456')
         self.assertEqual(writer.finish(), self.result_type(b'number=123456'))
 
+    def test_format_i(self):
+        # Test PyBytesWriter_Format()
+        writer = self.create_writer()
+        writer.format_i(b'x=%i', 123456)
+        self.assertEqual(writer.finish(), self.result_type(b'x=123456'))
+
+        writer = self.create_writer()
+        writer.format_i(b'x=%i, ', 123)
+        writer.format_i(b'y=%i', 456)
+        self.assertEqual(writer.finish(), self.result_type(b'x=123, y=456'))
+
     def test_example_abc(self):
         self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
 
     def test_example_resize(self):
         self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
+
+    def test_example_highlevel(self):
+        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
 
 
 class ByteArrayWriterTest(BytesWriterTest):
@@ -373,6 +387,7 @@ class ByteArrayWriterTest(BytesWriterTest):
 
     def create_writer(self, alloc=0, string=b''):
         return _testcapi.PyBytesWriter(alloc, string, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

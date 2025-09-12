@@ -68,6 +68,10 @@ PyAPI_FUNC(int) PyBytesWriter_WriteBytes(
     PyBytesWriter *writer,
     const void *bytes,
     Py_ssize_t size);
+PyAPI_FUNC(int) PyBytesWriter_Format(
+    PyBytesWriter *writer,
+    const char *format,
+    ...);
 
 PyAPI_FUNC(int) PyBytesWriter_Resize(
     PyBytesWriter *writer,

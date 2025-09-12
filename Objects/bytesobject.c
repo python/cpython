@@ -196,10 +196,11 @@ PyBytes_FromString(const char *str)
     return (PyObject *) op;
 }
 
-PyObject *
-PyBytes_FromFormatV(const char *format, va_list vargs)
+
+static char*
+bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
+                 const char *format, va_list vargs)
 {
-    char *s;
     const char *f;
     const char *p;
     Py_ssize_t prec;
@@ -213,21 +214,20 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
        Longest 64-bit pointer representation:
        "0xffffffffffffffff\0" (19 bytes). */
     char buffer[21];
-    _PyBytesWriter writer;
 
-    _PyBytesWriter_Init(&writer);
+    char *s = (char*)PyBytesWriter_GetData(writer) + writer_pos;
 
-    s = _PyBytesWriter_Alloc(&writer, strlen(format));
-    if (s == NULL)
-        return NULL;
-    writer.overallocate = 1;
-
-#define WRITE_BYTES(str) \
+#define WRITE_BYTES_LEN(str, len_expr) \
     do { \
-        s = _PyBytesWriter_WriteBytes(&writer, s, (str), strlen(str)); \
-        if (s == NULL) \
+        size_t len = (len_expr); \
+        s = PyBytesWriter_GrowAndUpdatePointer(writer, len, s); \
+        if (s == NULL) { \
             goto error; \
+        } \
+        memcpy(s, (str), len); \
+        s += len; \
     } while (0)
+#define WRITE_BYTES(str) WRITE_BYTES_LEN(str, strlen(str))
 
     for (f = format; *f; f++) {
         if (*f != '%') {
@@ -268,10 +268,6 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
             ++f;
         }
 
-        /* subtract bytes preallocated for the format string
-           (ex: 2 for "%s") */
-        writer.min_size -= (f - p + 1);
-
         switch (*f) {
         case 'c':
         {
@@ -282,7 +278,6 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
                                 "expects an integer in range [0; 255]");
                 goto error;
             }
-            writer.min_size++;
             *s++ = (unsigned char)c;
             break;
         }
@@ -341,9 +336,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
                     i++;
                 }
             }
-            s = _PyBytesWriter_WriteBytes(&writer, s, p, i);
-            if (s == NULL)
-                goto error;
+            WRITE_BYTES_LEN(p, i);
             break;
         }
 
@@ -362,30 +355,44 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
             break;
 
         case '%':
-            writer.min_size++;
             *s++ = '%';
             break;
 
         default:
-            if (*f == 0) {
-                /* fix min_size if we reached the end of the format string */
-                writer.min_size++;
-            }
-
             /* invalid format string: copy unformatted string and exit */
             WRITE_BYTES(p);
-            return _PyBytesWriter_Finish(&writer, s);
+            return s;
         }
     }
 
 #undef WRITE_BYTES
+#undef WRITE_BYTES_LEN
 
-    return _PyBytesWriter_Finish(&writer, s);
+    return s;
 
  error:
-    _PyBytesWriter_Dealloc(&writer);
     return NULL;
 }
+
+
+PyObject *
+PyBytes_FromFormatV(const char *format, va_list vargs)
+{
+    Py_ssize_t alloc = strlen(format);
+    PyBytesWriter *writer = PyBytesWriter_Create(alloc);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    char *s = bytes_fromformat(writer, 0, format, vargs);
+    if (s == NULL) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    return PyBytesWriter_FinishWithPointer(writer, s);
+}
+
 
 PyObject *
 PyBytes_FromFormat(const char *format, ...)
@@ -398,6 +405,7 @@ PyBytes_FromFormat(const char *format, ...)
     va_end(vargs);
     return ret;
 }
+
 
 /* Helpers for formatstring */
 
@@ -4047,4 +4055,22 @@ PyBytesWriter_WriteBytes(PyBytesWriter *writer,
     char *buf = byteswriter_data(writer);
     memcpy(buf + pos, bytes, size);
     return 0;
+}
+
+
+int
+PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
+{
+    Py_ssize_t pos = writer->size;
+    if (PyBytesWriter_Grow(writer, strlen(format)) < 0) {
+        return -1;
+    }
+
+    va_list vargs;
+    va_start(vargs, format);
+    char *buf = bytes_fromformat(writer, pos, format, vargs);
+    va_end(vargs);
+
+    Py_ssize_t size = buf - byteswriter_data(writer);
+    return PyBytesWriter_Resize(writer, size);
 }
