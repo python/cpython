@@ -8,10 +8,8 @@ import functools
 import itertools
 import pickle
 from string.templatelib import Template
-import types
 import typing
 import unittest
-import unittest.mock
 from annotationlib import (
     Format,
     ForwardRef,
@@ -1209,34 +1207,19 @@ class TestCallEvaluateFunction(unittest.TestCase):
 
 
 class TestCallAnnotateFunction(unittest.TestCase):
-    def _annotate_mock(self):
+    # Tests for user defined annotate functions.
+
+    # Format and NotImplementedError are provided as arguments so they exist in
+    # the fake globals namespace.
+    # This avoids non-matching conditions passing by being converted to stringifiers.
+    # See: https://github.com/python/cpython/issues/138764
+
+    def test_user_annotate_value(self):
         def annotate(format, /):
             if format == Format.VALUE:
                 return {"x": str}
             else:
                 raise NotImplementedError(format)
-
-        annotate_mock = unittest.mock.MagicMock(
-            wraps=annotate
-        )
-
-        # Add missing magic attributes needed
-        required_magic = [
-            "__builtins__",
-            "__closure__",
-            "__code__",
-            "__defaults__",
-            "__globals__",
-            "__kwdefaults__",
-        ]
-
-        for attrib in required_magic:
-            setattr(annotate_mock, attrib, getattr(annotate, attrib))
-
-        return annotate_mock
-
-    def test_user_annotate_value(self):
-        annotate = self._annotate_mock()
 
         annotations = annotationlib.call_annotate_function(
             annotate,
@@ -1244,53 +1227,124 @@ class TestCallAnnotateFunction(unittest.TestCase):
         )
 
         self.assertEqual(annotations, {"x": str})
-        annotate.assert_called_once_with(Format.VALUE)
 
-    def test_user_annotate_forwardref(self):
-        annotate = self._annotate_mock()
+    def test_user_annotate_forwardref_supported(self):
+        # If Format.FORWARDREF is supported prefer it over Format.VALUE
+        def annotate(format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                return {'x': str}
+            elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                return {'x': int}
+            elif format == __Format.FORWARDREF:
+                return {'x': float}
+            else:
+                raise __NotImplementedError(format)
 
-        new_annotate = None
-        functype = types.FunctionType
+        annotations = annotationlib.call_annotate_function(
+            annotate,
+            Format.FORWARDREF
+        )
 
-        def functiontype(*args, **kwargs):
-            nonlocal new_annotate
-            new_func = unittest.mock.MagicMock(wraps=functype(*args, **kwargs))
-            new_annotate = new_func
-            return new_func
+        self.assertEqual(annotations, {"x": float})
 
-        with unittest.mock.patch("types.FunctionType", new=functiontype):
-            annotations = annotationlib.call_annotate_function(
-                annotate,
-                Format.FORWARDREF,
-            )
+    def test_user_annotate_forwardref_fakeglobals(self):
+        # If Format.FORWARDREF is not supported, use Format.VALUE_WITH_FAKE_GLOBALS
+        # before falling back to Format.VALUE
+        def annotate(format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                return {'x': str}
+            elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                return {'x': int}
+            else:
+                raise __NotImplementedError(format)
 
-        # The call with Format.VALUE_WITH_FAKE_GLOBALS is not
-        # on the original function.
-        annotate.assert_has_calls([
-            unittest.mock.call(Format.FORWARDREF),
-            unittest.mock.call(Format.VALUE),
-        ])
+        annotations = annotationlib.call_annotate_function(
+            annotate,
+            Format.FORWARDREF
+        )
 
-        new_annotate.assert_called_once_with(Format.VALUE_WITH_FAKE_GLOBALS)
+        self.assertEqual(annotations, {"x": int})
+
+    def test_user_annotate_forwardref_value_fallback(self):
+        # If Format.FORWARDREF and Format.VALUE_WITH_FAKE_GLOBALS are not supported
+        # use Format.VALUE
+        def annotate(format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                return {"x": str}
+            else:
+                raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            annotate,
+            Format.FORWARDREF,
+        )
 
         self.assertEqual(annotations, {"x": str})
 
-
-    def test_user_annotate_string(self):
-        annotate = self._annotate_mock()
+    def test_user_annotate_string_supported(self):
+        # If Format.STRING is supported prefer it over Format.VALUE
+        def annotate(format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                return {'x': str}
+            elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                return {'x': int}
+            elif format == __Format.STRING:
+                return {'x': "float"}
+            else:
+                raise __NotImplementedError(format)
 
         annotations = annotationlib.call_annotate_function(
             annotate,
             Format.STRING,
         )
 
-        annotate.assert_has_calls([
-            unittest.mock.call(Format.STRING),
-            unittest.mock.call(Format.VALUE_WITH_FAKE_GLOBALS),
-            unittest.mock.call(Format.VALUE),
-        ])
+        self.assertEqual(annotations, {"x": "float"})
+
+    def test_user_annotate_string_fakeglobals(self):
+        # If Format.STRING is not supported but Format.VALUE_WITH_FAKE_GLOBALS is
+        # prefer that over Format.VALUE
+        def annotate(format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                return {'x': str}
+            elif format == __Format.VALUE_WITH_FAKE_GLOBALS:
+                return {'x': int}
+            else:
+                raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            annotate,
+            Format.STRING,
+        )
+
+        self.assertEqual(annotations, {"x": "int"})
+
+    def test_user_annotate_string_value_fallback(self):
+        # If Format.STRING and Format.VALUE_WITH_FAKE_GLOBALS are not
+        # supported fall back to Format.VALUE and convert to strings
+        def annotate(format, /, __Format=Format, __NotImplementedError=NotImplementedError):
+            if format == __Format.VALUE:
+                return {"x": str}
+            else:
+                raise __NotImplementedError(format)
+
+        annotations = annotationlib.call_annotate_function(
+            annotate,
+            Format.STRING,
+        )
 
         self.assertEqual(annotations, {"x": "str"})
+
+    def test_condition_not_stringified(self):
+        # Make sure the first condition isn't evaluated as True by being converted
+        # to a _Stringifier
+        def annotate(format, /):
+            if format == Format.FORWARDREF:
+                return {"x": str}
+            else:
+                raise NotImplementedError(format)
+
+        with self.assertRaises(NotImplementedError):
+            _ = annotationlib.call_annotate_function(annotate, Format.STRING)
 
 
 class MetaclassTests(unittest.TestCase):
