@@ -1116,9 +1116,6 @@ static struct constant {
 #ifdef TCFLSH
     {"TCFLSH", TCFLSH},
 #endif
-#ifdef TCGETA
-    {"TCGETA", TCGETA},
-#endif
 #ifdef TCGETS
     {"TCGETS", TCGETS},
 #endif
@@ -1127,15 +1124,6 @@ static struct constant {
 #endif
 #ifdef TCSBRKP
     {"TCSBRKP", TCSBRKP},
-#endif
-#ifdef TCSETA
-    {"TCSETA", TCSETA},
-#endif
-#ifdef TCSETAF
-    {"TCSETAF", TCSETAF},
-#endif
-#ifdef TCSETAW
-    {"TCSETAW", TCSETAW},
 #endif
 #ifdef TCSETS
     {"TCSETS", TCSETS},
