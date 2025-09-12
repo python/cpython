@@ -159,13 +159,13 @@ class FindLibraryEmscripten(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import tempfile
-        
+
         # A very simple wasm module
         # In WAT format: (module)
         cls.wasm_module = b'\x00asm\x01\x00\x00\x00\x00\x08\x04name\x02\x01\x00'
-        
+
         cls.non_wasm_content = b'This is not a WASM file'
-        
+
         cls.temp_dir = tempfile.mkdtemp()
         cls.libdummy_so_path = os.path.join(cls.temp_dir, 'libdummy.so')
         with open(cls.libdummy_so_path, 'wb') as f:
@@ -174,11 +174,11 @@ class FindLibraryEmscripten(unittest.TestCase):
         cls.libother_wasm_path = os.path.join(cls.temp_dir, 'libother.wasm')
         with open(cls.libother_wasm_path, 'wb') as f:
             f.write(cls.wasm_module)
-        
+
         cls.libnowasm_so_path = os.path.join(cls.temp_dir, 'libnowasm.so')
         with open(cls.libnowasm_so_path, 'wb') as f:
             f.write(cls.non_wasm_content)
-    
+
     @classmethod
     def tearDownClass(cls):
         import shutil
@@ -189,6 +189,7 @@ class FindLibraryEmscripten(unittest.TestCase):
             env.set('LD_LIBRARY_PATH', self.temp_dir)
             result = find_library('dummy')
             self.assertEqual(result, self.libdummy_so_path)
+
 
     def test_find_wasm_file_with_wasm_extension(self):
         with os_helper.EnvironmentVarGuard() as env:
