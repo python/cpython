@@ -7347,3 +7347,15 @@ class ForkInThreads(unittest.TestCase):
         res = assert_python_failure("-c", code, PYTHONWARNINGS='error')
         self.assertIn(b'DeprecationWarning', res.err)
         self.assertIn(b'is multi-threaded, use of forkpty() may lead to deadlocks in the child', res.err)
+
+class _TestDummyProcessKwargs(BaseTestCase):
+    ALLOWED_TYPES = ('threads',)
+
+    def test_dummyprocess_kwargs_default_not_shared(self):
+        p1 = self.Process()
+        p2 = self.Process()
+        self.assertIsInstance(p1._kwargs, dict)
+        self.assertIsInstance(p2._kwargs, dict)
+        self.assertIsNot(p1._kwargs, p2._kwargs)
+        p1._kwargs['sentinel'] = 42
+        self.assertNotIn('sentinel', p2._kwargs)
