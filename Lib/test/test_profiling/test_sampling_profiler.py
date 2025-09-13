@@ -1996,6 +1996,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                skip_idle=False
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2023,6 +2024,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                skip_idle=False
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2050,6 +2052,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                skip_idle=False
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2149,6 +2152,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                skip_idle=False
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2182,6 +2186,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="collapsed",
                 realtime_stats=False,
+                skip_idle=False
             )
 
     def test_cli_empty_module_name(self):
@@ -2393,6 +2398,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
+                skip_idle=False
             )
 
     def test_sort_options(self):
@@ -2421,6 +2427,146 @@ class TestSampleProfilerCLI(unittest.TestCase):
                     expected_sort_value,
                 )
                 mock_sample.reset_mock()
+
+
+class TestCpuModeFiltering(unittest.TestCase):
+    """Test CPU mode filtering functionality (--mode=cpu)."""
+
+    def test_mode_validation(self):
+        """Test that CLI validates mode choices correctly."""
+        # Invalid mode choice should raise SystemExit
+        test_args = ["profiling.sampling.sample", "--mode", "invalid", "-p", "12345"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("sys.stderr", io.StringIO()) as mock_stderr,
+            self.assertRaises(SystemExit) as cm,
+        ):
+            profiling.sampling.sample.main()
+
+        self.assertEqual(cm.exception.code, 2)  # argparse error
+        error_msg = mock_stderr.getvalue()
+        self.assertIn("invalid choice", error_msg)
+
+    def test_frames_filtered_with_skip_idle(self):
+        """Test that frames are actually filtered when skip_idle=True."""
+        # Create mock frames with different thread statuses
+        class MockThreadInfoWithStatus:
+            def __init__(self, thread_id, frame_info, status):
+                self.thread_id = thread_id
+                self.frame_info = frame_info
+                self.status = status
+
+        # Create test data: running thread, idle thread, and another running thread
+        test_frames = [
+            MockInterpreterInfo(0, [
+                MockThreadInfoWithStatus(1, [MockFrameInfo("active1.py", 10, "active_func1")], 0),  # RUNNING
+                MockThreadInfoWithStatus(2, [MockFrameInfo("idle.py", 20, "idle_func")], 1),        # IDLE
+                MockThreadInfoWithStatus(3, [MockFrameInfo("active2.py", 30, "active_func2")], 0),  # RUNNING
+            ])
+        ]
+
+        # Test with skip_idle=True - should only process running threads
+        collector_skip = PstatsCollector(sample_interval_usec=1000, skip_idle=True)
+        collector_skip.collect(test_frames)
+
+        # Should only have functions from running threads (status 0)
+        active1_key = ("active1.py", 10, "active_func1")
+        active2_key = ("active2.py", 30, "active_func2")
+        idle_key = ("idle.py", 20, "idle_func")
+
+        self.assertIn(active1_key, collector_skip.result)
+        self.assertIn(active2_key, collector_skip.result)
+        self.assertNotIn(idle_key, collector_skip.result)  # Idle thread should be filtered out
+
+        # Test with skip_idle=False - should process all threads
+        collector_no_skip = PstatsCollector(sample_interval_usec=1000, skip_idle=False)
+        collector_no_skip.collect(test_frames)
+
+        # Should have functions from all threads
+        self.assertIn(active1_key, collector_no_skip.result)
+        self.assertIn(active2_key, collector_no_skip.result)
+        self.assertIn(idle_key, collector_no_skip.result)  # Idle thread should be included
+
+    @requires_subprocess()
+    def test_cpu_mode_integration_filtering(self):
+        """Integration test: CPU mode should only capture active threads, not idle ones."""
+        # Script with one mostly-idle thread and one CPU-active thread
+        cpu_vs_idle_script = '''
+import time
+import threading
+
+def idle_worker():
+    time.sleep(999999)
+
+def cpu_active_worker():
+    x = 1
+    while True:
+        x += 1
+
+def main():
+# Start both threads
+    idle_thread = threading.Thread(target=idle_worker)
+    cpu_thread = threading.Thread(target=cpu_active_worker)
+    idle_thread.start()
+    cpu_thread.start()
+    idle_thread.join()
+    cpu_thread.join()
+
+main()
+
+'''
+        with test_subprocess(cpu_vs_idle_script) as proc:
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        proc.pid,
+                        duration_sec=0.5,
+                        sample_interval_usec=5000,
+                        skip_idle=True,  # CPU mode
+                        show_summary=False,
+                        all_threads=True,
+                    )
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+                cpu_mode_output = captured_output.getvalue()
+
+            # Test wall-clock mode (skip_idle=False) - should capture both functions
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        proc.pid,
+                        duration_sec=0.5,
+                        sample_interval_usec=5000,
+                        skip_idle=False,  # Wall-clock mode
+                        show_summary=False,
+                        all_threads=True,
+                    )
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+                wall_mode_output = captured_output.getvalue()
+
+            # Verify both modes captured samples
+            self.assertIn("Captured", cpu_mode_output)
+            self.assertIn("samples", cpu_mode_output)
+            self.assertIn("Captured", wall_mode_output)
+            self.assertIn("samples", wall_mode_output)
+
+            # CPU mode should strongly favor cpu_active_worker over mostly_idle_worker
+            self.assertIn("cpu_active_worker", cpu_mode_output)
+            self.assertNotIn("idle_worker", cpu_mode_output)
+
+            # Wall-clock mode should capture both types of work
+            self.assertIn("cpu_active_worker", wall_mode_output)
+            self.assertIn("idle_worker", wall_mode_output)
 
 
 if __name__ == "__main__":

@@ -120,18 +120,18 @@ def _run_with_sync(original_cmd):
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, cpu_time=False):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads
+                self.pid, all_threads=self.all_threads, cpu_time=cpu_time
             )
         else:
             only_active_threads = bool(self.all_threads)
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads
+                self.pid, only_active_thread=only_active_threads, cpu_time=cpu_time
             )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -596,21 +596,22 @@ def sample(
     show_summary=True,
     output_format="pstats",
     realtime_stats=False,
+    skip_idle=False,
 ):
     profiler = SampleProfiler(
-        pid, sample_interval_usec, all_threads=all_threads
+        pid, sample_interval_usec, all_threads=all_threads, cpu_time=skip_idle
     )
     profiler.realtime_stats = realtime_stats
 
     collector = None
     match output_format:
         case "pstats":
-            collector = PstatsCollector(sample_interval_usec)
+            collector = PstatsCollector(sample_interval_usec, skip_idle=skip_idle)
         case "collapsed":
-            collector = CollapsedStackCollector()
+            collector = CollapsedStackCollector(skip_idle=skip_idle)
             filename = filename or f"collapsed.{pid}.txt"
         case "flamegraph":
-            collector = FlamegraphCollector()
+            collector = FlamegraphCollector(skip_idle=skip_idle)
             filename = filename or f"flamegraph.{pid}.html"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
@@ -660,6 +661,7 @@ def wait_for_process_and_sample(pid, sort_value, args):
     filename = args.outfile
     if not filename and args.format == "collapsed":
         filename = f"collapsed.{pid}.txt"
+    skip_idle = True if args.mode == "cpu" else False
 
     sample(
         pid,
@@ -672,6 +674,7 @@ def wait_for_process_and_sample(pid, sort_value, args):
         show_summary=not args.no_summary,
         output_format=args.format,
         realtime_stats=args.realtime_stats,
+        skip_idle=skip_idle,
     )
 
 
@@ -724,6 +727,15 @@ def main():
         action="store_true",
         default=False,
         help="Print real-time sampling statistics (Hz, mean, min, max, stdev) during profiling",
+    )
+
+    # Mode options
+    mode_group = parser.add_argument_group("Mode options")
+    mode_group.add_argument(
+        "--mode",
+        choices=["wall", "cpu"],
+        default="wall-time",
+        help="Sampling mode: wall-time (default, skip_idle=False) or cpu-time (skip_idle=True)",
     )
 
     # Output format selection
@@ -850,6 +862,9 @@ def main():
     elif target_count > 1:
         parser.error("only one target type can be specified: -p/--pid, -m/--module, or script")
 
+    # Set skip_idle based on mode
+    skip_idle = True if args.mode == "cpu" else False
+
     if args.pid:
         sample(
             args.pid,
@@ -862,6 +877,7 @@ def main():
             show_summary=not args.no_summary,
             output_format=args.format,
             realtime_stats=args.realtime_stats,
+            skip_idle=skip_idle,
         )
     elif args.module or args.args:
         if args.module:

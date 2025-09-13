@@ -896,6 +896,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(coro));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(count));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(covariant));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cpu_time));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ctx));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cwd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(d_parameter_type));
