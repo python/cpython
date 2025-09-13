@@ -1505,6 +1505,25 @@ Test cases
 
       .. versionadded:: 3.2
 
+   .. attribute:: status
+
+      This attribute contains resulting status of the single test run.
+      This can be used to check the test status in :meth:`tearDown` and
+      cleanup phase. Possible values are ``None`` or any of the values
+      stored in ``unittest.TestStatus`` enum:
+
+      ======================= =================================================
+      Enum name               Details
+      ======================= =================================================
+      ``SUCCESS``             Test succeeded.
+      ``UNEXPECTED_SUCCESS``  Test succeeded, but was expected to fail.
+      ``FAILED``              Test failed.
+      ``EXPECTED_FAILURE``    Test failed, as was expected.
+      ``SKIPPED``             Test was skipped.
+      ======================= =================================================
+
+      .. versionadded:: 3.14
+
 
    Testing frameworks can use the following methods to collect information on
    the test:
