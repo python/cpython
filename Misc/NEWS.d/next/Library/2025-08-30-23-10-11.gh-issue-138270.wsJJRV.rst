@@ -1,0 +1,2 @@
+Use :c:type:`PyUnicodeWriter` in :func:`csv.writer`, instead of constructing
+the buffers manually.
