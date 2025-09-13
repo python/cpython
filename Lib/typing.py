@@ -1124,7 +1124,7 @@ def _paramspec_prepare_subst(self, alias, args):
     elif isinstance(args[i], list):
         args = (*args[:i], tuple(args[i]), *args[i+1:])
     else:
-        args = (*args[:i], args[i], *args[i + 1:])
+        args = tuple(args)
     return args
 
 
