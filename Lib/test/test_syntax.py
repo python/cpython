@@ -398,6 +398,14 @@ SyntaxError: case statement must be inside match statement
 Traceback (most recent call last):
 SyntaxError: case statement must be inside match statement
 
+>>> case match: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
+>>> case case: ...
+Traceback (most recent call last):
+SyntaxError: case statement must be inside match statement
+
 >>> if some:
 ...     case 1: ...
 Traceback (most recent call last):
