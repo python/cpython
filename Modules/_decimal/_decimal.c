@@ -5164,12 +5164,14 @@ _decimal_Decimal_copy_negate_impl(PyObject *self)
 /*[clinic input]
 _decimal.Decimal.logical_invert = _decimal.Decimal.exp
 
-Return the digit-wise inversion of the (logical) operand.
+Invert all its digits.
+
+The self should have zero sign and exponent, and digits either 0 or 1.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_invert_impl(PyObject *self, PyObject *context)
-/*[clinic end generated code: output=59beb9b1b51b9f34 input=3531dac8b9548dad]*/
+/*[clinic end generated code: output=59beb9b1b51b9f34 input=fb9eb6253e7639e1]*/
 Dec_UnaryFuncVA(mpd_qinvert)
 
 /*[clinic input]
@@ -5396,37 +5398,46 @@ _decimal_Decimal_same_quantum_impl(PyObject *self, PyObject *other,
 /*[clinic input]
 _decimal.Decimal.logical_and = _decimal.Decimal.compare
 
-Return the digit-wise 'and' of the two (logical) operands.
+Applies an 'and' operation between self and other's digits.
+
+Both self and other should have zero sign and exponent,
+and digits either 0 or 1.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_and_impl(PyObject *self, PyObject *other,
                                   PyObject *context)
-/*[clinic end generated code: output=1526a357f97eaf71 input=2b319baee8970929]*/
+/*[clinic end generated code: output=1526a357f97eaf71 input=f8857b9b57be75f3]*/
 Dec_BinaryFuncVA(mpd_qand)
 
 /*[clinic input]
 _decimal.Decimal.logical_or = _decimal.Decimal.compare
 
-Return the digit-wise 'or' of the two (logical) operands.
+Applies an 'or' operation between self and other's digits.
+
+Both self and other should have zero sign and exponent,
+and digits either 0 or 1.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_or_impl(PyObject *self, PyObject *other,
                                  PyObject *context)
-/*[clinic end generated code: output=e57a72acf0982f56 input=75e0e1d4dd373b90]*/
+/*[clinic end generated code: output=e57a72acf0982f56 input=4043d61390b2a07d]*/
 Dec_BinaryFuncVA(mpd_qor)
 
 /*[clinic input]
 _decimal.Decimal.logical_xor = _decimal.Decimal.compare
 
-Return the digit-wise 'xor' of the two (logical) operands.
+Applies an 'xor' operation between self and other's digits.
+
+Both self and other should have zero sign and exponent,
+and digits either 0 or 1.
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Decimal_logical_xor_impl(PyObject *self, PyObject *other,
                                   PyObject *context)
-/*[clinic end generated code: output=ae3a7aeddde5a1a8 input=a1ed8d6ac38c1c9e]*/
+/*[clinic end generated code: output=ae3a7aeddde5a1a8 input=faea7766e521bdde]*/
 Dec_BinaryFuncVA(mpd_qxor)
 
 /*[clinic input]
@@ -6977,12 +6988,26 @@ DecCtx_UnaryFunc(mpd_qlogb)
 /*[clinic input]
 _decimal.Context.logical_invert = _decimal.Context.abs
 
-Invert all digits of x.
+Invert all the digits in the operand.
+
+The operand should have zero sign and exponent, and digits
+either 0 or 1.
+
+    >>> ExtendedContext.logical_invert(Decimal('0'))
+    Decimal('111111111')
+    >>> ExtendedContext.logical_invert(Decimal('1'))
+    Decimal('111111110')
+    >>> ExtendedContext.logical_invert(Decimal('111111111'))
+    Decimal('0')
+    >>> ExtendedContext.logical_invert(Decimal('101010101'))
+    Decimal('10101010')
+    >>> ExtendedContext.logical_invert(1101)
+    Decimal('111110010')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_logical_invert(PyObject *context, PyObject *x)
-/*[clinic end generated code: output=b863a5cdb986f684 input=1fa8dcc59c557fcc]*/
+/*[clinic end generated code: output=b863a5cdb986f684 input=c10bbdfd8d864be6]*/
 DecCtx_UnaryFunc(mpd_qinvert)
 
 /*[clinic input]
@@ -7134,36 +7159,102 @@ _decimal_Context_copy_sign_impl(PyObject *context, PyObject *x, PyObject *y)
 /*[clinic input]
 _decimal.Context.logical_and = _decimal.Context.add
 
-Digit-wise and of x and y.
+Applies the logical operation 'and' between each operand's digits.
+
+Both operands should have zero sign and exponent, and
+digits either 0 or 1.
+
+    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('0'), Decimal('1'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_and(Decimal('1'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_and(Decimal('1100'), Decimal('1010'))
+    Decimal('1000')
+    >>> ExtendedContext.logical_and(Decimal('1111'), Decimal('10'))
+    Decimal('10')
+    >>> ExtendedContext.logical_and(110, 1101)
+    Decimal('100')
+    >>> ExtendedContext.logical_and(Decimal(110), 1101)
+    Decimal('100')
+    >>> ExtendedContext.logical_and(110, Decimal(1101))
+    Decimal('100')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_logical_and_impl(PyObject *context, PyObject *x,
                                   PyObject *y)
-/*[clinic end generated code: output=f1e9bf7844a395fc input=30ee33b5b365fd80]*/
+/*[clinic end generated code: output=f1e9bf7844a395fc input=771aebf6de97e246]*/
 DecCtx_BinaryFunc(mpd_qand)
 
 /*[clinic input]
 _decimal.Context.logical_or = _decimal.Context.add
 
-Digit-wise or of x and y.
+Applies the logical operation 'or' between each operand's digits.
+
+Both operands should have zero sign and exponent, and digits
+either 0 or 1.
+
+    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_or(Decimal('0'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('0'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_or(Decimal('1100'), Decimal('1010'))
+    Decimal('1110')
+    >>> ExtendedContext.logical_or(Decimal('1110'), Decimal('10'))
+    Decimal('1110')
+    >>> ExtendedContext.logical_or(110, 1101)
+    Decimal('1111')
+    >>> ExtendedContext.logical_or(Decimal(110), 1101)
+    Decimal('1111')
+    >>> ExtendedContext.logical_or(110, Decimal(1101))
+    Decimal('1111')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_logical_or_impl(PyObject *context, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=28f7ecd1af3262f0 input=3b1a6725d0262fb9]*/
+/*[clinic end generated code: output=28f7ecd1af3262f0 input=380611292d885f9d]*/
 DecCtx_BinaryFunc(mpd_qor)
 
 /*[clinic input]
 _decimal.Context.logical_xor = _decimal.Context.add
 
-Digit-wise xor of x and y.
+Applies the logical operation 'xor' between each operand's digits.
+
+Both operands should have zero sign and exponent, and digits
+either 0 or 1.
+
+    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('0'))
+    Decimal('0')
+    >>> ExtendedContext.logical_xor(Decimal('0'), Decimal('1'))
+    Decimal('1')
+    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('0'))
+    Decimal('1')
+    >>> ExtendedContext.logical_xor(Decimal('1'), Decimal('1'))
+    Decimal('0')
+    >>> ExtendedContext.logical_xor(Decimal('1100'), Decimal('1010'))
+    Decimal('110')
+    >>> ExtendedContext.logical_xor(Decimal('1111'), Decimal('10'))
+    Decimal('1101')
+    >>> ExtendedContext.logical_xor(110, 1101)
+    Decimal('1011')
+    >>> ExtendedContext.logical_xor(Decimal(110), 1101)
+    Decimal('1011')
+    >>> ExtendedContext.logical_xor(110, Decimal(1101))
+    Decimal('1011')
 [clinic start generated code]*/
 
 static PyObject *
 _decimal_Context_logical_xor_impl(PyObject *context, PyObject *x,
                                   PyObject *y)
-/*[clinic end generated code: output=7d8461ace42d1871 input=5ebbbe8bb35da380]*/
+/*[clinic end generated code: output=7d8461ace42d1871 input=a23b928a8d0f5df0]*/
 DecCtx_BinaryFunc(mpd_qxor)
 
 /*[clinic input]
