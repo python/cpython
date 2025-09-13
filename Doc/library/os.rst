@@ -3224,6 +3224,9 @@ features:
 
       .. versionchanged:: 3.12
          ``st_birthtime`` is now available on Windows.
+      .. versionchanged:: next
+         ``st_birthtime`` is now available on Linux kernel 4.11 and later when
+         supported by the filesystem.
 
    .. attribute:: st_birthtime_ns
 
@@ -3232,6 +3235,9 @@ features:
       :exc:`AttributeError`.
 
       .. versionadded:: 3.12
+      .. versionchanged:: next
+         ``st_birthtime`` is now available on Linux kernel 4.11 and later when
+         supported by the filesystem.
 
    .. note::
 
@@ -3363,6 +3369,10 @@ features:
       it would contain the same as :attr:`st_dev`, which was incorrect.
 
       Added the :attr:`st_birthtime` member on Windows.
+
+   .. versionchanged:: next
+      Added the :attr:`st_birthtime` and :attr:`st_birthtime_ns` members on
+      Linux.
 
 
 .. function:: statvfs(path)

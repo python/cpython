@@ -1,0 +1,3 @@
+Provide :func:`os.statx` and populate :attr:`~os.stat_result.st_birthtime`
+in the return value of :func:`os.stat` on Linux kernel 4.11 and later using
+the statx system call.  Contributed by Jeffrey Bosboom and Erin of Yukis.
