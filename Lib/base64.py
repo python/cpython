@@ -601,7 +601,14 @@ def main():
         with open(args[0], 'rb') as f:
             func(f, sys.stdout.buffer)
     else:
-        func(sys.stdin.buffer, sys.stdout.buffer)
+        if sys.stdin.isatty():
+            # gh-138775: read input data at once when reading from stdin.
+            import io
+            data = sys.stdin.buffer.read()
+            func(io.BytesIO(data), sys.stdout.buffer)
+        else:
+            # keep the old behaviour for non-interactive input
+            func(sys.stdin.buffer, sys.stdout.buffer)
 
 
 if __name__ == '__main__':
