@@ -827,6 +827,9 @@ _Py_uop_frame_new(
     frame->locals = ctx->n_consumed;
     frame->stack = frame->locals + co->co_nlocalsplus;
     frame->stack_pointer = frame->stack + curr_stackentries;
+    frame->globals_checked_version = 0;
+    frame->globals_watched = false;
+    frame->func = NULL;
     ctx->n_consumed = ctx->n_consumed + (co->co_nlocalsplus + co->co_stacksize);
     if (ctx->n_consumed >= ctx->limit) {
         ctx->done = true;
@@ -895,6 +898,7 @@ _Py_uop_abstractcontext_init(JitOptContext *ctx)
     ctx->done = false;
     ctx->out_of_space = false;
     ctx->contradiction = false;
+    ctx->builtins_watched = false;
 }
 
 int
