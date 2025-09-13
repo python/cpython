@@ -524,9 +524,17 @@ Turtle motion
 
    :param angle: a number (integer or float)
 
-   Turn turtle right by *angle* units.  (Units are by default degrees, but
-   can be set via the :func:`degrees` and :func:`radians` functions.)  Angle
-   orientation depends on the turtle mode, see :func:`mode`.
+   Turn turtle right by *angle* units.
+
+   The unit of measurement is controlled by :func:`degrees` and
+   :func:`radians`:
+
+   * By default, 360.0 units form a full circle (degrees).
+   * After calling :func:`radians`, ``2*math.pi`` units form a full circle.
+   * Custom values can be set with :func:`degrees(fullcircle)`.
+
+   Orientation of the turn depends in the current turtle mode,
+   see :func:`mode`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -549,9 +557,17 @@ Turtle motion
 
    :param angle: a number (integer or float)
 
-   Turn turtle left by *angle* units.  (Units are by default degrees, but
-   can be set via the :func:`degrees` and :func:`radians` functions.)  Angle
-   orientation depends on the turtle mode, see :func:`mode`.
+   Turn turtle left by *angle* units.
+
+   The unit of measurement is controlled by :func:`degrees` and
+   :func:`radians`:
+
+   * By default, 360.0 units form a full circle (degrees).
+   * After calling :func:`radians`, ``2*math.pi`` units form a full circle.
+   * Custom values can be set with :func:`degrees(fullcircle)`.
+
+   Orientation of the turn depends in the current turtle mode,
+   see :func:`mode`.
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1008,10 +1024,16 @@ Settings for measurement
 
 .. function:: degrees(fullcircle=360.0)
 
-   :param fullcircle: a number
+   :param fullcircle: a number representing units for a full circle
 
-   Set angle measurement units, i.e. set number of "degrees" for a full circle.
-   Default value is 360 degrees.
+   Set angle measurement units so that a full circle is *fullcircle*
+   units. The default value is ``360.0`` (i.e. conventional degrees).
+
+   .. seealso::
+      :func:`radians`
+      :func:`mode`
+      :func:`left`
+      :func:`right`
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1030,11 +1052,25 @@ Settings for measurement
       >>> turtle.heading()
       90.0
 
+      >>> # Change angle measurement unit to radians (where a full circle
+      >>> # equals 2π radians, so 90 degrees becomes π/2 radians)
+      >>> turtle.degrees(2*math.pi)
+      >>> turtle.heading()
+      1.5707963267948966
+
 
 .. function:: radians()
 
-   Set the angle measurement units to radians.  Equivalent to
-   ``degrees(2*math.pi)``.
+   Set the angle measurement unit to radians.
+
+   Equivalent to::
+      
+      degrees(2*math.pi)
+
+   After this call, one full circle correspond to
+   ``2*math.pi`` units.
+
+   .. seealso:: :func:`degrees`, :func:`left`, :func:`right`
 
    .. doctest::
       :skipif: _tkinter is None
@@ -1356,8 +1392,27 @@ More drawing control
 
 .. function:: reset()
 
-   Delete the turtle's drawings from the screen, re-center the turtle and set
-   variables to the default values.
+   Delete the turtle's drawings from the screen. Move the turtle
+   to position ``(0, 0)``, set its heading to the default
+   (facing east in standard mode) and restore the following state
+   variables to their initial values:
+
+   * position: ``(0, 0)``
+   * heading: ``0`` (east)
+   * pen state: down (drawing)
+   * pensize: ``1``
+   * pencolor: black
+   * fillcolor: white
+   * speed: ``3``
+   * turtle visibility: shown
+   * shape size: ``(1.0, 1.0)`` (no stretch)
+   * shape shear: ``0.0`` (no shear)
+   * shape tilt: ``0.0`` (no tilt)
+
+   .. note::
+      The angle unit is **not reset** to degrees. If
+      :func:`radians` was used before :func:`reset`,
+      the unit remains radians.
 
    .. doctest::
       :skipif: _tkinter is None
