@@ -273,6 +273,22 @@ Other language changes
   This speeds up class creation, and helps avoid reference cycles.
   (Contributed by Petr Viktorin in :gh:`135228`.)
 
+* Warning filters specified by the :option:`-W` option and the
+  :envvar:`PYTHONWARNINGS` environment variable can now use regular
+  expressions for message and module.
+  The corresponding field must be surrounded by slashes (``/``).
+
+  The :option:`-W` option and the :envvar:`PYTHONWARNINGS` environment
+  variable can now specify use regular expressions for matching warning
+  message and module if the corresponding field starts and ends by slashes
+  (``/``).
+
+  The :option:`-W` option and the :envvar:`PYTHONWARNINGS` environment variable
+  can now specify regular expressions instead of literal strings to match
+  the warning message and the module name, if the corresponding field starts
+  and ends with a forward slash (``/``).
+  (Contributed by Serhiy Storchaka in :gh:`134716`.)
+
 
 New modules
 ===========
