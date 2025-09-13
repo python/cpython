@@ -190,7 +190,7 @@ exit:
 
 PyDoc_STRVAR(os_statx__doc__,
 "statx($module, /, path, mask, *, dir_fd=None, follow_symlinks=True,\n"
-"      sync=None, raw=False)\n"
+"      sync=None)\n"
 "--\n"
 "\n"
 "Perform a statx system call on the given path.\n"
@@ -212,10 +212,6 @@ PyDoc_STRVAR(os_statx__doc__,
 "    If True, statx will return up-to-date values, even if doing so is\n"
 "    expensive.  If False, statx will return cached values if possible.\n"
 "    If None, statx lets the operating system decide.\n"
-"  raw\n"
-"    If False, fields that were not requested or that are not valid will be\n"
-"    None.  If True, all fields will be initialized with the (possibly fake)\n"
-"    kernel-provided value; use stx_mask to check validity.\n"
 "\n"
 "It\'s an error to use dir_fd or follow_symlinks when specifying path as\n"
 "  an open file descriptor.");
@@ -225,7 +221,7 @@ PyDoc_STRVAR(os_statx__doc__,
 
 static PyObject *
 os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
-              int follow_symlinks, int sync, int raw);
+              int follow_symlinks, int sync);
 
 static PyObject *
 os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -233,7 +229,7 @@ os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 6
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -242,7 +238,7 @@ os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(path), &_Py_ID(mask), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), &_Py_ID(sync), &_Py_ID(raw), },
+        .ob_item = { &_Py_ID(path), &_Py_ID(mask), &_Py_ID(dir_fd), &_Py_ID(follow_symlinks), &_Py_ID(sync), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -251,21 +247,20 @@ os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", "mask", "dir_fd", "follow_symlinks", "sync", "raw", NULL};
+    static const char * const _keywords[] = {"path", "mask", "dir_fd", "follow_symlinks", "sync", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "statx",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[6];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     path_t path = PATH_T_INITIALIZE_P("statx", "path", 0, 0, 0, 1);
     unsigned int mask;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
     int sync = -1;
-    int raw = 0;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
             /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -311,20 +306,11 @@ os_statx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
             goto skip_optional_kwonly;
         }
     }
-    if (args[4]) {
-        if (!optional_bool_converter(args[4], &sync)) {
-            goto exit;
-        }
-        if (!--noptargs) {
-            goto skip_optional_kwonly;
-        }
-    }
-    raw = PyObject_IsTrue(args[5]);
-    if (raw < 0) {
+    if (!optional_bool_converter(args[4], &sync)) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = os_statx_impl(module, &path, mask, dir_fd, follow_symlinks, sync, raw);
+    return_value = os_statx_impl(module, &path, mask, dir_fd, follow_symlinks, sync);
 
 exit:
     /* Cleanup for path */
@@ -13597,4 +13583,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=67333d54e0a2fff4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9bf5ab9744910bc input=a9049054013a1b77]*/

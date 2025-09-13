@@ -40,6 +40,7 @@
 
 // --- System includes ------------------------------------------------------
 
+#include <stddef.h>               // offsetof()
 #include <stdio.h>                // ctermid()
 #include <stdlib.h>               // system()
 
@@ -3412,28 +3413,178 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 
 
 #ifdef HAVE_LINUX_STATX
+#define STATX_RESULT_CACHE_SLOTS 17
+typedef struct {
+    PyObject_HEAD
+    struct statx stx;
+#if STATX_RESULT_CACHE_SLOTS > 0
+    PyObject *cache[STATX_RESULT_CACHE_SLOTS];
+#endif
+} statx_result;
+
+static PyObject *
+_PyFloat_FromStatxTimestamp(struct statx_timestamp ts) {
+    return PyFloat_FromDouble((double)ts.tv_sec + 1e-9 * ts.tv_nsec);
+}
+
+/* The reserved space in struct statx was originally defined as arrays of u64.
+   Accessing u32 members (or other future non-u64 members) directly by offset
+   would be a strict aliasing violation, so use memcpy. */
+#define DECLARE_UNCACHED_GET(name, type, func) \
+    static PyObject * \
+    statx_result_get_##name(PyObject *op, void *context) { \
+        statx_result *self = (statx_result *) op; \
+        uint16_t offset = (uintptr_t)context; \
+        type val; \
+        memcpy(&val, (void *)self + offset, sizeof(val)); \
+        return func(val); \
+    }
+
+DECLARE_UNCACHED_GET(uid, uint32_t, _PyLong_FromUid)
+DECLARE_UNCACHED_GET(gid, uint32_t, _PyLong_FromGid)
+DECLARE_UNCACHED_GET(sec, struct statx_timestamp, _PyFloat_FromStatxTimestamp)
+/* Don't use these uncached getters directly -- define members instead. */
+DECLARE_UNCACHED_GET(u16, uint16_t, PyLong_FromUInt32)
+DECLARE_UNCACHED_GET(u32, uint32_t, PyLong_FromUInt32)
+DECLARE_UNCACHED_GET(u64, uint64_t, PyLong_FromUInt64)
+#undef DECLARE_UNCACHED_GET
+
+static PyObject *
+statx_result_get_nsec(PyObject *op, void *context) {
+    statx_result *self = (statx_result *) op;
+    uint16_t offset = (uintptr_t)context;
+    struct statx_timestamp val;
+    memcpy(&val, (void *)self + offset, sizeof(val));
+    _posixstate *state = PyType_GetModuleState(Py_TYPE(op));
+    assert(state != NULL);
+    return nanosecond_timestamp(state, val.tv_sec, val.tv_nsec);
+}
+
+static PyObject *
+statx_result_get_dev(PyObject *op, void *context) {
+    statx_result *self = (statx_result *) op;
+    uint16_t offset = (uintptr_t)context;
+    uint32_t major, minor;
+    memcpy(&major, (void *)self + offset, sizeof(major));
+    memcpy(&minor, (void *)self + offset + sizeof(major), sizeof(minor));
+    return _PyLong_FromDev(makedev(major, minor));
+}
+
+#define DECLARE_CACHED_GET(func) \
+    static PyObject * \
+    func##_cached(PyObject *op, void *context) { \
+        statx_result *self = (statx_result *) op; \
+        uint16_t slot = (uintptr_t)context >> 16; \
+        assert(slot < STATX_RESULT_CACHE_SLOTS); \
+        PyObject *cached = FT_ATOMIC_LOAD_PTR(self->cache[slot]); \
+        if (cached != NULL) { \
+            return Py_NewRef(cached); \
+        } \
+        Py_BEGIN_CRITICAL_SECTION(self); \
+        cached = self->cache[slot]; \
+        if (cached == NULL) { \
+            cached = func(op, context); \
+            if (cached != NULL) { \
+                FT_ATOMIC_STORE_PTR(self->cache[slot], cached); \
+            } \
+        } \
+        Py_END_CRITICAL_SECTION(); \
+        return Py_XNewRef(cached); \
+    }
+
+DECLARE_CACHED_GET(statx_result_get_uid)
+DECLARE_CACHED_GET(statx_result_get_gid)
+DECLARE_CACHED_GET(statx_result_get_sec)
+DECLARE_CACHED_GET(statx_result_get_u16)
+DECLARE_CACHED_GET(statx_result_get_u32)
+DECLARE_CACHED_GET(statx_result_get_u64)
+DECLARE_CACHED_GET(statx_result_get_nsec)
+DECLARE_CACHED_GET(statx_result_get_dev)
+#undef DECLARE_CACHED_GET
+
+/* The low 16 bits of the context pointer are the offset from the start of
+   statx_result to the struct statx member; the next 16 bits are the cache
+   index or -1.  The high 32 bits (if present) are unused. */
+#define WHERE_NAME_CACHE(name, index) (void *)(offsetof(statx_result, stx.stx_##name) | (index << 16))
+#define WHERE_OFFSET_CACHE(offset, index) (void *)(offsetof(statx_result, stx) + offset | (index << 16))
+#define WHERE_NAME(name) WHERE_NAME_CACHE(name, (uint16_t)-1)
+#define WHERE_OFFSET(offset) WHERE_OFFSET_CACHE(offset, (uint16_t)-1)
+static PyGetSetDef statx_result_getset[] = {
+    {"stx_mask", statx_result_get_u32_cached, NULL, "member validity mask", WHERE_NAME_CACHE(mask, 0)},
+    {"stx_attributes", statx_result_get_u64_cached, NULL, "Linux inode attribute bits", WHERE_NAME_CACHE(attributes, 1)},
+    {"st_uid", statx_result_get_uid_cached, NULL, "user ID of owner", WHERE_NAME_CACHE(uid, 2)},
+    {"st_gid", statx_result_get_gid_cached, NULL, "group ID of owner", WHERE_NAME_CACHE(uid, 3)},
+    {"st_mode", statx_result_get_u16_cached, NULL, "protection bits", WHERE_NAME_CACHE(mode, 4)},
+    {"st_ino", statx_result_get_u64_cached, NULL, "inode", WHERE_NAME_CACHE(ino, 5)},
+    {"st_size", statx_result_get_u64_cached, NULL, "total size, in bytes", WHERE_NAME_CACHE(size, 6)},
+    {"stx_attributes_mask", statx_result_get_u64_cached, NULL, "Linux inode attribute bits supported for this file", WHERE_NAME_CACHE(attributes_mask, 7)},
+    {"st_atime", statx_result_get_sec_cached, NULL, "time of last access", WHERE_NAME_CACHE(atime, 8)},
+    {"st_atime_ns", statx_result_get_nsec_cached, NULL, "time of last access in nanoseconds", WHERE_NAME_CACHE(atime, 9)},
+    {"st_birthtime", statx_result_get_sec_cached, NULL, "time of creation", WHERE_NAME_CACHE(btime, 10)},
+    {"st_birthtime_ns", statx_result_get_nsec_cached, NULL, "time of creation in nanoseconds", WHERE_NAME_CACHE(btime, 11)},
+    {"st_ctime", statx_result_get_sec_cached, NULL, "time of last change", WHERE_NAME_CACHE(ctime, 12)},
+    {"st_ctime_ns", statx_result_get_nsec_cached, NULL, "time of last change in nanoseconds", WHERE_NAME_CACHE(ctime, 13)},
+    {"st_mtime", statx_result_get_sec_cached, NULL, "time of last modification", WHERE_NAME_CACHE(mtime, 14)},
+    {"st_mtime_ns", statx_result_get_nsec_cached, NULL, "time of last modification in nanoseconds", WHERE_NAME_CACHE(mtime, 15)},
+    {"st_rdev", statx_result_get_dev, NULL, "device type (if inode device)", WHERE_NAME(rdev_major)},
+    {"st_dev", statx_result_get_dev_cached, NULL, "device", WHERE_NAME_CACHE(dev_major, 16)},
+    {NULL},
+};
+#undef WHERE_OFFSET
+#undef WHERE_NAME
+#undef WHERE_OFFSET_CACHE
+#undef WHERE_NAME_CACHE
+
+static PyMemberDef statx_result_members[] = {
+    {"st_blksize", Py_T_UINT, offsetof(statx_result, stx.stx_blksize), Py_READONLY, "blocksize for filesystem I/O"},
+    {"st_nlink", Py_T_UINT, offsetof(statx_result, stx.stx_nlink), Py_READONLY, "number of hard links"},
+    {"st_blocks", Py_T_ULONGLONG, offsetof(statx_result, stx.stx_blocks), Py_READONLY, "number of blocks allocated"},
+    {"stx_mnt_id", Py_T_ULONGLONG, offsetof(statx_result, stx) + 144, Py_READONLY, "mount ID"},
+    {"stx_dio_mem_align", Py_T_UINT, offsetof(statx_result, stx) + 152, Py_READONLY, "direct I/O memory buffer alignment"},
+    {"stx_dio_offset_align", Py_T_UINT, offsetof(statx_result, stx) + 156, Py_READONLY, "direct I/O file offset alignment"},
+    {"stx_subvol", Py_T_ULONGLONG, offsetof(statx_result, stx) + 160, Py_READONLY, "subvolume ID"},
+    {"stx_atomic_write_unit_min", Py_T_UINT, offsetof(statx_result, stx) + 168, Py_READONLY, "minimum size for direct I/O with torn-write protection"},
+    {"stx_atomic_write_unit_max", Py_T_UINT, offsetof(statx_result, stx) + 172, Py_READONLY, "maximum size for direct I/O with torn-write protection"},
+    {"stx_atomic_write_segments_max", Py_T_UINT, offsetof(statx_result, stx) + 176, Py_READONLY, "maximum iovecs for direct I/O with torn-write protection"},
+    {"stx_dio_read_offset_align", Py_T_UINT, offsetof(statx_result, stx) + 180, Py_READONLY, "direct I/O file offset alignment for reads"},
+    {"stx_atomic_write_unit_max_opt", Py_T_UINT, offsetof(statx_result, stx) + 184, Py_READONLY, "maximum optimized size for direct I/O with torn-write protection"},
+    {NULL},
+};
+
 static int
 statx_result_traverse(PyObject *self, visitproc visit, void *arg) {
     Py_VISIT(Py_TYPE(self));
-    return PyObject_VisitManagedDict((PyObject*)self, visit, arg);
+    /* self->cache only points to longs and floats */
+    return 0;
 }
 
-static int
-statx_result_clear(PyObject *self) {
-    PyObject_ClearManagedDict(self);
-    return 0;
+static void
+statx_result_dealloc(PyObject *op) {
+    statx_result *self = (statx_result *) op;
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+#if STATX_RESULT_CACHE_SLOTS > 0
+    for (int i = 0; i < STATX_RESULT_CACHE_SLOTS; ++i) {
+        Py_CLEAR(self->cache[i]);
+    }
+#endif
+    tp->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static PyType_Slot statx_result_slots[] = {
     {Py_tp_traverse, statx_result_traverse},
-    {Py_tp_clear, statx_result_clear},
+    {Py_tp_dealloc, statx_result_dealloc},
+    {Py_tp_getset, statx_result_getset},
+    {Py_tp_members, statx_result_members},
     {0, NULL},
 };
 
 static PyType_Spec statx_result_spec = {
     .name = "statx_result",
-    .basicsize = sizeof(PyObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_MANAGED_DICT | Py_TPFLAGS_IMMUTABLETYPE,
+    .basicsize = sizeof(statx_result),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC |
+             Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .slots = statx_result_slots,
 };
 
@@ -3488,11 +3639,6 @@ os.statx
         expensive.  If False, statx will return cached values if possible.
         If None, statx lets the operating system decide.
 
-    raw: bool = False
-        If False, fields that were not requested or that are not valid will be
-        None.  If True, all fields will be initialized with the (possibly fake)
-        kernel-provided value; use stx_mask to check validity.
-
 Perform a statx system call on the given path.
 
 It's an error to use dir_fd or follow_symlinks when specifying path as
@@ -3502,8 +3648,8 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 
 static PyObject *
 os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
-              int follow_symlinks, int sync, int raw)
-/*[clinic end generated code: output=94261132ec9b507e input=de4f8caad620361b]*/
+              int follow_symlinks, int sync)
+/*[clinic end generated code: output=fe385235585f3d07 input=148c4fce440ca53a]*/
 {
     if (path_and_dir_fd_invalid("statx", path, dir_fd) ||
         dir_fd_and_fd_invalid("statx", dir_fd, path->fd) ||
@@ -3511,7 +3657,6 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
         return NULL;
 
     int result;
-    struct statx stx = {};
     /* Future bits may refer to members beyond the current size of struct
        statx, so we need to mask them off to prevent memory corruption. */
     mask &= _Py_STATX_KNOWN;
@@ -3520,98 +3665,29 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
         flags |= sync ? AT_STATX_FORCE_SYNC : AT_STATX_DONT_SYNC;
     }
 
+    _posixstate *state = get_posix_state(module);
+    PyTypeObject *tp = (PyTypeObject *)state->StatxResultType;
+    statx_result *v = (statx_result *)tp->tp_alloc(tp, 0);
+    if (v == NULL) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     if (path->fd != -1) {
-        result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &stx);
+        result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &v->stx);
     }
     else {
-        result = statx(dir_fd, path->narrow, flags, mask, &stx);
+        result = statx(dir_fd, path->narrow, flags, mask, &v->stx);
     }
     Py_END_ALLOW_THREADS
 
     if (result != 0) {
+        Py_DECREF(v);
         return path_error(path);
     }
 
-    unsigned int fill_mask = raw ? _Py_STATX_KNOWN : mask & stx.stx_mask;
-
-    _posixstate *state = get_posix_state(module);
-    PyTypeObject *tp = (PyTypeObject *)state->StatxResultType;
-    PyObject *v = tp->tp_alloc(tp, 0);
-
-#define SET_ATTR_IF(name, cond, expr) \
-    do { \
-        PyObject *obj = (cond) ? (expr) : Py_None; \
-        if (obj == NULL) { \
-            goto error; \
-        } \
-        if (PyObject_SetAttrString(v, (name), obj) == -1) { \
-            Py_DECREF(obj); \
-            goto error; \
-        } \
-    } while (0)
-#define SET_ATTR(name, expr) SET_ATTR_IF((name), true, (expr))
-#define SET_ATTR_IF_BIT(name, bit, expr) SET_ATTR_IF((name), fill_mask & (bit), (expr))
-
-    SET_ATTR("stx_mask", PyLong_FromUnsignedLong(stx.stx_mask));
-    SET_ATTR("st_blksize", PyLong_FromUnsignedLong(stx.stx_blksize));
-    SET_ATTR("stx_attributes", PyLong_FromUnsignedLongLong(stx.stx_attributes));
-    SET_ATTR_IF_BIT("st_nlink", STATX_NLINK, PyLong_FromUnsignedLong(stx.stx_nlink));
-    SET_ATTR_IF_BIT("st_uid", STATX_UID, _PyLong_FromUid(stx.stx_uid));
-    SET_ATTR_IF_BIT("st_gid", STATX_GID, _PyLong_FromUid(stx.stx_gid));
-    SET_ATTR_IF_BIT("st_mode", STATX_TYPE | STATX_MODE, PyLong_FromUnsignedLong(stx.stx_mode));
-    SET_ATTR_IF_BIT("st_ino", STATX_INO, PyLong_FromUnsignedLongLong(stx.stx_ino));
-    SET_ATTR_IF_BIT("st_size", STATX_SIZE, PyLong_FromUnsignedLongLong(stx.stx_size));
-    SET_ATTR_IF_BIT("st_blocks", STATX_BLOCKS, PyLong_FromUnsignedLongLong(stx.stx_blocks));
-    SET_ATTR("stx_attributes_mask", PyLong_FromUnsignedLongLong(stx.stx_attributes_mask));
-
-#define SET_ATTR_IF_BIT_TS(name, bit, ts) \
-    do { \
-        if (fill_mask & (bit)) { \
-            SET_ATTR((name), PyFloat_FromDouble((double)(ts).tv_sec + 1e-9 * (ts).tv_nsec)); \
-            SET_ATTR(name "_ns", nanosecond_timestamp(state, (ts).tv_sec, (ts).tv_nsec)); \
-        } \
-        else { \
-            SET_ATTR((name), Py_None); \
-            SET_ATTR(name "_ns", Py_None); \
-        } \
-    } while (0)
-    SET_ATTR_IF_BIT_TS("st_atime", STATX_ATIME, stx.stx_atime);
-    SET_ATTR_IF_BIT_TS("st_mtime", STATX_MTIME, stx.stx_mtime);
-    SET_ATTR_IF_BIT_TS("st_ctime", STATX_CTIME, stx.stx_ctime);
-    SET_ATTR_IF_BIT_TS("st_birthtime", STATX_BTIME, stx.stx_btime);
-
-    bool rdev_relevant = (stx.stx_mask & STATX_TYPE) && (S_ISBLK(stx.stx_mode) || S_ISCHR(stx.stx_mode));
-    SET_ATTR_IF("st_rdev", rdev_relevant || raw, _PyLong_FromDev(makedev(stx.stx_rdev_major, stx.stx_rdev_minor)));
-    SET_ATTR("st_dev", _PyLong_FromDev(makedev(stx.stx_dev_major, stx.stx_dev_minor)));
-
-#define SET_ATTR_IF_BIT_OFFSET(name, bit, offset, length) \
-    do { \
-        void *addr = (unsigned char *)&stx + (offset); \
-        SET_ATTR_IF_BIT((name), (bit), PyLong_FromUnsignedNativeBytes(addr, (length), -1)); \
-    } while (0)
-    SET_ATTR_IF_BIT_OFFSET("stx_mnt_id", STATX_MNT_ID | STATX_MNT_ID_UNIQUE, 144, 8);
-    SET_ATTR_IF_BIT_OFFSET("stx_dio_mem_align", STATX_DIOALIGN, 152, 4);
-    SET_ATTR_IF_BIT_OFFSET("stx_dio_offset_align", STATX_DIOALIGN, 156, 4);
-    SET_ATTR_IF_BIT_OFFSET("stx_subvol", STATX_SUBVOL, 160, 8);
-    SET_ATTR_IF_BIT_OFFSET("stx_atomic_write_unit_min", STATX_WRITE_ATOMIC, 168, 4);
-    SET_ATTR_IF_BIT_OFFSET("stx_atomic_write_unit_max", STATX_WRITE_ATOMIC, 172, 4);
-    SET_ATTR_IF_BIT_OFFSET("stx_atomic_write_segments_max", STATX_WRITE_ATOMIC, 176, 4);
-    SET_ATTR_IF_BIT_OFFSET("stx_dio_read_offset_align", STATX_DIO_READ_ALIGN, 180, 4);
-    SET_ATTR_IF_BIT_OFFSET("stx_atomic_write_unit_max_opt", STATX_WRITE_ATOMIC, 184, 4);
-
-#undef SET_ATTR_IF_BIT_OFFSET
-#undef SET_ATTR_IF_BIT_TS
-#undef SET_ATTR_IF_BIT
-#undef SET_ATTR
-#undef SET_ATTR_IF
-
     assert(!PyErr_Occurred());
-    return v;
-
-error:
-    Py_DECREF(v);
-    return Py_None;
+    return (PyObject *)v;
 }
 #endif
 
