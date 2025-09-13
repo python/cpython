@@ -3694,15 +3694,6 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
         Py_XDECREF(sys_path);
         return NULL;
     }
-    if (_PySys_Audit(tstate, "import", "OOOOO",
-                     abs_name, Py_None, sys_path ? sys_path : Py_None,
-                     sys_meta_path ? sys_meta_path : Py_None,
-                     sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
-        Py_XDECREF(sys_path_hooks);
-        Py_XDECREF(sys_meta_path);
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
     Py_XDECREF(sys_path_hooks);
     Py_XDECREF(sys_meta_path);
     Py_XDECREF(sys_path);

@@ -672,6 +672,26 @@ def test_sys_remote_exec():
         assertEqual(event_script_path, tmp_file.name)
         assertEqual(remote_event_script_path, tmp_file.name)
 
+def test_import_module():
+    import importlib
+
+    with TestHook() as hook:
+        importlib.import_module("importlib")  # already imported, won't get logged
+        importlib.import_module("email") # standard library module
+        importlib.import_module("pythoninfo")  # random module
+        importlib.import_module(".test_importlib.abc", "test")  # relative import
+
+    actual = [a[0] for e, a in hook.seen if e == "import"]
+    assertSequenceEqual(
+        [
+            "email",
+            "pythoninfo",
+            "test.test_importlib.abc",
+            "test.test_importlib"
+        ],
+        actual,
+    )
+
 if __name__ == "__main__":
     from test.support import suppress_msvcrt_asserts
 

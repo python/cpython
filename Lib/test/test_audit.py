@@ -331,5 +331,8 @@ class AuditTest(unittest.TestCase):
         if returncode:
             self.fail(stderr)
 
+    def test_import_module(self):
+        self.do_test("test_import_module")
+
 if __name__ == "__main__":
     unittest.main()
