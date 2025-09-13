@@ -1,3 +1,4 @@
+import doctest
 import os
 import pickle
 import re
@@ -67,6 +68,62 @@ def patch_screen():
             "return_value.mode.return_value": "standard",
         },
     )
+
+
+def setUp(test):
+    try:
+        turtle.mode('standard')
+        turtle.reset()
+        turtle.degrees()
+    except turtle.Terminator:
+        pass
+    except:
+        raise
+
+    # mock mainloop in order doenst be necessary the tester close the window
+    # on mainloop() and exitonclick()
+    turtle.TurtleScreenBase.mainloop = turtle.mainloop = lambda self: None
+
+
+def load_tests(loader, tests, ignore):
+    tests.addTests(doctest.DocTestSuite(
+                turtle,
+                optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                setUp=setUp,
+                ))
+    return tests
+
+    """
+    finder = doctest.DocTestFinder()
+    runner = doctest.DocTestRunner()
+
+    suite = unittest.TestSuite()
+
+    # Find doctests on specific methods (for debug propose mainly) - to be removed
+    targets = turtle.Turtle.right, turtle.Turtle.reset,  turtle.Turtle.radians,\
+        turtle.Turtle.setheading, turtle.Turtle.setx, turtle.Turtle.sety,\
+        turtle.Turtle.speed, turtle.Turtle.teleport, turtle.Turtle.towards,\
+        turtle.Turtle.xcor, turtle.Turtle.ycor
+    for target in targets:
+        for test in finder.find(target):
+            suite.addTest(doctest.DocTestCase(test,
+                            optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                            setUp=setUp,
+                            tearDown=tearDown))
+    """
+
+    """ review to activate it
+    lib_tests = os.path.join(REPO_ROOT, 'Doc/library/turtle.rst')
+    if os.path.exists(lib_tests):
+        print('add lib_tests')
+        tests.addTests(doctest.DocFileSuite(
+                lib_tests,
+                module_relative=False,
+                optionflags=doctest.ELLIPSIS|doctest.NORMALIZE_WHITESPACE,
+                setUp=setUp
+                ))
+    """
+    return suite
 
 
 class TurtleConfigTest(unittest.TestCase):
