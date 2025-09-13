@@ -1123,6 +1123,8 @@ def _paramspec_prepare_subst(self, alias, args):
     # Convert lists to tuples to help other libraries cache the results.
     elif isinstance(args[i], list):
         args = (*args[:i], tuple(args[i]), *args[i+1:])
+    else:
+        args = (*args[:i], args[i], *args[i + 1:])
     return args
 
 
