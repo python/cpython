@@ -1,0 +1,2 @@
+Fix :func:`email.utils.parseaddr` to handle routes with multiple intermediate hops
+(see :rfc:`RFC 2822, §4.4 <2822#section-4.4>`).  Patch by Ioana Tagirta.
