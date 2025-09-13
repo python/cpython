@@ -8186,10 +8186,10 @@ static PyObject *
 os_sched_get_priority_max_impl(PyObject *module, int policy)
 /*[clinic end generated code: output=9e465c6e43130521 input=2097b7998eca6874]*/
 {
-    int max;
-
-    max = sched_get_priority_max(policy);
-    if (max < 0)
+    /* make sure that errno is cleared before the call */
+    errno = 0;
+    int max = sched_get_priority_max(policy);
+    if (max == -1 && errno)
         return posix_error();
     return PyLong_FromLong(max);
 }
@@ -8207,8 +8207,10 @@ static PyObject *
 os_sched_get_priority_min_impl(PyObject *module, int policy)
 /*[clinic end generated code: output=7595c1138cc47a6d input=21bc8fa0d70983bf]*/
 {
+    /* make sure that errno is cleared before the call */
+    errno = 0;
     int min = sched_get_priority_min(policy);
-    if (min < 0)
+    if (min == -1 && errno)
         return posix_error();
     return PyLong_FromLong(min);
 }
