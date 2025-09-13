@@ -691,18 +691,23 @@ elif not pythonpath_was_set:
             pythonpath.append(abspath(p))
 
     # Then add the default zip file
+    posix_zip_builddir_quirk = False
     if os_name == 'nt':
         # QUIRK: Windows uses the library directory rather than the prefix
         if library:
             library_dir = dirname(library)
         else:
             library_dir = executable_dir
-        pythonpath.append(joinpath(library_dir, ZIP_LANDMARK))
+        stdlib_zip = joinpath(library_dir, ZIP_LANDMARK)
     elif build_prefix:
         # QUIRK: POSIX uses the default prefix when in the build directory
-        pythonpath.append(joinpath(PREFIX, ZIP_LANDMARK))
+        # XXX: This can lead to a ZIP file from a different installation/build
+        #      to be present in sys.path. We should reconsider this quirk.
+        stdlib_zip = joinpath(PREFIX, ZIP_LANDMARK)
+        posix_zip_builddir_quirk = True
     else:
-        pythonpath.append(joinpath(base_prefix, ZIP_LANDMARK))
+        stdlib_zip = joinpath(base_prefix, ZIP_LANDMARK)
+    pythonpath.append(stdlib_zip)
 
     if os_name == 'nt' and use_environment and winreg:
         # QUIRK: Windows also lists paths in the registry. Paths are stored
@@ -762,6 +767,24 @@ elif not pythonpath_was_set:
             pythonpath.append(stdlib_dir)
         if platstdlib_dir:
             pythonpath.append(platstdlib_dir)
+
+    # GH-125873: Error out early if we fail to find the standard library.
+    missing_stdlib = False
+    if posix_zip_builddir_quirk or not isfile(stdlib_zip):
+        if not stdlib_dir or not isdir(stdlib_dir):
+            warn(f'Failed to find the standard library directory ({stdlib_dir=}, {stdlib_zip=})')
+            config['_error'] = missing_stdlib = True
+        # Allow platstdlib_dir to be missing in source builds for bootstraping purposes.
+        if not build_prefix and (not platstdlib_dir or not isdir(platstdlib_dir)):
+            warn(f'Failed to find the platform-specifc standard library directory ({platstdlib_dir=})')
+            config['_error'] = missing_stdlib = True
+
+    # Hint possible causes
+    if missing_stdlib:
+        if ENV_PYTHONHOME:
+            warn('\nHint')
+            warn(f'| The home directory was manually set to {ENV_PYTHONHOME!r} via the PYTHONHOME environment variable.')
+            warn('| This value might point to an invalid Python home directory.')
 
     config['module_search_paths'] = pythonpath
     config['module_search_paths_set'] = 1
