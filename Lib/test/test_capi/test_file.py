@@ -1,5 +1,6 @@
 import io
 import os
+import errno
 import unittest
 from test import support
 from test.support import import_helper, os_helper, warnings_helper
@@ -33,6 +34,30 @@ class CAPIFileTest(unittest.TestCase):
             finally:
                 obj.close()
 
+            # Default buffering in binary mode (-1): BufferedReader
+            fd2 = os.open(filename, os.O_RDONLY)
+            try:
+                obj = pyfile_fromfd(fd2, filename, "rb", -1, NULL, NULL, NULL, 0)
+                try:
+                    self.assertIsInstance(obj, _io.BufferedReader)
+                    self.assertEqual(obj.readline(), FIRST_LINE.encode())
+                finally:
+                    obj.close()
+            finally:
+                os.close(fd2)
+
+            # Default buffering in text mode (-1): TextIOWrapper
+            fd3 = os.open(filename, os.O_RDONLY)
+            try:
+                obj = pyfile_fromfd(fd3, filename, "r", -1, NULL, NULL, NULL, 0)
+                try:
+                    self.assertIsInstance(obj, _io.TextIOWrapper)
+                    self.assertEqual(obj.readline(), FIRST_LINE_NORM)
+                finally:
+                    obj.close()
+            finally:
+                os.close(fd3)
+
             # BufferedReader
             fp.seek(0)
             obj = pyfile_fromfd(fd, filename, "rb", 1024, NULL, NULL, NULL, 0)
@@ -53,6 +78,27 @@ class CAPIFileTest(unittest.TestCase):
                 self.assertEqual(obj.readline(), FIRST_LINE_NORM)
             finally:
                 obj.close()
+
+    def test_pyfile_fromfd_closefd(self):
+        # closefd=True should close the underlying file descriptor when the
+        # returned object is closed
+        pyfile_fromfd = _testlimitedcapi.pyfile_fromfd
+        filename = __file__
+
+        fd = os.open(filename, os.O_RDONLY)
+        try:
+            obj = pyfile_fromfd(fd, filename, "rb", -1, NULL, NULL, NULL, 1)
+            obj.close()
+            with self.assertRaises(OSError) as cm:
+                os.close(fd)
+            # On POSIX, closing a closed fd raises EBADF
+            self.assertEqual(cm.exception.errno, errno.EBADF)
+        finally:
+            # If the above failed for any reason and fd is still open, close it
+            try:
+                os.close(fd)
+            except OSError:
+                pass
 
     def test_pyfile_getline(self):
         # Test PyFile_GetLine(file, n): call file.readline()

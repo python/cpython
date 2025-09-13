@@ -39,7 +39,7 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     open = PyImport_ImportModuleAttrString("_io", "open");
     if (open == NULL)
         return NULL;
-    stream = PyObject_CallFunction(open, "isisssO", fd, mode,
+    stream = PyObject_CallFunction(open, "isizzzO", fd, mode,
                                   buffering, encoding, errors,
                                   newline, closefd ? Py_True : Py_False);
     Py_DECREF(open);
