@@ -159,6 +159,10 @@ class UnixConsole(Console):
         self.pollob.register(self.input_fd, select.POLLIN)
         self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
+        self.is_apple_terminal = (
+            platform.system() == "Darwin"
+            and os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+        )
 
         @overload
         def _my_getstr(cap: str, optional: Literal[False] = False) -> bytes: ...
@@ -339,7 +343,7 @@ class UnixConsole(Console):
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7l")
 
         self.screen = []
@@ -370,7 +374,7 @@ class UnixConsole(Console):
         self.flushoutput()
         tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
 
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
