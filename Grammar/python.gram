@@ -495,6 +495,7 @@ case_block[match_case_ty]:
     | invalid_case_block
     | "case" pattern=patterns guard=guard? ':' body=block {
         _PyAST_match_case(pattern, guard, body, p->arena) }
+    | invalid_case_pattern
 
 guard[expr_ty]: 'if' guard=named_expression { guard }
 
@@ -1480,6 +1481,10 @@ invalid_case_block:
     | "case" patterns guard? NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a="case" patterns guard? ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'case' statement on line %d", a->lineno) }
+invalid_case_pattern:
+    | "case" a=expression guard? ':' block {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
+            a, "cannot use case statement with %s", _PyPegen_get_expr_name(a)) }
 invalid_as_pattern:
     | or_pattern 'as' a="_" { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use '_' as a target") }
     | or_pattern 'as' a=expression {

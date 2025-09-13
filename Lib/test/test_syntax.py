@@ -374,13 +374,18 @@ SyntaxError: invalid syntax
 ...     case {**rest, "key": value}:
 ...        ...
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: cannot use case statement with dict literal
 
 >>> match ...:
 ...     case {**_}:
 ...        ...
 Traceback (most recent call last):
-SyntaxError: invalid syntax
+SyntaxError: cannot use case statement with dict literal
+
+>>> match ...:
+...    case ...: ...
+Traceback (most recent call last):
+SyntaxError: cannot use case statement with ellipsis
 
 # But prefixes of soft keywords should
 # still raise specialized errors
