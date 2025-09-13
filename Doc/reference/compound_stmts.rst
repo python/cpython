@@ -619,7 +619,7 @@ The match statement is used for pattern matching.  Syntax:
    This section uses single quotes to denote
    :ref:`soft keywords <soft-keywords>`.
 
-Pattern matching takes a pattern as input (following :keyword:`case`) and a subject
+Pattern matching takes a pattern as input (following ``case``) and a subject
 value (following ``match``).  The pattern (which may contain subpatterns) is
 matched against the subject value.  The outcomes are:
 
