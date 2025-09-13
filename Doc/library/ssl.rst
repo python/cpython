@@ -125,7 +125,8 @@ Context creation
 A convenience function helps create :class:`SSLContext` objects for common
 purposes.
 
-.. function:: create_default_context(purpose=Purpose.SERVER_AUTH, cafile=None, capath=None, cadata=None)
+.. function:: create_default_context(purpose=Purpose.SERVER_AUTH, *,\
+                                     cafile=None, capath=None, cadata=None)
 
    Return a new :class:`SSLContext` object with default settings for
    the given *purpose*.  The settings are chosen by the :mod:`ssl` module,
@@ -314,7 +315,7 @@ Exceptions
 Random generation
 ^^^^^^^^^^^^^^^^^
 
-.. function:: RAND_bytes(num)
+.. function:: RAND_bytes(num, /)
 
    Return *num* cryptographically strong pseudo-random bytes. Raises an
    :class:`SSLError` if the PRNG has not been seeded with enough data or if the
@@ -338,7 +339,7 @@ Random generation
    :func:`ssl.RAND_egd` and :func:`ssl.RAND_add` to increase the randomness of
    the pseudo-random number generator.
 
-.. function:: RAND_add(bytes, entropy)
+.. function:: RAND_add(bytes, entropy, /)
 
    Mix the given *bytes* into the SSL pseudo-random number generator.  The
    parameter *entropy* (a float) is a lower bound on the entropy contained in
@@ -406,12 +407,12 @@ Certificate handling
    .. versionchanged:: 3.10
       The *timeout* parameter was added.
 
-.. function:: DER_cert_to_PEM_cert(DER_cert_bytes)
+.. function:: DER_cert_to_PEM_cert(der_cert_bytes)
 
    Given a certificate as a DER-encoded blob of bytes, returns a PEM-encoded
    string version of the same certificate.
 
-.. function:: PEM_cert_to_DER_cert(PEM_cert_string)
+.. function:: PEM_cert_to_DER_cert(pem_cert_string)
 
    Given a certificate as an ASCII PEM string, returns a DER-encoded sequence of
    bytes for that same certificate.
@@ -1128,10 +1129,10 @@ SSL sockets also have the following additional methods and attributes:
    .. deprecated:: 3.6
       Use :meth:`~SSLSocket.recv` instead of :meth:`~SSLSocket.read`.
 
-.. method:: SSLSocket.write(buf)
+.. method:: SSLSocket.write(data)
 
-   Write *buf* to the SSL socket and return the number of bytes written. The
-   *buf* argument must be an object supporting the buffer interface.
+   Write *data* to the SSL socket and return the number of bytes written. The
+   *data* argument must be an object supporting the buffer interface.
 
    Raise :exc:`SSLWantReadError` or :exc:`SSLWantWriteError` if the socket is
    :ref:`non-blocking <ssl-nonblocking>` and the write would block.
@@ -1141,7 +1142,7 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionchanged:: 3.5
       The socket timeout is no longer reset each time bytes are received or sent.
-      The socket timeout is now the maximum total duration to write *buf*.
+      The socket timeout is now the maximum total duration to write *data*.
 
    .. deprecated:: 3.6
       Use :meth:`~SSLSocket.send` instead of :meth:`~SSLSocket.write`.
@@ -1158,12 +1159,15 @@ SSL sockets also have the following additional methods and attributes:
    :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` instead of these
    methods.
 
-.. method:: SSLSocket.do_handshake()
+.. method:: SSLSocket.do_handshake(block=False)
 
    Perform the SSL setup handshake.
 
+   If *block* is true and the timeout obtained by :meth:`~socket.socket.gettimeout`
+   is zero, the socket is set in blocking mode until the handshake is performed.
+
    .. versionchanged:: 3.4
-      The handshake method also performs :func:`match_hostname` when the
+      The handshake method also performs :func:`!match_hostname` when the
       :attr:`~SSLContext.check_hostname` attribute of the socket's
       :attr:`~SSLSocket.context` is true.
 
@@ -1173,7 +1177,7 @@ SSL sockets also have the following additional methods and attributes:
 
    .. versionchanged:: 3.7
       Hostname or IP address is matched by OpenSSL during handshake. The
-      function :func:`match_hostname` is no longer used. In case OpenSSL
+      function :func:`!match_hostname` is no longer used. In case OpenSSL
       refuses a hostname or IP address, the handshake is aborted early and
       a TLS alert message is sent to the peer.
 
@@ -1643,7 +1647,7 @@ to speed up repeated connections from the same clients.
    provided as part of the operating system, though, it is likely to be
    configured properly.
 
-.. method:: SSLContext.set_ciphers(ciphers)
+.. method:: SSLContext.set_ciphers(ciphers, /)
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
@@ -1659,7 +1663,7 @@ to speed up repeated connections from the same clients.
       TLS 1.3 cipher suites cannot be disabled with
       :meth:`~SSLContext.set_ciphers`.
 
-.. method:: SSLContext.set_alpn_protocols(protocols)
+.. method:: SSLContext.set_alpn_protocols(alpn_protocols)
 
    Specify which protocols the socket should advertise during the SSL/TLS
    handshake. It should be a list of ASCII strings, like ``['http/1.1',
@@ -1673,7 +1677,7 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.5
 
-.. method:: SSLContext.set_npn_protocols(protocols)
+.. method:: SSLContext.set_npn_protocols(npn_protocols)
 
    Specify which protocols the socket should advertise during the SSL/TLS
    handshake. It should be a list of strings, like ``['http/1.1', 'spdy/2']``,
@@ -1740,7 +1744,7 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.7
 
-.. attribute:: SSLContext.set_servername_callback(server_name_callback)
+.. method:: SSLContext.set_servername_callback(server_name_callback)
 
    This is a legacy API retained for backwards compatibility. When possible,
    you should use :attr:`sni_callback` instead. The given *server_name_callback*
@@ -1754,7 +1758,7 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.4
 
-.. method:: SSLContext.load_dh_params(dhfile)
+.. method:: SSLContext.load_dh_params(dhfile, /)
 
    Load the key generation parameters for Diffie-Hellman (DH) key exchange.
    Using DH key exchange improves forward secrecy at the expense of
@@ -1767,7 +1771,7 @@ to speed up repeated connections from the same clients.
 
    .. versionadded:: 3.3
 
-.. method:: SSLContext.set_ecdh_curve(curve_name)
+.. method:: SSLContext.set_ecdh_curve(curve_name, /)
 
    Set the curve name for Elliptic Curve-based Diffie-Hellman (ECDH) key
    exchange.  ECDH is significantly faster than regular DH while arguably
@@ -2641,12 +2645,12 @@ purpose.  It wraps an OpenSSL memory BIO (Basic IO) object:
       A boolean indicating whether the memory BIO is current at the end-of-file
       position.
 
-   .. method:: MemoryBIO.read(n=-1)
+   .. method:: MemoryBIO.read(n=-1, /)
 
       Read up to *n* bytes from the memory buffer. If *n* is not specified or
       negative, all bytes are returned.
 
-   .. method:: MemoryBIO.write(buf)
+   .. method:: MemoryBIO.write(buf, /)
 
       Write the bytes from *buf* to the memory BIO. The *buf* argument must be an
       object supporting the buffer protocol.
@@ -2729,7 +2733,7 @@ This common check is automatically performed when
 
 .. versionchanged:: 3.7
    Hostname matchings is now performed by OpenSSL. Python no longer uses
-   :func:`match_hostname`.
+   :func:`!match_hostname`.
 
 In server mode, if you want to authenticate your clients using the SSL layer
 (rather than using a higher-level authentication mechanism), you'll also have
