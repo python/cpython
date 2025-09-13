@@ -1442,7 +1442,7 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
 {
     lzma_ret lzret;
     uint32_t encoded_size;
-    PyObject *result = NULL;
+    PyBytesWriter *writer = NULL;
     _lzma_state *state = get_lzma_state(module);
     assert(state != NULL);
 
@@ -1450,20 +1450,20 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
     if (catch_lzma_error(state, lzret))
         goto error;
 
-    result = PyBytes_FromStringAndSize(NULL, encoded_size);
-    if (result == NULL)
+    writer = PyBytesWriter_Create(encoded_size);
+    if (writer == NULL) {
         goto error;
+    }
 
-    lzret = lzma_properties_encode(
-            &filter, (uint8_t *)PyBytes_AS_STRING(result));
+    lzret = lzma_properties_encode(&filter, PyBytesWriter_GetData(writer));
     if (catch_lzma_error(state, lzret)) {
         goto error;
     }
 
-    return result;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_XDECREF(result);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
