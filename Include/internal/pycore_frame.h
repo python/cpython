@@ -49,11 +49,12 @@ typedef enum _framestate {
     FRAME_SUSPENDED_YIELD_FROM = -1,
     FRAME_EXECUTING = 0,
     FRAME_COMPLETED = 1,
-    FRAME_CLEARED = 4
+    FRAME_CLEARED = 4,
+    FRAME_ZOMBIE = 5, /* For generators left on the stack of cleared threads */
 } PyFrameState;
 
 #define FRAME_STATE_SUSPENDED(S) ((S) == FRAME_SUSPENDED || (S) == FRAME_SUSPENDED_YIELD_FROM)
-#define FRAME_STATE_FINISHED(S) ((S) >= FRAME_COMPLETED)
+#define FRAME_STATE_FINISHED(S) ((S) > FRAME_EXECUTING)
 
 #ifdef __cplusplus
 }

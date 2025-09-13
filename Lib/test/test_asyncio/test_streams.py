@@ -1211,9 +1211,8 @@ class StreamTests(test_utils.TestCase):
                 # can't use assertRaises because that clears frames
                 exc = excs.exceptions[0]
             self.assertIsNotNone(exc)
-            self.assertListEqual(gc.get_referrers(exc), [main_coro])
-        main_coro = main()
-        asyncio.run(main_coro)
+            self.assertListEqual(gc.get_referrers(exc), [])
+        asyncio.run(main())
 
 
 if __name__ == '__main__':
