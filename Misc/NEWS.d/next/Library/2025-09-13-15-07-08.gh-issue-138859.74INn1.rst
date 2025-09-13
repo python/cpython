@@ -1,0 +1,1 @@
+Fixes a :exc:`TypeError` when substituting ``ParamSpec`` with a default.

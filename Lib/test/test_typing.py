@@ -1172,6 +1172,28 @@ class GenericAliasSubstitutionTests(BaseTestCase):
                             eval(expected_str)
                         )
 
+    def test_paramspec_default_subst(self):
+        # See https://github.com/python/cpython/issues/138859
+
+        P_default = ParamSpec("P_default", default=...)
+        T = TypeVar("T")
+        T_default = TypeVar("T_default", default=object)
+
+        class A(Generic[T, P_default, T_default]): pass
+
+        # Must not raise:
+        ga = A[int]
+        self.assertEqual(ga.__args__, (int, ..., object))
+        self.assertEqual(ga.__parameters__, ())
+
+        ga = A[int, [str, complex]]
+        self.assertEqual(ga.__args__, (int, (str, complex), object))
+        self.assertEqual(ga.__parameters__, ())
+
+        ga = A[int, [str, complex], float]
+        self.assertEqual(ga.__args__, ((int, (str, complex), float)))
+        self.assertEqual(ga.__parameters__, ())
+
 
 class UnpackTests(BaseTestCase):
 
