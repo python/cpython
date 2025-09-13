@@ -1,0 +1,3 @@
+Ensure that  :c:func:`PyRefTracer_SetTracer` and
+:c:func:`PyRefTracer_GetTracer` sync with all existing threads when called
+to avoid races in the free threaded build. Patch by Pablo Galindo
