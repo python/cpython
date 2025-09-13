@@ -107,8 +107,8 @@ source.
 
    :option:`-I` option can  be used to run the script in isolated mode where
    :data:`sys.path` contains neither the current directory nor the user's
-   site-packages directory. All ``PYTHON*`` environment variables are
-   ignored, too.
+   site-packages directory. All ``PYTHON*`` environment variables (except
+   :envvar:`PYTHONEXECUTABLE`) are ignored, too.
 
    Many standard library modules contain code that is invoked on their execution
    as a script.  An example is the :mod:`timeit` module::
@@ -165,8 +165,8 @@ source.
 
    :option:`-I` option can  be used to run the script in isolated mode where
    :data:`sys.path` contains neither the script's directory nor the user's
-   site-packages directory. All ``PYTHON*`` environment variables are
-   ignored, too.
+   site-packages directory. All ``PYTHON*`` environment variables (except
+   :envvar:`PYTHONEXECUTABLE`) are ignored, too.
 
    .. audit-event:: cpython.run_file filename
 
@@ -285,7 +285,7 @@ Miscellaneous options
 
 .. option:: -E
 
-   Ignore all ``PYTHON*`` environment variables, e.g.
+   Ignore all ``PYTHON*`` environment variables (except :envvar:`PYTHONEXECUTABLE`), e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    See also the :option:`-P` and :option:`-I` (isolated) options.
@@ -945,9 +945,9 @@ conflict.
 
 .. envvar:: PYTHONEXECUTABLE
 
-   If this environment variable is set, ``sys.argv[0]`` will be set to its
-   value instead of the value got through the C runtime.  Only works on
-   macOS.
+   If this environment variable is set, ``sys.executable`` will be set to its
+   value instead of the value got through the C runtime. This environment
+   variable isn't ignored by the :option:`-E` and :option:`-I` options.
 
 .. envvar:: PYTHONWARNINGS
 
