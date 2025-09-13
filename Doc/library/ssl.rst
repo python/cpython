@@ -232,6 +232,8 @@ Signature algorithms
    :meth:`SSLContext.set_client_sigalgs` and
    :meth:`SSLContext.set_server_sigalgs` methods.
 
+   .. requirements:: OpenSSL >= 3.4
+
    .. versionadded:: next
 
 
@@ -1318,6 +1320,8 @@ SSL sockets also have the following additional methods and attributes:
    Return the group used for doing key agreement on this connection. If no
    connection has been established, returns ``None``.
 
+   .. requirements:: OpenSSL >= 3.2
+
    .. versionadded:: next
 
 .. method:: SSLSocket.client_sigalg()
@@ -1326,6 +1330,8 @@ SSL sockets also have the following additional methods and attributes:
    authentication on this connection, or ``None`` if no connection has been
    established or client authentication didn't occur.
 
+   .. requirements:: OpenSSL >= 3.5
+
    .. versionadded:: next
 
 .. method:: SSLSocket.server_sigalg()
@@ -1333,6 +1339,8 @@ SSL sockets also have the following additional methods and attributes:
    Return the signature algorithm used by the server to complete the TLS
    handshake on this connection, or ``None`` if no connection has been
    established or the cipher suite has no signature.
+
+   .. requirements:: OpenSSL >= 3.5
 
    .. versionadded:: next
 
@@ -1710,6 +1718,8 @@ to speed up repeated connections from the same clients.
    :const:`True` this method will also return any associated aliases such as
    the ECDH curve names supported in older versions of OpenSSL.
 
+   .. requirements:: OpenSSL >= 3.5
+
    .. versionadded:: next
 
 .. method:: SSLContext.set_default_verify_paths()
@@ -1776,6 +1786,8 @@ to speed up repeated connections from the same clients.
       When connected, the :meth:`SSLSocket.client_sigalg` method of SSL
       sockets will return the signature algorithm used for performing
       certificate-based client authentication on that connection.
+
+   .. requirements:: not AWS-LC
 
    .. versionadded:: next
 

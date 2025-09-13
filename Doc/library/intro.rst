@@ -48,6 +48,18 @@ this material.
 Let the show begin!
 
 
+.. _requirements-notes:
+
+Notes on requirements
+=====================
+
+* A "Requirements: OpenSSL >= 3.5" note means that this function requires
+  that Python has been built with OpenSSL 3.5 or later.
+
+* A "Requirements: not AWS-LC" note means that this function is not available
+  if Python has been built with AWS-LC instead of OpenSSL.
+
+
 .. _availability:
 
 Notes on availability
