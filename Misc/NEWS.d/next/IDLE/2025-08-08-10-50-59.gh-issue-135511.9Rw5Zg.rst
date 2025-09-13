@@ -1,0 +1,2 @@
+Fix the missing error message in "NameError" and "AttributeError" in IDLE
+when "\n" in message
