@@ -860,20 +860,174 @@ class TurtleGraphicsError(Exception):
     """Some TurtleGraphics Error
     """
 
+class TransformableImage(object):
+    """Class that handles rotation of image based turtle shape"""
+    def __init__(self, screen, image):
+        assert(isinstance(image, TK.PhotoImage))
+        self._screen = screen
+        self._originalImage = image
+        self._rotationCenter = (image.width() / 2, image.height() / 2)
+        self._transformedImage = image.copy()
+        self._currentOrientation = (1.0, 0)
+        self._currentTilt = 0.0
+        self._transformMatrix = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        self._item = screen._createimage(self._transformedImage)
+
+    def _transform_coordinates(self, x, y):
+        m = self._transformMatrix
+        return (m[0][0] * x + m[0][1] * y + m[0][2],
+                m[1][0] * x + m[1][1] * y + m[1][2])
+
+    def _get_new_bounding_box(self):
+        w, h = self._originalImage.width(), self._originalImage.height()
+        c = [self._transform_coordinates(x, y)
+             for x, y in [(0, 0), (w, 0), (w, h), (0, h)]]
+        min_x = min(x for x, _ in c)
+        min_y = min(y for _, y in c)
+        max_x = max(x for x, _ in c)
+        max_y = max(y for _, y in c)
+        return {
+            "min_x": min_x,
+            "min_y": min_y,
+            "max_x": max_x,
+            "max_y": max_y,
+            "width": math.ceil(max_x - min_x),
+            "height": math.ceil(max_y - min_y)
+        }
+
+    def _interpolate_color(self, x, y):
+        """Interpolates color based on neighboring pixels."""
+        x_floor, y_floor = int(x), int(y)
+        x_ceil, y_ceil = math.ceil(x), math.ceil(y)
+
+        if x_floor == x_ceil and y_floor == y_ceil:
+            return self._originalImage.get(x_floor, y_floor)
+
+        if x_floor == x_ceil:
+            c1 = self._originalImage.get(x_floor, y_floor)
+            c2 = self._originalImage.get(x_floor, y_ceil)
+            alpha = y - y_floor
+            return (
+                int(c1[0] * (1 - alpha) + c2[0] * alpha),
+                int(c1[1] * (1 - alpha) + c2[1] * alpha),
+                int(c1[2] * (1 - alpha) + c2[2] * alpha),
+            )
+
+        if y_floor == y_ceil:
+            c1 = self._originalImage.get(x_floor, y_floor)
+            c2 = self._originalImage.get(x_ceil, y_floor)
+            alpha = x - x_floor
+            return (
+                int(c1[0] * (1 - alpha) + c2[0] * alpha),
+                int(c1[1] * (1 - alpha) + c2[1] * alpha),
+                int(c1[2] * (1 - alpha) + c2[2] * alpha),
+            )
+
+        c11 = self._originalImage.get(x_floor, y_floor)
+        c12 = self._originalImage.get(x_floor, y_ceil)
+        c21 = self._originalImage.get(x_ceil, y_floor)
+        c22 = self._originalImage.get(x_ceil, y_ceil)
+
+        alpha_x = x - x_floor
+        alpha_y = y - y_floor
+
+        c1 = (
+            int(c11[0] * (1 - alpha_y) + c12[0] * alpha_y),
+            int(c11[1] * (1 - alpha_y) + c12[1] * alpha_y),
+            int(c11[2] * (1 - alpha_y) + c12[2] * alpha_y),
+        )
+        c2 = (
+            int(c21[0] * (1 - alpha_y) + c22[0] * alpha_y),
+            int(c21[1] * (1 - alpha_y) + c22[1] * alpha_y),
+            int(c21[2] * (1 - alpha_y) + c22[2] * alpha_y),
+        )
+
+        return (
+            int(c1[0] * (1 - alpha_x) + c2[0] * alpha_x),
+            int(c1[1] * (1 - alpha_x) + c2[1] * alpha_x),
+            int(c1[2] * (1 - alpha_x) + c2[2] * alpha_x),
+        )
+
+    def draw(self, position, orientation, tilt):
+        if (self._currentOrientation != orientation or self._currentTilt != tilt):
+            angle = math.atan2(orientation[1], orientation[0]) + tilt
+            cos_theta = math.cos(angle)
+            sin_theta = math.sin(angle)
+            x, y = self._rotationCenter
+            self._transformMatrix = [
+                [cos_theta, -sin_theta, x * (1 - cos_theta) + y * sin_theta],
+                [sin_theta, cos_theta, y * (1 - cos_theta) - x * sin_theta],
+                [0, 0, 1]
+            ]
+            bounding_box = self._get_new_bounding_box()
+            offset_x = bounding_box["min_x"] * -1
+            offset_y = bounding_box["min_y"] * -1
+            self._transformedImage = TK.PhotoImage(width=bounding_box["width"],
+                                               height=bounding_box["height"])
+
+            for new_y in range(bounding_box["height"]):
+                for new_x in range(bounding_box["width"]):
+                    original_x, original_y = self._transform_coordinates(
+                        new_x - offset_x, new_y - offset_y
+                    )
+                    if (
+                        0 <= original_x < self._originalImage.width() - 1
+                        and 0 <= original_y < self._originalImage.height() - 1
+                    ):
+                        rgb = self._interpolate_color(original_x, original_y)
+                        is_transparent = self._originalImage.transparency_get(
+                            int(original_x), int(original_y)
+                        )
+                        self._transformedImage.put(
+                            "#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2]),
+                            (new_x, new_y),
+                        )
+                        self._transformedImage.transparency_set(
+                            new_x, new_y, is_transparent
+                        )
+                    elif (
+                        0 <= int(original_x) < self._originalImage.width()
+                        and 0 <= int(original_y) < self._originalImage.height()
+                    ):
+                        rgb = self._originalImage.get(
+                            int(original_x), int(original_y)
+                        )
+                        is_transparent = self._originalImage.transparency_get(
+                            int(original_x), int(original_y)
+                        )
+                        self._transformedImage.put(
+                            "#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2]),
+                            (new_x, new_y),
+                        )
+                        self._transformedImage.transparency_set(
+                            new_x, new_y, is_transparent
+                        )
+
+            self._currentOrientation = orientation
+            self._currentTilt = tilt
+        self._screen._drawimage(self._item, position, self._transformedImage)
+
+    def stamp(self, position, orientation, tilt):
+        stamp = self.__class__(self._screen, self._originalImage)
+        stamp.draw(position, orientation, tilt)
+        return stamp
+
+    def delete(self):
+        self._screen._delete(self._item)
 
 class Shape(object):
     """Data structure modeling shapes.
 
-    attribute _type is one of "polygon", "image", "compound"
+    attribute _type is one of "polygon", "image", "compound", "transformable_image"
     attribute _data is - depending on _type a poygon-tuple,
-    an image or a list constructed using the addcomponent method.
+    an image or a list constructed using the addcomponent method
     """
     def __init__(self, type_, data=None):
         self._type = type_
         if type_ == "polygon":
             if isinstance(data, list):
                 data = tuple(data)
-        elif type_ == "image":
+        elif type_ == "image" or type_ == "transformable_image":
             assert(isinstance(data, TK.PhotoImage))
         elif type_ == "compound":
             data = []
@@ -1095,7 +1249,7 @@ class TurtleScreen(TurtleScreenBase):
         self._rescale(self.xscale/oldxscale, self.yscale/oldyscale)
         self.update()
 
-    def register_shape(self, name, shape=None):
+    def register_shape(self, name, shape=None, rotate_image_shape=False):
         """Adds a turtle shape to TurtleScreen's shapelist.
 
         Arguments:
@@ -1107,6 +1261,7 @@ class TurtleScreen(TurtleScreenBase):
             Installs the corresponding image shape.
             !! Image-shapes DO NOT rotate when turning the turtle,
             !! so they do not display the heading of the turtle!
+            !! unless rotate_image_shape is explicitly set to true
         (3) name is an arbitrary string and shape is a tuple
             of pairs of coordinates. Installs the corresponding
             polygon shape
@@ -1117,15 +1272,17 @@ class TurtleScreen(TurtleScreenBase):
 
         call: register_shape("turtle.gif")
         --or: register_shape("tri", ((0,0), (10,10), (-10,10)))
+        --or: register_shape("turtle.gif", rotate_image_shape=True)
 
         Example (for a TurtleScreen instance named screen):
         >>> screen.register_shape("triangle", ((5,-3),(0,5),(-5,-3)))
 
         """
+        image_shape_type = "transformable_image" if rotate_image_shape else "image"
         if shape is None:
-            shape = Shape("image", self._image(name))
+            shape = Shape(image_shape_type, self._image(name))
         elif isinstance(shape, str):
-            shape = Shape("image", self._image(shape))
+            shape = Shape(image_shape_type, self._image(shape))
         elif isinstance(shape, tuple):
             shape = Shape("polygon", shape)
         ## else shape assumed to be Shape-instance
@@ -2560,6 +2717,8 @@ class _TurtleImage(object):
         elif self._type == "compound":
             for item in self._item:
                 screen._delete(item)
+        elif self._type == "transformable_image":
+            self._item.delete()
         self._type = screen._shapes[shapeIndex]._type
         if self._type == "polygon":
             self._item = screen._createpoly()
@@ -2568,6 +2727,8 @@ class _TurtleImage(object):
         elif self._type == "compound":
             self._item = [screen._createpoly() for item in
                                           screen._shapes[shapeIndex]._data]
+        elif self._type == "transformable_image":
+            self._item = TransformableImage(screen, screen._shapes[self.shapeIndex]._data)
 
 
 class RawTurtle(TPen, TNavigator):
@@ -2855,6 +3016,8 @@ class RawTurtle(TPen, TNavigator):
         elif ttype == "compound":
             q.turtle._item = [screen._createpoly() for item in
                               screen._shapes[self.turtle.shapeIndex]._data]
+        elif ttype == "transformable_image":
+            q.turtle._item = TransformableImage(screen, screen._shapes[self.turtle.shapeIndex]._data)
         q.currentLineItem = screen._createline()
         q._update()
         return q
@@ -3111,6 +3274,8 @@ class RawTurtle(TPen, TNavigator):
                     poly = self._polytrafo(self._getshapepoly(poly, True))
                     screen._drawpoly(item, poly, fill=self._cc(fc),
                                      outline=self._cc(oc), width=self._outlinewidth, top=True)
+            elif ttype == "transformable_image":
+                titem.draw(self._position, self._orient, self._tilt)
         else:
             if self._hidden_from_screen:
                 return
@@ -3167,6 +3332,8 @@ class RawTurtle(TPen, TNavigator):
                 poly = self._polytrafo(self._getshapepoly(poly, True))
                 screen._drawpoly(item, poly, fill=self._cc(fc),
                                  outline=self._cc(oc), width=self._outlinewidth, top=True)
+        elif ttype == "transformable_image":
+            stitem = self.turtle._item.stamp(self._position, self._orient, self._tilt)
         self.stampItems.append(stitem)
         self.undobuffer.push(("stamp", stitem))
         return stitem
@@ -3178,20 +3345,21 @@ class RawTurtle(TPen, TNavigator):
             if isinstance(stampid, tuple):
                 for subitem in stampid:
                     self.screen._delete(subitem)
-            else:
+            elif not isinstance(stampid, TransformableImage):
                 self.screen._delete(stampid)
             self.stampItems.remove(stampid)
         # Delete stampitem from undobuffer if necessary
         # if clearstamp is called directly.
         item = ("stamp", stampid)
         buf = self.undobuffer
-        if item not in buf.buffer:
-            return
-        index = buf.buffer.index(item)
-        buf.buffer.remove(item)
-        if index <= buf.ptr:
-            buf.ptr = (buf.ptr - 1) % buf.bufsize
-        buf.buffer.insert((buf.ptr+1)%buf.bufsize, [None])
+        if item in buf.buffer:
+            index = buf.buffer.index(item)
+            buf.buffer.remove(item)
+            if index <= buf.ptr:
+                buf.ptr = (buf.ptr - 1) % buf.bufsize
+            buf.buffer.insert((buf.ptr+1)%buf.bufsize, [None])
+        if isinstance(stampid, TransformableImage):
+            stampid.delete()
 
     def clearstamp(self, stampid):
         """Delete stamp with given stampid
