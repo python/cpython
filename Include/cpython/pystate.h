@@ -157,6 +157,8 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
+    /* List of objects that still need to be cleaned up, singly linked
+     * via their gc headers' gc_next pointers.  */
     PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no
