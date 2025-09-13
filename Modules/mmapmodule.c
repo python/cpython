@@ -448,7 +448,8 @@ _safe_PyBytes_ReverseFind(Py_ssize_t *out, mmap_object *self,
 }
 
 PyObject *
-_safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
+_safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes)
+{
     if (num_bytes == 1) {
         char dest;
         if (safe_byte_copy(&dest, start) < 0) {
@@ -459,14 +460,15 @@ _safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
         }
     }
     else {
-        PyObject *result = PyBytes_FromStringAndSize(NULL, num_bytes);
-        if (result == NULL) {
+        PyBytesWriter *writer = PyBytesWriter_Create(num_bytes);
+        if (writer == NULL) {
             return NULL;
         }
-        if (safe_memcpy(PyBytes_AS_STRING(result), start, num_bytes) < 0) {
-            Py_CLEAR(result);
+        if (safe_memcpy(PyBytesWriter_GetData(writer), start, num_bytes) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
         }
-        return result;
+        return PyBytesWriter_Finish(writer);
     }
 }
 
