@@ -5252,7 +5252,7 @@ AC_CHECK_FUNCS([ \
   setitimer setlocale setpgid setpgrp setpriority setregid setresgid \
   setresuid setreuid setsid setuid setvbuf shutdown sigaction sigaltstack \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
-  sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
+  sigwaitinfo snprintf splice statx strftime strlcpy strsignal symlinkat sync \
   sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
   tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
@@ -7594,22 +7594,6 @@ AC_ARG_ENABLE([test-modules],
 ], [TEST_MODULES=yes])
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
-
-AC_MSG_CHECKING([for --without-linux-statx])
-AC_ARG_WITH([linux-statx],
-  [AS_HELP_STRING([--without-linux-statx], [don't provide os.statx nor os.stat_result.st_birthtime])],
-  [], [AS_CASE($ac_sys_system, [Linux*], [with_linux_statx=yes], [with_linux_statx=no])])
-AC_MSG_RESULT([$with_linux_statx])
-AS_IF([test "x$with_linux_statx" != xno],
-  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-    #include <sys/stat.h>
-  ]], [[void* p = statx]])],
-    [AC_DEFINE(HAVE_LINUX_STATX, 1, Define if you have the 'statx' function.)
-     AC_MSG_RESULT(yes)],
-    [AC_MSG_RESULT(no)
-     AC_MSG_ERROR([statx syscall wrapper function not available; upgrade to
-                   glibc 2.28 or later or use --without-linux-statx])
-  ])])
 
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked

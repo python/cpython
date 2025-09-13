@@ -186,7 +186,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_LINUX_STATX)
+#if defined(HAVE_STATX)
 
 PyDoc_STRVAR(os_statx__doc__,
 "statx($module, /, path, mask, *, dir_fd=None, follow_symlinks=True,\n"
@@ -319,7 +319,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_LINUX_STATX) */
+#endif /* defined(HAVE_STATX) */
 
 PyDoc_STRVAR(os_access__doc__,
 "access($module, /, path, mode, *, dir_fd=None, effective_ids=False,\n"
@@ -13583,4 +13583,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=c9bf5ab9744910bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43915d63088debf2 input=a9049054013a1b77]*/

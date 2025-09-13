@@ -409,7 +409,7 @@ extern char *ctermid_r(char *);
 #  define STRUCT_STAT struct stat
 #endif
 
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
 #  pragma weak statx
 /* provide constants introduced later than statx itself */
 #  ifndef STATX_MNT_ID
@@ -431,7 +431,7 @@ extern char *ctermid_r(char *);
 #    define STATX_DIO_READ_ALIGN 0x00020000U
 #  endif
 # define _Py_STATX_KNOWN (STATX_BASIC_STATS | STATX_BTIME | STATX_MNT_ID | STATX_DIOALIGN | STATX_MNT_ID_UNIQUE | STATX_SUBVOL | STATX_WRITE_ATOMIC | STATX_DIO_READ_ALIGN)
-#endif /* HAVE_LINUX_STATX */
+#endif /* HAVE_STATX */
 
 
 #if !defined(EX_OK) && defined(EXIT_SUCCESS)
@@ -1184,7 +1184,7 @@ typedef struct {
 #endif
     newfunc statresult_new_orig;
     PyObject *StatResultType;
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
     PyObject *StatxResultType;
 #endif
     PyObject *StatVFSResultType;
@@ -2381,10 +2381,10 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_GEN
     {"st_gen",    "generation number"},
 #endif
-#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(HAVE_LINUX_STATX) || defined(MS_WINDOWS)
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(HAVE_STATX) || defined(MS_WINDOWS)
     {"st_birthtime",   "time of creation"},
 #endif
-#if defined(HAVE_LINUX_STATX) || defined(MS_WINDOWS)
+#if defined(HAVE_STATX) || defined(MS_WINDOWS)
     {"st_birthtime_ns", "time of creation in nanoseconds"},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
@@ -2429,13 +2429,13 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_GEN_IDX ST_FLAGS_IDX
 #endif
 
-#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(HAVE_LINUX_STATX) || defined(MS_WINDOWS)
+#if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(HAVE_STATX) || defined(MS_WINDOWS)
 #define ST_BIRTHTIME_IDX (ST_GEN_IDX+1)
 #else
 #define ST_BIRTHTIME_IDX ST_GEN_IDX
 #endif
 
-#if defined(HAVE_LINUX_STATX) || defined(MS_WINDOWS)
+#if defined(HAVE_STATX) || defined(MS_WINDOWS)
 #define ST_BIRTHTIME_NS_IDX (ST_BIRTHTIME_IDX+1)
 #else
 #define ST_BIRTHTIME_NS_IDX ST_BIRTHTIME_IDX
@@ -2567,7 +2567,7 @@ _posix_clear(PyObject *module)
     Py_CLEAR(state->SchedParamType);
 #endif
     Py_CLEAR(state->StatResultType);
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
     Py_CLEAR(state->StatxResultType);
 #endif
     Py_CLEAR(state->StatVFSResultType);
@@ -2595,7 +2595,7 @@ _posix_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->SchedParamType);
 #endif
     Py_VISIT(state->StatResultType);
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
     Py_VISIT(state->StatxResultType);
 #endif
     Py_VISIT(state->StatVFSResultType);
@@ -2810,7 +2810,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #endif
       SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(bsec + bnsec * 1e-9));
     }
-#elif defined(HAVE_LINUX_STATX)
+#elif defined(HAVE_STATX)
     /* We were built with statx support, so stat_result.st_birthtime[_ns]
        exists, but we fell back to stat because statx isn't available at
        runtime.  User programs assume st_birthtime is not None. */
@@ -2844,7 +2844,7 @@ error:
     return NULL;
 }
 
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
 static PyObject*
 _pystat_fromstructstatx(PyObject *module, struct statx *st)
 {
@@ -2905,7 +2905,7 @@ error:
     Py_DECREF(v);
     return NULL;
 }
-#endif /* HAVE_LINUX_STATX */
+#endif /* HAVE_STATX */
 #undef SET_ITEM
 
 /* POSIX methods */
@@ -2932,7 +2932,7 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
         fd_and_follow_symlinks_invalid("stat", path->fd, follow_symlinks))
         return NULL;
 
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
     struct statx stx = {};
     static int statx_works = -1;
     if (statx != NULL && statx_works != 0) {
@@ -2962,7 +2962,7 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
             return _pystat_fromstructstatx(module, &stx);
         }
     }
-#endif /* HAVE_LINUX_STATX */
+#endif /* HAVE_STATX */
 
     Py_BEGIN_ALLOW_THREADS
     if (path->fd != -1)
@@ -3412,7 +3412,7 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
 }
 
 
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
 #define STATX_RESULT_CACHE_SLOTS 17
 typedef struct {
     PyObject_HEAD
@@ -18294,7 +18294,7 @@ all_ins(PyObject *m)
 #endif
 #endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
 
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
     if (PyModule_AddIntMacro(m, STATX_TYPE)) return -1;
     if (PyModule_AddIntMacro(m, STATX_MODE)) return -1;
     if (PyModule_AddIntMacro(m, STATX_NLINK)) return -1;
@@ -18316,7 +18316,7 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, STATX_DIO_READ_ALIGN)) return -1;
     /* STATX_ALL intentionally omitted because it is deprecated */
     /* STATX_ATTR_* constants are in the stat module */
-#endif /* HAVE_LINUX_STATX */
+#endif /* HAVE_STATX */
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
@@ -18589,7 +18589,7 @@ posixmodule_exec(PyObject *m)
     }
 #endif
 
-#ifdef HAVE_LINUX_STATX
+#ifdef HAVE_STATX
     /* We retract os.statx in three cases:
        - the weakly-linked statx wrapper function is not available (old libc)
        - the wrapper function fails with EINVAL on sync flags (glibc's

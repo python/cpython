@@ -1138,7 +1138,6 @@ with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 enable_test_modules
-with_linux_statx
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1963,8 +1962,6 @@ Optional Packages:
   --with-builtin-hashlib-hashes=md5,sha1,sha2,sha3,blake2
                           builtin hash modules, md5, sha1, sha2, sha3 (with
                           shake), blake2
-  --without-linux-statx   don't provide os.statx nor
-                          os.stat_result.st_birthtime
 
 Some influential environment variables:
   PKG_CONFIG  path to pkg-config utility
@@ -20179,6 +20176,12 @@ then :
   printf "%s\n" "#define HAVE_SPLICE 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
+if test "x$ac_cv_func_statx" = xyes
+then :
+  printf "%s\n" "#define HAVE_STATX 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "strftime" "ac_cv_func_strftime"
 if test "x$ac_cv_func_strftime" = xyes
 then :
@@ -30924,58 +30927,6 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $TEST_MODULES" >&5
 printf "%s\n" "$TEST_MODULES" >&6; }
 
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --without-linux-statx" >&5
-printf %s "checking for --without-linux-statx... " >&6; }
-
-# Check whether --with-linux-statx was given.
-if test ${with_linux_statx+y}
-then :
-  withval=$with_linux_statx;
-else case e in #(
-  e) case $ac_sys_system in #(
-  Linux*) :
-    with_linux_statx=yes ;; #(
-  *) :
-    with_linux_statx=no ;;
-esac ;;
-esac
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_linux_statx" >&5
-printf "%s\n" "$with_linux_statx" >&6; }
-if test "x$with_linux_statx" != xno
-then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    #include <sys/stat.h>
-
-int
-main (void)
-{
-void* p = statx
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-printf "%s\n" "#define HAVE_LINUX_STATX 1" >>confdefs.h
-
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-     as_fn_error $? "statx syscall wrapper function not available; upgrade to
-                   glibc 2.28 or later or use --without-linux-statx" "$LINENO" 5
-   ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
 
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked
