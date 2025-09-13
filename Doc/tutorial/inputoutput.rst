@@ -454,11 +454,11 @@ current position in the file represented as number of bytes from the beginning
 of the file when in binary mode and an opaque number when in text mode.
 
 To change the file object's position, use
-:meth:`f.seek(offset, whence) <io.IOBase.seek>`. The position is computed
-from adding *offset* to a reference point; the reference point is selected by
-the *whence* argument.  A *whence* value of 0 measures from the beginning
-of the file, 1 uses the current file position, and 2 uses the end of the file
-as the reference point. *whence* can be omitted and defaults to 0, using the
+:meth:`f.seek(offset, whence) <io.IOBase.seek>`. The position is computed from
+adding *offset* to a reference point; the reference point is selected by the
+*whence* argument.  A *whence* value of 0 measures from the beginning of the
+file, 1 uses the current file position, and 2 uses the end of the file as the
+reference point. *whence* can be omitted and defaults to 0, using the
 beginning of the file as the reference point. ::
 
    >>> f = open('workfile', 'rb+')
