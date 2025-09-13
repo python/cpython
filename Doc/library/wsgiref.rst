@@ -357,6 +357,14 @@ request.  (E.g., using the :func:`shift_path_info` function from
    :func:`make_server` function.  Some possibly relevant methods for overriding in
    subclasses:
 
+   :class:`WSGIRequestHandler` has the following class variables:
+
+   .. attribute:: server_handler
+
+      .. versionadded:: 3.9
+
+      The handler class to handle the request. This value should be the subclass
+      :class:`wsgiref.handlers.BaseHandler`
 
    .. method:: WSGIRequestHandler.get_environ()
 
