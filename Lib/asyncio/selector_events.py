@@ -1049,9 +1049,6 @@ class _SelectorSocketTransport(_SelectorTransport):
             self.close()
 
     def write(self, data):
-        if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError(f'data argument must be a bytes-like object, '
-                            f'not {type(data).__name__!r}')
         if self._eof:
             raise RuntimeError('Cannot call write() after write_eof()')
         if self._empty_waiter is not None:
@@ -1071,7 +1068,7 @@ class _SelectorSocketTransport(_SelectorTransport):
                 n = self._sock.send(data)
             except (BlockingIOError, InterruptedError):
                 pass
-            except (SystemExit, KeyboardInterrupt):
+            except (TypeError, SystemExit, KeyboardInterrupt):
                 raise
             except BaseException as exc:
                 self._fatal_error(exc, 'Fatal write error on socket transport')
@@ -1084,7 +1081,7 @@ class _SelectorSocketTransport(_SelectorTransport):
             self._loop._add_writer(self._sock_fd, self._write_ready)
 
         # Add it to the buffer.
-        self._buffer.append(data)
+        self._buffer.append(bytes(data))
         self._maybe_pause_protocol()
 
     def _get_sendmsg_buffer(self):
@@ -1255,10 +1252,6 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
             self._protocol.datagram_received(data, addr)
 
     def sendto(self, data, addr=None):
-        if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError(f'data argument must be a bytes-like object, '
-                            f'not {type(data).__name__!r}')
-
         if self._address:
             if addr not in (None, self._address):
                 raise ValueError(
@@ -1284,7 +1277,7 @@ class _SelectorDatagramTransport(_SelectorTransport, transports.DatagramTranspor
             except OSError as exc:
                 self._protocol.error_received(exc)
                 return
-            except (SystemExit, KeyboardInterrupt):
+            except (TypeError, SystemExit, KeyboardInterrupt):
                 raise
             except BaseException as exc:
                 self._fatal_error(

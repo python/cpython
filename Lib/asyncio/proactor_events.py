@@ -336,10 +336,6 @@ class _ProactorBaseWritePipeTransport(_ProactorBasePipeTransport,
         self._empty_waiter = None
 
     def write(self, data):
-        if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError(
-                f"data argument must be a bytes-like object, "
-                f"not {type(data).__name__}")
         if self._eof_written:
             raise RuntimeError('write_eof() already called')
         if self._empty_waiter is not None:
@@ -485,10 +481,6 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
         self._force_close(None)
 
     def sendto(self, data, addr=None):
-        if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be bytes-like object (%r)',
-                            type(data))
-
         if self._address is not None and addr not in (None, self._address):
             raise ValueError(
                 f'Invalid address: must be None or {self._address}')
@@ -500,7 +492,8 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             return
 
         # Ensure that what we buffer is immutable.
-        self._buffer.append((bytes(data), addr))
+        data = bytes(data)
+        self._buffer.append((data, addr))
         self._buffer_size += len(data) + self._header_size
 
         if self._write_fut is None:

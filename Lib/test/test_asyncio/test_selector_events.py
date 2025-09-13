@@ -1499,6 +1499,9 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
 
     def test_sendto_str(self):
         transport = self.datagram_transport()
+        def sendto(data, addr):
+            bytes(data)  # raises TypeError
+        self.sock.sendto = sendto
         self.assertRaises(TypeError, transport.sendto, 'str', ())
 
     def test_sendto_connected_addr(self):
