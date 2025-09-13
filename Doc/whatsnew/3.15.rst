@@ -283,6 +283,14 @@ New modules
 Improved modules
 ================
 
+argparse
+--------
+
+* The :class:`~argparse.BooleanOptionalAction` action supports now single-dash
+  long options and alternate prefix characters.
+  (Contributed by Serhiy Storchaka in :gh:`138525`.)
+
+
 dbm
 ---
 
