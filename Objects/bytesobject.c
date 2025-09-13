@@ -36,6 +36,9 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 /* Forward declaration */
 Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
                                                    char *str);
+static void* _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer,
+                                                   Py_ssize_t size, void *data);
+static Py_ssize_t _PyBytesWriter_GetAllocated(PyBytesWriter *writer);
 
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
@@ -2531,16 +2534,12 @@ bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
 PyObject*
 _PyBytes_FromHex(PyObject *string, int use_bytearray)
 {
-    char *buf;
     Py_ssize_t hexlen, invalid_char;
     unsigned int top, bot;
     const Py_UCS1 *str, *start, *end;
-    _PyBytesWriter writer;
+    PyBytesWriter *writer = NULL;
     Py_buffer view;
     view.obj = NULL;
-
-    _PyBytesWriter_Init(&writer);
-    writer.use_bytearray = use_bytearray;
 
     if (PyUnicode_Check(string)) {
         hexlen = PyUnicode_GET_LENGTH(string);
@@ -2577,10 +2576,16 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     }
 
     /* This overestimates if there are spaces */
-    buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
-    if (buf == NULL) {
+    if (use_bytearray) {
+        writer = _PyBytesWriter_CreateByteArray(hexlen / 2);
+    }
+    else {
+        writer = PyBytesWriter_Create(hexlen / 2);
+    }
+    if (writer == NULL) {
         goto release_buffer;
     }
+    char *buf = PyBytesWriter_GetData(writer);
 
     start = str;
     end = str + hexlen;
@@ -2619,7 +2624,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     if (view.obj != NULL) {
        PyBuffer_Release(&view);
     }
-    return _PyBytesWriter_Finish(&writer, buf);
+    return PyBytesWriter_FinishWithPointer(writer, buf);
 
   error:
     if (invalid_char == -1) {
@@ -2630,7 +2635,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
                      "non-hexadecimal number found in "
                      "fromhex() arg at position %zd", invalid_char);
     }
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
 
   release_buffer:
     if (view.obj != NULL) {
@@ -2857,23 +2862,25 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
 static PyObject*
 _PyBytes_FromBuffer(PyObject *x)
 {
-    PyObject *new;
     Py_buffer view;
-
     if (PyObject_GetBuffer(x, &view, PyBUF_FULL_RO) < 0)
         return NULL;
 
-    new = PyBytes_FromStringAndSize(NULL, view.len);
-    if (!new)
+    PyBytesWriter *writer = PyBytesWriter_Create(view.len);
+    if (writer == NULL) {
         goto fail;
-    if (PyBuffer_ToContiguous(((PyBytesObject *)new)->ob_sval,
-                &view, view.len, 'C') < 0)
+    }
+
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              &view, view.len, 'C') < 0) {
         goto fail;
+    }
+
     PyBuffer_Release(&view);
-    return new;
+    return PyBytesWriter_Finish(writer);
 
 fail:
-    Py_XDECREF(new);
+    PyBytesWriter_Discard(writer);
     PyBuffer_Release(&view);
     return NULL;
 }
@@ -2881,23 +2888,18 @@ fail:
 static PyObject*
 _PyBytes_FromList(PyObject *x)
 {
-    Py_ssize_t i, size = PyList_GET_SIZE(x);
-    Py_ssize_t value;
-    char *str;
-    PyObject *item;
-    _PyBytesWriter writer;
-
-    _PyBytesWriter_Init(&writer);
-    str = _PyBytesWriter_Alloc(&writer, size);
-    if (str == NULL)
+    Py_ssize_t size = PyList_GET_SIZE(x);
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
-    writer.overallocate = 1;
-    size = writer.allocated;
+    }
+    char *str = PyBytesWriter_GetData(writer);
+    size = _PyBytesWriter_GetAllocated(writer);
 
-    for (i = 0; i < PyList_GET_SIZE(x); i++) {
-        item = PyList_GET_ITEM(x, i);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(x); i++) {
+        PyObject *item = PyList_GET_ITEM(x, i);
         Py_INCREF(item);
-        value = PyNumber_AsSsize_t(item, NULL);
+        Py_ssize_t value = PyNumber_AsSsize_t(item, NULL);
         Py_DECREF(item);
         if (value == -1 && PyErr_Occurred())
             goto error;
@@ -2909,33 +2911,33 @@ _PyBytes_FromList(PyObject *x)
         }
 
         if (i >= size) {
-            str = _PyBytesWriter_Resize(&writer, str, size+1);
-            if (str == NULL)
-                return NULL;
-            size = writer.allocated;
+            str = _PyBytesWriter_ResizeAndUpdatePointer(writer, size + 1, str);
+            if (str == NULL) {
+                goto error;
+            }
+            size = _PyBytesWriter_GetAllocated(writer);
         }
         *str++ = (char) value;
     }
-    return _PyBytesWriter_Finish(&writer, str);
+    return PyBytesWriter_FinishWithPointer(writer, str);
 
-  error:
-    _PyBytesWriter_Dealloc(&writer);
+error:
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
 static PyObject*
 _PyBytes_FromTuple(PyObject *x)
 {
-    PyObject *bytes;
     Py_ssize_t i, size = PyTuple_GET_SIZE(x);
     Py_ssize_t value;
-    char *str;
     PyObject *item;
 
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
-    str = ((PyBytesObject *)bytes)->ob_sval;
+    }
+    char *str = PyBytesWriter_GetData(writer);
 
     for (i = 0; i < size; i++) {
         item = PyTuple_GET_ITEM(x, i);
@@ -2950,31 +2952,29 @@ _PyBytes_FromTuple(PyObject *x)
         }
         *str++ = (char) value;
     }
-    return bytes;
+    return PyBytesWriter_Finish(writer);
 
   error:
-    Py_DECREF(bytes);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
 static PyObject *
 _PyBytes_FromIterator(PyObject *it, PyObject *x)
 {
-    char *str;
     Py_ssize_t i, size;
-    _PyBytesWriter writer;
 
     /* For iterator version, create a bytes object and resize as needed */
     size = PyObject_LengthHint(x, 64);
     if (size == -1 && PyErr_Occurred())
         return NULL;
 
-    _PyBytesWriter_Init(&writer);
-    str = _PyBytesWriter_Alloc(&writer, size);
-    if (str == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
-    writer.overallocate = 1;
-    size = writer.allocated;
+    }
+    char *str = PyBytesWriter_GetData(writer);
+    size = _PyBytesWriter_GetAllocated(writer);
 
     /* Run the iterator to exhaustion */
     for (i = 0; ; i++) {
@@ -3004,18 +3004,18 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
 
         /* Append the byte */
         if (i >= size) {
-            str = _PyBytesWriter_Resize(&writer, str, size+1);
-            if (str == NULL)
-                return NULL;
-            size = writer.allocated;
+            str = _PyBytesWriter_ResizeAndUpdatePointer(writer, size + 1, str);
+            if (str == NULL) {
+                goto error;
+            }
+            size = _PyBytesWriter_GetAllocated(writer);
         }
         *str++ = (char) value;
     }
-
-    return _PyBytesWriter_Finish(&writer, str);
+    return PyBytesWriter_FinishWithPointer(writer, str);
 
   error:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
@@ -3983,6 +3983,13 @@ PyBytesWriter_GetSize(PyBytesWriter *writer)
 }
 
 
+static Py_ssize_t
+_PyBytesWriter_GetAllocated(PyBytesWriter *writer)
+{
+    return byteswriter_allocated(writer);
+}
+
+
 int
 PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
 {
@@ -3995,6 +4002,18 @@ PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
     }
     writer->size = size;
     return 0;
+}
+
+
+static void*
+_PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
+                                      void *data)
+{
+    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
+    if (PyBytesWriter_Resize(writer, size) < 0) {
+        return NULL;
+    }
+    return byteswriter_data(writer) + pos;
 }
 
 
