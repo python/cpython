@@ -2316,7 +2316,7 @@ test_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     PyObject *a;
     PyObject *b;
 
@@ -2335,7 +2335,7 @@ exit:
 
 static PyObject *
 test_keywords_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=591462ba3858e446 input=0d3484844749c05b]*/
+/*[clinic end generated code: output=05cd7c53addce350 input=0d3484844749c05b]*/
 
 
 /*[clinic input]
@@ -2389,7 +2389,7 @@ test_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     PyObject *a;
     PyObject *b;
 
@@ -2408,7 +2408,7 @@ exit:
 
 static PyObject *
 test_keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=620bb64efa62d69b input=384adc78bfa0bff7]*/
+/*[clinic end generated code: output=62f85f9da6d31216 input=384adc78bfa0bff7]*/
 
 
 /*[clinic input]
@@ -2463,7 +2463,7 @@ test_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static _Py_thread_local PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -2495,7 +2495,7 @@ exit:
 static PyObject *
 test_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                        PyObject *c)
-/*[clinic end generated code: output=3ea21673d129218c input=eda7964f784f4607]*/
+/*[clinic end generated code: output=d263a3c697ae2906 input=eda7964f784f4607]*/
 
 
 /*[clinic input]
@@ -2552,7 +2552,7 @@ test_keywords_opt_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    static _Py_thread_local PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -2595,7 +2595,7 @@ exit:
 static PyObject *
 test_keywords_opt_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c, PyObject *d)
-/*[clinic end generated code: output=1e5fbe4eebfd40a5 input=209387a4815e5082]*/
+/*[clinic end generated code: output=21bccfa737de042b input=209387a4815e5082]*/
 
 
 /*[clinic input]
@@ -2651,7 +2651,7 @@ test_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t nar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static _Py_thread_local PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -2683,7 +2683,7 @@ exit:
 static PyObject *
 test_keywords_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c)
-/*[clinic end generated code: output=bac8882cbcd50151 input=18393cc64fa000f4]*/
+/*[clinic end generated code: output=3e7080a53f846613 input=18393cc64fa000f4]*/
 
 
 /*[clinic input]
@@ -2737,7 +2737,7 @@ test_posonly_keywords(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     PyObject *a;
     PyObject *b;
 
@@ -2756,7 +2756,7 @@ exit:
 
 static PyObject *
 test_posonly_keywords_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=7ddf55a744ba53dc input=1767b0ebdf06060e]*/
+/*[clinic end generated code: output=d2a26a38c5049817 input=1767b0ebdf06060e]*/
 
 
 /*[clinic input]
@@ -2811,7 +2811,7 @@ test_posonly_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     PyObject *a;
     PyObject *c;
 
@@ -2830,7 +2830,7 @@ exit:
 
 static PyObject *
 test_posonly_kwonly_impl(PyObject *module, PyObject *a, PyObject *c)
-/*[clinic end generated code: output=095a4e17e22609bc input=9042f2818f664839]*/
+/*[clinic end generated code: output=c0076cb9aefa124f input=9042f2818f664839]*/
 
 
 /*[clinic input]
@@ -2887,7 +2887,7 @@ test_posonly_keywords_kwonly(PyObject *module, PyObject *const *args, Py_ssize_t
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static _Py_thread_local PyObject *argsbuf[3];
     PyObject *a;
     PyObject *b;
     PyObject *c;
@@ -2909,7 +2909,7 @@ exit:
 static PyObject *
 test_posonly_keywords_kwonly_impl(PyObject *module, PyObject *a, PyObject *b,
                                   PyObject *c)
-/*[clinic end generated code: output=2f03aff955026341 input=29546ebdca492fea]*/
+/*[clinic end generated code: output=8c377e5e0e2480b2 input=29546ebdca492fea]*/
 
 
 /*[clinic input]
@@ -2966,7 +2966,7 @@ test_posonly_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_t na
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    static _Py_thread_local PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
     PyObject *b;
@@ -3000,7 +3000,7 @@ exit:
 static PyObject *
 test_posonly_keywords_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                PyObject *c, PyObject *d)
-/*[clinic end generated code: output=2c8b2ca42f821c66 input=cdf5a9625e554e9b]*/
+/*[clinic end generated code: output=bae7264ff5845ead input=cdf5a9625e554e9b]*/
 
 
 /*[clinic input]
@@ -3056,7 +3056,7 @@ test_posonly_keywords_opt2(PyObject *module, PyObject *const *args, Py_ssize_t n
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static _Py_thread_local PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -3088,7 +3088,7 @@ exit:
 static PyObject *
 test_posonly_keywords_opt2_impl(PyObject *module, PyObject *a, PyObject *b,
                                 PyObject *c)
-/*[clinic end generated code: output=969a3b2b020310f1 input=1581299d21d16f14]*/
+/*[clinic end generated code: output=2ddad73c44662e04 input=1581299d21d16f14]*/
 
 
 /*[clinic input]
@@ -3145,7 +3145,7 @@ test_posonly_opt_keywords_opt(PyObject *module, PyObject *const *args, Py_ssize_
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    static _Py_thread_local PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -3184,7 +3184,7 @@ exit:
 static PyObject *
 test_posonly_opt_keywords_opt_impl(PyObject *module, PyObject *a,
                                    PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=02bf5e64403946fc input=408798ec3d42949f]*/
+/*[clinic end generated code: output=0cc8ceadf152fa51 input=408798ec3d42949f]*/
 
 
 /*[clinic input]
@@ -3242,7 +3242,7 @@ test_posonly_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t narg
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    static _Py_thread_local PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
     PyObject *b;
@@ -3276,7 +3276,7 @@ exit:
 static PyObject *
 test_posonly_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                              PyObject *c, PyObject *d)
-/*[clinic end generated code: output=26510e61948015e8 input=8d8e5643bbbc2309]*/
+/*[clinic end generated code: output=d3d9cf50a38f4320 input=8d8e5643bbbc2309]*/
 
 
 /*[clinic input]
@@ -3333,7 +3333,7 @@ test_posonly_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ssize_t nar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static _Py_thread_local PyObject *argsbuf[3];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -3365,7 +3365,7 @@ exit:
 static PyObject *
 test_posonly_kwonly_opt2_impl(PyObject *module, PyObject *a, PyObject *b,
                               PyObject *c)
-/*[clinic end generated code: output=b31416e16c908756 input=f7e5eed94f75fff0]*/
+/*[clinic end generated code: output=715f4d5d14b56ecb input=f7e5eed94f75fff0]*/
 
 
 /*[clinic input]
@@ -3423,7 +3423,7 @@ test_posonly_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    static _Py_thread_local PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -3462,7 +3462,7 @@ exit:
 static PyObject *
 test_posonly_opt_kwonly_opt_impl(PyObject *module, PyObject *a, PyObject *b,
                                  PyObject *c, PyObject *d)
-/*[clinic end generated code: output=dc2337647059cb51 input=1e557dc979d120fd]*/
+/*[clinic end generated code: output=12115e42b1a5f9a1 input=1e557dc979d120fd]*/
 
 
 /*[clinic input]
@@ -3522,7 +3522,7 @@ test_posonly_keywords_kwonly_opt(PyObject *module, PyObject *const *args, Py_ssi
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    static _Py_thread_local PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
     PyObject *a;
     PyObject *b;
@@ -3559,7 +3559,7 @@ static PyObject *
 test_posonly_keywords_kwonly_opt_impl(PyObject *module, PyObject *a,
                                       PyObject *b, PyObject *c, PyObject *d,
                                       PyObject *e)
-/*[clinic end generated code: output=b7adeae40c9833a4 input=c3884a4f956fdc89]*/
+/*[clinic end generated code: output=2868d7a70dec73f2 input=c3884a4f956fdc89]*/
 
 
 /*[clinic input]
@@ -3617,7 +3617,7 @@ test_posonly_keywords_kwonly_opt2(PyObject *module, PyObject *const *args, Py_ss
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    static _Py_thread_local PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
     PyObject *b;
@@ -3651,7 +3651,7 @@ exit:
 static PyObject *
 test_posonly_keywords_kwonly_opt2_impl(PyObject *module, PyObject *a,
                                        PyObject *b, PyObject *c, PyObject *d)
-/*[clinic end generated code: output=827a349e36e89c82 input=68d01d7c0f6dafb0]*/
+/*[clinic end generated code: output=f435cee4e230423f input=68d01d7c0f6dafb0]*/
 
 
 /*[clinic input]
@@ -3712,7 +3712,7 @@ test_posonly_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    static _Py_thread_local PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *a;
     PyObject *b;
@@ -3758,7 +3758,7 @@ static PyObject *
 test_posonly_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                           PyObject *b, PyObject *c,
                                           PyObject *d, PyObject *e)
-/*[clinic end generated code: output=bcb0088555123966 input=d0883d45876f186c]*/
+/*[clinic end generated code: output=e91bd1375cbf4f46 input=d0883d45876f186c]*/
 
 
 /*[clinic input]
@@ -3819,7 +3819,7 @@ test_posonly_keywords_opt2_kwonly_opt(PyObject *module, PyObject *const *args, P
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    static _Py_thread_local PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -3870,7 +3870,7 @@ static PyObject *
 test_posonly_keywords_opt2_kwonly_opt_impl(PyObject *module, PyObject *a,
                                            PyObject *b, PyObject *c,
                                            PyObject *d, PyObject *e)
-/*[clinic end generated code: output=a22d1276d4c2c9c7 input=c95e2e1ec93035ad]*/
+/*[clinic end generated code: output=262e3657a764193a input=c95e2e1ec93035ad]*/
 
 
 /*[clinic input]
@@ -3933,7 +3933,7 @@ test_posonly_opt_keywords_opt_kwonly_opt(PyObject *module, PyObject *const *args
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[6];
+    static _Py_thread_local PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
     PyObject *b = Py_None;
@@ -3992,7 +3992,7 @@ test_posonly_opt_keywords_opt_kwonly_opt_impl(PyObject *module, PyObject *a,
                                               PyObject *b, PyObject *c,
                                               PyObject *d, PyObject *e,
                                               PyObject *f)
-/*[clinic end generated code: output=ebdbe695ee85a2ea input=9914857713c5bbf8]*/
+/*[clinic end generated code: output=234184a94a68eea7 input=9914857713c5bbf8]*/
 
 /*[clinic input]
 test_keyword_only_parameter
@@ -4045,7 +4045,7 @@ test_keyword_only_parameter(PyObject *module, PyObject *const *args, Py_ssize_t 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyBytesObject *co_lnotab = (PyBytesObject *)self->co_lnotab;
 
@@ -4071,7 +4071,7 @@ exit:
 
 static PyObject *
 test_keyword_only_parameter_impl(PyObject *module, PyBytesObject *co_lnotab)
-/*[clinic end generated code: output=bcad654ee66b0972 input=303df5046c7e37a3]*/
+/*[clinic end generated code: output=ef14c557af0a79e8 input=303df5046c7e37a3]*/
 
 
 /*[clinic input]
@@ -4409,7 +4409,7 @@ test_vararg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     PyObject * const *fastargs;
     PyObject *a;
     PyObject *__clinic_args = NULL;
@@ -4437,7 +4437,7 @@ exit:
 
 static PyObject *
 test_vararg_impl(PyObject *module, PyObject *a, PyObject *args)
-/*[clinic end generated code: output=17ba625cdd0369c1 input=7448995636d9186a]*/
+/*[clinic end generated code: output=2255ff43c00f7af4 input=7448995636d9186a]*/
 
 /*[clinic input]
 test_vararg_with_default
@@ -4492,7 +4492,7 @@ test_vararg_with_default(PyObject *module, PyObject *const *args, Py_ssize_t nar
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *a;
@@ -4531,7 +4531,7 @@ exit:
 static PyObject *
 test_vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
                               int b)
-/*[clinic end generated code: output=3f2b06ab08d5d0be input=3a0f9f557ce1f712]*/
+/*[clinic end generated code: output=80952dcd9d3de194 input=3a0f9f557ce1f712]*/
 
 /*[clinic input]
 test_vararg_with_only_defaults
@@ -4586,7 +4586,7 @@ test_vararg_with_only_defaults(PyObject *module, PyObject *const *args, Py_ssize
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[2];
+    static _Py_thread_local PyObject *argsbuf[2];
     PyObject * const *fastargs;
     Py_ssize_t noptargs = 0 + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *__clinic_args = NULL;
@@ -4628,7 +4628,7 @@ exit:
 static PyObject *
 test_vararg_with_only_defaults_impl(PyObject *module, PyObject *args, int b,
                                     PyObject *c)
-/*[clinic end generated code: output=f46666f0b1bf86b9 input=6983e66817f82924]*/
+/*[clinic end generated code: output=4bcd7f97b7ac3cf2 input=6983e66817f82924]*/
 
 /*[clinic input]
 test_paramname_module
@@ -4678,7 +4678,7 @@ test_paramname_module(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     PyObject *mod;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -4695,7 +4695,7 @@ exit:
 
 static PyObject *
 test_paramname_module_impl(PyObject *module, PyObject *mod)
-/*[clinic end generated code: output=b979bb1c03b16911 input=afefe259667f13ba]*/
+/*[clinic end generated code: output=e9ad3dcfc0706f14 input=afefe259667f13ba]*/
 
 /*[clinic input]
 mangle1
@@ -4758,7 +4758,7 @@ mangle1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[9];
+    static _Py_thread_local PyObject *argsbuf[9];
     PyObject *__clinic_args;
     PyObject *__clinic_kwnames;
     PyObject *__clinic_return_value;
@@ -4794,7 +4794,7 @@ mangle1_impl(PyObject *module, PyObject *args, PyObject *kwnames,
              PyObject *return_value, PyObject *_keywords, PyObject *_parser,
              PyObject *argsbuf, PyObject *fastargs, PyObject *nargs,
              PyObject *noptargs)
-/*[clinic end generated code: output=8993a3111845dfc3 input=a3ed51bdedf8a3c7]*/
+/*[clinic end generated code: output=c91aba6969229d7c input=a3ed51bdedf8a3c7]*/
 
 /*[clinic input]
 mangle2
@@ -4848,7 +4848,7 @@ mangle2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[3];
+    static _Py_thread_local PyObject *argsbuf[3];
     PyObject *__clinic_args;
     PyObject *__clinic_kwargs;
     PyObject *__clinic_return_value;
@@ -4870,7 +4870,7 @@ exit:
 static PyObject *
 mangle2_impl(PyObject *module, PyObject *args, PyObject *kwargs,
              PyObject *return_value)
-/*[clinic end generated code: output=bbbe696e52e0267f input=391766fee51bad7a]*/
+/*[clinic end generated code: output=aa0b37c3769393ea input=391766fee51bad7a]*/
 
 
 /*[clinic input]
@@ -4922,7 +4922,7 @@ Test_cls_with_param(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     int a;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -4942,7 +4942,7 @@ exit:
 
 static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
-/*[clinic end generated code: output=bd3883003f57d02b input=af158077bd237ef9]*/
+/*[clinic end generated code: output=1de84eef8cc59ab6 input=af158077bd237ef9]*/
 
 
 /*[clinic input]
@@ -5278,7 +5278,7 @@ Test___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *a;
@@ -5297,7 +5297,7 @@ exit:
 
 static int
 Test___init___impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=5c1e743f6a2a0b8b input=a8f9222a6ab35c59]*/
+/*[clinic end generated code: output=ab2e0d3b2cd403f7 input=a8f9222a6ab35c59]*/
 
 
 /*[clinic input]
@@ -5614,7 +5614,7 @@ mangled_c_keyword_identifier(PyObject *module, PyObject *const *args, Py_ssize_t
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     int int_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -5634,7 +5634,7 @@ exit:
 
 static PyObject *
 mangled_c_keyword_identifier_impl(PyObject *module, int int_value)
-/*[clinic end generated code: output=49365b3b96b23980 input=060876448ab567a2]*/
+/*[clinic end generated code: output=22479e03822272a1 input=060876448ab567a2]*/
 
 
 /*[clinic input]
@@ -5875,7 +5875,7 @@ fn_with_default_binop_expr(PyObject *module, PyObject *const *args, Py_ssize_t n
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *arg = CONST_A + CONST_B;
 
@@ -5897,7 +5897,7 @@ exit:
 
 static PyObject *
 fn_with_default_binop_expr_impl(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=6613a7a96537bcf2 input=1b55c8ae68d89453]*/
+/*[clinic end generated code: output=55ccbfe1fac98679 input=1b55c8ae68d89453]*/
 
 
 /*[python input]
@@ -5967,7 +5967,7 @@ docstr_fallback_to_converter_default(PyObject *module, PyObject *const *args, Py
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[1];
+    static _Py_thread_local PyObject *argsbuf[1];
     str a;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -5986,7 +5986,7 @@ exit:
 
 static PyObject *
 docstr_fallback_to_converter_default_impl(PyObject *module, str a)
-/*[clinic end generated code: output=4405b7050a5f6fb9 input=0cbe6a4d24bc2274]*/
+/*[clinic end generated code: output=a508a050189f4f5d input=0cbe6a4d24bc2274]*/
 
 
 /*[clinic input]
