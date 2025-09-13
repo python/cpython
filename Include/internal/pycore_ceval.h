@@ -139,7 +139,7 @@ _Py_CODEUNIT *_PyTier2Interpreter(
 
 extern _PyJitEntryFuncPtr _Py_jit_entry;
 
-extern PyObject*
+PyAPI_FUNC(PyObject *)
 _PyEval_Vector(PyThreadState *tstate,
             PyFunctionObject *func, PyObject *locals,
             PyObject* const* args, size_t argcount,
@@ -226,7 +226,7 @@ PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);
 
-int _Py_CheckRecursiveCallPy(
+PyAPI_FUNC(int) _Py_CheckRecursiveCallPy(
     PyThreadState *tstate);
 
 static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
