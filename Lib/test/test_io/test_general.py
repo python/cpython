@@ -1980,6 +1980,10 @@ class BufferedRWPairTest:
                 self.assertEqual(getattr(pair, method)(data), 5)
                 self.assertEqual(bytes(data), b"abcde")
 
+        # gh-138720: C BufferedRWPair would destruct in a bad order resulting in
+        # an unraisable exception.
+        support.gc_collect()
+
     def test_write(self):
         w = self.MockRawIO()
         pair = self.tp(self.MockRawIO(), w)
