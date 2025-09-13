@@ -184,7 +184,7 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls)
         }
     }
     rc = internal_close(self);
-    if (res == NULL) {
+    if (exc != NULL) {
         _PyErr_ChainExceptions1(exc);
     }
     if (rc < 0) {
