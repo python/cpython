@@ -108,96 +108,10 @@ def pathdirs():
             normdirs.append(normdir)
     return dirs
 
-def _findclass(func):
-    cls = sys.modules.get(func.__module__)
-    if cls is None:
-        return None
-    for name in func.__qualname__.split('.')[:-1]:
-        cls = getattr(cls, name)
-    if not inspect.isclass(cls):
-        return None
-    return cls
-
-def _finddoc(obj):
-    if inspect.ismethod(obj):
-        name = obj.__func__.__name__
-        self = obj.__self__
-        if (inspect.isclass(self) and
-            getattr(getattr(self, name, None), '__func__') is obj.__func__):
-            # classmethod
-            cls = self
-        else:
-            cls = self.__class__
-    elif inspect.isfunction(obj):
-        name = obj.__name__
-        cls = _findclass(obj)
-        if cls is None or getattr(cls, name) is not obj:
-            return None
-    elif inspect.isbuiltin(obj):
-        name = obj.__name__
-        self = obj.__self__
-        if (inspect.isclass(self) and
-            self.__qualname__ + '.' + name == obj.__qualname__):
-            # classmethod
-            cls = self
-        else:
-            cls = self.__class__
-    # Should be tested before isdatadescriptor().
-    elif isinstance(obj, property):
-        name = obj.__name__
-        cls = _findclass(obj.fget)
-        if cls is None or getattr(cls, name) is not obj:
-            return None
-    elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
-        name = obj.__name__
-        cls = obj.__objclass__
-        if getattr(cls, name) is not obj:
-            return None
-        if inspect.ismemberdescriptor(obj):
-            slots = getattr(cls, '__slots__', None)
-            if isinstance(slots, dict) and name in slots:
-                return slots[name]
-    else:
-        return None
-    for base in cls.__mro__:
-        try:
-            doc = _getowndoc(getattr(base, name))
-        except AttributeError:
-            continue
-        if doc is not None:
-            return doc
-    return None
-
-def _getowndoc(obj):
-    """Get the documentation string for an object if it is not
-    inherited from its class."""
-    try:
-        doc = object.__getattribute__(obj, '__doc__')
-        if doc is None:
-            return None
-        if obj is not type:
-            typedoc = type(obj).__doc__
-            if isinstance(typedoc, str) and typedoc == doc:
-                return None
-        return doc
-    except AttributeError:
-        return None
-
 def _getdoc(object):
-    """Get the documentation string for an object.
-
-    All tabs are expanded to spaces.  To clean up docstrings that are
-    indented to line up with blocks of code, any whitespace than can be
-    uniformly removed from the second line onwards is removed."""
-    doc = _getowndoc(object)
-    if doc is None:
-        try:
-            doc = _finddoc(object)
-        except (AttributeError, TypeError):
-            return None
-    if not isinstance(doc, str):
-        return None
-    return inspect.cleandoc(doc)
+    return inspect.getdoc(object,
+                          fallback_to_class_doc=False,
+                          inherit_class_doc=False)
 
 def getdoc(object):
     """Get the doc string or comments for an object."""
