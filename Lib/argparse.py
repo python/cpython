@@ -64,7 +64,6 @@ considered public as object names -- the API of the formatter objects is
 still considered an implementation detail.)
 """
 
-__version__ = '1.1'
 __all__ = [
     'ArgumentParser',
     'ArgumentError',
@@ -2773,3 +2772,12 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
     def _warning(self, message):
         args = {'prog': self.prog, 'message': message}
         self._print_message(_('%(prog)s: warning: %(message)s\n') % args, _sys.stderr)
+
+
+def __getattr__(name):
+    if name == "__version__":
+        from warnings import _deprecated
+
+        _deprecated("__version__", remove=(3, 17))
+        return "1.1"  # Do not change
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
