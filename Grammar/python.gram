@@ -1484,7 +1484,7 @@ invalid_case_block:
 invalid_case_pattern:
     | "case" a=expression guard? ':' block {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
-            a, "cannot use case statement with %s", _PyPegen_get_expr_name(a)) }
+            a, "cannot use %s as case pattern", _PyPegen_get_expr_name(a)) }
 invalid_as_pattern:
     | or_pattern 'as' a="_" { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot use '_' as a target") }
     | or_pattern 'as' a=expression {

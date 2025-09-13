@@ -374,38 +374,38 @@ SyntaxError: invalid syntax
 ...     case {**rest, "key": value}:
 ...        ...
 Traceback (most recent call last):
-SyntaxError: cannot use case statement with dict literal
+SyntaxError: cannot use dict literal as case pattern
 
 >>> match ...:
 ...     case {**_}:
 ...        ...
 Traceback (most recent call last):
-SyntaxError: cannot use case statement with dict literal
+SyntaxError: cannot use dict literal as case pattern
 
 >>> match ...:
 ...    case ...: ...
 Traceback (most recent call last):
-SyntaxError: cannot use case statement with ellipsis
+SyntaxError: cannot use ellipsis as case pattern
 
 >>> match ...:
 ...    case 1 // 2: ...
 Traceback (most recent call last):
-SyntaxError: cannot use case statement with expression
+SyntaxError: cannot use expression as case pattern
 
 >>> match ...:
 ...    case {1, 2, 3}: ...
 Traceback (most recent call last):
-SyntaxError: cannot use case statement with set display
+SyntaxError: cannot use set display as case pattern
 
 >>> match ...:
 ...    case a[0]: ...
 Traceback (most recent call last):
-SyntaxError: cannot use case statement with subscript
+SyntaxError: cannot use subscript as case pattern
 
 >>> match ...:
 ...    case a[0].method(): ...
 Traceback (most recent call last):
-SyntaxError: cannot use case statement with function call
+SyntaxError: cannot use function call as case pattern
 
 # But prefixes of soft keywords should
 # still raise specialized errors

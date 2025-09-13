@@ -25369,7 +25369,7 @@ invalid_case_pattern_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_case_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "\"case\" expression guard? ':' block"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use case statement with %s" , _PyPegen_get_expr_name ( a ) );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_LOCATION ( a , "cannot use %s as case pattern" , _PyPegen_get_expr_name ( a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
