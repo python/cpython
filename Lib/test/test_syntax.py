@@ -387,6 +387,26 @@ SyntaxError: cannot use case statement with dict literal
 Traceback (most recent call last):
 SyntaxError: cannot use case statement with ellipsis
 
+>>> match ...:
+...    case 1 // 2: ...
+Traceback (most recent call last):
+SyntaxError: cannot use case statement with expression
+
+>>> match ...:
+...    case {1, 2, 3}: ...
+Traceback (most recent call last):
+SyntaxError: cannot use case statement with set display
+
+>>> match ...:
+...    case a[0]: ...
+Traceback (most recent call last):
+SyntaxError: cannot use case statement with subscript
+
+>>> match ...:
+...    case a[0].method(): ...
+Traceback (most recent call last):
+SyntaxError: cannot use case statement with function call
+
 # But prefixes of soft keywords should
 # still raise specialized errors
 
