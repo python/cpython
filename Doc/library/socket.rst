@@ -1021,8 +1021,12 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 
 .. data:: SocketType
 
-   This is a Python type object that represents the socket object type. It is the
-   same as ``type(socket(...))``.
+   This is the base class for a type object of socket objects, such that
+   ``isinstance(socket(...), SocketType)`` is ``True``.
+
+   .. versionchanged:: 3.0
+      SocketType is the base class for the socket object type rather than
+      being ``type(socket(...))``` directly.
 
 
 Other functions
