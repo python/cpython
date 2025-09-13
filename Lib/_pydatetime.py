@@ -1072,7 +1072,11 @@ class date:
 
     @classmethod
     def strptime(cls, date_string, format):
-        """Parse string according to the given date format (like time.strptime())."""
+        """Parse string according to the given date format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_date(cls, date_string, format)
 
@@ -1109,6 +1113,8 @@ class date:
         Format using strftime().
 
         Example: "%d/%m/%Y, %H:%M:%S"
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
         """
         return _wrap_strftime(self, format, self.timetuple())
 
@@ -1456,8 +1462,13 @@ class time:
         return self
 
     @classmethod
+
     def strptime(cls, date_string, format):
-        """Parse string according to the given time format (like time.strptime())."""
+        """Parse string according to the given time format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_time(cls, date_string, format)
 
@@ -1650,6 +1661,9 @@ class time:
     def strftime(self, format):
         """Format using strftime().  The date part of the timestamp passed
         to underlying strftime should not be used.
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
         """
         # The year must be >= 1000 else Python's strftime implementation
         # can raise a bogus exception.
@@ -2198,7 +2212,11 @@ class datetime(date):
 
     @classmethod
     def strptime(cls, date_string, format):
-        """Parse string according to the given date and time format (like time.strptime())."""
+        """Parse string according to the given time format (like time.strptime()).
+
+        For a list of supported format codes, see the documentation:
+            https://docs.python.org/3/library/datetime.html#format-codes
+        """
         import _strptime
         return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
