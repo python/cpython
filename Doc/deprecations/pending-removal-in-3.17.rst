@@ -8,3 +8,8 @@ Pending removal in Python 3.17
     but it has been retained for backward compatibility, with removal scheduled for Python
     3.17. Users should use documented introspection helpers like :func:`typing.get_origin`
     and :func:`typing.get_args` instead of relying on private implementation details.
+
+* :mod:`token`:
+
+  - The :func:`token.ISTERMINAL`, :func:`token.ISNONTERMINAL` and
+    :func:`token.ISEOF` tokens.
