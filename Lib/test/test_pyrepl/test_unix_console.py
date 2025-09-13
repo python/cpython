@@ -1,12 +1,16 @@
+import errno
 import itertools
 import os
+import signal
+import subprocess
 import sys
 import unittest
 from functools import partial
 from test.support import os_helper, force_not_colorized_test_class
+from test.support import script_helper
 
 from unittest import TestCase
-from unittest.mock import MagicMock, call, patch, ANY
+from unittest.mock import MagicMock, call, patch, ANY, Mock
 
 from .support import handle_all_events, code_to_events
 
@@ -303,3 +307,49 @@ class TestConsole(TestCase):
             self.assertIsInstance(console.getheightwidth(), tuple)
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
+
+
+class TestUnixConsoleEIOHandling(TestCase):
+
+    @patch('_pyrepl.unix_console.tcsetattr')
+    @patch('_pyrepl.unix_console.tcgetattr')
+    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
+    def test_eio_error_handling_in_restore(self, mock_tcgetattr, mock_tcsetattr):
+
+        import termios
+        mock_termios = Mock()
+        mock_termios.iflag = 0
+        mock_termios.oflag = 0
+        mock_termios.cflag = 0
+        mock_termios.lflag = 0
+        mock_termios.cc = [0] * 32
+        mock_termios.copy.return_value = mock_termios
+        mock_tcgetattr.return_value = mock_termios
+
+        console = UnixConsole(term="xterm")
+        console.prepare()
+
+        mock_tcsetattr.side_effect = termios.error(errno.EIO, "Input/output error")
+
+        # EIO error should be handled gracefully in restore()
+        console.restore()
+
+    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
+    def test_repl_eio(self):
+        # Use the pty-based approach to simulate EIO error
+        script_path = os.path.join(os.path.dirname(__file__), "eio_test_script.py")
+
+        proc = script_helper.spawn_python(
+            "-S", script_path,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        ready_line = proc.stdout.readline().strip()
+        if ready_line != "READY" or proc.poll() is not None:
+            self.fail("Child process failed to start properly")
+
+        os.kill(proc.pid, signal.SIGUSR1)
+        _, err = proc.communicate(timeout=5) # sleep for pty to settle
+        self.assertEqual(proc.returncode, 1, f"Expected EIO error, got return code {proc.returncode}")
+        self.assertIn("Got EIO:", err, f"Expected EIO error message in stderr: {err}")
