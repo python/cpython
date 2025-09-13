@@ -518,6 +518,7 @@ class PositionTest(unittest.TestCase):
     def check_pos(self, event):
         pos = (event,
                self.parser.CurrentByteIndex,
+               self.parser.CurrentByteCount,
                self.parser.CurrentLineNumber,
                self.parser.CurrentColumnNumber)
         self.assertTrue(self.upto < len(self.expected_list),
@@ -532,8 +533,8 @@ class PositionTest(unittest.TestCase):
         self.parser.StartElementHandler = self.StartElementHandler
         self.parser.EndElementHandler = self.EndElementHandler
         self.upto = 0
-        self.expected_list = [('s', 0, 1, 0), ('s', 5, 2, 1), ('s', 11, 3, 2),
-                              ('e', 15, 3, 6), ('e', 17, 4, 1), ('e', 22, 5, 0)]
+        self.expected_list = [('s', 0, 3, 1, 0), ('s', 5, 3, 2, 1), ('s', 11, 4, 3, 2),
+                              ('e', 15, 0, 3, 6), ('e', 17, 4, 4, 1), ('e', 22, 4, 5, 0)]
 
         xml = b'<a>\n <b>\n  <c/>\n </b>\n</a>'
         self.parser.Parse(xml, True)
