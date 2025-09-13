@@ -2785,7 +2785,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
                             "errors without a string argument");
             return NULL;
         }
-        bytes = PyBytes_FromStringAndSize(NULL, 0);
+        bytes = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
     else if (encoding != NULL) {
         /* Encode via the codec registry */
@@ -3680,7 +3680,7 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
     if (size == 0 && !writer->use_bytearray) {
         Py_CLEAR(writer->buffer);
         /* Get the empty byte string singleton */
-        result = PyBytes_FromStringAndSize(NULL, 0);
+        result = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
     else if (writer->use_small_buffer) {
         if (writer->use_bytearray) {
