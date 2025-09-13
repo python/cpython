@@ -1,0 +1,1 @@
+Fix mutable default argument in `multiprocessing.dummy.DummyProcess.__init__.`
