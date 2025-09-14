@@ -2612,31 +2612,26 @@ save_picklebuffer(PickleState *st, PicklerObject *self, PyObject *obj)
 static PyObject *
 raw_unicode_escape(PyObject *obj)
 {
-    char *p;
-    Py_ssize_t i, size;
-    const void *data;
-    int kind;
-    _PyBytesWriter writer;
+    Py_ssize_t size = PyUnicode_GET_LENGTH(obj);
+    const void *data = PyUnicode_DATA(obj);
+    int kind = PyUnicode_KIND(obj);
 
-    _PyBytesWriter_Init(&writer);
+    Py_ssize_t alloc = size;
+    PyBytesWriter *writer = PyBytesWriter_Create(alloc);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *p = PyBytesWriter_GetData(writer);
 
-    size = PyUnicode_GET_LENGTH(obj);
-    data = PyUnicode_DATA(obj);
-    kind = PyUnicode_KIND(obj);
-
-    p = _PyBytesWriter_Alloc(&writer, size);
-    if (p == NULL)
-        goto error;
-    writer.overallocate = 1;
-
-    for (i=0; i < size; i++) {
+    for (Py_ssize_t i=0; i < size; i++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         /* Map 32-bit characters to '\Uxxxxxxxx' */
         if (ch >= 0x10000) {
             /* -1: subtract 1 preallocated byte */
-            p = _PyBytesWriter_Prepare(&writer, p, 10-1);
-            if (p == NULL)
+            p = PyBytesWriter_GrowAndUpdatePointer(writer, 10-1, p);
+            if (p == NULL) {
                 goto error;
+            }
 
             *p++ = '\\';
             *p++ = 'U';
@@ -2655,9 +2650,10 @@ raw_unicode_escape(PyObject *obj)
                  ch == 0x1a)
         {
             /* -1: subtract 1 preallocated byte */
-            p = _PyBytesWriter_Prepare(&writer, p, 6-1);
-            if (p == NULL)
+            p = PyBytesWriter_GrowAndUpdatePointer(writer, 6-1, p);
+            if (p == NULL) {
                 goto error;
+            }
 
             *p++ = '\\';
             *p++ = 'u';
@@ -2671,10 +2667,10 @@ raw_unicode_escape(PyObject *obj)
             *p++ = (char) ch;
     }
 
-    return _PyBytesWriter_Finish(&writer, p);
+    return PyBytesWriter_FinishWithPointer(writer, p);
 
 error:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
