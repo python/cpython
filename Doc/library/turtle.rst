@@ -1058,6 +1058,9 @@ Settings for measurement
       >>> turtle.degrees(2*math.pi)
       >>> turtle.heading()
       1.5707963267948966
+      >>> turtle.degrees(360)
+      >>> turtle.heading()
+      90.0
 
 
 .. function:: radians()
