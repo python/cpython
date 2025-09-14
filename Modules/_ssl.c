@@ -2200,6 +2200,56 @@ _ssl__SSLSocket_group_impl(PySSLSocket *self)
 #endif
 }
 
+static PyObject *
+ssl_socket_signame_impl(PySSLSocket *socket,
+                        enum py_ssl_server_or_client self_socket_type)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30500000L
+    int ret;
+    const char *sigalg;
+
+    if (socket->ssl == NULL) {
+        Py_RETURN_NONE;
+    }
+    ret = (socket->socket_type == self_socket_type)
+        ? SSL_get0_signature_name(socket->ssl, &sigalg)
+        : SSL_get0_peer_signature_name(socket->ssl, &sigalg);
+    if (ret == 0) {
+        Py_RETURN_NONE;
+    }
+    assert(sigalg != NULL);
+    return PyUnicode_DecodeFSDefault(sigalg);
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting sig algorithms requires OpenSSL 3.5 or later.");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLSocket.client_sigalg
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_client_sigalg_impl(PySSLSocket *self)
+/*[clinic end generated code: output=499dd7fbf021a47b input=a0d9696b5414c627]*/
+{
+    return ssl_socket_signame_impl(self, PY_SSL_CLIENT);
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLSocket.server_sigalg
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_server_sigalg_impl(PySSLSocket *self)
+/*[clinic end generated code: output=c508a766a8e275dc input=9063e562a1e6b946]*/
+{
+    return ssl_socket_signame_impl(self, PY_SSL_SERVER);
+}
+
 /*[clinic input]
 @critical_section
 _ssl._SSLSocket.version
@@ -2269,6 +2319,7 @@ _ssl__SSLSocket_compression_impl(PySSLSocket *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @critical_section
 @getter
 _ssl._SSLSocket.context
@@ -2282,12 +2333,13 @@ SSLSocket before the cryptographic exchange handshake messages.
 
 static PyObject *
 _ssl__SSLSocket_context_get_impl(PySSLSocket *self)
-/*[clinic end generated code: output=d23e82f72f32e3d7 input=7cbb97407c2ace30]*/
+/*[clinic end generated code: output=d23e82f72f32e3d7 input=0cc8e773a079295e]*/
 {
     return Py_NewRef(self->ctx);
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @critical_section
 @setter
 _ssl._SSLSocket.context
@@ -2295,7 +2347,7 @@ _ssl._SSLSocket.context
 
 static int
 _ssl__SSLSocket_context_set_impl(PySSLSocket *self, PyObject *value)
-/*[clinic end generated code: output=6b0a6cc5cf33d9fe input=48ece77724fd9dd4]*/
+/*[clinic end generated code: output=6b0a6cc5cf33d9fe input=f7fc1674b660df96]*/
 {
     if (PyObject_TypeCheck(value, self->ctx->state->PySSLContext_Type)) {
         Py_SETREF(self->ctx, (PySSLContext *)Py_NewRef(value));
@@ -2546,6 +2598,8 @@ _ssl__SSLSocket_uses_ktls_for_recv_impl(PySSLSocket *self)
 
 #ifdef BIO_get_ktls_send
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 @critical_section
 _ssl._SSLSocket.sendfile
     fd: int
@@ -2566,7 +2620,7 @@ The meaning of flags is platform dependent.
 static PyObject *
 _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
                               size_t size, int flags)
-/*[clinic end generated code: output=0c6815b0719ca8d5 input=dfc1b162bb020de1]*/
+/*[clinic end generated code: output=0c6815b0719ca8d5 input=1f193e681bbae664]*/
 {
     Py_ssize_t retval;
     int sockstate;
@@ -2793,6 +2847,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 _ssl._SSLSocket.pending
 
@@ -2801,7 +2856,7 @@ Returns the number of already decrypted bytes available for read, pending on the
 
 static PyObject *
 _ssl__SSLSocket_pending_impl(PySSLSocket *self)
-/*[clinic end generated code: output=983d9fecdc308a83 input=32ab982a254e8866]*/
+/*[clinic end generated code: output=983d9fecdc308a83 input=042dcc48bdf3e312]*/
 {
     int count = 0;
     _PySSLError err;
@@ -3085,6 +3140,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @critical_section
 _ssl._SSLSocket.get_channel_binding
    cb_type: str = "tls-unique"
@@ -3099,7 +3155,7 @@ Only 'tls-unique' channel binding data from RFC 5929 is supported.
 static PyObject *
 _ssl__SSLSocket_get_channel_binding_impl(PySSLSocket *self,
                                          const char *cb_type)
-/*[clinic end generated code: output=34bac9acb6a61d31 input=e008004fc08744db]*/
+/*[clinic end generated code: output=34bac9acb6a61d31 input=26fad522435ecca1]*/
 {
     char buf[PySSL_CB_MAXLEN];
     size_t len;
@@ -3270,6 +3326,8 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_GROUP_METHODDEF
+    _SSL__SSLSOCKET_CLIENT_SIGALG_METHODDEF
+    _SSL__SSLSOCKET_SERVER_SIGALG_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
     _SSL__SSLSOCKET_VERSION_METHODDEF
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
@@ -3610,6 +3668,25 @@ _ssl__SSLContext_set_ciphers_impl(PySSLContext *self, const char *cipherlist)
 
 /*[clinic input]
 @critical_section
+_ssl._SSLContext.set_ciphersuites
+    ciphersuites: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_ciphersuites_impl(PySSLContext *self,
+                                       const char *ciphersuites)
+/*[clinic end generated code: output=9915bec58e54d76d input=2afcc3693392be41]*/
+{
+    if (!SSL_CTX_set_ciphersuites(self->ctx, ciphersuites)) {
+        _setSSLError(get_state_ctx(self), "No cipher suite can be selected.", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+@critical_section
 _ssl._SSLContext.get_ciphers
 [clinic start generated code]*/
 
@@ -3702,7 +3779,6 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
     num = sk_OPENSSL_CSTRING_num(groups);
     result = PyList_New(num);
     if (result == NULL) {
-        _setSSLError(get_state_ctx(self), "Can't allocate list", 0, __FILE__, __LINE__);
         goto error;
     }
 
@@ -3714,9 +3790,7 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
         // Group names are plain ASCII, so there's no chance of a decoding
         // error here. However, an allocation failure could occur when
         // constructing the Unicode version of the names.
-        item = PyUnicode_DecodeASCII(group, strlen(group), "strict");
-        if (item == NULL) {
-            _setSSLError(get_state_ctx(self), "Can't allocate group name", 0, __FILE__, __LINE__);
+        if ((item = PyUnicode_DecodeFSDefault(group)) == NULL) {
             goto error;
         }
 
@@ -3734,6 +3808,49 @@ error:
                     "Getting implemented groups requires OpenSSL 3.5 or later.");
     return NULL;
 #endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.set_client_sigalgs
+    sigalgslist: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist)
+/*[clinic end generated code: output=f4f5be160a29c7d6 input=500d853ce9fd94ff]*/
+{
+#ifdef OPENSSL_IS_AWSLC
+    _setSSLError(get_state_ctx(self), "can't set client sigalgs on AWS-LC", 0, __FILE__, __LINE__);
+    return NULL;
+#else
+    if (!SSL_CTX_set1_client_sigalgs_list(self->ctx, sigalgslist)) {
+        _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+#endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.set_server_sigalgs
+    sigalgslist: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_server_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist)
+/*[clinic end generated code: output=31ecb1d310285644 input=653b752e4f8d801b]*/
+{
+    if (!SSL_CTX_set1_sigalgs_list(self->ctx, sigalgslist)) {
+        _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static int
@@ -5092,6 +5209,8 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 @critical_section
 @getter
 _ssl._SSLContext.sni_callback
@@ -5106,7 +5225,7 @@ See RFC 6066 for details of the SNI extension.
 
 static PyObject *
 _ssl__SSLContext_sni_callback_get_impl(PySSLContext *self)
-/*[clinic end generated code: output=961e6575cdfaf036 input=9b2473c5e984cfe6]*/
+/*[clinic end generated code: output=961e6575cdfaf036 input=3aee06696b0874d9]*/
 {
     PyObject *cb = self->set_sni_cb;
     if (cb == NULL) {
@@ -5116,6 +5235,8 @@ _ssl__SSLContext_sni_callback_get_impl(PySSLContext *self)
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 @critical_section
 @setter
 _ssl._SSLContext.sni_callback
@@ -5123,7 +5244,7 @@ _ssl._SSLContext.sni_callback
 
 static int
 _ssl__SSLContext_sni_callback_set_impl(PySSLContext *self, PyObject *value)
-/*[clinic end generated code: output=b32736c6b891f61a input=c3c4ff33540b3c85]*/
+/*[clinic end generated code: output=b32736c6b891f61a input=332def1d8c81d549]*/
 {
     if (self->protocol == PY_SSL_VERSION_TLS_CLIENT) {
         PyErr_SetString(PyExc_ValueError,
@@ -5585,7 +5706,10 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT__WRAP_SOCKET_METHODDEF
     _SSL__SSLCONTEXT__WRAP_BIO_METHODDEF
     _SSL__SSLCONTEXT_SET_CIPHERS_METHODDEF
+    _SSL__SSLCONTEXT_SET_CIPHERSUITES_METHODDEF
     _SSL__SSLCONTEXT_SET_GROUPS_METHODDEF
+    _SSL__SSLCONTEXT_SET_CLIENT_SIGALGS_METHODDEF
+    _SSL__SSLCONTEXT_SET_SERVER_SIGALGS_METHODDEF
     _SSL__SSLCONTEXT__SET_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF
     _SSL__SSLCONTEXT_LOAD_DH_PARAMS_METHODDEF
@@ -5660,13 +5784,6 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
     self->eof_written = 0;
 
     return (PyObject *) self;
-}
-
-static int
-memory_bio_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 static void
@@ -5839,7 +5956,7 @@ static PyType_Slot PySSLMemoryBIO_slots[] = {
     {Py_tp_getset, memory_bio_getsetlist},
     {Py_tp_new, _ssl_MemoryBIO},
     {Py_tp_dealloc, memory_bio_dealloc},
-    {Py_tp_traverse, memory_bio_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0},
 };
 
@@ -6150,6 +6267,7 @@ _ssl_RAND_bytes_impl(PyObject *module, int n)
 
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 _ssl.RAND_status
 
@@ -6161,12 +6279,13 @@ using the ssl() function.
 
 static PyObject *
 _ssl_RAND_status_impl(PyObject *module)
-/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=636fb5659ea2e727]*/
+/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=aba24a3f3af3b184]*/
 {
     return PyBool_FromLong(RAND_status());
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 _ssl.get_default_verify_paths
 
@@ -6177,7 +6296,7 @@ The values are 'cert_file_env', 'cert_file', 'cert_dir_env', 'cert_dir'.
 
 static PyObject *
 _ssl_get_default_verify_paths_impl(PyObject *module)
-/*[clinic end generated code: output=e5b62a466271928b input=c6ae00bc04eb2b6e]*/
+/*[clinic end generated code: output=e5b62a466271928b input=255507e1be890095]*/
 {
     PyObject *ofile_env = NULL;
     PyObject *ofile = NULL;
@@ -6207,6 +6326,39 @@ _ssl_get_default_verify_paths_impl(PyObject *module)
     Py_XDECREF(odir_env);
     Py_XDECREF(odir);
     return NULL;
+}
+
+/*[clinic input]
+_ssl.get_sigalgs
+[clinic start generated code]*/
+
+static PyObject *
+_ssl_get_sigalgs_impl(PyObject *module)
+/*[clinic end generated code: output=ab0791b63856854b input=d96dd6cefec3f86b]*/
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30400000L
+    const char *sigalgs;
+    PyObject *sigalgs_str, *sigalgs_list;
+
+    if ((sigalgs = SSL_get1_builtin_sigalgs(NULL)) == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    if ((sigalgs_str = PyUnicode_DecodeFSDefault(sigalgs)) == NULL) {
+        OPENSSL_free((void *)sigalgs);
+        return NULL;
+    }
+
+    OPENSSL_free((void *)sigalgs);
+    sigalgs_list = PyUnicode_Split(sigalgs_str, _Py_LATIN1_CHR(':'), -1);
+    Py_DECREF(sigalgs_str);
+    return sigalgs_list;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting signature algorithms requires OpenSSL 3.4 or later.");
+    return NULL;
+#endif
 }
 
 static PyObject*
@@ -6612,6 +6764,7 @@ static PyMethodDef PySSL_methods[] = {
     _SSL_RAND_BYTES_METHODDEF
     _SSL_RAND_STATUS_METHODDEF
     _SSL_GET_DEFAULT_VERIFY_PATHS_METHODDEF
+    _SSL_GET_SIGALGS_METHODDEF
     _SSL_ENUM_CERTIFICATES_METHODDEF
     _SSL_ENUM_CRLS_METHODDEF
     _SSL_TXT2OBJ_METHODDEF

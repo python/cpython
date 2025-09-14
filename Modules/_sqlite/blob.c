@@ -164,6 +164,7 @@ read_multiple(pysqlite_Blob *self, Py_ssize_t length, Py_ssize_t offset)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _sqlite3.Blob.read as blob_read
 
     length: int = -1
@@ -179,7 +180,7 @@ end of the blob.
 
 static PyObject *
 blob_read_impl(pysqlite_Blob *self, int length)
-/*[clinic end generated code: output=1fc99b2541360dde input=f2e4aa4378837250]*/
+/*[clinic end generated code: output=1fc99b2541360dde input=e5715bcddbcfca5a]*/
 {
     if (!check_blob(self)) {
         return NULL;
@@ -232,6 +233,7 @@ inner_write(pysqlite_Blob *self, const void *buf, Py_ssize_t len,
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _sqlite3.Blob.write as blob_write
 
     data: Py_buffer
@@ -245,7 +247,7 @@ blob will result in an exception being raised.
 
 static PyObject *
 blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
-/*[clinic end generated code: output=b34cf22601b570b2 input=a84712f24a028e6d]*/
+/*[clinic end generated code: output=b34cf22601b570b2 input=203d3458f244814b]*/
 {
     if (!check_blob(self)) {
         return NULL;
@@ -261,6 +263,7 @@ blob_write_impl(pysqlite_Blob *self, Py_buffer *data)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 _sqlite3.Blob.seek as blob_seek
 
     offset: int
@@ -276,7 +279,7 @@ and os.SEEK_END (seek relative to the blob's end).
 
 static PyObject *
 blob_seek_impl(pysqlite_Blob *self, int offset, int origin)
-/*[clinic end generated code: output=854c5a0e208547a5 input=5da9a07e55fe6bb6]*/
+/*[clinic end generated code: output=854c5a0e208547a5 input=ee4d88e1dc0b1048]*/
 {
     if (!check_blob(self)) {
         return NULL;
