@@ -9,6 +9,7 @@ The objects used by the site module to add custom builtins.
 # globals.
 
 import sys
+from _pyrepl.pager import get_pager
 
 class Quitter(object):
     def __init__(self, name, eof):
@@ -66,23 +67,9 @@ class _Printer(object):
 
     def __call__(self):
         self.__setup()
-        prompt = 'Hit Return for more, or q (and Return) to quit: '
-        lineno = 0
-        while 1:
-            try:
-                for i in range(lineno, lineno + self.MAXLINES):
-                    print(self.__lines[i])
-            except IndexError:
-                break
-            else:
-                lineno += self.MAXLINES
-                key = None
-                while key is None:
-                    key = input(prompt)
-                    if key not in ('', 'q'):
-                        key = None
-                if key == 'q':
-                    break
+        pager = get_pager()
+        text = "\n".join(self.__lines)
+        pager(text, title=self.__name)
 
 
 class _Helper(object):
