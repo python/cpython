@@ -531,7 +531,7 @@ Turtle motion
 
    * By default, 360.0 units form a full circle (degrees).
    * After calling :func:`radians`, ``2*math.pi`` units form a full circle.
-   * Custom values can be set with :func:`degrees(fullcircle)`.
+   * Custom values can be set with :func:`degrees`.
 
    Orientation of the turn depends in the current turtle mode,
    see :func:`mode`.
@@ -564,7 +564,7 @@ Turtle motion
 
    * By default, 360.0 units form a full circle (degrees).
    * After calling :func:`radians`, ``2*math.pi`` units form a full circle.
-   * Custom values can be set with :func:`degrees(fullcircle)`.
+   * Custom values can be set with :func:`degrees`.
 
    Orientation of the turn depends in the current turtle mode,
    see :func:`mode`.
@@ -1054,6 +1054,7 @@ Settings for measurement
 
       >>> # Change angle measurement unit to radians (where a full circle
       >>> # equals 2π radians, so 90 degrees becomes π/2 radians)
+      >>> import math
       >>> turtle.degrees(2*math.pi)
       >>> turtle.heading()
       1.5707963267948966
@@ -1064,7 +1065,7 @@ Settings for measurement
    Set the angle measurement unit to radians.
 
    Equivalent to::
-      
+
       degrees(2*math.pi)
 
    After this call, one full circle correspond to
