@@ -22,6 +22,10 @@ extern void PySys_AddWarnOption(const wchar_t *s);
 extern void PySys_AddXOption(const wchar_t *s);
 extern void Py_SetPath(const wchar_t *path);
 
+// These functions were removed from Python 3.15 API but are still exported
+// for the stable ABI. We want to test them in this program.
+extern void PySys_ResetWarnOptions(void);
+
 
 int main_argc;
 char **main_argv;
@@ -343,9 +347,12 @@ static int test_pre_initialization_sys_options(void)
 
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption\n");
     PySys_AddWarnOption(L"default");
+    _Py_EMBED_PREINIT_CHECK("Checking PySys_ResetWarnOptions\n");
+    PySys_ResetWarnOptions();
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption linked list\n");
     PySys_AddWarnOption(dynamic_once_warnoption);
     PySys_AddWarnOption(L"module");
+    PySys_AddWarnOption(L"default");
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
     PySys_AddXOption(L"not_an_option=1");
     PySys_AddXOption(dynamic_xoption);

@@ -315,9 +315,9 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             print(out)
             print(err)
         expected_output = (
-            "sys.warnoptions: ['default', 'once', 'module']\n"
+            "sys.warnoptions: ['once', 'module', 'default']\n"
             "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
-            "warnings.filters[:3]: ['module', 'once', 'default']\n"
+            "warnings.filters[:3]: ['default', 'module', 'once']\n"
         )
         self.assertIn(expected_output, out)
         self.assertEqual(err, '')
