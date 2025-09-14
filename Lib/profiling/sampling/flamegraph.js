@@ -1,5 +1,50 @@
 const EMBEDDED_DATA = {{FLAMEGRAPH_DATA}};
 
+// Global string table for resolving string indices
+let stringTable = [];
+
+// Function to resolve string indices to actual strings
+function resolveString(index) {
+    if (typeof index === 'number' && index >= 0 && index < stringTable.length) {
+        return stringTable[index];
+    }
+    // Fallback for non-indexed strings or invalid indices
+    return String(index);
+}
+
+// Function to recursively resolve all string indices in flamegraph data
+function resolveStringIndices(node) {
+    if (!node) return node;
+
+    // Create a copy to avoid mutating the original
+    const resolved = { ...node };
+
+    // Resolve string fields
+    if (typeof resolved.name === 'number') {
+        resolved.name = resolveString(resolved.name);
+    }
+    if (typeof resolved.filename === 'number') {
+        resolved.filename = resolveString(resolved.filename);
+    }
+    if (typeof resolved.funcname === 'number') {
+        resolved.funcname = resolveString(resolved.funcname);
+    }
+
+    // Resolve source lines if present
+    if (Array.isArray(resolved.source)) {
+        resolved.source = resolved.source.map(index =>
+            typeof index === 'number' ? resolveString(index) : index
+        );
+    }
+
+    // Recursively resolve children
+    if (Array.isArray(resolved.children)) {
+        resolved.children = resolved.children.map(child => resolveStringIndices(child));
+    }
+
+    return resolved;
+}
+
 // Python color palette - cold to hot
 const pythonColors = [
   "#fff4bf", // Coldest - light yellow (<1%)
@@ -99,6 +144,10 @@ function createPythonTooltip(data) {
           </div>
         </div>`;
     }
+
+    // Resolve strings for display
+    const funcname = resolveString(d.data.funcname) || resolveString(d.data.name);
+    const filename = resolveString(d.data.filename) || "";
 
     const tooltipHTML = `
       <div>
@@ -257,9 +306,9 @@ function updateSearchHighlight(searchTerm, searchInput) {
     let matchCount = 0;
     d3.selectAll("#chart rect").each(function (d) {
       if (d && d.data) {
-        const name = d.data.name || "";
-        const funcname = d.data.funcname || "";
-        const filename = d.data.filename || "";
+        const name = resolveString(d.data.name) || "";
+        const funcname = resolveString(d.data.funcname) || "";
+        const filename = resolveString(d.data.filename) || "";
         const term = searchTerm.toLowerCase();
         const matches =
           name.toLowerCase().includes(term) ||
@@ -317,12 +366,20 @@ function handleResize(chart, data) {
 
 function initFlamegraph() {
   ensureLibraryLoaded();
-  const tooltip = createPythonTooltip(EMBEDDED_DATA);
-  const chart = createFlamegraph(tooltip, EMBEDDED_DATA.value);
-  renderFlamegraph(chart, EMBEDDED_DATA);
+
+  // Extract string table if present and resolve string indices
+  let processedData = EMBEDDED_DATA;
+  if (EMBEDDED_DATA.strings) {
+    stringTable = EMBEDDED_DATA.strings;
+    processedData = resolveStringIndices(EMBEDDED_DATA);
+  }
+
+  const tooltip = createPythonTooltip(processedData);
+  const chart = createFlamegraph(tooltip, processedData.value);
+  renderFlamegraph(chart, processedData);
   attachPanelControls();
   initSearchHandlers();
-  handleResize(chart, EMBEDDED_DATA);
+  handleResize(chart, processedData);
 }
 
 if (document.readyState === "loading") {
@@ -338,7 +395,10 @@ function populateStats(data) {
   const functionMap = new Map();
 
   function collectFunctions(node) {
-    if (node.filename && node.funcname) {
+    const filename = resolveString(node.filename);
+    const funcname = resolveString(node.funcname);
+
+    if (filename && funcname) {
       // Calculate direct samples (this node's value minus children's values)
       let childrenValue = 0;
       if (node.children) {
@@ -347,7 +407,7 @@ function populateStats(data) {
       const directSamples = Math.max(0, node.value - childrenValue);
 
       // Use file:line:funcname as key to ensure uniqueness
-      const funcKey = `${node.filename}:${node.lineno || '?'}:${node.funcname}`;
+      const funcKey = `${filename}:${node.lineno || '?'}:${funcname}`;
 
       if (functionMap.has(funcKey)) {
         const existing = functionMap.get(funcKey);
@@ -355,15 +415,15 @@ function populateStats(data) {
         existing.directPercent = (existing.directSamples / totalSamples) * 100;
         // Keep the most representative file/line (the one with more samples)
         if (directSamples > existing.maxSingleSamples) {
-          existing.filename = node.filename;
+          existing.filename = filename;
           existing.lineno = node.lineno || '?';
           existing.maxSingleSamples = directSamples;
         }
       } else {
         functionMap.set(funcKey, {
-          filename: node.filename,
+          filename: filename,
           lineno: node.lineno || '?',
-          funcname: node.funcname,
+          funcname: funcname,
           directSamples,
           directPercent: (directSamples / totalSamples) * 100,
           maxSingleSamples: directSamples
