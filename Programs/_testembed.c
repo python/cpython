@@ -343,12 +343,9 @@ static int test_pre_initialization_sys_options(void)
 
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption\n");
     PySys_AddWarnOption(L"default");
-    _Py_EMBED_PREINIT_CHECK("Checking PySys_ResetWarnOptions\n");
-    PySys_ResetWarnOptions();
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddWarnOption linked list\n");
     PySys_AddWarnOption(dynamic_once_warnoption);
     PySys_AddWarnOption(L"module");
-    PySys_AddWarnOption(L"default");
     _Py_EMBED_PREINIT_CHECK("Checking PySys_AddXOption\n");
     PySys_AddXOption(L"not_an_option=1");
     PySys_AddXOption(dynamic_xoption);

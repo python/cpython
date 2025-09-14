@@ -41,7 +41,7 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyObject_SetArenaAllocator`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
-  * :c:func:`PySys_ResetWarnOptions`
+  * :c:func:`!PySys_ResetWarnOptions`
   * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
