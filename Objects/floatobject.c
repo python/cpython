@@ -68,8 +68,8 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"radix",           "FLT_RADIX -- radix of exponent"},
     {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
                     "operations"},
-    {"stdc_iec_559", "test if implementation supports the IEC 60559"
-                     " floating-point standard"},
+    {"stdc_iec_559", "test if implementation supports the IEC 60559 "
+                     "floating-point standard"},
     {0}
 };
 
