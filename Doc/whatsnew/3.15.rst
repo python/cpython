@@ -537,6 +537,17 @@ module_name
 Deprecated
 ==========
 
+CLI
+---
+
+* Deprecate :option:`-b` and :option:`!-bb` command line options
+  and schedule them to become no-op in Python 3.17.
+  These were primarily helpers for the Python 2 -> 3 transition.
+  Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+  for these cases; use a type checker instead.
+
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
+
 hashlib
 -------
 
@@ -774,6 +785,10 @@ Deprecated C APIs
   :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
   :c:func:`_Py_c_abs` are :term:`soft deprecated`.
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
+* :c:member:`~PyConfig.bytes_warning` is deprecated
+  since 3.15 and will be removed in 3.17.
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
 
 
 .. Add C API deprecations above alphabetically, not here at the end.
