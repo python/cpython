@@ -321,6 +321,8 @@ Data Types
          In Python 2 code the :attr:`~Enum._order_` attribute is necessary as definition
          order is lost before it can be recorded.
 
+      .. versionadded:: 3.6
+
    .. attribute:: Enum._ignore_
 
       ``_ignore_`` is only used during creation and is removed from the
@@ -329,6 +331,8 @@ Data Types
       ``_ignore_`` is a list of names that will not become members, and whose
       names will also be removed from the completed enumeration.  See
       :ref:`TimePeriod <enum-time-period>` for an example.
+
+      .. versionadded:: 3.7
 
    .. method:: Enum.__dir__(self)
 
@@ -372,6 +376,10 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
+      .. versionadded:: 3.6
+      .. versionchanged:: 3.13
+         Prior versions would use the last seen value instead of the highest value.
+
    .. method:: Enum.__init__(self, *args, **kwds)
 
       By default, does nothing.  If multiple values are given in the member
@@ -409,6 +417,8 @@ Data Types
          'debug'
          >>> Build('deBUG')
          <Build.DEBUG: 'debug'>
+
+      .. versionadded:: 3.6
 
    .. method:: Enum.__new__(cls, *args, **kwds)
 
