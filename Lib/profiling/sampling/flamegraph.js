@@ -42,6 +42,8 @@ function createPythonTooltip(data) {
         .style("font-weight", "400")
         .style("line-height", "1.5")
         .style("max-width", "500px")
+        .style("word-wrap", "break-word")
+        .style("overflow-wrap", "break-word")
         .style("font-family", "'Source Sans Pro', sans-serif")
         .style("opacity", 0);
     }
@@ -61,7 +63,7 @@ function createPythonTooltip(data) {
             `<div style="font-family: 'SF Mono', 'Monaco', 'Consolas', ` +
             `monospace; font-size: 12px; color: ${
               line.startsWith("→") ? "#3776ab" : "#5a6c7d"
-            }; white-space: pre; line-height: 1.4; padding: 2px 0;">${line
+            }; white-space: pre-wrap; word-break: break-all; overflow-wrap: break-word; line-height: 1.4; padding: 2px 0;">${line
               .replace(/&/g, "&amp;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;")}</div>`,
@@ -77,7 +79,7 @@ function createPythonTooltip(data) {
           </div>
           <div style="background: #f8f9fa; border: 1px solid #e9ecef;
                       border-radius: 6px; padding: 12px; max-height: 150px;
-                      overflow-y: auto;">
+                      overflow-y: auto; overflow-x: hidden;">
             ${sourceLines}
           </div>
         </div>`;
@@ -92,7 +94,7 @@ function createPythonTooltip(data) {
           </div>
           <div style="background: #f8f9fa; border: 1px solid #e9ecef;
                       border-radius: 6px; padding: 12px; max-height: 150px;
-                      overflow-y: auto; font-family: monospace; font-size: 11px;">
+                      overflow-y: auto; overflow-x: hidden; font-family: monospace; font-size: 11px; word-break: break-all; overflow-wrap: break-word;">
             ${JSON.stringify(source, null, 2)}
           </div>
         </div>`;
@@ -101,13 +103,13 @@ function createPythonTooltip(data) {
     const tooltipHTML = `
       <div>
         <div style="color: #3776ab; font-weight: 600; font-size: 16px;
-                    margin-bottom: 8px; line-height: 1.3;">
-          ${d.data.funcname || d.data.name}
+                    margin-bottom: 8px; line-height: 1.3; word-break: break-word; overflow-wrap: break-word;">
+          ${funcname}
         </div>
         <div style="color: #5a6c7d; font-size: 13px; margin-bottom: 12px;
                     font-family: monospace; background: #f8f9fa;
-                    padding: 4px 8px; border-radius: 4px;">
-          ${d.data.filename || ""}${d.data.lineno ? ":" + d.data.lineno : ""}
+                    padding: 4px 8px; border-radius: 4px; word-break: break-all; overflow-wrap: break-word;">
+          ${filename}${d.data.lineno ? ":" + d.data.lineno : ""}
         </div>
         <div style="display: grid; grid-template-columns: auto 1fr;
                     gap: 8px 16px; font-size: 14px;">
