@@ -679,15 +679,72 @@ def test_import_module():
         importlib.import_module("importlib")  # already imported, won't get logged
         importlib.import_module("email") # standard library module
         importlib.import_module("pythoninfo")  # random module
-        importlib.import_module(".test_importlib.abc", "test")  # relative import
+        importlib.import_module(".audit_test_data.submodule", "test")  # relative import
+        importlib.import_module("test.audit_test_data.submodule2")  # absolute import
+        importlib.import_module("_testcapi")  # extension module
 
     actual = [a[0] for e, a in hook.seen if e == "import"]
     assertSequenceEqual(
         [
             "email",
             "pythoninfo",
-            "test.test_importlib.abc",
-            "test.test_importlib"
+            "test.audit_test_data.submodule",
+            "test.audit_test_data",
+            "test.audit_test_data.submodule2",
+            "_testcapi",
+            "_testcapi",
+        ],
+        actual,
+    )
+
+def test_builtin__import__():
+    import importlib # noqa: F401
+
+    with TestHook() as hook:
+        __import__("importlib")
+        __import__("email")
+        __import__("pythoninfo")
+        __import__("test.audit_test_data.submodule", fromlist=["audit_test_data"])
+        __import__("test.audit_test_data.submodule2")
+        __import__("_testcapi")
+
+    actual = [a[0] for e, a in hook.seen if e == "import"]
+    assertSequenceEqual(
+        [
+            "email",
+            "pythoninfo",
+            "test.audit_test_data.submodule",
+            "test.audit_test_data",
+            "test.audit_test_data.submodule2",
+            "_testcapi",
+            "_testcapi",
+        ],
+        actual,
+    )
+
+def test_import_statement():
+    import importlib # noqa: F401
+
+    with TestHook() as hook:
+        import importlib # noqa: F401
+        import email # noqa: F401
+        import pythoninfo # noqa: F401
+        from test.audit_test_data import submodule # noqa: F401
+        import test.audit_test_data.submodule2 # noqa: F401
+        import _testcapi # noqa: F401
+
+    actual = [a[0] for e, a in hook.seen if e == "import"]
+    # Import statement ordering is different because the package is
+    # loaded first and then the submodule
+    assertSequenceEqual(
+        [
+            "email",
+            "pythoninfo",
+            "test.audit_test_data",
+            "test.audit_test_data.submodule",
+            "test.audit_test_data.submodule2",
+            "_testcapi",
+            "_testcapi",
         ],
         actual,
     )

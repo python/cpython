@@ -1306,8 +1306,15 @@ def _sanity_check(name, package, level):
 _ERR_MSG_PREFIX = 'No module named '
 
 def _find_and_load_unlocked(name, import_):
+    sys.audit(
+        "import",
+        name,
+        None,
+        getattr(sys, "path"),
+        getattr(sys, "meta_path"),
+        getattr(sys, "path_hooks")
+    )
     path = None
-    sys.audit("import", name, path, sys.path, sys.meta_path, sys.path_hooks)
     parent = name.rpartition('.')[0]
     parent_spec = None
     if parent:
