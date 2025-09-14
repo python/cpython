@@ -7,6 +7,7 @@ import linecache
 import os
 
 from .collector import Collector
+from .string_table import StringTable
 
 
 class StackTraceCollector(Collector):
@@ -50,6 +51,7 @@ class FlamegraphCollector(StackTraceCollector):
         self._root = {"samples": 0, "children": {}}
         self._total_samples = 0
         self._func_intern = {}
+        self._string_table = StringTable()
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None):
         """Set profiling statistics to include in flamegraph data."""
@@ -63,11 +65,13 @@ class FlamegraphCollector(StackTraceCollector):
     def export(self, filename):
         flamegraph_data = self._convert_to_flamegraph_format()
 
-        # Debug output
+        # Debug output with string table statistics
         num_functions = len(flamegraph_data.get("children", []))
         total_time = flamegraph_data.get("value", 0)
+        string_count = len(self._string_table)
         print(
-            f"Flamegraph data: {num_functions} root functions, total samples: {total_time}"
+            f"Flamegraph data: {num_functions} root functions, total samples: {total_time}, "
+            f"{string_count} unique strings"
         )
 
         if num_functions == 0:
@@ -96,9 +100,14 @@ class FlamegraphCollector(StackTraceCollector):
         return f"{funcname} ({filename}:{lineno})"
 
     def _convert_to_flamegraph_format(self):
-        """Convert aggregated trie to d3-flamegraph format."""
+        """Convert aggregated trie to d3-flamegraph format with string table optimization."""
         if self._total_samples == 0:
-            return {"name": "No Data", "value": 0, "children": []}
+            return {
+                "name": self._string_table.intern("No Data"),
+                "value": 0,
+                "children": [],
+                "strings": self._string_table.get_strings()
+            }
 
         def convert_children(children, min_samples):
             out = []
@@ -107,19 +116,25 @@ class FlamegraphCollector(StackTraceCollector):
                 if samples < min_samples:
                     continue
 
-                name = self._format_function_name(func)
+                # Intern all string components for maximum efficiency
+                filename_idx = self._string_table.intern(func[0])
+                funcname_idx = self._string_table.intern(func[2])
+                name_idx = self._string_table.intern(self._format_function_name(func))
+
                 child_entry = {
-                    "name": name,
+                    "name": name_idx,
                     "value": samples,
                     "children": [],
-                    "filename": func[0],
+                    "filename": filename_idx,
                     "lineno": func[1],
-                    "funcname": func[2],
+                    "funcname": funcname_idx,
                 }
 
                 source = self._get_source_lines(func)
                 if source:
-                    child_entry["source"] = source
+                    # Intern source lines for memory efficiency
+                    source_indices = [self._string_table.intern(line) for line in source]
+                    child_entry["source"] = source_indices
 
                 # Recurse
                 child_entry["children"] = convert_children(
@@ -127,6 +142,7 @@ class FlamegraphCollector(StackTraceCollector):
                 )
                 out.append(child_entry)
 
+            # Sort by value (descending) then by name index for consistent ordering
             out.sort(key=lambda x: (-x["value"], x["name"]))
             return out
 
@@ -136,16 +152,31 @@ class FlamegraphCollector(StackTraceCollector):
 
         root_children = convert_children(self._root["children"], min_samples)
         if not root_children:
-            return {"name": "No significant data", "value": 0, "children": []}
+            return {
+                "name": self._string_table.intern("No significant data"),
+                "value": 0,
+                "children": [],
+                "strings": self._string_table.get_strings()
+            }
 
         # If we only have one root child, make it the root to avoid redundant level
         if len(root_children) == 1:
             main_child = root_children[0]
-            main_child["name"] = f"Program Root: {main_child['name']}"
+            # Update the name to indicate it's the program root
+            old_name = self._string_table.get_string(main_child["name"])
+            new_name = f"Program Root: {old_name}"
+            main_child["name"] = self._string_table.intern(new_name)
             main_child["stats"] = self.stats
+            main_child["strings"] = self._string_table.get_strings()
             return main_child
 
-        return {"name": "Program Root", "value": total_samples, "children": root_children, "stats": self.stats}
+        return {
+            "name": self._string_table.intern("Program Root"),
+            "value": total_samples,
+            "children": root_children,
+            "stats": self.stats,
+            "strings": self._string_table.get_strings()
+        }
 
     def process_frames(self, frames):
         # Reverse to root->leaf

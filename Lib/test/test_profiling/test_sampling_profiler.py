@@ -437,7 +437,11 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Empty collector should produce 'No Data'
         data = collector._convert_to_flamegraph_format()
-        self.assertIn(data["name"], ("No Data", "No significant data"))
+        # With string table, name is now an index - resolve it using the strings array
+        strings = data.get("strings", [])
+        name_index = data.get("name", 0)
+        resolved_name = strings[name_index] if isinstance(name_index, int) and 0 <= name_index < len(strings) else str(name_index)
+        self.assertIn(resolved_name, ("No Data", "No significant data"))
 
         # Test collecting sample data
         test_frames = [
@@ -451,14 +455,18 @@ class TestSampleProfilerComponents(unittest.TestCase):
         # Convert and verify structure: func2 -> func1 with counts = 1
         data = collector._convert_to_flamegraph_format()
         # Expect promotion: root is the single child (func2), with func1 as its only child
-        name = data.get("name", "")
+        strings = data.get("strings", [])
+        name_index = data.get("name", 0)
+        name = strings[name_index] if isinstance(name_index, int) and 0 <= name_index < len(strings) else str(name_index)
         self.assertIsInstance(name, str)
         self.assertTrue(name.startswith("Program Root: "))
         self.assertIn("func2 (file.py:20)", name)  # formatted name
         children = data.get("children", [])
         self.assertEqual(len(children), 1)
         child = children[0]
-        self.assertIn("func1 (file.py:10)", child["name"])  # formatted name
+        child_name_index = child.get("name", 0)
+        child_name = strings[child_name_index] if isinstance(child_name_index, int) and 0 <= child_name_index < len(strings) else str(child_name_index)
+        self.assertIn("func1 (file.py:10)", child_name)  # formatted name
         self.assertEqual(child["value"], 1)
 
     def test_flamegraph_collector_export(self):
