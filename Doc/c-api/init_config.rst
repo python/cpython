@@ -1280,8 +1280,8 @@ PyConfig
 
       .. deprecated-removed:: 3.15 3.17
 
-         Deprecated, :option:`-b` and :option:`!-bb` will become no-op in 3.17.
-         :c:member:`~PyConfig.bytes_warning` will be removed in 3.17.
+         Deprecated, :option:`-b` and :option:`!-bb` options will become no-op in 3.17.
+         :c:member:`~PyConfig.bytes_warning` member will be removed in 3.17.
 
    .. c:member:: int warn_default_encoding
 
