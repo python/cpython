@@ -363,7 +363,16 @@ Data Types
          :last_values: A list of the previous values.
 
       A *staticmethod* that is used to determine the next value returned by
-      :class:`auto`::
+      :class:`auto`.
+
+      .. note::
+         For standard :class:`Enum` classes the next value chosen is the highest
+         value seen incremented by one.
+
+         For :class:`Flag` classes the next value chosen will be the next highest
+         power-of-two.
+
+      This method may be overridden, e.g.::
 
          >>> from enum import auto
          >>> class PowersOfThree(Enum):
@@ -938,14 +947,6 @@ Supported ``_sunder_`` names
 
 - :meth:`~Enum._generate_next_value_` -- used to get an appropriate value for
   an enum member; may be overridden
-
-  .. note::
-
-     For standard :class:`Enum` classes the next value chosen is the highest
-     value seen incremented by one.
-
-     For :class:`Flag` classes the next value chosen will be the next highest
-     power-of-two.
 
 - :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
   member.
