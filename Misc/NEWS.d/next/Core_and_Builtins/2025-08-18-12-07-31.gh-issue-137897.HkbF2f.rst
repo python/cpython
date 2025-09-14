@@ -1,0 +1,2 @@
+Deprecate the :option:`-R` command line option, and schedule for removal in
+3.17

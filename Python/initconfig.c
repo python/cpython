@@ -3021,6 +3021,9 @@ config_parse_cmdline(PyConfig *config, PyWideStringList *warnoptions,
             break;
 
         case 'R':
+            fprintf(stderr,
+                    "The -R option is deprecated since Python 3.15 and "
+                    "will be removed in Python 3.17\n");
             config->use_hash_seed = 0;
             break;
 
