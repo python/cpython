@@ -1,0 +1,3 @@
+Correct the documentation for the functions :func:`turtle.reset`,
+:func:`turtle.left`, :func:`turtle.right`, :func:`turtle.degrees`, and
+:func:`turtle.radians` to address misconceptions.
