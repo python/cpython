@@ -663,7 +663,8 @@ _json_scanstring_impl(PyObject *module, PyObject *pystr, Py_ssize_t end,
 
     if (PyUnicode_Check(pystr)) {
         rval = scanstring_unicode(pystr, end, strict, &next_end);
-    } else {
+    }
+    else {
         PyErr_Format(PyExc_TypeError,
                      "first argument must be a string, not %.80s",
                      Py_TYPE(pystr)->tp_name);
