@@ -1078,6 +1078,7 @@ extern "C" {
     INIT_ID(last_value), \
     INIT_ID(latin1), \
     INIT_ID(leaf_size), \
+    INIT_ID(legacy), \
     INIT_ID(len), \
     INIT_ID(length), \
     INIT_ID(level), \
@@ -1251,6 +1252,7 @@ extern "C" {
     INIT_ID(setstate), \
     INIT_ID(shape), \
     INIT_ID(shared), \
+    INIT_ID(short), \
     INIT_ID(show_cmd), \
     INIT_ID(signed), \
     INIT_ID(signum), \
