@@ -515,7 +515,7 @@ class WindowsConsole(Console):
         """Wipe the screen"""
         self.__write(CLEAR)
         self.posxy = 0, 0
-        self.screen = [""]
+        self.screen = []
 
     def finish(self) -> None:
         """Move the cursor to the end of the display and otherwise get
