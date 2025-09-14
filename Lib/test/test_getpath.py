@@ -354,6 +354,27 @@ class MockGetPathTests(unittest.TestCase):
         actual = getpath(ns, expected)
         self.assertEqual(expected, actual)
 
+    def test_venv_posix_without_home_key(self):
+        ns = MockPosixNamespace(
+            argv0="/venv/bin/python3",
+            PREFIX="/usr",
+            ENV_PATH="/usr/bin",
+        )
+        # Setup the bare minimum venv
+        ns.add_known_xfile("/usr/bin/python3")
+        ns.add_known_xfile("/venv/bin/python3")
+        ns.add_known_link("/venv/bin/python3", "/usr/bin/python3")
+        ns.add_known_file("/venv/pyvenv.cfg", [
+            # home = key intentionally omitted
+        ])
+        expected = dict(
+            executable="/venv/bin/python3",
+            prefix="/venv",
+            base_prefix="/usr",
+        )
+        actual = getpath(ns, expected)
+        self.assertEqual(expected, actual)
+
     def test_venv_changed_name_posix(self):
         "Test a venv layout on *nix."
         ns = MockPosixNamespace(
