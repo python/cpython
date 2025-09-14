@@ -1,0 +1,1 @@
+Improving ``license()`` prompting in repl.
