@@ -494,10 +494,10 @@ constants, but are not an exhaustive list.
 
    .. versionadded:: 3.8
 
-On Linux, the following constants are available for comparing against the
-``st_attributes`` and ``st_attributes_mask`` members returned by
-:func:`os.stat`.  See the `statx(2) man page
-<https://man.archlinux.org/man/statx.2#File_attributes>` for more detail on the
+On Linux, the following file attribute constants are available for use when
+testing bits in the :attr:`~os.statx_result.stx_attributes` and
+:attr:`~os.statx_result.stx_attributes_mask` members returned by
+:func:`os.statx`.  See the :manpage:`statx(2)` man page for more detail on the
 meaning of these constants.
 
 .. data:: STATX_ATTR_COMPRESSED
