@@ -3292,7 +3292,7 @@ datetime_date_today_impl(PyTypeObject *type)
 /*[clinic end generated code: output=d5474697df6b251c input=21688afa289c0a06]*/
 {
     /* Use C implementation to boost performance for date type */
-    if ((PyTypeObject *)cls == &PyDateTime_DateType) {
+    if (type == &PyDateTime_DateType) {
         struct tm tm;
         time_t t;
         time(&t);
@@ -3304,7 +3304,7 @@ datetime_date_today_impl(PyTypeObject *type)
         return new_date_ex(tm.tm_year + 1900,
                            tm.tm_mon + 1,
                            tm.tm_mday,
-                           (PyTypeObject *)cls);
+                           type);
     }
 
     PyObject *time = time_time();
@@ -3315,7 +3315,7 @@ datetime_date_today_impl(PyTypeObject *type)
     /* Note well: since today() is a class method, it may not call
      * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
      */
-    PyObject *result = PyObject_CallMethodOneArg(cls, &_Py_ID(fromtimestamp), time);
+    PyObject *result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
     Py_DECREF(time);
     return result;
 }
