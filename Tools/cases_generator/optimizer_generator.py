@@ -4,7 +4,6 @@ Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_
 """
 
 import argparse
-import textwrap
 
 from analyzer import (
     Analysis,
