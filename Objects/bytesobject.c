@@ -1340,11 +1340,12 @@ PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
 {
     return _Py_bytes_repr(PyBytes_AS_STRING(obj),
-                          PyBytes_GET_SIZE(obj), smartquotes);
+                          PyBytes_GET_SIZE(obj), smartquotes, "bytes");
 }
 
 PyObject *
-_Py_bytes_repr(const char *data, Py_ssize_t length, int smartquotes)
+_Py_bytes_repr(const char *data, Py_ssize_t length, int smartquotes,
+               const char *classname)
 {
     Py_ssize_t i;
     Py_ssize_t newsize, squotes, dquotes;
@@ -1411,8 +1412,8 @@ _Py_bytes_repr(const char *data, Py_ssize_t length, int smartquotes)
     return v;
 
   overflow:
-    PyErr_SetString(PyExc_OverflowError,
-                    "bytes object is too large to make repr");
+    PyErr_Format(PyExc_OverflowError,
+                 "%s object is too large to make repr", classname);
     return NULL;
 }
 

@@ -48,7 +48,7 @@ extern PyObject *_Py_bytes_endswith(const char *str, Py_ssize_t len,
 extern PyObject* _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to);
 
 /* Helper for repr(bytes) and repr(bytearray). */
-extern PyObject *_Py_bytes_repr(const char *, Py_ssize_t, int);
+extern PyObject *_Py_bytes_repr(const char *, Py_ssize_t, int, const char *);
 
 /* Shared __doc__ strings. */
 extern const char _Py_isspace__doc__[];

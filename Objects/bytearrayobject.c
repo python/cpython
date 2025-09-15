@@ -1073,12 +1073,9 @@ bytearray_repr_lock_held(PyObject *op)
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     const char *className = _PyType_Name(Py_TYPE(op));
     PyObject *bytes_repr = _Py_bytes_repr(PyByteArray_AS_STRING(op),
-                                          PyByteArray_GET_SIZE(op), 1);
+                                          PyByteArray_GET_SIZE(op), 1,
+                                          "bytearray");
     if (bytes_repr == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-            PyErr_SetString(PyExc_OverflowError,
-                "bytearray object is too large to make repr");
-        }
         return NULL;
     }
     PyObject *res = PyUnicode_FromFormat("%s(%U)", className, bytes_repr);
