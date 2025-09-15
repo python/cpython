@@ -454,6 +454,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 
 #if STRINGLIB_SIZEOF_CHAR > 1
  error:
+    PyBytesWriter_Discard(writer);
     Py_XDECREF(rep);
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
