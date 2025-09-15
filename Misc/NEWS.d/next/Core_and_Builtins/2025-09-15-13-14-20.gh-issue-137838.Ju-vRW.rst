@@ -1,2 +1,0 @@
-Move _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH] to _PyThreadStateImpl.
-Patch By Donghee Na.
