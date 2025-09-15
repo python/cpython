@@ -836,6 +836,11 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             if (v == NULL)
                 goto error;
 
+            if (fmtcnt == 0) {
+                /* last write: disable writer overallocation */
+                writer->overallocate = 0;
+            }
+
             sign = 0;
             fill = ' ';
             switch (c) {
@@ -1056,6 +1061,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             assert((res - before) == alloc);
 #endif
         } /* '%' */
+
+        /* If overallocation was disabled, ensure that it was the last
+           write. Otherwise, we missed an optimization */
+        assert(writer->overallocate || fmtcnt == 0 || use_bytearray);
     } /* until end */
 
     if (argidx < arglen && !dict) {
@@ -3746,14 +3755,6 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
 
 // --- PyBytesWriter API -----------------------------------------------------
 
-struct PyBytesWriter {
-    char small_buffer[256];
-    PyObject *obj;
-    Py_ssize_t size;
-    int use_bytearray;
-};
-
-
 static inline char*
 byteswriter_data(PyBytesWriter *writer)
 {
@@ -3802,7 +3803,8 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
         return 0;
     }
 
-    if (overallocate && !writer->use_bytearray) {
+    overallocate &= writer->overallocate;
+    if (overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
@@ -3867,6 +3869,7 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
     writer->obj = NULL;
     writer->size = 0;
     writer->use_bytearray = use_bytearray;
+    writer->overallocate = !use_bytearray;
 
     if (size >= 1) {
         if (byteswriter_resize(writer, size, 0) < 0) {

@@ -147,6 +147,15 @@ PyAPI_FUNC(void*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
 PyAPI_FUNC(PyBytesWriter*) _PyBytesWriter_CreateByteArray(
     Py_ssize_t size);
 
+
+struct PyBytesWriter {
+    char small_buffer[256];
+    PyObject *obj;
+    Py_ssize_t size;
+    int use_bytearray;
+    int overallocate;
+};
+
 #ifdef __cplusplus
 }
 #endif
