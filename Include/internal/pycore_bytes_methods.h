@@ -47,7 +47,7 @@ extern PyObject *_Py_bytes_endswith(const char *str, Py_ssize_t len,
 /* The maketrans() static method. */
 extern PyObject* _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to);
 
-/* Helper for repr(). */
+/* Helper for repr(bytes) and repr(bytearray). */
 extern PyObject *_Py_bytes_repr(const char *, Py_ssize_t, int);
 
 /* Shared __doc__ strings. */
