@@ -3289,17 +3289,14 @@ int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
     _Py_AssertHoldsTstate();
 
     _PyEval_StopTheWorldAll(&_PyRuntime);
-
     if (_PyRuntime.ref_tracer.tracer_func != NULL) {
         _PyReftracerTrack(NULL, PyRefTracer_TRACKER_REMOVED);
         if (PyErr_Occurred()) {
             return -1;
         }
     }
-
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
-  
     _PyEval_StartTheWorldAll(&_PyRuntime);
     return 0;
 }
