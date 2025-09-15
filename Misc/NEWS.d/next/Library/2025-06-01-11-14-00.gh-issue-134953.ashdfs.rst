@@ -1,2 +1,2 @@
-Expand ``_colorize`` theme with ``keyword_colorize`` and implement in
+Expand ``_colorize`` theme with ``keyword_constant`` and implement in
 :term:`repl`.
