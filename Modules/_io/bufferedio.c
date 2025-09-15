@@ -1048,25 +1048,26 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
         return res;
     }
 
-    PyBytesWriter *writer = PyBytesWriter_Create(n);
-    if (writer == NULL) {
-        return NULL;
-    }
     if (!ENTER_BUFFERED(self)) {
-        PyBytesWriter_Discard(writer);
         return NULL;
     }
+
     /* Flush the write buffer if necessary */
     if (self->writable) {
         PyObject *res = buffered_flush_and_rewind_unlocked(self);
         if (res == NULL) {
             LEAVE_BUFFERED(self)
-            PyBytesWriter_Discard(writer);
             return NULL;
         }
         Py_DECREF(res);
     }
     _bufferedreader_reset_buf(self);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(n);
+    if (writer == NULL) {
+        return NULL;
+    }
+
     Py_ssize_t r = _bufferedreader_raw_read(self,
                                             PyBytesWriter_GetData(writer), n);
     LEAVE_BUFFERED(self)
