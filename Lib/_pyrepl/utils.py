@@ -196,6 +196,9 @@ def gen_colors_from_token_stream(
                     is_def_name = False
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "definition")
+                elif token.string in ("True", "False", "None"):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "keyword_constant")
                 elif keyword.iskeyword(token.string):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "keyword")
@@ -208,7 +211,10 @@ def gen_colors_from_token_stream(
                 ):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "soft_keyword")
-                elif token.string in BUILTINS:
+                elif (
+                    token.string in BUILTINS
+                    and not (prev_token and prev_token.exact_type == T.DOT)
+                ):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "builtin")
 
