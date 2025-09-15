@@ -406,9 +406,6 @@ class StrptimeTests(unittest.TestCase):
         (*_, offset), _, offset_fraction = _strptime._strptime("-013030.000001", "%z")
         self.assertEqual(offset, -(one_hour + half_hour + half_minute))
         self.assertEqual(offset_fraction, -1)
-        (*_, offset), _, offset_fraction = _strptime._strptime("Z", "%z")
-        self.assertEqual(offset, 0)
-        self.assertEqual(offset_fraction, 0)
         for directive in ("%z", "%:z"):
             (*_, offset), _, offset_fraction = _strptime._strptime("+01:00",
                                                                    directive)
@@ -430,6 +427,10 @@ class StrptimeTests(unittest.TestCase):
                                                                    directive)
             self.assertEqual(offset, one_hour + half_hour + half_minute)
             self.assertEqual(offset_fraction, 1000)
+            (*_, offset), _, offset_fraction = _strptime._strptime("Z",
+                                                                   directive)
+            self.assertEqual(offset, 0)
+            self.assertEqual(offset_fraction, 0)
 
     def test_bad_offset(self):
         for directive in ("%z", "%:z"):

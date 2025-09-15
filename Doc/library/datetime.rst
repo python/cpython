@@ -2631,7 +2631,7 @@ differences between platforms in handling of unsupported format specifiers.
 .. versionadded:: 3.12
    ``%:z`` was added for :meth:`~.datetime.strftime`
 
-.. versionadded:: 3.15
+.. versionadded:: next
    ``%:z`` was added for :meth:`~.datetime.strptime`
 
 Technical Detail
