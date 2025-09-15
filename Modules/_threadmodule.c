@@ -657,6 +657,9 @@ PyThreadHandleObject_is_done(PyThreadHandleObject *self,
                              PyObject *Py_UNUSED(ignored))
 {
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
+        if (_PyOnceFlag_CallOnce(&self->handle->once, join_thread, self->handle) == -1) {
+            return NULL;
+        }
         Py_RETURN_TRUE;
     }
     else {
