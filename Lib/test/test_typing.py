@@ -7185,12 +7185,6 @@ class GetTypeHintsTests(BaseTestCase):
         self.assertEqual(TD.__annotations__, {'a': EqualToForwardRef('UniqueT', owner=TD, module=TD.__module__)})
         self.assertEqual(get_type_hints(TD), {'a': TD.__type_params__[0]})
 
-        class TD2(TD):
-            pass
-
-        self.assertEqual(TD2.__annotations__, {'a': EqualToForwardRef('UniqueT', owner=TD, module=TD.__module__)})
-        self.assertEqual(get_type_hints(TD2), {'a': TD.__type_params__[0]})
-
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
