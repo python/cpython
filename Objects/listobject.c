@@ -1784,7 +1784,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, flo
     if (adapt) {
         Py_ssize_t diff = ok;       // jump (jump out on 1st loop to not kick in)
         Py_ssize_t last = ok >> 1;  // mid point (simple binary on 1st loop)
-        float ns = 5.0f;            // number of successes (a bit of head start)
+        Py_ssize_t ns = 5;          // number of successes (a bit of head start)
         float seen = 0.0f;          // number of loops done
         // const float adapt = 1.3;    // adaptivity strength
         for (; ok < n && ns * adapt >= seen; ++ok) {
@@ -1802,7 +1802,6 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, flo
                     IFLT(pivot, a[M]) {
                         R = M;
                         if (L < R) {
-                            diff += 1;
                             M = R - diff;
                             if (M < L)
                                 M = L;
@@ -1810,19 +1809,19 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, flo
                                 R = M;
                             else
                                 L = M + 1;
-                            ns += (float)(R - L) * 8 < ok;
+                            ns += (R - L) * 8 < ok;
                         }
                         else {
-                            ns += 2.0f;
+                            ns += 2;
                         }
                     }
                     else {
                         L = M + 1;
-                        ns += (float)(R - L) * 4 < ok;
+                        ns += (R - L) * 4 < ok;
                     }
                 }
                 else {
-                    ns += 2.0f;
+                    ns += 2;
                 }
             }
             else {
@@ -1834,12 +1833,11 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, flo
                         M = R - 1;
                     IFLT(pivot, a[M]) {
                         R = M;
-                        ns += (float)(R - L) * 4 < ok;
+                        ns += (R - L) * 4 < ok;
                     }
                     else {
                         L = M + 1;
                         if (L < R) {
-                            diff += 1;
                             M = L + diff;
                             if (M >= R)
                                 M = R - 1;
@@ -1847,15 +1845,15 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, flo
                                 R = M;
                             else
                                 L = M + 1;
-                            ns += (float)(R - L) * 8 < ok;
+                            ns += (R - L) * 8 < ok;
                         }
                         else {
-                            ns += 2.0f;
+                            ns += 2;
                         }
                     }
                 }
                 else {
-                    ns += 2.0f;
+                    ns += 2;
                 }
             }
 
@@ -1887,9 +1885,9 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, flo
         }
         if (ok >= n) {
             // Successfully ran fully adaptive
-            // Else go to simple binary sort
             return 1;
         }
+        // Else go to simple binary sort
     }
 
     /* Regular insertion sort has average- and worst-case O(n**2) cost
