@@ -1,11 +1,5 @@
 /* fcntl module */
 
-// Need limited C API version 3.14 for PyLong_AsNativeBytes() in AC code
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030e0000
-#endif
-
 #include "Python.h"
 
 #include <errno.h>                // EINTR
@@ -113,12 +107,12 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             return PyBytes_FromStringAndSize(buf, len);
         }
         else {
-            PyObject *result = PyBytes_FromStringAndSize(NULL, len);
-            if (result == NULL) {
+            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            if (writer == NULL) {
                 PyBuffer_Release(&view);
                 return NULL;
             }
-            char *ptr = PyBytes_AsString(result);
+            char *ptr = PyBytesWriter_GetData(writer);
             memcpy(ptr, view.buf, len);
             PyBuffer_Release(&view);
 
@@ -131,15 +125,15 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 if (!async_err) {
                     PyErr_SetFromErrno(PyExc_OSError);
                 }
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
             if (ptr[len] != '\0') {
                 PyErr_SetString(PyExc_SystemError, "buffer overflow");
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            return result;
+            return PyBytesWriter_Finish(writer);
         }
 #undef FCNTL_BUFSZ
     }
@@ -297,12 +291,12 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             return PyBytes_FromStringAndSize(buf, len);
         }
         else {
-            PyObject *result = PyBytes_FromStringAndSize(NULL, len);
-            if (result == NULL) {
+            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            if (writer == NULL) {
                 PyBuffer_Release(&view);
                 return NULL;
             }
-            char *ptr = PyBytes_AsString(result);
+            char *ptr = PyBytesWriter_GetData(writer);
             memcpy(ptr, view.buf, len);
             PyBuffer_Release(&view);
 
@@ -315,15 +309,15 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 if (!async_err) {
                     PyErr_SetFromErrno(PyExc_OSError);
                 }
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
             if (ptr[len] != '\0') {
                 PyErr_SetString(PyExc_SystemError, "buffer overflow");
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
-            return result;
+            return PyBytesWriter_Finish(writer);
         }
 #undef IOCTL_BUFSZ
     }
