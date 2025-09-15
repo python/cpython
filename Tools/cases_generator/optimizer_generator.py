@@ -247,8 +247,8 @@ class OptimizerEmitter(Emitter):
                     if input_count in input_count_to_uop:
                         replacement_uop = input_count_to_uop[input_count]
                         input_desc = "one input" if input_count == 1 else "two inputs"
-                        emitter.emit(f"""
-                if (sym_is_const(ctx, {outp.name})) {{
+                        emitter.emit(
+                f"""if (sym_is_const(ctx, {outp.name})) {{
                     PyObject *result = sym_get_const(ctx, {outp.name});
                     if (_Py_IsImmortal(result)) {{
                         // Replace with {replacement_uop} since we have {input_desc} and an immortal result
