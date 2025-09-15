@@ -945,6 +945,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
+    clear_freelist(&freelists->bytes_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->ints, is_finalization, free_object);
     clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
@@ -3286,6 +3287,12 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
     _Py_AssertHoldsTstate();
+    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
+        _PyReftracerTrack(NULL, PyRefTracer_TRACKER_REMOVED);
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+    }
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
     return 0;

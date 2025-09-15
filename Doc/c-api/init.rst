@@ -41,7 +41,6 @@ The following functions can be safely called before Python is initialized:
   * :c:func:`PyObject_SetArenaAllocator`
   * :c:func:`Py_SetProgramName`
   * :c:func:`Py_SetPythonHome`
-  * :c:func:`PySys_ResetWarnOptions`
   * the configuration functions covered in :ref:`init-config`
 
 * Informative functions:
@@ -1020,6 +1019,12 @@ code, or when embedding the Python interpreter:
    interpreter lock is also shared by all threads, regardless of to which
    interpreter they belong.
 
+   .. versionchanged:: 3.12
+
+      :pep:`684` introduced the possibility
+      of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
+      See :c:func:`Py_NewInterpreterFromConfig`.
+
 
 .. c:type:: PyThreadState
 
@@ -1711,6 +1716,8 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+.. _per-interpreter-gil:
+
 A Per-Interpreter GIL
 ---------------------
 
@@ -1722,7 +1729,7 @@ being blocked by other interpreters or blocking any others.  Thus a
 single Python process can truly take advantage of multiple CPU cores
 when running Python code.  The isolation also encourages a different
 approach to concurrency than that of just using threads.
-(See :pep:`554`.)
+(See :pep:`554` and :pep:`684`.)
 
 Using an isolated interpreter requires vigilance in preserving that
 isolation.  That especially means not sharing any objects or mutable
@@ -2003,6 +2010,11 @@ Reference tracing
    is set to :c:data:`PyRefTracer_DESTROY`). The **data** argument is the opaque pointer
    that was provided when :c:func:`PyRefTracer_SetTracer` was called.
 
+   If a new tracing function is registered replacing the current a call to the
+   trace function will be made with the object set to **NULL** and **event** set to
+   :c:data:`PyRefTracer_TRACKER_REMOVED`. This will happen just before the new
+   function is registered.
+
 .. versionadded:: 3.13
 
 .. c:var:: int PyRefTracer_CREATE
@@ -2014,6 +2026,13 @@ Reference tracing
 
    The value for the *event* parameter to :c:type:`PyRefTracer` functions when a Python
    object has been destroyed.
+
+.. c:var:: int PyRefTracer_TRACKER_REMOVED
+
+   The value for the *event* parameter to :c:type:`PyRefTracer` functions when the
+   current tracer is about to be replaced by a new one.
+
+   .. versionadded:: 3.14
 
 .. c:function:: int PyRefTracer_SetTracer(PyRefTracer tracer, void *data)
 
@@ -2029,6 +2048,10 @@ Reference tracing
    every time the tracer function is called.
 
    There must be an :term:`attached thread state` when calling this function.
+
+   If another tracer function was already registered, the old function will be
+   called with **event** set to :c:data:`PyRefTracer_TRACKER_REMOVED` just before
+   the new function is registered.
 
 .. versionadded:: 3.13
 

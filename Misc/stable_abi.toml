@@ -1335,6 +1335,7 @@
     abi_only = true
 [function.PySys_ResetWarnOptions]
     added = '3.2'
+    abi_only = true
 [function.PySys_SetArgv]
     added = '3.2'
 [function.PySys_SetArgvEx]
