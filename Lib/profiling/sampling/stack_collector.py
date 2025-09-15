@@ -7,6 +7,7 @@ import linecache
 import os
 
 from .collector import Collector
+from .string_table import StringTable
 
 
 class StackTraceCollector(Collector):
@@ -15,36 +16,39 @@ class StackTraceCollector(Collector):
         self.function_samples = collections.defaultdict(int)
         self.skip_idle = skip_idle
 
-    def _process_frames(self, frames):
-        """Process a single thread's frame stack."""
-        if not frames:
-            return
+    def collect(self, stack_frames, skip_idle=None):
+        if skip_idle == None:
+            skip_idle = self.skip_idle
 
-        # Store the complete call stack (reverse order - root first)
-        call_tree = list(reversed(frames))
-        self.call_trees.append(call_tree)
+        for frames in self._iter_all_frames(stack_frames):
+            if not frames:
+                continue
+            self.process_frames(frames)
 
-        # Count samples per function
-        for frame in frames:
-            self.function_samples[frame] += 1
-
-    def collect(self, stack_frames):
-        for frames in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
-            self._process_frames(frames)
+    def process_frames(self, frames):
+        pass
 
 
 class CollapsedStackCollector(StackTraceCollector):
+    def __init__(self):
+        self.stack_counter = collections.Counter()
+
+    def process_frames(self, frames):
+        call_tree = tuple(reversed(frames))
+        self.stack_counter[call_tree] += 1
+
     def export(self, filename):
-        stack_counter = collections.Counter()
-        for call_tree in self.call_trees:
-            # Call tree is already in root->leaf order
+        lines = []
+        for call_tree, count in self.stack_counter.items():
             stack_str = ";".join(
                 f"{os.path.basename(f[0])}:{f[2]}:{f[1]}" for f in call_tree
             )
-            stack_counter[stack_str] += 1
+            lines.append((stack_str, count))
+
+        lines.sort(key=lambda x: (-x[1], x[0]))
 
         with open(filename, "w") as f:
-            for stack, count in stack_counter.items():
+            for stack, count in lines:
                 f.write(f"{stack} {count}\n")
         print(f"Collapsed stack output written to {filename}")
 
@@ -53,6 +57,10 @@ class FlamegraphCollector(StackTraceCollector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.stats = {}
+        self._root = {"samples": 0, "children": {}}
+        self._total_samples = 0
+        self._func_intern = {}
+        self._string_table = StringTable()
 
     def set_stats(self, sample_interval_usec, duration_sec, sample_rate, error_rate=None):
         """Set profiling statistics to include in flamegraph data."""
@@ -66,11 +74,13 @@ class FlamegraphCollector(StackTraceCollector):
     def export(self, filename):
         flamegraph_data = self._convert_to_flamegraph_format()
 
-        # Debug output
+        # Debug output with string table statistics
         num_functions = len(flamegraph_data.get("children", []))
         total_time = flamegraph_data.get("value", 0)
+        string_count = len(self._string_table)
         print(
-            f"Flamegraph data: {num_functions} root functions, total samples: {total_time}"
+            f"Flamegraph data: {num_functions} root functions, total samples: {total_time}, "
+            f"{string_count} unique strings"
         )
 
         if num_functions == 0:
@@ -99,105 +109,105 @@ class FlamegraphCollector(StackTraceCollector):
         return f"{funcname} ({filename}:{lineno})"
 
     def _convert_to_flamegraph_format(self):
-        """Convert call trees to d3-flamegraph format with optimized hierarchy building"""
-        if not self.call_trees:
-            return {"name": "No Data", "value": 0, "children": []}
-
-        unique_functions = set()
-        for call_tree in self.call_trees:
-            unique_functions.update(call_tree)
-
-        func_to_name = {
-            func: self._format_function_name(func) for func in unique_functions
-        }
-
-        root = {"name": "root", "children": {}, "samples": 0}
-
-        for call_tree in self.call_trees:
-            current_node = root
-            current_node["samples"] += 1
-
-            for func in call_tree:
-                func_name = func_to_name[func]  # Use pre-computed name
-
-                if func_name not in current_node["children"]:
-                    current_node["children"][func_name] = {
-                        "name": func_name,
-                        "func": func,
-                        "children": {},
-                        "samples": 0,
-                        "filename": func[0],
-                        "lineno": func[1],
-                        "funcname": func[2],
-                    }
-
-                current_node = current_node["children"][func_name]
-                current_node["samples"] += 1
-
-        def convert_node(node, min_samples=1):
-            if node["samples"] < min_samples:
-                return None
-
-            source_code = None
-            if "func" in node:
-                source_code = self._get_source_lines(node["func"])
-
-            result = {
-                "name": node["name"],
-                "value": node["samples"],
+        """Convert aggregated trie to d3-flamegraph format with string table optimization."""
+        if self._total_samples == 0:
+            return {
+                "name": self._string_table.intern("No Data"),
+                "value": 0,
                 "children": [],
+                "strings": self._string_table.get_strings()
             }
 
-            if "filename" in node:
-                result.update(
-                    {
-                        "filename": node["filename"],
-                        "lineno": node["lineno"],
-                        "funcname": node["funcname"],
-                    }
+        def convert_children(children, min_samples):
+            out = []
+            for func, node in children.items():
+                samples = node["samples"]
+                if samples < min_samples:
+                    continue
+
+                # Intern all string components for maximum efficiency
+                filename_idx = self._string_table.intern(func[0])
+                funcname_idx = self._string_table.intern(func[2])
+                name_idx = self._string_table.intern(self._format_function_name(func))
+
+                child_entry = {
+                    "name": name_idx,
+                    "value": samples,
+                    "children": [],
+                    "filename": filename_idx,
+                    "lineno": func[1],
+                    "funcname": funcname_idx,
+                }
+
+                source = self._get_source_lines(func)
+                if source:
+                    # Intern source lines for memory efficiency
+                    source_indices = [self._string_table.intern(line) for line in source]
+                    child_entry["source"] = source_indices
+
+                # Recurse
+                child_entry["children"] = convert_children(
+                    node["children"], min_samples
                 )
+                out.append(child_entry)
 
-            if source_code:
-                result["source"] = source_code
-
-            # Recursively convert children
-            child_nodes = []
-            for child_name, child_node in node["children"].items():
-                child_result = convert_node(child_node, min_samples)
-                if child_result:
-                    child_nodes.append(child_result)
-
-            # Sort children by sample count (descending)
-            child_nodes.sort(key=lambda x: x["value"], reverse=True)
-            result["children"] = child_nodes
-
-            return result
+            # Sort by value (descending) then by name index for consistent ordering
+            out.sort(key=lambda x: (-x["value"], x["name"]))
+            return out
 
         # Filter out very small functions (less than 0.1% of total samples)
-        total_samples = len(self.call_trees)
+        total_samples = self._total_samples
         min_samples = max(1, int(total_samples * 0.001))
 
-        converted_root = convert_node(root, min_samples)
-
-        if not converted_root or not converted_root["children"]:
-            return {"name": "No significant data", "value": 0, "children": []}
+        root_children = convert_children(self._root["children"], min_samples)
+        if not root_children:
+            return {
+                "name": self._string_table.intern("No significant data"),
+                "value": 0,
+                "children": [],
+                "strings": self._string_table.get_strings()
+            }
 
         # If we only have one root child, make it the root to avoid redundant level
-        if len(converted_root["children"]) == 1:
-            main_child = converted_root["children"][0]
-            main_child["name"] = f"Program Root: {main_child['name']}"
+        if len(root_children) == 1:
+            main_child = root_children[0]
+            # Update the name to indicate it's the program root
+            old_name = self._string_table.get_string(main_child["name"])
+            new_name = f"Program Root: {old_name}"
+            main_child["name"] = self._string_table.intern(new_name)
             main_child["stats"] = self.stats
+            main_child["strings"] = self._string_table.get_strings()
             return main_child
 
-        converted_root["name"] = "Program Root"
-        converted_root["stats"] = self.stats
-        return converted_root
+        return {
+            "name": self._string_table.intern("Program Root"),
+            "value": total_samples,
+            "children": root_children,
+            "stats": self.stats,
+            "strings": self._string_table.get_strings()
+        }
+
+    def process_frames(self, frames):
+        # Reverse to root->leaf
+        call_tree = reversed(frames)
+        self._root["samples"] += 1
+        self._total_samples += 1
+
+        current = self._root
+        for func in call_tree:
+            func = self._func_intern.setdefault(func, func)
+            children = current["children"]
+            node = children.get(func)
+            if node is None:
+                node = {"samples": 0, "children": {}}
+                children[func] = node
+            node["samples"] += 1
+            current = node
 
     def _get_source_lines(self, func):
-        filename, lineno, funcname = func
+        filename, lineno, _ = func
 
         try:
-            # Get several lines around the function definition
             lines = []
             start_line = max(1, lineno - 2)
             end_line = lineno + 3
@@ -211,7 +221,6 @@ class FlamegraphCollector(StackTraceCollector):
             return lines if lines else None
 
         except Exception:
-            # If we can't get source code, return None
             return None
 
     def _create_flamegraph_html(self, data):
