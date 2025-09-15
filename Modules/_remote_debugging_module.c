@@ -2655,14 +2655,11 @@ unwind_stack_for_thread(
         status = THREAD_STATE_RUNNING;
     }
 
-    // Check if we should skip this thread based on mode and the new option
+    // Check if we should skip this thread based on mode
     int should_skip = 0;
-    if (unwinder->skip_non_matching_threads) {
-        if (unwinder->mode == PROFILING_MODE_CPU && status != THREAD_STATE_RUNNING) {
-            should_skip = 1;
-        } else if (unwinder->mode == PROFILING_MODE_GIL && status != THREAD_STATE_RUNNING) {
-            should_skip = 1;
-        }
+    if ((unwinder->skip_non_matching_threads && status != THREAD_STATE_RUNNING) &&
+        (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_GIL)) {
+        should_skip = 1;
     }
 
     if (should_skip) {
