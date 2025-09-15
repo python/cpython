@@ -862,10 +862,6 @@ static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
 /*[clinic end generated code: output=bbd749c7c224143e input=752d1ad3db8564a5]*/
 {
-    char *ptr;
-    Py_ssize_t n;
-    PyObject *bytes;
-
     if (self->fd < 0)
         return err_closed();
     if (!self->readable) {
@@ -880,16 +876,17 @@ _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
         size = _PY_READ_MAX;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
-    ptr = PyBytes_AS_STRING(bytes);
+    }
+    char *ptr = PyBytesWriter_GetData(writer);
 
-    n = _Py_read(self->fd, ptr, size);
+    Py_ssize_t n = _Py_read(self->fd, ptr, size);
     if (n == -1) {
-        /* copy errno because Py_DECREF() can indirectly modify it */
+        // copy errno because PyBytesWriter_Discard() can indirectly modify it
         int err = errno;
-        Py_DECREF(bytes);
+        PyBytesWriter_Discard(writer);
         if (err == EAGAIN) {
             PyErr_Clear();
             Py_RETURN_NONE;
@@ -897,14 +894,7 @@ _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
         return NULL;
     }
 
-    if (n != size) {
-        if (_PyBytes_Resize(&bytes, n) < 0) {
-            Py_CLEAR(bytes);
-            return NULL;
-        }
-    }
-
-    return (PyObject *) bytes;
+    return PyBytesWriter_FinishWithSize(writer, n);
 }
 
 /*[clinic input]
