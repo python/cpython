@@ -1994,8 +1994,7 @@ class _PosixSpawnMixin:
     @unittest.skipIf(platform.libc_ver()[0] == 'glibc' and
                      os.sched_getscheduler(0) in [
                         os.SCHED_BATCH,
-                        os.SCHED_IDLE,
-                        os.SCHED_DEADLINE],
+                        os.SCHED_IDLE],
                      "Skip test due to glibc posix_spawn policy")
     def test_setscheduler_with_policy(self):
         policy = os.sched_getscheduler(0)
