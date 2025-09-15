@@ -1,1 +1,1 @@
-Fix failure during parameterization of generics when a non-type-list ``ParamSpec`` default is followed by another type variable default, and the ``ParamSpec`` is not provided as a type argument.
+Fix generic type parameterization raising a :exc:`TypeError` when omitting a :class:`ParamSpec` that has a default which is not a list of types.
