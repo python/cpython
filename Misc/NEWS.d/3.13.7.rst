@@ -1,0 +1,63 @@
+.. date: 2025-08-09-08-53-32
+.. gh-issue: 137583
+.. nonce: s6OZud
+.. release date: 2025-08-14
+.. section: Library
+
+Fix a deadlock introduced in 3.13.6 when a call to :meth:`ssl.SSLSocket.recv
+<socket.socket.recv>` was blocked in one thread, and then another method on
+the object (such as :meth:`ssl.SSLSocket.send <socket.socket.send>`) was
+subsequently called in another thread.
+
+..
+
+.. date: 2025-08-03-13-16-39
+.. gh-issue: 137044
+.. nonce: 0hPVL_
+.. section: Library
+
+Return large limit values as positive integers instead of negative integers
+in :func:`resource.getrlimit`. Accept large values and reject negative
+values (except :data:`~resource.RLIM_INFINITY`) for limits in
+:func:`resource.setrlimit`.
+
+..
+
+.. date: 2025-07-21-15-40-00
+.. gh-issue: 136914
+.. nonce: -GNG-d
+.. section: Library
+
+Fix retrieval of :attr:`doctest.DocTest.lineno` for objects decorated with
+:func:`functools.cache` or :class:`functools.cached_property`.
+
+..
+
+.. date: 2025-03-27-08-13-32
+.. gh-issue: 131788
+.. nonce: 0RWiFc
+.. section: Library
+
+Make ``ResourceTracker.send`` from :mod:`multiprocessing` re-entrant safe
+
+..
+
+.. date: 2025-07-01-23-00-58
+.. gh-issue: 136155
+.. nonce: 4siQQO
+.. section: Documentation
+
+We are now checking for fatal errors in EPUB builds in CI.
+
+..
+
+.. date: 2025-08-06-15-39-54
+.. gh-issue: 137400
+.. nonce: xIw0zs
+.. section: Core and Builtins
+
+Fix a crash in the :term:`free threading` build when disabling profiling or
+tracing across all threads with :c:func:`PyEval_SetProfileAllThreads` or
+:c:func:`PyEval_SetTraceAllThreads` or their Python equivalents
+:func:`threading.settrace_all_threads` and
+:func:`threading.setprofile_all_threads`.

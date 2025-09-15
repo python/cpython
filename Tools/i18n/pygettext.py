@@ -214,7 +214,7 @@ def make_escapes(pass_nonascii):
     else:
         mod = 256
         escape = escape_nonascii
-    escapes = [r"\%03o" % i for i in range(mod)]
+    escapes = [fr"\{i:03o}" for i in range(mod)]
     for i in range(32, 127):
         escapes[i] = chr(i)
     escapes[ord('\\')] = r'\\'
@@ -620,7 +620,7 @@ def main():
         try:
             with open(options.excludefilename) as fp:
                 options.toexclude = fp.readlines()
-        except IOError:
+        except OSError:
             print(_(
                 "Can't read --exclude-file: %s") % options.excludefilename, file=sys.stderr)
             sys.exit(1)

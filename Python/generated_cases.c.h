@@ -961,6 +961,9 @@
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
                 DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             }
             // _INIT_CALL_PY_EXACT_ARGS
@@ -1043,6 +1046,10 @@
                 assert(PyFunction_Check(method));
                 Py_INCREF(method);
                 Py_DECREF(callable);
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
+                DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             }
             // _PY_FRAME_GENERAL
             args = &stack_pointer[-oparg];
@@ -1890,6 +1897,9 @@
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 PyCodeObject *code = (PyCodeObject *)func->func_code;
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
                 DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             }
             // _INIT_CALL_PY_EXACT_ARGS
@@ -1954,6 +1964,10 @@
                 DEOPT_IF(!PyFunction_Check(callable), CALL);
                 PyFunctionObject *func = (PyFunctionObject *)callable;
                 DEOPT_IF(func->func_version != func_version, CALL);
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
+                DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             }
             // _PY_FRAME_GENERAL
             args = &stack_pointer[-oparg];

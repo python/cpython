@@ -1041,13 +1041,19 @@ _PyLong_AsByteArray(PyLongObject* v,
         *p = (unsigned char)(accum & 0xff);
         p += pincr;
     }
-    else if (j == n && n > 0 && is_signed) {
+    else if (j == n && is_signed) {
         /* The main loop filled the byte array exactly, so the code
            just above didn't get to ensure there's a sign bit, and the
            loop below wouldn't add one either.  Make sure a sign bit
            exists. */
-        unsigned char msb = *(p - pincr);
-        int sign_bit_set = msb >= 0x80;
+        int sign_bit_set;
+        if (n > 0) {
+            unsigned char msb = *(p - pincr);
+            sign_bit_set = msb >= 0x80;
+        }
+        else {
+            sign_bit_set = 0;
+        }
         assert(accumbits == 0);
         if (sign_bit_set == do_twos_comp)
             return 0;

@@ -203,6 +203,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_PEP_523] = HAS_DEOPT_FLAG,
     [_CHECK_FUNCTION_EXACT_ARGS] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CHECK_STACK_SPACE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_CHECK_RECURSION_REMAINING] = HAS_DEOPT_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS_0] = HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS_1] = HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS_2] = HAS_PURE_FLAG,
@@ -319,6 +320,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_METHOD_VERSION] = "_CHECK_METHOD_VERSION",
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_PERIODIC] = "_CHECK_PERIODIC",
+    [_CHECK_RECURSION_REMAINING] = "_CHECK_RECURSION_REMAINING",
     [_CHECK_STACK_SPACE] = "_CHECK_STACK_SPACE",
     [_CHECK_STACK_SPACE_OPERAND] = "_CHECK_STACK_SPACE_OPERAND",
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
@@ -880,6 +882,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2 + oparg;
         case _CHECK_STACK_SPACE:
             return 2 + oparg;
+        case _CHECK_RECURSION_REMAINING:
+            return 0;
         case _INIT_CALL_PY_EXACT_ARGS_0:
             return 2 + oparg;
         case _INIT_CALL_PY_EXACT_ARGS_1:

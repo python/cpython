@@ -80,7 +80,9 @@ The following warnings category classes are currently defined:
 |                                  | unless triggered by code in ``__main__``).    |
 +----------------------------------+-----------------------------------------------+
 | :exc:`SyntaxWarning`             | Base category for warnings about dubious      |
-|                                  | syntactic features.                           |
+|                                  | syntactic features (typically emitted when    |
+|                                  | compiling Python source code, and hence       |
+|                                  | may not be suppressed by runtime filters)     |
 +----------------------------------+-----------------------------------------------+
 | :exc:`RuntimeWarning`            | Base category for warnings about dubious      |
 |                                  | runtime features.                             |

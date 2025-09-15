@@ -2302,6 +2302,9 @@ Customizing module attribute access
    single: __dir__ (module attribute)
    single: __class__ (module attribute)
 
+.. method:: module.__getattr__
+            module.__dir__
+
 Special names ``__getattr__`` and ``__dir__`` can be also used to customize
 access to module attributes. The ``__getattr__`` function at the module level
 should accept one argument which is the name of an attribute and return the
@@ -2314,6 +2317,8 @@ it is called with the attribute name and the result is returned.
 The ``__dir__`` function should accept no arguments, and return an iterable of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
+
+.. attribute:: module.__class__
 
 For a more fine grained customization of the module behavior (setting
 attributes, properties, etc.), one can set the ``__class__`` attribute of
@@ -3079,11 +3084,12 @@ objects.  The :mod:`collections.abc` module provides a
 :term:`abstract base class` to help create those methods from a base set of
 :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
 :meth:`~object.__delitem__`, and :meth:`!keys`.
-Mutable sequences should provide methods :meth:`!append`, :meth:`!count`,
-:meth:`!index`, :meth:`!extend`, :meth:`!insert`, :meth:`!pop`, :meth:`!remove`,
-:meth:`!reverse` and :meth:`!sort`, like Python standard :class:`list`
-objects. Finally,
-sequence types should implement addition (meaning concatenation) and
+Mutable sequences should provide methods :meth:`~sequence.append`,
+:meth:`~sequence.count`, :meth:`~sequence.index`, :meth:`~sequence.extend`,
+:meth:`~sequence.insert`, :meth:`~sequence.pop`, :meth:`~sequence.remove`,
+:meth:`~sequence.reverse` and :meth:`~sequence.sort`,
+like Python standard :class:`list` objects.
+Finally, sequence types should implement addition (meaning concatenation) and
 multiplication (meaning repetition) by defining the methods
 :meth:`~object.__add__`, :meth:`~object.__radd__`, :meth:`~object.__iadd__`,
 :meth:`~object.__mul__`, :meth:`~object.__rmul__` and :meth:`~object.__imul__`

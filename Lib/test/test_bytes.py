@@ -1885,16 +1885,43 @@ class AssortedBytesTest(unittest.TestCase):
     # Test various combinations of bytes and bytearray
     #
 
+    def test_bytes_repr(self, f=repr):
+        self.assertEqual(f(b''), "b''")
+        self.assertEqual(f(b"abc"), "b'abc'")
+        self.assertEqual(f(bytes([92])), r"b'\\'")
+        self.assertEqual(f(bytes([0, 1, 254, 255])), r"b'\x00\x01\xfe\xff'")
+        self.assertEqual(f(b'\a\b\t\n\v\f\r'), r"b'\x07\x08\t\n\x0b\x0c\r'")
+        self.assertEqual(f(b'"'), """b'"'""") # '"'
+        self.assertEqual(f(b"'"), '''b"'"''') # "'"
+        self.assertEqual(f(b"'\""), r"""b'\'"'""") # '\'"'
+        self.assertEqual(f(b"\"'\""), r"""b'"\'"'""") # '"\'"'
+        self.assertEqual(f(b"'\"'"), r"""b'\'"\''""") # '\'"\''
+        self.assertEqual(f(BytesSubclass(b"abc")), "b'abc'")
+
+    def test_bytearray_repr(self, f=repr):
+        self.assertEqual(f(bytearray()), "bytearray(b'')")
+        self.assertEqual(f(bytearray(b'abc')), "bytearray(b'abc')")
+        self.assertEqual(f(bytearray([92])), r"bytearray(b'\\')")
+        self.assertEqual(f(bytearray([0, 1, 254, 255])),
+                            r"bytearray(b'\x00\x01\xfe\xff')")
+        self.assertEqual(f(bytearray([7, 8, 9, 10, 11, 12, 13])),
+                            r"bytearray(b'\x07\x08\t\n\x0b\x0c\r')")
+        self.assertEqual(f(bytearray(b'"')), """bytearray(b'"')""") # '"'
+        self.assertEqual(f(bytearray(b"'")), r'''bytearray(b"\'")''') # "\'"
+        self.assertEqual(f(bytearray(b"'\"")), r"""bytearray(b'\'"')""") # '\'"'
+        self.assertEqual(f(bytearray(b"\"'\"")), r"""bytearray(b'"\'"')""") # '"\'"'
+        self.assertEqual(f(bytearray(b'\'"\'')), r"""bytearray(b'\'"\'')""") # '\'"\''
+        self.assertEqual(f(ByteArraySubclass(b"abc")), "ByteArraySubclass(b'abc')")
+        self.assertEqual(f(ByteArraySubclass.Nested(b"abc")), "Nested(b'abc')")
+        self.assertEqual(f(ByteArraySubclass.Ŭñıçöđë(b"abc")), "Ŭñıçöđë(b'abc')")
+
     @check_bytes_warnings
-    def test_repr_str(self):
-        for f in str, repr:
-            self.assertEqual(f(bytearray()), "bytearray(b'')")
-            self.assertEqual(f(bytearray([0])), "bytearray(b'\\x00')")
-            self.assertEqual(f(bytearray([0, 1, 254, 255])),
-                             "bytearray(b'\\x00\\x01\\xfe\\xff')")
-            self.assertEqual(f(b"abc"), "b'abc'")
-            self.assertEqual(f(b"'"), '''b"'"''') # '''
-            self.assertEqual(f(b"'\""), r"""b'\'"'""") # '
+    def test_bytes_str(self):
+        self.test_bytes_repr(str)
+
+    @check_bytes_warnings
+    def test_bytearray_str(self):
+        self.test_bytearray_repr(str)
 
     @check_bytes_warnings
     def test_format(self):
@@ -1946,15 +1973,6 @@ class AssortedBytesTest(unittest.TestCase):
         buf = memoryview(sample)
         b = bytearray(buf)
         self.assertEqual(b, bytearray(sample))
-
-    @check_bytes_warnings
-    def test_to_str(self):
-        self.assertEqual(str(b''), "b''")
-        self.assertEqual(str(b'x'), "b'x'")
-        self.assertEqual(str(b'\x80'), "b'\\x80'")
-        self.assertEqual(str(bytearray(b'')), "bytearray(b'')")
-        self.assertEqual(str(bytearray(b'x')), "bytearray(b'x')")
-        self.assertEqual(str(bytearray(b'\x80')), "bytearray(b'\\x80')")
 
     def test_literal(self):
         tests =  [
@@ -2163,7 +2181,10 @@ class SubclassTest:
 
 
 class ByteArraySubclass(bytearray):
-    pass
+    class Nested(bytearray):
+        pass
+    class Ŭñıçöđë(bytearray):
+        pass
 
 class ByteArraySubclassWithSlots(bytearray):
     __slots__ = ('x', 'y', '__dict__')

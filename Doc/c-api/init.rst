@@ -447,7 +447,11 @@ Initializing and finalizing the interpreter
    freed.  Some memory allocated by extension modules may not be freed.  Some
    extensions may not work properly if their initialization routine is called more
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
-   :c:func:`Py_FinalizeEx` more than once.
+   :c:func:`Py_FinalizeEx` more than once.  :c:func:`Py_FinalizeEx` must not be
+   called recursively from within itself.  Therefore, it must not be called by
+   any code that may be run as part of the interpreter shutdown process, such
+   as :py:mod:`atexit` handlers, object finalizers, or any code that may be run
+   while flushing the stdout and stderr files.
 
    .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
@@ -1074,6 +1078,37 @@ thread, where the CPython global runtime was originally initialized.
 The only exception is if :c:func:`exec` will be called immediately
 after.
 
+.. _cautions-regarding-runtime-finalization:
+
+Cautions regarding runtime finalization
+---------------------------------------
+
+In the late stage of :term:`interpreter shutdown`, after attempting to wait for
+non-daemon threads to exit (though this can be interrupted by
+:class:`KeyboardInterrupt`) and running the :mod:`atexit` functions, the runtime
+is marked as *finalizing*: :c:func:`Py_IsFinalizing` and
+:func:`sys.is_finalizing` return true.  At this point, only the *finalization
+thread* that initiated finalization (typically the main thread) is allowed to
+acquire the :term:`GIL`.
+
+If any thread, other than the finalization thread, attempts to acquire the GIL
+during finalization, either explicitly via :c:func:`PyGILState_Ensure`,
+:c:macro:`Py_END_ALLOW_THREADS`, :c:func:`PyEval_AcquireThread`, or
+:c:func:`PyEval_AcquireLock`, or implicitly when the interpreter attempts to
+reacquire it after having yielded it, the thread enters **a permanently blocked
+state** where it remains until the program exits.  In most cases this is
+harmless, but this can result in deadlock if a later stage of finalization
+attempts to acquire a lock owned by the blocked thread, or otherwise waits on
+the blocked thread.
+
+Gross? Yes. This prevents random crashes and/or unexpectedly skipped C++
+finalizations further up the call stack when such threads were forcibly exited
+here in CPython 3.13.7 and earlier. The CPython runtime GIL acquiring C APIs
+have never had any error reporting or handling expectations at GIL acquisition
+time that would've allowed for graceful exit from this situation. Changing that
+would require new stable C APIs and rewriting the majority of C code in the
+CPython ecosystem to use those with error handling.
+
 
 High-level API
 --------------
@@ -1092,6 +1127,12 @@ code, or when embedding the Python interpreter:
    process state like available memory, open file descriptors and such.  The global
    interpreter lock is also shared by all threads, regardless of to which
    interpreter they belong.
+
+   .. versionchanged:: 3.12
+
+      :pep:`684` introduced the possibility
+      of a :ref:`per-interpreter GIL <per-interpreter-gil>`.
+      See :c:func:`Py_NewInterpreterFromConfig`.
 
 
 .. c:type:: PyThreadState
@@ -1147,11 +1188,14 @@ code, or when embedding the Python interpreter:
    ensues.
 
    .. note::
-      Calling this function from a thread when the runtime is finalizing
-      will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
-      check if the interpreter is in process of being finalized before calling
-      this function to avoid unwanted termination.
+      Calling this function from a thread when the runtime is finalizing will
+      hang the thread until the program exits, even if the thread was not
+      created by Python.  Refer to
+      :ref:`cautions-regarding-runtime-finalization` for more details.
+
+   .. versionchanged:: next
+      Hangs the current thread, rather than terminating it, if called while the
+      interpreter is finalizing.
 
 .. c:function:: PyThreadState* PyThreadState_Get()
 
@@ -1207,11 +1251,14 @@ with sub-interpreters:
    to call arbitrary Python code.  Failure is a fatal error.
 
    .. note::
-      Calling this function from a thread when the runtime is finalizing
-      will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
-      check if the interpreter is in process of being finalized before calling
-      this function to avoid unwanted termination.
+      Calling this function from a thread when the runtime is finalizing will
+      hang the thread until the program exits, even if the thread was not
+      created by Python.  Refer to
+      :ref:`cautions-regarding-runtime-finalization` for more details.
+
+   .. versionchanged:: next
+      Hangs the current thread, rather than terminating it, if called while the
+      interpreter is finalizing.
 
 .. c:function:: void PyGILState_Release(PyGILState_STATE)
 
@@ -1503,16 +1550,19 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    If this thread already has the lock, deadlock ensues.
 
    .. note::
-      Calling this function from a thread when the runtime is finalizing
-      will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
-      check if the interpreter is in process of being finalized before calling
-      this function to avoid unwanted termination.
+      Calling this function from a thread when the runtime is finalizing will
+      hang the thread until the program exits, even if the thread was not
+      created by Python.  Refer to
+      :ref:`cautions-regarding-runtime-finalization` for more details.
 
    .. versionchanged:: 3.8
       Updated to be consistent with :c:func:`PyEval_RestoreThread`,
       :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
       and terminate the current thread if called while the interpreter is finalizing.
+
+   .. versionchanged:: next
+      Hangs the current thread, rather than terminating it, if called while the
+      interpreter is finalizing.
 
    :c:func:`PyEval_RestoreThread` is a higher-level function which is always
    available (even when threads have not been initialized).
@@ -1773,6 +1823,8 @@ function. You can create and destroy them using the following functions:
    haven't been explicitly destroyed at that point.
 
 
+.. _per-interpreter-gil:
+
 A Per-Interpreter GIL
 ---------------------
 
@@ -1784,7 +1836,7 @@ being blocked by other interpreters or blocking any others.  Thus a
 single Python process can truly take advantage of multiple CPU cores
 when running Python code.  The isolation also encourages a different
 approach to concurrency than that of just using threads.
-(See :pep:`554`.)
+(See :pep:`554` and :pep:`684`.)
 
 Using an isolated interpreter requires vigilance in preserving that
 isolation.  That especially means not sharing any objects or mutable
@@ -2352,12 +2404,20 @@ per-object locks for :term:`free-threaded <free threading>` CPython.  They are
 intended to replace reliance on the :term:`global interpreter lock`, and are
 no-ops in versions of Python with the global interpreter lock.
 
+Critical sections are intended to be used for custom types implemented
+in C-API extensions. They should generally not be used with built-in types like
+:class:`list` and :class:`dict` because their public C-APIs
+already use critical sections internally, with the notable
+exception of :c:func:`PyDict_Next`, which requires critical section
+to be acquired externally.
+
 Critical sections avoid deadlocks by implicitly suspending active critical
-sections and releasing the locks during calls to :c:func:`PyEval_SaveThread`.
-When :c:func:`PyEval_RestoreThread` is called, the most recent critical section
-is resumed, and its locks reacquired.  This means the critical section API
-provides weaker guarantees than traditional locks -- they are useful because
-their behavior is similar to the :term:`GIL`.
+sections, hence, they do not provide exclusive access such as provided by
+traditional locks like :c:type:`PyMutex`.  When a critical section is started,
+the per-object lock for the object is acquired. If the code executed inside the
+critical section calls C-API functions then it can suspend the critical section thereby
+releasing the per-object lock, so other threads can acquire the per-object lock
+for the same object.
 
 The functions and structs used by the macros are exposed for cases
 where C macros are not available. They should only be used as in the

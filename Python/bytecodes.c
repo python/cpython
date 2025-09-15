@@ -3213,6 +3213,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
+            _CHECK_RECURSION_REMAINING +
             _PY_FRAME_GENERAL +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -3242,6 +3243,7 @@ dummy_func(
             _CHECK_PEP_523 +
             _CHECK_METHOD_VERSION +
             _EXPAND_METHOD +
+            _CHECK_RECURSION_REMAINING +
             _PY_FRAME_GENERAL +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -3310,6 +3312,9 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
+        }
+
+        op(_CHECK_RECURSION_REMAINING, (--)) {
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
@@ -3347,6 +3352,7 @@ dummy_func(
             _INIT_CALL_BOUND_METHOD_EXACT_ARGS +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
+            _CHECK_RECURSION_REMAINING +
             _INIT_CALL_PY_EXACT_ARGS +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -3356,6 +3362,7 @@ dummy_func(
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
+            _CHECK_RECURSION_REMAINING +
             _INIT_CALL_PY_EXACT_ARGS +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
