@@ -3861,6 +3861,9 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
             return NULL;
         }
     }
+#ifdef Py_DEBUG
+    memset(writer->small_buffer, 0xff, sizeof(writer->small_buffer));
+#endif
     writer->obj = NULL;
     writer->size = 0;
     writer->use_bytearray = use_bytearray;
