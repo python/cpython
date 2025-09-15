@@ -1,0 +1,2 @@
+Update :class:`io.FileIO` to use :pep:`782` :c:type:`PyBytesWriter` to
+implement :meth:`~io.RawIOBase.readall`

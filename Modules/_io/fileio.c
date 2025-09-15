@@ -739,7 +739,7 @@ _io_FileIO_readall_impl(fileio *self)
 /*[clinic end generated code: output=faa0292b213b4022 input=10d8b2ec403302dc]*/
 {
     Py_off_t pos, end;
-    PyObject *result;
+    PyBytesWriter *writer;
     Py_ssize_t bytes_read = 0;
     Py_ssize_t n;
     size_t bufsize;
@@ -794,10 +794,10 @@ _io_FileIO_readall_impl(fileio *self)
         }
     }
 
-
-    result = PyBytes_FromStringAndSize(NULL, bufsize);
-    if (result == NULL)
+    writer = PyBytesWriter_Create(bufsize);
+    if (writer == NULL) {
         return NULL;
+    }
 
     while (1) {
         if (bytes_read >= (Py_ssize_t)bufsize) {
@@ -806,18 +806,18 @@ _io_FileIO_readall_impl(fileio *self)
                 PyErr_SetString(PyExc_OverflowError,
                                 "unbounded read returned more bytes "
                                 "than a Python bytes object can hold");
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 return NULL;
             }
 
-            if (PyBytes_GET_SIZE(result) < (Py_ssize_t)bufsize) {
-                if (_PyBytes_Resize(&result, bufsize) < 0)
+            if (PyBytesWriter_GetSize(writer) < (Py_ssize_t)bufsize) {
+                if (PyBytesWriter_Resize(writer, bufsize) < 0)
                     return NULL;
             }
         }
 
         n = _Py_read(self->fd,
-                     PyBytes_AS_STRING(result) + bytes_read,
+                     PyBytesWriter_GetData(writer) + bytes_read,
                      bufsize - bytes_read);
 
         if (n == 0)
@@ -827,20 +827,16 @@ _io_FileIO_readall_impl(fileio *self)
                 PyErr_Clear();
                 if (bytes_read > 0)
                     break;
-                Py_DECREF(result);
+                PyBytesWriter_Discard(writer);
                 Py_RETURN_NONE;
             }
-            Py_DECREF(result);
+            PyBytesWriter_Discard(writer);
             return NULL;
         }
         bytes_read += n;
     }
 
-    if (PyBytes_GET_SIZE(result) > bytes_read) {
-        if (_PyBytes_Resize(&result, bytes_read) < 0)
-            return NULL;
-    }
-    return result;
+    return PyBytesWriter_FinishWithSize(writer, bytes_read);
 }
 
 /*[clinic input]
