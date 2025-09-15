@@ -4,6 +4,7 @@ Writes the cases to optimizer_cases.c.h, which is #included in Python/optimizer_
 """
 
 import argparse
+import textwrap
 
 from analyzer import (
     Analysis,
@@ -246,14 +247,14 @@ class OptimizerEmitter(Emitter):
                     if input_count in input_count_to_uop:
                         replacement_uop = input_count_to_uop[input_count]
                         input_desc = "one input" if input_count == 1 else "two inputs"
-                        emitter.emit(f"""
+                        emitter.emit(textwrap.dedent(f"""
                                      if (sym_is_const(ctx, {outp.name})) {{
                                         PyObject *result = sym_get_const(ctx, {outp.name});
                                         if (_Py_IsImmortal(result)) {{
                                             // Replace with {replacement_uop} since we have {input_desc} and an immortal result
                                             REPLACE_OP(this_instr, {replacement_uop}, 0, (uintptr_t)result);
                                         }}
-                                    }}""")
+                                    }}"""))
 
         storage.flush(self.out)
         emitter.emit("break;\n")

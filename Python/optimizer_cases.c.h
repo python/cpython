@@ -204,13 +204,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-1] = res;
                 break;
             }
@@ -247,13 +247,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-1] = res;
                 break;
             }
@@ -409,13 +409,13 @@
                     /* End of uop copied from bytecodes for constant evaluation */
                     res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TOP_LOAD_CONST_INLINE_BORROW since we have one input and an immortal result
+        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                     stack_pointer[-1] = res;
                     break;
                 }
@@ -500,13 +500,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -551,13 +551,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -602,13 +602,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -672,13 +672,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -725,13 +725,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -778,13 +778,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -858,13 +858,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -1739,13 +1739,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -1791,13 +1791,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -1842,13 +1842,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -1891,13 +1891,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -1945,13 +1945,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 b = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(b_stackref));
 
-                                     if (sym_is_const(ctx, b)) {
-                                        PyObject *result = sym_get_const(ctx, b);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, b)) {
+    PyObject *result = sym_get_const(ctx, b);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = b;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -3030,13 +3030,13 @@
                 /* End of uop copied from bytecodes for constant evaluation */
                 res = sym_new_const_steal(ctx, PyStackRef_AsPyObjectSteal(res_stackref));
 
-                                     if (sym_is_const(ctx, res)) {
-                                        PyObject *result = sym_get_const(ctx, res);
-                                        if (_Py_IsImmortal(result)) {
-                                            // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
-                                            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
-                                        }
-                                    }
+ if (sym_is_const(ctx, res)) {
+    PyObject *result = sym_get_const(ctx, res);
+    if (_Py_IsImmortal(result)) {
+        // Replace with _POP_TWO_LOAD_CONST_INLINE_BORROW since we have two inputs and an immortal result
+        REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)result);
+    }
+}
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
