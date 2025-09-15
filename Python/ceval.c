@@ -709,6 +709,7 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
                  PyObject *name, PyObject *seen)
 {
     assert(PyUnicode_CheckExact(name));
+    // Only check for duplicates if seen is not NULL.
     if (seen != NULL) {
         assert(PySet_CheckExact(seen));
         if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
@@ -751,6 +752,8 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
     }
     // So far so good:
     PyObject *seen = NULL;
+    // Only check for duplicates if there is at least one positional attribute
+    // and two or more attributes in total.
     if (nargs > 0 && nattrs > 1) {
         seen = PySet_New(NULL);
         if (seen == NULL) {
