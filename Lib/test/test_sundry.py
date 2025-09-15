@@ -4,6 +4,7 @@ from test import support
 from test.support import import_helper
 from test.support import warnings_helper
 import unittest
+import sys
 
 class TestUntestedModules(unittest.TestCase):
     def test_untested_modules_can_be_imported(self):
@@ -17,6 +18,32 @@ class TestUntestedModules(unittest.TestCase):
                 else:
                     self.fail('{} has tests even though test_sundry claims '
                               'otherwise'.format(name))
+
+            import html.entities
+
+            try:
+                import tty  # Not available on Windows
+            except ImportError:
+                if support.verbose:
+                    print("skipping tty")
+
+    def test_distutils_modules(self):
+        with warnings_helper.check_warnings(quiet=True):
+
+            path_copy = sys.path[:]
+            import distutils
+            if '_distutils_hack' in sys.modules:
+                # gh-135374: when 'setuptools' is installed, it now replaces
+                # 'distutils' with its own version.
+                # This imports '_distutils_hack' and modifies sys.path.
+                # The setuptols version of distutils also does not include some
+                # of the modules tested here.
+
+                # Undo the path modifications and skip the test.
+
+                sys.path[:] = path_copy
+                raise unittest.SkipTest(
+                    'setuptools has replaced distutils with its own version')
 
             import distutils.bcppcompiler
             import distutils.ccompiler
@@ -41,13 +68,6 @@ class TestUntestedModules(unittest.TestCase):
             import distutils.command.sdist
             import distutils.command.upload
 
-            import html.entities
-
-            try:
-                import tty  # Not available on Windows
-            except ImportError:
-                if support.verbose:
-                    print("skipping tty")
 
 
 if __name__ == "__main__":
