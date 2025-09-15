@@ -545,8 +545,8 @@ _sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length)
     if (length == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     }
-
     CHECK_HACL_UINT32_T_LENGTH(length);
+
     uint8_t *buffer = PyMem_Malloc(length);
     if (buffer == NULL) {
         return PyErr_NoMemory();
@@ -555,6 +555,7 @@ _sha3_shake_128_hexdigest_impl(SHA3object *self, Py_ssize_t length)
     HASHLIB_ACQUIRE_LOCK(self);
     (void)Hacl_Hash_SHA3_squeeze(self->hash_state, buffer, (uint32_t)length);
     HASHLIB_RELEASE_LOCK(self);
+
     PyObject *digest = _Py_strhex((const char *)buffer, length);
     PyMem_Free(buffer);
     return digest;
