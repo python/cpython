@@ -191,6 +191,7 @@ class OptimizerEmitter(Emitter):
         input_identifiers_as_str = {tkn.text for tkn in input_identifiers}
         used_stack_inputs = [inp for inp in uop.stack.inputs if inp.name in input_identifiers_as_str]
         assert len(used_stack_inputs) > 0
+        self.out.start_line()
         emitter = OptimizerConstantEmitter(self.out, {}, self.original_uop, self.stack.copy())
         emitter.emit("if (\n")
         for inp in used_stack_inputs[:-1]:
@@ -247,14 +248,14 @@ class OptimizerEmitter(Emitter):
                     if input_count in input_count_to_uop:
                         replacement_uop = input_count_to_uop[input_count]
                         input_desc = "one input" if input_count == 1 else "two inputs"
-                        emitter.emit(
-                f"""if (sym_is_const(ctx, {outp.name})) {{
-                    PyObject *result = sym_get_const(ctx, {outp.name});
-                    if (_Py_IsImmortal(result)) {{
-                        // Replace with {replacement_uop} since we have {input_desc} and an immortal result
-                        REPLACE_OP(this_instr, {replacement_uop}, 0, (uintptr_t)result);
-                    }}
-                }}""")
+
+                        emitter.emit(f"if (sym_is_const(ctx, {outp.name})) {{\n")
+                        emitter.emit(f"PyObject *result = sym_get_const(ctx, {outp.name});\n")
+                        emitter.emit(f"if (_Py_IsImmortal(result)) {{\n")
+                        emitter.emit(f"// Replace with {replacement_uop} since we have {input_desc} and an immortal result\n")
+                        emitter.emit(f"REPLACE_OP(this_instr, {replacement_uop}, 0, (uintptr_t)result);\n")
+                        emitter.emit("}\n")
+                        emitter.emit("}\n")
 
         storage.flush(self.out)
         emitter.emit("break;\n")
