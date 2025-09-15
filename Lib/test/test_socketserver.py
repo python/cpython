@@ -520,5 +520,6 @@ class TestModule(unittest.TestCase):
             getattr(socketserver, "__version__")
         self.assertEqual(cm.filename, __file__)
 
+
 if __name__ == "__main__":
     unittest.main()
