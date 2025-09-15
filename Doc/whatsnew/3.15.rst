@@ -305,10 +305,10 @@ tarfile
 traceback
 ----------
 
-* Add new *show_lines* and *recent_first* keyword only arguments to
+* Add new *show_source_lines* and *recent_first* keyword only arguments to
   the :mod:`traceback` functions.
 
-  The *show_lines* argument controls whether source code lines are displayed.
+  The *show_source_lines* argument controls whether source code lines are displayed.
   It is default to ``True``.
 
   The *recent_first* argument controls whether the most recent frames are
