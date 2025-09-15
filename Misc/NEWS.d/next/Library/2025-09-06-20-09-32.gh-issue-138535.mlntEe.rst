@@ -1,0 +1,2 @@
+Speed up :func:`os.stat` for files with reasonable timestamps. Contributed
+by Jeffrey Bosboom.
