@@ -817,7 +817,7 @@ _io_FileIO_readall_impl(fileio *self)
         }
 
         n = _Py_read(self->fd,
-                     PyBytesWriter_GetData(writer) + bytes_read,
+                     (char*)PyBytesWriter_GetData(writer) + bytes_read,
                      bufsize - bytes_read);
 
         if (n == 0)
