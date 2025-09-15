@@ -509,14 +509,19 @@ _sha3_shake_128_digest_impl(SHA3object *self, Py_ssize_t length)
     if (length == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
-
     CHECK_HACL_UINT32_T_LENGTH(length);
-    PyObject *digest = PyBytes_FromStringAndSize(NULL, length);
-    uint8_t *buffer = (uint8_t *)PyBytes_AS_STRING(digest);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
+        return NULL;
+    }
+    uint8_t *buffer = (uint8_t *)PyBytesWriter_GetData(writer);
+
     HASHLIB_ACQUIRE_LOCK(self);
     (void)Hacl_Hash_SHA3_squeeze(self->hash_state, buffer, (uint32_t)length);
     HASHLIB_RELEASE_LOCK(self);
-    return digest;
+
+    return PyBytesWriter_Finish(writer);
 }
 
 
