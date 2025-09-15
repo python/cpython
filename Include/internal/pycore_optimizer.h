@@ -11,7 +11,7 @@ extern "C" {
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 #include "pycore_uop_ids.h"
 #include "pycore_stackref.h"      // _PyStackRef
-#include "pycore_tstate.h"       // _PyUOpInstruction
+#include "pycore_uop.h"       // _PyUOpInstruction
 #include <stdbool.h>
 
 
