@@ -14,10 +14,7 @@ class StackTraceCollector(Collector):
     def __init__(self, *, skip_idle=False):
         self.skip_idle = skip_idle
 
-    def collect(self, stack_frames, skip_idle=None):
-        if skip_idle is None:
-            skip_idle = self.skip_idle
-
+    def collect(self, stack_frames, skip_idle=False):
         for frames in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
             if not frames:
                 continue
