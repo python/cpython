@@ -7269,7 +7269,7 @@ compatible_flags(int setclass, PyTypeObject *origto, PyTypeObject *newto, unsign
        if the original class flags are set.
      */
     return setclass ? (origto->tp_flags & flags) == (newto->tp_flags & flags)
-                   : !(~(origto->tp_flags & flags) & (newto->tp_flags & flags));
+                    : !(~(origto->tp_flags & flags) & (newto->tp_flags & flags));
 }
 
 static int
