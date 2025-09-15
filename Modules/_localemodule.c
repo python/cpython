@@ -457,7 +457,9 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
 
     /* assume no change in size, first */
     n1 = n1 + 1;
-    buf = PyMem_New(wchar_t, n1);
+    /* Yet one +1 is needed to work around a platform bug in wcsxfrm()
+     * on macOS. See gh-130567. */
+    buf = PyMem_New(wchar_t, n1+1);
     if (!buf) {
         PyErr_NoMemory();
         goto exit;
