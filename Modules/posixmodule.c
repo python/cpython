@@ -17861,6 +17861,10 @@ all_ins(PyObject *m)
 #endif
 #endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
 
+#ifdef NODEV
+    if (PyModule_Add(m, "NODEV", _PyLong_FromDev(NODEV))) return -1;
+#endif
+
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
     if (PyModule_AddIntConstant(m, "_COPYFILE_STAT", COPYFILE_STAT)) return -1;
