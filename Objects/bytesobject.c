@@ -1339,8 +1339,8 @@ _PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
 PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
 {
-    return _Py_bytes_repr(PyBytes_AS_STRING(obj),
-                          PyBytes_GET_SIZE(obj), smartquotes, "bytes");
+    return _Py_bytes_repr(PyBytes_AS_STRING(obj), PyBytes_GET_SIZE(obj),
+                          smartquotes, "bytes");
 }
 
 PyObject *
