@@ -757,7 +757,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
             return NULL;
         }
     }
-    PyObject *attrs = PyTuple_New(nattrs);
+    PyObject *attrs = PyList_New(0);
     if (attrs == NULL) {
         Py_XDECREF(seen);
         return NULL;
@@ -800,7 +800,9 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            PyTuple_SET_ITEM(attrs, 0, subject);
+            if (PyList_Append(attrs, subject) < 0) {
+                goto fail;
+            }
         }
         else {
             for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -816,7 +818,11 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 if (attr == NULL) {
                     goto fail;
                 }
-                PyTuple_SET_ITEM(attrs, i, attr);
+                if (PyList_Append(attrs, attr) < 0) {
+                    Py_DECREF(attr);
+                    goto fail;
+                }
+                Py_DECREF(attr);
             }
         }
         Py_CLEAR(match_args);
@@ -828,8 +834,13 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         if (attr == NULL) {
             goto fail;
         }
-        PyTuple_SET_ITEM(attrs, nargs + i, attr);
+        if (PyList_Append(attrs, attr) < 0) {
+            Py_DECREF(attr);
+            goto fail;
+        }
+        Py_DECREF(attr);
     }
+    Py_SETREF(attrs, PyList_AsTuple(attrs));
     Py_XDECREF(seen);
     return attrs;
 fail:
