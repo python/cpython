@@ -943,6 +943,8 @@ _hmac_HMAC_digest_impl(HMACObject *self)
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 _hmac.HMAC.hexdigest
 
 Return hexadecimal digest of the bytes passed to the update() method so far.
@@ -955,7 +957,7 @@ This method may raise a MemoryError.
 
 static PyObject *
 _hmac_HMAC_hexdigest_impl(HMACObject *self)
-/*[clinic end generated code: output=6659807a09ae14ec input=493b2db8013982b9]*/
+/*[clinic end generated code: output=6659807a09ae14ec input=6e0e796e38d82fc8]*/
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
@@ -1030,13 +1032,6 @@ HMACObject_dealloc(PyObject *op)
     Py_DECREF(type);
 }
 
-static int
-HMACObject_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
 static PyMethodDef HMACObject_methods[] = {
     _HMAC_HMAC_COPY_METHODDEF
     _HMAC_HMAC_UPDATE_METHODDEF
@@ -1058,7 +1053,7 @@ static PyType_Slot HMACObject_Type_slots[] = {
     {Py_tp_getset, HMACObject_getsets},
     {Py_tp_clear, HMACObject_clear},
     {Py_tp_dealloc, HMACObject_dealloc},
-    {Py_tp_traverse, HMACObject_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL} /* sentinel */
 };
 

@@ -691,6 +691,13 @@ struct _Py_interp_cached_objects {
     PyTypeObject *paramspecargs_type;
     PyTypeObject *paramspeckwargs_type;
     PyTypeObject *constevaluator_type;
+
+    /* Descriptors for __dict__ and __weakref__ */
+#ifdef Py_GIL_DISABLED
+    PyMutex descriptor_mutex;
+#endif
+    PyObject *dict_descriptor;
+    PyObject *weakref_descriptor;
 };
 
 struct _Py_interp_static_objects {
@@ -758,6 +765,7 @@ struct _Py_unique_id_pool {
 
 #endif
 
+typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.

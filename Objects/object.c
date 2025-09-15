@@ -784,8 +784,7 @@ PyObject_Repr(PyObject *v)
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "__repr__ returned non-string (type %.200s)",
-                      Py_TYPE(res)->tp_name);
+                      "%T.__repr__() must return a str, not %T", v, res);
         Py_DECREF(res);
         return NULL;
     }
@@ -827,8 +826,7 @@ PyObject_Str(PyObject *v)
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "__str__ returned non-string (type %.200s)",
-                      Py_TYPE(res)->tp_name);
+                      "%T.__str__() must return a str, not %T", v, res);
         Py_DECREF(res);
         return NULL;
     }
@@ -883,8 +881,8 @@ PyObject_Bytes(PyObject *v)
             return NULL;
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "__bytes__ returned non-bytes (type %.200s)",
-                         Py_TYPE(result)->tp_name);
+                         "%T.__bytes__() must return a bytes, not %T",
+                         v, result);
             Py_DECREF(result);
             return NULL;
         }
@@ -947,6 +945,7 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
         clear_freelist(&freelists->object_stack_chunks, 1, PyMem_RawFree);
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
+    clear_freelist(&freelists->bytes_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->ints, is_finalization, free_object);
     clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
@@ -3288,6 +3287,12 @@ _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt)
 
 int PyRefTracer_SetTracer(PyRefTracer tracer, void *data) {
     _Py_AssertHoldsTstate();
+    if (_PyRuntime.ref_tracer.tracer_func != NULL) {
+        _PyReftracerTrack(NULL, PyRefTracer_TRACKER_REMOVED);
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+    }
     _PyRuntime.ref_tracer.tracer_func = tracer;
     _PyRuntime.ref_tracer.tracer_data = data;
     return 0;
@@ -3385,4 +3390,14 @@ PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
     _Py_AssertHoldsTstate();
     assert(op != NULL);
     return _PyObject_IsUniquelyReferenced(op);
+}
+
+int
+_PyObject_VisitType(PyObject *op, visitproc visit, void *arg)
+{
+    assert(op != NULL);
+    PyTypeObject *tp = Py_TYPE(op);
+    _PyObject_ASSERT((PyObject *)tp, PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+    Py_VISIT(tp);
+    return 0;
 }
