@@ -1,0 +1,3 @@
+Executing ``quit`` command in :mod:`pdb` will raise :exc:`bdb.BdbQuit` when
+:mod:`pdb` is started from an asyncio console using :func:`breakpoint` or
+:func:`pdb.set_trace`.
