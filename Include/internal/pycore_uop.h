@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdint.h> 
+#include <stdint.h>
 /* Depending on the format,
  * the 32 bits between the oparg and operand are:
  * UOP_FORMAT_TARGET:
