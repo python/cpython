@@ -12,15 +12,13 @@ from .string_table import StringTable
 
 class StackTraceCollector(Collector):
     def __init__(self, *, skip_idle=False):
-        self.call_trees = []
-        self.function_samples = collections.defaultdict(int)
         self.skip_idle = skip_idle
 
     def collect(self, stack_frames, skip_idle=None):
-        if skip_idle == None:
+        if skip_idle is None:
             skip_idle = self.skip_idle
 
-        for frames in self._iter_all_frames(stack_frames):
+        for frames in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
             if not frames:
                 continue
             self.process_frames(frames)
