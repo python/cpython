@@ -709,15 +709,17 @@ match_class_attr(PyThreadState *tstate, PyObject *subject, PyObject *type,
                  PyObject *name, PyObject *seen)
 {
     assert(PyUnicode_CheckExact(name));
-    assert(PySet_CheckExact(seen));
-    if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
-        if (!_PyErr_Occurred(tstate)) {
-            // Seen it before!
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "%s() got multiple sub-patterns for attribute %R",
-                          ((PyTypeObject*)type)->tp_name, name);
+    if (seen != NULL) {
+        assert(PySet_CheckExact(seen));
+        if (PySet_Contains(seen, name) || PySet_Add(seen, name)) {
+            if (!_PyErr_Occurred(tstate)) {
+                // Seen it before!
+                _PyErr_Format(tstate, PyExc_TypeError,
+                            "%s() got multiple sub-patterns for attribute %R",
+                            ((PyTypeObject*)type)->tp_name, name);
+            }
+            return NULL;
         }
-        return NULL;
     }
     PyObject *attr;
     (void)PyObject_GetOptionalAttr(subject, name, &attr);
@@ -740,14 +742,24 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
     if (PyObject_IsInstance(subject, type) <= 0) {
         return NULL;
     }
-    // So far so good:
-    PyObject *seen = PySet_New(NULL);
-    if (seen == NULL) {
-        return NULL;
+    // Short circuit if there aren't any arguments:
+    Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
+    Py_ssize_clean_t nattrs = nargs + nkwargs;
+    if (!nattrs) {
+        PyObject *attrs = PyTuple_New(0);
+        return attrs;
     }
-    PyObject *attrs = PyList_New(0);
+    // So far so good:
+    PyObject *seen = NULL;
+    if (nattrs > 1) {
+        seen = PySet_New(NULL);
+        if (seen == NULL) {
+            return NULL;
+        }
+    }
+    PyObject *attrs = PyTuple_New(nattrs);
     if (attrs == NULL) {
-        Py_DECREF(seen);
+        Py_XDECREF(seen);
         return NULL;
     }
     // NOTE: From this point on, goto fail on failure:
@@ -788,9 +800,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            if (PyList_Append(attrs, subject) < 0) {
-                goto fail;
-            }
+            PyTuple_SET_ITEM(attrs, 0, subject);
         }
         else {
             for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -806,36 +816,27 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 if (attr == NULL) {
                     goto fail;
                 }
-                if (PyList_Append(attrs, attr) < 0) {
-                    Py_DECREF(attr);
-                    goto fail;
-                }
-                Py_DECREF(attr);
+                PyTuple_SET_ITEM(attrs, i, attr);
             }
         }
         Py_CLEAR(match_args);
     }
     // Finally, the keyword subpatterns:
-    for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(kwargs); i++) {
+    for (Py_ssize_t i = 0; i < nkwargs; i++) {
         PyObject *name = PyTuple_GET_ITEM(kwargs, i);
         PyObject *attr = match_class_attr(tstate, subject, type, name, seen);
         if (attr == NULL) {
             goto fail;
         }
-        if (PyList_Append(attrs, attr) < 0) {
-            Py_DECREF(attr);
-            goto fail;
-        }
-        Py_DECREF(attr);
+        PyTuple_SET_ITEM(attrs, nargs + i, attr);
     }
-    Py_SETREF(attrs, PyList_AsTuple(attrs));
-    Py_DECREF(seen);
+    Py_XDECREF(seen);
     return attrs;
 fail:
     // We really don't care whether an error was raised or not... that's our
     // caller's problem. All we know is that the match failed.
     Py_XDECREF(match_args);
-    Py_DECREF(seen);
+    Py_XDECREF(seen);
     Py_DECREF(attrs);
     return NULL;
 }
