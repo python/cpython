@@ -3225,7 +3225,8 @@ features:
       .. versionchanged:: 3.12
          ``st_birthtime`` is now available on Windows.
       .. versionchanged:: next
-         ``st_birthtime`` is now available on Linux.
+         ``st_birthtime`` is now present on Linux.  The value will be ``0.0``
+         on kernel versions < 4.11 or if not supported by the filesystem.
 
    .. attribute:: st_birthtime_ns
 
@@ -3235,7 +3236,8 @@ features:
 
       .. versionadded:: 3.12
       .. versionchanged:: next
-         ``st_birthtime_ns`` is now available on Linux.
+         ``st_birthtime_ns`` is now present on Linux.  The value will be ``0``
+         on kernel versions < 4.11 or if not supported by the filesystem.
 
    .. note::
 

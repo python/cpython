@@ -2816,7 +2816,10 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #elif defined(HAVE_STATX)
     /* We were built with statx support, so stat_result.st_birthtime[_ns]
        exists, but we fell back to stat because statx isn't available at
-       runtime.  User programs assume st_birthtime is not None. */
+       runtime.  structseq members are _Py_T_OBJECT (for which NULL means None,
+       not AttributeError), but user programs assume st_birthtime is not None.
+       When the statx syscall wrapper is available but the syscall itself is
+       not, we end up setting the birthtime to 0, so do that here too. */
     SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(0.0));
     SET_ITEM(ST_BIRTHTIME_NS_IDX, _PyLong_GetZero());
 #elif defined(MS_WINDOWS)
