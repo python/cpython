@@ -2569,5 +2569,220 @@ main()
             self.assertIn("idle_worker", wall_mode_output)
 
 
+class TestGilModeFiltering(unittest.TestCase):
+    """Test GIL mode filtering functionality (--mode=gil)."""
+
+    def test_gil_mode_validation(self):
+        """Test that CLI accepts gil mode choice correctly."""
+        test_args = ["profiling.sampling.sample", "--mode", "gil", "-p", "12345"]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
+        ):
+            try:
+                profiling.sampling.sample.main()
+            except SystemExit:
+                pass  # Expected due to invalid PID
+
+        # Should have attempted to call sample with mode=2 (GIL mode)
+        mock_sample.assert_called_once()
+        call_args = mock_sample.call_args[1]
+        self.assertEqual(call_args["mode"], 2)  # PROFILING_MODE_GIL
+
+    def test_gil_mode_sample_function_call(self):
+        """Test that sample() function correctly uses GIL mode."""
+        with (
+            mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler,
+            mock.patch("profiling.sampling.sample.PstatsCollector") as mock_collector,
+        ):
+            # Mock the profiler instance
+            mock_instance = mock.Mock()
+            mock_profiler.return_value = mock_instance
+
+            # Mock the collector instance
+            mock_collector_instance = mock.Mock()
+            mock_collector.return_value = mock_collector_instance
+
+            # Call sample with GIL mode and a filename to avoid pstats creation
+            profiling.sampling.sample.sample(
+                12345,
+                mode=2,  # PROFILING_MODE_GIL
+                duration_sec=1,
+                sample_interval_usec=1000,
+                filename="test_output.txt",
+            )
+
+            # Verify SampleProfiler was created with correct mode
+            mock_profiler.assert_called_once()
+            call_args = mock_profiler.call_args
+            self.assertEqual(call_args[1]['mode'], 2)  # mode parameter
+
+            # Verify profiler.sample was called
+            mock_instance.sample.assert_called_once()
+
+            # Verify collector.export was called since we provided a filename
+            mock_collector_instance.export.assert_called_once_with("test_output.txt")
+
+    def test_gil_mode_collector_configuration(self):
+        """Test that collectors are configured correctly for GIL mode."""
+        with (
+            mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler,
+            mock.patch("profiling.sampling.sample.PstatsCollector") as mock_collector,
+        ):
+            # Mock the profiler instance
+            mock_instance = mock.Mock()
+            mock_profiler.return_value = mock_instance
+
+            # Call sample with GIL mode
+            profiling.sampling.sample.sample(
+                12345,
+                mode=2,  # PROFILING_MODE_GIL
+                output_format="pstats",
+            )
+
+            # Verify collector was created with skip_idle=True (since mode != WALL)
+            mock_collector.assert_called_once()
+            call_args = mock_collector.call_args[1]
+            self.assertTrue(call_args['skip_idle'])
+
+    def test_gil_mode_with_collapsed_format(self):
+        """Test GIL mode with collapsed stack format."""
+        with (
+            mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler,
+            mock.patch("profiling.sampling.sample.CollapsedStackCollector") as mock_collector,
+        ):
+            # Mock the profiler instance
+            mock_instance = mock.Mock()
+            mock_profiler.return_value = mock_instance
+
+            # Call sample with GIL mode and collapsed format
+            profiling.sampling.sample.sample(
+                12345,
+                mode=2,  # PROFILING_MODE_GIL
+                output_format="collapsed",
+                filename="test_output.txt",
+            )
+
+            # Verify collector was created with skip_idle=True
+            mock_collector.assert_called_once()
+            call_args = mock_collector.call_args[1]
+            self.assertTrue(call_args['skip_idle'])
+
+    def test_gil_mode_cli_argument_parsing(self):
+        """Test CLI argument parsing for GIL mode with various options."""
+        test_args = [
+            "profiling.sampling.sample",
+            "--mode", "gil",
+            "--interval", "500",
+            "--duration", "5",
+            "-p", "12345"
+        ]
+
+        with (
+            mock.patch("sys.argv", test_args),
+            mock.patch("profiling.sampling.sample.sample") as mock_sample,
+        ):
+            try:
+                profiling.sampling.sample.main()
+            except SystemExit:
+                pass  # Expected due to invalid PID
+
+        # Verify all arguments were parsed correctly
+        mock_sample.assert_called_once()
+        call_args = mock_sample.call_args[1]
+        self.assertEqual(call_args["mode"], 2)  # GIL mode
+        self.assertEqual(call_args["sample_interval_usec"], 500)
+        self.assertEqual(call_args["duration_sec"], 5)
+
+    @requires_subprocess()
+    def test_gil_mode_integration_behavior(self):
+        """Integration test: GIL mode should capture GIL-holding threads."""
+        # Create a test script with GIL-releasing operations
+        gil_test_script = '''
+import time
+import threading
+
+def gil_releasing_work():
+    time.sleep(999999)
+
+def gil_holding_work():
+    x = 1
+    while True:
+        x += 1
+
+def main():
+# Start both threads
+    idle_thread = threading.Thread(target=idle_worker)
+    cpu_thread = threading.Thread(target=cpu_active_worker)
+    idle_thread.start()
+    cpu_thread.start()
+    idle_thread.join()
+    cpu_thread.join()
+
+main()
+'''
+        with test_subprocess(gil_test_script) as proc:
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        proc.pid,
+                        duration_sec=0.5,
+                        sample_interval_usec=5000,
+                        mode=2,  # GIL mode
+                        show_summary=False,
+                        all_threads=True,
+                    )
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+                gil_mode_output = captured_output.getvalue()
+
+            # Test wall-clock mode for comparison
+            with (
+                io.StringIO() as captured_output,
+                mock.patch("sys.stdout", captured_output),
+            ):
+                try:
+                    profiling.sampling.sample.sample(
+                        proc.pid,
+                        duration_sec=0.5,
+                        sample_interval_usec=5000,
+                        mode=0,  # Wall-clock mode
+                        show_summary=False,
+                        all_threads=True,
+                    )
+                except (PermissionError, RuntimeError) as e:
+                    self.skipTest("Insufficient permissions for remote profiling")
+
+                wall_mode_output = captured_output.getvalue()
+
+            # GIL mode should primarily capture GIL-holding work
+            # (Note: actual behavior depends on threading implementation)
+            self.assertIn("gil_holding_work", gil_mode_output)
+
+            # Wall-clock mode should capture both types of work
+            self.assertIn("gil_holding_work", wall_mode_output)
+
+    def test_mode_constants_are_defined(self):
+        """Test that all profiling mode constants are properly defined."""
+        self.assertEqual(profiling.sampling.sample.PROFILING_MODE_WALL, 0)
+        self.assertEqual(profiling.sampling.sample.PROFILING_MODE_CPU, 1)
+        self.assertEqual(profiling.sampling.sample.PROFILING_MODE_GIL, 2)
+
+    def test_parse_mode_function(self):
+        """Test the _parse_mode function with all valid modes."""
+        self.assertEqual(profiling.sampling.sample._parse_mode("wall"), 0)
+        self.assertEqual(profiling.sampling.sample._parse_mode("cpu"), 1)
+        self.assertEqual(profiling.sampling.sample._parse_mode("gil"), 2)
+
+        # Test invalid mode raises KeyError
+        with self.assertRaises(KeyError):
+            profiling.sampling.sample._parse_mode("invalid")
+
+
 if __name__ == "__main__":
     unittest.main()
