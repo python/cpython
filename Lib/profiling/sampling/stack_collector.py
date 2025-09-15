@@ -25,7 +25,8 @@ class StackTraceCollector(Collector):
 
 
 class CollapsedStackCollector(StackTraceCollector):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.stack_counter = collections.Counter()
 
     def process_frames(self, frames):
