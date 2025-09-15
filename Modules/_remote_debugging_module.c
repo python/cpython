@@ -2617,6 +2617,18 @@ get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread
 #endif
 }
 
+typedef struct {
+    unsigned int initialized:1;
+    unsigned int bound:1;
+    unsigned int unbound:1;
+    unsigned int bound_gilstate:1;
+    unsigned int active:1;
+    unsigned int finalizing:1;
+    unsigned int cleared:1;
+    unsigned int finalized:1;
+    unsigned int :24;
+} _thread_status;
+
 static PyObject*
 unwind_stack_for_thread(
     RemoteUnwinderObject *unwinder,
@@ -2649,7 +2661,13 @@ unwind_stack_for_thread(
             goto error;
         }
     } else if (unwinder->mode == PROFILING_MODE_GIL) {
+#ifdef Py_GIL_DISABLED
+        // All threads are considered running in free threading builds if they have a thread state attached
+        int active = GET_MEMBER(_thread_status, ts, unwinder->debug_offsets.thread_state.status).active;
+        status = active ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
+#else
         status = (*current_tstate == gil_holder_tstate) ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
+#endif
     } else {
         // PROFILING_MODE_WALL - all threads are considered running
         status = THREAD_STATE_RUNNING;
@@ -2657,7 +2675,7 @@ unwind_stack_for_thread(
 
     // Check if we should skip this thread based on mode
     int should_skip = 0;
-    if ((unwinder->skip_non_matching_threads && status != THREAD_STATE_RUNNING) &&
+    if (unwinder->skip_non_matching_threads && status != THREAD_STATE_RUNNING &&
         (unwinder->mode == PROFILING_MODE_CPU || unwinder->mode == PROFILING_MODE_GIL)) {
         should_skip = 1;
     }
