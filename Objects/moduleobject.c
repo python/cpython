@@ -89,7 +89,7 @@ PyModuleDef_Init(PyModuleDef* def)
     // - 0b1111 (e.g. from UINT_MAX)
     // (The values may change at runtime as the PyModuleDef is used, but
     // PyModuleDef_Init is required before using the def as a Python object,
-    // so this check at least once with the initial values.
+    // so we check at least once with the initial values.
     uint16_t flags = ((PyObject*)def)->ob_flags;
     uint16_t bits = _Py_STATICALLY_ALLOCATED_FLAG | _Py_LEGACY_ABI_CHECK_FLAG;
     if ((flags & bits) != _Py_STATICALLY_ALLOCATED_FLAG) {
