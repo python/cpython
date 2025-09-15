@@ -28,7 +28,7 @@ except ImportError:
 
 from pathlib._os import (
     PathInfo, DirEntryInfo,
-    magic_open, vfspath,
+    vfsopen, vfspath,
     ensure_different_files, ensure_distinct_paths,
     copyfile2, copyfileobj, copy_info,
 )
@@ -188,9 +188,6 @@ class PurePath:
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
 
-    def __fspath__(self):
-        return str(self)
-
     def __bytes__(self):
         """Return the bytes representation of the path.  This is only
         recommended to use under Unix."""
@@ -258,6 +255,9 @@ class PurePath:
             self._str = self._format_parsed_parts(self.drive, self.root,
                                                   self._tail) or '.'
             return self._str
+
+    __fspath__ = __str__
+    __vfspath__ = __str__
 
     @classmethod
     def _format_parsed_parts(cls, drv, root, tail):
@@ -1129,7 +1129,7 @@ class Path(PurePath):
 
     def _copy_from_file(self, source, preserve_metadata=False):
         ensure_different_files(source, self)
-        with magic_open(source, 'rb') as source_f:
+        with vfsopen(source, 'rb') as source_f:
             with open(self, 'wb') as target_f:
                 copyfileobj(source_f, target_f)
         if preserve_metadata:

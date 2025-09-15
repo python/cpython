@@ -2319,6 +2319,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 struct simpletracer_data {
     int create_count;
     int destroy_count;
+    int tracker_removed;
     void* addresses[10];
 };
 
@@ -2326,10 +2327,18 @@ static int _simpletracer(PyObject *obj, PyRefTracerEvent event, void* data) {
     struct simpletracer_data* the_data = (struct simpletracer_data*)data;
     assert(the_data->create_count + the_data->destroy_count < (int)Py_ARRAY_LENGTH(the_data->addresses));
     the_data->addresses[the_data->create_count + the_data->destroy_count] = obj;
-    if (event == PyRefTracer_CREATE) {
-        the_data->create_count++;
-    } else {
-        the_data->destroy_count++;
+    switch (event) {
+        case PyRefTracer_CREATE:
+            the_data->create_count++;
+            break;
+        case PyRefTracer_DESTROY:
+            the_data->destroy_count++;
+            break;
+        case PyRefTracer_TRACKER_REMOVED:
+            the_data->tracker_removed++;
+            break;
+        default:
+            return -1;
     }
     return 0;
 }
@@ -2393,6 +2402,10 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
         PyErr_SetString(PyExc_ValueError, "The object destruction was not correctly traced");
         goto failed;
     }
+    if (tracer_data.tracker_removed != 1) {
+        PyErr_SetString(PyExc_ValueError, "The tracker removal was not correctly traced");
+        goto failed;
+    }
     PyRefTracer_SetTracer(current_tracer, current_data);
     Py_RETURN_NONE;
 failed:
@@ -2417,6 +2430,16 @@ test_critical_sections(PyObject *module, PyObject *Py_UNUSED(args))
 
     Py_BEGIN_CRITICAL_SECTION2(module, module);
     Py_END_CRITICAL_SECTION2();
+
+#ifdef Py_GIL_DISABLED
+    // avoid unused variable compiler warning on GIL-enabled build
+    PyMutex mut = {0};
+    Py_BEGIN_CRITICAL_SECTION_MUTEX(&mut);
+    Py_END_CRITICAL_SECTION();
+
+    Py_BEGIN_CRITICAL_SECTION2_MUTEX(&mut, &mut);
+    Py_END_CRITICAL_SECTION2();
+#endif
 
     Py_RETURN_NONE;
 }
@@ -2523,11 +2546,15 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 static int
 _reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
 {
-    if (event == PyRefTracer_CREATE) {
-        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
-    }
-    else {  // PyRefTracer_DESTROY
-        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+    switch (event) {
+        case PyRefTracer_CREATE:
+            printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
+            break;
+        case PyRefTracer_DESTROY:
+            printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+            break;
+        case PyRefTracer_TRACKER_REMOVED:
+            return 0;
     }
     return 0;
 }
@@ -3453,6 +3480,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Time(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Modsupport(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Monitoring(m) < 0) {
