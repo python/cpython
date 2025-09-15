@@ -1,7 +1,9 @@
 // TypeVar, TypeVarTuple, ParamSpec, and TypeAlias
 #include "Python.h"
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
 #include "structmember.h"
 
@@ -190,7 +192,7 @@ constevaluator_call(PyObject *self, PyObject *args, PyObject *kwargs)
             for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(value); i++) {
                 PyObject *item = PyTuple_GET_ITEM(value, i);
                 if (i > 0) {
-                    if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
+                    if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
                         PyUnicodeWriter_Discard(writer);
                         return NULL;
                     }
@@ -271,7 +273,7 @@ _Py_typing_type_repr(PyUnicodeWriter *writer, PyObject *p)
     }
 
     if (p == (PyObject *)&_PyNone_Type) {
-        return PyUnicodeWriter_WriteUTF8(writer, "None", 4);
+        return PyUnicodeWriter_WriteASCII(writer, "None", 4);
     }
 
     if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
@@ -749,8 +751,8 @@ typevar.__typing_subst__ as typevar_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-typevar_typing_subst(typevarobject *self, PyObject *arg)
-/*[clinic end generated code: output=0773735e8ce18968 input=9e87b57f0fc59b92]*/
+typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
+/*[clinic end generated code: output=c76ced134ed8f4e1 input=9e87b57f0fc59b92]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_typevar_subst", args, 2);
@@ -1358,8 +1360,8 @@ paramspec.__typing_subst__ as paramspec_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-paramspec_typing_subst(paramspecobject *self, PyObject *arg)
-/*[clinic end generated code: output=4c5b4aaada1c5814 input=2d5b5e3d4a717189]*/
+paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
+/*[clinic end generated code: output=803e1ade3f13b57d input=2d5b5e3d4a717189]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_paramspec_subst", args, 2);
@@ -1612,8 +1614,8 @@ typevartuple.__typing_subst__ as typevartuple_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_typing_subst(typevartupleobject *self, PyObject *arg)
-/*[clinic end generated code: output=237054c6d7484eea input=3fcf2dfd9eee7945]*/
+typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg)
+/*[clinic end generated code: output=814316519441cd76 input=3fcf2dfd9eee7945]*/
 {
     PyErr_SetString(PyExc_TypeError, "Substitution of bare TypeVarTuple is not supported");
     return NULL;
@@ -2254,15 +2256,17 @@ error:
 }
 
 static PyObject *
-generic_init_subclass(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+generic_init_subclass(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    return call_typing_args_kwargs("_generic_init_subclass", cls, args, kwargs);
+    return call_typing_args_kwargs("_generic_init_subclass",
+                                   (PyTypeObject*)cls, args, kwargs);
 }
 
 static PyObject *
-generic_class_getitem(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+generic_class_getitem(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
+    return call_typing_args_kwargs("_generic_class_getitem",
+                                   (PyTypeObject*)cls, args, kwargs);
 }
 
 PyObject *
@@ -2300,20 +2304,13 @@ generic_dealloc(PyObject *self)
     Py_DECREF(tp);
 }
 
-static int
-generic_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyType_Slot generic_slots[] = {
     {Py_tp_doc, (void *)generic_doc},
     {Py_tp_methods, generic_methods},
     {Py_tp_dealloc, generic_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_free, PyObject_GC_Del},
-    {Py_tp_traverse, generic_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL},
 };
 

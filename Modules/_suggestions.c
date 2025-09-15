@@ -21,7 +21,7 @@ _suggestions__generate_suggestions_impl(PyObject *module,
 /*[clinic end generated code: output=79be7b653ae5e7ca input=ba2a8dddc654e33a]*/
 {
    // Check if dir is a list
-    if (!PyList_Check(candidates)) {
+    if (!PyList_CheckExact(candidates)) {
         PyErr_SetString(PyExc_TypeError, "candidates must be a list");
         return NULL;
     }

@@ -66,6 +66,7 @@ Python/dynload_aix.c            # sys/ldr.h
 Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/emscripten_signal.c
+Python/emscripten_syscalls.c
 Python/thread_pthread.h
 Python/thread_pthread_stubs.h
 
@@ -82,6 +83,8 @@ Python/frozen_modules/*.h
 Python/generated_cases.c.h
 Python/executor_cases.c.h
 Python/optimizer_cases.c.h
+# XXX: Throws errors if PY_VERSION_HEX is not mocked out
+Modules/clinic/_testclinic_depr.c.h
 
 # not actually source
 Python/bytecodes.c
@@ -126,6 +129,7 @@ Modules/sha1module.c	Modules/_hacl/include
 Modules/sha2module.c	Modules/_hacl/include
 Modules/sha3module.c	Modules/_hacl/include
 Modules/blake2module.c	Modules/_hacl/include
+Modules/hmacmodule.c	Modules/_hacl/include
 Objects/stringlib/*.h	Objects
 
 # possible system-installed headers, just in case
@@ -322,7 +326,7 @@ MAX_SIZES = {
     _abs('Modules/_testcapimodule.c'): (20_000, 400),
     _abs('Modules/expat/expat.h'): (10_000, 400),
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
-    _abs('Objects/typeobject.c'): (35_000, 200),
+    _abs('Objects/typeobject.c'): (380_000, 13_000),
     _abs('Python/compile.c'): (20_000, 500),
     _abs('Python/optimizer.c'): (100_000, 5_000),
     _abs('Python/parking_lot.c'): (40_000, 1000),

@@ -145,9 +145,11 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(file), &_Py_ID(mode), &_Py_ID(buffering), &_Py_ID(encoding), &_Py_ID(errors), &_Py_ID(newline), &_Py_ID(closefd), &_Py_ID(opener), },
     };
     #undef NUM_KEYWORDS
@@ -369,9 +371,11 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(path), },
     };
     #undef NUM_KEYWORDS
@@ -406,4 +410,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2eaf6e914503bcfd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7a8e032c0424bce2 input=a9049054013a1b77]*/

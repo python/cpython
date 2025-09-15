@@ -4,6 +4,7 @@
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stdbool.h>              // bool
 #ifdef HAVE_UNISTD_H
@@ -570,9 +571,7 @@ fileio_dealloc(PyObject *op)
         PyMem_Free(self->stat_atopen);
         self->stat_atopen = NULL;
     }
-    if (self->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(op);
-    }
+    FT_CLEAR_WEAKREFS(op, self->weakreflist);
     (void)fileio_clear(op);
 
     PyTypeObject *tp = Py_TYPE(op);
@@ -723,6 +722,7 @@ new_buffersize(fileio *self, size_t currentsize)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.readall
 
 Read all data from the file, returned as bytes.
@@ -736,7 +736,7 @@ data is available (EAGAIN is returned before bytes are read) returns None.
 
 static PyObject *
 _io_FileIO_readall_impl(fileio *self)
-/*[clinic end generated code: output=faa0292b213b4022 input=1e19849857f5d0a1]*/
+/*[clinic end generated code: output=faa0292b213b4022 input=10d8b2ec403302dc]*/
 {
     Py_off_t pos, end;
     PyObject *result;
@@ -844,6 +844,7 @@ _io_FileIO_readall_impl(fileio *self)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.read
     cls: defining_class
     size: Py_ssize_t(accept={int, NoneType}) = -1
@@ -863,7 +864,7 @@ bytes object at EOF.
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=bbd749c7c224143e input=cf21fddef7d38ab6]*/
+/*[clinic end generated code: output=bbd749c7c224143e input=752d1ad3db8564a5]*/
 {
     char *ptr;
     Py_ssize_t n;
@@ -1019,6 +1020,7 @@ portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_er
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _io.FileIO.seek
     pos: object
     whence: int = 0
@@ -1037,7 +1039,7 @@ Note that not all file objects are seekable.
 
 static PyObject *
 _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence)
-/*[clinic end generated code: output=c976acdf054e6655 input=0439194b0774d454]*/
+/*[clinic end generated code: output=c976acdf054e6655 input=f077c492a84c9e62]*/
 {
     if (self->fd < 0)
         return err_closed();
@@ -1262,8 +1264,7 @@ static PyMethodDef fileio_methods[] = {
     _IO_FILEIO_ISATTY_METHODDEF
     {"_isatty_open_only", _io_FileIO_isatty_open_only, METH_NOARGS},
     {"_dealloc_warn", fileio_dealloc_warn, METH_O, NULL},
-    {"__reduce__", _PyIOBase_cannot_pickle, METH_NOARGS},
-    {"__reduce_ex__", _PyIOBase_cannot_pickle, METH_O},
+    {"__getstate__", _PyIOBase_cannot_pickle, METH_NOARGS},
     {NULL,           NULL}             /* sentinel */
 };
 
@@ -1293,8 +1294,8 @@ fileio_get_mode(PyObject *op, void *closure)
 static PyObject *
 fileio_get_blksize(PyObject *op, void *closure)
 {
-    fileio *self = PyFileIO_CAST(op);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
         return PyLong_FromLong(self->stat_atopen->st_blksize);
     }

@@ -37,10 +37,10 @@ Alternatives to the Interactive Interpreter
 
 This facility is an enormous step forward compared to earlier versions of the
 interpreter; however, some wishes are left: It would be nice if the proper
-indentation were suggested on continuation lines (the parser knows if an indent
-token is required next).  The completion mechanism might use the interpreter's
-symbol table.  A command to check (or even suggest) matching parentheses,
-quotes, etc., would also be useful.
+indentation were suggested on continuation lines (the parser knows if an
+:data:`~token.INDENT` token is required next).  The completion mechanism might
+use the interpreter's symbol table.  A command to check (or even suggest)
+matching parentheses, quotes, etc., would also be useful.
 
 One alternative enhanced interactive interpreter that has been around for quite
 some time is IPython_, which features tab completion, object exploration and

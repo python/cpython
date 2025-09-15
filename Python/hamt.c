@@ -256,9 +256,9 @@ Debug
 =====
 
 The HAMT datatype is accessible for testing purposes under the
-`_testcapi` module:
+`_testinternalcapi` module:
 
-    >>> from _testcapi import hamt
+    >>> from _testinternalcapi import hamt
     >>> h = hamt()
     >>> h2 = h.set('a', 2)
     >>> h3 = h2.set('b', 3)
@@ -1118,7 +1118,6 @@ hamt_node_bitmap_dealloc(PyObject *self)
     }
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_bitmap_dealloc)
 
     if (len > 0) {
         i = len;
@@ -1128,7 +1127,6 @@ hamt_node_bitmap_dealloc(PyObject *self)
     }
 
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1178,7 +1176,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
         }
 
         if (key_or_null == NULL) {
-            if (PyUnicodeWriter_WriteUTF8(writer, "NULL:\n", -1) < 0) {
+            if (PyUnicodeWriter_WriteASCII(writer, "NULL:\n", 6) < 0) {
                 goto error;
             }
 
@@ -1196,7 +1194,7 @@ hamt_node_bitmap_dump(PyHamtNode_Bitmap *node,
             }
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -1508,7 +1506,6 @@ hamt_node_collision_dealloc(PyObject *self)
     /* Collision's tp_dealloc */
     Py_ssize_t len = Py_SIZE(self);
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_collision_dealloc)
     if (len > 0) {
         PyHamtNode_Collision *node = _PyHamtNode_Collision_CAST(self);
         while (--len >= 0) {
@@ -1516,7 +1513,6 @@ hamt_node_collision_dealloc(PyObject *self)
         }
     }
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1878,13 +1874,11 @@ hamt_node_array_dealloc(PyObject *self)
 {
     /* Array's tp_dealloc */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_array_dealloc)
     PyHamtNode_Array *obj = _PyHamtNode_Array_CAST(self);
     for (Py_ssize_t i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
         Py_XDECREF(obj->a_array[i]);
     }
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1921,7 +1915,7 @@ hamt_node_array_dump(PyHamtNode_Array *node,
             goto error;
         }
 
-        if (PyUnicodeWriter_WriteUTF8(writer, "\n", 1) < 0) {
+        if (PyUnicodeWriter_WriteASCII(writer, "\n", 1) < 0) {
             goto error;
         }
     }
@@ -2433,14 +2427,15 @@ error:
 
 
 static int
-hamt_baseiter_tp_clear(PyHamtIterator *it)
+hamt_baseiter_tp_clear(PyObject *op)
 {
+    PyHamtIterator *it = (PyHamtIterator*)op;
     Py_CLEAR(it->hi_obj);
     return 0;
 }
 
 static void
-hamt_baseiter_tp_dealloc(PyHamtIterator *it)
+hamt_baseiter_tp_dealloc(PyObject *it)
 {
     PyObject_GC_UnTrack(it);
     (void)hamt_baseiter_tp_clear(it);
@@ -2448,15 +2443,17 @@ hamt_baseiter_tp_dealloc(PyHamtIterator *it)
 }
 
 static int
-hamt_baseiter_tp_traverse(PyHamtIterator *it, visitproc visit, void *arg)
+hamt_baseiter_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyHamtIterator *it = (PyHamtIterator*)op;
     Py_VISIT(it->hi_obj);
     return 0;
 }
 
 static PyObject *
-hamt_baseiter_tp_iternext(PyHamtIterator *it)
+hamt_baseiter_tp_iternext(PyObject *op)
 {
+    PyHamtIterator *it = (PyHamtIterator*)op;
     PyObject *key;
     PyObject *val;
     hamt_iter_t res = hamt_iterator_next(&it->hi_iter, &key, &val);
@@ -2477,13 +2474,14 @@ hamt_baseiter_tp_iternext(PyHamtIterator *it)
 }
 
 static Py_ssize_t
-hamt_baseiter_tp_len(PyHamtIterator *it)
+hamt_baseiter_tp_len(PyObject *op)
 {
+    PyHamtIterator *it = (PyHamtIterator*)op;
     return it->hi_obj->h_count;
 }
 
 static PyMappingMethods PyHamtIterator_as_mapping = {
-    (lenfunc)hamt_baseiter_tp_len,
+    hamt_baseiter_tp_len,
 };
 
 static PyObject *
@@ -2506,13 +2504,13 @@ hamt_baseiter_new(PyTypeObject *type, binaryfunc yield, PyHamtObject *o)
     .tp_basicsize = sizeof(PyHamtIterator),                     \
     .tp_itemsize = 0,                                           \
     .tp_as_mapping = &PyHamtIterator_as_mapping,                \
-    .tp_dealloc = (destructor)hamt_baseiter_tp_dealloc,         \
+    .tp_dealloc = hamt_baseiter_tp_dealloc,                     \
     .tp_getattro = PyObject_GenericGetAttr,                     \
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,        \
-    .tp_traverse = (traverseproc)hamt_baseiter_tp_traverse,     \
-    .tp_clear = (inquiry)hamt_baseiter_tp_clear,                \
+    .tp_traverse = hamt_baseiter_tp_traverse,                   \
+    .tp_clear = hamt_baseiter_tp_clear,                         \
     .tp_iter = PyObject_SelfIter,                               \
-    .tp_iternext = (iternextfunc)hamt_baseiter_tp_iternext,
+    .tp_iternext = hamt_baseiter_tp_iternext,
 
 
 /////////////////////////////////// _PyHamtItems_Type

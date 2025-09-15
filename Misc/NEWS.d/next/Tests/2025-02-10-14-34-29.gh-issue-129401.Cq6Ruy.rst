@@ -1,1 +1,0 @@
-Fix a flaky test in ``test_repr_rlock`` that checks the representation of :class:`multiprocessing.RLock`.

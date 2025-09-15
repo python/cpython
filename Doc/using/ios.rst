@@ -297,10 +297,10 @@ To add Python to an iOS Xcode project:
    * Writing bytecode (:c:member:`PyConfig.write_bytecode`) is *disabled*;
    * Signal handlers (:c:member:`PyConfig.install_signal_handlers`) are *enabled*;
    * System logging (:c:member:`PyConfig.use_system_logger`) is *enabled*
-     (optional, but strongly recommended);
-   * ``PYTHONHOME`` for the interpreter is configured to point at the
+     (optional, but strongly recommended; this is enabled by default);
+   * :envvar:`PYTHONHOME` for the interpreter is configured to point at the
      ``python`` subfolder of your app's bundle; and
-   * The ``PYTHONPATH`` for the interpreter includes:
+   * The :envvar:`PYTHONPATH` for the interpreter includes:
 
      - the ``python/lib/python3.X`` subfolder of your app's bundle,
      - the ``python/lib/python3.X/lib-dynload`` subfolder of your app's bundle, and
@@ -324,7 +324,12 @@ modules in your app, some additional steps will be required:
   the ``lib-dynload`` folder can be copied and adapted for this purpose.
 
 * If you're using a separate folder for third-party packages, ensure that folder
-  is included as part of the ``PYTHONPATH`` configuration in step 10.
+  is included as part of the :envvar:`PYTHONPATH` configuration in step 10.
+
+* If any of the folders that contain third-party packages will contain ``.pth``
+  files, you should add that folder as a *site directory* (using
+  :meth:`site.addsitedir`), rather than adding to :envvar:`PYTHONPATH` or
+  :attr:`sys.path` directly.
 
 Testing a Python package
 ------------------------
@@ -368,6 +373,17 @@ You can also open the testbed project in Xcode by running:
     $ open app-testbed/iOSTestbed.xcodeproj
 
 This will allow you to use the full Xcode suite of tools for debugging.
+
+The arguments used to run the test suite are defined as part of the test plan.
+To modify the test plan, select the test plan node of the project tree (it
+should be the first child of the root node), and select the "Configurations"
+tab. Modify the "Arguments Passed On Launch" value to change the testing
+arguments.
+
+The test plan also disables parallel testing, and specifies the use of the
+``iOSTestbed.lldbinit`` file for providing configuration of the debugger. The
+default debugger configuration disables automatic breakpoints on the
+``SIGINT``, ``SIGUSR1``, ``SIGUSR2``, and ``SIGXFSZ`` signals.
 
 App Store Compliance
 ====================

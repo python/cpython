@@ -5,9 +5,10 @@
 #include "Python.h"
 #include "pycore_ast.h"           // asdl_stmt_seq
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
-#include <assert.h>
-#include <stdbool.h>
+#include <stdbool.h>              // bool
+
 
 #define ENTER_RECURSIVE() \
 if (Py_EnterRecursiveCall(" during compilation")) { \
@@ -344,11 +345,23 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     case JoinedStr_kind:
         ret = validate_exprs(exp->v.JoinedStr.values, Load, 0);
         break;
+    case TemplateStr_kind:
+        ret = validate_exprs(exp->v.TemplateStr.values, Load, 0);
+        break;
     case FormattedValue_kind:
         if (validate_expr(exp->v.FormattedValue.value, Load) == 0)
             return 0;
         if (exp->v.FormattedValue.format_spec) {
             ret = validate_expr(exp->v.FormattedValue.format_spec, Load);
+            break;
+        }
+        ret = 1;
+        break;
+    case Interpolation_kind:
+        if (validate_expr(exp->v.Interpolation.value, Load) == 0)
+            return 0;
+        if (exp->v.Interpolation.format_spec) {
+            ret = validate_expr(exp->v.Interpolation.format_spec, Load);
             break;
         }
         ret = 1;
@@ -511,6 +524,7 @@ validate_pattern_match_value(expr_ty exp)
             }
             break;
         case JoinedStr_kind:
+        case TemplateStr_kind:
             // Handled in the later stages
             return 1;
         default:
