@@ -367,7 +367,7 @@ typedef struct {
 @classmethod
 reversed.__new__ as reversed_new
 
-    sequence as seq: object
+    object as seq: object
     /
 
 Return a reverse iterator over the values of the given sequence.
@@ -375,7 +375,7 @@ Return a reverse iterator over the values of the given sequence.
 
 static PyObject *
 reversed_new_impl(PyTypeObject *type, PyObject *seq)
-/*[clinic end generated code: output=f7854cc1df26f570 input=aeb720361e5e3f1d]*/
+/*[clinic end generated code: output=f7854cc1df26f570 input=4781869729e3ba50]*/
 {
     Py_ssize_t n;
     PyObject *reversed_meth;

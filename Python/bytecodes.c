@@ -153,22 +153,19 @@ dummy_func(
         macro(NOT_TAKEN) = NOP;
 
         op(_CHECK_PERIODIC, (--)) {
-            _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-            QSBR_QUIESCENT_STATE(tstate);
-            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                int err = _Py_HandlePending(tstate);
-                ERROR_IF(err != 0);
-            }
+            int err = check_periodics(tstate);
+            ERROR_IF(err != 0);
+        }
+
+        replaced op(_CHECK_PERIODIC_AT_END, (--)) {
+            int err = check_periodics(tstate);
+            ERROR_IF(err != 0);
         }
 
         op(_CHECK_PERIODIC_IF_NOT_YIELD_FROM, (--)) {
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
-                _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-                QSBR_QUIESCENT_STATE(tstate);
-                if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
-                    int err = _Py_HandlePending(tstate);
-                    ERROR_IF(err != 0);
-                }
+                int err = check_periodics(tstate);
+                ERROR_IF(err != 0);
             }
         }
 
@@ -181,7 +178,15 @@ dummy_func(
         }
 
         tier1 op(_MAYBE_INSTRUMENT, (--)) {
-            if (tstate->tracing == 0) {
+            #ifdef Py_GIL_DISABLED
+            // For thread-safety, we need to check instrumentation version
+            // even when tracing. Otherwise, another thread may concurrently
+            // re-write the bytecode while we are executing this function.
+            int check_instrumentation = 1;
+            #else
+            int check_instrumentation = (tstate->tracing == 0);
+            #endif
+            if (check_instrumentation) {
                 uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
                 uintptr_t code_version = FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version);
                 if (code_version != global_version) {
@@ -806,7 +811,7 @@ dummy_func(
             assert(next_instr->op.code == STORE_FAST);
             next_oparg = next_instr->op.arg;
         #else
-            next_oparg = CURRENT_OPERAND0();
+            next_oparg = (int)CURRENT_OPERAND0();
         #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
@@ -2966,7 +2971,7 @@ dummy_func(
                     assert(tstate->current_executor == NULL);
                     assert(executor != tstate->interp->cold_executor);
                     tstate->jit_exit = NULL;
-                    GOTO_TIER_TWO(executor);
+                    TIER1_TO_TIER2(executor);
                 }
             }
             else {
@@ -3032,7 +3037,7 @@ dummy_func(
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
-            GOTO_TIER_TWO(executor);
+            TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -3794,8 +3799,8 @@ dummy_func(
             ERROR_IF(err);
         }
 
-        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _MAYBE_EXPAND_METHOD + _DO_CALL + _CHECK_PERIODIC;
-        macro(INSTRUMENTED_CALL) = unused/3 + _MAYBE_EXPAND_METHOD + _MONITOR_CALL + _DO_CALL + _CHECK_PERIODIC;
+        macro(CALL) = _SPECIALIZE_CALL + unused/2 + _MAYBE_EXPAND_METHOD + _DO_CALL + _CHECK_PERIODIC_AT_END;
+        macro(INSTRUMENTED_CALL) = unused/3 + _MAYBE_EXPAND_METHOD + _MONITOR_CALL + _DO_CALL + _CHECK_PERIODIC_AT_END;
 
         op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -3916,7 +3921,7 @@ dummy_func(
             unused/2 +
             _CHECK_IS_NOT_PY_CALLABLE +
             _CALL_NON_PY_GENERAL +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_CHECK_CALL_BOUND_METHOD_EXACT_ARGS, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
             EXIT_IF(!PyStackRef_IsNull(null));
@@ -4073,7 +4078,7 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_STR_1 +
             _CALL_STR_1 +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4101,7 +4106,7 @@ dummy_func(
             _GUARD_NOS_NULL +
             _GUARD_CALLABLE_TUPLE_1 +
             _CALL_TUPLE_1 +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4197,7 +4202,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_CLASS +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_O functions */
@@ -4232,7 +4237,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_O +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
@@ -4269,7 +4274,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_FAST +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_CALL_BUILTIN_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
@@ -4305,7 +4310,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_BUILTIN_FAST_WITH_KEYWORDS +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         macro(CALL_LEN) =
             unused/1 +
@@ -4443,7 +4448,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_O +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, (callable, self_or_null, args[oparg] -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4485,7 +4490,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_CALL_METHOD_DESCRIPTOR_NOARGS, (callable, self_or_null, args[oparg] -- res)) {
             assert(oparg == 0 || oparg == 1);
@@ -4523,7 +4528,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_NOARGS +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_CALL_METHOD_DESCRIPTOR_FAST, (callable, self_or_null, args[oparg] -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
@@ -4564,7 +4569,7 @@ dummy_func(
             unused/1 +
             unused/2 +
             _CALL_METHOD_DESCRIPTOR_FAST +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         // Cache layout: counter/1, func_version/2
         family(CALL_KW, INLINE_CACHE_ENTRIES_CALL_KW) = {
@@ -4716,6 +4721,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION_KW +
+            _CHECK_RECURSION_REMAINING +
             _PY_FRAME_KW +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -4820,7 +4826,7 @@ dummy_func(
             unused/2 +
             _CHECK_IS_NOT_PY_CALLABLE_KW +
             _CALL_KW_NON_PY +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs -- func, unused, callargs, kwargs)) {
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
@@ -4921,12 +4927,12 @@ dummy_func(
         macro(CALL_FUNCTION_EX) =
             _MAKE_CALLARGS_A_TUPLE +
             _DO_CALL_FUNCTION_EX +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         macro(INSTRUMENTED_CALL_FUNCTION_EX) =
             _MAKE_CALLARGS_A_TUPLE +
             _DO_CALL_FUNCTION_EX +
-            _CHECK_PERIODIC;
+            _CHECK_PERIODIC_AT_END;
 
         inst(MAKE_FUNCTION, (codeobj_st -- func)) {
             PyObject *codeobj = PyStackRef_AsPyObjectBorrow(codeobj_st);
@@ -5189,23 +5195,20 @@ dummy_func(
         op (_GUARD_IS_TRUE_POP, (flag -- )) {
             int is_true = PyStackRef_IsTrue(flag);
             DEAD(flag);
-            SYNC_SP();
-            EXIT_IF(!is_true);
+            AT_END_EXIT_IF(!is_true);
         }
 
         op (_GUARD_IS_FALSE_POP, (flag -- )) {
             int is_false = PyStackRef_IsFalse(flag);
             DEAD(flag);
-            SYNC_SP();
-            EXIT_IF(!is_false);
+            AT_END_EXIT_IF(!is_false);
         }
 
         op (_GUARD_IS_NONE_POP, (val -- )) {
             int is_none = PyStackRef_IsNone(val);
             if (!is_none) {
                 PyStackRef_CLOSE(val);
-                SYNC_SP();
-                EXIT_IF(1);
+                AT_END_EXIT_IF(1);
             }
             DEAD(val);
         }
@@ -5213,8 +5216,7 @@ dummy_func(
         op (_GUARD_IS_NOT_NONE_POP, (val -- )) {
             int is_none = PyStackRef_IsNone(val);
             PyStackRef_CLOSE(val);
-            SYNC_SP();
-            EXIT_IF(is_none);
+            AT_END_EXIT_IF(is_none);
         }
 
         op(_JUMP_TO_TOP, (--)) {
@@ -5248,14 +5250,14 @@ dummy_func(
             if (frame->lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %lu, temp %d, target %d -> %s]\n",
+                printf(", exit %tu, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyFrame_GetBytecode(frame)),
                     _PyOpcode_OpName[target->op.code]);
             }
         #endif
             tstate->jit_exit = exit;
-            GOTO_TIER_TWO(exit->executor);
+            TIER2_TO_TIER2(exit->executor);
         }
 
         tier2 op(_CHECK_VALIDITY, (--)) {
@@ -5351,7 +5353,7 @@ dummy_func(
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
 #ifndef _Py_JIT
-            current_executor = (_PyExecutorObject*)executor;
+            assert(current_executor == (_PyExecutorObject*)executor);
 #endif
             assert(tstate->jit_exit == NULL || tstate->jit_exit->executor == current_executor);
             tstate->current_executor = (PyObject *)executor;
@@ -5380,6 +5382,11 @@ dummy_func(
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }
 
+        tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
+            int err = _Py_HandlePending(tstate);
+            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+        }
+
         tier2 op(_ERROR_POP_N, (target/2 --)) {
             assert(oparg == 0);
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
@@ -5391,11 +5398,11 @@ dummy_func(
          * ENTER_EXECUTOR will not re-enter tier 2 with the eval breaker set. */
         tier2 op(_TIER2_RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
-            DEOPT_IF(_Py_emscripten_signal_clock == 0);
+            HANDLE_PENDING_AND_DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
-            DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
+            HANDLE_PENDING_AND_DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 
@@ -5427,7 +5434,7 @@ dummy_func(
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
-            GOTO_TIER_TWO(exit->executor);
+            TIER2_TO_TIER2(exit->executor);
         }
 
         label(pop_2_error) {

@@ -570,8 +570,7 @@ _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 }
 
 /* Subtract internal references from gc_refs.  After this, gc_refs is >= 0
- * for all objects in containers, and is GC_REACHABLE for all tracked gc
- * objects not in containers.  The ones with gc_refs > 0 are directly
+ * for all objects in containers. The ones with gc_refs > 0 are directly
  * reachable from outside containers, and so can't be collected.
  */
 static void
@@ -883,7 +882,7 @@ move_legacy_finalizer_reachable(PyGC_Head *finalizers)
  * to invalidate caches (e.g. by PyType_Modified), that clearing has created
  * a bug.  If the weakref to the subclass is cleared before a finalizer is
  * called, the cache may not be correctly invalidated.  That can lead to
- * segfaults since the caches can refer to deallocated objects (GH-91636
+ * segfaults since the caches can refer to deallocated objects (GH-135552
  * is an example).  Now, we delay the clear of weakrefs without callbacks
  * until *after* finalizers have been executed.  That means weakrefs without
  * callbacks are still usable while finalizers are being executed.
