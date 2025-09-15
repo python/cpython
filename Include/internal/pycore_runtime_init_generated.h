@@ -894,7 +894,6 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(covariant), \
-    INIT_ID(cpu_time), \
     INIT_ID(ctx), \
     INIT_ID(cwd), \
     INIT_ID(d_parameter_type), \
@@ -1260,6 +1259,7 @@ extern "C" {
     INIT_ID(size), \
     INIT_ID(sizehint), \
     INIT_ID(skip_file_prefixes), \
+    INIT_ID(skip_non_matching_threads), \
     INIT_ID(sleep), \
     INIT_ID(sock), \
     INIT_ID(sort), \

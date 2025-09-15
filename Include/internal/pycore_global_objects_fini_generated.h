@@ -896,7 +896,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(coro));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(count));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(covariant));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cpu_time));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(ctx));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(cwd));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(d_parameter_type));
@@ -1262,6 +1261,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(size));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sizehint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(skip_file_prefixes));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(skip_non_matching_threads));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sleep));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sock));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sort));
