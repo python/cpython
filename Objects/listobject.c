@@ -1765,7 +1765,7 @@ struct s_MergeState {
    the input (nothing is lost or duplicated).
 */
 static int
-binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
+binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, float adapt)
 {
     Py_ssize_t k; /* for IFLT macro expansion */
     PyObject ** const a = ss->keys;
@@ -1778,6 +1778,120 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
     /* assert a[:ok] is sorted */
     if (! ok)
         ++ok;
+
+    Py_ssize_t L, R;
+    /* Adaptive step */
+    if (adapt) {
+        Py_ssize_t diff = ok;       // jump (jump out on 1st loop to not kick in)
+        Py_ssize_t last = ok >> 1;  // mid point (simple binary on 1st loop)
+        float ns = 5.0f;            // number of successes (a bit of head start)
+        float seen = 0.0f;          // number of loops done
+        // const float adapt = 1.3;    // adaptivity strength
+        for (; ok < n && ns * adapt >= seen; ++ok) {
+            pivot = a[ok];
+
+            IFLT(pivot, a[last]) {
+                L = 0;
+                R = last;
+                if (L < R) {
+                    if (diff == 0)
+                        diff = 1;
+                    M = R - diff;
+                    if (M < L)
+                        M = L;
+                    IFLT(pivot, a[M]) {
+                        R = M;
+                        if (L < R) {
+                            diff += 1;
+                            M = R - diff;
+                            if (M < L)
+                                M = L;
+                            IFLT(pivot, a[M])
+                                R = M;
+                            else
+                                L = M + 1;
+                            ns += (float)(R - L) * 8 < ok;
+                        }
+                        else {
+                            ns += 2.0f;
+                        }
+                    }
+                    else {
+                        L = M + 1;
+                        ns += (float)(R - L) * 4 < ok;
+                    }
+                }
+                else {
+                    ns += 2.0f;
+                }
+            }
+            else {
+                L = last + 1;
+                R = ok;
+                if (L < R) {
+                    M = L + diff;
+                    if (M >= R)
+                        M = R - 1;
+                    IFLT(pivot, a[M]) {
+                        R = M;
+                        ns += (float)(R - L) * 4 < ok;
+                    }
+                    else {
+                        L = M + 1;
+                        if (L < R) {
+                            diff += 1;
+                            M = L + diff;
+                            if (M >= R)
+                                M = R - 1;
+                            IFLT(pivot, a[M])
+                                R = M;
+                            else
+                                L = M + 1;
+                            ns += (float)(R - L) * 8 < ok;
+                        }
+                        else {
+                            ns += 2.0f;
+                        }
+                    }
+                }
+                else {
+                    ns += 2.0f;
+                }
+            }
+
+            // Binary Insertion
+            while (L < R) {
+                M = (L + R) >> 1;
+                IFLT(pivot, a[M])
+                    R = M;
+                else
+                    L = M + 1;
+            }
+
+            for (M = ok; M > L; --M)
+                a[M] = a[M - 1];
+            a[L] = pivot;
+            if (has_values) {
+                pivot = v[ok];
+                for (M = ok; M > L; --M)
+                    v[M] = v[M - 1];
+                v[L] = pivot;
+            }
+
+            // Update Adaptive runvars
+            diff = L - last;
+            if (diff < 0)
+                diff = -diff;
+            last = L;
+            seen += 1.0f;
+        }
+        if (ok >= n) {
+            // Successfully ran fully adaptive
+            // Else go to simple binary sort
+            return 1;
+        }
+    }
+
     /* Regular insertion sort has average- and worst-case O(n**2) cost
        for both # of comparisons and number of bytes moved. But its branches
        are highly predictable, and it loves sorted input (n-1 compares and no
@@ -1828,7 +1942,7 @@ binarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok)
             v[M + 1] = vpivot;
     }
 #else // binary insertion sort
-    Py_ssize_t L, R;
+
     for (; ok < n; ++ok) {
         /* set L to where a[ok] belongs */
         L = 0;
@@ -3074,6 +3188,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     /* March over the array once, left to right, finding natural runs,
      * and extending short natural runs to minrun elements.
      */
+    int bres;
+    Py_ssize_t cs = 0;
+    Py_ssize_t cd = 1;
     do {
         Py_ssize_t n;
 
@@ -3086,8 +3203,24 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         if (n < minrun) {
             const Py_ssize_t force = nremaining <= minrun ?
                               nremaining : minrun;
-            if (binarysort(&ms, &lo, force, n) < 0)
-                goto fail;
+            if (cs) {
+                if (binarysort(&ms, &lo, force, n, 0.0) < 0)
+                    goto fail;
+                cs -= 1;
+            }
+            else {
+                bres = binarysort(&ms, &lo, force, n, 1.3);
+                if (bres < 0)
+                    goto fail;
+                if (bres) {
+                    cd = 1;
+                } else {
+                    cd += 2;
+                    if (cd > 11)
+                        cd = 11;
+                    cs = cd;
+                }
+            }
             n = force;
         }
         /* Maybe merge pending runs. */
