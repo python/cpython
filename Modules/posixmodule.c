@@ -430,7 +430,10 @@ extern char *ctermid_r(char *);
 #  ifndef STATX_DIO_READ_ALIGN
 #    define STATX_DIO_READ_ALIGN 0x00020000U
 #  endif
-# define _Py_STATX_KNOWN (STATX_BASIC_STATS | STATX_BTIME | STATX_MNT_ID | STATX_DIOALIGN | STATX_MNT_ID_UNIQUE | STATX_SUBVOL | STATX_WRITE_ATOMIC | STATX_DIO_READ_ALIGN)
+# define _Py_STATX_KNOWN (STATX_BASIC_STATS | STATX_BTIME | STATX_MNT_ID | \
+                          STATX_DIOALIGN | STATX_MNT_ID_UNIQUE | \
+                          STATX_SUBVOL | STATX_WRITE_ATOMIC | \
+                          STATX_DIO_READ_ALIGN)
 #endif /* HAVE_STATX */
 
 
@@ -3475,7 +3478,6 @@ statx_result_get_dev(PyObject *op, void *context) {
     func##_cached(PyObject *op, void *context) { \
         statx_result *self = (statx_result *) op; \
         uint16_t slot = (uintptr_t)context >> 16; \
-        assert(slot < STATX_RESULT_CACHE_SLOTS); \
         PyObject *cached = FT_ATOMIC_LOAD_PTR(self->cache[slot]); \
         if (cached != NULL) { \
             return Py_NewRef(cached); \
@@ -3505,51 +3507,88 @@ DECLARE_CACHED_GET(statx_result_get_dev)
 /* The low 16 bits of the context pointer are the offset from the start of
    statx_result to the struct statx member; the next 16 bits are the cache
    index or -1.  The high 32 bits (if present) are unused. */
-#define WHERE_NAME_CACHE(name, index) (void *)(offsetof(statx_result, stx.stx_##name) | (index << 16))
-#define WHERE_OFFSET_CACHE(offset, index) (void *)(offsetof(statx_result, stx) + offset | (index << 16))
-#define WHERE_NAME(name) WHERE_NAME_CACHE(name, (uint16_t)-1)
-#define WHERE_OFFSET(offset) WHERE_OFFSET_CACHE(offset, (uint16_t)-1)
+#define OFFSET_CACHE_CONTEXT(offset, index) \
+    (void *)((offsetof(statx_result, stx) + offset) | ((size_t)(index) << 16))
+#define OFFSET_CONTEXT(offset) OFFSET_CACHE_CONTEXT(offset, (uint16_t)-1)
+#define MEMBER_CACHE_CONTEXT(name, index) \
+    OFFSET_CACHE_CONTEXT(offsetof(struct statx, stx_##name), index)
+#define MEMBER_CONTEXT(name) MEMBER_CACHE_CONTEXT(name, (uint16_t)-1)
+
+#define G(attr, type, doc, context) \
+    {attr, statx_result_get_##type, NULL, PyDoc_STR(doc), context}
+#define GMC(attr, type, member, index, doc) \
+    G(#attr, type##_cached, doc, MEMBER_CACHE_CONTEXT(member, index))
+#define GM(attr, type, member, doc) \
+    G(#attr, type, doc, MEMBER_CONTEXT(member))
+#define GOC(attr, type, offset, index, doc) \
+    G(#attr, type##_cached, doc, OFFSET_CACHE_CONTEXT(offset, index))
+#define GO(attr, type, offset, doc) \
+    G(#attr, type, doc, OFFSET_CONTEXT(offset))
+
 static PyGetSetDef statx_result_getset[] = {
-    {"stx_mask", statx_result_get_u32_cached, NULL, "member validity mask", WHERE_NAME_CACHE(mask, 0)},
-    {"stx_attributes", statx_result_get_u64_cached, NULL, "Linux inode attribute bits", WHERE_NAME_CACHE(attributes, 1)},
-    {"st_uid", statx_result_get_uid_cached, NULL, "user ID of owner", WHERE_NAME_CACHE(uid, 2)},
-    {"st_gid", statx_result_get_gid_cached, NULL, "group ID of owner", WHERE_NAME_CACHE(uid, 3)},
-    {"st_mode", statx_result_get_u16_cached, NULL, "protection bits", WHERE_NAME_CACHE(mode, 4)},
-    {"st_ino", statx_result_get_u64_cached, NULL, "inode", WHERE_NAME_CACHE(ino, 5)},
-    {"st_size", statx_result_get_u64_cached, NULL, "total size, in bytes", WHERE_NAME_CACHE(size, 6)},
-    {"stx_attributes_mask", statx_result_get_u64_cached, NULL, "Linux inode attribute bits supported for this file", WHERE_NAME_CACHE(attributes_mask, 7)},
-    {"st_atime", statx_result_get_sec_cached, NULL, "time of last access", WHERE_NAME_CACHE(atime, 8)},
-    {"st_atime_ns", statx_result_get_nsec_cached, NULL, "time of last access in nanoseconds", WHERE_NAME_CACHE(atime, 9)},
-    {"st_birthtime", statx_result_get_sec_cached, NULL, "time of creation", WHERE_NAME_CACHE(btime, 10)},
-    {"st_birthtime_ns", statx_result_get_nsec_cached, NULL, "time of creation in nanoseconds", WHERE_NAME_CACHE(btime, 11)},
-    {"st_ctime", statx_result_get_sec_cached, NULL, "time of last change", WHERE_NAME_CACHE(ctime, 12)},
-    {"st_ctime_ns", statx_result_get_nsec_cached, NULL, "time of last change in nanoseconds", WHERE_NAME_CACHE(ctime, 13)},
-    {"st_mtime", statx_result_get_sec_cached, NULL, "time of last modification", WHERE_NAME_CACHE(mtime, 14)},
-    {"st_mtime_ns", statx_result_get_nsec_cached, NULL, "time of last modification in nanoseconds", WHERE_NAME_CACHE(mtime, 15)},
-    {"st_rdev", statx_result_get_dev, NULL, "device type (if inode device)", WHERE_NAME(rdev_major)},
-    {"st_dev", statx_result_get_dev_cached, NULL, "device", WHERE_NAME_CACHE(dev_major, 16)},
+    GMC(stx_mask, u32, mask, 0, "member validity mask"),
+    GMC(stx_attributes, u64, attributes, 1, "Linux inode attribute bits"),
+    GMC(st_uid, uid, uid, 2, "user ID of owner"),
+    GMC(st_gid, gid, gid, 3, "group ID of owner"),
+    GMC(st_mode, u16, mode, 4, "protection bits"),
+    GMC(st_ino, u64, ino, 5, "inode"),
+    GMC(st_size, u64, size, 6, "total size, in bytes"),
+    GMC(stx_attributes_mask, u64, attributes_mask, 7,
+        "Linux inode attribute bits supported for this file"),
+    GMC(st_atime, sec, atime, 8, "time of last access"),
+    GMC(st_atime_ns, nsec, atime, 9, "time of last access in nanoseconds"),
+    GMC(st_birthtime, sec, btime, 10, "time of creation"),
+    GMC(st_birthtime_ns, nsec, btime, 11, "time of creation in nanoseconds"),
+    GMC(st_ctime, sec, ctime, 12, "time of last change"),
+    GMC(st_ctime_ns, nsec, ctime, 13, "time of last change in nanoseconds"),
+    GMC(st_mtime, sec, mtime, 14, "time of last modification"),
+    GMC(st_mtime_ns, nsec, mtime, 15,
+        "time of last modification in nanoseconds"),
+    GM(st_rdev, dev, rdev_major, "device type (if inode device)"),
+    GMC(st_dev, dev, dev_major, 16, "device"),
     {NULL},
 };
-#undef WHERE_OFFSET
-#undef WHERE_NAME
-#undef WHERE_OFFSET_CACHE
-#undef WHERE_NAME_CACHE
+
+#undef GO
+#undef GOC
+#undef GM
+#undef GMC
+#undef G
+#undef MEMBER_CONTEXT
+#undef MEMBER_CACHE_CONTEXT
+#undef OFFSET_CONTEXT
+#undef OFFSET_CACHE_CONTEXT
+
+#define MO(attr, type, offset, doc) \
+    {#attr, type, offsetof(statx_result, stx) + offset, Py_READONLY, PyDoc_STR(doc)}
+#define MM(attr, type, member, doc) \
+    MO(attr, type, offsetof(struct statx, stx_##member), doc)
 
 static PyMemberDef statx_result_members[] = {
-    {"st_blksize", Py_T_UINT, offsetof(statx_result, stx.stx_blksize), Py_READONLY, "blocksize for filesystem I/O"},
-    {"st_nlink", Py_T_UINT, offsetof(statx_result, stx.stx_nlink), Py_READONLY, "number of hard links"},
-    {"st_blocks", Py_T_ULONGLONG, offsetof(statx_result, stx.stx_blocks), Py_READONLY, "number of blocks allocated"},
-    {"stx_mnt_id", Py_T_ULONGLONG, offsetof(statx_result, stx) + 144, Py_READONLY, "mount ID"},
-    {"stx_dio_mem_align", Py_T_UINT, offsetof(statx_result, stx) + 152, Py_READONLY, "direct I/O memory buffer alignment"},
-    {"stx_dio_offset_align", Py_T_UINT, offsetof(statx_result, stx) + 156, Py_READONLY, "direct I/O file offset alignment"},
-    {"stx_subvol", Py_T_ULONGLONG, offsetof(statx_result, stx) + 160, Py_READONLY, "subvolume ID"},
-    {"stx_atomic_write_unit_min", Py_T_UINT, offsetof(statx_result, stx) + 168, Py_READONLY, "minimum size for direct I/O with torn-write protection"},
-    {"stx_atomic_write_unit_max", Py_T_UINT, offsetof(statx_result, stx) + 172, Py_READONLY, "maximum size for direct I/O with torn-write protection"},
-    {"stx_atomic_write_segments_max", Py_T_UINT, offsetof(statx_result, stx) + 176, Py_READONLY, "maximum iovecs for direct I/O with torn-write protection"},
-    {"stx_dio_read_offset_align", Py_T_UINT, offsetof(statx_result, stx) + 180, Py_READONLY, "direct I/O file offset alignment for reads"},
-    {"stx_atomic_write_unit_max_opt", Py_T_UINT, offsetof(statx_result, stx) + 184, Py_READONLY, "maximum optimized size for direct I/O with torn-write protection"},
+    MM(st_blksize, Py_T_UINT, blksize, "blocksize for filesystem I/O"),
+    MM(st_nlink, Py_T_UINT, nlink, "number of hard links"),
+    MM(st_blocks, Py_T_ULONGLONG, blocks, "number of blocks allocated"),
+    MO(stx_mnt_id, Py_T_ULONGLONG, 144, "mount ID"),
+    MO(stx_dio_mem_align, Py_T_UINT, 152,
+        "direct I/O memory buffer alignment"),
+    MO(stx_dio_offset_align, Py_T_UINT, 156,
+        "direct I/O file offset alignment"),
+    MO(stx_subvol, Py_T_ULONGLONG, 160, "subvolume ID"),
+    MO(stx_atomic_write_unit_min, Py_T_UINT, 168,
+        "minimum size for direct I/O with torn-write protection"),
+    MO(stx_atomic_write_unit_max, Py_T_UINT, 172,
+        "maximum size for direct I/O with torn-write protection"),
+    MO(stx_atomic_write_segments_max, Py_T_UINT, 176,
+        "maximum iovecs for direct I/O with torn-write protection"),
+    MO(stx_dio_read_offset_align, Py_T_UINT, 180,
+        "direct I/O file offset alignment for reads"),
+    MO(stx_atomic_write_unit_max_opt, Py_T_UINT, 184,
+        "maximum optimized size for direct I/O with torn-write protection"),
     {NULL},
 };
+
+#undef MM
+#undef MO
 
 static int
 statx_result_traverse(PyObject *self, visitproc visit, void *arg) {
@@ -18590,6 +18629,20 @@ posixmodule_exec(PyObject *m)
 #endif
 
 #ifdef HAVE_STATX
+#ifndef NDEBUG
+    /* Verify the cache slot assignment. */
+    size_t used_slots = 0;
+    for (int i = 0; statx_result_getset[i].name != NULL; ++i) {
+        uint16_t slot = (uintptr_t)statx_result_getset[i].closure >> 16;
+        if (slot != (uint16_t)-1) {
+            assert(slot < STATX_RESULT_CACHE_SLOTS);
+            assert((used_slots & (1 << slot)) == 0);
+            used_slots |= 1 << slot;
+        }
+    }
+    assert(used_slots == (1 << STATX_RESULT_CACHE_SLOTS) - 1);
+#endif
+
     /* We retract os.statx in three cases:
        - the weakly-linked statx wrapper function is not available (old libc)
        - the wrapper function fails with EINVAL on sync flags (glibc's

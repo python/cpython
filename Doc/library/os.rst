@@ -3225,8 +3225,7 @@ features:
       .. versionchanged:: 3.12
          ``st_birthtime`` is now available on Windows.
       .. versionchanged:: next
-         ``st_birthtime`` is now available on Linux kernel 4.11 and later when
-         supported by the filesystem.
+         ``st_birthtime`` is now available on Linux.
 
    .. attribute:: st_birthtime_ns
 
@@ -3236,8 +3235,7 @@ features:
 
       .. versionadded:: 3.12
       .. versionchanged:: next
-         ``st_birthtime`` is now available on Linux kernel 4.11 and later when
-         supported by the filesystem.
+         ``st_birthtime_ns`` is now available on Linux.
 
    .. note::
 
@@ -3436,14 +3434,40 @@ features:
       specifying the attributes of this file.
 
    .. attribute:: stx_mnt_id
+
+      Mount ID.
+
    .. attribute:: stx_dio_mem_align
+
+      Direct I/O memory buffer alignment requirement.
+
    .. attribute:: stx_dio_offset_align
+
+      Direct I/O file offset alignment requirement.
+
    .. attribute:: stx_subvol
+
+      Subvolume ID.
+
    .. attribute:: stx_atomic_write_unit_min
+
+      Minimum size for direct I/O with torn-write protection.
+
    .. attribute:: stx_atomic_write_unit_max
+
+      Maximum size for direct I/O with torn-write protection.
+
    .. attribute:: stx_atomic_write_segments_max
+
+      Maximum iovecs for direct I/O with torn-write protection.
+
    .. attribute:: stx_dio_read_offset_align
+
+      Direct I/O file offset alignment requirement for reads.
+
    .. attribute:: stx_atomic_write_unit_max_opt
+
+      Maximum optimized size for direct I/O with torn-write protection.
 
    .. seealso:: The :manpage:`statx(2)` man page.
 

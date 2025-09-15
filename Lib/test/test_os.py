@@ -726,6 +726,17 @@ class StatAttributeTests(unittest.TestCase):
             self.skipTest("cannot encode %a for the filesystem" % self.fname)
         self.check_stat_attributes(fname)
 
+    def test_stat_result_pickle(self):
+        result = os.stat(self.fname)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(f'protocol {proto}'):
+                p = pickle.dumps(result, proto)
+                self.assertIn(b'stat_result', p)
+                if proto < 4:
+                    self.assertIn(b'cos\nstat_result\n', p)
+                unpickled = pickle.loads(p)
+                self.assertEqual(result, unpickled)
+
     def check_statx_attributes(self, fname):
         maximal_mask = 0
         for name in dir(os):
@@ -754,13 +765,13 @@ class StatAttributeTests(unittest.TestCase):
             ('st_birthtime', os.STATX_BTIME),
             ('st_birthtime_ns', os.STATX_BTIME),
             # unconditionally valid members
-            ('st_blksize', maximal_mask),
-            ('st_dev', maximal_mask),
-            ('st_rdev', maximal_mask),
+            ('st_blksize', 0),
+            ('st_dev', 0),
+            ('st_rdev', 0),
         )
         basic_result = os.stat(self.fname)
         for name, bits in requirements:
-            if result.stx_mask & bits:
+            if result.stx_mask & bits == bits:
                 x = getattr(result, name)
                 b = getattr(basic_result, name)
                 if isinstance(x, float):
@@ -782,8 +793,8 @@ class StatAttributeTests(unittest.TestCase):
             except AttributeError:
                 pass
 
-        self.assertTrue(result.stx_attributes & result.stx_attributes_mask
-                        == result.stx_attributes)
+        self.assertEqual(result.stx_attributes & result.stx_attributes_mask,
+                         result.stx_attributes)
 
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_attributes(self):
@@ -804,17 +815,6 @@ class StatAttributeTests(unittest.TestCase):
         for sync in (False, True):
             with self.subTest(sync=sync):
                 os.statx(self.fname, os.STATX_BASIC_STATS, sync=sync)
-
-    def test_stat_result_pickle(self):
-        result = os.stat(self.fname)
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(f'protocol {proto}'):
-                p = pickle.dumps(result, proto)
-                self.assertIn(b'stat_result', p)
-                if proto < 4:
-                    self.assertIn(b'cos\nstat_result\n', p)
-                unpickled = pickle.loads(p)
-                self.assertEqual(result, unpickled)
 
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
