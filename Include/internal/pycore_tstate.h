@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_freelist_state.h"  // struct _Py_freelists
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
+#include "pycore_uop.h"             // struct _PyUOpInstruction
 
 
 #ifdef Py_GIL_DISABLED
@@ -20,35 +21,6 @@ struct _gc_thread_state {
     Py_ssize_t alloc_count;
 };
 #endif
-
-/* Depending on the format,
- * the 32 bits between the oparg and operand are:
- * UOP_FORMAT_TARGET:
- *    uint32_t target;
- * UOP_FORMAT_JUMP
- *    uint16_t jump_target;
- *    uint16_t error_target;
- */
-typedef struct _PyUOpInstruction{
-    uint16_t opcode:15;
-    uint16_t format:1;
-    uint16_t oparg;
-    union {
-        uint32_t target;
-        struct {
-            uint16_t jump_target;
-            uint16_t error_target;
-        };
-    };
-    uint64_t operand0;  // A cache entry
-    uint64_t operand1;
-#ifdef Py_STATS
-    uint64_t execution_count;
-#endif
-} _PyUOpInstruction;
-
-// This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 1200
 
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
