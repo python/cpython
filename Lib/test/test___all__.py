@@ -81,7 +81,7 @@ class AllTest(unittest.TestCase):
 
     def walk_modules(self, basedir, modpath):
         if modpath == 'distutils.':
-            # gh-135374: when setuptools ins installed, it now replaces
+            # gh-135374: when setuptools is installed, it now replaces
             # 'distutils' with its own version.
             # In a security-fix only branch of CPython,
             # skip the __all__ test rather than deal with the fallout.
