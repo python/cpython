@@ -3958,6 +3958,7 @@ class ProtocolTests(BaseTestCase):
 
     def test_defining_generic_protocols(self):
         T = TypeVar('T')
+        T2 = TypeVar('T2')
         S = TypeVar('S')
 
         @runtime_checkable
@@ -3967,17 +3968,26 @@ class ProtocolTests(BaseTestCase):
         class P(PR[int, T], Protocol[T]):
             y = 1
 
+        self.assertEqual(P.__parameters__, (T,))
+
         with self.assertRaises(TypeError):
             PR[int]
         with self.assertRaises(TypeError):
             P[int, str]
+        with self.assertRaisesRegex(
+            TypeError,
+            re.escape('Some type variables (~S) are not listed in Protocol[~T, ~T2]'),
+        ):
+            class ExtraTypeVars(P[S], Protocol[T, T2]): ...
 
         class C(PR[int, T]): pass
 
+        self.assertEqual(C.__parameters__, (T,))
         self.assertIsInstance(C[str](), C)
 
     def test_defining_generic_protocols_old_style(self):
         T = TypeVar('T')
+        T2 = TypeVar('T2')
         S = TypeVar('S')
 
         @runtime_checkable
@@ -3996,8 +4006,18 @@ class ProtocolTests(BaseTestCase):
         class P1(Protocol, Generic[T]):
             def bar(self, x: T) -> str: ...
 
+        self.assertEqual(P1.__parameters__, (T,))
+
         class P2(Generic[T], Protocol):
             def bar(self, x: T) -> str: ...
+
+        self.assertEqual(P2.__parameters__, (T,))
+
+        msg = re.escape('Some type variables (~S) are not listed in Protocol[~T, ~T2]')
+        with self.assertRaisesRegex(TypeError, msg):
+            class ExtraTypeVars(P1[S], Protocol[T, T2]): ...
+        with self.assertRaisesRegex(TypeError, msg):
+            class ExtraTypeVars(P2[S], Protocol[T, T2]): ...
 
         @runtime_checkable
         class PSub(P1[str], Protocol):
@@ -4010,6 +4030,28 @@ class ProtocolTests(BaseTestCase):
                 return x
 
         self.assertIsInstance(Test(), PSub)
+
+    def test_protocol_parameter_order(self):
+        # https://github.com/python/cpython/issues/137191
+        T1 = TypeVar("T1")
+        T2 = TypeVar("T2", default=object)
+
+        class A(Protocol[T1]): ...
+
+        class B0(A[T2], Generic[T1, T2]): ...
+        self.assertEqual(B0.__parameters__, (T1, T2))
+
+        class B1(A[T2], Protocol, Generic[T1, T2]): ...
+        self.assertEqual(B1.__parameters__, (T1, T2))
+
+        class B2(A[T2], Protocol[T1, T2]): ...
+        self.assertEqual(B2.__parameters__, (T1, T2))
+
+        class B3[T1, T2](A[T2], Protocol):
+            @staticmethod
+            def get_typeparams():
+                return (T1, T2)
+        self.assertEqual(B3.__parameters__, B3.get_typeparams())
 
     def test_pep695_generic_protocol_callable_members(self):
         @runtime_checkable
@@ -5801,6 +5843,23 @@ class GenericTests(BaseTestCase):
                     a = c[[s], s]
                     with self.assertRaises(TypeError):
                         a[int]
+
+    def test_return_non_tuple_while_unpacking(self):
+        # GH-138497: GenericAlias objects didn't ensure that __typing_subst__ actually
+        # returned a tuple
+        class EvilTypeVar:
+            __typing_is_unpacked_typevartuple__ = True
+            def __typing_prepare_subst__(*_):
+                return None  # any value
+            def __typing_subst__(*_):
+                return 42  # not tuple
+
+        evil = EvilTypeVar()
+        # Create a dummy TypeAlias that will be given the evil generic from
+        # above.
+        type type_alias[*_] = 0
+        with self.assertRaisesRegex(TypeError, ".+__typing_subst__.+tuple.+int.*"):
+            type_alias[evil][0]
 
 
 class ClassVarTests(BaseTestCase):
@@ -9745,6 +9804,19 @@ class AnnotatedTests(BaseTestCase):
         self.assertIs(type(field_c1.__metadata__[0]), int)
         self.assertIs(type(field_c2.__metadata__[0]), float)
         self.assertIs(type(field_c3.__metadata__[0]), bool)
+
+    def test_forwardref_partial_evaluation(self):
+        # Test that Annotated partially evaluates if it contains a ForwardRef
+        # See: https://github.com/python/cpython/issues/137706
+        def f(x: Annotated[undefined, '']): pass
+
+        ann = annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF)
+
+        # Test that the attributes are retrievable from the partially evaluated annotation
+        x_ann = ann['x']
+        self.assertIs(get_origin(x_ann), Annotated)
+        self.assertEqual(x_ann.__origin__, EqualToForwardRef('undefined', owner=f))
+        self.assertEqual(x_ann.__metadata__, ('',))
 
 
 class TypeAliasTests(BaseTestCase):

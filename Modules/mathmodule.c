@@ -3806,6 +3806,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 math.perm
 
     n: object
@@ -3826,7 +3827,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=e021a25469653e23 input=5311c5a00f359b53]*/
+/*[clinic end generated code: output=e021a25469653e23 input=9d54b8e13c0a3683]*/
 {
     PyObject *result = NULL;
     int overflow, cmp;
@@ -3899,6 +3900,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_summary
 math.comb
 
     n: object
@@ -3921,7 +3923,7 @@ Raises ValueError if either of the arguments are negative.
 
 static PyObject *
 math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
-/*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
+/*[clinic end generated code: output=bd2cec8d854f3493 input=7ad3c763d442d64c]*/
 {
     PyObject *result = NULL, *temp;
     int overflow, cmp;
@@ -4018,6 +4020,7 @@ error:
 
 
 /*[clinic input]
+@permit_long_docstring_body
 math.nextafter
 
     x: double
@@ -4036,7 +4039,7 @@ Raises ValueError if steps is negative.
 
 static PyObject *
 math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps)
-/*[clinic end generated code: output=cc6511f02afc099e input=7f2a5842112af2b4]*/
+/*[clinic end generated code: output=cc6511f02afc099e input=cc8f0dad1b27a8a4]*/
 {
 #if defined(_AIX)
     if (x == y) {

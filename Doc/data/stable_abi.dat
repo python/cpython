@@ -1,5 +1,8 @@
 role,name,added,ifdef_note,struct_abi_kind
 macro,PY_VECTORCALL_ARGUMENTS_OFFSET,3.12,,
+type,PyABIInfo,3.15,,full-abi
+func,PyABIInfo_Check,3.15,,
+macro,PyABIInfo_VAR,3.15,,
 func,PyAIter_Check,3.10,,
 func,PyArg_Parse,3.2,,
 func,PyArg_ParseTuple,3.2,,
@@ -634,7 +637,6 @@ func,PySys_GetObject,3.2,,
 func,PySys_GetOptionalAttr,3.15,,
 func,PySys_GetOptionalAttrString,3.15,,
 func,PySys_GetXOptions,3.7,,
-func,PySys_ResetWarnOptions,3.2,,
 func,PySys_SetArgv,3.2,,
 func,PySys_SetArgvEx,3.2,,
 func,PySys_SetObject,3.2,,
