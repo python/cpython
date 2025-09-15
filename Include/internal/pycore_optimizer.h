@@ -11,6 +11,7 @@ extern "C" {
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 #include "pycore_uop_ids.h"
 #include "pycore_stackref.h"      // _PyStackRef
+#include "pycore_tstate.h"       // _PyUOpInstruction
 #include <stdbool.h>
 
 
@@ -40,32 +41,6 @@ typedef struct {
     _PyExecutorLinkListNode links;
     PyCodeObject *code;  // Weak (NULL if no corresponding ENTER_EXECUTOR).
 } _PyVMData;
-
-/* Depending on the format,
- * the 32 bits between the oparg and operand are:
- * UOP_FORMAT_TARGET:
- *    uint32_t target;
- * UOP_FORMAT_JUMP
- *    uint16_t jump_target;
- *    uint16_t error_target;
- */
-typedef struct {
-    uint16_t opcode:15;
-    uint16_t format:1;
-    uint16_t oparg;
-    union {
-        uint32_t target;
-        struct {
-            uint16_t jump_target;
-            uint16_t error_target;
-        };
-    };
-    uint64_t operand0;  // A cache entry
-    uint64_t operand1;
-#ifdef Py_STATS
-    uint64_t execution_count;
-#endif
-} _PyUOpInstruction;
 
 typedef struct _PyExitData {
     uint32_t target;
@@ -117,9 +92,6 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 // Used as the threshold to trigger executor invalidation when
 // trace_run_counter is greater than this value.
 #define JIT_CLEANUP_THRESHOLD 100000
-
-// This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 1200
 
 #define TRACE_STACK_SIZE 5
 

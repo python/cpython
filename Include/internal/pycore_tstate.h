@@ -13,13 +13,42 @@ extern "C" {
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
 
-
 #ifdef Py_GIL_DISABLED
 struct _gc_thread_state {
     /* Thread-local allocation count. */
     Py_ssize_t alloc_count;
 };
 #endif
+
+/* Depending on the format,
+ * the 32 bits between the oparg and operand are:
+ * UOP_FORMAT_TARGET:
+ *    uint32_t target;
+ * UOP_FORMAT_JUMP
+ *    uint16_t jump_target;
+ *    uint16_t error_target;
+ */
+typedef struct _PyUOpInstruction{
+    uint16_t opcode:15;
+    uint16_t format:1;
+    uint16_t oparg;
+    union {
+        uint32_t target;
+        struct {
+            uint16_t jump_target;
+            uint16_t error_target;
+        };
+    };
+    uint64_t operand0;  // A cache entry
+    uint64_t operand1;
+#ifdef Py_STATS
+    uint64_t execution_count;
+#endif
+} _PyUOpInstruction;
+
+// This is the length of the trace we project initially.
+#define UOP_MAX_TRACE_LENGTH 1200
+
 
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
@@ -75,6 +104,7 @@ typedef struct _PyThreadStateImpl {
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
+    struct _PyUOpInstruction buffer[1200];
 
 } _PyThreadStateImpl;
 
