@@ -35,7 +35,7 @@
 #endif
 
 // Returns thread status using proc_pidinfo, caches thread_id_offset on first use (macOS only)
-#ifdef __APPLE__
+#if defined(__APPLE__) && TARGET_OS_OSX
 #include <libproc.h>
 #include <sys/types.h>
 #define MAX_NATIVE_THREADS 4096
