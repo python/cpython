@@ -453,8 +453,9 @@ start_failed:
 }
 
 static int
-join_thread(ThreadHandle *handle)
+join_thread(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle*)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
     PyThread_handle_t os_handle;
     if (ThreadHandle_get_os_handle(handle, &os_handle)) {
@@ -528,8 +529,7 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
         }
     }
 
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)join_thread,
-                             self) == -1) {
+    if (_PyOnceFlag_CallOnce(&self->once, join_thread, self) == -1) {
         return -1;
     }
     assert(get_thread_handle_state(self) == THREAD_HANDLE_DONE);
