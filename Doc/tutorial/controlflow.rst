@@ -251,6 +251,7 @@ statements: a ``try`` statement's ``else`` clause runs when no exception
 occurs, and a loop's ``else`` clause runs when no ``break`` occurs. For more on
 the ``try`` statement and exceptions, see :ref:`tut-handling`.
 
+.. index:: single: ...; ellipsis literal
 .. _tut-pass:
 
 :keyword:`!pass` Statements
@@ -276,6 +277,12 @@ at a more abstract level.  The :keyword:`!pass` is silently ignored::
    >>> def initlog(*args):
    ...     pass   # Remember to implement this!
    ...
+
+For this last case, many people use the ellipsis literal :code:`...` instead of
+:code:`pass`. This use has no special meaning to Python, and is not part of
+the language definition (you could use any constant expression here), but
+:code:`...` is used conventionally as a placeholder body as well.
+See :ref:`bltin-ellipsis-object`.
 
 
 .. _tut-match:
@@ -561,7 +568,7 @@ This example, as usual, demonstrates some new Python features:
   Different types define different methods.  Methods of different types may have
   the same name without causing ambiguity.  (It is possible to define your own
   object types and methods, using *classes*, see :ref:`tut-classes`)
-  The method :meth:`!append` shown in the example is defined for list objects; it
+  The method :meth:`~list.append` shown in the example is defined for list objects; it
   adds a new element at the end of the list.  In this example it is equivalent to
   ``result = result + [a]``, but more efficient.
 
@@ -1074,7 +1081,7 @@ Function Annotations
 information about the types used by user-defined functions (see :pep:`3107` and
 :pep:`484` for more information).
 
-:term:`Annotations <function annotation>` are stored in the :attr:`!__annotations__`
+:term:`Annotations <function annotation>` are stored in the :attr:`~object.__annotations__`
 attribute of the function as a dictionary and have no effect on any other part of the
 function.  Parameter annotations are defined by a colon after the parameter name, followed
 by an expression evaluating to the value of the annotation.  Return annotations are

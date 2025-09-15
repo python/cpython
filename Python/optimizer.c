@@ -591,9 +591,8 @@ translate_bytecode_to_trace(
 
     for (;;) {
         target = INSTR_IP(instr, code);
-        // Need space for _DEOPT
-        max_length--;
-
+        // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
+        max_length-=2;
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
 
@@ -1238,7 +1237,6 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 #endif
 #ifdef _Py_JIT
     executor->jit_code = NULL;
-    executor->jit_side_entry = NULL;
     executor->jit_size = 0;
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.
@@ -1284,6 +1282,11 @@ uop_optimize(
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
     OPT_STAT_INC(attempts);
+    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
+    bool is_noopt = true;
+    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+        is_noopt = false;
+    }
     int length = translate_bytecode_to_trace(frame, instr, buffer, UOP_MAX_TRACE_LENGTH, &dependencies, progress_needed);
     if (length <= 0) {
         // Error or nothing translated
@@ -1291,8 +1294,7 @@ uop_optimize(
     }
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
-    char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-    if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
+    if (!is_noopt) {
         length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            length,
                                            curr_stackentries, &dependencies);
@@ -1490,7 +1492,6 @@ _PyExecutor_GetColdExecutor(void)
     ((_PyUOpInstruction *)cold->trace)->opcode = _COLD_EXIT;
 #ifdef _Py_JIT
     cold->jit_code = NULL;
-    cold->jit_side_entry = NULL;
     cold->jit_size = 0;
     // This is initialized to true so we can prevent the executor
     // from being immediately detected as cold and invalidated.

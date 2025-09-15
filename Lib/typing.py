@@ -453,12 +453,6 @@ def _deprecation_warning_for_no_type_params_passed(funcname: str) -> None:
     warnings.warn(depr_message, category=DeprecationWarning, stacklevel=3)
 
 
-class _Sentinel:
-    __slots__ = ()
-    def __repr__(self):
-        return '<sentinel>'
-
-
 def _eval_type(t, globalns, localns, type_params, *, recursive_guard=frozenset(),
                format=None, owner=None, parent_fwdref=None):
     """Evaluate all forward references in the given type t.
@@ -1033,8 +1027,10 @@ def evaluate_forward_ref(
 
 
 def _is_unpacked_typevartuple(x: Any) -> bool:
+    # Need to check 'is True' here
+    # See: https://github.com/python/cpython/issues/137706
     return ((not isinstance(x, type)) and
-            getattr(x, '__typing_is_unpacked_typevartuple__', False))
+            getattr(x, '__typing_is_unpacked_typevartuple__', False) is True)
 
 
 def _is_typevar_like(x: Any) -> bool:

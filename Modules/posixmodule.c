@@ -686,7 +686,7 @@ reset_remotedebug_data(PyThreadState *tstate)
 {
     tstate->remote_debugger_support.debugger_pending_call = 0;
     memset(tstate->remote_debugger_support.debugger_script_path, 0,
-           Py_MAX_SCRIPT_PATH_SIZE);
+           _Py_MAX_SCRIPT_PATH_SIZE);
 }
 
 
@@ -2585,58 +2585,72 @@ _posix_free(void *module)
 }
 
 static int
-fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index, time_t sec, unsigned long nsec)
+fill_time(_posixstate *state, PyObject *v, int s_index, int f_index,
+          int ns_index, time_t sec, unsigned long nsec)
 {
     assert(!PyErr_Occurred());
-
-    int res = -1;
-    PyObject *s_in_ns = NULL;
-    PyObject *ns_total = NULL;
-    PyObject *float_s = NULL;
-
-    PyObject *s = _PyLong_FromTime_t(sec);
-    PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
-    if (!(s && ns_fractional)) {
-        goto exit;
-    }
-
-    s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
-    if (!s_in_ns) {
-        goto exit;
-    }
-
-    ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-    if (!ns_total)
-        goto exit;
-
-    float_s = PyFloat_FromDouble(sec + 1e-9*nsec);
-    if (!float_s) {
-        goto exit;
-    }
+#define SEC_TO_NS (1000000000LL)
+    assert(nsec < SEC_TO_NS);
 
     if (s_index >= 0) {
+        PyObject *s = _PyLong_FromTime_t(sec);
+        if (s == NULL) {
+            return -1;
+        }
         PyStructSequence_SET_ITEM(v, s_index, s);
-        s = NULL;
     }
+
     if (f_index >= 0) {
+        PyObject *float_s = PyFloat_FromDouble((double)sec + 1e-9 * nsec);
+        if (float_s == NULL) {
+            return -1;
+        }
         PyStructSequence_SET_ITEM(v, f_index, float_s);
-        float_s = NULL;
     }
+
+    int res = -1;
     if (ns_index >= 0) {
-        PyStructSequence_SET_ITEM(v, ns_index, ns_total);
-        ns_total = NULL;
+        /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
+        if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
+            PyObject *ns_total = PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
+            if (ns_total == NULL) {
+                return -1;
+            }
+            PyStructSequence_SET_ITEM(v, ns_index, ns_total);
+            assert(!PyErr_Occurred());
+            res = 0;
+        }
+        else {
+            PyObject *s_in_ns = NULL;
+            PyObject *ns_total = NULL;
+            PyObject *s = _PyLong_FromTime_t(sec);
+            PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+            if (s == NULL || ns_fractional == NULL) {
+                goto exit;
+            }
+
+            s_in_ns = PyNumber_Multiply(s, state->billion);
+            if (s_in_ns == NULL) {
+                goto exit;
+            }
+
+            ns_total = PyNumber_Add(s_in_ns, ns_fractional);
+            if (ns_total == NULL) {
+                goto exit;
+            }
+            PyStructSequence_SET_ITEM(v, ns_index, ns_total);
+            assert(!PyErr_Occurred());
+            res = 0;
+
+        exit:
+            Py_XDECREF(s);
+            Py_XDECREF(ns_fractional);
+            Py_XDECREF(s_in_ns);
+        }
     }
 
-    assert(!PyErr_Occurred());
-    res = 0;
-
-exit:
-    Py_XDECREF(s);
-    Py_XDECREF(ns_fractional);
-    Py_XDECREF(s_in_ns);
-    Py_XDECREF(ns_total);
-    Py_XDECREF(float_s);
     return res;
+    #undef SEC_TO_NS
 }
 
 #ifdef MS_WINDOWS
@@ -2673,7 +2687,8 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 {
     assert(!PyErr_Occurred());
 
-    PyObject *StatResultType = get_posix_state(module)->StatResultType;
+    _posixstate *state = get_posix_state(module);
+    PyObject *StatResultType = state->StatResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
     if (v == NULL) {
         return NULL;
@@ -2727,13 +2742,13 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    if (fill_time(module, v, 7, 10, 13, st->st_atime, ansec) < 0) {
+    if (fill_time(state, v, 7, 10, 13, st->st_atime, ansec) < 0) {
         goto error;
     }
-    if (fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec) < 0) {
+    if (fill_time(state, v, 8, 11, 14, st->st_mtime, mnsec) < 0) {
         goto error;
     }
-    if (fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec) < 0) {
+    if (fill_time(state, v, 9, 12, 15, st->st_ctime, cnsec) < 0) {
         goto error;
     }
 
@@ -2761,7 +2776,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
       SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(bsec + bnsec * 1e-9));
     }
 #elif defined(MS_WINDOWS)
-    if (fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
+    if (fill_time(state, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
                   st->st_birthtime, st->st_birthtime_nsec) < 0) {
         goto error;
     }
@@ -8000,7 +8015,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 //
 // This should only be called from the parent process after
 // PyOS_AfterFork_Parent().
-static void
+static int
 warn_about_fork_with_threads(const char* name)
 {
     // It's not safe to issue the warning while the world is stopped, because
@@ -8051,14 +8066,14 @@ warn_about_fork_with_threads(const char* name)
         PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
         if (!threading) {
             PyErr_Clear();
-            return;
+            return 0;
         }
         PyObject *threading_active =
                 PyObject_GetAttr(threading, &_Py_ID(_active));
         if (!threading_active) {
             PyErr_Clear();
             Py_DECREF(threading);
-            return;
+            return 0;
         }
         PyObject *threading_limbo =
                 PyObject_GetAttr(threading, &_Py_ID(_limbo));
@@ -8066,7 +8081,7 @@ warn_about_fork_with_threads(const char* name)
             PyErr_Clear();
             Py_DECREF(threading);
             Py_DECREF(threading_active);
-            return;
+            return 0;
         }
         Py_DECREF(threading);
         // Duplicating what threading.active_count() does but without holding
@@ -8082,7 +8097,7 @@ warn_about_fork_with_threads(const char* name)
         Py_DECREF(threading_limbo);
     }
     if (num_python_threads > 1) {
-        PyErr_WarnFormat(
+        return PyErr_WarnFormat(
                 PyExc_DeprecationWarning, 1,
 #ifdef HAVE_GETPID
                 "This process (pid=%d) is multi-threaded, "
@@ -8094,8 +8109,8 @@ warn_about_fork_with_threads(const char* name)
                 getpid(),
 #endif
                 name);
-        PyErr_Clear();
     }
+    return 0;
 }
 #endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
@@ -8134,7 +8149,9 @@ os_fork1_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("fork1");
+        if (warn_about_fork_with_threads("fork1") < 0) {
+            return NULL;
+        }
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -8183,7 +8200,8 @@ os_fork_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("fork");
+        if (warn_about_fork_with_threads("fork") < 0)
+            return NULL;
     }
     if (pid == -1) {
         errno = saved_errno;
@@ -8208,10 +8226,10 @@ static PyObject *
 os_sched_get_priority_max_impl(PyObject *module, int policy)
 /*[clinic end generated code: output=9e465c6e43130521 input=2097b7998eca6874]*/
 {
-    int max;
-
-    max = sched_get_priority_max(policy);
-    if (max < 0)
+    /* make sure that errno is cleared before the call */
+    errno = 0;
+    int max = sched_get_priority_max(policy);
+    if (max == -1 && errno)
         return posix_error();
     return PyLong_FromLong(max);
 }
@@ -8229,8 +8247,10 @@ static PyObject *
 os_sched_get_priority_min_impl(PyObject *module, int policy)
 /*[clinic end generated code: output=7595c1138cc47a6d input=21bc8fa0d70983bf]*/
 {
+    /* make sure that errno is cleared before the call */
+    errno = 0;
     int min = sched_get_priority_min(policy);
-    if (min < 0)
+    if (min == -1 && errno)
         return posix_error();
     return PyLong_FromLong(min);
 }
@@ -9040,7 +9060,8 @@ os_forkpty_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
         // After PyOS_AfterFork_Parent() starts the world to avoid deadlock.
-        warn_about_fork_with_threads("forkpty");
+        if (warn_about_fork_with_threads("forkpty") < 0)
+            return NULL;
     }
     if (pid == -1) {
         return posix_error();
@@ -11486,9 +11507,6 @@ static PyObject *
 os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 /*[clinic end generated code: output=dafbe9a5cddb987b input=1df2eaa27c0bf1d3]*/
 {
-    Py_ssize_t n;
-    PyObject *buffer;
-
     if (length < 0) {
         errno = EINVAL;
         return posix_error();
@@ -11496,20 +11514,18 @@ os_read_impl(PyObject *module, int fd, Py_ssize_t length)
 
     length = Py_MIN(length, _PY_READ_MAX);
 
-    buffer = PyBytes_FromStringAndSize((char *)NULL, length);
-    if (buffer == NULL)
-        return NULL;
-
-    n = _Py_read(fd, PyBytes_AS_STRING(buffer), length);
-    if (n == -1) {
-        Py_DECREF(buffer);
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
     }
 
-    if (n != length)
-        _PyBytes_Resize(&buffer, n);
+    Py_ssize_t n = _Py_read(fd, PyBytesWriter_GetData(writer), length);
+    if (n == -1) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
 
-    return buffer;
+    return PyBytesWriter_FinishWithSize(writer, n);
 }
 
 /*[clinic input]
@@ -11687,20 +11703,20 @@ os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
 {
     Py_ssize_t n;
     int async_err = 0;
-    PyObject *buffer;
 
     if (length < 0) {
         errno = EINVAL;
         return posix_error();
     }
-    buffer = PyBytes_FromStringAndSize((char *)NULL, length);
-    if (buffer == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
+    }
 
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
-        n = pread(fd, PyBytes_AS_STRING(buffer), length, offset);
+        n = pread(fd, PyBytesWriter_GetData(writer), length, offset);
         _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
@@ -11709,12 +11725,10 @@ os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
         if (!async_err) {
             posix_error();
         }
-        Py_DECREF(buffer);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
-    if (n != length)
-        _PyBytes_Resize(&buffer, n);
-    return buffer;
+    return PyBytesWriter_FinishWithSize(writer, n);
 }
 #endif /* HAVE_PREAD */
 
@@ -11868,7 +11882,7 @@ os.sendfile
     out_fd: int
     in_fd: int
     offset: Py_off_t
-    count: Py_ssize_t
+    count: Py_ssize_t(allow_negative=False)
     headers: object(c_default="NULL") = ()
     trailers: object(c_default="NULL") = ()
     flags: int = 0
@@ -11880,7 +11894,7 @@ static PyObject *
 os_sendfile_impl(PyObject *module, int out_fd, int in_fd, Py_off_t offset,
                  Py_ssize_t count, PyObject *headers, PyObject *trailers,
                  int flags)
-/*[clinic end generated code: output=329ea009bdd55afc input=338adb8ff84ae8cd]*/
+/*[clinic end generated code: output=329ea009bdd55afc input=dcb026b94effa922]*/
 #else
 /*[clinic input]
 os.sendfile
@@ -11888,7 +11902,7 @@ os.sendfile
     out_fd: int
     in_fd: int
     offset as offobj: object
-    count: Py_ssize_t
+    count: Py_ssize_t(allow_negative=False)
 
 Copy count bytes from file descriptor in_fd to file descriptor out_fd.
 [clinic start generated code]*/
@@ -11896,11 +11910,21 @@ Copy count bytes from file descriptor in_fd to file descriptor out_fd.
 static PyObject *
 os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
                  Py_ssize_t count)
-/*[clinic end generated code: output=ae81216e40f167d8 input=76d64058c74477ba]*/
+/*[clinic end generated code: output=ae81216e40f167d8 input=424df0949059ea5b]*/
 #endif
 {
     Py_ssize_t ret;
     int async_err = 0;
+
+#ifdef __APPLE__
+    if(sbytes < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "count cannot be negative");
+        return NULL;
+    }
+#else
+    assert(count >= 0);
+#endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__APPLE__)
 #ifndef __APPLE__
@@ -12477,7 +12501,7 @@ os.copy_file_range
         Source file descriptor.
     dst: int
         Destination file descriptor.
-    count: Py_ssize_t
+    count: Py_ssize_t(allow_negative=False)
         Number of bytes to copy.
     offset_src: object = None
         Starting offset in src.
@@ -12493,7 +12517,7 @@ respectively for offset_dst.
 static PyObject *
 os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
                         PyObject *offset_src, PyObject *offset_dst)
-/*[clinic end generated code: output=1a91713a1d99fc7a input=42fdce72681b25a9]*/
+/*[clinic end generated code: output=1a91713a1d99fc7a input=08dacb760869b87c]*/
 {
     off_t offset_src_val, offset_dst_val;
     off_t *p_offset_src = NULL;
@@ -12504,11 +12528,6 @@ os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
      * for future extensions and currently must be to 0. */
     int flags = 0;
 
-
-    if (count < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
-        return NULL;
-    }
 
     if (offset_src != Py_None) {
         if (!Py_off_t_converter(offset_src, &offset_src_val)) {
@@ -12546,7 +12565,7 @@ os.splice
         Source file descriptor.
     dst: int
         Destination file descriptor.
-    count: Py_ssize_t
+    count: Py_ssize_t(allow_negative=False)
         Number of bytes to copy.
     offset_src: object = None
         Starting offset in src.
@@ -12566,7 +12585,7 @@ static PyObject *
 os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
                PyObject *offset_src, PyObject *offset_dst,
                unsigned int flags)
-/*[clinic end generated code: output=d0386f25a8519dc5 input=047527c66c6d2e0a]*/
+/*[clinic end generated code: output=d0386f25a8519dc5 input=034852a7b2e7af35]*/
 {
     off_t offset_src_val, offset_dst_val;
     off_t *p_offset_src = NULL;
@@ -12574,10 +12593,6 @@ os_splice_impl(PyObject *module, int src, int dst, Py_ssize_t count,
     Py_ssize_t ret;
     int async_err = 0;
 
-    if (count < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
-        return NULL;
-    }
 
     if (offset_src != Py_None) {
         if (!Py_off_t_converter(offset_src, &offset_src_val)) {
@@ -14923,9 +14938,6 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  int follow_symlinks)
 /*[clinic end generated code: output=5f2f44200a43cff2 input=025789491708f7eb]*/
 {
-    Py_ssize_t i;
-    PyObject *buffer = NULL;
-
     if (fd_and_follow_symlinks_invalid("getxattr", path->fd, follow_symlinks))
         return NULL;
 
@@ -14933,8 +14945,7 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         return NULL;
     }
 
-    for (i = 0; ; i++) {
-        void *ptr;
+    for (Py_ssize_t i = 0; ; i++) {
         ssize_t result;
         static const Py_ssize_t buffer_sizes[] = {128, XATTR_SIZE_MAX, 0};
         Py_ssize_t buffer_size = buffer_sizes[i];
@@ -14942,10 +14953,11 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
             path_error(path);
             return NULL;
         }
-        buffer = PyBytes_FromStringAndSize(NULL, buffer_size);
-        if (!buffer)
+        PyBytesWriter *writer = PyBytesWriter_Create(buffer_size);
+        if (writer == NULL) {
             return NULL;
-        ptr = PyBytes_AS_STRING(buffer);
+        }
+        void *ptr = PyBytesWriter_GetData(writer);
 
         Py_BEGIN_ALLOW_THREADS;
         if (path->fd >= 0)
@@ -14957,23 +14969,16 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         Py_END_ALLOW_THREADS;
 
         if (result < 0) {
+            PyBytesWriter_Discard(writer);
             if (errno == ERANGE) {
-                Py_DECREF(buffer);
                 continue;
             }
             path_error(path);
-            Py_DECREF(buffer);
             return NULL;
         }
 
-        if (result != buffer_size) {
-            /* Can only shrink. */
-            _PyBytes_Resize(&buffer, result);
-        }
-        break;
+        return PyBytesWriter_FinishWithSize(writer, result);
     }
-
-    return buffer;
 }
 
 
@@ -15190,7 +15195,7 @@ exit:
 @permit_long_summary
 os.urandom
 
-    size: Py_ssize_t
+    size: Py_ssize_t(allow_negative=False)
     /
 
 Return a bytes object containing random bytes suitable for cryptographic use.
@@ -15198,24 +15203,24 @@ Return a bytes object containing random bytes suitable for cryptographic use.
 
 static PyObject *
 os_urandom_impl(PyObject *module, Py_ssize_t size)
-/*[clinic end generated code: output=42c5cca9d18068e9 input=ade19e6b362e7388]*/
+/*[clinic end generated code: output=42c5cca9d18068e9 input=58a0def87dbc2c22]*/
 {
-    PyObject *bytes;
-    int result;
-
-    if (size < 0)
+    if (size < 0) {
         return PyErr_Format(PyExc_ValueError,
                             "negative argument not allowed");
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
-        return NULL;
+    }
 
-    result = _PyOS_URandom(PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes));
-    if (result == -1) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
     }
-    return bytes;
+
+    int result = _PyOS_URandom(PyBytesWriter_GetData(writer), size);
+    if (result == -1) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+    return PyBytesWriter_Finish(writer);
 }
 
 #ifdef HAVE_MEMFD_CREATE
@@ -16031,11 +16036,14 @@ static PyType_Slot DirEntryType_slots[] = {
 };
 
 static PyType_Spec DirEntryType_spec = {
-    MODNAME ".DirEntry",
-    sizeof(DirEntry),
-    0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    DirEntryType_slots
+    .name = MODNAME ".DirEntry",
+    .basicsize = sizeof(DirEntry),
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = DirEntryType_slots
 };
 
 
@@ -16473,14 +16481,17 @@ static PyType_Slot ScandirIteratorType_slots[] = {
 };
 
 static PyType_Spec ScandirIteratorType_spec = {
-    MODNAME ".ScandirIterator",
-    sizeof(ScandirIterator),
-    0,
+    .name = MODNAME ".ScandirIterator",
+    .basicsize = sizeof(ScandirIterator),
     // bpo-40549: Py_TPFLAGS_BASETYPE should not be used, since
     // PyType_GetModule(Py_TYPE(self)) doesn't work on a subclass instance.
-    (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_FINALIZE
-        | Py_TPFLAGS_DISALLOW_INSTANTIATION),
-    ScandirIteratorType_slots
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_HAVE_FINALIZE
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
+    .slots = ScandirIteratorType_slots
 };
 
 /*[clinic input]
@@ -16679,25 +16690,20 @@ static PyObject *
 os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
 /*[clinic end generated code: output=b3a618196a61409c input=59bafac39c594947]*/
 {
-    PyObject *bytes;
-    Py_ssize_t n;
-
     if (size < 0) {
         errno = EINVAL;
         return posix_error();
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL) {
-        PyErr_NoMemory();
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
     }
+    void *data = PyBytesWriter_GetData(writer);
 
+    Py_ssize_t n;
     while (1) {
-        n = syscall(SYS_getrandom,
-                    PyBytes_AS_STRING(bytes),
-                    PyBytes_GET_SIZE(bytes),
-                    flags);
+        n = syscall(SYS_getrandom, data, size, flags);
         if (n < 0 && errno == EINTR) {
             if (PyErr_CheckSignals() < 0) {
                 goto error;
@@ -16714,14 +16720,10 @@ os_getrandom_impl(PyObject *module, Py_ssize_t size, int flags)
         goto error;
     }
 
-    if (n != size) {
-        _PyBytes_Resize(&bytes, n);
-    }
-
-    return bytes;
+    return PyBytesWriter_FinishWithSize(writer, n);
 
 error:
-    Py_DECREF(bytes);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 #endif   /* HAVE_GETRANDOM_SYSCALL */

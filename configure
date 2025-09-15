@@ -7903,8 +7903,10 @@ then :
   as_fn_append HOSTRUNNER " --experimental-wasm-memory64"
 fi
      ;; #(
-              WASI) :
-    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
+  WASI) :
+
+      as_fn_error $? "HOSTRUNNER must be set when cross-compiling to WASI" "$LINENO" 5
+     ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -8407,6 +8409,13 @@ fi
 
 
 if test "$Py_OPT" = 'true' ; then
+  # Check for conflicting CFLAGS=-O0 and --enable-optimizations
+  case "$CFLAGS" in
+    *-O0*)
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: CFLAGS contains -O0 which may conflict with --enable-optimizations. Consider removing -O0 from CFLAGS for optimal performance." >&5
+printf "%s\n" "$as_me: WARNING: CFLAGS contains -O0 which may conflict with --enable-optimizations. Consider removing -O0 from CFLAGS for optimal performance." >&2;}
+      ;;
+  esac
   # Intentionally not forcing Py_LTO='true' here.  Too many toolchains do not
   # compile working code using it and both test_distutils and test_gdb are
   # broken when you do manage to get a toolchain that works with it.  People
