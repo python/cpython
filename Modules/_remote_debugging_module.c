@@ -264,6 +264,7 @@ typedef struct {
     int debug;
     int only_active_thread;
     int mode;  // Use enum _ProfilingMode values
+    int skip_non_matching_threads;  // New option to skip threads that don't match mode
     RemoteDebuggingState *cached_state;  // Cached module state
 #ifdef Py_GIL_DISABLED
     // TLBC cache invalidation tracking
@@ -2654,12 +2655,14 @@ unwind_stack_for_thread(
         status = THREAD_STATE_RUNNING;
     }
 
-    // Check if we should skip this thread based on mode
+    // Check if we should skip this thread based on mode and the new option
     int should_skip = 0;
-    if (unwinder->mode == PROFILING_MODE_CPU && status != THREAD_STATE_RUNNING) {
-        should_skip = 1;
-    } else if (unwinder->mode == PROFILING_MODE_GIL && status != THREAD_STATE_RUNNING) {
-        should_skip = 1;
+    if (unwinder->skip_non_matching_threads) {
+        if (unwinder->mode == PROFILING_MODE_CPU && status != THREAD_STATE_RUNNING) {
+            should_skip = 1;
+        } else if (unwinder->mode == PROFILING_MODE_GIL && status != THREAD_STATE_RUNNING) {
+            should_skip = 1;
+        }
     }
 
     if (should_skip) {
@@ -2743,6 +2746,7 @@ _remote_debugging.RemoteUnwinder.__init__
     only_active_thread: bool = False
     mode: int = 0
     debug: bool = False
+    skip_non_matching_threads: bool = True
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
 
@@ -2755,6 +2759,8 @@ Args:
                        Cannot be used together with all_threads=True.
     debug: If True, chain exceptions to explain the sequence of events that
            lead to the exception.
+    skip_non_matching_threads: If True, skip threads that don't match the selected mode.
+                              If False, include all threads regardless of mode.
 
 The RemoteUnwinder provides functionality to inspect and debug a running Python
 process, including examining thread states, stack frames and other runtime data.
@@ -2770,8 +2776,9 @@ static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
                                                int only_active_thread,
-                                               int mode, int debug)
-/*[clinic end generated code: output=784e9990115aa569 input=d082d792d2ba9924]*/
+                                               int mode, int debug,
+                                               int skip_non_matching_threads)
+/*[clinic end generated code: output=abf5ea5cd58bcb36 input=08fb6ace023ec3b5]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -2791,6 +2798,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     self->debug = debug;
     self->only_active_thread = only_active_thread;
     self->mode = mode;
+    self->skip_non_matching_threads = skip_non_matching_threads;
     self->cached_state = NULL;
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
         set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");

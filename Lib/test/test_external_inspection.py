@@ -19,6 +19,11 @@ from test.support.socket_helper import find_unused_port
 
 import subprocess
 
+# Profiling mode constants
+PROFILING_MODE_WALL = 0
+PROFILING_MODE_CPU = 1
+PROFILING_MODE_GIL = 2
+
 try:
     from concurrent import interpreters
 except ImportError:
@@ -1747,7 +1752,8 @@ class TestDetectionOfThreadStatus(unittest.TestCase):
 
                 attempts = 10
                 try:
-                    unwinder = RemoteUnwinder(p.pid, all_threads=True, cpu_time=True)
+                    unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_CPU,
+                                                skip_non_matching_threads=False)
                     for _ in range(attempts):
                         traces = unwinder.get_stack_trace()
                         # Check if any thread is running
@@ -1779,6 +1785,118 @@ class TestDetectionOfThreadStatus(unittest.TestCase):
                     client_socket.close()
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
+
+    @unittest.skipIf(
+        sys.platform not in ("linux", "darwin", "win32"),
+        "Test only runs on unsupported platforms (not Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    def test_thread_status_gil_detection(self):
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import time, sys, socket, threading
+            import os
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def sleeper():
+                tid = threading.get_native_id()
+                sock.sendall(f'ready:sleeper:{{tid}}\\n'.encode())
+                time.sleep(10000)
+
+            def busy():
+                tid = threading.get_native_id()
+                sock.sendall(f'ready:busy:{{tid}}\\n'.encode())
+                x = 0
+                while True:
+                    x = x + 1
+                time.sleep(0.5)
+
+            t1 = threading.Thread(target=sleeper)
+            t2 = threading.Thread(target=busy)
+            t1.start()
+            t2.start()
+            sock.sendall(b'ready:main\\n')
+            t1.join()
+            t2.join()
+            sock.close()
+            """
+        )
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+
+            script_name = _make_test_script(script_dir, "thread_status_script", script)
+            client_socket = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+                response = b""
+                sleeper_tid = None
+                busy_tid = None
+                while True:
+                    chunk = client_socket.recv(1024)
+                    response += chunk
+                    if b"ready:main" in response and b"ready:sleeper" in response and b"ready:busy" in response:
+                        # Parse TIDs from the response
+                        for line in response.split(b"\n"):
+                            if line.startswith(b"ready:sleeper:"):
+                                try:
+                                    sleeper_tid = int(line.split(b":")[-1])
+                                except Exception:
+                                    pass
+                            elif line.startswith(b"ready:busy:"):
+                                try:
+                                    busy_tid = int(line.split(b":")[-1])
+                                except Exception:
+                                    pass
+                        break
+
+                attempts = 10
+                try:
+                    unwinder = RemoteUnwinder(p.pid, all_threads=True, mode=PROFILING_MODE_GIL,
+                                                skip_non_matching_threads=False)
+                    for _ in range(attempts):
+                        traces = unwinder.get_stack_trace()
+                        # Check if any thread is running
+                        if any(thread_info.status == 0 for interpreter_info in traces
+                               for thread_info in interpreter_info.threads):
+                            break
+                        time.sleep(0.5)  # Give a bit of time to let threads settle
+                except PermissionError:
+                    self.skipTest(
+                        "Insufficient permissions to read the stack trace"
+                    )
+
+
+                # Find threads and their statuses
+                statuses = {}
+                for interpreter_info in traces:
+                    for thread_info in interpreter_info.threads:
+                        statuses[thread_info.thread_id] = thread_info.status
+
+                self.assertIsNotNone(sleeper_tid, "Sleeper thread id not received")
+                self.assertIsNotNone(busy_tid, "Busy thread id not received")
+                self.assertIn(sleeper_tid, statuses, "Sleeper tid not found in sampled threads")
+                self.assertIn(busy_tid, statuses, "Busy tid not found in sampled threads")
+                self.assertEqual(statuses[sleeper_tid], 2, "Sleeper thread should be idle (1)")
+                self.assertEqual(statuses[busy_tid], 0, "Busy thread should be running (0)")
+
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+
 
 if __name__ == "__main__":
     unittest.main()

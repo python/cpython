@@ -11,7 +11,7 @@ preserve
 
 PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 "RemoteUnwinder(pid, *, all_threads=False, only_active_thread=False,\n"
-"               mode=0, debug=False)\n"
+"               mode=0, debug=False, skip_non_matching_threads=True)\n"
 "--\n"
 "\n"
 "Initialize a new RemoteUnwinder object for debugging a remote Python process.\n"
@@ -25,6 +25,8 @@ PyDoc_STRVAR(_remote_debugging_RemoteUnwinder___init____doc__,
 "                       Cannot be used together with all_threads=True.\n"
 "    debug: If True, chain exceptions to explain the sequence of events that\n"
 "           lead to the exception.\n"
+"    skip_non_matching_threads: If True, skip threads that don\'t match the selected mode.\n"
+"                              If False, include all threads regardless of mode.\n"
 "\n"
 "The RemoteUnwinder provides functionality to inspect and debug a running Python\n"
 "process, including examining thread states, stack frames and other runtime data.\n"
@@ -39,7 +41,8 @@ static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
                                                int only_active_thread,
-                                               int mode, int debug);
+                                               int mode, int debug,
+                                               int skip_non_matching_threads);
 
 static int
 _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -47,7 +50,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     int return_value = -1;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 5
+    #define NUM_KEYWORDS 6
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
@@ -56,7 +59,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(pid), &_Py_ID(all_threads), &_Py_ID(only_active_thread), &_Py_ID(mode), &_Py_ID(debug), },
+        .ob_item = { &_Py_ID(pid), &_Py_ID(all_threads), &_Py_ID(only_active_thread), &_Py_ID(mode), &_Py_ID(debug), &_Py_ID(skip_non_matching_threads), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -65,14 +68,14 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"pid", "all_threads", "only_active_thread", "mode", "debug", NULL};
+    static const char * const _keywords[] = {"pid", "all_threads", "only_active_thread", "mode", "debug", "skip_non_matching_threads", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "RemoteUnwinder",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[5];
+    PyObject *argsbuf[6];
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
@@ -81,6 +84,7 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
     int only_active_thread = 0;
     int mode = 0;
     int debug = 0;
+    int skip_non_matching_threads = 1;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
             /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
@@ -121,12 +125,21 @@ _remote_debugging_RemoteUnwinder___init__(PyObject *self, PyObject *args, PyObje
             goto skip_optional_kwonly;
         }
     }
-    debug = PyObject_IsTrue(fastargs[4]);
-    if (debug < 0) {
+    if (fastargs[4]) {
+        debug = PyObject_IsTrue(fastargs[4]);
+        if (debug < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    skip_non_matching_threads = PyObject_IsTrue(fastargs[5]);
+    if (skip_non_matching_threads < 0) {
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = _remote_debugging_RemoteUnwinder___init___impl((RemoteUnwinderObject *)self, pid, all_threads, only_active_thread, mode, debug);
+    return_value = _remote_debugging_RemoteUnwinder___init___impl((RemoteUnwinderObject *)self, pid, all_threads, only_active_thread, mode, debug, skip_non_matching_threads);
 
 exit:
     return return_value;
@@ -308,4 +321,4 @@ _remote_debugging_RemoteUnwinder_get_async_stack_trace(PyObject *self, PyObject 
 
     return return_value;
 }
-/*[clinic end generated code: output=47ff0bccf5c45828 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2caefeddf7683d32 input=a9049054013a1b77]*/
