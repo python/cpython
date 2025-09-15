@@ -104,7 +104,10 @@ typedef struct _PyThreadStateImpl {
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     Py_ssize_t reftotal;  // this thread's total refcount operations
 #endif
-    struct _PyUOpInstruction buffer[1200];
+
+#ifdef _Py_TIER2
+    struct _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+#endif
 
 } _PyThreadStateImpl;
 
