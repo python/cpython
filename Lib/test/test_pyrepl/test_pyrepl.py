@@ -27,10 +27,16 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
-from _pyrepl._module_completer import (ImportParser, ModuleCompleter,
-                                       HARDCODED_SUBMODULES)
-from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
-                              _ReadlineWrapper)
+from _pyrepl._module_completer import (
+    ImportParser,
+    ModuleCompleter,
+    HARDCODED_SUBMODULES,
+)
+from _pyrepl.readline import (
+    ReadlineAlikeReader,
+    ReadlineConfig,
+    _ReadlineWrapper,
+)
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
