@@ -1683,14 +1683,14 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
 
     PyBytesWriter *writer = PyBytesWriter_Create(dklen);
     if (writer == NULL) {
-        return NULL;
+        goto end;
     }
 
     Py_BEGIN_ALLOW_THREADS
     retval = PKCS5_PBKDF2_HMAC((const char *)password->buf, (int)password->len,
                                (const unsigned char *)salt->buf, (int)salt->len,
                                iterations, digest, dklen,
-                               PyBytesWriter_GetData(writer));
+                               (unsigned char *)PyBytesWriter_GetData(writer));
     Py_END_ALLOW_THREADS
 
     if (!retval) {
@@ -1798,7 +1798,7 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         (const char *)password->buf, (size_t)password->len,
         (const unsigned char *)salt->buf, (size_t)salt->len,
         (uint64_t)n, (uint64_t)r, (uint64_t)p, (uint64_t)maxmem,
-        PyBytesWriter_GetData(writer), (size_t)dklen
+        (unsigned char *)PyBytesWriter_GetData(writer), (size_t)dklen
     );
     Py_END_ALLOW_THREADS
 
