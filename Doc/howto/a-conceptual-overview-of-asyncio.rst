@@ -9,7 +9,7 @@ model of how :mod:`asyncio` fundamentally works, helping you understand the
 how and why behind the recommended patterns.
 
 You might be curious about some key :mod:`!asyncio` concepts.
-By the end of this article, you'll be able to answer these questions:
+By the end of this article, you'll be able to comfortably answer these questions:
 
 - What's happening behind the scenes when an object is awaited?
 - How does :mod:`!asyncio` differentiate between a task which doesn't need
@@ -347,7 +347,7 @@ The design intentionally trades off some conceptual clarity around usage of
 ``await`` for improved performance.
 Each time a task is awaited, control needs to be passed all the way up the
 call stack to the event loop.
-That might sound minor, but in a large program with many ``await`` statements and a deep
+That might sound minor, but in a large program with many ``await``s and a deep
 call stack, that overhead can add up to a meaningful performance drag.
 
 ------------------------------------------------
@@ -489,8 +489,8 @@ We'll go through an example of how you could leverage a future to create your
 own variant of asynchronous sleep (``async_sleep``) which mimics
 :func:`asyncio.sleep`.
 
-This snippet registers a few tasks with the event loop and then awaits the ``async_sleep(3)``
-coroutine, which is wrapped in a task using ``asyncio.create_task``.
+This snippet registers a few tasks with the event loop and then awaits the task
+created by ``asyncio.create_task``, which wraps the ``async_sleep(3)`` coroutine.
 We want that task to finish only after three seconds have elapsed, but without
 preventing other tasks from running.
 
@@ -539,7 +539,7 @@ will monitor how much time has elapsed and, accordingly, call
        # Block until the future is marked as done.
        await future
 
-Below, we use a simple ``YieldToEventLoop()`` object to ``yield``
+Below, we use a rather bare ``YieldToEventLoop()`` object to ``yield``
 from its ``__await__`` method, ceding control to the event loop.
 This is effectively the same as calling ``asyncio.sleep(0)``, but this approach
 offers more clarity, not to mention it's somewhat cheating to use
