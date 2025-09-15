@@ -3591,8 +3591,19 @@ duplicate_exits_without_lineno(cfg_builder *g)
  * Also reduces the size of the line number table,
  * but has no impact on the generated line number events.
  */
+
+static inline void
+maybe_propagate_location(basicblock *b, int i, location loc)
+{
+    assert(b->b_iused > i);
+    if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
+         b->b_instr[i].i_loc = loc;
+    }
+}
+
 static void
-propagate_line_numbers(basicblock *entryblock) {
+propagate_line_numbers(basicblock *entryblock)
+{
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         cfg_instr *last = basicblock_last_instr(b);
         if (last == NULL) {
@@ -3601,18 +3612,12 @@ propagate_line_numbers(basicblock *entryblock) {
 
         location prev_location = NO_LOCATION;
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
-                b->b_instr[i].i_loc = prev_location;
-            }
-            else {
-                prev_location = b->b_instr[i].i_loc;
-            }
+            maybe_propagate_location(b, i, prev_location);
+            prev_location = b->b_instr[i].i_loc;
         }
         if (BB_HAS_FALLTHROUGH(b) && b->b_next->b_predecessors == 1) {
             if (b->b_next->b_iused > 0) {
-                if (b->b_next->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
-                    b->b_next->b_instr[0].i_loc = prev_location;
-                }
+                maybe_propagate_location(b->b_next, 0, prev_location);
             }
         }
         if (is_jump(last)) {
@@ -3620,10 +3625,8 @@ propagate_line_numbers(basicblock *entryblock) {
             while (target->b_iused == 0 && target->b_predecessors == 1) {
                 target = target->b_next;
             }
-            if (target->b_predecessors == 1 && target->b_iused > 0) {
-                if (target->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
-                    target->b_instr[0].i_loc = prev_location;
-                }
+            if (target->b_predecessors == 1) {
+                maybe_propagate_location(target, 0, prev_location);
             }
         }
     }
