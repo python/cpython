@@ -244,6 +244,12 @@ enum _ThreadState {
     THREAD_STATE_UNKNOWN
 };
 
+enum _ProfilingMode {
+    PROFILING_MODE_WALL = 0,
+    PROFILING_MODE_CPU = 1,
+    PROFILING_MODE_GIL = 2
+};
+
 typedef struct {
     PyObject_HEAD
     proc_handle_t handle;
@@ -257,7 +263,7 @@ typedef struct {
     _Py_hashtable_t *code_object_cache;
     int debug;
     int only_active_thread;
-    int cpu_time;
+    int mode;  // Use enum _ProfilingMode values
     RemoteDebuggingState *cached_state;  // Cached module state
 #ifdef Py_GIL_DISABLED
     // TLBC cache invalidation tracking
@@ -2629,6 +2635,39 @@ unwind_stack_for_thread(
         goto error;
     }
 
+    long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
+
+    // Calculate thread status based on mode
+    int status = THREAD_STATE_UNKNOWN;
+    if (unwinder->mode == PROFILING_MODE_CPU) {
+        long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
+        status = get_thread_status(unwinder, tid, pthread_id);
+        if (status == -1) {
+            PyErr_Print();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to get thread status");
+            goto error;
+        }
+    } else if (unwinder->mode == PROFILING_MODE_GIL) {
+        status = (*current_tstate == gil_holder_tstate) ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
+    } else {
+        // PROFILING_MODE_WALL - all threads are considered running
+        status = THREAD_STATE_RUNNING;
+    }
+
+    // Check if we should skip this thread based on mode
+    int should_skip = 0;
+    if (unwinder->mode == PROFILING_MODE_CPU && status != THREAD_STATE_RUNNING) {
+        should_skip = 1;
+    } else if (unwinder->mode == PROFILING_MODE_GIL && status != THREAD_STATE_RUNNING) {
+        should_skip = 1;
+    }
+
+    if (should_skip) {
+        // Advance to next thread and return NULL to skip processing
+        *current_tstate = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.next);
+        return NULL;
+    }
+
     uintptr_t frame_addr = GET_MEMBER(uintptr_t, ts, unwinder->debug_offsets.thread_state.current_frame);
 
     frame_info = PyList_New(0);
@@ -2640,20 +2679,6 @@ unwind_stack_for_thread(
     if (copy_stack_chunks(unwinder, *current_tstate, &chunks) < 0) {
         set_exception_cause(unwinder, PyExc_RuntimeError, "Failed to copy stack chunks");
         goto error;
-    }
-
-    long tid = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.native_thread_id);
-    int status = THREAD_STATE_UNKNOWN;
-    if (unwinder->cpu_time == 1) {
-        long pthread_id = GET_MEMBER(long, ts, unwinder->debug_offsets.thread_state.thread_id);
-        status = get_thread_status(unwinder, tid, pthread_id);
-        if (status == -1) {
-            PyErr_Print();
-            PyErr_SetString(PyExc_RuntimeError, "Failed to get thread status");
-            goto error;
-        }
-    } else {
-        status = (*current_tstate == gil_holder_tstate) ? THREAD_STATE_RUNNING : THREAD_STATE_GIL_WAIT;
     }
 
     if (process_frame_chain(unwinder, frame_addr, &chunks, frame_info) < 0) {
@@ -2716,7 +2741,7 @@ _remote_debugging.RemoteUnwinder.__init__
     *
     all_threads: bool = False
     only_active_thread: bool = False
-    cpu_time: bool = False
+    mode: int = 0
     debug: bool = False
 
 Initialize a new RemoteUnwinder object for debugging a remote Python process.
@@ -2726,7 +2751,7 @@ Args:
     all_threads: If True, initialize state for all threads in the process.
                 If False, only initialize for the main thread.
     only_active_thread: If True, only sample the thread holding the GIL.
-    cpu_time: If True, enable CPU time tracking for unwinder operations.
+    mode: Profiling mode: 0=WALL (wall-time), 1=CPU (cpu-time), 2=GIL (gil-time).
                        Cannot be used together with all_threads=True.
     debug: If True, chain exceptions to explain the sequence of events that
            lead to the exception.
@@ -2745,8 +2770,8 @@ static int
 _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
                                                int pid, int all_threads,
                                                int only_active_thread,
-                                               int cpu_time, int debug)
-/*[clinic end generated code: output=2598ce54f6335ac7 input=0cf2038cc304c165]*/
+                                               int mode, int debug)
+/*[clinic end generated code: output=784e9990115aa569 input=d082d792d2ba9924]*/
 {
     // Validate that all_threads and only_active_thread are not both True
     if (all_threads && only_active_thread) {
@@ -2765,7 +2790,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
 
     self->debug = debug;
     self->only_active_thread = only_active_thread;
-    self->cpu_time = cpu_time;
+    self->mode = mode;
     self->cached_state = NULL;
     if (_Py_RemoteDebug_InitProcHandle(&self->handle, pid) < 0) {
         set_exception_cause(self, PyExc_RuntimeError, "Failed to initialize process handle");
@@ -2983,6 +3008,12 @@ _remote_debugging_RemoteUnwinder_get_stack_trace_impl(RemoteUnwinderObject *self
         while (current_tstate != 0) {
             PyObject* frame_info = unwind_stack_for_thread(self, &current_tstate, gil_holder_tstate);
             if (!frame_info) {
+                // Check if this was an intentional skip due to mode-based filtering
+                if ((self->mode == PROFILING_MODE_CPU || self->mode == PROFILING_MODE_GIL) && !PyErr_Occurred()) {
+                    // Thread was skipped due to mode filtering, continue to next thread
+                    continue;
+                }
+                // This was an actual error
                 Py_DECREF(interpreter_threads);
                 set_exception_cause(self, PyExc_RuntimeError, "Failed to unwind stack for thread");
                 Py_CLEAR(result);

@@ -15,6 +15,21 @@ from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
+
+# Profiling mode constants
+PROFILING_MODE_WALL = 0
+PROFILING_MODE_CPU = 1
+PROFILING_MODE_GIL = 2
+
+
+def _parse_mode(mode_string):
+    """Convert mode string to mode constant."""
+    mode_map = {
+        "wall": PROFILING_MODE_WALL,
+        "cpu": PROFILING_MODE_CPU,
+        "gil": PROFILING_MODE_GIL,
+    }
+    return mode_map[mode_string]
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 Supports the following target modes:
   - -p PID: Profile an existing process by PID
@@ -120,18 +135,18 @@ def _run_with_sync(original_cmd):
 
 
 class SampleProfiler:
-    def __init__(self, pid, sample_interval_usec, all_threads, *, cpu_time=False):
+    def __init__(self, pid, sample_interval_usec, all_threads, *, mode=PROFILING_MODE_WALL):
         self.pid = pid
         self.sample_interval_usec = sample_interval_usec
         self.all_threads = all_threads
         if _FREE_THREADED_BUILD:
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, all_threads=self.all_threads, cpu_time=cpu_time
+                self.pid, all_threads=self.all_threads, mode=mode
             )
         else:
             only_active_threads = bool(self.all_threads)
             self.unwinder = _remote_debugging.RemoteUnwinder(
-                self.pid, only_active_thread=only_active_threads, cpu_time=cpu_time
+                self.pid, only_active_thread=only_active_threads, mode=mode
             )
         # Track sample intervals and total sample count
         self.sample_intervals = deque(maxlen=100)
@@ -596,12 +611,15 @@ def sample(
     show_summary=True,
     output_format="pstats",
     realtime_stats=False,
-    skip_idle=False,
+    mode=PROFILING_MODE_WALL,
 ):
     profiler = SampleProfiler(
-        pid, sample_interval_usec, all_threads=all_threads, cpu_time=skip_idle
+        pid, sample_interval_usec, all_threads=all_threads, mode=mode
     )
     profiler.realtime_stats = realtime_stats
+
+    # Determine skip_idle for collector compatibility
+    skip_idle = mode != PROFILING_MODE_WALL
 
     collector = None
     match output_format:
@@ -661,7 +679,8 @@ def wait_for_process_and_sample(pid, sort_value, args):
     filename = args.outfile
     if not filename and args.format == "collapsed":
         filename = f"collapsed.{pid}.txt"
-    skip_idle = True if args.mode == "cpu" else False
+
+    mode = _parse_mode(args.mode)
 
     sample(
         pid,
@@ -674,7 +693,7 @@ def wait_for_process_and_sample(pid, sort_value, args):
         show_summary=not args.no_summary,
         output_format=args.format,
         realtime_stats=args.realtime_stats,
-        skip_idle=skip_idle,
+        mode=mode,
     )
 
 
@@ -733,9 +752,9 @@ def main():
     mode_group = parser.add_argument_group("Mode options")
     mode_group.add_argument(
         "--mode",
-        choices=["wall", "cpu"],
-        default="wall-time",
-        help="Sampling mode: wall-time (default, skip_idle=False) or cpu-time (skip_idle=True)",
+        choices=["wall", "cpu", "gil"],
+        default="wall",
+        help="Sampling mode: wall (all threads), cpu (only CPU-running threads), gil (only GIL-holding threads)",
     )
 
     # Output format selection
@@ -862,8 +881,7 @@ def main():
     elif target_count > 1:
         parser.error("only one target type can be specified: -p/--pid, -m/--module, or script")
 
-    # Set skip_idle based on mode
-    skip_idle = True if args.mode == "cpu" else False
+    mode = _parse_mode(args.mode)
 
     if args.pid:
         sample(
@@ -877,7 +895,7 @@ def main():
             show_summary=not args.no_summary,
             output_format=args.format,
             realtime_stats=args.realtime_stats,
-            skip_idle=skip_idle,
+            mode=mode,
         )
     elif args.module or args.args:
         if args.module:
