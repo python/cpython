@@ -1,3 +1,3 @@
 Support ``%:z`` directive for :meth:`datetime.datetime.strptime`,
-:meth:`datetime.time.strptime` and :meth:`time.strptime`.
+:meth:`datetime.time.strptime` and :func:`time.strptime`.
 Patch by Lucas Esposito and Semyon Moroz.
