@@ -751,7 +751,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
     }
     // So far so good:
     PyObject *seen = NULL;
-    if (nattrs > 1) {
+    if (nargs > 0 && nattrs > 1) {
         seen = PySet_New(NULL);
         if (seen == NULL) {
             return NULL;
