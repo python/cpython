@@ -623,6 +623,15 @@ class HandlerTests(TestCase):
             s('200 OK',[('Content-Length', '12345')])
             return []
 
+        def trivial_app5(e,s):
+            s('304 Not Modified',[('Date', 'Wed, 24 Dec 2008 13:29:32 GMT')])
+            return []
+
+        def trivial_app6(e,s):
+            # Simulate a 204 status code received in response to a PUT Request
+            s('204 No Content',[('ETag', 'some vakue')])
+            return []
+
         h = TestHandler()
         h.run(trivial_app1)
         self.assertEqual(h.stdout.getvalue(),
@@ -652,6 +661,14 @@ class HandlerTests(TestCase):
             b'Status: 200 OK\r\n'
             b'Content-Length: 12345\r\n'
             b'\r\n')
+
+        h = TestHandler()
+        h.run(trivial_app5)
+        self.assertNotIn(b'Content-Length:', h.stdout.getvalue())
+
+        h = TestHandler()
+        h.run(trivial_app6)
+        self.assertNotIn(b'Content-Length:', h.stdout.getvalue())
 
     def testBasicErrorOutput(self):
 
