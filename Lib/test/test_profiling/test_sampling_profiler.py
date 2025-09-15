@@ -1996,7 +1996,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                skip_idle=False
+                mode=0
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2024,7 +2024,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                skip_idle=False
+                mode=0
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2052,7 +2052,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                skip_idle=False
+                mode=0
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2152,7 +2152,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                skip_idle=False
+                mode=0
             )
 
     @unittest.skipIf(is_emscripten, "socket.SO_REUSEADDR does not exist")
@@ -2186,7 +2186,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="collapsed",
                 realtime_stats=False,
-                skip_idle=False
+                mode=0
             )
 
     def test_cli_empty_module_name(self):
@@ -2398,7 +2398,7 @@ class TestSampleProfilerCLI(unittest.TestCase):
                 show_summary=True,
                 output_format="pstats",
                 realtime_stats=False,
-                skip_idle=False
+                mode=0
             )
 
     def test_sort_options(self):
@@ -2526,7 +2526,7 @@ main()
                         proc.pid,
                         duration_sec=0.5,
                         sample_interval_usec=5000,
-                        skip_idle=True,  # CPU mode
+                        mode=1,  # CPU mode
                         show_summary=False,
                         all_threads=True,
                     )
@@ -2535,7 +2535,7 @@ main()
 
                 cpu_mode_output = captured_output.getvalue()
 
-            # Test wall-clock mode (skip_idle=False) - should capture both functions
+            # Test wall-clock mode (mode=0) - should capture both functions
             with (
                 io.StringIO() as captured_output,
                 mock.patch("sys.stdout", captured_output),
@@ -2545,7 +2545,7 @@ main()
                         proc.pid,
                         duration_sec=0.5,
                         sample_interval_usec=5000,
-                        skip_idle=False,  # Wall-clock mode
+                        mode=0,  # Wall-clock mode
                         show_summary=False,
                         all_threads=True,
                     )
