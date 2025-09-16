@@ -412,9 +412,11 @@ class InterpreterObjectTests(TestBase):
 
     def test_pickle(self):
         interp = interpreters.create()
-        data = pickle.dumps(interp)
-        unpickled = pickle.loads(data)
-        self.assertEqual(unpickled, interp)
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=protocol):
+                data = pickle.dumps(interp, protocol)
+                unpickled = pickle.loads(data)
+                self.assertEqual(unpickled, interp)
 
 
 class TestInterpreterIsRunning(TestBase):
@@ -2201,6 +2203,16 @@ class LowLevelTests(TestBase):
                 config=False)
             whence = eval(text)
             self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
+
+    def test_contextvars_missing(self):
+        script = f"""
+            import contextvars
+            print(getattr(contextvars.Token, "MISSING", "'doesn't exist'"))
+            """
+
+        orig = _interpreters.create()
+        text = self.run_and_capture(orig, script)
+        self.assertEqual(text.strip(), "<Token.MISSING>")
 
     def test_is_running(self):
         def check(interpid, expected):

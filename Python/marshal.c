@@ -1997,6 +1997,8 @@ marshal_load_impl(PyObject *module, PyObject *file, int allow_code)
 }
 
 /*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
 marshal.dumps
 
     value: object
@@ -2017,7 +2019,7 @@ unsupported type.
 static PyObject *
 marshal_dumps_impl(PyObject *module, PyObject *value, int version,
                    int allow_code)
-/*[clinic end generated code: output=115f90da518d1d49 input=167eaecceb63f0a8]*/
+/*[clinic end generated code: output=115f90da518d1d49 input=80cd3f30c1637ade]*/
 {
     return _PyMarshal_WriteObjectToString(value, version, allow_code);
 }

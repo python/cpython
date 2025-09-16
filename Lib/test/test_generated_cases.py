@@ -1572,7 +1572,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            frame->return_offset = 1 ;
+            frame->return_offset = 1u ;
             DISPATCH();
         }
         """
@@ -2037,7 +2037,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         output = """
         """
-        with self.assertRaisesRegex(AssertionError, "All abstract uops"):
+        with self.assertRaisesRegex(ValueError, "All abstract uops"):
             self.run_cases_test(input, input2, output)
 
     def test_validate_uop_input_length_mismatch(self):
