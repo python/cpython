@@ -12,7 +12,6 @@ extern "C" {
 #include "pycore_freelist_state.h"  // struct _Py_freelists
 #include "pycore_mimalloc.h"        // struct _mimalloc_thread_state
 #include "pycore_qsbr.h"            // struct qsbr
-#include "pycore_uop.h"             // struct _PyUOpInstruction
 
 
 #ifdef Py_GIL_DISABLED
@@ -75,10 +74,6 @@ typedef struct _PyThreadStateImpl {
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     Py_ssize_t reftotal;  // this thread's total refcount operations
-#endif
-
-#ifdef _Py_TIER2
-    struct _PyUOpInstruction *jit_uop_buffer;
 #endif
 
 } _PyThreadStateImpl;

@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
+#include "pycore_uop.h"           // struct _PyUOpInstruction
 
 
 #define CODE_MAX_WATCHERS 8
@@ -897,6 +898,10 @@ struct _is {
     struct atexit_state atexit;
     struct _stoptheworld_state stoptheworld;
     struct _qsbr_shared qsbr;
+
+#ifdef _Py_TIER2
+    struct _PyUOpInstruction *jit_uop_buffer;
+#endif
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;

@@ -1280,14 +1280,14 @@ uop_optimize(
 {
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
-    _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (tstate->jit_uop_buffer == NULL) {
-        tstate->jit_uop_buffer = (_PyUOpInstruction *)PyMem_RawMalloc(UOP_MAX_TRACE_LENGTH*sizeof(_PyUOpInstruction));
-        if (tstate->jit_uop_buffer == NULL) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->jit_uop_buffer == NULL) {
+        interp->jit_uop_buffer = (_PyUOpInstruction *)PyMem_RawMalloc(UOP_MAX_TRACE_LENGTH*sizeof(_PyUOpInstruction));
+        if (interp->jit_uop_buffer == NULL) {
             return 0;
         }
     }
-    _PyUOpInstruction *buffer = tstate->jit_uop_buffer;
+    _PyUOpInstruction *buffer = interp->jit_uop_buffer;
     OPT_STAT_INC(attempts);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
     bool is_noopt = true;
