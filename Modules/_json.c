@@ -10,6 +10,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST()
 #include "pycore_global_strings.h" // _Py_ID()
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote
 #include "pycore_runtime.h"       // _PyRuntime
@@ -1456,7 +1457,7 @@ write_newline_indent(PyUnicodeWriter *writer,
 static PyObject *
 encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    /* Python callable interface to encode_listencode_obj */
+    /* Python callable interface to encoder_listencode_obj */
     static char *kwlist[] = {"obj", "_current_indent_level", NULL};
     PyObject *obj;
     Py_ssize_t indent_level;
@@ -1743,15 +1744,84 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
     return 0;
 }
 
+static inline int
+_encoder_iterate_mapping_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
+                            bool *first, PyObject *dct, PyObject *items,
+                            Py_ssize_t indent_level, PyObject *indent_cache,
+                            PyObject *separator)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(items);
+    PyObject *key, *value;
+    for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
+        PyObject *item = PyList_GET_ITEM(items, i);
+#ifdef Py_GIL_DISABLED
+        // gh-119438: in the free-threading build the critical section on items can get suspended
+        Py_INCREF(item);
+#endif
+        if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
+            PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
+#ifdef Py_GIL_DISABLED
+            Py_DECREF(item);
+#endif
+            return -1;
+        }
+
+        key = PyTuple_GET_ITEM(item, 0);
+        value = PyTuple_GET_ITEM(item, 1);
+        if (encoder_encode_key_value(s, writer, first, dct, key, value,
+                                     indent_level, indent_cache,
+                                     separator) < 0) {
+#ifdef Py_GIL_DISABLED
+            Py_DECREF(item);
+#endif
+            return -1;
+        }
+#ifdef Py_GIL_DISABLED
+        Py_DECREF(item);
+#endif
+    }
+
+    return 0;
+}
+
+static inline int
+_encoder_iterate_dict_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
+                         bool *first, PyObject *dct, Py_ssize_t indent_level,
+                         PyObject *indent_cache, PyObject *separator)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dct);
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(dct, &pos, &key, &value)) {
+#ifdef Py_GIL_DISABLED
+        // gh-119438: in the free-threading build the critical section on dct can get suspended
+        Py_INCREF(key);
+        Py_INCREF(value);
+#endif
+        if (encoder_encode_key_value(s, writer, first, dct, key, value,
+                                    indent_level, indent_cache,
+                                    separator) < 0) {
+#ifdef Py_GIL_DISABLED
+            Py_DECREF(key);
+            Py_DECREF(value);
+#endif
+            return -1;
+        }
+#ifdef Py_GIL_DISABLED
+        Py_DECREF(key);
+        Py_DECREF(value);
+#endif
+    }
+    return 0;
+}
+
 static int
 encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
-                        PyObject *dct,
+                       PyObject *dct,
                        Py_ssize_t indent_level, PyObject *indent_cache)
 {
     /* Encode Python dict dct a JSON term */
     PyObject *ident = NULL;
-    PyObject *items = NULL;
-    PyObject *key, *value;
     bool first = true;
 
     if (PyDict_GET_SIZE(dct) == 0) {
@@ -1788,34 +1858,30 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     }
 
     if (s->sort_keys || !PyDict_CheckExact(dct)) {
-        items = PyMapping_Items(dct);
-        if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0))
+        PyObject *items = PyMapping_Items(dct);
+        if (items == NULL || (s->sort_keys && PyList_Sort(items) < 0)) {
+            Py_XDECREF(items);
             goto bail;
-
-        for (Py_ssize_t  i = 0; i < PyList_GET_SIZE(items); i++) {
-            PyObject *item = PyList_GET_ITEM(items, i);
-
-            if (!PyTuple_Check(item) || PyTuple_GET_SIZE(item) != 2) {
-                PyErr_SetString(PyExc_ValueError, "items must return 2-tuples");
-                goto bail;
-            }
-
-            key = PyTuple_GET_ITEM(item, 0);
-            value = PyTuple_GET_ITEM(item, 1);
-            if (encoder_encode_key_value(s, writer, &first, dct, key, value,
-                                         indent_level, indent_cache,
-                                         separator) < 0)
-                goto bail;
         }
-        Py_CLEAR(items);
+
+        int result;
+        Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(items);
+        result = _encoder_iterate_mapping_lock_held(s, writer, &first, dct,
+                    items, indent_level, indent_cache, separator);
+        Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
+        Py_DECREF(items);
+        if (result < 0) {
+            goto bail;
+        }
 
     } else {
-        Py_ssize_t pos = 0;
-        while (PyDict_Next(dct, &pos, &key, &value)) {
-            if (encoder_encode_key_value(s, writer, &first, dct, key, value,
-                                         indent_level, indent_cache,
-                                         separator) < 0)
-                goto bail;
+        int result;
+        Py_BEGIN_CRITICAL_SECTION(dct);
+        result = _encoder_iterate_dict_lock_held(s, writer, &first, dct,
+                            indent_level, indent_cache, separator);
+        Py_END_CRITICAL_SECTION();
+        if (result < 0) {
+            goto bail;
         }
     }
 
@@ -1837,9 +1903,41 @@ encoder_listencode_dict(PyEncoderObject *s, PyUnicodeWriter *writer,
     return 0;
 
 bail:
-    Py_XDECREF(items);
     Py_XDECREF(ident);
     return -1;
+}
+
+static inline int
+_encoder_iterate_fast_seq_lock_held(PyEncoderObject *s, PyUnicodeWriter *writer,
+    PyObject *seq, PyObject *s_fast,
+    Py_ssize_t indent_level, PyObject *indent_cache, PyObject *separator)
+{
+    for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
+        PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
+#ifdef Py_GIL_DISABLED
+        // gh-119438: in the free-threading build the critical section on s_fast can get suspended
+        Py_INCREF(obj);
+#endif
+        if (i) {
+            if (PyUnicodeWriter_WriteStr(writer, separator) < 0) {
+#ifdef Py_GIL_DISABLED
+                Py_DECREF(obj);
+#endif
+                return -1;
+            }
+        }
+        if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
+            _PyErr_FormatNote("when serializing %T item %zd", seq, i);
+#ifdef Py_GIL_DISABLED
+            Py_DECREF(obj);
+#endif
+            return -1;
+        }
+#ifdef Py_GIL_DISABLED
+        Py_DECREF(obj);
+#endif
+    }
+    return 0;
 }
 
 static int
@@ -1849,10 +1947,8 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
 {
     PyObject *ident = NULL;
     PyObject *s_fast = NULL;
-    Py_ssize_t i;
 
-    ident = NULL;
-    s_fast = PySequence_Fast(seq, "_iterencode_list needs a sequence");
+    s_fast = PySequence_Fast(seq, "encoder_listencode_list needs a sequence");
     if (s_fast == NULL)
         return -1;
     if (PySequence_Fast_GET_SIZE(s_fast) == 0) {
@@ -1890,16 +1986,13 @@ encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer,
             goto bail;
         }
     }
-    for (i = 0; i < PySequence_Fast_GET_SIZE(s_fast); i++) {
-        PyObject *obj = PySequence_Fast_GET_ITEM(s_fast, i);
-        if (i) {
-            if (PyUnicodeWriter_WriteStr(writer, separator) < 0)
-                goto bail;
-        }
-        if (encoder_listencode_obj(s, writer, obj, indent_level, indent_cache)) {
-            _PyErr_FormatNote("when serializing %T item %zd", seq, i);
-            goto bail;
-        }
+    int result;
+    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(seq);
+    result = _encoder_iterate_fast_seq_lock_held(s, writer, seq, s_fast,
+                     indent_level, indent_cache, separator);
+    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
+    if (result < 0) {
+        goto bail;
     }
     if (ident != NULL) {
         if (PyDict_DelItem(s->markers, ident))
