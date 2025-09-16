@@ -1991,6 +1991,11 @@ class _PosixSpawnMixin:
     @requires_sched
     @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),
                      "bpo-34685: test can fail on BSD")
+    @unittest.skipIf(platform.libc_ver()[0] == 'glibc' and
+                     os.sched_getscheduler(0) in [
+                        os.SCHED_BATCH,
+                        os.SCHED_IDLE],
+                     "Skip test due to glibc posix_spawn policy")
     def test_setscheduler_with_policy(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
