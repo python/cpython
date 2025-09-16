@@ -16,10 +16,10 @@ from pathlib import Path
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from typing import Any, Literal
+    from typing import Any, Literal, TypeAlias
 
-    type StrPath = str | os.PathLike[str]
-    type ValidSchemaVersion = Literal['1.0']
+    StrPath: TypeAlias = str | os.PathLike[str]
+    ValidSchemaVersion: TypeAlias = Literal['1.0']
 
 
 def write_build_details(
