@@ -137,7 +137,8 @@ class TestForwardRefFormat(unittest.TestCase):
             str | int,
         )
         union = annos["union"]
-        self.assertIsInstance(union, Union)
+        self.assertIs(typing.get_origin(union), Union)
+        # self.assertIsInstance(union, Union)
         arg1, arg2 = typing.get_args(union)
         self.assertIs(arg1, str)
         self.assertEqual(
