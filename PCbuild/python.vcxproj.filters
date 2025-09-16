@@ -12,6 +12,29 @@
     <None Include="..\PC\icons\python.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="python_inline.vcxproj" />
+    <None Include="Build-MSIX.ps1" />
+    <None Include="python_inline.vcxproj.filters" />
+    <None Include="Examples\usage_examples.bat" />
+    <None Include="test_python_inline.py" />
+    <None Include="README.md" />
+    <None Include="QUICKSTART.md" />
+    <None Include="ContosoLab 2.pfx" />
+    <None Include="Create-MSIX-Simple.ps1" />
+    <None Include="Install-Certificate.ps1" />
+    <None Include="Test-MSIX-Installation.ps1" />
+    <None Include="PythonInline.psm1" />
+    <None Include="REFACTORING_SUMMARY.md" />
+    <None Include="PythonInline\README.md" />
+    <None Include="PythonInline\output\.gitignore" />
+    <None Include="PythonInline\docs\MIGRATION_GUIDE.md" />
+    <None Include="REORGANIZATION_COMPLETE.md" />
+    <None Include="PythonInline\docs\CLEANUP_SUMMARY.md" />
+    <None Include="PythonInline\packaging\Install-Packages.ps1" />
+    <None Include="PythonInline\docs\PACKAGE_SUPPORT.md" />
+    <None Include="PythonInline\docs\PACKAGE_IMPLEMENTATION.md" />
+    <None Include="PythonInline\docs\BUILD_TIME_BUNDLING.md" />
+    <None Include="PythonInline\scripts\examples\test_bundling.bat" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_exe.rc">
@@ -22,5 +45,11 @@
     <ClCompile Include="..\Programs\python.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="MSIX\Package.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="PythonInline\packaging\requirements.txt" />
   </ItemGroup>
 </Project>

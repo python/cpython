@@ -1,13 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|ARM">
       <Configuration>Debug</Configuration>
       <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|ARM64">
-      <Configuration>Debug</Configuration>
-      <Platform>ARM64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -17,13 +13,13 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM64">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="PGInstrument|ARM">
       <Configuration>PGInstrument</Configuration>
       <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="PGInstrument|ARM64">
-      <Configuration>PGInstrument</Configuration>
-      <Platform>ARM64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="PGInstrument|Win32">
       <Configuration>PGInstrument</Configuration>
@@ -33,13 +29,13 @@
       <Configuration>PGInstrument</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|ARM64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="PGUpdate|ARM">
       <Configuration>PGUpdate</Configuration>
       <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="PGUpdate|ARM64">
-      <Configuration>PGUpdate</Configuration>
-      <Platform>ARM64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="PGUpdate|Win32">
       <Configuration>PGUpdate</Configuration>
@@ -49,13 +45,13 @@
       <Configuration>PGUpdate</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|ARM64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|ARM">
       <Configuration>Release</Configuration>
       <Platform>ARM</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|ARM64">
-      <Configuration>Release</Configuration>
-      <Platform>ARM64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -65,39 +61,41 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM64">
+      <Configuration>Release</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B11D750F-CD1F-4A96-85CE-E69A5C5259F9}</ProjectGuid>
+    <ProjectGuid>{8B9140D3-1BB2-4C8F-9A23-1D87BC5BF2E8}</ProjectGuid>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
-    <TargetName>$(PyExeName)</TargetName>
+    <TargetName>python_inline</TargetName>
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="pyproject.props" />
-    <Import Project="tcltk.props" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <DefaultLanguage>en</DefaultLanguage>
-    <PackageCertificateThumbprint>330B87B0D27D4055BA2DF5447ED29F26BB73FCA3</PackageCertificateThumbprint>
-    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <OutDir>$(BuildPath)</OutDir>
+    <IntDir>$(BuildPath)python_inline\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>Py_BUILD_CORE;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)PC;PythonInline\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <WarningLevel>Level3</WarningLevel>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)' == 'Debug'">MultiThreadedDebugDLL</RuntimeLibrary>
+      <Optimization>MaxSpeed</Optimization>
+      <Optimization Condition="'$(Configuration)' == 'Debug'">Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>2000000</StackReserveSize>
       <StackReserveSize Condition="$(Configuration) == 'Debug'">12000000</StackReserveSize>
       <StackReserveSize Condition="$(Configuration) == 'PGInstrument'">12000000</StackReserveSize>
@@ -106,36 +104,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="..\PC\icons\python.ico" />
-    <None Include="Build-MSIX.ps1" />
-    <None Include="ContosoLab 2.pfx" />
-    <None Include="Create-MSIX-Simple.ps1" />
-    <None Include="Examples\usage_examples.bat" />
-    <None Include="Install-Certificate.ps1" />
-    <None Include="PythonInline.psm1" />
-    <None Include="PythonInline\docs\BUILD_TIME_BUNDLING.md" />
-    <None Include="PythonInline\docs\CLEANUP_SUMMARY.md" />
-    <None Include="PythonInline\docs\MIGRATION_GUIDE.md" />
-    <None Include="PythonInline\docs\PACKAGE_IMPLEMENTATION.md" />
-    <None Include="PythonInline\docs\PACKAGE_SUPPORT.md" />
-    <None Include="PythonInline\output\.gitignore" />
-    <None Include="PythonInline\packaging\Install-Packages.ps1" />
-    <None Include="PythonInline\README.md" />
-    <None Include="PythonInline\scripts\examples\test_bundling.bat" />
-    <None Include="python_inline.vcxproj" />
-    <None Include="python_inline.vcxproj.filters" />
-    <None Include="QUICKSTART.md" />
-    <None Include="README.md" />
-    <None Include="REFACTORING_SUMMARY.md" />
-    <None Include="REORGANIZATION_COMPLETE.md" />
-    <None Include="Test-MSIX-Installation.ps1" />
-    <None Include="test_python_inline.py" />
+    <None Include="PythonInline\packaging\msix\Assets\python.ico" />
+  </ItemGroup>
+  <!--
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\python_inline.rc" />
+  </ItemGroup>
+  -->
+  <ItemGroup>
+    <ClInclude Include="PythonInline\src\python_inline_config.h" />
+    <ClInclude Include="PythonInline\src\python_inline_args.h" />
+    <ClInclude Include="PythonInline\src\python_inline_executor.h" />
+    <ClInclude Include="PythonInline\src\python_inline_platform.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\PC\python_exe.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\Programs\python.c" />
+    <ClCompile Include="PythonInline\src\python_inline.c" />
+    <ClCompile Include="PythonInline\src\python_inline_config.c" />
+    <ClCompile Include="PythonInline\src\python_inline_args.c" />
+    <ClCompile Include="PythonInline\src\python_inline_executor.c" />
+    <ClCompile Include="PythonInline\src\python_inline_platform.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="pythoncore.vcxproj">
@@ -143,18 +130,48 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <AppxManifest Include="MSIX\Package.appxmanifest">
-      <SubType>Designer</SubType>
-    </AppxManifest>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="PythonInline\packaging\requirements.txt" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="regen.targets" />
   </ImportGroup>
+  
+  <!-- Package Installation Target - Run before build -->
+  <Target Name="InstallExternalPackages" BeforeTargets="Build" Condition="Exists('PythonInline\packaging\requirements.txt') AND '$(SkipPackageInstallation)' != 'true'">
+    <Message Text="Installing external Python packages from requirements.txt..." Importance="high" />
+    <PropertyGroup>
+      <PackageInstallScript>PythonInline\packaging\Install-Packages.ps1</PackageInstallScript>
+      <RequirementsFile>PythonInline\packaging\requirements.txt</RequirementsFile>
+      <SitePackagesPath>PythonInline\packaging\site-packages</SitePackagesPath>
+    </PropertyGroup>
+    
+    <!-- Check if packages are already installed -->
+    <PropertyGroup>
+      <PackagesInstalled Condition="Exists('$(SitePackagesPath)\python_inline_packages.txt')">true</PackagesInstalled>
+      <PackagesInstalled Condition="!Exists('$(SitePackagesPath)\python_inline_packages.txt')">false</PackagesInstalled>
+    </PropertyGroup>
+    
+    <Message Text="Packages already installed, skipping installation." Importance="normal" Condition="'$(PackagesInstalled)' == 'true'" />
+    
+    <Exec Command="powershell.exe -ExecutionPolicy Bypass -File &quot;$(PackageInstallScript)&quot; -RequirementsFile &quot;$(RequirementsFile)&quot; -SitePackagesPath &quot;$(SitePackagesPath)&quot;" 
+          Condition="'$(PackagesInstalled)' == 'false'"
+          ContinueOnError="false" 
+          WorkingDirectory="$(ProjectDir)" />
+    
+    <Message Text="External packages installation completed." Importance="high" Condition="'$(PackagesInstalled)' == 'false'" />
+  </Target>
+  
+  <!-- Copy site-packages to output directory -->
+  <Target Name="CopySitePackages" AfterTargets="Build" Condition="Exists('PythonInline\packaging\site-packages')">
+    <Message Text="Copying bundled packages to output directory..." Importance="high" />
+    <ItemGroup>
+      <SitePackageFiles Include="PythonInline\packaging\site-packages\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(SitePackageFiles)" 
+          DestinationFiles="@(SitePackageFiles->'$(OutDir)site-packages\%(RecursiveDir)%(Filename)%(Extension)')" 
+          SkipUnchangedFiles="true" />
+    <Message Text="Site-packages copied to: $(OutDir)site-packages\" Importance="high" />
+  </Target>
+  
   <Target Name="_TriggerPostRegen" AfterTargets="Build" DependsOnTargets="PostBuildRegen" />
   <Target Name="GeneratePyBuildDirTxt" AfterTargets="Link">
     <Message Text="Generating $(OutDir)pybuilddir.txt" />
@@ -165,24 +182,26 @@
       <UcrtName>ucrtbase</UcrtName>
       <UcrtName Condition="'$(Configuration)' == 'Debug'">ucrtbased</UcrtName>
     </PropertyGroup>
-    <Exec Command="setlocal&#xD;&#xA;set PYTHONPATH=$(PySourcePath)Lib&#xD;&#xA;&quot;$(OutDir)$(PyExeName)$(PyDebugExt).exe&quot; &quot;$(PySourcePath)PC\validate_ucrtbase.py&quot; $(UcrtName)" ContinueOnError="true" />
+    <Exec Command='setlocal
+set PYTHONPATH=$(PySourcePath)Lib
+"$(OutDir)$(PyExeName)$(PyDebugExt).exe" "$(PySourcePath)PC\validate_ucrtbase.py" $(UcrtName)' ContinueOnError="true" />
   </Target>
-  <Target Name="GeneratePythonBat" AfterTargets="AfterBuild">
+  <Target Name="GeneratePythonInlineBat" AfterTargets="AfterBuild">
     <PropertyGroup>
-      <_Content>@rem This script invokes the most recently built Python with all arguments
+      <_Content>@rem This script invokes the most recently built Python Inline with all arguments
 @rem passed through to the interpreter.  This file is generated by the
 @rem build process and any changes *will* be thrown away by the next
 @rem rebuild.
 @rem This is only meant as a convenience for developing CPython
 @rem and using it outside of that context is ill-advised.
-@echo Running $(Configuration)^|$(Platform) interpreter...
+@echo Running $(Configuration)^|$(Platform) Python Inline interpreter...
 @setlocal
 @set PYTHONHOME=$(PySourcePath)
-@"$(OutDir)$(PyExeName)$(PyDebugExt).exe" %*
+@"$(OutDir)python_inline$(PyDebugExt).exe" %*
 </_Content>
-      <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
+      <_ExistingContent Condition="Exists('$(PySourcePath)python_inline.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python_inline.bat'))</_ExistingContent>
     </PropertyGroup>
-    <WriteLinesToFile File="$(PySourcePath)python.bat" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
+    <WriteLinesToFile File="$(PySourcePath)python_inline.bat" Lines="$(_Content)" Overwrite="true" Condition="'$(_Content)' != '$(_ExistingContent)'" />
   </Target>
   <Target Name="CopyPGORT" AfterTargets="Link" Condition="$(Configuration) == 'PGInstrument'">
     <ItemGroup>

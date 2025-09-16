@@ -1,0 +1,81 @@
+# Python Inline External Packages Configuration
+# Specify packages that should be bundled with the application at build time
+# 
+# Format: package_name[==version] or package_name[>=version]
+#
+# Note: These packages will be bundled into the executable and available
+# to any Python script run through Python Inline without needing separate installation.
+
+# HTTP requests and web APIs
+requests==2.31.0
+
+# Data analysis and scientific computing
+# numpy>=1.24.0
+# pandas>=2.0.0
+# scipy>=1.11.0
+
+# Web scraping and HTML parsing
+# beautifulsoup4>=4.12.0
+# lxml>=4.9.0
+
+# Excel/CSV/Data file handling
+# openpyxl>=3.1.0
+# xlsxwriter>=3.1.0
+# PyYAML>=6.0
+
+# Date/time utilities
+# python-dateutil>=2.8.0
+# pytz>=2023.3
+
+# Image processing
+# pillow>=10.0.0
+
+# Plotting and visualization
+# matplotlib>=3.7.0
+# seaborn>=0.12.0
+
+# JSON and configuration handling (built-in, but useful for reference)
+# configparser  # Built-in to Python
+# json          # Built-in to Python
+
+# Command line interfaces
+# click>=8.1.0
+# argparse      # Built-in to Python
+
+# Networking and protocols
+# urllib3>=2.0.0
+# httpx>=0.24.0
+
+# Text processing and regular expressions
+# regex>=2023.8.8
+# re            # Built-in to Python
+
+# File and path utilities
+# pathlib       # Built-in to Python (Python 3.4+)
+# os            # Built-in to Python
+# shutil        # Built-in to Python
+
+# Math and statistics
+# math          # Built-in to Python
+# statistics    # Built-in to Python
+# decimal       # Built-in to Python
+
+# Concurrent programming
+# asyncio       # Built-in to Python
+# threading     # Built-in to Python
+# multiprocessing # Built-in to Python
+
+# Logging and debugging
+# logging       # Built-in to Python
+
+# Add your custom packages below:
+# your_package_name>=1.0.0
+
+# Examples of popular packages:
+# flask>=2.3.0           # Web framework
+# django>=4.2.0          # Web framework  
+# fastapi>=0.100.0       # Modern API framework
+# pytest>=7.4.0          # Testing framework
+# black>=23.7.0          # Code formatter
+# flake8>=6.0.0          # Code linter
+# mypy>=1.5.0            # Type checker

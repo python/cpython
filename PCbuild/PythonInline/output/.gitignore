@@ -1,0 +1,31 @@
+# Build outputs
+*.exe
+*.pdb
+*.ilk
+*.obj
+*.tlog
+*.log
+*.recipe
+
+# MSIX packages
+*.msix
+*.appx
+
+# Temporary files
+Package/
+makeappx_output.log
+makeappx_error.log
+
+# Visual Studio files
+*.user
+*.suo
+.vs/
+
+# Certificate files (for security)
+*.pfx
+*.p12
+*.cer
+
+# Test outputs
+test_output/
+temp/
