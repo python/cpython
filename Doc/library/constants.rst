@@ -112,11 +112,13 @@ should not be used in programs.
 
 .. data:: copyright
           credits
+   :noindex:
 
    Objects that when printed or called, print the text of copyright or
    credits, respectively (see :func:`copyright` and :func:`credits`).
 
 .. data:: license
+   :noindex:
 
    Object that when printed, prints the message "Type license() to see the
    full license text", and when called, displays the full license text in a
