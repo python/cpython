@@ -68,10 +68,15 @@ def generate_data(
 
     data['base_prefix'] = sysconfig.get_config_var('installed_base')
     #data['base_interpreter'] = sys._base_executable
-    data['base_interpreter'] = os.path.join(
-        sysconfig.get_path('scripts'),
-        'python' + sysconfig.get_config_var('VERSION'),
-    )
+    if os.name == 'nt':
+        data['base_interpreter'] = os.path.join(
+            data['base_prefix'], os.path.basename(sys._base_executable)
+        )
+    else:
+        data['base_interpreter'] = os.path.join(
+            sysconfig.get_path('scripts'),
+            'python' + sysconfig.get_config_var('VERSION'),
+        )
     data['platform'] = sysconfig.get_platform()
 
     data['language']['version'] = sysconfig.get_python_version()
@@ -94,13 +99,19 @@ def generate_data(
     #data['suffixes']['debug_bytecode'] = importlib.machinery.DEBUG_BYTECODE_SUFFIXES
     data['suffixes']['extensions'] = importlib.machinery.EXTENSION_SUFFIXES
 
-    LIBDIR = sysconfig.get_config_var('LIBDIR')
+    if os.name == 'nt':
+        LIBDIR = data['base_prefix']
+    else:
+        LIBDIR = sysconfig.get_config_var('LIBDIR')
     LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')
     LIBRARY = sysconfig.get_config_var('LIBRARY')
     PY3LIBRARY = sysconfig.get_config_var('PY3LIBRARY')
     LIBPYTHON = sysconfig.get_config_var('LIBPYTHON')
     LIBPC = sysconfig.get_config_var('LIBPC')
-    INCLUDEPY = sysconfig.get_config_var('INCLUDEPY')
+    if os.name == 'nt':
+        INCLUDEPY = os.path.join(data['base_prefix'], 'include')
+    else:
+        INCLUDEPY = sysconfig.get_config_var('INCLUDEPY')
 
     if os.name == 'posix':
         # On POSIX, LIBRARY is always the static library, while LDLIBRARY is the
