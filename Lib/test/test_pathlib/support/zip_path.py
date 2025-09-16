@@ -24,6 +24,7 @@ else:
 
 class ZipPathGround:
     can_symlink = True
+    seps = '/'
 
     def __init__(self, path_cls):
         self.path_cls = path_cls
