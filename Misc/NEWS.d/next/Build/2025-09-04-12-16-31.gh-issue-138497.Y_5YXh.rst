@@ -1,2 +1,4 @@
 LLVM version can be modified during build with environment variable
-"LLVM_VERSION".
+"LLVM_VERSION". Use this at your own risk, as there is only one
+officially supported LLVM version. For more information, please check
+Tools/jit/README.md.
