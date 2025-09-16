@@ -1,1 +1,2 @@
-Improving ``license()`` prompting in repl.
+Improved ``license()``/``copyright()``/``credits()`` display in the REPL
+to use a pager.
