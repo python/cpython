@@ -808,10 +808,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
-    if (interp->jit_uop_buffer != NULL) {
-        PyMem_RawFree(interp->jit_uop_buffer);
-        interp->jit_uop_buffer = NULL;
-    }
 #endif
     _PyAST_Fini(interp);
     _PyAtExit_Fini(interp);
