@@ -2716,8 +2716,8 @@ def gil_holding_work():
 
 def main():
 # Start both threads
-    idle_thread = threading.Thread(target=idle_worker)
-    cpu_thread = threading.Thread(target=cpu_active_worker)
+    idle_thread = threading.Thread(target=gil_releasing_work)
+    cpu_thread = threading.Thread(target=gil_holding_work)
     idle_thread.start()
     cpu_thread.start()
     idle_thread.join()
