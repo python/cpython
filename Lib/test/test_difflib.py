@@ -1,5 +1,5 @@
 import difflib
-from test.support import findfile
+from test.support import findfile, force_colorized
 import unittest
 import doctest
 import sys
@@ -28,6 +28,16 @@ class TestWithAscii(unittest.TestCase):
             [   ('equal', 0, 40, 0, 40),
                 ('delete', 40, 41, 40, 40),
                 ('equal', 41, 81, 40, 80)])
+
+    def test_opcode_caching(self):
+        sm = difflib.SequenceMatcher(None, 'b' * 100, 'a' + 'b' * 100)
+        opcode = sm.get_opcodes()
+        self.assertEqual(opcode,
+            [   ('insert', 0, 0, 0, 1),
+                ('equal', 0, 100, 1, 101)])
+        # Implementation detail: opcodes are cached;
+        # `get_opcodes()` returns the same object
+        self.assertIs(opcode, sm.get_opcodes())
 
     def test_bjunk(self):
         sm = difflib.SequenceMatcher(isjunk=lambda x: x == ' ',
@@ -255,21 +265,21 @@ class TestSFpatches(unittest.TestCase):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_from1.splitlines(),
                                      patch914575_to1.splitlines())
-        self.assertIn('content="text/html; charset=utf-8"', output)
+        self.assertIn('charset="utf-8"', output)
 
     def test_make_file_iso88591_charset(self):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_from1.splitlines(),
                                      patch914575_to1.splitlines(),
                                      charset='iso-8859-1')
-        self.assertIn('content="text/html; charset=iso-8859-1"', output)
+        self.assertIn('charset="iso-8859-1"', output)
 
     def test_make_file_usascii_charset_with_nonascii_input(self):
         html_diff = difflib.HtmlDiff()
         output = html_diff.make_file(patch914575_nonascii_from1.splitlines(),
                                      patch914575_nonascii_to1.splitlines(),
                                      charset='us-ascii')
-        self.assertIn('content="text/html; charset=us-ascii"', output)
+        self.assertIn('charset="us-ascii"', output)
         self.assertIn('&#305;mpl&#305;c&#305;t', output)
 
 class TestDiffer(unittest.TestCase):
@@ -292,6 +302,15 @@ class TestDiffer(unittest.TestCase):
                             '?             ^\n',
                             '+ kitten\n',
                             '+ puppy\n'])
+
+    def test_one_insert(self):
+        m = difflib.Differ().compare('b' * 2, 'a' + 'b' * 2)
+        self.assertEqual(list(m), ['+ a', '  b', '  b'])
+
+    def test_one_delete(self):
+        m = difflib.Differ().compare('a' + 'b' * 2, 'b' * 2)
+        self.assertEqual(list(m), ['- a', '  b', '  b'])
+
 
 class TestOutputFormat(unittest.TestCase):
     def test_tab_delimiter(self):
@@ -354,6 +373,22 @@ class TestOutputFormat(unittest.TestCase):
         self.assertEqual(fmt(3,5), '4,5')
         self.assertEqual(fmt(3,6), '4,6')
         self.assertEqual(fmt(0,0), '0')
+
+    @force_colorized
+    def test_unified_diff_colored_output(self):
+        args = [['one', 'three'], ['two', 'three'], 'Original', 'Current',
+            '2005-01-26 23:30:50', '2010-04-02 10:20:52']
+        actual = list(difflib.unified_diff(*args, lineterm='', color=True))
+
+        expect = [
+            "\033[1m--- Original\t2005-01-26 23:30:50\033[0m",
+            "\033[1m+++ Current\t2010-04-02 10:20:52\033[0m",
+             "\033[36m@@ -1,2 +1,2 @@\033[0m",
+             "\033[31m-one\033[0m",
+             "\033[32m+two\033[0m",
+             "\033[0m three\033[0m",
+        ]
+        self.assertEqual(expect, actual)
 
 
 class TestBytes(unittest.TestCase):
@@ -583,6 +618,26 @@ class TestFindLongest(unittest.TestCase):
         self.assertEqual(a[match.a: match.a + match.size],
                          b[match.b: match.b + match.size])
         self.assertFalse(self.longer_match_exists(a, b, match.size))
+
+
+class TestCloseMatches(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.get_close_matches`.
+
+    def test_invalid_inputs(self):
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=0)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], n=-1)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], cutoff=1.1)
+        self.assertRaises(ValueError, difflib.get_close_matches, "spam", ['egg'], cutoff=-0.1)
+
+
+class TestRestore(unittest.TestCase):
+    # Happy paths are tested in the doctests of `difflib.restore`.
+
+    def test_invalid_input(self):
+        with self.assertRaises(ValueError):
+            ''.join(difflib.restore([], 0))
+        with self.assertRaises(ValueError):
+            ''.join(difflib.restore([], 3))
 
 
 def setUpModule():

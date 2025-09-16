@@ -986,12 +986,12 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
 
     def test_defaults_keyword(self):
         """bpo-23835 fix for ConfigParser"""
-        cf = self.newconfig(defaults={1: 2.4})
-        self.assertEqual(cf[self.default_section]['1'], '2.4')
-        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.4)
-        cf = self.newconfig(defaults={"A": 5.2})
-        self.assertEqual(cf[self.default_section]['a'], '5.2')
-        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.2)
+        cf = self.newconfig(defaults={1: 2.5})
+        self.assertEqual(cf[self.default_section]['1'], '2.5')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.5)
+        cf = self.newconfig(defaults={"A": 5.25})
+        self.assertEqual(cf[self.default_section]['a'], '5.25')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.25)
 
 
 class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
@@ -1326,6 +1326,47 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
 
 class ConfigParserTestCaseNoValue(ConfigParserTestCase):
     allow_no_value = True
+
+
+class NoValueAndExtendedInterpolation(CfgParserTestCaseClass):
+    interpolation = configparser.ExtendedInterpolation()
+    allow_no_value = True
+
+    def test_interpolation_with_allow_no_value(self):
+        config = textwrap.dedent("""
+            [dummy]
+            a
+            b = ${a}
+        """)
+        cf = self.fromstring(config)
+
+        self.assertIs(cf["dummy"]["a"], None)
+        self.assertEqual(cf["dummy"]["b"], "")
+
+    def test_explicit_none(self):
+        config = textwrap.dedent("""
+            [dummy]
+            a = None
+            b = ${a}
+        """)
+        cf = self.fromstring(config)
+
+        self.assertEqual(cf["dummy"]["a"], "None")
+        self.assertEqual(cf["dummy"]["b"], "None")
+
+
+class ConfigParserNoValueAndExtendedInterpolationTest(
+    NoValueAndExtendedInterpolation,
+    unittest.TestCase,
+):
+    config_class = configparser.ConfigParser
+
+
+class RawConfigParserNoValueAndExtendedInterpolationTest(
+    NoValueAndExtendedInterpolation,
+    unittest.TestCase,
+):
+    config_class = configparser.RawConfigParser
 
 
 class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):

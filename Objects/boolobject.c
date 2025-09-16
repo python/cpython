@@ -130,7 +130,7 @@ static PyNumberMethods bool_as_number = {
     0,                          /* nb_positive */
     0,                          /* nb_absolute */
     0,                          /* nb_bool */
-    (unaryfunc)bool_invert,     /* nb_invert */
+    bool_invert,                /* nb_invert */
     0,                          /* nb_lshift */
     0,                          /* nb_rshift */
     bool_and,                   /* nb_and */

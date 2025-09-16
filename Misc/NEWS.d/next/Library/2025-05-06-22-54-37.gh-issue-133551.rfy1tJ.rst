@@ -1,0 +1,2 @@
+Support t-strings (:pep:`750`) in :mod:`annotationlib`. Patch by Jelle
+Zijlstra.

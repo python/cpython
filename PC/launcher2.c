@@ -1058,7 +1058,7 @@ checkShebang(SearchInfo *search)
         debug(L"# Failed to open %s for shebang parsing (0x%08X)\n",
               scriptFile, GetLastError());
         free(scriptFile);
-        return 0;
+        return RC_NO_SCRIPT;
     }
 
     DWORD bytesRead = 0;
@@ -2665,6 +2665,21 @@ performSearch(SearchInfo *search, EnvironmentInfo **envs)
     case RC_NO_SHEBANG:
     case RC_RECURSIVE_SHEBANG:
         break;
+    case RC_NO_SCRIPT:
+        if (!_comparePath(search->scriptFile, search->scriptFileLength, L"install", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"uninstall", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"list", -1) ||
+            !_comparePath(search->scriptFile, search->scriptFileLength, L"help", -1)) {
+            fprintf(
+                stderr,
+                "WARNING: The '%.*ls' command is unavailable because this is the legacy py.exe command.\n"
+                "If you have already installed the Python install manager, open Installed Apps and "
+                "remove 'Python Launcher' to enable the new py.exe command.\n",
+                search->scriptFileLength,
+                search->scriptFile
+            );
+        }
+        break;
     default:
         return exitCode;
     }
@@ -2760,7 +2775,7 @@ process(int argc, wchar_t ** argv)
     // We searched earlier, so if we didn't find anything, now we react
     exitCode = searchExitCode;
     // If none found, and if permitted, install it
-    if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") ||
+    if (((exitCode == RC_NO_PYTHON) && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL")) ||
         isEnvVarSet(L"PYLAUNCHER_ALWAYS_INSTALL")) {
         exitCode = installEnvironment(&search);
         if (!exitCode) {

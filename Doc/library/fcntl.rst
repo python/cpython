@@ -79,67 +79,94 @@ descriptor.
    On macOS and NetBSD, the :mod:`!fcntl` module exposes the ``F_GETNOSIGPIPE``
    and ``F_SETNOSIGPIPE`` constant.
 
+.. versionchanged:: 3.14
+   On Linux >= 6.1, the :mod:`!fcntl` module exposes the ``F_DUPFD_QUERY``
+   to query a file descriptor pointing to the same file.
+
 The module defines the following functions:
 
 
-.. function:: fcntl(fd, cmd, arg=0)
+.. function:: fcntl(fd, cmd, arg=0, /)
 
    Perform the operation *cmd* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well).  The values used
    for *cmd* are operating system dependent, and are available as constants
    in the :mod:`fcntl` module, using the same names as used in the relevant C
-   header files. The argument *arg* can either be an integer value, or a
-   :class:`bytes` object. With an integer value, the return value of this
-   function is the integer return value of the C :c:func:`fcntl` call.  When
-   the argument is bytes it represents a binary structure, e.g. created by
-   :func:`struct.pack`. The binary data is copied to a buffer whose address is
+   header files. The argument *arg* can either be an integer value, a
+   :term:`bytes-like object`, or a string.
+   The type and size of *arg* must match the type and size of
+   the argument of the operation as specified in the relevant C documentation.
+
+   When *arg* is an integer, the function returns the integer
+   return value of the C :c:func:`fcntl` call.
+
+   When the argument is bytes-like object, it represents a binary structure,
+   for example, created by :func:`struct.pack`.
+   A string value is encoded to binary using the UTF-8 encoding.
+   The binary data is copied to a buffer whose address is
    passed to the C :c:func:`fcntl` call.  The return value after a successful
    call is the contents of the buffer, converted to a :class:`bytes` object.
    The length of the returned object will be the same as the length of the
-   *arg* argument. This is limited to 1024 bytes. If the information returned
-   in the buffer by the operating system is larger than 1024 bytes, this is
-   most likely to result in a segmentation violation or a more subtle data
-   corruption.
+   *arg* argument.
 
    If the :c:func:`fcntl` call fails, an :exc:`OSError` is raised.
 
+   .. note::
+      If the type or size of *arg* does not match the type or size
+      of the operation's argument (for example, if an integer is
+      passed when a pointer is expected, or the information returned in
+      the buffer by the operating system is larger than the size of *arg*),
+      this is most likely to result in a segmentation violation or
+      a more subtle data corruption.
+
    .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
 
+   .. versionchanged:: 3.14
+      Add support of arbitrary :term:`bytes-like objects <bytes-like object>`,
+      not only :class:`bytes`.
 
-.. function:: ioctl(fd, request, arg=0, mutate_flag=True)
+   .. versionchanged:: next
+      The size of bytes-like objects is no longer limited to 1024 bytes.
+
+
+.. function:: ioctl(fd, request, arg=0, mutate_flag=True, /)
 
    This function is identical to the :func:`~fcntl.fcntl` function, except
    that the argument handling is even more complicated.
 
-   The *request* parameter is limited to values that can fit in 32-bits.
+   The *request* parameter is limited to values that can fit in 32-bits
+   or 64-bits, depending on the platform.
    Additional constants of interest for use as the *request* argument can be
    found in the :mod:`termios` module, under the same names as used in
    the relevant C header files.
 
-   The parameter *arg* can be one of an integer, an object supporting the
-   read-only buffer interface (like :class:`bytes`) or an object supporting
-   the read-write buffer interface (like :class:`bytearray`).
+   The parameter *arg* can be an integer, a :term:`bytes-like object`,
+   or a string.
+   The type and size of *arg* must match the type and size of
+   the argument of the operation as specified in the relevant C documentation.
 
-   In all but the last case, behaviour is as for the :func:`~fcntl.fcntl`
+   If *arg* does not support the read-write buffer interface or
+   the *mutate_flag* is false, behavior is as for the :func:`~fcntl.fcntl`
    function.
 
-   If a mutable buffer is passed, then the behaviour is determined by the value of
-   the *mutate_flag* parameter.
-
-   If it is false, the buffer's mutability is ignored and behaviour is as for a
-   read-only buffer, except that the 1024 byte limit mentioned above is avoided --
-   so long as the buffer you pass is at least as long as what the operating system
-   wants to put there, things should work.
-
-   If *mutate_flag* is true (the default), then the buffer is (in effect) passed
-   to the underlying :func:`ioctl` system call, the latter's return code is
+   If *arg* supports the read-write buffer interface (like :class:`bytearray`)
+   and *mutate_flag* is true (the default), then the buffer is (in effect) passed
+   to the underlying :c:func:`!ioctl` system call, the latter's return code is
    passed back to the calling Python, and the buffer's new contents reflect the
-   action of the :func:`ioctl`.  This is a slight simplification, because if the
+   action of the :c:func:`ioctl`.  This is a slight simplification, because if the
    supplied buffer is less than 1024 bytes long it is first copied into a static
    buffer 1024 bytes long which is then passed to :func:`ioctl` and copied back
    into the supplied buffer.
 
    If the :c:func:`ioctl` call fails, an :exc:`OSError` exception is raised.
+
+   .. note::
+      If the type or size of *arg* does not match the type or size
+      of the operation's argument (for example, if an integer is
+      passed when a pointer is expected, or the information returned in
+      the buffer by the operating system is larger than the size of *arg*),
+      this is most likely to result in a segmentation violation or
+      a more subtle data corruption.
 
    An example::
 
@@ -156,8 +183,15 @@ The module defines the following functions:
 
    .. audit-event:: fcntl.ioctl fd,request,arg fcntl.ioctl
 
+   .. versionchanged:: 3.14
+      The GIL is always released during a system call.
+      System calls failing with EINTR are automatically retried.
 
-.. function:: flock(fd, operation)
+   .. versionchanged:: next
+      The size of not mutated bytes-like objects is no longer
+      limited to 1024 bytes.
+
+.. function:: flock(fd, operation, /)
 
    Perform the lock operation *operation* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well). See the Unix manual
@@ -169,7 +203,7 @@ The module defines the following functions:
    .. audit-event:: fcntl.flock fd,operation fcntl.flock
 
 
-.. function:: lockf(fd, cmd, len=0, start=0, whence=0)
+.. function:: lockf(fd, cmd, len=0, start=0, whence=0, /)
 
    This is essentially a wrapper around the :func:`~fcntl.fcntl` locking calls.
    *fd* is the file descriptor (file objects providing a :meth:`~io.IOBase.fileno`

@@ -13,10 +13,11 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "osdefs.h"               // SEP
-
 #include "clinic/exceptions.c.h"
+
 
 /*[clinic input]
 class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
@@ -149,10 +150,8 @@ BaseException_dealloc(PyObject *op)
     // bpo-44348: The trashcan mechanism prevents stack overflow when deleting
     // long chains of exceptions. For example, exceptions can be chained
     // through the __context__ attributes or the __traceback__ attribute.
-    Py_TRASHCAN_BEGIN(self, BaseException_dealloc)
     (void)BaseException_clear(op);
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 static int
@@ -1865,6 +1864,62 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     return res;
 }
 
+static PyObject *
+ImportError_repr(PyObject *self)
+{
+    int hasargs = PyTuple_GET_SIZE(((PyBaseExceptionObject *)self)->args) != 0;
+    PyImportErrorObject *exc = PyImportErrorObject_CAST(self);
+    if (exc->name == NULL && exc->path == NULL) {
+        return BaseException_repr(self);
+    }
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    PyObject *r = BaseException_repr(self);
+    if (r == NULL) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteSubstring(
+        writer, r, 0, PyUnicode_GET_LENGTH(r) - 1) < 0)
+    {
+        Py_DECREF(r);
+        goto error;
+    }
+    Py_DECREF(r);
+    if (exc->name) {
+        if (hasargs) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+        if (PyUnicodeWriter_Format(writer, "name=%R", exc->name) < 0) {
+            goto error;
+        }
+        hasargs = 1;
+    }
+    if (exc->path) {
+        if (hasargs) {
+            if (PyUnicodeWriter_WriteASCII(writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+        if (PyUnicodeWriter_Format(writer, "path=%R", exc->path) < 0) {
+            goto error;
+        }
+    }
+
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
+        goto error;
+    }
+
+    return PyUnicodeWriter_Finish(writer);
+
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
 static PyMemberDef ImportError_members[] = {
     {"msg", _Py_T_OBJECT, offsetof(PyImportErrorObject, msg), 0,
         PyDoc_STR("exception message")},
@@ -1882,12 +1937,26 @@ static PyMethodDef ImportError_methods[] = {
     {NULL}
 };
 
-ComplexExtendsException(PyExc_Exception, ImportError,
-                        ImportError, 0 /* new */,
-                        ImportError_methods, ImportError_members,
-                        0 /* getset */, ImportError_str,
-                        "Import can't find module, or can't find name in "
-                        "module.");
+static PyTypeObject _PyExc_ImportError = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "ImportError",
+    .tp_basicsize = sizeof(PyImportErrorObject),
+    .tp_dealloc = ImportError_dealloc,
+    .tp_repr = ImportError_repr,
+    .tp_str = ImportError_str,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = PyDoc_STR(
+        "Import can't find module, "
+        "or can't find name in module."),
+    .tp_traverse = ImportError_traverse,
+    .tp_clear = ImportError_clear,
+    .tp_methods = ImportError_methods,
+    .tp_members = ImportError_members,
+    .tp_base = &_PyExc_Exception,
+    .tp_dictoffset = offsetof(PyImportErrorObject, dict),
+    .tp_init = ImportError_init,
+};
+PyObject *PyExc_ImportError = (PyObject *)&_PyExc_ImportError;
 
 /*
  *    ModuleNotFoundError extends ImportError
@@ -2667,10 +2736,10 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
 
         self->end_lineno = NULL;
         self->end_offset = NULL;
-        if (!PyArg_ParseTuple(info, "OOOO|OO",
+        if (!PyArg_ParseTuple(info, "OOOO|OOO",
                               &self->filename, &self->lineno,
                               &self->offset, &self->text,
-                              &self->end_lineno, &self->end_offset)) {
+                              &self->end_lineno, &self->end_offset, &self->metadata)) {
             Py_DECREF(info);
             return -1;
         }
@@ -2681,6 +2750,7 @@ SyntaxError_init(PyObject *op, PyObject *args, PyObject *kwds)
         Py_INCREF(self->text);
         Py_XINCREF(self->end_lineno);
         Py_XINCREF(self->end_offset);
+        Py_XINCREF(self->metadata);
         Py_DECREF(info);
 
         if (self->end_lineno != NULL && self->end_offset == NULL) {
@@ -2703,6 +2773,7 @@ SyntaxError_clear(PyObject *op)
     Py_CLEAR(self->end_offset);
     Py_CLEAR(self->text);
     Py_CLEAR(self->print_file_and_line);
+    Py_CLEAR(self->metadata);
     return BaseException_clear(op);
 }
 
@@ -2726,6 +2797,7 @@ SyntaxError_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->end_offset);
     Py_VISIT(self->text);
     Py_VISIT(self->print_file_and_line);
+    Py_VISIT(self->metadata);
     return BaseException_traverse(op, visit, arg);
 }
 
@@ -2821,6 +2893,8 @@ static PyMemberDef SyntaxError_members[] = {
     {"print_file_and_line", _Py_T_OBJECT,
         offsetof(PySyntaxErrorObject, print_file_and_line), 0,
         PyDoc_STR("exception print_file_and_line")},
+    {"_metadata", _Py_T_OBJECT, offsetof(PySyntaxErrorObject, metadata), 0,
+                   PyDoc_STR("exception private metadata")},
     {NULL}  /* Sentinel */
 };
 

@@ -604,7 +604,7 @@ class Trace:
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('--version', action='version', version='trace 2.0')
 
     grp = parser.add_argument_group('Main options',

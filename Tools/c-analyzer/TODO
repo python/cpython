@@ -794,6 +794,7 @@ Objects/genobject.c:_PyAsyncGenASend_Type                        PyTypeObject _P
 Objects/genobject.c:_PyAsyncGenAThrow_Type                       PyTypeObject _PyAsyncGenAThrow_Type
 Objects/genobject.c:_PyAsyncGenWrappedValue_Type                 PyTypeObject _PyAsyncGenWrappedValue_Type
 Objects/genobject.c:_PyCoroWrapper_Type                          PyTypeObject _PyCoroWrapper_Type
+Objects/interpolationobject.c:_PyInterpolation_Type              PyTypeObject _PyInterpolation_Type
 Objects/interpreteridobject.c:_PyInterpreterID_Type              PyTypeObject _PyInterpreterID_Type
 Objects/iterobject.c:PyCallIter_Type                             PyTypeObject PyCallIter_Type
 Objects/iterobject.c:PySeqIter_Type                              PyTypeObject PySeqIter_Type
@@ -827,6 +828,8 @@ Objects/sliceobject.c:PyEllipsis_Type                            PyTypeObject Py
 Objects/sliceobject.c:PySlice_Type                               PyTypeObject PySlice_Type
 Objects/stringlib/unicode_format.h:PyFieldNameIter_Type          static PyTypeObject PyFieldNameIter_Type
 Objects/stringlib/unicode_format.h:PyFormatterIter_Type          static PyTypeObject PyFormatterIter_Type
+Objects/templateobject.c:_PyTemplateIter_Type                    PyTypeObject _PyTemplateIter_Type
+Objects/templateobject.c:_PyTemplate_Type                        PyTypeObject _PyTemplate_Type
 Objects/tupleobject.c:PyTupleIter_Type                           PyTypeObject PyTupleIter_Type
 Objects/tupleobject.c:PyTuple_Type                               PyTypeObject PyTuple_Type
 Objects/typeobject.c:PyBaseObject_Type                           PyTypeObject PyBaseObject_Type

@@ -3,8 +3,8 @@ Low-level OS functionality wrappers used by pathlib.
 """
 
 from errno import *
+from io import TextIOWrapper, text_encoding
 from stat import S_ISDIR, S_ISREG, S_ISLNK, S_IMODE
-import io
 import os
 import sys
 try:
@@ -102,16 +102,16 @@ else:
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2'):
-    def _copyfile2(source, target):
+    def copyfile2(source, target):
         """
         Copy from one file to another using CopyFile2 (Windows only).
         """
         _winapi.CopyFile2(source, target, 0)
 else:
-    _copyfile2 = None
+    copyfile2 = None
 
 
-def _copyfileobj(source_f, target_f):
+def copyfileobj(source_f, target_f):
     """
     Copy data from file-like object source_f to file-like object target_f.
     """
@@ -166,38 +166,100 @@ def _copyfileobj(source_f, target_f):
         write_target(buf)
 
 
-def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
-               newline=None):
+def _open_reader(obj):
+    cls = type(obj)
+    try:
+        open_reader = cls.__open_reader__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for reading") from None
+    else:
+        return open_reader(obj)
+
+
+def _open_writer(obj, mode):
+    cls = type(obj)
+    try:
+        open_writer = cls.__open_writer__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for writing") from None
+    else:
+        return open_writer(obj, mode)
+
+
+def _open_updater(obj, mode):
+    cls = type(obj)
+    try:
+        open_updater = cls.__open_updater__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"{cls_name} can't be opened for updating") from None
+    else:
+        return open_updater(obj, mode)
+
+
+def vfsopen(obj, mode='r', buffering=-1, encoding=None, errors=None,
+            newline=None):
     """
     Open the file pointed to by this path and return a file object, as
     the built-in open() function does.
+
+    Unlike the built-in open() function, this function additionally accepts
+    'openable' objects, which are objects with any of these special methods:
+
+        __open_reader__()
+        __open_writer__(mode)
+        __open_updater__(mode)
+
+    '__open_reader__' is called for 'r' mode; '__open_writer__' for 'a', 'w'
+    and 'x' modes; and '__open_updater__' for 'r+' and 'w+' modes. If text
+    mode is requested, the result is wrapped in an io.TextIOWrapper object.
     """
+    if buffering != -1:
+        raise ValueError("buffer size can't be customized")
+    text = 'b' not in mode
+    if text:
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = text_encoding(encoding)
     try:
-        return io.open(path, mode, buffering, encoding, errors, newline)
+        return open(obj, mode, buffering, encoding, errors, newline)
     except TypeError:
         pass
-    cls = type(path)
-    text = 'b' not in mode
+    if not text:
+        if encoding is not None:
+            raise ValueError("binary mode doesn't take an encoding argument")
+        if errors is not None:
+            raise ValueError("binary mode doesn't take an errors argument")
+        if newline is not None:
+            raise ValueError("binary mode doesn't take a newline argument")
     mode = ''.join(sorted(c for c in mode if c not in 'bt'))
-    if text:
-        try:
-            attr = getattr(cls, f'__open_{mode}__')
-        except AttributeError:
-            pass
-        else:
-            return attr(path, buffering, encoding, errors, newline)
-
-    try:
-        attr = getattr(cls, f'__open_{mode}b__')
-    except AttributeError:
-        pass
+    if mode == 'r':
+        stream = _open_reader(obj)
+    elif mode in ('a', 'w', 'x'):
+        stream = _open_writer(obj, mode)
+    elif mode in ('+r', '+w'):
+        stream = _open_updater(obj, mode[1])
     else:
-        stream = attr(path, buffering)
-        if text:
-            stream = io.TextIOWrapper(stream, encoding, errors, newline)
-        return stream
+        raise ValueError(f'invalid mode: {mode}')
+    if text:
+        stream = TextIOWrapper(stream, encoding, errors, newline)
+    return stream
 
-    raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
+
+def vfspath(obj):
+    """
+    Return the string representation of a virtual path object.
+    """
+    cls = type(obj)
+    try:
+        vfspath_method = cls.__vfspath__
+    except AttributeError:
+        cls_name = cls.__name__
+        raise TypeError(f"expected JoinablePath object, not {cls_name}") from None
+    else:
+        return vfspath_method(obj)
 
 
 def ensure_distinct_paths(source, target):
@@ -215,8 +277,8 @@ def ensure_distinct_paths(source, target):
         err = OSError(EINVAL, "Source path is a parent of target path")
     else:
         return
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
 
 
@@ -237,45 +299,9 @@ def ensure_different_files(source, target):
         except (OSError, ValueError):
             return
     err = OSError(EINVAL, "Source and target are the same file")
-    err.filename = str(source)
-    err.filename2 = str(target)
+    err.filename = vfspath(source)
+    err.filename2 = vfspath(target)
     raise err
-
-
-def copy_file(source, target, follow_symlinks=True, preserve_metadata=False):
-    """
-    Recursively copy the given source ReadablePath to the given target WritablePath.
-    """
-    info = source.info
-    if not follow_symlinks and info.is_symlink():
-        target.symlink_to(source.readlink(), info.is_dir())
-        if preserve_metadata:
-            target._write_info(info, follow_symlinks=False)
-    elif info.is_dir():
-        children = source.iterdir()
-        target.mkdir()
-        for src in children:
-            dst = target.joinpath(src.name)
-            copy_file(src, dst, follow_symlinks, preserve_metadata)
-        if preserve_metadata:
-            target._write_info(info)
-    else:
-        if _copyfile2:
-            # Use fast OS routine for local file copying where available.
-            try:
-                source_p = os.fspath(source)
-                target_p = os.fspath(target)
-            except TypeError:
-                pass
-            else:
-                _copyfile2(source_p, target_p)
-                return
-        ensure_different_files(source, target)
-        with magic_open(source, 'rb') as source_f:
-            with magic_open(target, 'wb') as target_f:
-                _copyfileobj(source_f, target_f)
-        if preserve_metadata:
-            target._write_info(info)
 
 
 def copy_info(info, target, follow_symlinks=True):

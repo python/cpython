@@ -9,17 +9,18 @@
 #endif
 
 #include "Python.h"
-#include "pycore_bytesobject.h"       // _PyBytesWriter
-#include "pycore_ceval.h"             // _Py_EnterRecursiveCall()
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION()
-#include "pycore_long.h"              // _PyLong_AsByteArray()
-#include "pycore_moduleobject.h"      // _PyModule_GetState()
-#include "pycore_object.h"            // _PyNone_Type
-#include "pycore_pyerrors.h"          // _PyErr_FormatNote
-#include "pycore_pystate.h"           // _PyThreadState_GET()
-#include "pycore_runtime.h"           // _Py_ID()
-#include "pycore_setobject.h"         // _PySet_NextEntry()
-#include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_long.h"          // _PyLong_AsByteArray()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object.h"        // _PyNone_Type
+#include "pycore_pyerrors.h"      // _PyErr_FormatNote
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_sysmodule.h"     // _PySys_GetSizeOf()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdlib.h>               // strtol()
 
@@ -412,13 +413,6 @@ typedef struct {
 
 #define Pdata_CAST(op)  ((Pdata *)(op))
 
-static int
-Pdata_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static void
 Pdata_dealloc(PyObject *op)
 {
@@ -436,7 +430,7 @@ Pdata_dealloc(PyObject *op)
 
 static PyType_Slot pdata_slots[] = {
     {Py_tp_dealloc, Pdata_dealloc},
-    {Py_tp_traverse, Pdata_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, NULL},
 };
 
@@ -1878,6 +1872,10 @@ _checkmodule(PyObject *module_name, PyObject *module,
             _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
         return -1;
     }
+    if (PyUnicode_Check(module_name) &&
+            _PyUnicode_EqualToASCIIString(module_name, "__mp_main__")) {
+        return -1;
+    }
 
     PyObject *candidate = getattribute(module, dotted_path, 0);
     if (candidate == NULL) {
@@ -1910,7 +1908,7 @@ whichmodule(PickleState *st, PyObject *global, PyObject *global_name, PyObject *
            __module__ can be None. If it is so, then search sys.modules for
            the module of global. */
         Py_CLEAR(module_name);
-        modules = _PySys_GetRequiredAttr(&_Py_ID(modules));
+        modules = PySys_GetAttr(&_Py_ID(modules));
         if (modules == NULL) {
             return NULL;
         }
@@ -2614,31 +2612,26 @@ save_picklebuffer(PickleState *st, PicklerObject *self, PyObject *obj)
 static PyObject *
 raw_unicode_escape(PyObject *obj)
 {
-    char *p;
-    Py_ssize_t i, size;
-    const void *data;
-    int kind;
-    _PyBytesWriter writer;
+    Py_ssize_t size = PyUnicode_GET_LENGTH(obj);
+    const void *data = PyUnicode_DATA(obj);
+    int kind = PyUnicode_KIND(obj);
 
-    _PyBytesWriter_Init(&writer);
+    Py_ssize_t alloc = size;
+    PyBytesWriter *writer = PyBytesWriter_Create(alloc);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *p = PyBytesWriter_GetData(writer);
 
-    size = PyUnicode_GET_LENGTH(obj);
-    data = PyUnicode_DATA(obj);
-    kind = PyUnicode_KIND(obj);
-
-    p = _PyBytesWriter_Alloc(&writer, size);
-    if (p == NULL)
-        goto error;
-    writer.overallocate = 1;
-
-    for (i=0; i < size; i++) {
+    for (Py_ssize_t i=0; i < size; i++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         /* Map 32-bit characters to '\Uxxxxxxxx' */
         if (ch >= 0x10000) {
             /* -1: subtract 1 preallocated byte */
-            p = _PyBytesWriter_Prepare(&writer, p, 10-1);
-            if (p == NULL)
+            p = PyBytesWriter_GrowAndUpdatePointer(writer, 10-1, p);
+            if (p == NULL) {
                 goto error;
+            }
 
             *p++ = '\\';
             *p++ = 'U';
@@ -2657,9 +2650,10 @@ raw_unicode_escape(PyObject *obj)
                  ch == 0x1a)
         {
             /* -1: subtract 1 preallocated byte */
-            p = _PyBytesWriter_Prepare(&writer, p, 6-1);
-            if (p == NULL)
+            p = PyBytesWriter_GrowAndUpdatePointer(writer, 6-1, p);
+            if (p == NULL) {
                 goto error;
+            }
 
             *p++ = '\\';
             *p++ = 'u';
@@ -2673,10 +2667,10 @@ raw_unicode_escape(PyObject *obj)
             *p++ = (char) ch;
     }
 
-    return _PyBytesWriter_Finish(&writer, p);
+    return PyBytesWriter_FinishWithPointer(writer, p);
 
 error:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
@@ -5250,7 +5244,7 @@ load_int(PickleState *state, UnpicklerObject *self)
         }
     }
     else {
-        if (len == 3 && (x == 0 || x == 1)) {
+        if (len == 3 && s[0] == '0' && (s[1] == '0' || s[1] == '1')) {
             if ((value = PyBool_FromLong(x)) == NULL)
                 return -1;
         }
@@ -5538,17 +5532,16 @@ static int
 load_counted_binstring(PickleState *st, UnpicklerObject *self, int nbytes)
 {
     PyObject *obj;
-    Py_ssize_t size;
+    long size;
     char *s;
 
     if (_Unpickler_Read(self, st, &s, nbytes) < 0)
         return -1;
 
-    size = calc_binsize(s, nbytes);
+    size = calc_binint(s, nbytes);
     if (size < 0) {
-        PyErr_Format(st->UnpicklingError,
-                     "BINSTRING exceeds system's maximum size of %zd bytes",
-                     PY_SSIZE_T_MAX);
+        PyErr_SetString(st->UnpicklingError,
+                     "BINSTRING pickle has negative byte count");
         return -1;
     }
 
@@ -7969,9 +7962,9 @@ pickle_clear(PyObject *m)
 }
 
 static void
-pickle_free(PyObject *m)
+pickle_free(void *m)
 {
-    _Pickle_ClearState(_Pickle_GetState(m));
+    _Pickle_ClearState(_Pickle_GetState((PyObject*)m));
 }
 
 static int
@@ -8077,7 +8070,7 @@ static struct PyModuleDef _picklemodule = {
     .m_slots = pickle_slots,
     .m_traverse = pickle_traverse,
     .m_clear = pickle_clear,
-    .m_free = (freefunc)pickle_free,
+    .m_free = pickle_free,
 };
 
 PyMODINIT_FUNC

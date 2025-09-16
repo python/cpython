@@ -1,2 +1,0 @@
-Use ``-flto=thin`` for faster build times using clang-cl on Windows. Patch by
-Chris Eibl.

@@ -1,2 +1,0 @@
-C API: Document :c:func:`PyUnicode_RSplit`, :c:func:`PyUnicode_Partition` and
-:c:func:`PyUnicode_RPartition`.
