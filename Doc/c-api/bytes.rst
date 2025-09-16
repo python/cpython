@@ -228,6 +228,7 @@ called with a non-bytes parameter.
       The function is :term:`soft deprecated`,
       use the :c:type:`PyBytesWriter` API instead.
 
+.. _pybyteswriter:
 
 PyBytesWriter
 -------------
