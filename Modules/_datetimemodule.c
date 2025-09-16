@@ -1856,6 +1856,39 @@ make_freplacement(PyObject *object)
     return PyUnicode_FromString(freplacement);
 }
 
+#if defined(MS_WINDOWS) || defined(__ANDROID__)
+static PyObject *
+make_dash_replacement(PyObject *object, Py_UCS4 ch, PyObject *timetuple)
+{
+    PyObject *strftime = PyImport_ImportModuleAttrString("time", "strftime");
+    if (!strftime) {
+        return NULL;
+    }
+
+    char fmt[3] = {'%', (char)ch, 0};
+    PyObject *fmt_obj = PyUnicode_FromString(fmt);
+    if (!fmt_obj) {
+        Py_DECREF(strftime);
+        return NULL;
+    }
+
+    PyObject *res = PyObject_CallFunctionObjArgs(strftime, fmt_obj, timetuple, NULL);
+    Py_DECREF(fmt_obj);
+    Py_DECREF(strftime);
+    if (!res) {
+        return NULL;
+    }
+
+    PyObject *stripped = PyObject_CallMethod(res, "lstrip", "s", "0");
+    Py_DECREF(res);
+    if (!stripped) {
+        return NULL;
+    }
+
+    return stripped;
+}
+#endif
+
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
  * giving special meanings to the %z, %:z, %Z and %f format codes via a
@@ -2002,6 +2035,17 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
+        #if defined(MS_WINDOWS) || defined(__ANDROID__)
+        /* non-0-pad Windows support */
+        else if (ch == '-' && i < flen) {
+            Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
+            i++;
+            replacement = make_dash_replacement(object, next_ch, timetuple);
+            if (replacement == NULL) {
+                goto Error;
+            }
+        }
+        #endif
         else {
             /* percent followed by something else */
             continue;
