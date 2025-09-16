@@ -358,6 +358,6 @@ class TestUnixConsoleEIOHandling(TestCase):
             self.fail("Child process failed to start properly")
 
         os.kill(proc.pid, signal.SIGUSR1)
-        _, err = proc.communicate(timeout=5) # sleep for pty to settle
+        _, err = proc.communicate(timeout=5)  # sleep for pty to settle
         self.assertEqual(proc.returncode, 1, f"Expected EIO error, got return code {proc.returncode}")
         self.assertIn("Got EIO:", err, f"Expected EIO error message in stderr: {err}")

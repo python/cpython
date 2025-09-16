@@ -1,10 +1,10 @@
-import os
-import sys
-import pty
-import fcntl
-import termios
-import signal
 import errno
+import fcntl
+import os
+import pty
+import signal
+import sys
+import termios
 
 
 def handler(sig, f):
@@ -12,8 +12,9 @@ def handler(sig, f):
 
 
 def create_eio_condition():
+    # SIGINT handler used to produce an EIO.
+    # See https://github.com/python/cpython/issues/135329.
     try:
-        # gh-135329: try to create a condition that will actually produce EIO
         master_fd, slave_fd = pty.openpty()
         child_pid = os.fork()
         if child_pid == 0:
@@ -23,19 +24,14 @@ def create_eio_condition():
                 p2_pgid = os.getpgrp()
                 grandchild_pid = os.fork()
                 if grandchild_pid == 0:
-                    # Grandchild - set up process group
-                    os.setpgid(0, 0)
-                    # Redirect stdin to slave
-                    os.dup2(slave_fd, 0)
+                    os.setpgid(0, 0)      # set process group for grandchild
+                    os.dup2(slave_fd, 0)  # redirect stdin
                     if slave_fd > 2:
                         os.close(slave_fd)
-                    # Fork great-grandchild for terminal control manipulation
-                    ggc_pid = os.fork()
-                    if ggc_pid == 0:
-                        # Great-grandchild - just exit quickly
-                        sys.exit(0)
+                    # Fork grandchild for terminal control manipulation
+                    if os.fork() == 0:
+                        sys.exit(0)  # exit the child process that was just obtained
                     else:
-                        # Back to grandchild
                         try:
                             os.tcsetpgrp(0, p2_pgid)
                         except OSError:
@@ -71,8 +67,7 @@ def create_eio_condition():
             os.dup2(master_fd, 0)
             os.close(master_fd)
             # This should now trigger EIO
-            result = input()
-            print(f"Unexpectedly got input: {repr(result)}", file=sys.stderr)
+            print(f"Unexpectedly got input: {input()!r}", file=sys.stderr)
             sys.exit(0)
     except OSError as e:
         if e.errno == errno.EIO:
