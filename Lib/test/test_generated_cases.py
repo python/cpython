@@ -132,7 +132,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -154,7 +154,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -179,7 +179,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -205,7 +205,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -232,7 +232,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -262,7 +262,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -296,7 +296,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -313,7 +313,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP3;
             (void)(opcode);
             #endif
@@ -355,7 +355,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(A) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = A;
             (void)(opcode);
             #endif
@@ -378,7 +378,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(B) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = B;
             (void)(opcode);
             #endif
@@ -421,7 +421,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -444,7 +444,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -470,7 +470,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -505,7 +505,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -537,7 +537,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -570,7 +570,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -604,7 +604,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -645,7 +645,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -667,7 +667,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP3;
             (void)(opcode);
             #endif
@@ -702,7 +702,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -728,7 +728,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -751,7 +751,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -777,7 +777,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -788,7 +788,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP2) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP2;
             (void)(opcode);
             #endif
@@ -812,7 +812,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -843,7 +843,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -875,7 +875,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -905,7 +905,7 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -940,7 +940,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = M;
             (void)(opcode);
             #endif
@@ -977,7 +977,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1002,7 +1002,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = M;
             (void)(opcode);
             #endif
@@ -1023,7 +1023,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1045,7 +1045,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = M;
             (void)(opcode);
             #endif
@@ -1086,7 +1086,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1128,7 +1128,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(INST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = INST;
             (void)(opcode);
             #endif
@@ -1158,7 +1158,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1202,7 +1202,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1245,7 +1245,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1297,7 +1297,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1348,7 +1348,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(TEST) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = TEST;
             (void)(opcode);
             #endif
@@ -1393,7 +1393,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP1) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP1;
             (void)(opcode);
             #endif
@@ -1404,7 +1404,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP2) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP2;
             (void)(opcode);
             #endif
@@ -1466,7 +1466,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
@@ -1492,7 +1492,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
@@ -1514,7 +1514,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
@@ -1539,7 +1539,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
@@ -1565,7 +1565,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1604,7 +1604,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1642,7 +1642,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1840,7 +1840,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif
@@ -1867,7 +1867,7 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
+            #if _Py_TAIL_CALL_INTERP
             int opcode = OP;
             (void)(opcode);
             #endif

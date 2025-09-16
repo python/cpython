@@ -29803,7 +29803,7 @@ then :
 if test "$withval" = yes
 then
 
-printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
+printf "%s\n" "#define _Py_TAIL_CALL_INTERP 1" >>confdefs.h
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
@@ -29811,7 +29811,7 @@ fi
 if test "$withval" = no
 then
 
-printf "%s\n" "#define Py_TAIL_CALL_INTERP 0" >>confdefs.h
+printf "%s\n" "#define _Py_TAIL_CALL_INTERP 0" >>confdefs.h
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }

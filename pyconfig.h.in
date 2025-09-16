@@ -1749,9 +1749,6 @@
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
 
-/* Define if you want to use tail-calling interpreters in CPython. */
-#undef Py_TAIL_CALL_INTERP
-
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
 
@@ -2022,6 +2019,9 @@
 
 /* HACL* library can compile SIMD256 implementations */
 #undef _Py_HACL_CAN_COMPILE_VEC256
+
+/* Define if you want to use tail-calling interpreters in CPython. */
+#undef _Py_TAIL_CALL_INTERP
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

@@ -7107,13 +7107,13 @@ AC_ARG_WITH(
 [
 if test "$withval" = yes
 then
-  AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
+  AC_DEFINE([_Py_TAIL_CALL_INTERP], [1],
   [Define if you want to use tail-calling interpreters in CPython.])
   AC_MSG_RESULT([yes])
 fi
 if test "$withval" = no
 then
-  AC_DEFINE([Py_TAIL_CALL_INTERP], [0],
+  AC_DEFINE([_Py_TAIL_CALL_INTERP], [0],
   [Define if you want to use tail-calling interpreters in CPython.])
   AC_MSG_RESULT([no])
 fi
