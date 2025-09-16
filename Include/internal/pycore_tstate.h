@@ -78,7 +78,7 @@ typedef struct _PyThreadStateImpl {
 #endif
 
 #ifdef _Py_TIER2
-    struct _PyUOpInstruction *buffer;
+    struct _PyUOpInstruction *jit_uop_buffer;
 #endif
 
 } _PyThreadStateImpl;

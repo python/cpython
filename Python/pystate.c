@@ -1536,6 +1536,11 @@ new_threadstate(PyInterpreterState *interp, int whence)
     }
 #endif
 
+#ifdef _Py_TIER2
+     // Ensure the buffer is to be set as NULL for MSVC
+    tstate->jit_uop_buffer = NULL;
+#endif
+
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(interp->runtime);
 
@@ -1724,6 +1729,14 @@ PyThreadState_Clear(PyThreadState *tstate)
     // Release our thread-local copies of the bytecode for reuse by another
     // thread
     _Py_ClearTLBCIndex((_PyThreadStateImpl *)tstate);
+#endif
+
+#ifdef _Py_TIER2
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->jit_uop_buffer != NULL) {
+        PyMem_RawFree(_tstate->jit_uop_buffer);
+        _tstate->jit_uop_buffer = NULL;
+    }
 #endif
 
     // Merge our queue of pointers to be freed into the interpreter queue.

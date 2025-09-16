@@ -863,10 +863,6 @@ pycore_interp_init(PyThreadState *tstate)
     if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
-#ifdef _Py_TIER2
-     // Ensure the buffer is to be set as NULL for MSVC
-    _tstate->buffer = NULL;
-#endif
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
@@ -1708,11 +1704,6 @@ finalize_modules(PyThreadState *tstate)
     interp->jit = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (_tstate->buffer != NULL) {
-        PyMem_RawFree(_tstate->buffer);
-        _tstate->buffer = NULL;
-    }
 #endif
 
     // Stop watching __builtin__ modifications

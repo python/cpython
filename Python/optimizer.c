@@ -1281,14 +1281,13 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (tstate->buffer == NULL) {
-        tstate->buffer = (_PyUOpInstruction *)PyMem_RawMalloc(UOP_MAX_TRACE_LENGTH*sizeof(_PyUOpInstruction));
-        if (tstate->buffer == NULL) {
-            PyErr_NoMemory();
+    if (tstate->jit_uop_buffer == NULL) {
+        tstate->jit_uop_buffer = (_PyUOpInstruction *)PyMem_RawMalloc(UOP_MAX_TRACE_LENGTH*sizeof(_PyUOpInstruction));
+        if (tstate->jit_uop_buffer == NULL) {
             return -1;
         }
     }
-    _PyUOpInstruction *buffer = tstate->buffer;
+    _PyUOpInstruction *buffer = tstate->jit_uop_buffer;
     OPT_STAT_INC(attempts);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
     bool is_noopt = true;
