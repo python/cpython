@@ -48,18 +48,6 @@ this material.
 Let the show begin!
 
 
-.. _requirements-notes:
-
-Notes on requirements
-=====================
-
-* A "Requirements: OpenSSL >= 3.5" note means that this function requires
-  that Python has been built with OpenSSL 3.5 or later.
-
-* A "Requirements: not AWS-LC" note means that this function is not available
-  if Python has been built with AWS-LC instead of OpenSSL.
-
-
 .. _availability:
 
 Notes on availability
@@ -76,6 +64,13 @@ Notes on availability
   libc version, then both conditions must hold. For example a feature with note
   *Availability: Linux >= 3.17 with glibc >= 2.27* requires both Linux 3.17 or
   newer and glibc 2.27 or newer.
+
+* "Availability" notes may also be used to indicate requirements on how Python
+  was built. For instance, "Availability: OpenSSL >= 3.5" note means that the
+  feature is available if Python has been built with OpenSSL 3.5 or later,
+  while "Availability: not AWS-LC" note means that the feature is not available
+  if Python has been built with AWS-LC instead of OpenSSL.
+
 
 .. _wasm-availability:
 
