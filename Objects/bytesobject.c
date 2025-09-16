@@ -432,7 +432,7 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 
 static char*
 formatfloat(PyObject *v, int flags, int prec, int type,
-            PyObject **p_result, _PyBytesWriter *writer, char *str)
+            PyObject **p_result, PyBytesWriter *writer, char *str)
 {
     char *p;
     PyObject *result;
@@ -460,7 +460,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
 
     len = strlen(p);
     if (writer != NULL) {
-        str = _PyBytesWriter_Prepare(writer, str, len);
+        str = PyBytesWriter_GrowAndUpdatePointer(writer, len, str);
         if (str == NULL) {
             PyMem_Free(p);
             return NULL;
@@ -611,12 +611,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                   PyObject *args, int use_bytearray)
 {
     const char *fmt;
-    char *res;
     Py_ssize_t arglen, argidx;
     Py_ssize_t fmtcnt;
     int args_owned = 0;
     PyObject *dict = NULL;
-    _PyBytesWriter writer;
 
     if (args == NULL) {
         PyErr_BadInternalCall();
@@ -625,14 +623,17 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     fmt = format;
     fmtcnt = format_len;
 
-    _PyBytesWriter_Init(&writer);
-    writer.use_bytearray = use_bytearray;
-
-    res = _PyBytesWriter_Alloc(&writer, fmtcnt);
-    if (res == NULL)
+    PyBytesWriter *writer;
+    if (use_bytearray) {
+        writer = _PyBytesWriter_CreateByteArray(fmtcnt);
+    }
+    else {
+        writer = PyBytesWriter_Create(fmtcnt);
+    }
+    if (writer == NULL) {
         return NULL;
-    if (!use_bytearray)
-        writer.overallocate = 1;
+    }
+    char *res = PyBytesWriter_GetData(writer);
 
     if (PyTuple_Check(args)) {
         arglen = PyTuple_GET_SIZE(args);
@@ -837,7 +838,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
             if (fmtcnt == 0) {
                 /* last write: disable writer overallocation */
-                writer.overallocate = 0;
+                writer->overallocate = 0;
             }
 
             sign = 0;
@@ -900,8 +901,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     }
 
                     /* Fast path */
-                    writer.min_size -= 2; /* size preallocated for "%d" */
-                    res = _PyLong_FormatBytesWriter(&writer, res,
+                    res = _PyLong_FormatBytesWriter(writer, res,
                                                     v, base, alternate);
                     if (res == NULL)
                         goto error;
@@ -929,8 +929,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                     && !(flags & (F_SIGN | F_BLANK)))
                 {
                     /* Fast path */
-                    writer.min_size -= 2; /* size preallocated for "%f" */
-                    res = formatfloat(v, flags, prec, c, NULL, &writer, res);
+                    res = formatfloat(v, flags, prec, c, NULL, writer, res);
                     if (res == NULL)
                         goto error;
                     continue;
@@ -986,9 +985,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 alloc++;
             /* 2: size preallocated for %s */
             if (alloc > 2) {
-                res = _PyBytesWriter_Prepare(&writer, res, alloc - 2);
-                if (res == NULL)
+                res = PyBytesWriter_GrowAndUpdatePointer(writer, alloc - 2, res);
+                if (res == NULL) {
                     goto error;
+                }
             }
 #ifndef NDEBUG
             char *before = res;
@@ -1064,7 +1064,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 
         /* If overallocation was disabled, ensure that it was the last
            write. Otherwise, we missed an optimization */
-        assert(writer.overallocate || fmtcnt == 0 || use_bytearray);
+        assert(writer->overallocate || fmtcnt == 0 || use_bytearray);
     } /* until end */
 
     if (argidx < arglen && !dict) {
@@ -1076,10 +1076,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     if (args_owned) {
         Py_DECREF(args);
     }
-    return _PyBytesWriter_Finish(&writer, res);
+    return PyBytesWriter_FinishWithPointer(writer, res);
 
  error:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     if (args_owned) {
         Py_DECREF(args);
     }
@@ -3755,14 +3755,6 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
 
 // --- PyBytesWriter API -----------------------------------------------------
 
-struct PyBytesWriter {
-    char small_buffer[256];
-    PyObject *obj;
-    Py_ssize_t size;
-    int use_bytearray;
-};
-
-
 static inline char*
 byteswriter_data(PyBytesWriter *writer)
 {
@@ -3811,7 +3803,8 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
         return 0;
     }
 
-    if (overallocate && !writer->use_bytearray) {
+    overallocate &= writer->overallocate;
+    if (overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
@@ -3870,9 +3863,13 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
             return NULL;
         }
     }
+#ifdef Py_DEBUG
+    memset(writer->small_buffer, 0xff, sizeof(writer->small_buffer));
+#endif
     writer->obj = NULL;
     writer->size = 0;
     writer->use_bytearray = use_bytearray;
+    writer->overallocate = !use_bytearray;
 
     if (size >= 1) {
         if (byteswriter_resize(writer, size, 0) < 0) {

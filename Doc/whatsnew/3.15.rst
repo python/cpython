@@ -537,6 +537,17 @@ module_name
 Deprecated
 ==========
 
+CLI
+---
+
+* Deprecate :option:`-b` and :option:`!-bb` command line options
+  and schedule them to become no-op in Python 3.17.
+  These were primarily helpers for the Python 2 -> 3 transition.
+  Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+  for these cases; use a type checker instead.
+
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
+
 hashlib
 -------
 
@@ -707,7 +718,8 @@ New features
   and :c:data:`Py_mod_abi`.
   (Contributed by Petr Viktorin in :gh:`137210`.)
 
-* Implement :pep:`782`, the :c:type:`PyBytesWriter` API. Add functions:
+* Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
+  Add functions:
 
   * :c:func:`PyBytesWriter_Create`
   * :c:func:`PyBytesWriter_Discard`
@@ -763,6 +775,11 @@ Deprecated C APIs
   signed integer type of the same size is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`132629`.)
 
+* :c:func:`PyBytes_FromStringAndSize(NULL, len) <PyBytes_FromStringAndSize>`
+  and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
+  use the :c:type:`PyBytesWriter` API instead.
+  (Contributed by Victor Stinner in :gh:`129813`.)
+
 * Deprecate :c:member:`~PyComplexObject.cval` field of the the
   :c:type:`PyComplexObject` type.
   Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
@@ -774,6 +791,10 @@ Deprecated C APIs
   :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
   :c:func:`_Py_c_abs` are :term:`soft deprecated`.
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
+* :c:member:`~PyConfig.bytes_warning` is deprecated
+  since 3.15 and will be removed in 3.17.
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
 
 
 .. Add C API deprecations above alphabetically, not here at the end.
@@ -799,6 +820,11 @@ Removed C APIs
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
   (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* Remove deprecated :c:func:`!PySys_ResetWarnOptions`.
+  Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
+
+  (Contributed by Nikita Sobolev in :gh:`138886`.)
 
 The following functions are removed in favor of :c:func:`PyConfig_Get`.
 The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
