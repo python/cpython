@@ -393,6 +393,7 @@ Other functions
 
    - linux-x86_64
    - macosx-15.5-arm64
+   - macosx-26.0-universal2 (macOS on Apple Silicon or Intel)
    - android-24-arm64_v8a
 
    For other non-POSIX platforms, currently just returns :data:`sys.platform`.
