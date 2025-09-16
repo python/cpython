@@ -745,10 +745,9 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
     }
     // Short circuit if there aren't any arguments:
     Py_ssize_t nkwargs = PyTuple_GET_SIZE(kwargs);
-    Py_ssize_clean_t nattrs = nargs + nkwargs;
+    Py_ssize_t nattrs = nargs + nkwargs;
     if (!nattrs) {
-        PyObject *attrs = PyTuple_New(0);
-        return attrs;
+        return PyTuple_New(0);
     }
     // So far so good:
     PyObject *seen = NULL;
@@ -803,7 +802,8 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            Py_INCREF(subject);
+            Py_NewRef(subject);
+            assert(PyTuple_GET_ITEM(attrs, 0) == NULL);
             PyTuple_SET_ITEM(attrs, 0, subject);
         }
         else {
@@ -820,6 +820,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 if (attr == NULL) {
                     goto fail;
                 }
+                assert(PyTuple_GET_ITEM(attrs, i) == NULL);
                 PyTuple_SET_ITEM(attrs, i, attr);
             }
         }
@@ -832,6 +833,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         if (attr == NULL) {
             goto fail;
         }
+        assert(PyTuple_GET_ITEM(attrs, nargs + i) == NULL);
         PyTuple_SET_ITEM(attrs, nargs + i, attr);
     }
     Py_XDECREF(seen);
