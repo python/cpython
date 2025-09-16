@@ -212,7 +212,7 @@ _PyRawMutex_LockSlow(_PyRawMutex *m)
 
         // Wait for us to be woken up. Note that we still have to lock the
         // mutex ourselves: it is NOT handed off to us.
-        _PySemaphore_Wait(&waiter.sema, -1, /*detach=*/0);
+        _PySemaphore_Wait(&waiter.sema, -1);
     }
 
     _PySemaphore_Destroy(&waiter.sema);

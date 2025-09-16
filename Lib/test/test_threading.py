@@ -1381,6 +1381,33 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(len(native_ids), 2)
         self.assertNotEqual(native_ids[0], native_ids[1])
 
+    def test_stop_the_world_during_finalization(self):
+        # gh-137433: Test functions that trigger a stop-the-world in the free
+        # threading build concurrent with interpreter finalization.
+        script = """if True:
+            import gc
+            import sys
+            import threading
+            NUM_THREADS = 5
+            b = threading.Barrier(NUM_THREADS + 1)
+            def run_in_bg():
+                b.wait()
+                while True:
+                    sys.setprofile(None)
+                    gc.collect()
+
+            for _ in range(NUM_THREADS):
+                t = threading.Thread(target=run_in_bg, daemon=True)
+                t.start()
+
+            b.wait()
+            print("Exiting...")
+        """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b"")
+        self.assertEqual(out.strip(), b"Exiting...")
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
