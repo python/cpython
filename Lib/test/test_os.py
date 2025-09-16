@@ -13,7 +13,6 @@ import itertools
 import locale
 import os
 import pickle
-import platform
 import select
 import selectors
 import shutil
@@ -105,7 +104,7 @@ requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
 
 
 def tearDownModule():
-    asyncio._set_event_loop_policy(None)
+    asyncio.events._set_event_loop_policy(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -1065,9 +1064,15 @@ class UtimeTests(unittest.TestCase):
         if self.get_file_system(self.dirname) != "NTFS":
             self.skipTest("requires NTFS")
 
-        large = 5000000000   # some day in 2128
-        os.utime(self.fname, (large, large))
-        self.assertEqual(os.stat(self.fname).st_mtime, large)
+        times = (
+            5000000000,  # some day in 2128
+            # boundaries of the fast path cutoff in posixmodule.c:fill_time
+            -9223372037, -9223372036, 9223372035, 9223372036,
+        )
+        for large in times:
+            with self.subTest(large=large):
+                os.utime(self.fname, (large, large))
+                self.assertEqual(os.stat(self.fname).st_mtime, large)
 
     def test_utime_invalid_arguments(self):
         # seconds and nanoseconds parameters are mutually exclusive
@@ -1920,6 +1925,8 @@ class MakedirTests(unittest.TestCase):
         "WASI's umask is a stub."
     )
     def test_mode(self):
+        # Note: in some cases, the umask might already be 2 in which case this
+        # will pass even if os.umask is actually broken.
         with os_helper.temp_umask(0o002):
             base = os_helper.TESTFN
             parent = os.path.join(base, 'dir1')
@@ -3517,6 +3524,7 @@ class PidTests(unittest.TestCase):
         self.assertEqual(error, b'')
         self.assertEqual(int(stdout), os.getpid())
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     def check_waitpid(self, code, exitcode, callback=None):
         if sys.platform == 'win32':
             # On Windows, os.spawnv() simply joins arguments with spaces:
@@ -3619,30 +3627,35 @@ class SpawnTests(unittest.TestCase):
 
         return program, args
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnl')
     def test_spawnl(self):
         program, args = self.create_args()
         exitcode = os.spawnl(os.P_WAIT, program, *args)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnle')
     def test_spawnle(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnle(os.P_WAIT, program, *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnlp')
     def test_spawnlp(self):
         program, args = self.create_args()
         exitcode = os.spawnlp(os.P_WAIT, program, *args)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnlpe')
     def test_spawnlpe(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnlpe(os.P_WAIT, program, *args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnv')
     def test_spawnv(self):
         program, args = self.create_args()
@@ -3653,30 +3666,35 @@ class SpawnTests(unittest.TestCase):
         exitcode = os.spawnv(os.P_WAIT, FakePath(program), args)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnve')
     def test_spawnve(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnvp')
     def test_spawnvp(self):
         program, args = self.create_args()
         exitcode = os.spawnvp(os.P_WAIT, program, args)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnvpe')
     def test_spawnvpe(self):
         program, args = self.create_args(with_env=True)
         exitcode = os.spawnvpe(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnv')
     def test_nowait(self):
         program, args = self.create_args()
         pid = os.spawnv(os.P_NOWAIT, program, args)
         support.wait_process(pid, exitcode=self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnve')
     def test_spawnve_bytes(self):
         # Test bytes handling in parse_arglist and parse_envlist (#28114)
@@ -3684,18 +3702,21 @@ class SpawnTests(unittest.TestCase):
         exitcode = os.spawnve(os.P_WAIT, program, args, self.env)
         self.assertEqual(exitcode, self.exitcode)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnl')
     def test_spawnl_noargs(self):
         program, __ = self.create_args()
         self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, program)
         self.assertRaises(ValueError, os.spawnl, os.P_NOWAIT, program, '')
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnle')
     def test_spawnle_noargs(self):
         program, __ = self.create_args()
         self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, program, {})
         self.assertRaises(ValueError, os.spawnle, os.P_NOWAIT, program, '', {})
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnv')
     def test_spawnv_noargs(self):
         program, __ = self.create_args()
@@ -3704,6 +3725,7 @@ class SpawnTests(unittest.TestCase):
         self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, ('',))
         self.assertRaises(ValueError, os.spawnv, os.P_NOWAIT, program, [''])
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnve')
     def test_spawnve_noargs(self):
         program, __ = self.create_args()
@@ -3760,10 +3782,12 @@ class SpawnTests(unittest.TestCase):
         exitcode = spawn(os.P_WAIT, program, args, newenv)
         self.assertEqual(exitcode, 0)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnve')
     def test_spawnve_invalid_env(self):
         self._test_invalid_env(os.spawnve)
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @requires_os_func('spawnvpe')
     def test_spawnvpe_invalid_env(self):
         self._test_invalid_env(os.spawnvpe)
@@ -3938,6 +3962,11 @@ class TestSendfile(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(OSError) as cm:
             await self.async_sendfile(self.sockno, self.fileno, -1, 4096)
         self.assertEqual(cm.exception.errno, errno.EINVAL)
+
+    async def test_invalid_count(self):
+        with self.assertRaises(ValueError, msg="count cannot be negative"):
+            await self.sendfile_wrapper(self.sockno, self.fileno, offset=0,
+                                        count=-1)
 
     async def test_keywords(self):
         # Keyword arguments should be supported
@@ -4291,13 +4320,8 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
-    # 1 ms accuracy is reliably achievable on every platform except Android
-    # emulators, where we allow 10 ms (gh-108277).
-    if sys.platform == "android" and platform.android_ver().is_emulator:
-        CLOCK_RES_PLACES = 2
-    else:
-        CLOCK_RES_PLACES = 3
-
+    # gh-126112: Use 10 ms to tolerate slow buildbots
+    CLOCK_RES_PLACES = 2  # 10 ms
     CLOCK_RES = 10 ** -CLOCK_RES_PLACES
     CLOCK_RES_NS = 10 ** (9 - CLOCK_RES_PLACES)
 
@@ -4885,6 +4909,7 @@ class PseudoterminalTests(unittest.TestCase):
         self.addCleanup(os.close, son_fd)
         self.assertEqual(os.ptsname(mother_fd), os.ttyname(son_fd))
 
+    @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
     @unittest.skipUnless(hasattr(os, 'spawnl'), "need os.spawnl()")
     @support.requires_subprocess()
     def test_pipe_spawnl(self):

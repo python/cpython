@@ -254,6 +254,15 @@ Miscellaneous options
    .. versionchanged:: 3.5
       Affects also comparisons of :class:`bytes` with :class:`int`.
 
+   .. deprecated:: 3.15
+
+      Deprecate :option:`-b` and :option:`!-bb` command line options
+      and schedule them to become no-op in Python 3.17.
+      These were primarily helpers for the Python 2 -> 3 transition.
+      Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+      for these cases; use a type checker instead.
+
+
 .. option:: -B
 
    If given, Python won't try to write ``.pyc`` files on the
@@ -369,8 +378,8 @@ Miscellaneous options
 .. option:: -R
 
    Turn on hash randomization. This option only has an effect if the
-   :envvar:`PYTHONHASHSEED` environment variable is set to ``0``, since hash
-   randomization is enabled by default.
+   :envvar:`PYTHONHASHSEED` environment variable is set to anything other
+   than ``random``, since hash randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
    so that the :meth:`~object.__hash__` values of str and bytes objects
@@ -653,7 +662,7 @@ Miscellaneous options
      .. versionadded:: 3.13
 
    * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
-     to, by default, use a copy of context of of the caller of
+     to, by default, use a copy of context of the caller of
      ``Thread.start()`` when starting.  Otherwise, threads will start
      with an empty context.  If unset, the value of this option defaults
      to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
@@ -666,6 +675,13 @@ Miscellaneous options
      :class:`~contextvars.ContextVar` to store warnings filter state.  If
      unset, the value of this option defaults to ``1`` on free-threaded builds
      and to ``0`` otherwise.  See also :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`.
+
+     .. versionadded:: 3.14
+
+   * :samp:`-X tlbc={0,1}` enables (1, the default) or disables (0) thread-local
+     bytecode in builds configured with :option:`--disable-gil`.  When disabled,
+     this also disables the specializing interpreter.  See also
+     :envvar:`PYTHON_TLBC`.
 
      .. versionadded:: 3.14
 
@@ -1277,7 +1293,7 @@ conflict.
 .. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
 
    If this variable is set to ``1`` then :class:`~threading.Thread` will,
-   by default, use a copy of context of of the caller of ``Thread.start()``
+   by default, use a copy of context of the caller of ``Thread.start()``
    when starting.  Otherwise, new threads will start with an empty context.
    If unset, this variable defaults to ``1`` on free-threaded builds and to
    ``0`` otherwise.  See also :option:`-X thread_inherit_context<-X>`.
@@ -1301,6 +1317,16 @@ conflict.
    interpreter startup.
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_TLBC
+
+   If set to ``1`` enables thread-local bytecode. If set to ``0`` thread-local
+   bytecode and the specializing interpreter are disabled.  Only applies to
+   builds configured with :option:`--disable-gil`.
+
+   See also the :option:`-X tlbc <-X>` command-line option.
+
+   .. versionadded:: 3.14
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

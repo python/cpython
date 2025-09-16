@@ -5,13 +5,24 @@ import importlib
 import sys
 import socket
 import threading
+import time
 from asyncio import staggered, taskgroups, base_events, tasks
 from unittest.mock import ANY
-from test.support import os_helper, SHORT_TIMEOUT, busy_retry
+from test.support import (
+    os_helper,
+    SHORT_TIMEOUT,
+    busy_retry,
+    requires_gil_enabled,
+)
 from test.support.script_helper import make_script
 from test.support.socket_helper import find_unused_port
 
 import subprocess
+
+try:
+    from concurrent import interpreters
+except ImportError:
+    interpreters = None
 
 PROCESS_VM_READV_SUPPORTED = False
 
@@ -39,6 +50,12 @@ skip_if_not_supported = unittest.skipIf(
     ),
     "Test only runs on Linux, Windows and MacOS",
 )
+
+
+def requires_subinterpreters(meth):
+    """Decorator to skip a test if subinterpreters are not supported."""
+    return unittest.skipIf(interpreters is None,
+                           'subinterpreters required')(meth)
 
 
 def get_stack_trace(pid):
@@ -134,15 +151,27 @@ class TestGetStackTrace(unittest.TestCase):
             ]
             # Is possible that there are more threads, so we check that the
             # expected stack traces are in the result (looking at you Windows!)
-            self.assertIn((ANY, thread_expected_stack_trace), stack_trace)
+            found_expected_stack = False
+            for interpreter_info in stack_trace:
+                for thread_info in interpreter_info.threads:
+                    if thread_info.frame_info == thread_expected_stack_trace:
+                        found_expected_stack = True
+                        break
+                if found_expected_stack:
+                    break
+            self.assertTrue(found_expected_stack, "Expected thread stack trace not found")
 
             # Check that the main thread stack trace is in the result
             frame = FrameInfo([script_name, 19, "<module>"])
-            for _, stack in stack_trace:
-                if frame in stack:
+            main_thread_found = False
+            for interpreter_info in stack_trace:
+                for thread_info in interpreter_info.threads:
+                    if frame in thread_info.frame_info:
+                        main_thread_found = True
+                        break
+                if main_thread_found:
                     break
-            else:
-                self.fail("Main thread stack trace not found in result")
+            self.assertTrue(main_thread_found, "Main thread stack trace not found in result")
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -235,55 +264,162 @@ class TestGetStackTrace(unittest.TestCase):
                     p.terminate()
                     p.wait(timeout=SHORT_TIMEOUT)
 
-                # sets are unordered, so we want to sort "awaited_by"s
-                stack_trace[2].sort(key=lambda x: x[1])
+                # First check all the tasks are present
+                tasks_names = [
+                    task.task_name for task in stack_trace[0].awaited_by
+                ]
+                for task_name in ["c2_root", "sub_main_1", "sub_main_2"]:
+                    self.assertIn(task_name, tasks_names)
 
-                expected_stack_trace = [
-                    [
-                        FrameInfo([script_name, 10, "c5"]),
-                        FrameInfo([script_name, 14, "c4"]),
-                        FrameInfo([script_name, 17, "c3"]),
-                        FrameInfo([script_name, 20, "c2"]),
-                    ],
-                    "c2_root",
-                    [
-                        CoroInfo(
-                            [
-                                [
-                                    FrameInfo(
+                # Now ensure that the awaited_by_relationships are correct
+                id_to_task = {
+                    task.task_id: task for task in stack_trace[0].awaited_by
+                }
+                task_name_to_awaited_by = {
+                    task.task_name: set(
+                        id_to_task[awaited.task_name].task_name
+                        for awaited in task.awaited_by
+                    )
+                    for task in stack_trace[0].awaited_by
+                }
+                self.assertEqual(
+                    task_name_to_awaited_by,
+                    {
+                        "c2_root": {"Task-1", "sub_main_1", "sub_main_2"},
+                        "Task-1": set(),
+                        "sub_main_1": {"Task-1"},
+                        "sub_main_2": {"Task-1"},
+                    },
+                )
+
+                # Now ensure that the coroutine stacks are correct
+                coroutine_stacks = {
+                    task.task_name: sorted(
+                        tuple(tuple(frame) for frame in coro.call_stack)
+                        for coro in task.coroutine_stack
+                    )
+                    for task in stack_trace[0].awaited_by
+                }
+                self.assertEqual(
+                    coroutine_stacks,
+                    {
+                        "Task-1": [
+                            (
+                                tuple(
+                                    [
+                                        taskgroups.__file__,
+                                        ANY,
+                                        "TaskGroup._aexit",
+                                    ]
+                                ),
+                                tuple(
+                                    [
+                                        taskgroups.__file__,
+                                        ANY,
+                                        "TaskGroup.__aexit__",
+                                    ]
+                                ),
+                                tuple([script_name, 26, "main"]),
+                            )
+                        ],
+                        "c2_root": [
+                            (
+                                tuple([script_name, 10, "c5"]),
+                                tuple([script_name, 14, "c4"]),
+                                tuple([script_name, 17, "c3"]),
+                                tuple([script_name, 20, "c2"]),
+                            )
+                        ],
+                        "sub_main_1": [(tuple([script_name, 23, "c1"]),)],
+                        "sub_main_2": [(tuple([script_name, 23, "c1"]),)],
+                    },
+                )
+
+                # Now ensure the coroutine stacks for the awaited_by relationships are correct.
+                awaited_by_coroutine_stacks = {
+                    task.task_name: sorted(
+                        (
+                            id_to_task[coro.task_name].task_name,
+                            tuple(tuple(frame) for frame in coro.call_stack),
+                        )
+                        for coro in task.awaited_by
+                    )
+                    for task in stack_trace[0].awaited_by
+                }
+                self.assertEqual(
+                    awaited_by_coroutine_stacks,
+                    {
+                        "Task-1": [],
+                        "c2_root": [
+                            (
+                                "Task-1",
+                                (
+                                    tuple(
                                         [
                                             taskgroups.__file__,
                                             ANY,
                                             "TaskGroup._aexit",
                                         ]
                                     ),
-                                    FrameInfo(
+                                    tuple(
                                         [
                                             taskgroups.__file__,
                                             ANY,
                                             "TaskGroup.__aexit__",
                                         ]
                                     ),
-                                    FrameInfo([script_name, 26, "main"]),
-                                ],
+                                    tuple([script_name, 26, "main"]),
+                                ),
+                            ),
+                            ("sub_main_1", (tuple([script_name, 23, "c1"]),)),
+                            ("sub_main_2", (tuple([script_name, 23, "c1"]),)),
+                        ],
+                        "sub_main_1": [
+                            (
                                 "Task-1",
-                            ]
-                        ),
-                        CoroInfo(
-                            [
-                                [FrameInfo([script_name, 23, "c1"])],
-                                "sub_main_1",
-                            ]
-                        ),
-                        CoroInfo(
-                            [
-                                [FrameInfo([script_name, 23, "c1"])],
-                                "sub_main_2",
-                            ]
-                        ),
-                    ],
-                ]
-                self.assertEqual(stack_trace, expected_stack_trace)
+                                (
+                                    tuple(
+                                        [
+                                            taskgroups.__file__,
+                                            ANY,
+                                            "TaskGroup._aexit",
+                                        ]
+                                    ),
+                                    tuple(
+                                        [
+                                            taskgroups.__file__,
+                                            ANY,
+                                            "TaskGroup.__aexit__",
+                                        ]
+                                    ),
+                                    tuple([script_name, 26, "main"]),
+                                ),
+                            )
+                        ],
+                        "sub_main_2": [
+                            (
+                                "Task-1",
+                                (
+                                    tuple(
+                                        [
+                                            taskgroups.__file__,
+                                            ANY,
+                                            "TaskGroup._aexit",
+                                        ]
+                                    ),
+                                    tuple(
+                                        [
+                                            taskgroups.__file__,
+                                            ANY,
+                                            "TaskGroup.__aexit__",
+                                        ]
+                                    ),
+                                    tuple([script_name, 26, "main"]),
+                                ),
+                            )
+                        ],
+                    },
+                )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -349,19 +485,29 @@ class TestGetStackTrace(unittest.TestCase):
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
 
-            # sets are unordered, so we want to sort "awaited_by"s
-            stack_trace[2].sort(key=lambda x: x[1])
+            # For this simple asyncgen test, we only expect one task with the full coroutine stack
+            self.assertEqual(len(stack_trace[0].awaited_by), 1)
+            task = stack_trace[0].awaited_by[0]
+            self.assertEqual(task.task_name, "Task-1")
 
-            expected_stack_trace = [
+            # Check the coroutine stack - based on actual output, only shows main
+            coroutine_stack = sorted(
+                tuple(tuple(frame) for frame in coro.call_stack)
+                for coro in task.coroutine_stack
+            )
+            self.assertEqual(
+                coroutine_stack,
                 [
-                    FrameInfo([script_name, 10, "gen_nested_call"]),
-                    FrameInfo([script_name, 16, "gen"]),
-                    FrameInfo([script_name, 19, "main"]),
+                    (
+                        tuple([script_name, 10, "gen_nested_call"]),
+                        tuple([script_name, 16, "gen"]),
+                        tuple([script_name, 19, "main"]),
+                    )
                 ],
-                "Task-1",
-                [],
-            ]
-            self.assertEqual(stack_trace, expected_stack_trace)
+            )
+
+            # No awaited_by relationships expected for this simple case
+            self.assertEqual(task.awaited_by, [])
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -428,18 +574,73 @@ class TestGetStackTrace(unittest.TestCase):
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
 
-            # sets are unordered, so we want to sort "awaited_by"s
-            stack_trace[2].sort(key=lambda x: x[1])
-
-            expected_stack_trace = [
-                [
-                    FrameInfo([script_name, 11, "deep"]),
-                    FrameInfo([script_name, 15, "c1"]),
-                ],
-                "Task-2",
-                [CoroInfo([[FrameInfo([script_name, 21, "main"])], "Task-1"])],
+            # First check all the tasks are present
+            tasks_names = [
+                task.task_name for task in stack_trace[0].awaited_by
             ]
-            self.assertEqual(stack_trace, expected_stack_trace)
+            for task_name in ["Task-1", "Task-2"]:
+                self.assertIn(task_name, tasks_names)
+
+            # Now ensure that the awaited_by_relationships are correct
+            id_to_task = {
+                task.task_id: task for task in stack_trace[0].awaited_by
+            }
+            task_name_to_awaited_by = {
+                task.task_name: set(
+                    id_to_task[awaited.task_name].task_name
+                    for awaited in task.awaited_by
+                )
+                for task in stack_trace[0].awaited_by
+            }
+            self.assertEqual(
+                task_name_to_awaited_by,
+                {
+                    "Task-1": set(),
+                    "Task-2": {"Task-1"},
+                },
+            )
+
+            # Now ensure that the coroutine stacks are correct
+            coroutine_stacks = {
+                task.task_name: sorted(
+                    tuple(tuple(frame) for frame in coro.call_stack)
+                    for coro in task.coroutine_stack
+                )
+                for task in stack_trace[0].awaited_by
+            }
+            self.assertEqual(
+                coroutine_stacks,
+                {
+                    "Task-1": [(tuple([script_name, 21, "main"]),)],
+                    "Task-2": [
+                        (
+                            tuple([script_name, 11, "deep"]),
+                            tuple([script_name, 15, "c1"]),
+                        )
+                    ],
+                },
+            )
+
+            # Now ensure the coroutine stacks for the awaited_by relationships are correct.
+            awaited_by_coroutine_stacks = {
+                task.task_name: sorted(
+                    (
+                        id_to_task[coro.task_name].task_name,
+                        tuple(tuple(frame) for frame in coro.call_stack),
+                    )
+                    for coro in task.awaited_by
+                )
+                for task in stack_trace[0].awaited_by
+            }
+            self.assertEqual(
+                awaited_by_coroutine_stacks,
+                {
+                    "Task-1": [],
+                    "Task-2": [
+                        ("Task-1", (tuple([script_name, 21, "main"]),))
+                    ],
+                },
+            )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -509,36 +710,93 @@ class TestGetStackTrace(unittest.TestCase):
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
 
-            # sets are unordered, so we want to sort "awaited_by"s
-            stack_trace[2].sort(key=lambda x: x[1])
-            expected_stack_trace = [
-                [
-                    FrameInfo([script_name, 11, "deep"]),
-                    FrameInfo([script_name, 15, "c1"]),
-                    FrameInfo(
-                        [
-                            staggered.__file__,
-                            ANY,
-                            "staggered_race.<locals>.run_one_coro",
-                        ]
-                    ),
-                ],
-                "Task-2",
-                [
-                    CoroInfo(
-                        [
-                            [
-                                FrameInfo(
+            # First check all the tasks are present
+            tasks_names = [
+                task.task_name for task in stack_trace[0].awaited_by
+            ]
+            for task_name in ["Task-1", "Task-2"]:
+                self.assertIn(task_name, tasks_names)
+
+            # Now ensure that the awaited_by_relationships are correct
+            id_to_task = {
+                task.task_id: task for task in stack_trace[0].awaited_by
+            }
+            task_name_to_awaited_by = {
+                task.task_name: set(
+                    id_to_task[awaited.task_name].task_name
+                    for awaited in task.awaited_by
+                )
+                for task in stack_trace[0].awaited_by
+            }
+            self.assertEqual(
+                task_name_to_awaited_by,
+                {
+                    "Task-1": set(),
+                    "Task-2": {"Task-1"},
+                },
+            )
+
+            # Now ensure that the coroutine stacks are correct
+            coroutine_stacks = {
+                task.task_name: sorted(
+                    tuple(tuple(frame) for frame in coro.call_stack)
+                    for coro in task.coroutine_stack
+                )
+                for task in stack_trace[0].awaited_by
+            }
+            self.assertEqual(
+                coroutine_stacks,
+                {
+                    "Task-1": [
+                        (
+                            tuple([staggered.__file__, ANY, "staggered_race"]),
+                            tuple([script_name, 21, "main"]),
+                        )
+                    ],
+                    "Task-2": [
+                        (
+                            tuple([script_name, 11, "deep"]),
+                            tuple([script_name, 15, "c1"]),
+                            tuple(
+                                [
+                                    staggered.__file__,
+                                    ANY,
+                                    "staggered_race.<locals>.run_one_coro",
+                                ]
+                            ),
+                        )
+                    ],
+                },
+            )
+
+            # Now ensure the coroutine stacks for the awaited_by relationships are correct.
+            awaited_by_coroutine_stacks = {
+                task.task_name: sorted(
+                    (
+                        id_to_task[coro.task_name].task_name,
+                        tuple(tuple(frame) for frame in coro.call_stack),
+                    )
+                    for coro in task.awaited_by
+                )
+                for task in stack_trace[0].awaited_by
+            }
+            self.assertEqual(
+                awaited_by_coroutine_stacks,
+                {
+                    "Task-1": [],
+                    "Task-2": [
+                        (
+                            "Task-1",
+                            (
+                                tuple(
                                     [staggered.__file__, ANY, "staggered_race"]
                                 ),
-                                FrameInfo([script_name, 21, "main"]),
-                            ],
-                            "Task-1",
-                        ]
-                    )
-                ],
-            ]
-            self.assertEqual(stack_trace, expected_stack_trace)
+                                tuple([script_name, 21, "main"]),
+                            ),
+                        )
+                    ],
+                },
+            )
 
     @skip_if_not_supported
     @unittest.skipIf(
@@ -851,13 +1109,17 @@ class TestGetStackTrace(unittest.TestCase):
         # Is possible that there are more threads, so we check that the
         # expected stack traces are in the result (looking at you Windows!)
         this_tread_stack = None
-        for thread_id, stack in stack_trace:
-            if thread_id == threading.get_native_id():
-                this_tread_stack = stack
+        # New format: [InterpreterInfo(interpreter_id, [ThreadInfo(...)])]
+        for interpreter_info in stack_trace:
+            for thread_info in interpreter_info.threads:
+                if thread_info.thread_id == threading.get_native_id():
+                    this_tread_stack = thread_info.frame_info
+                    break
+            if this_tread_stack:
                 break
         self.assertIsNotNone(this_tread_stack)
         self.assertEqual(
-            stack[:2],
+            this_tread_stack[:2],
             [
                 FrameInfo(
                     [
@@ -874,6 +1136,538 @@ class TestGetStackTrace(unittest.TestCase):
                     ]
                 ),
             ],
+        )
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    @requires_subinterpreters
+    def test_subinterpreter_stack_trace(self):
+        # Test that subinterpreters are correctly handled
+        port = find_unused_port()
+
+        # Calculate subinterpreter code separately and pickle it to avoid f-string issues
+        import pickle
+        subinterp_code = textwrap.dedent(f'''
+            import socket
+            import time
+
+            def sub_worker():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            sub_worker()
+        ''').strip()
+
+        # Pickle the subinterpreter code
+        pickled_code = pickle.dumps(subinterp_code)
+
+        script = textwrap.dedent(
+            f"""
+            from concurrent import interpreters
+            import time
+            import sys
+            import socket
+            import threading
+
+            # Connect to the test process
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def main_worker():
+                # Function running in main interpreter
+                sock.sendall(b"ready:main\\n")
+                time.sleep(10_000)
+
+            def run_subinterp():
+                # Create and run subinterpreter
+                subinterp = interpreters.create()
+
+                import pickle
+                pickled_code = {pickled_code!r}
+                subinterp_code = pickle.loads(pickled_code)
+                subinterp.exec(subinterp_code)
+
+            # Start subinterpreter in thread
+            sub_thread = threading.Thread(target=run_subinterp)
+            sub_thread.start()
+
+            # Start main thread work
+            main_thread = threading.Thread(target=main_worker)
+            main_thread.start()
+
+            # Keep main thread alive
+            main_thread.join()
+            sub_thread.join()
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            # Create a socket server to communicate with the target process
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+
+            script_name = _make_test_script(script_dir, "script", script)
+            client_sockets = []
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+
+                # Accept connections from both main and subinterpreter
+                responses = set()
+                while len(responses) < 2:  # Wait for both "ready:main" and "ready:sub"
+                    try:
+                        client_socket, _ = server_socket.accept()
+                        client_sockets.append(client_socket)
+
+                        # Read the response from this connection
+                        response = client_socket.recv(1024)
+                        if b"ready:main" in response:
+                            responses.add("main")
+                        if b"ready:sub" in response:
+                            responses.add("sub")
+                    except socket.timeout:
+                        break
+
+                server_socket.close()
+                stack_trace = get_stack_trace(p.pid)
+            except PermissionError:
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace"
+                )
+            finally:
+                for client_socket in client_sockets:
+                    if client_socket is not None:
+                        client_socket.close()
+                p.kill()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+            # Verify we have multiple interpreters
+            self.assertGreaterEqual(len(stack_trace), 1, "Should have at least one interpreter")
+
+            # Look for main interpreter (ID 0) and subinterpreter (ID > 0)
+            main_interp = None
+            sub_interp = None
+
+            for interpreter_info in stack_trace:
+                if interpreter_info.interpreter_id == 0:
+                    main_interp = interpreter_info
+                elif interpreter_info.interpreter_id > 0:
+                    sub_interp = interpreter_info
+
+            self.assertIsNotNone(main_interp, "Main interpreter should be present")
+
+            # Check main interpreter has expected stack trace
+            main_found = False
+            for thread_info in main_interp.threads:
+                for frame in thread_info.frame_info:
+                    if frame.funcname == "main_worker":
+                        main_found = True
+                        break
+                if main_found:
+                    break
+            self.assertTrue(main_found, "Main interpreter should have main_worker in stack")
+
+            # If subinterpreter is present, check its stack trace
+            if sub_interp:
+                sub_found = False
+                for thread_info in sub_interp.threads:
+                    for frame in thread_info.frame_info:
+                        if frame.funcname in ("sub_worker", "nested_func"):
+                            sub_found = True
+                            break
+                    if sub_found:
+                        break
+                self.assertTrue(sub_found, "Subinterpreter should have sub_worker or nested_func in stack")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    @requires_subinterpreters
+    def test_multiple_subinterpreters_with_threads(self):
+        # Test multiple subinterpreters, each with multiple threads
+        port = find_unused_port()
+
+        # Calculate subinterpreter codes separately and pickle them
+        import pickle
+
+        # Code for first subinterpreter with 2 threads
+        subinterp1_code = textwrap.dedent(f'''
+            import socket
+            import time
+            import threading
+
+            def worker1():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub1-t1\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            def worker2():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub1-t2\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            t1 = threading.Thread(target=worker1)
+            t2 = threading.Thread(target=worker2)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+        ''').strip()
+
+        # Code for second subinterpreter with 2 threads
+        subinterp2_code = textwrap.dedent(f'''
+            import socket
+            import time
+            import threading
+
+            def worker1():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub2-t1\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            def worker2():
+                def nested_func():
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.connect(('localhost', {port}))
+                    sock.sendall(b"ready:sub2-t2\\n")
+                    time.sleep(10_000)
+                nested_func()
+
+            t1 = threading.Thread(target=worker1)
+            t2 = threading.Thread(target=worker2)
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+        ''').strip()
+
+        # Pickle the subinterpreter codes
+        pickled_code1 = pickle.dumps(subinterp1_code)
+        pickled_code2 = pickle.dumps(subinterp2_code)
+
+        script = textwrap.dedent(
+            f"""
+            from concurrent import interpreters
+            import time
+            import sys
+            import socket
+            import threading
+
+            # Connect to the test process
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def main_worker():
+                # Function running in main interpreter
+                sock.sendall(b"ready:main\\n")
+                time.sleep(10_000)
+
+            def run_subinterp1():
+                # Create and run first subinterpreter
+                subinterp = interpreters.create()
+
+                import pickle
+                pickled_code = {pickled_code1!r}
+                subinterp_code = pickle.loads(pickled_code)
+                subinterp.exec(subinterp_code)
+
+            def run_subinterp2():
+                # Create and run second subinterpreter
+                subinterp = interpreters.create()
+
+                import pickle
+                pickled_code = {pickled_code2!r}
+                subinterp_code = pickle.loads(pickled_code)
+                subinterp.exec(subinterp_code)
+
+            # Start subinterpreters in threads
+            sub1_thread = threading.Thread(target=run_subinterp1)
+            sub2_thread = threading.Thread(target=run_subinterp2)
+            sub1_thread.start()
+            sub2_thread.start()
+
+            # Start main thread work
+            main_thread = threading.Thread(target=main_worker)
+            main_thread.start()
+
+            # Keep main thread alive
+            main_thread.join()
+            sub1_thread.join()
+            sub2_thread.join()
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            # Create a socket server to communicate with the target process
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(5)  # Allow multiple connections
+
+            script_name = _make_test_script(script_dir, "script", script)
+            client_sockets = []
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+
+                # Accept connections from main and all subinterpreter threads
+                expected_responses = {"ready:main", "ready:sub1-t1", "ready:sub1-t2", "ready:sub2-t1", "ready:sub2-t2"}
+                responses = set()
+
+                while len(responses) < 5:  # Wait for all 5 ready signals
+                    try:
+                        client_socket, _ = server_socket.accept()
+                        client_sockets.append(client_socket)
+
+                        # Read the response from this connection
+                        response = client_socket.recv(1024)
+                        response_str = response.decode().strip()
+                        if response_str in expected_responses:
+                            responses.add(response_str)
+                    except socket.timeout:
+                        break
+
+                server_socket.close()
+                stack_trace = get_stack_trace(p.pid)
+            except PermissionError:
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace"
+                )
+            finally:
+                for client_socket in client_sockets:
+                    if client_socket is not None:
+                        client_socket.close()
+                p.kill()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+            # Verify we have multiple interpreters
+            self.assertGreaterEqual(len(stack_trace), 2, "Should have at least two interpreters")
+
+            # Count interpreters by ID
+            interpreter_ids = {interp.interpreter_id for interp in stack_trace}
+            self.assertIn(0, interpreter_ids, "Main interpreter should be present")
+            self.assertGreaterEqual(len(interpreter_ids), 3, "Should have main + at least 2 subinterpreters")
+
+            # Count total threads across all interpreters
+            total_threads = sum(len(interp.threads) for interp in stack_trace)
+            self.assertGreaterEqual(total_threads, 5, "Should have at least 5 threads total")
+
+            # Look for expected function names in stack traces
+            all_funcnames = set()
+            for interpreter_info in stack_trace:
+                for thread_info in interpreter_info.threads:
+                    for frame in thread_info.frame_info:
+                        all_funcnames.add(frame.funcname)
+
+            # Should find functions from different interpreters and threads
+            expected_funcs = {"main_worker", "worker1", "worker2", "nested_func"}
+            found_funcs = expected_funcs.intersection(all_funcnames)
+            self.assertGreater(len(found_funcs), 0, f"Should find some expected functions, got: {all_funcnames}")
+
+    @skip_if_not_supported
+    @unittest.skipIf(
+        sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
+        "Test only runs on Linux with process_vm_readv support",
+    )
+    @requires_gil_enabled("Free threaded builds don't have an 'active thread'")
+    def test_only_active_thread(self):
+        # Test that only_active_thread parameter works correctly
+        port = find_unused_port()
+        script = textwrap.dedent(
+            f"""\
+            import time, sys, socket, threading
+
+            # Connect to the test process
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(('localhost', {port}))
+
+            def worker_thread(name, barrier, ready_event):
+                barrier.wait()  # Synchronize thread start
+                ready_event.wait()  # Wait for main thread signal
+                # Sleep to keep thread alive
+                time.sleep(10_000)
+
+            def main_work():
+                # Do busy work to hold the GIL
+                sock.sendall(b"working\\n")
+                count = 0
+                while count < 100000000:
+                    count += 1
+                    if count % 10000000 == 0:
+                        pass  # Keep main thread busy
+                sock.sendall(b"done\\n")
+
+            # Create synchronization primitives
+            num_threads = 3
+            barrier = threading.Barrier(num_threads + 1)  # +1 for main thread
+            ready_event = threading.Event()
+
+            # Start worker threads
+            threads = []
+            for i in range(num_threads):
+                t = threading.Thread(target=worker_thread, args=(f"Worker-{{i}}", barrier, ready_event))
+                t.start()
+                threads.append(t)
+
+            # Wait for all threads to be ready
+            barrier.wait()
+
+            # Signal ready to parent process
+            sock.sendall(b"ready\\n")
+
+            # Signal threads to start waiting
+            ready_event.set()
+
+            # Now do busy work to hold the GIL
+            main_work()
+            """
+        )
+
+        with os_helper.temp_dir() as work_dir:
+            script_dir = os.path.join(work_dir, "script_pkg")
+            os.mkdir(script_dir)
+
+            # Create a socket server to communicate with the target process
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind(("localhost", port))
+            server_socket.settimeout(SHORT_TIMEOUT)
+            server_socket.listen(1)
+
+            script_name = _make_test_script(script_dir, "script", script)
+            client_socket = None
+            try:
+                p = subprocess.Popen([sys.executable, script_name])
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
+
+                # Wait for ready signal
+                response = b""
+                while b"ready" not in response:
+                    response += client_socket.recv(1024)
+
+                # Wait for the main thread to start its busy work
+                while b"working" not in response:
+                    response += client_socket.recv(1024)
+
+                # Get stack trace with all threads
+                unwinder_all = RemoteUnwinder(p.pid, all_threads=True)
+                for _ in range(10):
+                    # Wait for the main thread to start its busy work
+                    all_traces = unwinder_all.get_stack_trace()
+                    found = False
+                    # New format: [InterpreterInfo(interpreter_id, [ThreadInfo(...)])]
+                    for interpreter_info in all_traces:
+                        for thread_info in interpreter_info.threads:
+                            if not thread_info.frame_info:
+                                continue
+                            current_frame = thread_info.frame_info[0]
+                            if (
+                                current_frame.funcname == "main_work"
+                                and current_frame.lineno > 15
+                            ):
+                                found = True
+                                break
+                        if found:
+                            break
+
+                    if found:
+                        break
+                    # Give a bit of time to take the next sample
+                    time.sleep(0.1)
+                else:
+                    self.fail(
+                        "Main thread did not start its busy work on time"
+                    )
+
+                # Get stack trace with only GIL holder
+                unwinder_gil = RemoteUnwinder(p.pid, only_active_thread=True)
+                gil_traces = unwinder_gil.get_stack_trace()
+
+            except PermissionError:
+                self.skipTest(
+                    "Insufficient permissions to read the stack trace"
+                )
+            finally:
+                if client_socket is not None:
+                    client_socket.close()
+                p.kill()
+                p.terminate()
+                p.wait(timeout=SHORT_TIMEOUT)
+
+            # Count total threads across all interpreters in all_traces
+            total_threads = sum(len(interpreter_info.threads) for interpreter_info in all_traces)
+            self.assertGreater(
+                total_threads, 1, "Should have multiple threads"
+            )
+
+            # Count total threads across all interpreters in gil_traces
+            total_gil_threads = sum(len(interpreter_info.threads) for interpreter_info in gil_traces)
+            self.assertEqual(
+                total_gil_threads, 1, "Should have exactly one GIL holder"
+            )
+
+            # Get the GIL holder thread ID
+            gil_thread_id = None
+            for interpreter_info in gil_traces:
+                if interpreter_info.threads:
+                    gil_thread_id = interpreter_info.threads[0].thread_id
+                    break
+
+            # Get all thread IDs from all_traces
+            all_thread_ids = []
+            for interpreter_info in all_traces:
+                for thread_info in interpreter_info.threads:
+                    all_thread_ids.append(thread_info.thread_id)
+
+            self.assertIn(
+                gil_thread_id,
+                all_thread_ids,
+                "GIL holder should be among all threads",
+            )
+
+
+class TestUnsupportedPlatformHandling(unittest.TestCase):
+    @unittest.skipIf(
+        sys.platform in ("linux", "darwin", "win32"),
+        "Test only runs on unsupported platforms (not Linux, macOS, or Windows)",
+    )
+    @unittest.skipIf(sys.platform == "android", "Android raises Linux-specific exception")
+    def test_unsupported_platform_error(self):
+        with self.assertRaises(RuntimeError) as cm:
+            RemoteUnwinder(os.getpid())
+
+        self.assertIn(
+            "Reading the PyRuntime section is not supported on this platform",
+            str(cm.exception)
         )
 
 

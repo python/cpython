@@ -89,7 +89,7 @@ When the full jit is enabled (python was configured with
 [`--enable-experimental-jit`](https://docs.python.org/dev/using/configure.html#cmdoption-enable-experimental-jit),
 the uop executor's `jit_code` field is populated with a pointer to a compiled
 C function that implements the executor logic. This function's signature is
-defined by `jit_func` in [`pycore_jit.h`](Include/internal/pycore_jit.h).
+defined by `jit_func` in [`pycore_jit.h`](../Include/internal/pycore_jit.h).
 When the executor is invoked by `ENTER_EXECUTOR`, instead of jumping to
 the uop interpreter at `tier2_dispatch`, the executor runs the function
 that `jit_code` points to. This function returns the instruction pointer

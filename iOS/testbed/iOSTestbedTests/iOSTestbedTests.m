@@ -15,6 +15,11 @@
     PyStatus status;
     PyPreConfig preconfig;
     PyConfig config;
+    PyObject *app_packages_path;
+    PyObject *method_args;
+    PyObject *result;
+    PyObject *site_module;
+    PyObject *site_addsitedir_attr;
     PyObject *sys_module;
     PyObject *sys_path_attr;
     NSArray *test_args;
@@ -33,16 +38,20 @@
     // Arguments to pass into the test suite runner.
     // argv[0] must identify the process; any subsequent arg
     // will be handled as if it were an argument to `python -m test`
-    test_args = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"TestArgs"];
+    // The processInfo arguments contain the binary that is running,
+    // followed by the arguments defined in the test plan. This means:
+    //    run_module = test_args[1]
+    //    argv = ["iOSTestbed"] + test_args[2:]
+    test_args = [[NSProcessInfo processInfo] arguments];
     if (test_args == NULL) {
         NSLog(@"Unable to identify test arguments.");
     }
-    argv = malloc(sizeof(char *) * ([test_args count] + 1));
+    NSLog(@"Test arguments: %@", test_args);
+    argv = malloc(sizeof(char *) * ([test_args count] - 1));
     argv[0] = "iOSTestbed";
-    for (int i = 1; i < [test_args count]; i++) {
-        argv[i] = [[test_args objectAtIndex:i] UTF8String];
+    for (int i = 1; i < [test_args count] - 1; i++) {
+        argv[i] = [[test_args objectAtIndex:i+1] UTF8String];
     }
-    NSLog(@"Test command: %@", test_args);
 
     // Generate an isolated Python configuration.
     NSLog(@"Configuring isolated Python...");
@@ -63,7 +72,7 @@
     // Ensure that signal handlers are installed
     config.install_signal_handlers = 1;
     // Run the test module.
-    config.run_module = Py_DecodeLocale([[test_args objectAtIndex:0] UTF8String], NULL);
+    config.run_module = Py_DecodeLocale([[test_args objectAtIndex:1] UTF8String], NULL);
     // For debugging - enable verbose mode.
     // config.verbose = 1;
 
@@ -96,7 +105,7 @@
     }
 
     NSLog(@"Configure argc/argv...");
-    status = PyConfig_SetBytesArgv(&config, [test_args count], (char**) argv);
+    status = PyConfig_SetBytesArgv(&config, [test_args count] - 1, (char**) argv);
     if (PyStatus_Exception(status)) {
         XCTFail(@"Unable to configure argc/argv: %s", status.err_msg);
         PyConfig_Clear(&config);
@@ -111,6 +120,43 @@
         return;
     }
 
+    // Add app_packages as a site directory. This both adds to sys.path,
+    // and ensures that any .pth files in that directory will be executed.
+    site_module = PyImport_ImportModule("site");
+    if (site_module == NULL) {
+        XCTFail(@"Could not import site module");
+        return;
+    }
+
+    site_addsitedir_attr = PyObject_GetAttrString(site_module, "addsitedir");
+    if (site_addsitedir_attr == NULL || !PyCallable_Check(site_addsitedir_attr)) {
+        XCTFail(@"Could not access site.addsitedir");
+        return;
+    }
+
+    path = [NSString stringWithFormat:@"%@/app_packages", resourcePath, nil];
+    NSLog(@"App packages path: %@", path);
+    wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
+    app_packages_path = PyUnicode_FromWideChar(wtmp_str, wcslen(wtmp_str));
+    if (app_packages_path == NULL) {
+        XCTFail(@"Could not convert app_packages path to unicode");
+        return;
+    }
+    PyMem_RawFree(wtmp_str);
+
+    method_args = Py_BuildValue("(O)", app_packages_path);
+    if (method_args == NULL) {
+        XCTFail(@"Could not create arguments for site.addsitedir");
+        return;
+    }
+
+    result = PyObject_CallObject(site_addsitedir_attr, method_args);
+    if (result == NULL) {
+        XCTFail(@"Could not add app_packages directory using site.addsitedir");
+        return;
+    }
+
+    // Add test code to sys.path
     sys_module = PyImport_ImportModule("sys");
     if (sys_module == NULL) {
         XCTFail(@"Could not import sys module");
@@ -122,17 +168,6 @@
         XCTFail(@"Could not access sys.path");
         return;
     }
-
-    // Add the app packages path
-    path = [NSString stringWithFormat:@"%@/app_packages", resourcePath, nil];
-    NSLog(@"App packages path: %@", path);
-    wtmp_str = Py_DecodeLocale([path UTF8String], NULL);
-    failed = PyList_Insert(sys_path_attr, 0, PyUnicode_FromString([path UTF8String]));
-    if (failed) {
-        XCTFail(@"Unable to add app packages to sys.path");
-        return;
-    }
-    PyMem_RawFree(wtmp_str);
 
     path = [NSString stringWithFormat:@"%@/app", resourcePath, nil];
     NSLog(@"App path: %@", path);

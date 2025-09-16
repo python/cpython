@@ -1,7 +1,6 @@
 Pending removal in Python 3.15
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* The bundled copy of ``libmpdecimal``.
 * The :c:func:`!PyImport_ImportModuleNoBlock`:
   Use :c:func:`PyImport_ImportModule` instead.
 * :c:func:`PyWeakref_GetObject` and :c:func:`PyWeakref_GET_OBJECT`:
@@ -60,7 +59,7 @@ Pending removal in Python 3.15
     Set :c:member:`PyConfig.program_name` instead.
   * :c:func:`!Py_SetPythonHome()`:
     Set :c:member:`PyConfig.home` instead.
-  * :c:func:`PySys_ResetWarnOptions`:
+  * :c:func:`!PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
 
   The :c:func:`Py_InitializeFromConfig` API should be used with

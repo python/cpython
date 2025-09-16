@@ -33,7 +33,7 @@ import types
 import platform
 from fcntl import ioctl
 
-from . import curses
+from . import terminfo
 from .console import Console, Event
 from .fancy_termios import tcgetattr, tcsetattr
 from .trace import trace
@@ -60,7 +60,7 @@ class InvalidTerminal(RuntimeError):
     pass
 
 
-_error = (termios.error, curses.error, InvalidTerminal)
+_error = (termios.error, InvalidTerminal)
 
 SIGWINCH_EVENT = "repaint"
 
@@ -157,8 +157,12 @@ class UnixConsole(Console):
 
         self.pollob = poll()
         self.pollob.register(self.input_fd, select.POLLIN)
-        curses.setupterm(term or None, self.output_fd)
+        self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
+        self.is_apple_terminal = (
+            platform.system() == "Darwin"
+            and os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+        )
 
         @overload
         def _my_getstr(cap: str, optional: Literal[False] = False) -> bytes: ...
@@ -167,7 +171,7 @@ class UnixConsole(Console):
         def _my_getstr(cap: str, optional: bool) -> bytes | None: ...
 
         def _my_getstr(cap: str, optional: bool = False) -> bytes | None:
-            r = curses.tigetstr(cap)
+            r = self.terminfo.get(cap)
             if not optional and r is None:
                 raise InvalidTerminal(
                     f"terminal doesn't have the required {cap} capability"
@@ -201,7 +205,7 @@ class UnixConsole(Console):
 
         self.__setup_movement()
 
-        self.event_queue = EventQueue(self.input_fd, self.encoding)
+        self.event_queue = EventQueue(self.input_fd, self.encoding, self.terminfo)
         self.cursor_visible = 1
 
         signal.signal(signal.SIGCONT, self._sigcont_handler)
@@ -339,7 +343,7 @@ class UnixConsole(Console):
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7l")
 
         self.screen = []
@@ -370,7 +374,7 @@ class UnixConsole(Console):
         self.flushoutput()
         tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
 
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
@@ -597,14 +601,14 @@ class UnixConsole(Console):
         if self._dch1:
             self.dch1 = self._dch1
         elif self._dch:
-            self.dch1 = curses.tparm(self._dch, 1)
+            self.dch1 = terminfo.tparm(self._dch, 1)
         else:
             self.dch1 = None
 
         if self._ich1:
             self.ich1 = self._ich1
         elif self._ich:
-            self.ich1 = curses.tparm(self._ich, 1)
+            self.ich1 = terminfo.tparm(self._ich, 1)
         else:
             self.ich1 = None
 
@@ -701,7 +705,7 @@ class UnixConsole(Console):
         self.__buffer.append((text, 0))
 
     def __write_code(self, fmt, *args):
-        self.__buffer.append((curses.tparm(fmt, *args), 1))
+        self.__buffer.append((terminfo.tparm(fmt, *args), 1))
 
     def __maybe_write_code(self, fmt, *args):
         if fmt:
