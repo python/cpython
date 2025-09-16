@@ -310,7 +310,8 @@ built-in function :func:`len` returns the number of items of a sequence. When
 the length of a sequence is *n*, the index set contains the numbers 0, 1,
 ..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``. Most sequences,
 including built-in sequences, interpret negative subscripts by adding the
-sequence length. For example, ``a[-1]`` is the last item (``a[n-1]``).
+sequence length (once). For example, ``a[-1]`` is the last item (``a[n-1]``),
+but ``a[-n-1]`` doesn't exit.
 
 .. index:: single: slicing
 
