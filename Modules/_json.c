@@ -1092,17 +1092,22 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
         /* Straight conversion to ASCII, to avoid costly conversion of
            decimal unicode digits (which cannot appear here) */
         n = idx - start;
-        numstr = PyBytes_FromStringAndSize(NULL, n);
-        if (numstr == NULL)
+        PyBytesWriter *writer = PyBytesWriter_Create(n);
+        if (writer == NULL) {
             return NULL;
-        buf = PyBytes_AS_STRING(numstr);
+        }
+        buf = PyBytesWriter_GetData(writer);
         for (i = 0; i < n; i++) {
             buf[i] = (char) PyUnicode_READ(kind, str, i + start);
+        }
+        numstr = PyBytesWriter_Finish(writer);
+        if (numstr == NULL) {
+            return NULL;
         }
         if (is_float)
             rval = PyFloat_FromString(numstr);
         else
-            rval = PyLong_FromString(buf, NULL, 10);
+            rval = PyLong_FromString(PyBytes_AS_STRING(numstr), NULL, 10);
     }
     Py_DECREF(numstr);
     *next_idx_ptr = idx;
