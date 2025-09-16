@@ -4077,42 +4077,167 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(e.a, 2)
         self.assertEqual(C2.__subclasses__(), [D])
 
-        try:
+        with self.assertRaisesRegex(TypeError,
+                    "cannot delete '__bases__' attribute of immutable type"):
             del D.__bases__
-        except (TypeError, AttributeError):
-            pass
-        else:
-            self.fail("shouldn't be able to delete .__bases__")
-
-        try:
+        with self.assertRaisesRegex(TypeError, 'can only assign non-empty tuple'):
             D.__bases__ = ()
-        except TypeError as msg:
-            if str(msg) == "a new-style class can't have only classic bases":
-                self.fail("wrong error message for .__bases__ = ()")
-        else:
-            self.fail("shouldn't be able to set .__bases__ to ()")
-
-        try:
-            D.__bases__ = (D,)
-        except TypeError:
-            pass
-        else:
-            # actually, we'll have crashed by here...
-            self.fail("shouldn't be able to create inheritance cycles")
-
-        try:
+        with self.assertRaisesRegex(TypeError, 'can only assign tuple'):
+            D.__bases__ = [C]
+        with self.assertRaisesRegex(TypeError, 'duplicate base class'):
             D.__bases__ = (C, C)
-        except TypeError:
-            pass
-        else:
-            self.fail("didn't detect repeated base classes")
-
-        try:
+        with self.assertRaisesRegex(TypeError, 'inheritance cycle'):
+            D.__bases__ = (D,)
+        with self.assertRaisesRegex(TypeError, 'inheritance cycle'):
             D.__bases__ = (E,)
-        except TypeError:
+
+        class A:
+            __slots__ = ()
+            def __repr__(self):
+                return '<A>'
+        class A_with_dict:
+            __slots__ = ('__dict__',)
+            def __repr__(self):
+                return '<A_with_dict>'
+        class A_with_dict_weakref:
+            def __repr__(self):
+                return '<A_with_dict_weakref>'
+        class A_with_slots:
+            __slots__ = ('x',)
+            def __repr__(self):
+                return '<A_with_slots>'
+        class A_with_slots_dict:
+            __slots__ = ('x', '__dict__')
+            def __repr__(self):
+                return '<A_with_slots_dict>'
+
+        class B:
+            __slots__ = ()
+        b = B()
+        r = repr(b)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (int,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (A_with_dict_weakref,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (A_with_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (A_with_slots,)
+        B.__bases__ = (A,)
+        self.assertNotHasAttr(b, '__dict__')
+        self.assertNotHasAttr(b, '__weakref__')
+        self.assertEqual(repr(b), '<A>')
+        B.__bases__ = (object,)
+        self.assertEqual(repr(b), r)
+
+        class B_with_dict_weakref:
             pass
-        else:
-            self.fail("shouldn't be able to create inheritance cycles")
+        b = B_with_dict_weakref()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B.__bases__ = (A_with_slots,)
+        B_with_dict_weakref.__bases__ = (A_with_dict_weakref,)
+        self.assertEqual(repr(b), '<A_with_dict_weakref>')
+        B_with_dict_weakref.__bases__ = (A_with_dict,)
+        self.assertEqual(repr(b), '<A_with_dict>')
+        B_with_dict_weakref.__bases__ = (A,)
+        self.assertEqual(repr(b), '<A>')
+        B_with_dict_weakref.__bases__ = (object,)
+
+        class B_with_slots:
+            __slots__ = ('x',)
+        b = B_with_slots()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots.__bases__ = (A_with_dict_weakref,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots.__bases__ = (A_with_dict,)
+        B_with_slots.__bases__ = (A,)
+        self.assertEqual(repr(b), '<A>')
+
+        class B_with_slots_dict:
+            __slots__ = ('x', '__dict__')
+        b = B_with_slots_dict()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots_dict.__bases__ = (A_with_dict_weakref,)
+        B_with_slots_dict.__bases__ = (A_with_dict,)
+        self.assertEqual(repr(b), '<A_with_dict>')
+        B_with_slots_dict.__bases__ = (A,)
+        self.assertEqual(repr(b), '<A>')
+
+        class B_with_slots_dict_weakref:
+            __slots__ = ('x', '__dict__', '__weakref__')
+        b = B_with_slots_dict_weakref()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots_dict_weakref.__bases__ = (A_with_slots_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_with_slots_dict_weakref.__bases__ = (A_with_slots,)
+        B_with_slots_dict_weakref.__bases__ = (A_with_dict_weakref,)
+        self.assertEqual(repr(b), '<A_with_dict_weakref>')
+        B_with_slots_dict_weakref.__bases__ = (A_with_dict,)
+        self.assertEqual(repr(b), '<A_with_dict>')
+        B_with_slots_dict_weakref.__bases__ = (A,)
+        self.assertEqual(repr(b), '<A>')
+
+        class C_with_slots(A_with_slots):
+            __slots__ = ()
+        c = C_with_slots()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots.__bases__ = (A_with_slots_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots.__bases__ = (A_with_dict_weakref,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots.__bases__ = (A_with_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots.__bases__ = (A,)
+        C_with_slots.__bases__ = (A_with_slots,)
+        self.assertEqual(repr(c), '<A_with_slots>')
+
+        class C_with_slots_dict(A_with_slots):
+            pass
+        c = C_with_slots_dict()
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots_dict.__bases__ = (A_with_dict_weakref,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots_dict.__bases__ = (A_with_dict,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            C_with_slots_dict.__bases__ = (A,)
+        C_with_slots_dict.__bases__ = (A_with_slots_dict,)
+        self.assertEqual(repr(c), '<A_with_slots_dict>')
+        C_with_slots_dict.__bases__ = (A_with_slots,)
+        self.assertEqual(repr(c), '<A_with_slots>')
+
+        class A_int(int):
+            __slots__ = ()
+            def __repr__(self):
+                return '<A_int>'
+        class B_int(int):
+            __slots__ = ()
+        b = B_int(42)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_int.__bases__ = (object,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_int.__bases__ = (tuple,)
+        with self.assertRaisesRegex(TypeError, 'is not an acceptable base type'):
+            B_int.__bases__ = (bool,)
+        B_int.__bases__ = (A_int,)
+        self.assertEqual(repr(b), '<A_int>')
+        B_int.__bases__ = (int,)
+        self.assertEqual(repr(b), '42')
+
+        class A_tuple(tuple):
+            __slots__ = ()
+            def __repr__(self):
+                return '<A_tuple>'
+        class B_tuple(tuple):
+            __slots__ = ()
+        b = B_tuple((1, 2))
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_tuple.__bases__ = (object,)
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
+            B_tuple.__bases__ = (int,)
+        B_tuple.__bases__ = (A_tuple,)
+        self.assertEqual(repr(b), '<A_tuple>')
+        B_tuple.__bases__ = (tuple,)
+        self.assertEqual(repr(b), '(1, 2)')
 
     def test_assign_bases_many_subclasses(self):
         # This is intended to check that typeobject.c:queue_slot_update() can
@@ -4165,26 +4290,14 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         class D(C):
             pass
 
-        try:
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
             L.__bases__ = (dict,)
-        except TypeError:
-            pass
-        else:
-            self.fail("shouldn't turn list subclass into dict subclass")
 
-        try:
+        with self.assertRaisesRegex(TypeError, 'immutable type'):
             list.__bases__ = (dict,)
-        except TypeError:
-            pass
-        else:
-            self.fail("shouldn't be able to assign to list.__bases__")
 
-        try:
+        with self.assertRaisesRegex(TypeError, 'layout differs'):
             D.__bases__ = (C, list)
-        except TypeError:
-            pass
-        else:
-            self.fail("best_base calculation found wanting")
 
     def test_unsubclassable_types(self):
         with self.assertRaises(TypeError):
@@ -6011,6 +6124,70 @@ class MroTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             class A(metaclass=M):
                 pass
+
+
+class TestGenericDescriptors(unittest.TestCase):
+    def test___dict__(self):
+        class CustomClass:
+            pass
+        class SlotClass:
+            __slots__ = ['foo']
+        class SlotSubClass(SlotClass):
+            pass
+        class IntSubclass(int):
+            pass
+
+        dict_descriptor = CustomClass.__dict__['__dict__']
+        self.assertEqual(dict_descriptor.__objclass__, object)
+
+        for cls in CustomClass, SlotSubClass, IntSubclass:
+            with self.subTest(cls=cls):
+                self.assertIs(cls.__dict__['__dict__'], dict_descriptor)
+                instance = cls()
+                instance.attr = 123
+                self.assertEqual(
+                    dict_descriptor.__get__(instance, cls),
+                    {'attr': 123},
+                )
+        with self.assertRaises(AttributeError):
+            print(dict_descriptor.__get__(True, bool))
+        with self.assertRaises(AttributeError):
+            print(dict_descriptor.__get__(SlotClass(), SlotClass))
+
+        # delegation to type.__dict__
+        self.assertIsInstance(
+            dict_descriptor.__get__(type, type),
+            types.MappingProxyType,
+        )
+
+    def test___weakref__(self):
+        class CustomClass:
+            pass
+        class SlotClass:
+            __slots__ = ['foo']
+        class SlotSubClass(SlotClass):
+            pass
+        class IntSubclass(int):
+            pass
+
+        weakref_descriptor = CustomClass.__dict__['__weakref__']
+        self.assertEqual(weakref_descriptor.__objclass__, object)
+
+        for cls in CustomClass, SlotSubClass:
+            with self.subTest(cls=cls):
+                self.assertIs(cls.__dict__['__weakref__'], weakref_descriptor)
+                instance = cls()
+                instance.attr = 123
+                self.assertEqual(
+                    weakref_descriptor.__get__(instance, cls),
+                    None,
+                )
+        with self.assertRaises(AttributeError):
+            weakref_descriptor.__get__(True, bool)
+        with self.assertRaises(AttributeError):
+            weakref_descriptor.__get__(SlotClass(), SlotClass)
+        with self.assertRaises(AttributeError):
+            weakref_descriptor.__get__(IntSubclass(), IntSubclass)
 
 
 if __name__ == "__main__":

@@ -1939,6 +1939,9 @@ _PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts) {
         return stmts;
     }
     stmt_ty last_stmt = asdl_seq_GET(stmts, len - 1);
+    if (p->last_stmt_location.lineno > last_stmt->lineno) {
+        return stmts;
+    }
     p->last_stmt_location.lineno = last_stmt->lineno;
     p->last_stmt_location.col_offset = last_stmt->col_offset;
     p->last_stmt_location.end_lineno = last_stmt->end_lineno;
