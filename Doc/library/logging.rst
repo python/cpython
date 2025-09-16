@@ -671,8 +671,7 @@ Formatter Objects
        which is just the logged message.
    :type fmt: str
 
-   :param datefmt: A format string in the given *style* for
-       the date/time portion of the logged output.
+   :param datefmt: A format string for the date/time portion of the logged output.
        If not specified, the default described in :meth:`formatTime` is used.
    :type datefmt: str
 
@@ -680,7 +679,7 @@ Formatter Objects
        how the format string will be merged with its data: using one of
        :ref:`old-string-formatting` (``%``), :meth:`str.format` (``{``)
        or :class:`string.Template` (``$``). This only applies to
-       *fmt* and *datefmt* (e.g. ``'%(message)s'`` versus ``'{message}'``),
+       *fmt* (e.g. ``'%(message)s'`` versus ``'{message}'``),
        not to the actual log messages passed to the logging methods.
        However, there are :ref:`other ways <formatting-styles>`
        to use ``{``- and ``$``-formatting for log messages.
