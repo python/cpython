@@ -1,2 +1,2 @@
-Improved ``license()``/``copyright()``/``credits()`` display in the REPL
-to use a pager.
+Improved :data:`license`/:data:`copyright`/:data:`credits` display in the
+:term:`REPL`: now uses a pager.
