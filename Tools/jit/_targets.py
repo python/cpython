@@ -50,7 +50,7 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     verbose: bool = False
     cflags: str = ""
-    llvm_version: str = ""
+    llvm_version: str = _llvm._LLVM_VERSION
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
     pyconfig_dir: pathlib.Path = pathlib.Path.cwd().resolve()
 

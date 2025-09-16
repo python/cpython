@@ -96,24 +96,24 @@ async def _find_tool(tool: str, llvm_version: str, *, echo: bool = False) -> str
 
 
 async def maybe_run(
-    tool: str, args: typing.Iterable[str], echo: bool = False, llvm_version: str = ""
+    tool: str,
+    args: typing.Iterable[str],
+    echo: bool = False,
+    llvm_version: str = _LLVM_VERSION,
 ) -> str | None:
     """Run an LLVM tool if it can be found. Otherwise, return None."""
-
-    if not llvm_version:
-        llvm_version = _LLVM_VERSION
 
     path = await _find_tool(tool, llvm_version, echo=echo)
     return path and await _run(path, args, echo=echo)
 
 
 async def run(
-    tool: str, args: typing.Iterable[str], echo: bool = False, llvm_version: str = ""
+    tool: str,
+    args: typing.Iterable[str],
+    echo: bool = False,
+    llvm_version: str = _LLVM_VERSION,
 ) -> str:
     """Run an LLVM tool if it can be found. Otherwise, raise RuntimeError."""
-
-    if not llvm_version:
-        llvm_version = _LLVM_VERSION
 
     output = await maybe_run(tool, args, echo=echo, llvm_version=llvm_version)
     if output is None:
