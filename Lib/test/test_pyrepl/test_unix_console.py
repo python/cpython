@@ -313,7 +313,6 @@ class TestUnixConsoleEIOHandling(TestCase):
 
     @patch('_pyrepl.unix_console.tcsetattr')
     @patch('_pyrepl.unix_console.tcgetattr')
-    @unittest.skipUnless(sys.platform == "linux", "Only valid on Linux")
     def test_eio_error_handling_in_restore(self, mock_tcgetattr, mock_tcsetattr):
 
         import termios
