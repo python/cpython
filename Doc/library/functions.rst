@@ -12,32 +12,33 @@ are always available.  They are listed here in alphabetical order.
 +=========================+=======================+=======================+=========================+
 | |  **A**                | |  **E**              | |  **L**              | |  **R**                |
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
-| |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
-| |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`anext`        | |                     | |                     | |  :func:`round`        |
-| |  :func:`any`          | |  **F**              | |  **M**              | |                       |
-| |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
-| |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
-| |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
-| |  :func:`bin`          | |  |func-frozenset|_  | |  :func:`min`        | |  :func:`slice`        |
-| |  :func:`bool`         | |                     | |                     | |  :func:`sorted`       |
-| |  :func:`breakpoint`   | |  **G**              | |  **N**              | |  :func:`staticmethod` |
-| |  |func-bytearray|_    | |  :func:`getattr`    | |  :func:`next`       | |  |func-str|_          |
-| |  |func-bytes|_        | |  :func:`globals`    | |                     | |  :func:`sum`          |
-| |                       | |                     | |  **O**              | |  :func:`super`        |
-| |  **C**                | |  **H**              | |  :func:`object`     | |                       |
-| |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`oct`        | |  **T**                |
-| |  :func:`chr`          | |  :func:`hash`       | |  :func:`open`       | |  |func-tuple|_        |
-| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`ord`        | |  :func:`type`         |
-| |  :func:`compile`      | |  :func:`hex`        | |                     | |                       |
-| |  :func:`complex`      | |                     | |  **P**              | |  **V**                |
-| |                       | |  **I**              | |  :func:`pow`        | |  :func:`vars`         |
-| |  **D**                | |  :func:`id`         | |  :func:`print`      | |                       |
-| |  :func:`delattr`      | |  :func:`input`      | |  :func:`property`   | |  **Z**                |
-| |  |func-dict|_         | |  :func:`int`        | |                     | |  :func:`zip`          |
-| |  :func:`dir`          | |  :func:`isinstance` | |                     | |                       |
-| |  :func:`divmod`       | |  :func:`issubclass` | |                     | |  **_**                |
-| |                       | |  :func:`iter`       | |                     | |  :func:`__import__`   |
+| |  :func:`aiter`        | |  :func:`eval`       | |  :func:`license`    | |  :func:`repr`         |
+| |  :func:`all`          | |  :func:`exec`       | |  |func-list|_       | |  :func:`reversed`     |
+| |  :func:`anext`        | |                     | |  :func:`locals`     | |  :func:`round`        |
+| |  :func:`any`          | |  **F**              | |                     | |                       |
+| |  :func:`ascii`        | |  :func:`filter`     | |  **M**              | |  **S**                |
+| |                       | |  :func:`float`      | |  :func:`map`        | |  |func-set|_          |
+| |  **B**                | |  :func:`format`     | |  :func:`max`        | |  :func:`setattr`      |
+| |  :func:`bin`          | |  |func-frozenset|_  | |  |func-memoryview|_ | |  :func:`slice`        |
+| |  :func:`bool`         | |                     | |  :func:`min`        | |  :func:`sorted`       |
+| |  :func:`breakpoint`   | |  **G**              | |                     | |  :func:`staticmethod` |
+| |  |func-bytearray|_    | |  :func:`getattr`    | |  **N**              | |  |func-str|_          |
+| |  |func-bytes|_        | |  :func:`globals`    | |  :func:`next`       | |  :func:`sum`          |
+| |                       | |                     | |                     | |  :func:`super`        |
+| |  **C**                | |  **H**              | |  **O**              | |                       |
+| |  :func:`callable`     | |  :func:`hasattr`    | |  :func:`object`     | |  **T**                |
+| |  :func:`chr`          | |  :func:`hash`       | |  :func:`oct`        | |  |func-tuple|_        |
+| |  :func:`classmethod`  | |  :func:`help`       | |  :func:`open`       | |  :func:`type`         |
+| |  :func:`compile`      | |  :func:`hex`        | |  :func:`ord`        | |                       |
+| |  :func:`complex`      | |                     | |                     | |  **V**                |
+| |  :func:`copyright`    | |  **I**              | |  **P**              | |  :func:`vars`         |
+| |  :func:`credits`      | |  :func:`id`         | |  :func:`pow`        | |                       |
+| |                       | |  :func:`input`      | |  :func:`print`      | |  **Z**                |
+| |  **D**                | |  :func:`int`        | |  :func:`property`   | |  :func:`zip`          |
+| |  :func:`delattr`      | |  :func:`isinstance` | |                     | |                       |
+| |  |func-dict|_         | |  :func:`issubclass` | |                     | |  **_**                |
+| |  :func:`dir`          | |  :func:`iter`       | |                     | |  :func:`__import__`   |
+| |  :func:`divmod`       | |                     | |                     | |                       |
 +-------------------------+-----------------------+-----------------------+-------------------------+
 
 .. using :func:`dict` would create a link to another page, so local targets are
