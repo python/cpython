@@ -863,6 +863,10 @@ pycore_interp_init(PyThreadState *tstate)
     if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
+#ifdef _Py_TIER2
+     // Ensure the buffer is to be set as NULL for MSVC
+    _tstate->buffer = NULL;
+#endif
     PyInterpreterState *interp = tstate->interp;
     PyStatus status;
     PyObject *sysmod = NULL;
