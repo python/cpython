@@ -533,10 +533,6 @@ Functions
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
    |           | exists). Deprecated. [1]_                      |       |
    +-----------+------------------------------------------------+-------+
-   | ``%:z``   | Behaves exactly as ``%z``, but has a colon     | \(5)  |
-   |           | separator added between hours, minutes and     |       |
-   |           | seconds.                                       |       |
-   +-----------+------------------------------------------------+-------+
    | ``%G``    | ISO 8601 year (similar to ``%Y`` but follows   |       |
    |           | the rules for the ISO 8601 calendar year).     |       |
    |           | The year starts with the week that contains    |       |
@@ -573,16 +569,6 @@ Functions
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
       calculations when the day of the week and the year are specified.
 
-   (5)
-      When used with :func:`strftime`, behaves exactly as ``%z``, except that
-      a colon separator is added between hours, minutes and seconds.
-
-      When used with :func:`strptime`, the UTC offset is *required* to have a
-      colon as a separator between hours, minutes and seconds.
-      For example, ``'+01:00:00'`` (but *not* ``'+010000'``) will be parsed as
-      an offset of one hour. In addition, providing ``'Z'`` is identical to
-      ``'+00:00'``.
-
    Here is an example, a format for dates compatible with that specified  in the
    :rfc:`2822` Internet email standard.  [1]_ ::
 
@@ -599,12 +585,6 @@ Functions
    immediately follow the initial ``'%'`` of a directive in the following order;
    this is also not portable. The field width is normally 2 except for ``%j`` where
    it is 3.
-
-   .. versionadded:: 3.12
-      ``%:z`` was added for :func:`strftime`
-
-   .. versionadded:: next
-      ``%:z`` was added for :func:`strptime`
 
 
 .. index::
