@@ -2071,55 +2071,8 @@ turtle
   (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
 
 
-types
------
-
-* :class:`types.UnionType` is now an alias for :class:`typing.Union`.
-  See :ref:`below <whatsnew314-typing-union>` for more details.
-  (Contributed by Jelle Zijlstra in :gh:`105499`.)
-
-
 typing
 ------
-
-.. _whatsnew314-typing-union:
-
-* :class:`types.UnionType` and :class:`typing.Union` are now aliases for each other,
-  meaning that both old-style unions (created with ``Union[int, str]``) and new-style
-  unions (``int | str``) now create instances of the same runtime type. This unifies
-  the behavior between the two syntaxes, but leads to some differences in behavior that
-  may affect users who introspect types at runtime:
-
-  - Both syntaxes for creating a union now produce the same string representation in
-    ``repr()``. For example, ``repr(Union[int, str])``
-    is now ``"int | str"`` instead of ``"typing.Union[int, str]"``.
-  - Unions created using the old syntax are no longer cached. Previously, running
-    ``Union[int, str]`` multiple times would return the same object
-    (``Union[int, str] is Union[int, str]`` would be ``True``), but now it will
-    return two different objects. Users should use ``==`` to compare unions for equality, not
-    ``is``. New-style unions have never been cached this way.
-    This change could increase memory usage for some programs that use a large number of
-    unions created by subscripting ``typing.Union``. However, several factors offset this cost:
-    unions used in annotations are no longer evaluated by default in Python 3.14
-    because of :pep:`649`; an instance of :class:`types.UnionType` is
-    itself much smaller than the object returned by ``Union[]`` was on prior Python
-    versions; and removing the cache also saves some space. It is therefore
-    unlikely that this change will cause a significant increase in memory usage for most
-    users.
-  - Previously, old-style unions were implemented using the private class
-    ``typing._UnionGenericAlias``. This class is no longer needed for the implementation,
-    but it has been retained for backward compatibility, with removal scheduled for Python
-    3.17. Users should use documented introspection helpers like :func:`typing.get_origin`
-    and :func:`typing.get_args` instead of relying on private implementation details.
-  - It is now possible to use :class:`typing.Union` itself in :func:`isinstance` checks.
-    For example, ``isinstance(int | str, typing.Union)`` will return ``True``; previously
-    this raised :exc:`TypeError`.
-  - The ``__args__`` attribute of :class:`typing.Union` objects is no longer writable.
-  - It is no longer possible to set any attributes on :class:`typing.Union` objects.
-    This only ever worked for dunder attributes on previous versions, was never
-    documented to work, and was subtly broken in many cases.
-
-  (Contributed by Jelle Zijlstra in :gh:`105499`.)
 
 * :class:`typing.TypeAliasType` now supports star unpacking.
 
@@ -3188,11 +3141,6 @@ Changes in the Python API
   locale in some cases.
   This temporary change affects other threads.
   (Contributed by Serhiy Storchaka in :gh:`69998`.)
-
-* :class:`types.UnionType` is now an alias for :class:`typing.Union`,
-  causing changes in some behaviors.
-  See :ref:`above <whatsnew314-typing-union>` for more details.
-  (Contributed by Jelle Zijlstra in :gh:`105499`.)
 
 * The runtime behavior of annotations has changed in various ways; see
   :ref:`above <whatsnew314-pep649>` for details. While most code that interacts

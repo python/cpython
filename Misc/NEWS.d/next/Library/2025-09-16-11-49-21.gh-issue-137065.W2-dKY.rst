@@ -1,0 +1,2 @@
+Revert :gh:`105499`. Restore :data:`typing.Union` and
+:class:`types.UnionType`.

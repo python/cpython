@@ -509,7 +509,7 @@ class TypeVarTests(BaseTestCase):
 
     def test_bound_errors(self):
         with self.assertRaises(TypeError):
-            TypeVar('X', bound=Optional)
+            TypeVar('X', bound=Union)
         with self.assertRaises(TypeError):
             TypeVar('X', str, float, bound=Employee)
         with self.assertRaisesRegex(TypeError,
@@ -549,7 +549,7 @@ class TypeVarTests(BaseTestCase):
     def test_bad_var_substitution(self):
         T = TypeVar('T')
         bad_args = (
-            (), (int, str), Optional,
+            (), (int, str), Union,
             Generic, Generic[T], Protocol, Protocol[T],
             Final, Final[int], ClassVar, ClassVar[int],
         )
@@ -2056,6 +2056,10 @@ class UnionTests(BaseTestCase):
 
     def test_union_issubclass_type_error(self):
         with self.assertRaises(TypeError):
+            issubclass(int, Union)
+        with self.assertRaises(TypeError):
+            issubclass(Union, int)
+        with self.assertRaises(TypeError):
             issubclass(Union[int, str], int)
         with self.assertRaises(TypeError):
             issubclass(int, Union[str, list[int]])
@@ -2129,40 +2133,41 @@ class UnionTests(BaseTestCase):
 
         self.assertEqual(Union[A, B].__args__, (A, B))
         union1 = Union[A, B]
-        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+        with self.assertRaises(TypeError):
             hash(union1)
 
         union2 = Union[int, B]
-        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+        with self.assertRaises(TypeError):
             hash(union2)
 
         union3 = Union[A, int]
-        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
+        with self.assertRaises(TypeError):
             hash(union3)
 
     def test_repr(self):
+        self.assertEqual(repr(Union), 'typing.Union')
         u = Union[Employee, int]
-        self.assertEqual(repr(u), f'{__name__}.Employee | int')
+        self.assertEqual(repr(u), 'typing.Union[%s.Employee, int]' % __name__)
         u = Union[int, Employee]
-        self.assertEqual(repr(u), f'int | {__name__}.Employee')
+        self.assertEqual(repr(u), 'typing.Union[int, %s.Employee]' % __name__)
         T = TypeVar('T')
         u = Union[T, int][int]
         self.assertEqual(repr(u), repr(int))
         u = Union[List[int], int]
-        self.assertEqual(repr(u), 'typing.List[int] | int')
+        self.assertEqual(repr(u), 'typing.Union[typing.List[int], int]')
         u = Union[list[int], dict[str, float]]
-        self.assertEqual(repr(u), 'list[int] | dict[str, float]')
+        self.assertEqual(repr(u), 'typing.Union[list[int], dict[str, float]]')
         u = Union[int | float]
-        self.assertEqual(repr(u), 'int | float')
+        self.assertEqual(repr(u), 'typing.Union[int, float]')
 
         u = Union[None, str]
-        self.assertEqual(repr(u), 'None | str')
+        self.assertEqual(repr(u), 'typing.Optional[str]')
         u = Union[str, None]
-        self.assertEqual(repr(u), 'str | None')
+        self.assertEqual(repr(u), 'typing.Optional[str]')
         u = Union[None, str, int]
-        self.assertEqual(repr(u), 'None | str | int')
+        self.assertEqual(repr(u), 'typing.Union[NoneType, str, int]')
         u = Optional[str]
-        self.assertEqual(repr(u), 'str | None')
+        self.assertEqual(repr(u), 'typing.Optional[str]')
 
     def test_dir(self):
         dir_items = set(dir(Union[str, int]))
@@ -2174,11 +2179,14 @@ class UnionTests(BaseTestCase):
 
     def test_cannot_subclass(self):
         with self.assertRaisesRegex(TypeError,
-                r"type 'typing\.Union' is not an acceptable base type"):
+                r'Cannot subclass typing\.Union'):
             class C(Union):
                 pass
+        with self.assertRaisesRegex(TypeError, CANNOT_SUBCLASS_TYPE):
+            class D(type(Union)):
+                pass
         with self.assertRaisesRegex(TypeError,
-                r'Cannot subclass int \| str'):
+                r'Cannot subclass typing\.Union\[int, str\]'):
             class E(Union[int, str]):
                 pass
 
@@ -2224,7 +2232,8 @@ class UnionTests(BaseTestCase):
 
     def test_function_repr_union(self):
         def fun() -> int: ...
-        self.assertEqual(repr(Union[fun, int]), f'{__name__}.{fun.__qualname__} | int')
+        self.assertEqual(repr(Union[fun, int]),
+                         f'typing.Union[{__name__}.{fun.__qualname__}, int]')
 
     def test_union_str_pattern(self):
         # Shouldn't crash; see http://bugs.python.org/issue25390
@@ -5046,11 +5055,11 @@ class GenericTests(BaseTestCase):
     def test_extended_generic_rules_repr(self):
         T = TypeVar('T')
         self.assertEqual(repr(Union[Tuple, Callable]).replace('typing.', ''),
-                         'Tuple | Callable')
+                         'Union[Tuple, Callable]')
         self.assertEqual(repr(Union[Tuple, Tuple[int]]).replace('typing.', ''),
-                         'Tuple | Tuple[int]')
+                         'Union[Tuple, Tuple[int]]')
         self.assertEqual(repr(Callable[..., Optional[T]][int]).replace('typing.', ''),
-                         'Callable[..., int | None]')
+                         'Callable[..., Optional[int]]')
         self.assertEqual(repr(Callable[[], List[T]][int]).replace('typing.', ''),
                          'Callable[[], List[int]]')
 
@@ -5230,9 +5239,9 @@ class GenericTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(Tuple[int, ...], typing.Iterable)
 
-    def test_fail_with_special_forms(self):
+    def test_fail_with_bare_union(self):
         with self.assertRaises(TypeError):
-            List[Final]
+            List[Union]
         with self.assertRaises(TypeError):
             Tuple[Optional]
         with self.assertRaises(TypeError):
@@ -5776,6 +5785,8 @@ class GenericTests(BaseTestCase):
         for obj in (
             ClassVar[int],
             Final[int],
+            Union[int, float],
+            Optional[int],
             Literal[1, 2],
             Concatenate[int, ParamSpec("P")],
             TypeGuard[int],
@@ -5807,7 +5818,7 @@ class GenericTests(BaseTestCase):
             __parameters__ = (T,)
         # Bare classes should be skipped
         for a in (List, list):
-            for b in (A, int, TypeVar, TypeVarTuple, ParamSpec, types.GenericAlias, Union):
+            for b in (A, int, TypeVar, TypeVarTuple, ParamSpec, types.GenericAlias, types.UnionType):
                 with self.subTest(generic=a, sub=b):
                     with self.assertRaisesRegex(TypeError, '.* is not a generic class'):
                         a[b][str]
@@ -5826,7 +5837,7 @@ class GenericTests(BaseTestCase):
 
         for s in (int, G, A, List, list,
                   TypeVar, TypeVarTuple, ParamSpec,
-                  types.GenericAlias, Union):
+                  types.GenericAlias, types.UnionType):
 
             for t in Tuple, tuple:
                 with self.subTest(tuple=t, sub=s):
@@ -7195,7 +7206,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(Callable), collections.abc.Callable)
         self.assertIs(get_origin(list[int]), list)
         self.assertIs(get_origin(list), None)
-        self.assertIs(get_origin(list | str), Union)
+        self.assertIs(get_origin(list | str), types.UnionType)
         self.assertIs(get_origin(P.args), P)
         self.assertIs(get_origin(P.kwargs), P)
         self.assertIs(get_origin(Required[int]), Required)
@@ -10524,6 +10535,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.TypeGuard: 'TypeGuard',
             typing.TypeIs: 'TypeIs',
             typing.TypeVar: 'TypeVar',
+            typing.Union: 'Union',
             typing.Self: 'Self',
             # Subscripted special forms
             typing.Annotated[Any, "Annotation"]: 'Annotated',
@@ -10534,7 +10546,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.Literal[Any]: 'Literal',
             typing.Literal[1, 2]: 'Literal',
             typing.Literal[True, 2]: 'Literal',
-            typing.Optional[Any]: 'Union',
+            typing.Optional[Any]: 'Optional',
             typing.TypeGuard[Any]: 'TypeGuard',
             typing.TypeIs[Any]: 'TypeIs',
             typing.Union[Any]: 'Any',
@@ -10553,10 +10565,7 @@ class SpecialAttrsTests(BaseTestCase):
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     s = pickle.dumps(cls, proto)
                     loaded = pickle.loads(s)
-                    if isinstance(cls, Union):
-                        self.assertEqual(cls, loaded)
-                    else:
-                        self.assertIs(cls, loaded)
+                    self.assertIs(cls, loaded)
 
     TypeName = typing.NewType('SpecialAttrsTests.TypeName', Any)
 
@@ -10829,37 +10838,6 @@ class TypeIterationTests(BaseTestCase):
     def test_is_not_instance_of_iterable(self):
         for type_to_test in self._UNITERABLE_TYPES:
             self.assertNotIsInstance(type_to_test, collections.abc.Iterable)
-
-
-class UnionGenericAliasTests(BaseTestCase):
-    def test_constructor(self):
-        # Used e.g. in typer, pydantic
-        with self.assertWarns(DeprecationWarning):
-            inst = typing._UnionGenericAlias(typing.Union, (int, str))
-        self.assertEqual(inst, int | str)
-        with self.assertWarns(DeprecationWarning):
-            # name is accepted but ignored
-            inst = typing._UnionGenericAlias(typing.Union, (int, None), name="Optional")
-        self.assertEqual(inst, int | None)
-
-    def test_isinstance(self):
-        # Used e.g. in pydantic
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(isinstance(Union[int, str], typing._UnionGenericAlias))
-        with self.assertWarns(DeprecationWarning):
-            self.assertFalse(isinstance(int, typing._UnionGenericAlias))
-
-    def test_eq(self):
-        # type(t) == _UnionGenericAlias is used in vyos
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(Union, typing._UnionGenericAlias)
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(typing._UnionGenericAlias, typing._UnionGenericAlias)
-        with self.assertWarns(DeprecationWarning):
-            self.assertNotEqual(int, typing._UnionGenericAlias)
-
-    def test_hashable(self):
-        self.assertEqual(hash(typing._UnionGenericAlias), hash(Union))
 
 
 def load_tests(loader, tests, pattern):

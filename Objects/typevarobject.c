@@ -4,7 +4,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
-#include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
+#include "pycore_unionobject.h"   // _Py_union_type_or
 #include "structmember.h"
 
 /*[clinic input]
@@ -372,13 +372,9 @@ type_check(PyObject *arg, const char *msg)
 static PyObject *
 make_union(PyObject *self, PyObject *other)
 {
-    PyObject *args = PyTuple_Pack(2, self, other);
-    if (args == NULL) {
-        return NULL;
-    }
-    PyObject *u = _Py_union_from_tuple(args);
-    Py_DECREF(args);
-    return u;
+    PyObject *args[2] = {self, other};
+    PyObject *result = call_typing_func_object("_make_union", args, 2);
+    return result;
 }
 
 static PyObject *
