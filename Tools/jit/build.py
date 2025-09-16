@@ -49,7 +49,8 @@ if __name__ == "__main__":
         target.force = args.force
         target.verbose = args.verbose
         target.cflags = args.cflags
-        target.llvm_version = args.llvm_version
+        if args.llvm_version:
+            target.llvm_version = args.llvm_version
         target.pyconfig_dir = args.pyconfig_dir
         target.build(
             comment=comment,
