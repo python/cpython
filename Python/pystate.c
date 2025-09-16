@@ -556,11 +556,6 @@ init_interpreter(PyInterpreterState *interp,
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif
-
-#ifdef _Py_TIER2
-     // Ensure the buffer is to be set as NULL.
-    interp->jit_uop_buffer = NULL;
-#endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
     interp->asyncio_tasks_lock = (PyMutex){0};
