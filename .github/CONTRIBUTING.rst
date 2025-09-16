@@ -34,17 +34,18 @@ our workflow that are not covered by a bot or status check are:
 - All discussions that are not directly related to the code in the pull request
   should happen on `GitHub Issues <https://github.com/python/cpython/issues>`_.
 - Upon your first non-trivial pull request (which includes documentation changes),
-  feel free to add yourself to ``Misc/ACKS``
+  feel free to add yourself to `Misc/ACKS <https://github.com/python/cpython/blob/main/Misc/ACKS>`_.
 
 
 Setting Expectations
 --------------------
-Due to the fact that this project is entirely volunteer-run (i.e. no one is paid
-to work on Python full-time), we unfortunately can make no guarantees as to if
+Due to the fact that this project is primarily volunteer-run,
+we unfortunately can make no guarantees as to if
 or when a core developer will get around to reviewing your pull request.
 If no core developer has done a review or responded to changes made because of a
-"changes requested" review, please feel free to email python-dev to ask if
-someone could take a look at your pull request.
+"changes requested" review, you can post on the `Core Development Discourse
+category <https://discuss.python.org/c/core-dev/23>`_ to ask for someone to
+review your pull request.
 
 
 Code of Conduct
