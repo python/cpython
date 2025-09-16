@@ -1902,28 +1902,28 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
 
     Py_ssize_t M, L, R;
     Py_ssize_t nsorted = ok;
-    Py_ssize_t diff_new;
-    Py_ssize_t diff = ok;       // jump (jump out on 1st loop to not kick in)
-    Py_ssize_t last = ok >> 1;  // mid point (simple binary on 1st loop)
-    Py_ssize_t ns = 0;          // number of successes (a bit of head start)
+    Py_ssize_t last = ok >> 1;
+    Py_ssize_t std = ok >> 2;
+    Py_ssize_t mu = last;
+    Py_ssize_t nb = 0;          // badness of fit
 
     if (adapt) {
         for (; ok < n; ++ok) {
             pivot = a[ok];
 
-            IFLT(pivot, a[last]) {
+            IFLT(pivot, a[mu]) {
                 L = 0;
-                R = last;
+                R = mu;
                 if (L < R) {
                     // To not affect diff for measure counting
-                    diff_new = diff + (diff == 0);
-                    M = R - diff_new;
+                    std += (std == 0);
+                    M = R - std;
                     if (M < L)
                         M = L;
                     IFLT(pivot, a[M]) {
                         R = M;
                         if (L < R) {
-                            M = R - diff_new;
+                            M = R - std;
                             if (M < L)
                                 M = L;
                             IFLT(pivot, a[M])
@@ -1938,10 +1938,10 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
                 }
             }
             else {
-                L = last + 1;
+                L = mu + 1;
                 R = ok;
                 if (L < R) {
-                    M = L + diff;
+                    M = L + std;
                     if (M >= R)
                         M = R - 1;
                     IFLT(pivot, a[M]) {
@@ -1950,7 +1950,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
                     else {
                         L = M + 1;
                         if (L < R) {
-                            M = L + diff;
+                            M = L + std;
                             if (M >= R)
                                 M = R - 1;
                             IFLT(pivot, a[M])
@@ -1982,9 +1982,10 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
             }
 
             // Update Adaptive runvars
-            diff_new = L < last ? last - L : L - last;
-            ns += diff_new < diff ? diff - diff_new : diff_new - diff;
-            diff = diff_new;
+            std = L < mu ? mu - L : L - mu;
+            nb += std;
+            mu = L + L - last;
+            mu = mu < 0 ? 0 : mu > ok ? ok : mu;
             last = L;
         }
     }
@@ -2014,15 +2015,16 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
             }
 
             // Update Adaptive runvars
-            diff_new = L < last ? last - L : L - last;
-            ns += diff_new < diff ? diff - diff_new : diff_new - diff;
-            diff = diff_new;
+            std = L < mu ? mu - L : L - mu;
+            nb += std;
+            mu = L + L - last;
+            mu = mu < 0 ? 0 : mu > ok ? ok : mu;
             last = L;
         }
     }
 
     // Return Adaptivity measure (max 1000)
-    return ns * 2000 / ((n + 2 * nsorted - 1) * n);
+    return nb * 2000 / ((n + 2 * nsorted - 1) * n);
 
  fail:
     return -1;
@@ -3216,10 +3218,12 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     /* March over the array once, left to right, finding natural runs,
      * and extending short natural runs to minrun elements.
      */
-    int binary_adapt = 1;
     // NOTE: Could turn on based on minlen or comparison type
+    int binary_adapt = ms.listlen >= 100;
     if (binary_adapt) {
         int adapt = 0;  // do not run binarysort adaptivity on 1st run
+        Py_ssize_t cs = 0;
+        Py_ssize_t cd = 1;
         do {
             /* Identify next run. */
             Py_ssize_t n;
@@ -3231,11 +3235,27 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             if (n < minrun) {
                 const Py_ssize_t force = nremaining <= minrun ?
                                   nremaining : minrun;
-                Py_ssize_t bres;
-                bres = abinarysort(&ms, &lo, force, n, adapt);
-                if (bres < 0)
-                    goto fail;
-                adapt = bres < 125;
+                if (cs) {
+                    if (binarysort(&ms, &lo, force, n) < 0)
+                        goto fail;
+                    cs -= 1;
+                }
+                else {
+                    Py_ssize_t bres;
+                    bres = abinarysort(&ms, &lo, force, n, adapt);
+                    if (bres < 0)
+                        goto fail;
+                    adapt = bres < 250;
+                    if (adapt) {
+                        cd = 1;
+                    }
+                    else {
+                        cd += 2;
+                        if (cd > 11)
+                            cd = 11;
+                        cs = cd;
+                    }
+                }
                 n = force;
             }
             else {
