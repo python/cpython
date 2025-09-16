@@ -70,7 +70,8 @@ def generate_data(
     #data['base_interpreter'] = sys._base_executable
     if os.name == 'nt':
         data['base_interpreter'] = os.path.join(
-            data['base_prefix'], os.path.basename(sys._base_executable)
+            data['base_prefix'],
+            os.path.basename(sys._base_executable),  # type: ignore[attr-defined]
         )
     else:
         data['base_interpreter'] = os.path.join(
@@ -166,7 +167,7 @@ def generate_data(
     return data
 
 
-def make_paths_relative(data: dict[str, Any], base_path: str | None = None) -> None:
+def make_paths_relative(data: dict[str, Any], base_path: StrPath | None = None) -> None:
     base_prefix = data['base_prefix']
 
     # Update path values to make them relative to base_prefix
@@ -211,7 +212,7 @@ def relative_path(path: StrPath, base: StrPath) -> str:
     if path_drv.lower() == base_drv.lower():
         return os.path.relpath(path, base)
 
-    return path
+    return os.fspath(path)
 
 
 def main() -> None:
