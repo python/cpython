@@ -605,10 +605,10 @@ def main():
             # gh-138775: read input data at once when reading from stdin.
             import io
             data = sys.stdin.buffer.read()
-            func(io.BytesIO(data), sys.stdout.buffer)
+            buffer = io.BytesIO(data)
         else:
-            # keep the old behaviour for non-interactive input
-            func(sys.stdin.buffer, sys.stdout.buffer)
+            buffer = sys.stdin.buffer
+        func(buffer, sys.stdout.buffer)
 
 
 if __name__ == '__main__':
