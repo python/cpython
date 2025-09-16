@@ -39,6 +39,7 @@ OPTIONS = {
     "install-json": {"help": "a PyManager __install__.json file"},
     "install-embed-json": {"help": "a PyManager __install__.json file for embeddable distro"},
     "install-test-json": {"help": "a PyManager __install__.json for the test distro"},
+    "build-details-json": {"help": "a PEP 739 build-details.json file"},
 }
 
 
@@ -56,6 +57,7 @@ PRESETS = {
             "appxmanifest",
             "alias",
             "alias3x",
+            "build-details-json",
             # XXX: Disabled for now "precompile",
         ],
     },
@@ -69,9 +71,10 @@ PRESETS = {
             "props",
             "nuspec",
             "alias",
+            "build-details-json",
         ],
     },
-    "iot": {"help": "Windows IoT Core", "options": ["alias", "stable", "pip"]},
+    "iot": {"help": "Windows IoT Core", "options": ["alias", "stable", "pip", "build-details-json"]},
     "default": {
         "help": "development kit package",
         "options": [
@@ -85,6 +88,7 @@ PRESETS = {
             "symbols",
             "html-doc",
             "alias",
+            "build-details-json",
         ],
     },
     "embed": {
@@ -96,6 +100,7 @@ PRESETS = {
             "flat-dlls",
             "underpth",
             "precompile",
+            "build-details-json",
         ],
     },
     "pymanager": {
@@ -109,6 +114,7 @@ PRESETS = {
             "dev",
             "html-doc",
             "install-json",
+            "build-details-json",
         ],
     },
     "pymanager-test": {
@@ -124,6 +130,7 @@ PRESETS = {
             "symbols",
             "tests",
             "install-test-json",
+            "build-details-json",
         ],
     },
 }

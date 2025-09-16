@@ -130,7 +130,7 @@
     <Message Text="Generating $(OutDir)build-details.json" />
     <Exec Command='setlocal
 set PYTHONPATH=$(PySourcePath)Lib
-"$(OutDir)$(PyExeName)$(PyDebugExt).exe" "$(PySourcePath)Tools\build\generate-build-details.py" "$(OutDir)build-details.json"' ContinueOnError="true" />
+"$(OutDir)$(PyExeName)$(PyDebugExt).exe" "$(PySourcePath)Tools\build\generate_build_details.py" "$(OutDir)build-details.json"' ContinueOnError="true" />
   </Target>
   <Target Name="ValidateUcrtbase" AfterTargets="AfterBuild" Condition="$(Configuration) != 'PGInstrument' and $(Platform) != 'ARM' and $(Platform) != 'ARM64'">
     <PropertyGroup>
