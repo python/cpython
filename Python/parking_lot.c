@@ -91,8 +91,8 @@ _PySemaphore_Destroy(_PySemaphore *sema)
 #endif
 }
 
-int
-_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout)
+static int
+_PySemaphore_PlatformWait(_PySemaphore *sema, PyTime_t timeout)
 {
     int res;
 #if defined(MS_WINDOWS)
@@ -225,6 +225,27 @@ _PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout)
     return res;
 }
 
+int
+_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout, int detach)
+{
+    PyThreadState *tstate = NULL;
+    if (detach) {
+        tstate = _PyThreadState_GET();
+        if (tstate && _PyThreadState_IsAttached(tstate)) {
+            // Only detach if we are attached
+            PyEval_ReleaseThread(tstate);
+        }
+        else {
+            tstate = NULL;
+        }
+    }
+    int res = _PySemaphore_PlatformWait(sema, timeout);
+    if (tstate) {
+        PyEval_AcquireThread(tstate);
+    }
+    return res;
+}
+
 void
 _PySemaphore_Wakeup(_PySemaphore *sema)
 {
@@ -333,7 +354,7 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
         }
     }
 
-    int res = _PySemaphore_Wait(&wait.sema, timeout_ns);
+    int res = _PySemaphore_Wait(&wait.sema, timeout_ns, 0);
     if (res == Py_PARK_OK) {
         goto done;
     }
@@ -345,7 +366,7 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
         // Another thread has started to unpark us. Wait until we process the
         // wakeup signal.
         do {
-            res = _PySemaphore_Wait(&wait.sema, -1);
+            res = _PySemaphore_Wait(&wait.sema, -1, 0);
         } while (res != Py_PARK_OK);
         goto done;
     }
