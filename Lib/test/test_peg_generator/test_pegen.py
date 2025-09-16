@@ -1106,3 +1106,66 @@ class TestGrammarVisualizer(unittest.TestCase):
         )
 
         self.assertEqual(output, expected_output)
+
+    def test_rule_flags(self) -> None:
+        """Test the new rule flags syntax that accepts arbitrary lists of flags."""
+        # Test grammar with various flag combinations
+        grammar_source = """
+        start: simple_rule
+
+        simple_rule (memo):
+            | "hello"
+
+        multi_flag_rule (memo, custom, test):
+            | "world"
+
+        single_custom_flag (custom):
+            | "test"
+
+        no_flags_rule:
+            | "plain"
+        """
+
+        grammar: Grammar = parse_string(grammar_source, GrammarParser)
+        rules = grammar.rules
+
+        # Test memo-only rule
+        simple_rule = rules['simple_rule']
+        self.assertTrue(simple_rule.memo, "simple_rule should have memo=True")
+        self.assertEqual(simple_rule.flags, frozenset(['memo']),
+                        f"simple_rule flags should be ['memo'], got {simple_rule.flags}")
+
+        # Test multi-flag rule
+        multi_flag_rule = rules['multi_flag_rule']
+        self.assertTrue(multi_flag_rule.memo, "multi_flag_rule should have memo=True")
+        self.assertEqual(multi_flag_rule.flags, frozenset({'memo', 'custom', 'test'}),
+                        f"multi_flag_rule flags should contain memo, custom, test, got {multi_flag_rule.flags}")
+
+        # Test single custom flag rule
+        single_custom_rule = rules['single_custom_flag']
+        self.assertFalse(single_custom_rule.memo, "single_custom_flag should have memo=False")
+        self.assertEqual(single_custom_rule.flags, frozenset(['custom']),
+                        f"single_custom_flag flags should be ['custom'], got {single_custom_rule.flags}")
+
+        # Test no flags rule
+        no_flags_rule = rules['no_flags_rule']
+        self.assertFalse(no_flags_rule.memo, "no_flags_rule should have memo=False")
+        self.assertEqual(no_flags_rule.flags, [],
+                        f"no_flags_rule flags should be [], got {no_flags_rule.flags}")
+
+    def test_memo(self) -> None:
+        """Test that the old (memo) syntax works with the flag system"""
+        grammar_source = """
+        start: memo_rule
+
+        memo_rule (memo):
+            | "test"
+        """
+
+        grammar: Grammar = parse_string(grammar_source, GrammarParser)
+        rules = grammar.rules
+
+        memo_rule = rules['memo_rule']
+        self.assertTrue(memo_rule.memo, "memo_rule should have memo=True")
+        self.assertEqual(memo_rule.flags, frozenset(['memo']),
+                        f"memo_rule flags should be ['memo'], got {memo_rule.flags}")
