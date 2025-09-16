@@ -1057,6 +1057,7 @@ class Sequence(Reversible, Collection):
 
 Sequence.register(tuple)
 Sequence.register(str)
+Sequence.register(bytes)
 Sequence.register(range)
 Sequence.register(memoryview)
 
@@ -1159,4 +1160,4 @@ class MutableSequence(Sequence):
 
 
 MutableSequence.register(list)
-MutableSequence.register(bytearray)  # Multiply inheriting, see ByteString
+MutableSequence.register(bytearray)
