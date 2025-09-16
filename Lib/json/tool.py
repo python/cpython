@@ -87,14 +87,11 @@ def main():
             infile = sys.stdin
         else:
             infile = open(options.infile, encoding='utf-8')
-        try:
-            if options.json_lines:
-                objs = (json.loads(line) for line in infile)
-            else:
-                objs = (json.load(infile),)
-        finally:
-            if infile is not sys.stdin:
-                infile.close()
+
+        if options.json_lines:
+            objs = (json.loads(line) for line in infile)
+        else:
+            objs = (json.load(infile),)
 
         if options.outfile is None:
             outfile = sys.stdout
@@ -111,6 +108,8 @@ def main():
                 for obj in objs:
                     json.dump(obj, outfile, **dump_args)
                     outfile.write('\n')
+        if infile is not sys.stdin:
+            infile.close()
     except ValueError as e:
         raise SystemExit(e)
 
