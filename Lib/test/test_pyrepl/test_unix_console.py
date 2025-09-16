@@ -318,6 +318,7 @@ class TestConsole(TestCase):
             console.restore()  # this should succeed
 
 
+@unittest.skipIf(sys.platform == "win32", "No Unix console on Windows")
 class TestUnixConsoleEIOHandling(TestCase):
 
     @patch('_pyrepl.unix_console.tcsetattr')
@@ -359,5 +360,15 @@ class TestUnixConsoleEIOHandling(TestCase):
 
         os.kill(proc.pid, signal.SIGUSR1)
         _, err = proc.communicate(timeout=5)  # sleep for pty to settle
-        self.assertEqual(proc.returncode, 1, f"Expected EIO error, got return code {proc.returncode}")
-        self.assertIn("Got EIO:", err, f"Expected EIO error message in stderr: {err}")
+        self.assertEqual(
+            proc.returncode,
+            1,
+            f"Expected EIO/ENXIO error, got return code {proc.returncode}",
+        )
+        self.assertTrue(
+            (
+                "Got EIO:" in err
+                or "Got ENXIO:" in err
+            ),
+            f"Expected EIO/ENXIO error message in stderr: {err}",
+        )

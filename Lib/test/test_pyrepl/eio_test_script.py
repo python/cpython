@@ -21,7 +21,7 @@ def create_eio_condition():
             try:
                 os.setsid()
                 fcntl.ioctl(slave_fd, termios.TIOCSCTTY, 0)
-                p2_pgid = os.getpgrp()
+                child_process_group_id = os.getpgrp()
                 grandchild_pid = os.fork()
                 if grandchild_pid == 0:
                     os.setpgid(0, 0)      # set process group for grandchild
@@ -33,7 +33,7 @@ def create_eio_condition():
                         sys.exit(0)  # exit the child process that was just obtained
                     else:
                         try:
-                            os.tcsetpgrp(0, p2_pgid)
+                            os.tcsetpgrp(0, child_process_group_id)
                         except OSError:
                             pass
                         sys.exit(0)
@@ -48,7 +48,7 @@ def create_eio_condition():
                         os.close(slave_fd)
                     os.waitpid(grandchild_pid, 0)
                     # Manipulate terminal control to create EIO condition
-                    os.tcsetpgrp(master_fd, p2_pgid)
+                    os.tcsetpgrp(master_fd, child_process_group_id)
                     # Now try to read from master - this might cause EIO
                     try:
                         os.read(master_fd, 1)
