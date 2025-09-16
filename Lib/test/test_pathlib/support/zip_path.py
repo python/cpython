@@ -36,7 +36,9 @@ class ZipPathGround:
         root.zip_file.close()
 
     def create_file(self, path, data=b''):
-        path.zip_file.writestr(vfspath(path), data)
+        zip_info = zipfile.ZipInfo(vfspath(path))
+        zip_info.filename = vfspath(path)  # Undo sanitization
+        path.zip_file.writestr(zip_info, data)
 
     def create_dir(self, path):
         zip_info = zipfile.ZipInfo(vfspath(path) + '/')
