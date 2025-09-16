@@ -308,6 +308,15 @@ class TestConsole(TestCase):
             os.environ = []
             self.assertIsInstance(console.getheightwidth(), tuple)
 
+    @unittest.skipUnless(sys.platform == "darwin", "requires macOS")
+    def test_restore_with_invalid_environ_on_macos(self, _os_write):
+        # gh-128636 for macOS
+        console = UnixConsole(term="xterm")
+        with os_helper.EnvironmentVarGuard():
+            os.environ = []
+            console.prepare()  # needed to call restore()
+            console.restore()  # this should succeed
+
 
 class TestUnixConsoleEIOHandling(TestCase):
 
