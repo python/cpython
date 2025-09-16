@@ -3799,12 +3799,12 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
 {
     assert(size >= 0);
 
-    if (size <= byteswriter_allocated(writer)) {
+    Py_ssize_t old_allocated = byteswriter_allocated(writer);
+    if (size <= old_allocated) {
         return 0;
     }
 
-    overallocate &= writer->overallocate;
-    if (overallocate) {
+    if (overallocate & writer->overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
@@ -3843,6 +3843,15 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
                writer->small_buffer,
                sizeof(writer->small_buffer));
     }
+
+#ifdef Py_DEBUG
+    Py_ssize_t allocated = byteswriter_allocated(writer);
+    if (overallocate && allocated > old_allocated) {
+        memset(byteswriter_data(writer) + old_allocated, 0xff,
+               allocated - old_allocated);
+    }
+#endif
+
     return 0;
 }
 
@@ -3863,9 +3872,6 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
             return NULL;
         }
     }
-#ifdef Py_DEBUG
-    memset(writer->small_buffer, 0xff, sizeof(writer->small_buffer));
-#endif
     writer->obj = NULL;
     writer->size = 0;
     writer->use_bytearray = use_bytearray;
@@ -3878,6 +3884,9 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
         }
         writer->size = size;
     }
+#ifdef Py_DEBUG
+    memset(byteswriter_data(writer), 0xff, byteswriter_allocated(writer));
+#endif
     return writer;
 }
 
