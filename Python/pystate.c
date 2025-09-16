@@ -1537,7 +1537,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
 #endif
 
 #ifdef _Py_TIER2
-     // Ensure the buffer is to be set as NULL for MSVC
+     // Ensure the buffer is to be set as NULL.
     tstate->jit_uop_buffer = NULL;
 #endif
 
