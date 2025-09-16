@@ -16,34 +16,6 @@
       "fileName": "Modules/expat/COPYING"
     },
     {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-Makefile.am",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "00a989b4edfeb1e3c86d549719cd32cc318e9c55"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "31695f595a9b4ee971f63f1cc5991a6addd6fcec792006793b647d0cc6204139"
-        }
-      ],
-      "fileName": "Modules/expat/Makefile.am"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-Makefile.in",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "e8a6382156f5c7797e7eab48c765f2418e3e76bf"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "75148bdb3f4c403f8cdaba166a9ac8a5050841d0c72d79dec9233e141bdd50bb"
-        }
-      ],
-      "fileName": "Modules/expat/Makefile.in"
-    },
-    {
       "SPDXID": "SPDXRef-FILE-Modules-expat-ascii.h",
       "checksums": [
         {
@@ -140,20 +112,6 @@
         }
       ],
       "fileName": "Modules/expat/latin1tab.h"
-    },
-    {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-libexpat.def.cmake",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "681256f880c11d306d5035e05abcefa3adad506b"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "22fdd83adabcbaeedc865c47c2a9021156d34001b2ab24fa8dd01d98801f0153"
-        }
-      ],
-      "fileName": "Modules/expat/libexpat.def.cmake"
     },
     {
       "SPDXID": "SPDXRef-FILE-Modules-expat-nametab.h",
@@ -1863,16 +1821,6 @@
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
     {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-Makefile.am",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-expat"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-Makefile.in",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-expat"
-    },
-    {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-ascii.h",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
@@ -1904,11 +1852,6 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-latin1tab.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-expat"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-libexpat.def.cmake",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
