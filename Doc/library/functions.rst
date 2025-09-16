@@ -456,6 +456,20 @@ are always available.  They are listed here in alphabetical order.
       deprecated; it should only be passed as a single positional argument.
 
 
+.. function:: copyright()
+
+   Print the full :data:`copyright` text.
+
+   This function is added to the built-in namespace by the :mod:`site` module.
+
+
+.. function:: credits()
+
+   Print the full :data:`credits` text.
+
+   This function is added to the built-in namespace by the :mod:`site` module.
+
+
 .. function:: delattr(object, name, /)
 
    This is a relative of :func:`setattr`.  The arguments are an object and a
@@ -1139,6 +1153,14 @@ are always available.  They are listed here in alphabetical order.
 
       ``len`` raises :exc:`OverflowError` on lengths larger than
       :data:`sys.maxsize`, such as :class:`range(2 ** 100) <range>`.
+
+
+.. function:: license()
+
+   Displays the full license text in a pager-like fashion (one page at a time;
+   this function is intended for interactive use).
+
+   This function is added to the built-in namespace by the :mod:`site` module.
 
 
 .. _func-list:
