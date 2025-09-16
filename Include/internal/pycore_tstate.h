@@ -78,7 +78,7 @@ typedef struct _PyThreadStateImpl {
 #endif
 
 #ifdef _Py_TIER2
-    struct _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+    struct _PyUOpInstruction *buffer;
 #endif
 
 } _PyThreadStateImpl;
