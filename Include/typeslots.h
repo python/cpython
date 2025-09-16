@@ -94,3 +94,7 @@
 /* New in 3.14 */
 #define Py_tp_token 83
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030F0000
+/* New in 3.15 */
+#define Py_tp_getinterface 84
+#endif

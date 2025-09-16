@@ -491,6 +491,11 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
 */
 PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030F0000
+PyAPI_FUNC(int) PyObject_GetInterface(PyObject *obj, const char *intf_name, void *intf);
+#endif
+
+
 /* Helpers for printing recursive container types */
 PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
 PyAPI_FUNC(void) Py_ReprLeave(PyObject *);

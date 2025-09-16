@@ -80,6 +80,7 @@ __pragma(warning(disable: 4201))
 #include "pyatomic.h"
 #include "pylock.h"
 #include "critical_section.h"
+#include "pyinterface.h"
 #include "object.h"
 #include "refcount.h"
 #include "objimpl.h"

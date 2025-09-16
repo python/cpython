@@ -2180,6 +2180,81 @@ PyObject_Dir(PyObject *obj)
     return (obj == NULL) ? _dir_locals() : _dir_object(obj);
 }
 
+
+static int
+_PyInterface_GetAttrWChar_Release(PyInterface_GetAttrWChar *intf)
+{
+    Py_XDECREF(intf->_obj);
+    return 0;
+}
+
+
+static PyObject *
+_PyInterface_GetAttrWChar_GetAttr(PyInterface_GetAttrWChar *intf, const wchar_t *attr)
+{
+    // TODO: Optimise the implementation
+    PyObject *result = NULL;
+    PyObject *attro = PyUnicode_FromWideChar(attr, -1);
+    if (attro) {
+        result = PyObject_GetAttr(intf->_obj, attro);
+        Py_DECREF(attro);
+    }
+    return result;
+}
+
+
+static int
+_PyInterface_GetAttrWChar_HasAttr(PyInterface_GetAttrWChar *intf, const wchar_t *attr)
+{
+    // TODO: Optimise this implementation
+    int result = -1;
+    PyObject *attro = PyUnicode_FromWideChar(attr, -1);
+    if (attro) {
+        result = PyObject_HasAttrWithError(intf->_obj, attro);
+        Py_DECREF(attro);
+    }
+    return result;
+}
+
+
+static int
+PyObject_GenericGetInterface(PyObject *obj, const char *intf_name, void *intf)
+{
+    if (0 == strcmp(intf_name, PyInterface_GetAttrWChar_Name)) {
+        PyInterface_GetAttrWChar *gawc = (PyInterface_GetAttrWChar *)intf;
+        if (gawc->base.size != sizeof(PyInterface_GetAttrWChar)) {
+            PyErr_SetString(PyExc_SystemError, "Invalid size struct passed to PyObject_GetInterface");
+            return -1;
+        }
+        gawc->base.release = _PyInterface_GetAttrWChar_Release;
+        gawc->getattr = _PyInterface_GetAttrWChar_GetAttr;
+        gawc->hasattr = _PyInterface_GetAttrWChar_HasAttr;
+        gawc->_obj = Py_NewRef(obj);
+        return 0;
+    }
+    PyErr_SetString(PyExc_TypeError, "Interface not supported");
+    return -1;
+}
+
+
+/* Abstract API for getting an interface. Delegates through the type object,
+   or uses PyObject_GenericGetInterface if not set.
+*/
+int
+PyObject_GetInterface(PyObject *obj, const char *intf_name, void *intf)
+{
+    if (!obj || !intf_name || !intf) {
+        PyErr_SetString(PyExc_SystemError, "NULL argument passed to PyObject_GetInterface");
+        return -1;
+    }
+    getinterfacefunc fn = Py_TYPE(obj)->tp_getinterface;
+    if (fn) {
+        return fn(obj, intf_name, intf);
+    }
+    return PyObject_GenericGetInterface(obj, intf_name, intf);
+}
+
+
 /*
 None is a non-NULL undefined value.
 There is (and should be!) no way to create other objects of this type,
