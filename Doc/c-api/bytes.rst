@@ -47,6 +47,10 @@ called with a non-bytes parameter.
    *len* on success, and ``NULL`` on failure.  If *v* is ``NULL``, the contents of
    the bytes object are uninitialized.
 
+   .. deprecated:: 3.15
+      ``PyBytes_FromStringAndSize(NULL, len)`` is :term:`soft deprecated`,
+      use the :c:type:`PyBytesWriter` API instead.
+
 
 .. c:function:: PyObject* PyBytes_FromFormat(const char *format, ...)
 
@@ -219,6 +223,11 @@ called with a non-bytes parameter.
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
+
+   .. deprecated:: 3.15
+      The function is :term:`soft deprecated`,
+      use the :c:type:`PyBytesWriter` API instead.
+
 
 PyBytesWriter
 -------------

@@ -63,7 +63,7 @@ class InvalidTerminal(RuntimeError):
 
 
 _error = (termios.error, InvalidTerminal)
-_error_codes_to_ignore: frozenset[int] = frozenset([errno.EIO, errno.EPERM])
+_error_codes_to_ignore = frozenset([errno.EIO, errno.ENXIO, errno.EPERM])
 
 SIGWINCH_EVENT = "repaint"
 
@@ -163,6 +163,10 @@ class UnixConsole(Console):
         self.pollob.register(self.input_fd, select.POLLIN)
         self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
+        self.is_apple_terminal = (
+            platform.system() == "Darwin"
+            and os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+        )
 
         try:
             self.__input_fd_set(tcgetattr(self.input_fd), ignore=frozenset())
@@ -353,7 +357,7 @@ class UnixConsole(Console):
         self.__input_fd_set(raw)
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7l")
 
         self.screen = []
@@ -382,7 +386,7 @@ class UnixConsole(Console):
         self.flushoutput()
         self.__input_fd_set(self.__svtermstate)
 
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
@@ -419,6 +423,8 @@ class UnixConsole(Console):
                             return self.event_queue.get()
                         else:
                             continue
+                    elif err.errno == errno.EIO:
+                        raise SystemExit(errno.EIO)
                     else:
                         raise
                 else:

@@ -774,6 +774,11 @@ Deprecated C APIs
   signed integer type of the same size is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`132629`.)
 
+* :c:func:`PyBytes_FromStringAndSize(NULL, len) <PyBytes_FromStringAndSize>`
+  and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
+  use the :c:type:`PyBytesWriter` API instead.
+  (Contributed by Victor Stinner in :gh:`129813`.)
+
 * Deprecate :c:member:`~PyComplexObject.cval` field of the the
   :c:type:`PyComplexObject` type.
   Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
@@ -814,6 +819,11 @@ Removed C APIs
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
   (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* Remove deprecated :c:func:`!PySys_ResetWarnOptions`.
+  Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
+
+  (Contributed by Nikita Sobolev in :gh:`138886`.)
 
 The following functions are removed in favor of :c:func:`PyConfig_Get`.
 The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
