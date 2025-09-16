@@ -2458,6 +2458,16 @@
             if (v_o == NULL) {
                 JUMP_TO_ERROR();
             }
+            if (PyLazyImport_CheckExact(v_o)) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, v_o);
+                Py_DECREF(v_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                v_o = l_v;
+                if (v_o == NULL) {
+                    JUMP_TO_ERROR();
+                }
+            }
             v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[0] = v;
             stack_pointer += 1;
@@ -2475,6 +2485,21 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (PyStackRef_IsNull(*res)) {
                 JUMP_TO_ERROR();
+            }
+            PyObject *res_o = PyStackRef_AsPyObjectBorrow(*res);
+            if (PyLazyImport_CheckExact(res_o)) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
+                Py_DECREF(res_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                res_o = l_v;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(res[0]);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (res_o == NULL) {
+                    JUMP_TO_ERROR();
+                }
+                *res = PyStackRef_FromPyObjectSteal(res_o);
             }
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -4120,11 +4145,22 @@
             oparg = CURRENT_OPARG();
             fromlist = stack_pointer[-1];
             level = stack_pointer[-2];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
+            PyObject *res_o;
+            if (oparg & 0x01) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(),  name,
+                    PyStackRef_AsPyObjectBorrow(fromlist),
+                    PyStackRef_AsPyObjectBorrow(level));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            } else {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
+                    PyStackRef_AsPyObjectBorrow(fromlist),
+                    PyStackRef_AsPyObjectBorrow(level));
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = _PyEval_ImportName(tstate, frame, name,
-                PyStackRef_AsPyObjectBorrow(fromlist),
-                PyStackRef_AsPyObjectBorrow(level));
             _PyStackRef tmp = fromlist;
             fromlist = PyStackRef_NULL;
             stack_pointer[-1] = fromlist;
@@ -4152,9 +4188,16 @@
             oparg = CURRENT_OPARG();
             from = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
+            PyObject *res_o;
+            if (PyLazyImport_CheckExact(PyStackRef_AsPyObjectBorrow(from))) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                res_o = _PyEval_LazyImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            } else {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
             if (res_o == NULL) {
                 JUMP_TO_ERROR();
             }

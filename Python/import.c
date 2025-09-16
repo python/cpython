@@ -7,6 +7,8 @@
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // struct _import_runtime_state
+#include "pycore_long.h"          // _PyLong_GetZero
+#include "pycore_lazyimportobject.h"
 #include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER_TOKEN
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_namespace.h"     // _PyNamespace_Type
@@ -3668,6 +3670,101 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     Py_XDECREF(spec);
     Py_XDECREF(package);
     return NULL;
+}
+
+PyObject *
+_PyImport_ResolveName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level)
+{
+  return resolve_name(tstate, name, globals, level);  
+}
+
+PyObject *
+_PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
+{
+    PyObject *obj = NULL;
+    PyObject *fromlist = NULL;
+    assert(lazy_import != NULL);
+    assert(PyLazyImport_CheckExact(lazy_import));
+    PyObject *state_dict = _PyThreadState_GetDict(tstate);
+    assert(state_dict != NULL);
+
+    PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
+
+    Py_ssize_t dot = -1;
+    int full = 0;
+    if (lz->lz_attr != NULL) {
+        full = 1;
+    }
+    if (!full) {
+        dot = PyUnicode_FindChar(lz->lz_from, '.', 0, PyUnicode_GET_LENGTH(lz->lz_from), 1);
+    }
+    if (dot < 0) {
+        full = 1;
+    }
+
+    if (lz->lz_attr != NULL) {
+        if (PyUnicode_Check(lz->lz_attr)) {
+            fromlist = PyTuple_New(1);
+            if (fromlist == NULL) {
+                goto error;
+            }
+            Py_INCREF(lz->lz_attr);
+            PyTuple_SET_ITEM(fromlist, 0, lz->lz_attr);
+        } else {
+            Py_INCREF(lz->lz_attr);
+            fromlist = lz->lz_attr;
+        }
+    }
+
+    PyObject *globals = PyEval_GetGlobals();
+
+    if (full) {
+        obj = _PyEval_ImportName(tstate,
+                                   lz->lz_builtins,
+                                   globals,
+                                   globals,
+                                   lz->lz_from,
+                                   fromlist,
+                                   _PyLong_GetZero());
+    } else {
+        PyObject *name = PyUnicode_Substring(lz->lz_from, 0, dot);
+        if (name == NULL) {
+            goto error;
+        }
+        obj = _PyEval_ImportName(tstate,
+                                   lz->lz_builtins,
+                                   globals,
+                                   globals,
+                                   name,
+                                   fromlist,
+                                   _PyLong_GetZero());
+        Py_DECREF(name);
+    }
+
+    if (obj == NULL) {
+        goto error;
+    }
+
+    if (lz->lz_attr != NULL && PyUnicode_Check(lz->lz_attr)) {
+        PyObject *from = obj;
+        obj = _PyEval_ImportFrom(tstate, from, lz->lz_attr);
+        Py_DECREF(from);
+        if (obj == NULL) {
+            goto error;
+        }
+    }
+
+    assert(!PyLazyImport_CheckExact(obj));
+
+    goto ok;
+
+error:
+    Py_XDECREF(obj);
+    obj = NULL;
+
+ok:
+    Py_XDECREF(fromlist);
+    return obj;
 }
 
 static PyObject *

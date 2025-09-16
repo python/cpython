@@ -31,6 +31,12 @@ extern int _PyImport_FixupBuiltin(
     PyObject *modules
     );
 
+extern PyObject *
+_PyImport_ResolveName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
+extern PyObject *
+_PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import);
+
+
 #ifdef HAVE_DLOPEN
 #  include <dlfcn.h>              // RTLD_NOW, RTLD_LAZY
 #  if HAVE_DECL_RTLD_NOW

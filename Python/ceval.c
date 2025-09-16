@@ -22,6 +22,7 @@
 #include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
+#include "pycore_lazyimportobject.h"
 #include "pycore_list.h"          // _PyList_GetItemRef()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
@@ -2986,11 +2987,11 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
 }
 
 PyObject *
-_PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
+_PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals, PyObject *locals,
             PyObject *name, PyObject *fromlist, PyObject *level)
 {
     PyObject *import_func;
-    if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__import__), &import_func) < 0) {
         return NULL;
     }
     if (import_func == NULL) {
@@ -2998,7 +2999,6 @@ _PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
         return NULL;
     }
 
-    PyObject *locals = frame->f_locals;
     if (locals == NULL) {
         locals = Py_None;
     }
@@ -3012,15 +3012,47 @@ _PyEval_ImportName(PyThreadState *tstate, _PyInterpreterFrame *frame,
         }
         return PyImport_ImportModuleLevelObject(
                         name,
-                        frame->f_globals,
+                        globals,
                         locals,
                         fromlist,
                         ilevel);
     }
 
-    PyObject* args[5] = {name, frame->f_globals, locals, fromlist, level};
+    PyObject* args[5] = {name, globals, locals, fromlist, level};
     PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
     Py_DECREF(import_func);
+    return res;
+}
+
+
+PyObject *
+_PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
+            PyObject *name, PyObject *fromlist, PyObject *level)
+{
+    PyObject *res = NULL;
+    PyObject *abs_name = NULL;
+    int ilevel = PyLong_AsInt(level);
+    if (ilevel == -1 && PyErr_Occurred()) {
+        goto error;
+    }
+    if (ilevel > 0) {
+        abs_name = _PyImport_ResolveName(tstate, name, globals, ilevel);
+        if (abs_name == NULL) {
+            goto error;
+        }
+    } else {  /* ilevel == 0 */
+        if (PyUnicode_GET_LENGTH(name) == 0) {
+            PyErr_SetString(PyExc_ValueError, "Empty module name");
+            goto error;
+        }
+        abs_name = name;
+        Py_INCREF(abs_name);
+    }
+
+    // TODO: check sys.modules for module
+    res = _PyLazyImport_New(builtins, abs_name, fromlist);
+error:
+    Py_XDECREF(abs_name);
     return res;
 }
 
@@ -3190,6 +3222,33 @@ done:
     Py_XDECREF(spec);
     Py_DECREF(mod_name_or_unknown);
     return NULL;
+}
+
+PyObject *
+_PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
+{
+    assert(PyLazyImport_CheckExact(v));
+    assert(name && PyUnicode_Check(name));
+    PyObject *ret;
+    PyLazyImportObject *d = (PyLazyImportObject *)v;
+    if (d->lz_attr != NULL) {
+        if (PyUnicode_Check(d->lz_attr)) {
+            PyObject *from = PyUnicode_FromFormat("%U.%U", d->lz_from, d->lz_attr);
+            ret = _PyLazyImport_New(d->lz_builtins, from, name);
+            Py_DECREF(from);
+            return ret;
+        }
+    } else {
+        Py_ssize_t dot = PyUnicode_FindChar(d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1);
+        if (dot >= 0) {
+            PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
+            ret = _PyLazyImport_New(d->lz_builtins, from, name);
+            Py_DECREF(from);
+            return ret;
+        }
+    }
+    ret = _PyLazyImport_New(d->lz_builtins, d->lz_from, name);
+    return ret;
 }
 
 #define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
