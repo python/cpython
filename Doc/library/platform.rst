@@ -60,7 +60,7 @@ Cross platform
 
       The output of :func:`platform.machine` is system-dependent and may differ
       in casing and naming conventions across platforms. For example, on Apple
-      Silicon macOS it may return ``'arm64'`` (lowercase), while on Windows-on-ARM
+      Silicon based macOS it may return ``'arm64'`` (lowercase), while on Windows-on-ARM
       it may return ``'ARM64'`` (uppercase). If you need consistent results,
       normalize the output in your code.
 
