@@ -1284,7 +1284,7 @@ uop_optimize(
     if (tstate->jit_uop_buffer == NULL) {
         tstate->jit_uop_buffer = (_PyUOpInstruction *)PyMem_RawMalloc(UOP_MAX_TRACE_LENGTH*sizeof(_PyUOpInstruction));
         if (tstate->jit_uop_buffer == NULL) {
-            return -1;
+            return 0;
         }
     }
     _PyUOpInstruction *buffer = tstate->jit_uop_buffer;
