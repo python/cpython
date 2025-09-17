@@ -35,7 +35,6 @@ _PyEM_TrampolineCall_inner, (int* success,
             env: { __indirect_function_table: wasmTable, memory: wasmMemory },
         });
         _PyEM_TrampolineCall_inner = trampolineInstance.exports.trampoline_call;
-        console.log("Assigned _PyEM_TrampolineCall_inner!");
     } catch (e) {
         // Compilation error due to missing wasm-gc support, fall back to JS
         // trampoline
