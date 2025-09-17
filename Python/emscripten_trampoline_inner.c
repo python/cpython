@@ -1,3 +1,8 @@
+// This file must be compiled with -mgc to enable the extra wasm-gc
+// instructions. It has to be compiled separately because not enough JS runtimes
+// support wasm-gc yet. If the JS runtime does not support wasm-gc (or has buggy
+// support like iOS), we will use the JS trampoline fallback.
+
 typedef void PyObject;
 
 typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);

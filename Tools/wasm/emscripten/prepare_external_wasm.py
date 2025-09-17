@@ -3,7 +3,6 @@
 import argparse
 import sys
 from pathlib import Path
-from shutil import which
 
 JS_TEMPLATE = """
 #include "emscripten.h"
@@ -20,22 +19,7 @@ function hexStringToUTF8Array(hex) {{
 }});
 """
 
-
-def find_wasm_as():
-    emcc_path = which("emcc")
-    if not emcc_path:
-        print("Error: emcc not found in PATH", file=sys.stderr)
-        return None
-
-    wasm_as_path = Path(emcc_path).parents[1] / "bin/wasm-as"
-
-    if not wasm_as_path.exists():
-        print(f"Error: wasm-as not found at {wasm_as_path}", file=sys.stderr)
-        return None
-    return wasm_as_path
-
-
-def compile_wat(input_file, output_file, function_name):
+def prepare_wasm(input_file, output_file, function_name):
     # Read the compiled WASM as binary and convert to hex
     wasm_bytes = Path(input_file).read_bytes()
 
@@ -63,7 +47,7 @@ def main():
 
     args = parser.parse_args()
 
-    return compile_wat(args.input_file, args.output_file, args.function_name)
+    return prepare_wasm(args.input_file, args.output_file, args.function_name)
 
 
 if __name__ == "__main__":

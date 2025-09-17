@@ -3,14 +3,6 @@
 #include <emscripten.h>             // EM_JS, EM_JS_DEPS
 #include <Python.h>
 
-// We have to be careful to work correctly with memory snapshots. Even if we are
-// loading a memory snapshot, we need to perform the JS initialization work.
-// That means we can't call the initialization code from C. Instead, we export
-// this function pointer to JS and then fill it in a preRun function which runs
-// unconditionally.
-/**
- * Backwards compatible trampoline works with all JS runtimes
- */
 EM_JS(
 PyObject*,
 _PyEM_TrampolineCall_inner, (int* success,
@@ -18,15 +10,37 @@ _PyEM_TrampolineCall_inner, (int* success,
                              PyObject *arg1,
                              PyObject *arg2,
                              PyObject *arg3), {
+    // JavaScript fallback trampoline
     return wasmTable.get(func)(arg1, arg2, arg3);
 }
-try {
-  const trampolineModule = getWasmTrampolineModule();
-  const trampolineInstance = new WebAssembly.Instance(trampolineModule, {
-    env: { __indirect_function_table: wasmTable, memory: wasmMemory },
-  });
-  _PyEM_TrampolineCall_inner = trampolineInstance.exports.trampoline_call;
-} catch (e) {}
+// Try to replace the JS definition of _PyEM_TrampolineCall_inner with a wasm
+// version.
+(function () {
+    // iOS ships broken wasm-gc, so feature detect and turn it off
+    const isIOS =
+        globalThis.navigator &&
+        (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
+            // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
+            // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
+            (navigator.platform === "MacIntel" &&
+                typeof navigator.maxTouchPoints !== "undefined" &&
+                navigator.maxTouchPoints > 1));
+    if (isIOS) {
+        return;
+    }
+    try {
+        const trampolineModule = getWasmTrampolineModule();
+        const trampolineInstance = new WebAssembly.Instance(trampolineModule, {
+            env: { __indirect_function_table: wasmTable, memory: wasmMemory },
+        });
+        _PyEM_TrampolineCall_inner = trampolineInstance.exports.trampoline_call;
+        console.log("Assigned _PyEM_TrampolineCall_inner!");
+    } catch (e) {
+        // Compilation error due to missing wasm-gc support, fall back to JS
+        // trampoline
+    }
+})();
 );
 
 PyObject*
