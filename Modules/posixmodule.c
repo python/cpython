@@ -2759,7 +2759,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     SET_ITEM(ST_BLOCKS_IDX, PyLong_FromLong((long)st->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
-    SET_ITEM(ST_RDEV_IDX, PyLong_FromLong((long)st->st_rdev));
+    SET_ITEM(ST_RDEV_IDX, _PyLong_FromDev(st->st_rdev));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
     SET_ITEM(ST_GEN_IDX, PyLong_FromLong((long)st->st_gen));
@@ -17860,6 +17860,10 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, EFD_SEMAPHORE)) return -1;
 #endif
 #endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
+
+#ifdef NODEV
+    if (PyModule_Add(m, "NODEV", _PyLong_FromDev(NODEV))) return -1;
+#endif
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
