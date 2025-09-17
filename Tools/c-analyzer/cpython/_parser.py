@@ -17,7 +17,12 @@ def _abs(relfile):
     return os.path.join(REPO_ROOT, relfile)
 
 
-def format_table_lines(lines):
+def format_conf_lines(lines):
+    """Format conf entries for use in a TSV table."""
+    return [_abs(entry) for entry in lines]
+
+
+def format_tsv_lines(lines):
     """Format entries for use in a TSV table."""
     lines = ((_abs(first), *rest) for first, *rest in lines)
     lines = map('\t'.join, lines)
@@ -41,64 +46,64 @@ def format_table_lines(lines):
 '''
 
 # XXX Handle these.
-EXCLUDED = format_table_lines([
-    # OSX
-    ('Modules/_scproxy.c',),              # SystemConfiguration/SystemConfiguration.h
+EXCLUDED = format_conf_lines([
+    # macOS
+    'Modules/_scproxy.c',              # SystemConfiguration/SystemConfiguration.h
 
     # Windows
-    ('Modules/_winapi.c',),               # windows.h
-    ('Modules/expat/winconfig.h',),
-    ('Modules/overlapped.c',),            # winsock.h
-    ('Python/dynload_win.c',),            # windows.h
-    ('Python/thread_nt.h',),
+    'Modules/_winapi.c',               # windows.h
+    'Modules/expat/winconfig.h',
+    'Modules/overlapped.c',            # winsock.h
+    'Python/dynload_win.c',            # windows.h
+    'Python/thread_nt.h',
 
     # other OS-dependent
-    ('Python/dynload_aix.c',),            # sys/ldr.h
-    ('Python/dynload_dl.c',),             # dl.h
-    ('Python/dynload_hpux.c',),           # dl.h
-    ('Python/emscripten_signal.c',),
-    ('Python/emscripten_syscalls.c',),
-    ('Python/thread_pthread.h',),
-    ('Python/thread_pthread_stubs.h',),
+    'Python/dynload_aix.c',            # sys/ldr.h
+    'Python/dynload_dl.c',             # dl.h
+    'Python/dynload_hpux.c',           # dl.h
+    'Python/emscripten_signal.c',
+    'Python/emscripten_syscalls.c',
+    'Python/thread_pthread.h',
+    'Python/thread_pthread_stubs.h',
 
     # only huge constants (safe but parsing is slow)
-    ('Modules/_ssl_data_*.h',),
-    ('Modules/cjkcodecs/mappings_*.h',),
-    ('Modules/unicodedata_db.h',),
-    ('Modules/unicodename_db.h',),
-    ('Objects/unicodetype_db.h',),
+    'Modules/_ssl_data_*.h',
+    'Modules/cjkcodecs/mappings_*.h',
+    'Modules/unicodedata_db.h',
+    'Modules/unicodename_db.h',
+    'Objects/unicodetype_db.h',
 
     # generated
-    ('Python/deepfreeze/*.c',),
-    ('Python/frozen_modules/*.h',),
-    ('Python/generated_cases.c.h',),
-    ('Python/executor_cases.c.h',),
-    ('Python/optimizer_cases.c.h',),
+    'Python/deepfreeze/*.c',
+    'Python/frozen_modules/*.h',
+    'Python/generated_cases.c.h',
+    'Python/executor_cases.c.h',
+    'Python/optimizer_cases.c.h',
     # XXX: Throws errors if PY_VERSION_HEX is not mocked out
-    ('Modules/clinic/_testclinic_depr.c.h',),
+    'Modules/clinic/_testclinic_depr.c.h',
 
     # not actually source
-    ('Python/bytecodes.c',),
-    ('Python/optimizer_bytecodes.c',),
+    'Python/bytecodes.c',
+    'Python/optimizer_bytecodes.c',
 
     # mimalloc
-    ('Objects/mimalloc/*.c',),
-    ('Include/internal/mimalloc/*.h',),
-    ('Include/internal/mimalloc/mimalloc/*.h',),
+    'Objects/mimalloc/*.c',
+    'Include/internal/mimalloc/*.h',
+    'Include/internal/mimalloc/mimalloc/*.h',
 ])
 
 # XXX Fix the parser.
-EXCLUDED += format_table_lines([
+EXCLUDED += format_conf_lines([
     # The tool should be able to parse these...
 
     # The problem with xmlparse.c is that something
     # has gone wrong where # we handle "maybe inline actual"
     # in Tools/c-analyzer/c_parser/parser/_global.py.
-    ('Modules/expat/internal.h',),
-    ('Modules/expat/xmlparse.c',),
+    'Modules/expat/internal.h',
+    'Modules/expat/xmlparse.c',
 ])
 
-INCL_DIRS = format_table_lines([
+INCL_DIRS = format_tsv_lines([
     # (glob, dirname)
 
     ('*', '.'),
@@ -127,7 +132,7 @@ INCL_DIRS = format_table_lines([
 
 ])
 
-INCLUDES = format_table_lines([
+INCLUDES = format_tsv_lines([
     # (glob, include)
 
     ('**/*.h', 'Python.h'),
@@ -161,7 +166,7 @@ INCLUDES = format_table_lines([
     ('Objects/stringlib/split.h', 'Objects/stringlib/fastsearch.h'),
 ])
 
-MACROS = format_table_lines([
+MACROS = format_tsv_lines([
     # (glob, name, value)
 
     ('Include/internal/*.h', 'Py_BUILD_CORE', '1'),
@@ -271,7 +276,7 @@ MACROS = format_table_lines([
 
     # others
     ('Modules/_sre/sre_lib.h', 'LOCAL(type)', 'static inline type'),
-    ('Modules/_sre/sre_lib.h', 'SRE(F)', 'sre_ucs2_'),  ##F
+    ('Modules/_sre/sre_lib.h', 'SRE(F)', 'sre_ucs2_##F'),
     ('Objects/stringlib/codecs.h', 'STRINGLIB_IS_UNICODE', '1'),
     ('Include/internal/pycore_crossinterp_data_registry.h', 'Py_CORE_CROSSINTERP_DATA_REGISTRY_H', '1'),
 ])
