@@ -233,15 +233,10 @@ class _Target(typing.Generic[_S, _R]):
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
             request = "Please report any issues you encounter.".center(len(warning))
+            if self.llvm_version != _llvm._LLVM_VERSION:
+                request = f"Warning! Building with a LLVM version other than {_llvm._LLVM_VERSION} is not supported."
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
-
-        if self.llvm_version != _llvm._LLVM_VERSION:
-            warning = f"LLVM version {self.llvm_version} is not officially supported!"
-            request = "Use custom LLVM version at your own rist.".center(len(warning))
-            outline = "=" * len(warning)
-            print("\n".join(["", outline, warning, request, outline, ""]))
-
         digest = f"// {self._compute_digest()}\n"
         if (
             not force
