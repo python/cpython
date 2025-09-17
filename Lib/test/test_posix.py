@@ -1611,32 +1611,40 @@ class TestPosixDirFd(unittest.TestCase):
         with self.prepare_file() as (dir_fd, name, fullname):
             posix.chown(name, os.getuid(), os.getgid(), dir_fd=dir_fd)
 
-    @unittest.skipUnless(os.stat in os.supports_dir_fd, "test needs dir_fd support in os.stat()")
-    def test_stat_dir_fd(self):
+    def check_statlike_dir_fd(self, func):
         with self.prepare() as (dir_fd, name, fullname):
             with open(fullname, 'w') as outfile:
                 outfile.write("testline\n")
             self.addCleanup(posix.unlink, fullname)
 
-            s1 = posix.stat(fullname)
-            s2 = posix.stat(name, dir_fd=dir_fd)
-            self.assertEqual(s1, s2)
-            s2 = posix.stat(fullname, dir_fd=None)
-            self.assertEqual(s1, s2)
+            s1 = func(fullname)
+            s2 = func(name, dir_fd=dir_fd)
+            self.assertEqual((s1.st_dev, s1.st_ino), (s2.st_dev, s2.st_ino))
+            s2 = func(fullname, dir_fd=None)
+            self.assertEqual((s1.st_dev, s1.st_ino), (s2.st_dev, s2.st_ino))
 
             self.assertRaisesRegex(TypeError, 'should be integer or None, not',
-                    posix.stat, name, dir_fd=posix.getcwd())
+                    func, name, dir_fd=posix.getcwd())
             self.assertRaisesRegex(TypeError, 'should be integer or None, not',
-                    posix.stat, name, dir_fd=float(dir_fd))
+                    func, name, dir_fd=float(dir_fd))
             self.assertRaises(OverflowError,
-                    posix.stat, name, dir_fd=10**20)
+                    func, name, dir_fd=10**20)
 
             for fd in False, True:
                 with self.assertWarnsRegex(RuntimeWarning,
                         'bool is used as a file descriptor') as cm:
                     with self.assertRaises(OSError):
-                        posix.stat('nonexisting', dir_fd=fd)
+                        func('nonexisting', dir_fd=fd)
                 self.assertEqual(cm.filename, __file__)
+
+    @unittest.skipUnless(os.stat in os.supports_dir_fd, "test needs dir_fd support in os.stat()")
+    def test_stat_dir_fd(self):
+        self.check_statlike_dir_fd(posix.stat)
+
+    @unittest.skipUnless(hasattr(posix, 'statx'), "test needs os.statx()")
+    def test_statx_dir_fd(self):
+        func = lambda path, **kwargs: posix.statx(path, os.STATX_INO, **kwargs)
+        self.check_statlike_dir_fd(func)
 
     @unittest.skipUnless(os.utime in os.supports_dir_fd, "test needs dir_fd support in os.utime()")
     def test_utime_dir_fd(self):

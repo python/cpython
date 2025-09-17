@@ -668,7 +668,7 @@ class StatAttributeTests(unittest.TestCase):
                                   result[getattr(stat, name)])
                 self.assertIn(attr, members)
 
-        time_attributes = 'st_atime st_mtime st_ctime'.split()
+        time_attributes = ['st_atime', 'st_mtime', 'st_ctime']
         try:
             result.st_birthtime
             result.st_birthtime_ns
@@ -744,7 +744,7 @@ class StatAttributeTests(unittest.TestCase):
                 maximal_mask |= getattr(os, name)
         result = os.statx(self.fname, maximal_mask)
 
-        time_attributes = 'st_atime st_mtime st_ctime st_birthtime'.split()
+        time_attributes = ('st_atime', 'st_mtime', 'st_ctime', 'st_birthtime')
         self.check_timestamp_agreement(result, time_attributes)
 
         # Check that valid attributes match os.stat.
@@ -807,6 +807,10 @@ class StatAttributeTests(unittest.TestCase):
         except UnicodeEncodeError:
             self.skipTest("cannot encode %a for the filesystem" % self.fname)
         self.check_statx_attributes(fname)
+
+    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
+    def test_statx_attributes_pathlike(self):
+        self.check_statx_attributes(FakePath(self.fname))
 
     @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
     def test_statx_sync(self):
