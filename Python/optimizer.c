@@ -1287,7 +1287,7 @@ uop_optimize(
             return 0;
         }
     }
-    _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
+    _PyUOpInstruction *buffer = interp->jit_uop_buffer;
     OPT_STAT_INC(attempts);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
     bool is_noopt = true;
