@@ -711,6 +711,9 @@ PyThreadHandleObject_is_done(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
     if (_PyEvent_IsSet(&self->handle->thread_is_exiting)) {
+        if (_PyOnceFlag_CallOnce(&self->handle->once, join_thread, self->handle) == -1) {
+            return NULL;
+        }
         Py_RETURN_TRUE;
     }
     else {
@@ -2523,7 +2526,9 @@ _thread__get_name_impl(PyObject *module)
     }
 
 #ifdef __sun
-    return PyUnicode_DecodeUTF8(name, strlen(name), "surrogateescape");
+    // gh-138004: Decode Solaris/Illumos (e.g. OpenIndiana) thread names
+    // from ASCII, since OpenIndiana only supports ASCII names.
+    return PyUnicode_DecodeASCII(name, strlen(name), "surrogateescape");
 #else
     return PyUnicode_DecodeFSDefault(name);
 #endif
@@ -2561,8 +2566,9 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 {
 #ifndef MS_WINDOWS
 #ifdef __sun
-    // Solaris always uses UTF-8
-    const char *encoding = "utf-8";
+    // gh-138004: Encode Solaris/Illumos thread names to ASCII,
+    // since OpenIndiana does not support non-ASCII names.
+    const char *encoding = "ascii";
 #else
     // Encode the thread name to the filesystem encoding using the "replace"
     // error handler

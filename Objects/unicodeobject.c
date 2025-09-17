@@ -3264,13 +3264,21 @@ PyUnicode_FromFormat(const char *format, ...)
 int
 PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...)
 {
+    va_list vargs;
+    va_start(vargs, format);
+    int res = _PyUnicodeWriter_FormatV(writer, format, vargs);
+    va_end(vargs);
+    return res;
+}
+
+int
+_PyUnicodeWriter_FormatV(PyUnicodeWriter *writer, const char *format,
+                         va_list vargs)
+{
     _PyUnicodeWriter *_writer = (_PyUnicodeWriter*)writer;
     Py_ssize_t old_pos = _writer->pos;
 
-    va_list vargs;
-    va_start(vargs, format);
     int res = unicode_from_format(_writer, format, vargs);
-    va_end(vargs);
 
     if (res < 0) {
         _writer->pos = old_pos;
@@ -4905,7 +4913,7 @@ _PyUnicode_EncodeUTF7(PyObject *str,
     len = PyUnicode_GET_LENGTH(str);
 
     if (len == 0)
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     /* It might be possible to tighten this worst case */
     if (len > PY_SSIZE_T_MAX / 8)
@@ -6906,7 +6914,7 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 
     len = PyUnicode_GET_LENGTH(unicode);
     if (len == 0) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     kind = PyUnicode_KIND(unicode);
@@ -7356,7 +7364,7 @@ unicode_encode_ucs1(PyObject *unicode,
     /* allocate enough for a simple encoding without
        replacements, if we need more, we'll resize */
     if (size == 0)
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     _PyBytesWriter_Init(&writer);
     str = _PyBytesWriter_Alloc(&writer, size);
@@ -8297,7 +8305,7 @@ encode_code_page(int code_page,
     }
 
     if (len == 0)
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     offset = 0;
     do

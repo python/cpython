@@ -429,7 +429,7 @@ zlib.decompress
     /
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
         The window buffer size and container format.
-    bufsize: Py_ssize_t(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
+    bufsize: Py_ssize_t(c_default="DEF_BUF_SIZE", allow_negative=False) = DEF_BUF_SIZE
         The initial output buffer size.
 
 Returns a bytes object containing the uncompressed data.
@@ -438,7 +438,7 @@ Returns a bytes object containing the uncompressed data.
 static PyObject *
 zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      Py_ssize_t bufsize)
-/*[clinic end generated code: output=77c7e35111dc8c42 input=a9ac17beff1f893f]*/
+/*[clinic end generated code: output=77c7e35111dc8c42 input=530077065b3a2233]*/
 {
     PyObject *return_value;
     Byte *ibuf;
@@ -450,10 +450,7 @@ zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
 
     zlibstate *state = get_zlib_state(module);
 
-    if (bufsize < 0) {
-        PyErr_SetString(PyExc_ValueError, "bufsize must be non-negative");
-        return NULL;
-    } else if (bufsize == 0) {
+    if (bufsize == 0) {
         bufsize = 1;
     }
 
@@ -836,22 +833,24 @@ save_unconsumed_input(compobject *self, Py_buffer *data, int err)
            input data in self->unused_data. */
         if (self->zst.avail_in > 0) {
             Py_ssize_t old_size = PyBytes_GET_SIZE(self->unused_data);
-            Py_ssize_t new_size, left_size;
-            PyObject *new_data;
+            Py_ssize_t left_size;
             left_size = (Byte *)data->buf + data->len - self->zst.next_in;
             if (left_size > (PY_SSIZE_T_MAX - old_size)) {
                 PyErr_NoMemory();
                 return -1;
             }
-            new_size = old_size + left_size;
-            new_data = PyBytes_FromStringAndSize(NULL, new_size);
-            if (new_data == NULL)
+            PyBytesWriter *writer = PyBytesWriter_Create(old_size + left_size);
+            if (writer == NULL) {
                 return -1;
-            memcpy(PyBytes_AS_STRING(new_data),
-                      PyBytes_AS_STRING(self->unused_data), old_size);
-            memcpy(PyBytes_AS_STRING(new_data) + old_size,
-                      self->zst.next_in, left_size);
-            Py_SETREF(self->unused_data, new_data);
+            }
+            char *new_data = PyBytesWriter_GetData(writer);
+            memcpy(new_data, PyBytes_AS_STRING(self->unused_data), old_size);
+            memcpy(new_data + old_size, self->zst.next_in, left_size);
+            PyObject *new_unused_data = PyBytesWriter_Finish(writer);
+            if (new_unused_data == NULL) {
+                return -1;
+            }
+            Py_SETREF(self->unused_data, new_unused_data);
             self->zst.avail_in = 0;
         }
     }
@@ -879,7 +878,7 @@ zlib.Decompress.decompress
     data: Py_buffer
         The binary data to decompress.
     /
-    max_length: Py_ssize_t = 0
+    max_length: Py_ssize_t(allow_negative=False) = 0
         The maximum allowable length of the decompressed data.
         Unconsumed input data will be stored in
         the unconsumed_tail attribute.
@@ -894,7 +893,7 @@ Call the flush() method to clear these buffers.
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=b024a93c2c922d57 input=205667f8c387fce4]*/
+/*[clinic end generated code: output=b024a93c2c922d57 input=77de124bd2a2ecc0]*/
 {
     int err = Z_OK;
     Py_ssize_t ibuflen;
@@ -906,10 +905,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
         return NULL;
 
     zlibstate *state = get_zlib_state(module);
-    if (max_length < 0) {
-        PyErr_SetString(PyExc_ValueError, "max_length must be non-negative");
-        return NULL;
-    } else if (max_length == 0) {
+    if (max_length == 0) {
         max_length = -1;
     }
 
@@ -1015,7 +1011,7 @@ zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode)
     /* Flushing with Z_NO_FLUSH is a no-op, so there's no point in
        doing any work at all; just return an empty string. */
     if (mode == Z_NO_FLUSH) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
 
     ENTER_ZLIB(self);
@@ -1770,11 +1766,7 @@ zlib__ZlibDecompressor_impl(PyTypeObject *type, int wbits, PyObject *zdict)
     self->zst.zfree = PyZlib_Free;
     self->zst.next_in = NULL;
     self->zst.avail_in = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
-    if (self->unused_data == NULL) {
-        Py_CLEAR(self);
-        return NULL;
-    }
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     self->lock = PyThread_allocate_lock();
     if (self->lock == NULL) {
         Py_DECREF(self);
@@ -2049,6 +2041,7 @@ static PyType_Spec Comptype_spec = {
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
         | Py_TPFLAGS_HAVE_GC
     ),
     .slots= Comptype_slots,
@@ -2068,6 +2061,7 @@ static PyType_Spec Decomptype_spec = {
     .flags = (
         Py_TPFLAGS_DEFAULT
         | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
         | Py_TPFLAGS_HAVE_GC
     ),
     .slots = Decomptype_slots,

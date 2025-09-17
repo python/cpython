@@ -1430,6 +1430,33 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(len(native_ids), 2)
         self.assertNotEqual(native_ids[0], native_ids[1])
 
+    def test_stop_the_world_during_finalization(self):
+        # gh-137433: Test functions that trigger a stop-the-world in the free
+        # threading build concurrent with interpreter finalization.
+        script = """if True:
+            import gc
+            import sys
+            import threading
+            NUM_THREADS = 5
+            b = threading.Barrier(NUM_THREADS + 1)
+            def run_in_bg():
+                b.wait()
+                while True:
+                    sys.setprofile(None)
+                    gc.collect()
+
+            for _ in range(NUM_THREADS):
+                t = threading.Thread(target=run_in_bg, daemon=True)
+                t.start()
+
+            b.wait()
+            print("Exiting...")
+        """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b"")
+        self.assertEqual(out.strip(), b"Exiting...")
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
@@ -2281,6 +2308,9 @@ class MiscTestCase(unittest.TestCase):
     @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
     @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
     def test_set_name(self):
+        # Ensure main thread name is restored after test
+        self.addCleanup(_thread.set_name, _thread._get_name())
+
         # set_name() limit in bytes
         truncate = getattr(_thread, "_NAME_MAXLEN", None)
         limit = truncate or 100
@@ -2320,7 +2350,8 @@ class MiscTestCase(unittest.TestCase):
             tests.append(os_helper.TESTFN_UNENCODABLE)
 
         if sys.platform.startswith("sunos"):
-            encoding = "utf-8"
+            # Use ASCII encoding on Solaris/Illumos/OpenIndiana
+            encoding = "ascii"
         else:
             encoding = sys.getfilesystemencoding()
 
@@ -2336,7 +2367,7 @@ class MiscTestCase(unittest.TestCase):
                 if truncate is not None:
                     encoded = encoded[:truncate]
                 if sys.platform.startswith("sunos"):
-                    expected = encoded.decode("utf-8", "surrogateescape")
+                    expected = encoded.decode("ascii", "surrogateescape")
                 else:
                     expected = os.fsdecode(encoded)
             else:
@@ -2355,7 +2386,11 @@ class MiscTestCase(unittest.TestCase):
                 if '\0' in expected:
                     expected = expected.split('\0', 1)[0]
 
-            with self.subTest(name=name, expected=expected):
+            with self.subTest(name=name, expected=expected, thread="main"):
+                _thread.set_name(name)
+                self.assertEqual(_thread._get_name(), expected)
+
+            with self.subTest(name=name, expected=expected, thread="worker"):
                 work_name = None
                 thread = threading.Thread(target=work, name=name)
                 thread.start()
