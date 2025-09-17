@@ -899,9 +899,7 @@ struct _is {
     struct _stoptheworld_state stoptheworld;
     struct _qsbr_shared qsbr;
 
-#ifdef _Py_TIER2
     struct _PyUOpInstruction *jit_uop_buffer;
-#endif
 
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
