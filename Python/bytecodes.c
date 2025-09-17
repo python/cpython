@@ -2961,7 +2961,9 @@ dummy_func(
                     start--;
                 }
                 _PyExecutorObject *executor;
+                assert(!_PyInterpreterState_GET()->compiling);
                 int optimized = _PyOptimizer_Optimize(frame, start, &executor, 0);
+                assert(!_PyInterpreterState_GET()->compiling);
                 if (optimized <= 0) {
                     this_instr[1].counter = restart_backoff_counter(counter);
                     ERROR_IF(optimized < 0);
