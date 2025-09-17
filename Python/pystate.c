@@ -8,7 +8,6 @@
 #include "pycore_codecs.h"        // _PyCodec_Fini()
 #include "pycore_critical_section.h" // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
-#include "pycore_emscripten_trampoline.h" // _Py_EmscriptenTrampoline_Init()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
@@ -353,11 +352,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->main_thread = PyThread_get_thread_ident();
 
     runtime->unicode_state.ids.next_index = unicode_next_index;
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    _Py_EmscriptenTrampoline_Init(runtime);
-#endif
-
     runtime->_initialized = 1;
 }
 
@@ -2253,13 +2247,15 @@ stop_the_world(struct _stoptheworld_state *stw)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    PyMutex_Lock(&stw->mutex);
+    // gh-137433: Acquire the rwmutex first to avoid deadlocks with daemon
+    // threads that may hang when blocked on lock acquisition.
     if (stw->is_global) {
         _PyRWMutex_Lock(&runtime->stoptheworld_mutex);
     }
     else {
         _PyRWMutex_RLock(&runtime->stoptheworld_mutex);
     }
+    PyMutex_Lock(&stw->mutex);
 
     HEAD_LOCK(runtime);
     stw->requested = 1;
@@ -2325,13 +2321,13 @@ start_the_world(struct _stoptheworld_state *stw)
     }
     stw->requester = NULL;
     HEAD_UNLOCK(runtime);
+    PyMutex_Unlock(&stw->mutex);
     if (stw->is_global) {
         _PyRWMutex_Unlock(&runtime->stoptheworld_mutex);
     }
     else {
         _PyRWMutex_RUnlock(&runtime->stoptheworld_mutex);
     }
-    PyMutex_Unlock(&stw->mutex);
 }
 #endif  // Py_GIL_DISABLED
 

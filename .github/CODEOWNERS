@@ -80,9 +80,10 @@ Tools/patchcheck/             @AA-Turner
 # ----------------------------------------------------------------------------
 
 # Autotools
-configure*                       @erlend-aasland @corona10 @AA-Turner
-Makefile.pre.in                  @erlend-aasland @AA-Turner
-Modules/Setup*                   @erlend-aasland @AA-Turner
+configure*                       @erlend-aasland @corona10 @AA-Turner @emmatyping
+Makefile.pre.in                  @erlend-aasland @AA-Turner @emmatyping
+Modules/makesetup                @erlend-aasland @AA-Turner @emmatyping
+Modules/Setup*                   @erlend-aasland @AA-Turner @emmatyping
 Tools/build/regen-configure.sh   @AA-Turner
 
 
@@ -157,16 +158,16 @@ Lib/_osx_support.py           @python/macos-team
 Lib/test/test__osx_support.py @python/macos-team
 
 # WebAssembly
-Tools/wasm/README.md          @brettcannon @freakboy3742
+Tools/wasm/README.md          @brettcannon @freakboy3742 @emmatyping
 
 # WebAssembly (Emscripten)
-Tools/wasm/config.site-wasm32-emscripten  @freakboy3742
-Tools/wasm/emscripten                     @freakboy3742
+Tools/wasm/config.site-wasm32-emscripten  @freakboy3742 @emmatyping
+Tools/wasm/emscripten                     @freakboy3742 @emmatyping
 
 # WebAssembly (WASI)
-Tools/wasm/wasi-env           @brettcannon
-Tools/wasm/wasi.py            @brettcannon
-Tools/wasm/wasi               @brettcannon
+Tools/wasm/wasi-env           @brettcannon @emmatyping
+Tools/wasm/wasi.py            @brettcannon @emmatyping
+Tools/wasm/wasi               @brettcannon @emmatyping
 
 # Windows
 PC/                           @python/windows-team
@@ -405,11 +406,15 @@ Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
 Doc/**/*time.rst                 @pganssle @abalkin
+Doc/library/zoneinfo.rst         @pganssle
 Include/datetime.h               @pganssle @abalkin
 Include/internal/pycore_time.h   @pganssle @abalkin
+Lib/test/test_zoneinfo/          @pganssle
+Lib/zoneinfo/                    @pganssle
 Lib/*time.py                     @pganssle @abalkin
 Lib/test/datetimetester.py       @pganssle @abalkin
 Lib/test/test_*time.py           @pganssle @abalkin
+Modules/*zoneinfo*               @pganssle
 Modules/*time*                   @pganssle @abalkin
 Python/pytime.c                  @pganssle @abalkin
 
@@ -603,9 +608,9 @@ Lib/test/test_zipfile/_path/  @jaraco
 Lib/zipfile/_path/            @jaraco
 
 # Zstandard
-Lib/compression/zstd/         @AA-Turner
-Lib/test/test_zstd.py         @AA-Turner
-Modules/_zstd/                @AA-Turner
+Lib/compression/zstd/         @AA-Turner @emmatyping
+Lib/test/test_zstd.py         @AA-Turner @emmatyping
+Modules/_zstd/                @AA-Turner @emmatyping
 
 # ----------------------------------------------------------------------------
 

@@ -2176,7 +2176,7 @@ New Features
   (Contributed by Sam Gross in :gh:`114329`.)
 
 * Add the :c:func:`PyList_Extend` and :c:func:`PyList_Clear` functions,
-  mirroring the Python :meth:`!list.extend` and :meth:`!list.clear` methods.
+  mirroring the Python :meth:`list.extend` and :meth:`list.clear` methods.
   (Contributed by Victor Stinner in :gh:`111138`.)
 
 * Add the :c:func:`PyLong_AsInt` function.
@@ -2490,7 +2490,7 @@ Deprecated C APIs
 
 * Deprecate old Python initialization functions:
 
-  * :c:func:`PySys_ResetWarnOptions`:
+  * :c:func:`!PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
   * :c:func:`!Py_GetExecPrefix`:
     Get :data:`sys.exec_prefix` instead.
