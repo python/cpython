@@ -225,7 +225,7 @@ def build_python_path() -> Path:
 
 @contextmanager
 def group(text: str):
-    """A context manager that output a log marker around a section of a build.
+    """A context manager that outputs a log marker around a section of a build.
 
     If running in a GitHub Actions environment, the GitHub syntax for
     collapsible log sections is used.
@@ -460,6 +460,43 @@ def package_version(prefix_path: Path) -> str:
     sys.exit("Unable to determine Python version being packaged.")
 
 
+def lib_platform_files(dirname, names):
+    """A file filter that ignores platform-specific files in the lib directory.
+    """
+    path = Path(dirname)
+    if (
+        path.parts[-3] == "lib"
+        and path.parts[-2].startswith("python")
+        and path.parts[-1] == "lib-dynload"
+    ):
+        return names
+    elif path.parts[-2] == "lib" and path.parts[-1].startswith("python"):
+        ignored_names = set(
+            name
+            for name in names
+            if (
+                name.startswith("_sysconfigdata_")
+                or name.startswith("_sysconfig_vars_")
+                or name == "build-details.json"
+            )
+        )
+    else:
+        ignored_names = set()
+
+    return ignored_names
+
+
+def lib_non_platform_files(dirname, names):
+    """A file filter that ignores anything *except* platform-specific files
+    in the lib directory.
+    """
+    path = Path(dirname)
+    if path.parts[-2] == "lib" and path.parts[-1].startswith("python"):
+        return set(names) - lib_platform_files(dirname, names) - {"lib-dynload"}
+    else:
+        return set()
+
+
 def create_xcframework(platform: str) -> str:
     """Build an XCframework from the component parts for the platform.
 
@@ -547,6 +584,7 @@ def create_xcframework(platform: str) -> str:
     # to be copied in separately.
     print()
     print("Copy additional resources...")
+    has_common_stdlib = False
     for slice_name, slice_parts in HOSTS[platform].items():
         # Some parts are the same across all slices, so we can any of the
         # host frameworks as the source for the merged version.
@@ -575,71 +613,26 @@ def create_xcframework(platform: str) -> str:
             slice_framework / "Headers/pyconfig.h",
         )
 
-        # Copy the lib folder. If there's only one slice, we can copy the .so
-        # binary modules as is. Otherwise, we ignore .so files, and merge them
-        # into fat binaries in the next step.
-        print(f" - {slice_name} standard library")
-        shutil.copytree(
-            first_path / "lib",
-            slice_path / "lib",
-            ignore=(
-                None
-                if len(slice_parts) == 1
-                else shutil.ignore_patterns("*.so")
-            ),
-        )
-
-        # If there's more than one slice, merge binary .so modules.
-        if len(slice_parts) > 1:
-            print(f" - {slice_name} merging binary modules")
-            lib_dirs = [
-                CROSS_BUILD_DIR
-                / f"{host_triple}/Apple/iOS/Frameworks"
-                / f"{multiarch}/lib"
-                for host_triple, multiarch in slice_parts.items()
-            ]
-
-            # The list of .so binary modules should be the same in each slice.
-            # Find all .so files in each slice; then sort and zip those lists.
-            # Zipping with strict=True means any length discrepancy will raise
-            # an error.
-            for lib_set in zip(
-                *(sorted(lib_dir.glob("**/*.so")) for lib_dir in lib_dirs),
-                strict=True,
-            ):
-                # An additional safety check - not only must the two lists of
-                # libraries be the same length, but they must have the same
-                # module names. Raise an error if there's any discrepancy.
-                relative_libs = set(
-                    lib.relative_to(lib_dir.parent)
-                    for lib_dir, lib in zip(lib_dirs, lib_set)
-                )
-                if len(relative_libs) != 1:
-                    raise RuntimeError(
-                        f"Cannot merge non-matching libraries: {relative_libs}"
-                    ) from None
-
-                # Merge the per-arch .so files into a single "fat" binary.
-                relative_lib = next(iter(relative_libs))
-                run(
-                    [
-                        "lipo",
-                        "-create",
-                        "-output",
-                        slice_path / relative_lib,
-                    ]
-                    + [
-                        (
-                            CROSS_BUILD_DIR
-                            / f"{host_triple}/Apple/iOS/Frameworks/{multiarch}"
-                            / relative_lib
-                        )
-                        for host_triple, multiarch in slice_parts.items()
-                    ]
-                )
-
         print(f" - {slice_name} architecture-specific files")
         for host_triple, multiarch in slice_parts.items():
+            print(f"   - {multiarch} standard library")
+            arch, _ = multiarch.split("-", 1)
+
+            if not has_common_stdlib:
+                print("     - using this architecture as the common stdlib")
+                shutil.copytree(
+                    framework_path(host_triple, multiarch) / "lib",
+                    package_path / "Python.xcframework/lib",
+                    ignore=lib_platform_files,
+                )
+                has_common_stdlib = True
+
+            shutil.copytree(
+                framework_path(host_triple, multiarch) / "lib",
+                slice_path / f"lib-{arch}",
+                ignore=lib_non_platform_files,
+            )
+
             # Copy the host's pyconfig.h to an architecture-specific name.
             arch = multiarch.split("-")[0]
             host_path = (
@@ -654,12 +647,11 @@ def create_xcframework(platform: str) -> str:
                 slice_framework / f"Headers/pyconfig-{arch}.h",
             )
 
-            # Copy any files (such as sysconfig) that are multiarch-specific.
-            for path in host_path.glob(f"lib/**/*_{multiarch}.*"):
-                shutil.copy(
-                    path,
-                    slice_path / (path.relative_to(host_path)),
-                )
+    print(" - build tools")
+    shutil.copytree(
+        PYTHON_DIR / "Apple/iOS/Resources/build",
+        package_path / "Python.xcframework/build",
+    )
 
     return version
 
@@ -924,6 +916,11 @@ def parse_args() -> argparse.Namespace:
                 "`--simulator 'iPhone 16 Pro,arch=arm64,OS=26.0'` would run on "
                 "an ARM64 iPhone 16 Pro simulator running iOS 26.0."
             ),
+        )
+        cmd.add_argument(
+            "--slow",
+            action="store_true",
+            help="Run tests with --slow-ci options.",
         )
 
     for subcommand in [configure_build, configure_host, build, ci]:
