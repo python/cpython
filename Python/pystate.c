@@ -494,6 +494,11 @@ free_interpreter(PyInterpreterState *interp)
 static inline int check_interpreter_whence(long);
 #endif
 
+extern _Py_CODEUNIT *
+_Py_LazyJitTrampoline(
+    struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -800,7 +805,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     _Py_ClearExecutorDeletionList(interp);
 #endif
     _PyAST_Fini(interp);
-    _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
@@ -810,6 +814,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     /* Last garbage collection on this interpreter */
     _PyGC_CollectNoFail(tstate);
     _PyGC_Fini(interp);
+
+    // Finalize warnings after last gc so that any finalizers can
+    // access warnings state
+    _PyWarnings_Fini(interp);
     struct _PyExecutorObject *cold = interp->cold_executor;
     if (cold != NULL) {
         interp->cold_executor = NULL;
@@ -2245,13 +2253,15 @@ stop_the_world(struct _stoptheworld_state *stw)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    PyMutex_Lock(&stw->mutex);
+    // gh-137433: Acquire the rwmutex first to avoid deadlocks with daemon
+    // threads that may hang when blocked on lock acquisition.
     if (stw->is_global) {
         _PyRWMutex_Lock(&runtime->stoptheworld_mutex);
     }
     else {
         _PyRWMutex_RLock(&runtime->stoptheworld_mutex);
     }
+    PyMutex_Lock(&stw->mutex);
 
     HEAD_LOCK(runtime);
     stw->requested = 1;
@@ -2317,13 +2327,13 @@ start_the_world(struct _stoptheworld_state *stw)
     }
     stw->requester = NULL;
     HEAD_UNLOCK(runtime);
+    PyMutex_Unlock(&stw->mutex);
     if (stw->is_global) {
         _PyRWMutex_Unlock(&runtime->stoptheworld_mutex);
     }
     else {
         _PyRWMutex_RUnlock(&runtime->stoptheworld_mutex);
     }
-    PyMutex_Unlock(&stw->mutex);
 }
 #endif  // Py_GIL_DISABLED
 

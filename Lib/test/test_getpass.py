@@ -201,5 +201,41 @@ class UnixGetpassTest(unittest.TestCase):
         self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
 
 
+class GetpassEchoCharTest(unittest.TestCase):
+
+    def test_accept_none(self):
+        getpass._check_echo_char(None)
+
+    @support.subTests('echo_char', ["*", "A", " "])
+    def test_accept_single_printable_ascii(self, echo_char):
+        getpass._check_echo_char(echo_char)
+
+    def test_reject_empty_string(self):
+        self.assertRaises(ValueError, getpass.getpass, echo_char="")
+
+    @support.subTests('echo_char', ["***", "AA", "aA*!"])
+    def test_reject_multi_character_strings(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    @support.subTests('echo_char', [
+        '\N{LATIN CAPITAL LETTER AE}',  # non-ASCII single character
+        '\N{HEAVY BLACK HEART}',        # non-ASCII multibyte character
+    ])
+    def test_reject_non_ascii(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    @support.subTests('echo_char', [
+        ch for ch in map(chr, range(0, 128))
+        if not ch.isprintable()
+    ])
+    def test_reject_non_printable_characters(self, echo_char):
+        self.assertRaises(ValueError, getpass.getpass, echo_char=echo_char)
+
+    # TypeError Rejection
+    @support.subTests('echo_char', [b"*", 0, 0.0, [], {}])
+    def test_reject_non_string(self, echo_char):
+        self.assertRaises(TypeError, getpass.getpass, echo_char=echo_char)
+
+
 if __name__ == "__main__":
     unittest.main()
