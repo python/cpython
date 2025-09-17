@@ -1064,9 +1064,15 @@ class UtimeTests(unittest.TestCase):
         if self.get_file_system(self.dirname) != "NTFS":
             self.skipTest("requires NTFS")
 
-        large = 5000000000   # some day in 2128
-        os.utime(self.fname, (large, large))
-        self.assertEqual(os.stat(self.fname).st_mtime, large)
+        times = (
+            5000000000,  # some day in 2128
+            # boundaries of the fast path cutoff in posixmodule.c:fill_time
+            -9223372037, -9223372036, 9223372035, 9223372036,
+        )
+        for large in times:
+            with self.subTest(large=large):
+                os.utime(self.fname, (large, large))
+                self.assertEqual(os.stat(self.fname).st_mtime, large)
 
     def test_utime_invalid_arguments(self):
         # seconds and nanoseconds parameters are mutually exclusive

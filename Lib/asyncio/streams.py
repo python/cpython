@@ -214,7 +214,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         return self._stream_reader_wr()
 
     def _replace_transport(self, transport):
-        loop = self._loop
         self._transport = transport
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
 

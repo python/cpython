@@ -163,6 +163,10 @@ class UnixConsole(Console):
         self.__svtermstate = None
         self.terminfo = terminfo.TermInfo(term or None)
         self.term = term
+        self.is_apple_terminal = (
+            platform.system() == "Darwin"
+            and os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+        )
 
         @overload
         def _my_getstr(cap: str, optional: Literal[False] = False) -> bytes: ...
@@ -342,10 +346,17 @@ class UnixConsole(Console):
         raw.lflag |= termios.ISIG
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
-        tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
+        try:
+            tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
+        except termios.error as e:
+            if e.args[0] != errno.EIO:
+                # gh-135329: when running under external programs (like strace),
+                # tcsetattr may fail with EIO. We can safely ignore this
+                # and continue with default terminal settings.
+                raise
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7l")
 
         self.screen = []
@@ -374,12 +385,15 @@ class UnixConsole(Console):
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
-        if self.__svtermstate is not None:
+        try:
             tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
             # Reset the state for the next prepare() call.
             self.__svtermstate = None
+        except termios.error as e:
+            if e.args[0] != errno.EIO:
+                raise
 
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
@@ -416,6 +430,8 @@ class UnixConsole(Console):
                             return self.event_queue.get()
                         else:
                             continue
+                    elif err.errno == errno.EIO:
+                        raise SystemExit(errno.EIO)
                     else:
                         raise
                 else:

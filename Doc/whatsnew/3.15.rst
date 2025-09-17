@@ -273,6 +273,12 @@ Other language changes
   This speeds up class creation, and helps avoid reference cycles.
   (Contributed by Petr Viktorin in :gh:`135228`.)
 
+* The :option:`-W` option and the :envvar:`PYTHONWARNINGS` environment variable
+  can now specify regular expressions instead of literal strings to match
+  the warning message and the module name, if the corresponding field starts
+  and ends with a forward slash (``/``).
+  (Contributed by Serhiy Storchaka in :gh:`134716`.)
+
 
 New modules
 ===========
@@ -294,6 +300,7 @@ dbm
   the use of :manpage:`mmap(2)`.
   This may harm performance, but improve crash tolerance.
   (Contributed by Serhiy Storchaka in :gh:`66234`.)
+
 
 difflib
 -------
@@ -379,6 +386,7 @@ os.path
   the resulting path can be missing but it will be free of symlinks.
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
+
 resource
 --------
 
@@ -407,7 +415,7 @@ sqlite3
    * Prompts, error messages, and help text are now colored.
      This is enabled by default, see :ref:`using-on-controlling-color` for
      details.
-     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`)
+     (Contributed by Stan Ulbrych and Łukasz Langa in :gh:`133461`.)
 
 
 ssl
@@ -433,7 +441,7 @@ ssl
      agreement groups compatible with the minimum and maximum TLS versions
      currently set in the context. This call requires OpenSSL 3.5 or later.
 
-   (Contributed by Ron Frederick in :gh:`136306`)
+   (Contributed by Ron Frederick in :gh:`136306`.)
 
 * Added a new method :meth:`ssl.SSLContext.set_ciphersuites` for setting TLS 1.3
   ciphers. For TLS 1.2 or earlier, :meth:`ssl.SSLContext.set_ciphers` should
@@ -441,6 +449,30 @@ ssl
   selected cipher suite will depend on the TLS version negotiated when a
   connection is made.
   (Contributed by Ron Frederick in :gh:`137197`.)
+
+* Added new methods for managing signature algorithms:
+
+  * :func:`ssl.get_sigalgs` returns a list of all available TLS signature
+    algorithms. This call requires OpenSSL 3.4 or later.
+  * :meth:`ssl.SSLContext.set_client_sigalgs` sets the signature algorithms
+    allowed for certificate-based client authentication.
+  * :meth:`ssl.SSLContext.set_server_sigalgs` sets the signature algorithms
+    allowed for the server to complete the TLS handshake.
+  * :meth:`ssl.SSLSocket.client_sigalg` returns the signature algorithm
+    selected for client authentication on the current connection. This call
+    requires OpenSSL 3.5 or later.
+  * :meth:`ssl.SSLSocket.server_sigalg` returns the signature algorithm
+    selected for the server to complete the TLS handshake on the current
+    connection. This call requires OpenSSL 3.5 or later.
+
+   (Contributed by Ron Frederick in :gh:`138252`.)
+
+
+sys
+---
+
+* Add :data:`sys.abi_info` namespace to improve access to ABI information.
+  (Contributed by Klaus Zimmermann in :gh:`137476`.)
 
 
 tarfile
@@ -510,6 +542,17 @@ module_name
 
 Deprecated
 ==========
+
+CLI
+---
+
+* Deprecate :option:`-b` and :option:`!-bb` command line options
+  and schedule them to become no-op in Python 3.17.
+  These were primarily helpers for the Python 2 -> 3 transition.
+  Starting with Python 3.17, no :exc:`BytesWarning` will be raised
+  for these cases; use a type checker instead.
+
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
 
 hashlib
 -------
@@ -622,6 +665,12 @@ typing
   (Contributed by Nikita Sobolev in :gh:`137191`.)
 
 
+unicodedata
+-----------
+
+* The Unicode database has been updated to Unicode 17.0.0.
+
+
 wave
 ----
 
@@ -668,12 +717,30 @@ New features
 
 * Add :c:type:`PyUnstable_Unicode_GET_CACHED_HASH` to get the cached hash of
   a string. See the documentation for caveats.
-  (Contributed by Petr Viktorin in :gh:`131510`)
+  (Contributed by Petr Viktorin in :gh:`131510`.)
 
 * Add API for checking an extension module's ABI compatibility:
   :c:data:`Py_mod_abi`, :c:func:`PyABIInfo_Check`, :c:macro:`PyABIInfo_VAR`
   and :c:data:`Py_mod_abi`.
-  (Contributed by Petr Viktorin in :gh:`137210`)
+  (Contributed by Petr Viktorin in :gh:`137210`.)
+
+* Implement :pep:`782`, the :ref:`PyBytesWriter API <pybyteswriter>`.
+  Add functions:
+
+  * :c:func:`PyBytesWriter_Create`
+  * :c:func:`PyBytesWriter_Discard`
+  * :c:func:`PyBytesWriter_FinishWithPointer`
+  * :c:func:`PyBytesWriter_FinishWithSize`
+  * :c:func:`PyBytesWriter_Finish`
+  * :c:func:`PyBytesWriter_Format`
+  * :c:func:`PyBytesWriter_GetData`
+  * :c:func:`PyBytesWriter_GetSize`
+  * :c:func:`PyBytesWriter_GrowAndUpdatePointer`
+  * :c:func:`PyBytesWriter_Grow`
+  * :c:func:`PyBytesWriter_Resize`
+  * :c:func:`PyBytesWriter_WriteBytes`
+
+  (Contributed by Victor Stinner in :gh:`129813`.)
 
 
 Porting to Python 3.15
@@ -714,6 +781,11 @@ Deprecated C APIs
   signed integer type of the same size is now deprecated.
   (Contributed by Serhiy Storchaka in :gh:`132629`.)
 
+* :c:func:`PyBytes_FromStringAndSize(NULL, len) <PyBytes_FromStringAndSize>`
+  and :c:func:`_PyBytes_Resize` are :term:`soft deprecated`,
+  use the :c:type:`PyBytesWriter` API instead.
+  (Contributed by Victor Stinner in :gh:`129813`.)
+
 * Deprecate :c:member:`~PyComplexObject.cval` field of the the
   :c:type:`PyComplexObject` type.
   Use :c:func:`PyComplex_AsCComplex` and :c:func:`PyComplex_FromCComplex`
@@ -725,6 +797,11 @@ Deprecated C APIs
   :c:func:`_Py_c_prod`, :c:func:`_Py_c_quot`, :c:func:`_Py_c_pow` and
   :c:func:`_Py_c_abs` are :term:`soft deprecated`.
   (Contributed by Sergey B Kirpichev in :gh:`128813`.)
+
+* :c:member:`~PyConfig.bytes_warning` is deprecated
+  since 3.15 and will be removed in 3.17.
+  (Contributed by Nikita Sobolev in :gh:`136355`.)
+
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
@@ -744,11 +821,16 @@ Removed C APIs
     Use :c:func:`PyCodec_Encode` instead; Note that some codecs (for example, "base64")
     may return a type other than :class:`bytes`, such as :class:`str`.
 
-  (Contributed by Stan Ulbrych in :gh:`133612`)
+  (Contributed by Stan Ulbrych in :gh:`133612`.)
 
 * :c:func:`!PyImport_ImportModuleNoBlock`: deprecated alias
   of :c:func:`PyImport_ImportModule`.
   (Contributed by Bénédikt Tran in :gh:`133644`.)
+
+* Remove deprecated :c:func:`!PySys_ResetWarnOptions`.
+  Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
+
+  (Contributed by Nikita Sobolev in :gh:`138886`.)
 
 The following functions are removed in favor of :c:func:`PyConfig_Get`.
 The |pythoncapi_compat_project| can be used to get :c:func:`!PyConfig_Get`
