@@ -33,7 +33,7 @@ from test.support.script_helper import (assert_python_ok,
                                         assert_python_failure, spawn_python)
 from test.support import threading_helper
 from test.support import (reap_children, captured_stdout,
-                          captured_stderr, is_emscripten, is_wasi,
+                          captured_stderr, is_wasm32,
                           requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.test_pydoc import pydoc_mod
@@ -1303,6 +1303,11 @@ class PydocImportTest(PydocBaseTest):
     @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
+        if support.is_emscripten:
+            # Emscripten's readdir implementation is buggy on directories
+            # with read permission but no execute permission.
+            old_umask = os.umask(0)
+            self.addCleanup(os.umask, old_umask)
         os.mkdir(pkgdir)
         self.addCleanup(rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
@@ -2076,7 +2081,7 @@ class PydocFodderTest(unittest.TestCase):
 
 
 @unittest.skipIf(
-    is_emscripten or is_wasi,
+    is_wasm32,
     "Socket server not available on Emscripten/WASI."
 )
 class PydocServerTest(unittest.TestCase):

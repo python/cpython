@@ -70,21 +70,21 @@ class Optimizer:
 
     path: pathlib.Path
     _: dataclasses.KW_ONLY
-    # prefix used to mangle symbols on some platforms:
-    prefix: str = ""
+    # Prefixes used to mangle local labels and symbols:
+    label_prefix: str
+    symbol_prefix: str
     # The first block in the linked list:
     _root: _Block = dataclasses.field(init=False, default_factory=_Block)
     _labels: dict[str, _Block] = dataclasses.field(init=False, default_factory=dict)
     # No groups:
     _re_noninstructions: typing.ClassVar[re.Pattern[str]] = re.compile(
-        r"\s*(?:\.|#|//|$)"
+        r"\s*(?:\.|#|//|;|$)"
     )
     # One group (label):
     _re_label: typing.ClassVar[re.Pattern[str]] = re.compile(
         r'\s*(?P<label>[\w."$?@]+):'
     )
     # Override everything that follows in subclasses:
-    _alignment: typing.ClassVar[int] = 1
     _branches: typing.ClassVar[dict[str, str | None]] = {}
     # Two groups (instruction and target):
     _re_branch: typing.ClassVar[re.Pattern[str]] = _RE_NEVER_MATCH
@@ -131,8 +131,12 @@ class Optimizer:
                 block.fallthrough = False
 
     def _preprocess(self, text: str) -> str:
-        # Override this method to do preprocessing of the textual assembly:
-        return text
+        # Override this method to do preprocessing of the textual assembly.
+        # In all cases, replace references to the _JIT_CONTINUE symbol with
+        # references to a local _JIT_CONTINUE label (which we will add later):
+        continue_symbol = rf"\b{re.escape(self.symbol_prefix)}_JIT_CONTINUE\b"
+        continue_label = f"{self.label_prefix}_JIT_CONTINUE"
+        return re.sub(continue_symbol, continue_label, text)
 
     @classmethod
     def _invert_branch(cls, line: str, target: str) -> str | None:
@@ -197,15 +201,12 @@ class Optimizer:
         #    jmp FOO
         # After:
         #    jmp FOO
-        #    .balign 8
         #    _JIT_CONTINUE:
         # This lets the assembler encode _JIT_CONTINUE jumps at build time!
-        align = _Block()
-        align.noninstructions.append(f"\t.balign\t{self._alignment}")
-        continuation = self._lookup_label(f"{self.prefix}_JIT_CONTINUE")
+        continuation = self._lookup_label(f"{self.label_prefix}_JIT_CONTINUE")
         assert continuation.label
         continuation.noninstructions.append(f"{continuation.label}:")
-        end.link, align.link, continuation.link = align, continuation, end.link
+        end.link, continuation.link = continuation, end.link
 
     def _mark_hot_blocks(self) -> None:
         # Start with the last block, and perform a DFS to find all blocks that
@@ -285,8 +286,6 @@ class Optimizer:
 class OptimizerAArch64(Optimizer):  # pylint: disable = too-few-public-methods
     """aarch64-apple-darwin/aarch64-pc-windows-msvc/aarch64-unknown-linux-gnu"""
 
-    # TODO: @diegorusso
-    _alignment = 8
     # https://developer.arm.com/documentation/ddi0602/2025-03/Base-Instructions/B--Branch-
     _re_jump = re.compile(r"\s*b\s+(?P<target>[\w.]+)")
 
@@ -302,18 +301,3 @@ class OptimizerX86(Optimizer):  # pylint: disable = too-few-public-methods
     _re_jump = re.compile(r"\s*jmp\s+(?P<target>[\w.]+)")
     # https://www.felixcloutier.com/x86/ret
     _re_return = re.compile(r"\s*ret\b")
-
-
-class OptimizerX8664Windows(OptimizerX86):  # pylint: disable = too-few-public-methods
-    """x86_64-pc-windows-msvc"""
-
-    def _preprocess(self, text: str) -> str:
-        text = super()._preprocess(text)
-        # Before:
-        #     rex64 jmpq *__imp__JIT_CONTINUE(%rip)
-        # After:
-        #     jmp _JIT_CONTINUE
-        far_indirect_jump = (
-            rf"rex64\s+jmpq\s+\*__imp_(?P<target>{self.prefix}_JIT_\w+)\(%rip\)"
-        )
-        return re.sub(far_indirect_jump, r"jmp\t\g<target>", text)

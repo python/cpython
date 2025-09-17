@@ -45,15 +45,15 @@ provides backports of these new features to older versions of Python.
 
 .. seealso::
 
-   `"Typing cheat sheet" <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_
+   `Typing cheat sheet <https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html>`_
        A quick overview of type hints (hosted at the mypy docs)
 
-   "Type System Reference" section of `the mypy docs <https://mypy.readthedocs.io/en/stable/index.html>`_
+   Type System Reference section of `the mypy docs <https://mypy.readthedocs.io/en/stable/index.html>`_
       The Python typing system is standardised via PEPs, so this reference
       should broadly apply to most Python type checkers. (Some parts may still
       be specific to mypy.)
 
-   `"Static Typing with Python" <https://typing.python.org/en/latest/>`_
+   `Static Typing with Python <https://typing.python.org/en/latest/>`_
       Type-checker-agnostic documentation written by the community detailing
       type system features, useful typing related tools and typing best
       practices.
@@ -64,7 +64,7 @@ Specification for the Python Type System
 ========================================
 
 The canonical, up-to-date specification of the Python type system can be
-found at `"Specification for the Python type system" <https://typing.python.org/en/latest/spec/index.html>`_.
+found at `Specification for the Python type system <https://typing.python.org/en/latest/spec/index.html>`_.
 
 .. _type-aliases:
 
@@ -230,9 +230,11 @@ For example:
 
    callback: Callable[[str], Awaitable[None]] = on_update
 
+.. index:: single: ...; ellipsis literal
+
 The subscription syntax must always be used with exactly two values: the
 argument list and the return type.  The argument list must be a list of types,
-a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis. The return type must
+a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis (``...``). The return type must
 be a single type.
 
 If a literal ellipsis ``...`` is given as the argument list, it indicates that
@@ -375,8 +377,11 @@ accepts *any number* of type arguments::
    # but ``z`` has been assigned to a tuple of length 3
    z: tuple[int] = (1, 2, 3)
 
+.. index:: single: ...; ellipsis literal
+
 To denote a tuple which could be of *any* length, and in which all elements are
-of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
+of the same type ``T``, use the literal ellipsis ``...``: ``tuple[T, ...]``.
+To denote an empty tuple, use
 ``tuple[()]``. Using plain ``tuple`` as an annotation is equivalent to using
 ``tuple[Any, ...]``::
 
@@ -1161,6 +1166,8 @@ These can be used as types in annotations. They all support subscription using
 .. data:: Concatenate
 
    Special form for annotating higher-order functions.
+
+   .. index:: single: ...; ellipsis literal
 
    ``Concatenate`` can be used in conjunction with :ref:`Callable <annotating-callables>` and
    :class:`ParamSpec` to annotate a higher-order callable which adds, removes,
@@ -2573,7 +2580,7 @@ types.
       at runtime as soon as the class has been created. Monkey-patching
       attributes onto a runtime-checkable protocol will still work, but will
       have no impact on :func:`isinstance` checks comparing objects to the
-      protocol. See :ref:`"What's new in Python 3.12" <whatsnew-typing-py312>`
+      protocol. See :ref:`What's new in Python 3.12 <whatsnew-typing-py312>`
       for more details.
 
 
@@ -3357,8 +3364,13 @@ Introspection helpers
      with ``T``, unless *include_extras* is set to ``True`` (see
      :class:`Annotated` for more information).
 
-   See also :func:`inspect.get_annotations`, a lower-level function that
+   See also :func:`annotationlib.get_annotations`, a lower-level function that
    returns annotations more directly.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. note::
 
@@ -3505,6 +3517,11 @@ Introspection helpers
 
    See the documentation for :meth:`annotationlib.ForwardRef.evaluate` for
    the meaning of the *owner*, *globals*, *locals*, *type_params*, and *format* parameters.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. versionadded:: 3.14
 
@@ -3770,6 +3787,14 @@ Aliases to container ABCs in :mod:`collections.abc`
    .. deprecated:: 3.9
       :class:`collections.abc.Set` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: ByteString(Sequence[int])
+
+   This type represents the types :class:`bytes`, :class:`bytearray`,
+   and :class:`memoryview` of byte sequences.
+
+   .. deprecated-removed:: 3.9 3.17
+      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
@@ -4064,6 +4089,10 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.9
      - Undecided (see :ref:`deprecated-aliases` for more information)
      - :pep:`585`
+   * - :class:`typing.ByteString`
+     - 3.9
+     - 3.17
+     - :gh:`91896`
    * - :data:`typing.Text`
      - 3.11
      - Undecided

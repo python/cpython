@@ -315,7 +315,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
 }
 
 PyDoc_STRVAR(send_doc,
-"send(arg) -> send 'arg' into generator,\n\
+"send(value) -> send 'value' into generator,\n\
 return next yielded value or raise StopIteration.");
 
 static PyObject *
@@ -1092,14 +1092,14 @@ _PyCoro_GetAwaitableIter(PyObject *o)
             if (PyCoro_CheckExact(res) || gen_is_coroutine(res)) {
                 /* __await__ must return an *iterator*, not
                    a coroutine or another awaitable (see PEP 492) */
-                PyErr_SetString(PyExc_TypeError,
-                                "__await__() returned a coroutine");
+                PyErr_Format(PyExc_TypeError,
+                             "%T.__await__() must return an iterator, "
+                             "not coroutine", o);
                 Py_CLEAR(res);
             } else if (!PyIter_Check(res)) {
                 PyErr_Format(PyExc_TypeError,
-                             "__await__() returned non-iterator "
-                             "of type '%.100s'",
-                             Py_TYPE(res)->tp_name);
+                             "%T.__await__() must return an iterator, "
+                             "not %T", o, res);
                 Py_CLEAR(res);
             }
         }
