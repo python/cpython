@@ -413,6 +413,9 @@ Lib/test/datetimetester.py       @pganssle @abalkin
 Lib/test/test_*time.py           @pganssle @abalkin
 Modules/*time*                   @pganssle @abalkin
 Python/pytime.c                  @pganssle @abalkin
+Modules/**/*zoneinfo*            @pganssle
+Lib/**/*zoneinfo*                @pganssle
+Doc/**/*zoneinfo*                @pganssle
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
