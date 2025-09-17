@@ -900,7 +900,7 @@ struct _is {
     struct _qsbr_shared qsbr;
 
 #ifdef _Py_TIER2
-    struct _PyUOpInstruction jit_uop_buffer[UOP_MAX_TRACE_LENGTH];
+    struct _PyUOpInstruction *jit_uop_buffer;
 #endif
 
 #if defined(Py_GIL_DISABLED)

@@ -1281,14 +1281,12 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    /**
     if (interp->jit_uop_buffer == NULL) {
         interp->jit_uop_buffer = (_PyUOpInstruction *)PyMem_RawMalloc(UOP_MAX_TRACE_LENGTH*sizeof(_PyUOpInstruction));
         if (interp->jit_uop_buffer == NULL) {
             return 0;
         }
     }
-    **/
     _PyUOpInstruction *buffer = interp->jit_uop_buffer;
     OPT_STAT_INC(attempts);
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
