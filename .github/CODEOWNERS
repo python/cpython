@@ -409,7 +409,8 @@ Doc/**/*time.rst                 @pganssle @abalkin
 Doc/library/zoneinfo.rst         @pganssle
 Include/datetime.h               @pganssle @abalkin
 Include/internal/pycore_time.h   @pganssle @abalkin
-Lib/**/*zoneinfo*                @pganssle
+Lib/test/test_zoneinfo/          @pganssle
+Lib/zoneinfo/                    @pganssle
 Lib/*time.py                     @pganssle @abalkin
 Lib/test/datetimetester.py       @pganssle @abalkin
 Lib/test/test_*time.py           @pganssle @abalkin
