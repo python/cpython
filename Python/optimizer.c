@@ -116,7 +116,10 @@ _PyOptimizer_Optimize(
     _PyExecutorObject **executor_ptr, int chain_depth)
 {
     _PyStackRef *stack_pointer = frame->stackpointer;
-    assert(_PyInterpreterState_GET()->jit);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->jit);
+    assert(!interp->compiling);
+    interp->compiling = true;
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
@@ -126,10 +129,12 @@ _PyOptimizer_Optimize(
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
     if (progress_needed && !has_space_for_executor(code, start)) {
+        interp->compiling = false;
         return 0;
     }
     int err = uop_optimize(frame, start, executor_ptr, (int)(stack_pointer - _PyFrame_Stackbase(frame)), progress_needed);
     if (err <= 0) {
+        interp->compiling = false;
         return err;
     }
     assert(*executor_ptr != NULL);
@@ -143,6 +148,7 @@ _PyOptimizer_Optimize(
              * it might get confused by the executor disappearing,
              * but there is not much we can do about that here. */
             Py_DECREF(*executor_ptr);
+            interp->compiling = false;
             return 0;
         }
         insert_executor(code, start, index, *executor_ptr);
@@ -152,6 +158,7 @@ _PyOptimizer_Optimize(
     }
     (*executor_ptr)->vm_data.chain_depth = chain_depth;
     assert((*executor_ptr)->vm_data.valid);
+    interp->compiling = false;
     return 1;
 }
 
