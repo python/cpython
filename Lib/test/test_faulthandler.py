@@ -361,6 +361,17 @@ class FaultHandlerTests(unittest.TestCase):
             all_threads=False)
 
     @skip_segfault_on_android
+    def test_enable_without_c_stack(self):
+        self.check_fatal_error("""
+            import faulthandler
+            faulthandler.enable(c_stack=False)
+            faulthandler._sigsegv()
+            """,
+            3,
+            'Segmentation fault',
+            c_stack=False)
+
+    @skip_segfault_on_android
     def test_disable(self):
         code = """
             import faulthandler
