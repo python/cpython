@@ -1,1 +1,1 @@
-Fix handling of unusual t-string annotations in annotationlib. Path by Dave Peck.
+Fix handling of unusual t-string annotations in annotationlib. Patch by Dave Peck.
