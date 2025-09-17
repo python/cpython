@@ -2794,6 +2794,8 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-3.19.rst
 
+.. include:: ../deprecations/pending-removal-in-3.20.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
 
 

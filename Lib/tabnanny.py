@@ -336,7 +336,7 @@ def __getattr__(name):
     if name == "__version__":
         from warnings import _deprecated
 
-        _deprecated("__version__", remove=(3, 17))
+        _deprecated("__version__", remove=(3, 20))
         return "6"  # Do not change
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
