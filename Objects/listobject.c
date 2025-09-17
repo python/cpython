@@ -1905,7 +1905,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
     Py_ssize_t last = ok >> 1;
     Py_ssize_t std = ok >> 2;
     Py_ssize_t mu = last;
-    Py_ssize_t nb = 0;          // badness of fit
+    Py_ssize_t nbad = 0;          // badness of fit
 
     if (adapt) {
         for (; ok < n; ++ok) {
@@ -1983,7 +1983,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
 
             // Update Adaptive runvars
             std = L < mu ? mu - L : L - mu;
-            nb += std;
+            nbad += std;
             mu = L + L - last;
             mu = mu < 0 ? 0 : mu > ok ? ok : mu;
             last = L;
@@ -2016,7 +2016,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
 
             // Update Adaptive runvars
             std = L < mu ? mu - L : L - mu;
-            nb += std;
+            nbad += std;
             mu = L + L - last;
             mu = mu < 0 ? 0 : mu > ok ? ok : mu;
             last = L;
@@ -2024,7 +2024,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
     }
 
     // Return Adaptivity measure (max 1000)
-    return nb * 2000 / ((n + 2 * nsorted - 1) * n);
+    return nbad * 2000 / ((n + 2 * nsorted - 1) * n);
 
  fail:
     return -1;
@@ -3221,9 +3221,10 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     // NOTE: Could turn on based on minlen or comparison type
     int binary_adapt = ms.listlen >= 100;
     if (binary_adapt) {
-        int adapt = 0;  // do not run binarysort adaptivity on 1st run
-        Py_ssize_t cs = 0;
+        int adapt = 0;      // do not run binarysort adaptivity on 1st run
+        Py_ssize_t cs = 0;  // but do check goodness of adaptive fit
         Py_ssize_t cd = 1;
+        Py_ssize_t abinres;
         do {
             /* Identify next run. */
             Py_ssize_t n;
@@ -3241,26 +3242,24 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
                     cs -= 1;
                 }
                 else {
-                    Py_ssize_t bres;
-                    bres = abinarysort(&ms, &lo, force, n, adapt);
-                    if (bres < 0)
+                    abinres = abinarysort(&ms, &lo, force, n, adapt);
+                    if (abinres < 0)
                         goto fail;
-                    adapt = bres < 250;
-                    if (adapt) {
+                    adapt = abinres < 250;
+                    if (adapt)
                         cd = 1;
-                    }
-                    else {
-                        cd += 2;
-                        if (cd > 11)
-                            cd = 11;
-                        cs = cd;
-                    }
+                    else if (cd >= 9)
+                        cs = cd = 11;
+                    else
+                        cs = cd = cd + 2;
                 }
                 n = force;
             }
             else {
                 // After long monotonic run start adapting immediately
                 adapt = 1;
+                cs = 0;
+                cd = 1;
             }
             /* Maybe merge pending runs. */
             assert(ms.n == 0 || ms.pending[ms.n -1].base.keys +
