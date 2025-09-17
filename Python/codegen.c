@@ -5915,7 +5915,7 @@ codegen_pattern_class_fast(compiler *c, pattern_ty p, pattern_context *pc)
     pc->on_top++;
     RETURN_IF_ERROR(jump_to_fail_pop(c, LOC(p), pc, POP_JUMP_IF_FALSE));
     if (!nattrs) {
-        ADDOP_JUMP(c, NO_LOCATION, JUMP_FORWARD, end);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
     }
 
     Py_ssize_t i;
