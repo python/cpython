@@ -67,6 +67,7 @@ Python/dynload_dl.c             # dl.h
 Python/dynload_hpux.c           # dl.h
 Python/emscripten_signal.c
 Python/emscripten_syscalls.c
+Python/emscripten_trampoline_inner.c
 Python/thread_pthread.h
 Python/thread_pthread_stubs.h
 
