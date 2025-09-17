@@ -896,8 +896,8 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
   argument that can be followed by zero or one command-line arguments.
   When parsing the command line, if the option string is encountered with no
-  command-line argument following it, the value of ``const`` will be assumed to
-  be ``None`` instead.  See the nargs_ description for examples.
+  command-line argument following it, the value from ``const`` will be used.
+  See the nargs_ description for examples.
 
 .. versionchanged:: 3.11
    ``const=None`` by default, including when ``action='append_const'`` or
