@@ -2560,15 +2560,6 @@ asyncio
          blocking_code()
          runner.run(operation_two())
 
-
-collections.abc
----------------
-
-* Remove :class:`!ByteString`, which has been deprecated since Python 3.12.
-  (Contributed by Nikita Sobolev in :gh:`118803`.)
-
-
-
 email
 -----
 
@@ -2645,13 +2636,6 @@ sqlite3
   raises a :exc:`~sqlite3.ProgrammingError`,
   having been deprecated since Python 3.12.
   (Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
-
-
-typing
-------
-
-* Remove :class:`!ByteString`, which has been deprecated since Python 3.12.
-  (Contributed by Nikita Sobolev in :gh:`118803`.)
 
 
 urllib
