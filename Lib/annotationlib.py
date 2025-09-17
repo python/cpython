@@ -560,17 +560,6 @@ class _Stringifier:
     del _make_unary_op
 
 
-def _conversion_ast_value(conversion):
-    """Convert a `conversion` character to an AST-friendly Constant."""
-    return -1 if conversion is None else ord(conversion)
-
-
-def _format(format_spec):
-    """Convert a `format_spec` string to an AST-friendly Constant."""
-    value = format_spec or None  # empty string -> None
-    return ast.Constant(value=value)
-
-
 def _template_to_ast_constructor(template):
     """Convert a `template` instance to a non-literal AST."""
     args = []
