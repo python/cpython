@@ -557,8 +557,17 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         raise ValueError("time data %r does not match format %r" %
                          (data_string, format))
     if len(data_string) != found.end():
-        raise ValueError("unconverted data remains: %s" %
-                          data_string[found.end():])
+        rest = data_string[found.end():]
+        # Specific check for '%:z' directive
+        if (
+            "colon_z" in found.re.groupindex
+            and found.group("colon_z") is not None
+            and rest[0] != ":"
+        ):
+            raise ValueError(
+                f"Missing colon in %:z before '{rest}', got '{data_string}'"
+            )
+        raise ValueError("unconverted data remains: %s" % rest)
 
     iso_year = year = None
     month = day = 1
