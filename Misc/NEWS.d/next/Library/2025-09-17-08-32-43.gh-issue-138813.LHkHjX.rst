@@ -1,1 +1,1 @@
-:class:!`multiprocessing.BaseProcess` defaults ``kwargs`` to ``None`` instead of a shared dictionary.
+:class:`!multiprocessing.BaseProcess` defaults ``kwargs`` to ``None`` instead of a shared dictionary.
