@@ -172,6 +172,7 @@ _io__BufferedIOBase_read_impl(PyObject *self, PyTypeObject *cls,
 }
 
 /*[clinic input]
+@permit_long_summary
 _io._BufferedIOBase.read1
 
     cls: defining_class
@@ -187,7 +188,7 @@ A short result does not imply that EOF is imminent.
 static PyObject *
 _io__BufferedIOBase_read1_impl(PyObject *self, PyTypeObject *cls,
                                int Py_UNUSED(size))
-/*[clinic end generated code: output=2e7fc62972487eaa input=af76380e020fd9e6]*/
+/*[clinic end generated code: output=2e7fc62972487eaa input=1e76df255063afd6]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return bufferediobase_unsupported(state, "read1");
@@ -1025,9 +1026,6 @@ static PyObject *
 _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
 /*[clinic end generated code: output=bcc4fb4e54d103a3 input=3d0ad241aa52b36c]*/
 {
-    Py_ssize_t have, r;
-    PyObject *res = NULL;
-
     CHECK_INITIALIZED(self)
     if (n < 0) {
         n = self->buffer_size;
@@ -1035,48 +1033,53 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
 
     CHECK_CLOSED(self, "read of closed file")
 
-    if (n == 0)
-        return PyBytes_FromStringAndSize(NULL, 0);
+    if (n == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
 
     /* Return up to n bytes.  If at least one byte is buffered, we
        only return buffered bytes.  Otherwise, we do one raw read. */
 
-    have = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
+    Py_ssize_t have = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (have > 0) {
         n = Py_MIN(have, n);
-        res = _bufferedreader_read_fast(self, n);
+        PyObject *res = _bufferedreader_read_fast(self, n);
         assert(res != Py_None);
         return res;
     }
-    res = PyBytes_FromStringAndSize(NULL, n);
-    if (res == NULL)
-        return NULL;
+
     if (!ENTER_BUFFERED(self)) {
-        Py_DECREF(res);
         return NULL;
     }
+
     /* Flush the write buffer if necessary */
     if (self->writable) {
-        PyObject *r = buffered_flush_and_rewind_unlocked(self);
-        if (r == NULL) {
+        PyObject *res = buffered_flush_and_rewind_unlocked(self);
+        if (res == NULL) {
             LEAVE_BUFFERED(self)
-            Py_DECREF(res);
             return NULL;
         }
-        Py_DECREF(r);
+        Py_DECREF(res);
     }
     _bufferedreader_reset_buf(self);
-    r = _bufferedreader_raw_read(self, PyBytes_AS_STRING(res), n);
-    LEAVE_BUFFERED(self)
-    if (r == -1) {
-        Py_DECREF(res);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(n);
+    if (writer == NULL) {
         return NULL;
     }
-    if (r == -2)
+
+    Py_ssize_t r = _bufferedreader_raw_read(self,
+                                            PyBytesWriter_GetData(writer), n);
+    LEAVE_BUFFERED(self)
+    if (r == -1) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+    if (r == -2) {
         r = 0;
-    if (n > r)
-        _PyBytes_Resize(&res, r);
-    return res;
+    }
+
+    return PyBytesWriter_FinishWithSize(writer, r);
 }
 
 static PyObject *

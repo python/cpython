@@ -745,7 +745,7 @@ Some smaller changes made to the core Python language are:
 
 * It is now possible to set a :ref:`special method <specialnames>` to
   ``None`` to indicate that the corresponding operation is not available.
-  For example, if a class sets :meth:`__iter__` to ``None``, the class
+  For example, if a class sets :meth:`~object.__iter__` to ``None``, the class
   is not iterable.
   (Contributed by Andrew Barnert and Ivan Levkivskyi in :issue:`25958`.)
 
@@ -871,7 +871,7 @@ Notable changes in the :mod:`asyncio` module since Python 3.5.0
   of the last iteration will be discarded.
   (Contributed by Guido van Rossum in :issue:`25593`.)
 
-* :meth:`Future.set_exception <asyncio.futures.Future.set_exception>`
+* :meth:`Future.set_exception <asyncio.Future.set_exception>`
   will now raise :exc:`TypeError` when passed an instance of
   the :exc:`StopIteration` exception.
   (Contributed by Chris Angelico in :issue:`26221`.)
@@ -925,7 +925,7 @@ added to represent sized iterable container classes.
 (Contributed by Ivan Levkivskyi, docs by Neil Girdhar in :issue:`27598`.)
 
 The new :class:`~collections.abc.Reversible` abstract base class represents
-iterable classes that also provide the :meth:`__reversed__` method.
+iterable classes that also provide the :meth:`~object.__reversed__` method.
 (Contributed by Ivan Levkivskyi in :issue:`25987`.)
 
 The new :class:`~collections.abc.AsyncGenerator` abstract base class represents
@@ -971,7 +971,7 @@ datetime
 --------
 
 The :class:`~datetime.datetime` and :class:`~datetime.time` classes have
-the new :attr:`~time.fold` attribute used to disambiguate local time
+the new :attr:`~datetime.time.fold` attribute used to disambiguate local time
 when necessary.  Many functions in the :mod:`datetime` have been
 updated to support local time disambiguation.
 See :ref:`Local Time Disambiguation <whatsnew36-pep495>` section for more
@@ -1052,12 +1052,12 @@ enum
 ----
 
 Two new enumeration base classes have been added to the :mod:`enum` module:
-:class:`~enum.Flag` and :class:`~enum.IntFlags`.  Both are used to define
+:class:`~enum.Flag` and :class:`~enum.IntFlag`.  Both are used to define
 constants that can be combined using the bitwise operators.
 (Contributed by Ethan Furman in :issue:`23591`.)
 
 Many standard library modules have been updated to use the
-:class:`~enum.IntFlags` class for their constants.
+:class:`~enum.IntFlag` class for their constants.
 
 The new :class:`enum.auto` value can be used to assign values to enum
 members automatically::
@@ -1224,7 +1224,7 @@ generator expression scopes as if they were positional-only parameters called
 ``implicit0``. (Contributed by Jelle Zijlstra in :issue:`19611`.)
 
 To reduce code churn when upgrading from Python 2.7 and the legacy
-:func:`inspect.getargspec` API, the previously documented deprecation of
+:func:`!inspect.getargspec` API, the previously documented deprecation of
 :func:`inspect.getfullargspec` has been reversed. While this function is
 convenient for single/source Python 2/3 code bases, the richer
 :func:`inspect.signature` interface remains the recommended approach for new
@@ -1275,7 +1275,7 @@ See the summary of :ref:`PEP 519 <whatsnew36-pep519>` for details on how the
 
 A new :meth:`~os.scandir.close` method allows explicitly closing a
 :func:`~os.scandir` iterator.  The :func:`~os.scandir` iterator now
-supports the :term:`context manager` protocol.  If a :func:`scandir`
+supports the :term:`context manager` protocol.  If a :func:`!scandir`
 iterator is neither exhausted nor explicitly closed a :exc:`ResourceWarning`
 will be emitted in its destructor.
 (Contributed by Serhiy Storchaka in :issue:`25994`.)
@@ -1434,7 +1434,7 @@ defined in :mod:`http.server`, :mod:`xmlrpc.server` and
 protocol.
 (Contributed by Aviv Palivoda in :issue:`26404`.)
 
-The :attr:`~socketserver.StreamRequestHandler.wfile` attribute of
+The :attr:`wfile <socketserver.DatagramRequestHandler.wfile>` attribute of
 :class:`~socketserver.StreamRequestHandler` classes now implements
 the :class:`io.BufferedIOBase` writable interface.  In particular,
 calling :meth:`~io.BufferedIOBase.write` is now guaranteed to send the
@@ -1465,7 +1465,7 @@ The new :meth:`~ssl.SSLContext.get_ciphers` method can be used to
 get a list of enabled ciphers in order of cipher priority.
 
 All constants and flags have been converted to :class:`~enum.IntEnum` and
-:class:`~enum.IntFlags`.
+:class:`~enum.IntFlag`.
 (Contributed by Christian Heimes in :issue:`28025`.)
 
 Server and client-side specific TLS protocols for :class:`~ssl.SSLContext`
@@ -1531,8 +1531,8 @@ Stéphane Wirtel in :issue:`25485`).
 time
 ----
 
-The :class:`~time.struct_time` attributes :attr:`tm_gmtoff` and
-:attr:`tm_zone` are now available on all platforms.
+The :class:`~time.struct_time` attributes :attr:`!tm_gmtoff` and
+:attr:`!tm_zone` are now available on all platforms.
 
 
 timeit
@@ -1551,12 +1551,12 @@ between best and worst times.
 tkinter
 -------
 
-Added methods :meth:`~tkinter.Variable.trace_add`,
-:meth:`~tkinter.Variable.trace_remove` and :meth:`~tkinter.Variable.trace_info`
-in the :class:`tkinter.Variable` class.  They replace old methods
-:meth:`~tkinter.Variable.trace_variable`, :meth:`~tkinter.Variable.trace`,
-:meth:`~tkinter.Variable.trace_vdelete` and
-:meth:`~tkinter.Variable.trace_vinfo` that use obsolete Tcl commands and might
+Added methods :meth:`!Variable.trace_add`,
+:meth:`!Variable.trace_remove` and :meth:`!trace_info`
+in the :class:`!tkinter.Variable` class.  They replace old methods
+:meth:`!trace_variable`, :meth:`!trace`,
+:meth:`!trace_vdelete` and
+:meth:`!trace_vinfo` that use obsolete Tcl commands and might
 not work in future versions of Tcl.
 (Contributed by Serhiy Storchaka in :issue:`22115`).
 
@@ -1674,8 +1674,8 @@ urllib.request
 
 If a HTTP request has a file or iterable body (other than a
 bytes object) but no ``Content-Length`` header, rather than
-throwing an error, :class:`~urllib.request.AbstractHTTPHandler` now
-falls back to use chunked transfer encoding.
+throwing an error, :class:`AbstractHTTPHandler <urllib.request.HTTPHandler>`
+now falls back to use chunked transfer encoding.
 (Contributed by Demian Brecht and Rolf Krahl in :issue:`12319`.)
 
 
@@ -1701,7 +1701,7 @@ warnings
 A new optional *source* parameter has been added to the
 :func:`warnings.warn_explicit` function: the destroyed object which emitted a
 :exc:`ResourceWarning`. A *source* attribute has also been added to
-:class:`warnings.WarningMessage` (contributed by Victor Stinner in
+:class:`!warnings.WarningMessage` (contributed by Victor Stinner in
 :issue:`26568` and :issue:`26567`).
 
 When a :exc:`ResourceWarning` warning is logged, the :mod:`tracemalloc` module is now
@@ -1942,7 +1942,7 @@ Raising the :exc:`StopIteration` exception inside a generator will now
 generate a :exc:`DeprecationWarning`, and will trigger a :exc:`RuntimeError`
 in Python 3.7.  See :ref:`whatsnew-pep-479` for details.
 
-The :meth:`__aiter__` method is now expected to return an asynchronous
+The :meth:`~object.__aiter__` method is now expected to return an asynchronous
 iterator directly instead of returning an awaitable as previously.
 Doing the former will trigger a :exc:`DeprecationWarning`.  Backward
 compatibility will be removed in Python 3.7.
@@ -2189,7 +2189,7 @@ Changes in the Python API
   booleans being a subclass of integers, this should only be an issue if you
   were doing identity checks for ``1`` or ``0``. See :issue:`25768`.
 
-* Reading the :attr:`~urllib.parse.SplitResult.port` attribute of
+* Reading the :attr:`!port` attribute of
   :func:`urllib.parse.urlsplit` and :func:`~urllib.parse.urlparse` results
   now raises :exc:`ValueError` for out-of-range values, rather than
   returning :const:`None`.  See :issue:`20059`.
@@ -2197,8 +2197,8 @@ Changes in the Python API
 * The :mod:`!imp` module now raises a :exc:`DeprecationWarning` instead of
   :exc:`PendingDeprecationWarning`.
 
-* The following modules have had missing APIs added to their :attr:`__all__`
-  attributes to match the documented APIs:
+* The following modules have had missing APIs added to their
+  :attr:`~module.__all__` attributes to match the documented APIs:
   :mod:`calendar`, :mod:`!cgi`, :mod:`csv`,
   :mod:`~xml.etree.ElementTree`, :mod:`enum`,
   :mod:`fileinput`, :mod:`ftplib`, :mod:`logging`, :mod:`mailbox`,
@@ -2253,11 +2253,13 @@ Changes in the Python API
 * As part of :pep:`487`, the handling of keyword arguments passed to
   :class:`type` (other than the metaclass hint, ``metaclass``) is now
   consistently delegated to :meth:`object.__init_subclass__`. This means that
-  :meth:`type.__new__` and :meth:`type.__init__` both now accept arbitrary
-  keyword arguments, but :meth:`object.__init_subclass__` (which is called from
-  :meth:`type.__new__`) will reject them by default. Custom metaclasses
-  accepting additional keyword arguments will need to adjust their calls to
-  :meth:`type.__new__` (whether direct or via :class:`super`) accordingly.
+  :meth:`type.__new__ <object.__new__>` and :meth:`type.__init__
+  <object.__init__>` both now accept arbitrary keyword arguments,
+  but :meth:`object.__init_subclass__` (which is called from
+  :meth:`type.__new__ <object.__new__>`) will reject them by default.
+  Custom metaclasses accepting additional keyword arguments will need to adjust
+  their calls to :meth:`type.__new__ <object.__new__>`
+  (whether direct or via :class:`super`) accordingly.
 
 * In ``distutils.command.sdist.sdist``, the ``default_format``
   attribute has been removed and is no longer honored. Instead, the
@@ -2305,7 +2307,7 @@ Changes in the Python API
   real-world compatibility.
   (Contributed by Lita Cho in :issue:`21815`.)
 
-* The :func:`mmap.write() <mmap.write>` function now returns the number
+* The :func:`mmap.mmap.write` function now returns the number
   of bytes written like other write methods.
   (Contributed by Jakub Stasiak in :issue:`26335`.)
 

@@ -56,6 +56,11 @@ whose size is determined when the object is allocated.
 #  define Py_REF_DEBUG
 #endif
 
+#if defined(_Py_OPAQUE_PYOBJECT) && !defined(Py_LIMITED_API)
+#   error "_Py_OPAQUE_PYOBJECT only makes sense with Py_LIMITED_API"
+#endif
+
+#ifndef _Py_OPAQUE_PYOBJECT
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD                   PyObject ob_base;
 
@@ -66,6 +71,8 @@ whose size is determined when the object is allocated.
  *
  * Statically allocated objects might be shared between
  * interpreters, so must be marked as immortal.
+ *
+ * Before changing this, see the check in PyModuleDef_Init().
  */
 #if defined(Py_GIL_DISABLED)
 #define PyObject_HEAD_INIT(type)    \
@@ -99,6 +106,8 @@ whose size is determined when the object is allocated.
  * not necessarily a byte count.
  */
 #define PyObject_VAR_HEAD      PyVarObject ob_base;
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
+
 #define Py_INVALID_SIZE (Py_ssize_t)-1
 
 /* PyObjects are given a minimum alignment so that the least significant bits
@@ -112,20 +121,11 @@ whose size is determined when the object is allocated.
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
-#ifndef Py_GIL_DISABLED
+#ifdef _Py_OPAQUE_PYOBJECT
+  /* PyObject is opaque */
+#elif !defined(Py_GIL_DISABLED)
 struct _object {
-#if (defined(__GNUC__) || defined(__clang__)) \
-        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
-    // On C99 and older, anonymous union is a GCC and clang extension
-    __extension__
-#endif
-#ifdef _MSC_VER
-    // Ignore MSC warning C4201: "nonstandard extension used:
-    // nameless struct/union"
-    __pragma(warning(push))
-    __pragma(warning(disable: 4201))
-#endif
-    union {
+    _Py_ANONYMOUS union {
 #if SIZEOF_VOID_P > 4
         PY_INT64_T ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
         struct {
@@ -144,9 +144,6 @@ struct _object {
 #endif
         _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, char) _aligner;
     };
-#ifdef _MSC_VER
-    __pragma(warning(pop))
-#endif
 
     PyTypeObject *ob_type;
 };
@@ -168,15 +165,18 @@ struct _object {
     Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
     PyTypeObject *ob_type;
 };
-#endif
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
 
-typedef struct {
+#ifndef _Py_OPAQUE_PYOBJECT
+struct PyVarObject {
     PyObject ob_base;
     Py_ssize_t ob_size; /* Number of items in variable part */
-} PyVarObject;
+};
+#endif
+typedef struct PyVarObject PyVarObject;
 
 /* Cast argument to PyVarObject* type. */
 #define _PyVarObject_CAST(op) _Py_CAST(PyVarObject*, (op))
@@ -286,6 +286,7 @@ PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
 PyAPI_DATA(PyTypeObject) PyLong_Type;
 PyAPI_DATA(PyTypeObject) PyBool_Type;
 
+#ifndef _Py_OPAQUE_PYOBJECT
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
     assert(Py_TYPE(ob) != &PyLong_Type);
@@ -295,6 +296,7 @@ static inline Py_ssize_t Py_SIZE(PyObject *ob) {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
 #endif
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
     return Py_TYPE(ob) == type;
@@ -304,6 +306,7 @@ static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
 #endif
 
 
+#ifndef _Py_OPAQUE_PYOBJECT
 static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
     ob->ob_type = type;
 }
@@ -323,6 +326,7 @@ static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))
 #endif
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 
 /*
@@ -534,6 +538,9 @@ given type object has a specified feature.
  */
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
+/* Type has dictionary or weakref pointers that are managed by VM and has
+ * to allocate space to store these.
+ */
 #define Py_TPFLAGS_PREHEADER (Py_TPFLAGS_MANAGED_WEAKREF | Py_TPFLAGS_MANAGED_DICT)
 
 /* Set if instances of the type object are treated as sequences for pattern matching */
@@ -629,6 +636,7 @@ given type object has a specified feature.
 
 // Flag values for ob_flags (16 bits available, if SIZEOF_VOID_P > 4).
 #define _Py_IMMORTAL_FLAGS (1 << 0)
+#define _Py_LEGACY_ABI_CHECK_FLAG (1 << 1) /* see PyModuleDef_Init() */
 #define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
 #define _Py_TYPE_REVEALED_FLAG (1 << 3)

@@ -1,5 +1,5 @@
-IDLE History
-============
+IDLE History from Python 1.5.2 to 2.1
+=====================================
 
 This file contains the release messages for previous IDLE releases.
 As you read on you go back to the dark ages of IDLE's history.
@@ -59,8 +59,8 @@ IDLEfork 0.7.1 - 29 May 2000
   get to keep both pieces.
 
 - If you have problems or suggestions, you should either contact me or post to
-  the list at http://www.python.org/mailman/listinfo/idle-dev (making it clear
-  that you are using this modified version of IDLE).
+  the idle-dev mailing list (making it clear that you are using this modified
+  version of IDLE).
 
 - Changes:
 
@@ -164,7 +164,7 @@ with Python 1.5.2; you can drop this version on top of it.)
 COPYRIGHT
 
 IDLE is covered by the standard Python copyright notice
-(http://www.python.org/doc/Copyright.html).
+(https://www.python.org/doc/copyright).
 
 
 New in IDLE 0.5 (2/15/2000)
