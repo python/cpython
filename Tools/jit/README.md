@@ -53,7 +53,8 @@ choco install llvm --version=19.1.0
 
 ### Dev Containers
 
-If you are working CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no need to install LLVM as the Fedora 41 base image includes LLVM 19 out of the box.
+If you are working on CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no 
+need to install LLVM as the Fedora 41 base image includes LLVM 19 out of the box.
 
 
 ## Building
