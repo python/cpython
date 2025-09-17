@@ -3120,12 +3120,6 @@ Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_
 Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/wasm/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
-Python/emscripten_trampoline_wasm.o: Python/emscripten_trampoline_wasm.c
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
-
-Python/emscripten_trampoline.o: $(srcdir)/Python/emscripten_trampoline.c
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
-
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
 		$(srcdir)/Tools/jit/*.py \
