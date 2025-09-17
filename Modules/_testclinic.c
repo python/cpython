@@ -663,16 +663,16 @@ error:
 static PyObject *
 bytes_from_buffer(Py_buffer *buf)
 {
-    PyObject *bytes_obj = PyBytes_FromStringAndSize(NULL, buf->len);
-    if (!bytes_obj) {
+    PyBytesWriter *writer = PyBytesWriter_Create(buf->len);
+    if (writer == NULL) {
         return NULL;
     }
-    void *bytes_obj_buf = ((PyBytesObject *)bytes_obj)->ob_sval;
-    if (PyBuffer_ToContiguous(bytes_obj_buf, buf, buf->len, 'C') < 0) {
-        Py_DECREF(bytes_obj);
+    void *data = PyBytesWriter_GetData(writer);
+    if (PyBuffer_ToContiguous(data, buf, buf->len, 'C') < 0) {
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
-    return bytes_obj;
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]
