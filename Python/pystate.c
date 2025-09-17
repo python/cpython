@@ -559,7 +559,7 @@ init_interpreter(PyInterpreterState *interp,
 
 #ifdef _Py_TIER2
      // Ensure the buffer is to be set as NULL.
-    interp->jit_uop_buffer = NULL;
+    // interp->jit_uop_buffer = NULL;
 #endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
@@ -808,10 +808,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
+    /**
     if (interp->jit_uop_buffer != NULL) {
         PyMem_RawFree(interp->jit_uop_buffer);
         interp->jit_uop_buffer = NULL;
     }
+    **/
 #endif
     _PyAST_Fini(interp);
     _PyAtExit_Fini(interp);
