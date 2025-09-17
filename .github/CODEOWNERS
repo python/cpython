@@ -406,16 +406,16 @@ Lib/test/test_dataclasses/    @ericvsmith
 
 # Dates and times
 Doc/**/*time.rst                 @pganssle @abalkin
+Doc/**/*zoneinfo*                @pganssle
 Include/datetime.h               @pganssle @abalkin
 Include/internal/pycore_time.h   @pganssle @abalkin
+Lib/**/*zoneinfo*                @pganssle
 Lib/*time.py                     @pganssle @abalkin
 Lib/test/datetimetester.py       @pganssle @abalkin
 Lib/test/test_*time.py           @pganssle @abalkin
+Modules/**/*zoneinfo*            @pganssle
 Modules/*time*                   @pganssle @abalkin
 Python/pytime.c                  @pganssle @abalkin
-Modules/**/*zoneinfo*            @pganssle
-Lib/**/*zoneinfo*                @pganssle
-Doc/**/*zoneinfo*                @pganssle
 
 # Dbm
 Doc/library/dbm.rst           @corona10 @erlend-aasland @serhiy-storchaka
