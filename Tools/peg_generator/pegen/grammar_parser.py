@@ -152,7 +152,7 @@ class GeneratedParser(Parser):
         if (
             (rulename := self.rulename())
             and
-            (opt := self.flags(),)
+            (flags := self.flags(),)
             and
             (literal := self.expect(":"))
             and
@@ -166,12 +166,12 @@ class GeneratedParser(Parser):
             and
             (_dedent := self.expect('DEDENT'))
         ):
-            return Rule ( rulename [0] , rulename [1] , Rhs ( alts . alts + more_alts . alts ) , flags = opt )
+            return Rule ( rulename [0] , rulename [1] , Rhs ( alts . alts + more_alts . alts ) , flags = flags )
         self._reset(mark)
         if (
             (rulename := self.rulename())
             and
-            (opt := self.flags(),)
+            (flags := self.flags(),)
             and
             (literal := self.expect(":"))
             and
@@ -183,12 +183,12 @@ class GeneratedParser(Parser):
             and
             (_dedent := self.expect('DEDENT'))
         ):
-            return Rule ( rulename [0] , rulename [1] , more_alts , flags = opt )
+            return Rule ( rulename [0] , rulename [1] , more_alts , flags = flags )
         self._reset(mark)
         if (
             (rulename := self.rulename())
             and
-            (opt := self.flags(),)
+            (flags := self.flags(),)
             and
             (literal := self.expect(":"))
             and
@@ -196,7 +196,7 @@ class GeneratedParser(Parser):
             and
             (_newline := self.expect('NEWLINE'))
         ):
-            return Rule ( rulename [0] , rulename [1] , alts , flags = opt )
+            return Rule ( rulename [0] , rulename [1] , alts , flags = flags )
         self._reset(mark)
         return None
 
