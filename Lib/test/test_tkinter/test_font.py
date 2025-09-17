@@ -163,7 +163,7 @@ class TestModule(unittest.TestCase):
     def test_deprecated__version__(self):
         with self.assertWarnsRegex(
             DeprecationWarning,
-            "'__version__' is deprecated and slated for removal in Python 3.17",
+            "'__version__' is deprecated and slated for removal in Python 3.20",
         ) as cm:
             getattr(font, "__version__")
         self.assertEqual(cm.filename, __file__)
