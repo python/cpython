@@ -108,9 +108,7 @@ repos:
               Doc/library/hashlib-blake2-tree\.png|
               Doc/library/turtle-star\.png|
               Doc/library/kde_example\.png|
-              Doc/using/mac_installer_09_custom_install_free_threaded\.png|
-              Doc/using/win_install_freethreaded\.png|
-              Doc/using/win_installer\.png|
+              Doc/using/win_install[^/]*\.png|
               Doc/using/mac_installer_[^/]*\.png|
               Tools/msi/bundle/SideBar\.png|
               Lib/profiling/sampling/_assets/python-logo-only\.png|
