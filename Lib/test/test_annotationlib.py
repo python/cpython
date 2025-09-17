@@ -1364,6 +1364,10 @@ class TestTypeRepr(unittest.TestCase):
             type_repr(Template("hi", Interpolation(42))),
             "Template('hi', Interpolation(42, '', None, ''))",
         )
+        self.assertEqual(
+            type_repr(Template("hi", Interpolation(42, "   "))),
+            "Template('hi', Interpolation(42, '   ', None, ''))",
+        )
         # gh138558: perhaps in the future, we can improve this behavior:
         self.assertEqual(type_repr(Template(Interpolation(42, "99"))), "t'{99}'")
 

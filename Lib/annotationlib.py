@@ -578,11 +578,7 @@ def _template_to_ast_constructor(template):
                     ]
                 )
                 args.append(interp)
-    return ast.Call(
-        func=ast.Name(id="Template"),
-        args=args,
-        keywords=[],
-    )
+    return ast.Call(func=ast.Name(id="Template"), args=args, keywords=[])
 
 
 def _template_to_ast_literal(template, parsed):
@@ -611,7 +607,9 @@ def _template_to_ast(template):
     """Make a best-effort conversion of a `template` instance to an AST."""
     # gh-138558: Not all Template instances can be represented as t-string
     # literals. Return the most accurate AST we can. See issue for details.
-    if any(part.expression == "" for part in template.interpolations):
+
+    # If any expr is empty or whitespace only, we cannot convert to a literal.
+    if any(not part.expression.strip() for part in template.interpolations):
         return _template_to_ast_constructor(template)
 
     try:
