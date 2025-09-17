@@ -91,6 +91,35 @@ repos:
         args: [--enable=default-role]
         files: ^Doc/|^Misc/NEWS.d/
 
+  - repo: https://github.com/oxipng/oxipng
+    rev: v9.1.5
+    hooks:
+      - id: oxipng
+        args: [ "-o", "2", "--strip", "safe", "--alpha" ]
+        exclude: |
+          (?x)^(
+              PC/icons/*.png|
+              Android/testbed/app/src/main/res/drawable-xxhdpi/ic_launcher.png|
+              Objects/object_layout_*.png|
+              InternalDocs/images/python-cyclic-gc-*-new-page.png|
+              Doc/howto/logging_flow.png|
+              Doc/_static/og-image.png|
+              Doc/library/pathlib-inheritance.png|
+              Doc/library/tk_msg.png|
+              Doc/library/hashlib-blake2-tree.png|
+              Doc/library/turtle-star.png|
+              Doc/library/kde_example.png|
+              Doc/using/mac_installer_09_custom_install_free_threaded.png|
+              Doc/using/win_install_freethreaded.png|
+              Doc/using/win_installer.png|
+              Doc/using/mac_installer_*.png|
+              Tools/msi/bundle/SideBar.png|
+              Lib/profiling/sampling/_assets/python-logo-only.png|
+              Lib/test/tkinterdata/python.png|
+              Lib/test/test_email/data/python.png|
+              Lib/idlelib/Icons/idle_*.png|
+          )$
+
   - repo: local
     hooks:
       - id: blurb-no-space-c-api
