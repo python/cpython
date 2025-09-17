@@ -609,7 +609,7 @@ def _template_to_ast(template):
     # literals. Return the most accurate AST we can. See issue for details.
 
     # If any expr is empty or whitespace only, we cannot convert to a literal.
-    if any(not part.expression.strip() for part in template.interpolations):
+    if any(part.expression.strip() == "" for part in template.interpolations):
         return _template_to_ast_constructor(template)
 
     try:
