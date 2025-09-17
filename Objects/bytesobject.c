@@ -1348,27 +1348,33 @@ _PyBytes_ReverseFind(const char *haystack, Py_ssize_t len_haystack,
 PyObject *
 PyBytes_Repr(PyObject *obj, int smartquotes)
 {
-    PyBytesObject* op = (PyBytesObject*) obj;
-    Py_ssize_t i, length = Py_SIZE(op);
+    return _Py_bytes_repr(PyBytes_AS_STRING(obj), PyBytes_GET_SIZE(obj),
+                          smartquotes, "bytes");
+}
+
+PyObject *
+_Py_bytes_repr(const char *data, Py_ssize_t length, int smartquotes,
+               const char *classname)
+{
+    Py_ssize_t i;
     Py_ssize_t newsize, squotes, dquotes;
     PyObject *v;
     unsigned char quote;
-    const unsigned char *s;
     Py_UCS1 *p;
 
     /* Compute size of output string */
     squotes = dquotes = 0;
     newsize = 3; /* b'' */
-    s = (const unsigned char*)op->ob_sval;
     for (i = 0; i < length; i++) {
+        unsigned char c = data[i];
         Py_ssize_t incr = 1;
-        switch(s[i]) {
+        switch(c) {
         case '\'': squotes++; break;
         case '"':  dquotes++; break;
         case '\\': case '\t': case '\n': case '\r':
             incr = 2; break; /* \C */
         default:
-            if (s[i] < ' ' || s[i] >= 0x7f)
+            if (c < ' ' || c >= 0x7f)
                 incr = 4; /* \xHH */
         }
         if (newsize > PY_SSIZE_T_MAX - incr)
@@ -1392,7 +1398,7 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
 
     *p++ = 'b', *p++ = quote;
     for (i = 0; i < length; i++) {
-        unsigned char c = op->ob_sval[i];
+        unsigned char c = data[i];
         if (c == quote || c == '\\')
             *p++ = '\\', *p++ = c;
         else if (c == '\t')
@@ -1415,8 +1421,8 @@ PyBytes_Repr(PyObject *obj, int smartquotes)
     return v;
 
   overflow:
-    PyErr_SetString(PyExc_OverflowError,
-                    "bytes object is too large to make repr");
+    PyErr_Format(PyExc_OverflowError,
+                 "%s object is too large to make repr", classname);
     return NULL;
 }
 
@@ -3799,12 +3805,12 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
 {
     assert(size >= 0);
 
-    if (size <= byteswriter_allocated(writer)) {
+    Py_ssize_t old_allocated = byteswriter_allocated(writer);
+    if (size <= old_allocated) {
         return 0;
     }
 
-    overallocate &= writer->overallocate;
-    if (overallocate) {
+    if (overallocate & writer->overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
@@ -3843,6 +3849,15 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
                writer->small_buffer,
                sizeof(writer->small_buffer));
     }
+
+#ifdef Py_DEBUG
+    Py_ssize_t allocated = byteswriter_allocated(writer);
+    if (overallocate && allocated > old_allocated) {
+        memset(byteswriter_data(writer) + old_allocated, 0xff,
+               allocated - old_allocated);
+    }
+#endif
+
     return 0;
 }
 
@@ -3863,9 +3878,6 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
             return NULL;
         }
     }
-#ifdef Py_DEBUG
-    memset(writer->small_buffer, 0xff, sizeof(writer->small_buffer));
-#endif
     writer->obj = NULL;
     writer->size = 0;
     writer->use_bytearray = use_bytearray;
@@ -3878,6 +3890,9 @@ byteswriter_create(Py_ssize_t size, int use_bytearray)
         }
         writer->size = size;
     }
+#ifdef Py_DEBUG
+    memset(byteswriter_data(writer), 0xff, byteswriter_allocated(writer));
+#endif
     return writer;
 }
 
