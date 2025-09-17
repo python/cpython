@@ -3978,7 +3978,6 @@ sock_recv(PyObject *self, PyObject *args)
 
     Py_ssize_t recvlen, outlen;
     int flags = 0;
-    PyObject *buf;
 
     if (!PyArg_ParseTuple(args, "n|i:recv", &recvlen, &flags))
         return NULL;
@@ -3990,25 +3989,21 @@ sock_recv(PyObject *self, PyObject *args)
     }
 
     /* Allocate a new string. */
-    buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
-    if (buf == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(recvlen);
+    if (writer == NULL) {
         return NULL;
+    }
 
     /* Call the guts */
-    outlen = sock_recv_guts(s, PyBytes_AS_STRING(buf), recvlen, flags);
+    outlen = sock_recv_guts(s, PyBytesWriter_GetData(writer), recvlen, flags);
     if (outlen < 0) {
         /* An error occurred, release the string and return an
            error. */
-        Py_DECREF(buf);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
-    if (outlen != recvlen) {
-        /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be successful. */
-        _PyBytes_Resize(&buf, outlen);
-    }
 
-    return buf;
+    return PyBytesWriter_FinishWithSize(writer, outlen);
 }
 
 PyDoc_STRVAR(recv_doc,
@@ -4164,7 +4159,6 @@ sock_recvfrom(PyObject *self, PyObject *args)
 {
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
 
-    PyObject *buf = NULL;
     PyObject *addr = NULL;
     PyObject *ret = NULL;
     int flags = 0;
@@ -4179,28 +4173,26 @@ sock_recvfrom(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
-    if (buf == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(recvlen);
+    if (writer == NULL) {
         return NULL;
+    }
 
-    outlen = sock_recvfrom_guts(s, PyBytes_AS_STRING(buf),
+    outlen = sock_recvfrom_guts(s, PyBytesWriter_GetData(writer),
                                 recvlen, flags, &addr);
     if (outlen < 0) {
+        PyBytesWriter_Discard(writer);
         goto finally;
     }
 
-    if (outlen != recvlen) {
-        /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be successful. */
-        if (_PyBytes_Resize(&buf, outlen) < 0)
-            /* Oopsy, not so successful after all. */
-            goto finally;
+    PyObject *buf = PyBytesWriter_FinishWithSize(writer, outlen);
+    if (buf == NULL) {
+        goto finally;
     }
 
     ret = PyTuple_Pack(2, buf, addr);
 
 finally:
-    Py_XDECREF(buf);
     Py_XDECREF(addr);
     return ret;
 }
