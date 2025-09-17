@@ -1156,6 +1156,7 @@ appear unfamiliar in usage, help, or error messages.
 To keep *choices* user-friendly, consider a custom type wrapper that
 converts and formats values, or omit type_ and handle conversion in
 your application code.
+
 Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the
 *dest* parameter.  If this display isn't desirable (perhaps because there are
