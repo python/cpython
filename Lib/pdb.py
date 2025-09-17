@@ -75,6 +75,7 @@ import dis
 import code
 import glob
 import json
+import stat
 import token
 import types
 import atexit
@@ -3418,6 +3419,8 @@ def attach(pid, commands=()):
             )
         )
         connect_script.close()
+        orig_mode = os.stat(connect_script.name).st_mode
+        os.chmod(connect_script.name, orig_mode | stat.S_IROTH | stat.S_IRGRP)
         sys.remote_exec(pid, connect_script.name)
 
         # TODO Add a timeout? Or don't bother since the user can ^C?
@@ -3489,7 +3492,8 @@ def help():
 _usage = """\
 Debug the Python program given by pyfile. Alternatively,
 an executable module or package to debug can be specified using
-the -m switch.
+the -m switch. You can also attach to a running Python process
+using the -p option with its PID.
 
 Initial commands are read from .pdbrc files in your home directory
 and in the current directory, if they exist.  Commands supplied with
@@ -3498,6 +3502,20 @@ and in the current directory, if they exist.  Commands supplied with
 To let the script run until an exception occurs, use "-c continue".
 To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
+
+
+def exit_with_permission_help_text():
+    """
+    Prints a message pointing to platform-specific permission help text and exits the program.
+    This function is called when a PermissionError is encountered while trying
+    to attach to a process.
+    """
+    print(
+        "Error: The specified process cannot be attached to due to insufficient permissions.\n"
+        "See the Python documentation for details on required privileges and troubleshooting:\n"
+        "https://docs.python.org/3.14/howto/remote_debugging.html#permission-requirements\n"
+    )
+    sys.exit(1)
 
 
 def main():
@@ -3533,7 +3551,10 @@ def main():
         opts = parser.parse_args()
         if opts.module:
             parser.error("argument -m: not allowed with argument --pid")
-        attach(opts.pid, opts.commands)
+        try:
+            attach(opts.pid, opts.commands)
+        except PermissionError as e:
+            exit_with_permission_help_text()
         return
     elif opts.module:
         # If a module is being debugged, we consider the arguments after "-m module" to

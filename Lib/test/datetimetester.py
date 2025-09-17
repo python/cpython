@@ -183,7 +183,7 @@ class TestTZInfo(unittest.TestCase):
             def __init__(self, offset, name):
                 self.__offset = offset
                 self.__name = name
-        self.assertTrue(issubclass(NotEnough, tzinfo))
+        self.assertIsSubclass(NotEnough, tzinfo)
         ne = NotEnough(3, "NotByALongShot")
         self.assertIsInstance(ne, tzinfo)
 
@@ -232,7 +232,7 @@ class TestTZInfo(unittest.TestCase):
                 self.assertIs(type(derived), otype)
                 self.assertEqual(derived.utcoffset(None), offset)
                 self.assertEqual(derived.tzname(None), oname)
-                self.assertFalse(hasattr(derived, 'spam'))
+                self.assertNotHasAttr(derived, 'spam')
 
     def test_issue23600(self):
         DSTDIFF = DSTOFFSET = timedelta(hours=1)
@@ -813,7 +813,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
             # Verify td -> string -> td identity.
             s = repr(td)
-            self.assertTrue(s.startswith('datetime.'))
+            self.assertStartsWith(s, 'datetime.')
             s = s[9:]
             td2 = eval(s)
             self.assertEqual(td, td2)
@@ -1231,7 +1231,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                    self.theclass.today()):
             # Verify dt -> string -> date identity.
             s = repr(dt)
-            self.assertTrue(s.startswith('datetime.'))
+            self.assertStartsWith(s, 'datetime.')
             s = s[9:]
             dt2 = eval(s)
             self.assertEqual(dt, dt2)
@@ -1807,7 +1807,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertTrue(self.theclass.min)
         self.assertTrue(self.theclass.max)
 
-    def test_strftime_y2k(self):
+    def check_strftime_y2k(self, specifier):
         # Test that years less than 1000 are 0-padded; note that the beginning
         # of an ISO 8601 year may fall in an ISO week of the year before, and
         # therefore needs an offset of -1 when formatting with '%G'.
@@ -1821,22 +1821,28 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (1000, 0),
             (1970, 0),
         )
-        specifiers = 'YG'
-        if _time.strftime('%F', (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == '1900-01-01':
-            specifiers += 'FC'
         for year, g_offset in dataset:
-            for specifier in specifiers:
-                with self.subTest(year=year, specifier=specifier):
-                    d = self.theclass(year, 1, 1)
-                    if specifier == 'G':
-                        year += g_offset
-                    if specifier == 'C':
-                        expected = f"{year // 100:02d}"
-                    else:
-                        expected = f"{year:04d}"
-                        if specifier == 'F':
-                            expected += f"-01-01"
-                    self.assertEqual(d.strftime(f"%{specifier}"), expected)
+            with self.subTest(year=year, specifier=specifier):
+                d = self.theclass(year, 1, 1)
+                if specifier == 'G':
+                    year += g_offset
+                if specifier == 'C':
+                    expected = f"{year // 100:02d}"
+                else:
+                    expected = f"{year:04d}"
+                    if specifier == 'F':
+                        expected += f"-01-01"
+                self.assertEqual(d.strftime(f"%{specifier}"), expected)
+
+    def test_strftime_y2k(self):
+        self.check_strftime_y2k('Y')
+        self.check_strftime_y2k('G')
+
+    def test_strftime_y2k_c99(self):
+        # CPython requires C11; specifiers new in C99 must work.
+        # (Other implementations may want to disable this test.)
+        self.check_strftime_y2k('F')
+        self.check_strftime_y2k('C')
 
     def test_replace(self):
         cls = self.theclass
@@ -2147,14 +2153,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             (10000, 1, 1),
             (0, 1, 1),
             (9999999, 1, 1),
+        ]
+        for isocal in isocals:
+            with self.subTest(isocal=isocal):
+                with self.assertRaises(ValueError):
+                    self.theclass.fromisocalendar(*isocal)
+
+        isocals = [
             (2<<32, 1, 1),
             (2019, 2<<32, 1),
             (2019, 1, 2<<32),
         ]
-
         for isocal in isocals:
             with self.subTest(isocal=isocal):
-                with self.assertRaises(ValueError):
+                with self.assertRaises((ValueError, OverflowError)):
                     self.theclass.fromisocalendar(*isocal)
 
     def test_fromisocalendar_type_errors(self):
@@ -2218,7 +2230,7 @@ class TestDateTime(TestDate):
                    self.theclass.now()):
             # Verify dt -> string -> datetime identity.
             s = repr(dt)
-            self.assertTrue(s.startswith('datetime.'))
+            self.assertStartsWith(s, 'datetime.')
             s = s[9:]
             dt2 = eval(s)
             self.assertEqual(dt, dt2)
@@ -2301,7 +2313,7 @@ class TestDateTime(TestDate):
             dt = dt_base.replace(tzinfo=tzi)
             exp = exp_base + exp_tz
             with self.subTest(tzi=tzi):
-                assert dt.isoformat() == exp
+                self.assertEqual(dt.isoformat(), exp)
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10, 4, 5, 1, 123)
@@ -2972,6 +2984,17 @@ class TestDateTime(TestDate):
         with self._assertNotWarns(DeprecationWarning):
             self.theclass.strptime('02-29,2024', '%m-%d,%Y')
 
+    def test_strptime_z_empty(self):
+        for directive in ('z',):
+            string = '2025-04-25 11:42:47'
+            format = f'%Y-%m-%d %H:%M:%S%{directive}'
+            target = self.theclass(2025, 4, 25, 11, 42, 47)
+            with self.subTest(string=string,
+                              format=format,
+                              target=target):
+                result = self.theclass.strptime(string, format)
+                self.assertEqual(result, target)
+
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
         t = self.theclass(2004, 12, 31, 6, 22, 33)
@@ -3338,7 +3361,7 @@ class TestDateTime(TestDate):
 
             with self.subTest(tstr=dtstr):
                 dt_rt = self.theclass.fromisoformat(dtstr)
-                assert dt == dt_rt, dt_rt
+                self.assertEqual(dt_rt, dt)
 
     def test_fromisoformat_separators(self):
         separators = [
@@ -3571,6 +3594,10 @@ class TestDateTime(TestDate):
             '2009-04-19T12:30:45.400 +02:30',  # Space between ms and timezone (gh-130959)
             '2009-04-19T12:30:45.400 ',        # Trailing space (gh-130959)
             '2009-04-19T12:30:45. 400',        # Space before fraction (gh-130959)
+            '2009-04-19T12:30:45+00:90:00', # Time zone field out from range
+            '2009-04-19T12:30:45+00:00:90', # Time zone field out from range
+            '2009-04-19T12:30:45-00:90:00', # Time zone field out from range
+            '2009-04-19T12:30:45-00:00:90', # Time zone field out from range
         ]
 
         for bad_str in bad_strs:
@@ -3672,7 +3699,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
         # Verify t -> string -> time identity.
         s = repr(t)
-        self.assertTrue(s.startswith('datetime.'))
+        self.assertStartsWith(s, 'datetime.')
         s = s[9:]
         t2 = eval(s)
         self.assertEqual(t, t2)
@@ -3850,7 +3877,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             t = t_base.replace(tzinfo=tzi)
             exp = exp_base + exp_tz
             with self.subTest(tzi=tzi):
-                assert t.isoformat() == exp
+                self.assertEqual(t.isoformat(), exp)
 
     def test_1653736(self):
         # verify it doesn't accept extra keyword arguments
@@ -4335,7 +4362,7 @@ class TZInfoBase:
                     elif x is d2:
                         expected = -1
                     else:
-                        assert y is d2
+                        self.assertIs(y, d2)
                         expected = 1
                     self.assertEqual(got, expected)
 
@@ -4663,7 +4690,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
             with self.subTest(tstr=tstr):
                 t_rt = self.theclass.fromisoformat(tstr)
-                assert t == t_rt
+                self.assertEqual(t_rt, t)
 
     def test_fromisoformat_timespecs(self):
         time_bases = [
@@ -4795,6 +4822,11 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.400 +02:30',      # Space between ms and timezone (gh-130959)
             '12:30:45.400 ',            # Trailing space (gh-130959)
             '12:30:45. 400',            # Space before fraction (gh-130959)
+            '24:00:00.000001',          # Has non-zero microseconds on 24:00
+            '24:00:01.000000',          # Has non-zero seconds on 24:00
+            '24:01:00.000000',          # Has non-zero minutes on 24:00
+            '12:30:45+00:90:00',        # Time zone field out from range
+            '12:30:45+00:00:90',        # Time zone field out from range
         ]
 
         for bad_str in bad_strs:
@@ -5495,7 +5527,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
                 elif x is d2:
                     expected = timedelta(minutes=(11-59)-0)
                 else:
-                    assert y is d2
+                    self.assertIs(y, d2)
                     expected = timedelta(minutes=0-(11-59))
                 self.assertEqual(got, expected)
 
@@ -7274,6 +7306,34 @@ class ExtensionModuleTests(unittest.TestCase):
                 del sys.modules['_datetime']
             """)
         script_helper.assert_python_ok('-c', script)
+
+    def test_concurrent_initialization_subinterpreter(self):
+        # gh-136421: Concurrent initialization of _datetime across multiple
+        # interpreters wasn't thread-safe due to its static types.
+
+        # Run in a subprocess to ensure we get a clean version of _datetime
+        script = """if True:
+        from concurrent.futures import InterpreterPoolExecutor
+
+        def func():
+            import _datetime
+            print('a', end='')
+
+        with InterpreterPoolExecutor() as executor:
+            for _ in range(8):
+                executor.submit(func)
+        """
+        rc, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b"a" * 8)
+        self.assertEqual(err, b"")
+
+        # Now test against concurrent reinitialization
+        script = "import _datetime\n" + script
+        rc, out, err = script_helper.assert_python_ok("-c", script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out, b"a" * 8)
+        self.assertEqual(err, b"")
 
 
 def load_tests(loader, standard_tests, pattern):

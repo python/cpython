@@ -1012,6 +1012,16 @@ class AbstractUnpickleTests:
         self.assertIs(self.loads(b'I01\n.'), True)
         self.assertIs(self.loads(b'I00\n.'), False)
 
+    def test_issue135241(self):
+        # C implementation should check for hardcoded values 00 and 01
+        # when getting booleans from the INT opcode. Doing a str comparison
+        # to bypass truthy/falsy comparisons. These payloads should return
+        # 0, not False.
+        out1 = self.loads(b'I+0\n.')
+        self.assertEqual(str(out1), '0')
+        out2 = self.loads(b'I 0\n.')
+        self.assertEqual(str(out2), '0')
+
     def test_zero_padded_integers(self):
         self.assertEqual(self.loads(b'I010\n.'), 10)
         self.assertEqual(self.loads(b'I-010\n.'), -10)
@@ -1099,6 +1109,11 @@ class AbstractUnpickleTests:
         dumped = b'\x80\x04\x8d\4\0\0\0\1\0\0\0\xe2\x82\xac\x00.'
         self.check_unpickling_error((pickle.UnpicklingError, OverflowError),
                                     dumped)
+
+    def test_large_binstring(self):
+        errmsg = 'BINSTRING pickle has negative byte count'
+        with self.assertRaisesRegex(pickle.UnpicklingError, errmsg):
+            self.loads(b'T\0\0\0\x80')
 
     def test_get(self):
         pickled = b'((lp100000\ng100000\nt.'
@@ -3068,7 +3083,7 @@ class AbstractPickleTests:
             pickled = self.dumps(None, proto)
             if proto >= 2:
                 proto_header = pickle.PROTO + bytes([proto])
-                self.assertTrue(pickled.startswith(proto_header))
+                self.assertStartsWith(pickled, proto_header)
             else:
                 self.assertEqual(count_opcode(pickle.PROTO, pickled), 0)
 
@@ -5007,7 +5022,7 @@ class AbstractDispatchTableTests:
         p = self.pickler_class(f, 0)
         with self.assertRaises(AttributeError):
             p.dispatch_table
-        self.assertFalse(hasattr(p, 'dispatch_table'))
+        self.assertNotHasAttr(p, 'dispatch_table')
 
     def test_class_dispatch_table(self):
         # A dispatch_table attribute can be specified class-wide

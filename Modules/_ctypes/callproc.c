@@ -77,16 +77,8 @@ module _ctypes
 #include <mach-o/dyld.h>
 #endif
 
-#ifdef MS_WIN32
-#include <malloc.h>
-#endif
-
 #include <ffi.h>
 #include "ctypes.h"
-#ifdef HAVE_ALLOCA_H
-/* AIX needs alloca.h for alloca() */
-#include <alloca.h>
-#endif
 
 #ifdef _Py_MEMORY_SANITIZER
 #include <sanitizer/msan_interface.h>
@@ -1389,7 +1381,7 @@ static PyObject *format_error(PyObject *self, PyObject *args)
         code = GetLastError();
     lpMsgBuf = FormatError(code);
     if (lpMsgBuf) {
-        result = PyUnicode_FromWideChar(lpMsgBuf, wcslen(lpMsgBuf));
+        result = PyUnicode_FromWideChar(lpMsgBuf, -1);
         LocalFree(lpMsgBuf);
     } else {
         result = PyUnicode_FromString("<no description>");
@@ -1795,6 +1787,7 @@ align_func(PyObject *self, PyObject *obj)
 
 
 /*[clinic input]
+@permit_long_summary
 @critical_section obj
 _ctypes.byref
     obj: object(subclass_of="clinic_state()->PyCData_Type")
@@ -1806,7 +1799,7 @@ Return a pointer lookalike to a C instance, only usable as function argument.
 
 static PyObject *
 _ctypes_byref_impl(PyObject *module, PyObject *obj, Py_ssize_t offset)
-/*[clinic end generated code: output=60dec5ed520c71de input=6ec02d95d15fbd56]*/
+/*[clinic end generated code: output=60dec5ed520c71de input=870076149a2de427]*/
 {
     ctypes_state *st = get_module_state(module);
 

@@ -701,6 +701,27 @@ class CodeTest(unittest.TestCase):
                 'checks': CO_FAST_LOCAL,
                 'res': CO_FAST_LOCAL,
             },
+            defs.spam_with_global_and_attr_same_name: {},
+            defs.spam_full_args: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+            },
+            defs.spam_full_args_with_defaults: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+            },
             defs.spam_args_attrs_and_builtins: {
                 'a': POSONLY,
                 'b': POSONLY,
@@ -714,6 +735,7 @@ class CodeTest(unittest.TestCase):
             defs.spam_returns_arg: {
                 'x': POSORKW,
             },
+            defs.spam_raises: {},
             defs.spam_with_inner_not_closure: {
                 'eggs': CO_FAST_LOCAL,
             },
@@ -934,6 +956,24 @@ class CodeTest(unittest.TestCase):
                 purelocals=5,
                 globalvars=6,
             ),
+            defs.spam_with_global_and_attr_same_name: new_var_counts(
+                globalvars=2,
+                attrs=1,
+            ),
+            defs.spam_full_args: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+            ),
+            defs.spam_full_args_with_defaults: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+            ),
             defs.spam_args_attrs_and_builtins: new_var_counts(
                 posonly=2,
                 posorkw=2,
@@ -944,6 +984,9 @@ class CodeTest(unittest.TestCase):
             ),
             defs.spam_returns_arg: new_var_counts(
                 posorkw=1,
+            ),
+            defs.spam_raises: new_var_counts(
+                globalvars=1,
             ),
             defs.spam_with_inner_not_closure: new_var_counts(
                 purelocals=1,
@@ -1097,10 +1140,16 @@ class CodeTest(unittest.TestCase):
     def test_stateless(self):
         self.maxDiff = None
 
+        STATELESS_FUNCTIONS = [
+            *defs.STATELESS_FUNCTIONS,
+            # stateless with defaults
+            defs.spam_full_args_with_defaults,
+        ]
+
         for func in defs.STATELESS_CODE:
             with self.subTest((func, '(code)')):
                 _testinternalcapi.verify_stateless_code(func.__code__)
-        for func in defs.STATELESS_FUNCTIONS:
+        for func in STATELESS_FUNCTIONS:
             with self.subTest((func, '(func)')):
                 _testinternalcapi.verify_stateless_code(func)
 
@@ -1110,7 +1159,7 @@ class CodeTest(unittest.TestCase):
                     with self.assertRaises(Exception):
                         _testinternalcapi.verify_stateless_code(func.__code__)
 
-            if func not in defs.STATELESS_FUNCTIONS:
+            if func not in STATELESS_FUNCTIONS:
                 with self.subTest((func, '(func)')):
                     with self.assertRaises(Exception):
                         _testinternalcapi.verify_stateless_code(func)

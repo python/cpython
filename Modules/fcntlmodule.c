@@ -1,9 +1,8 @@
 /* fcntl module */
 
-// Need limited C API version 3.13 for PyLong_AsInt()
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030d0000
+// Argument Clinic uses the internal C API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
@@ -93,29 +92,54 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             return NULL;
         }
         Py_ssize_t len = view.len;
-        if (len > FCNTL_BUFSZ) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fcntl argument 3 is too long");
+        if (len <= FCNTL_BUFSZ) {
+            memcpy(buf, view.buf, len);
+            memcpy(buf + len, guard, GUARDSZ);
             PyBuffer_Release(&view);
-            return NULL;
-        }
-        memcpy(buf, view.buf, len);
-        memcpy(buf + len, guard, GUARDSZ);
-        PyBuffer_Release(&view);
 
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            ret = fcntl(fd, code, buf);
-            Py_END_ALLOW_THREADS
-        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-        if (ret < 0) {
-            return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = fcntl(fd, code, buf);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            }
+            if (memcmp(buf + len, guard, GUARDSZ) != 0) {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                return NULL;
+            }
+            return PyBytes_FromStringAndSize(buf, len);
         }
-        if (memcmp(buf + len, guard, GUARDSZ) != 0) {
-            PyErr_SetString(PyExc_SystemError, "buffer overflow");
-            return NULL;
+        else {
+            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            if (writer == NULL) {
+                PyBuffer_Release(&view);
+                return NULL;
+            }
+            char *ptr = PyBytesWriter_GetData(writer);
+            memcpy(ptr, view.buf, len);
+            PyBuffer_Release(&view);
+
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = fcntl(fd, code, ptr);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                if (!async_err) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                PyBytesWriter_Discard(writer);
+                return NULL;
+            }
+            if (ptr[len] != '\0') {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                PyBytesWriter_Discard(writer);
+                return NULL;
+            }
+            return PyBytesWriter_Finish(writer);
         }
-        return PyBytes_FromStringAndSize(buf, len);
 #undef FCNTL_BUFSZ
     }
     PyErr_Format(PyExc_TypeError,
@@ -127,6 +151,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 fcntl.ioctl
 
     fd: fildes
@@ -168,7 +193,7 @@ code.
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                  int mutate_arg)
-/*[clinic end generated code: output=f72baba2454d7a62 input=9c6cca5e2c339622]*/
+/*[clinic end generated code: output=f72baba2454d7a62 input=d7fe504d335449e2]*/
 {
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
        because the system expects it to be a 32bit bit field value
@@ -251,29 +276,54 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             return NULL;
         }
         Py_ssize_t len = view.len;
-        if (len > IOCTL_BUFSZ) {
-            PyErr_SetString(PyExc_ValueError,
-                            "ioctl argument 3 is too long");
+        if (len <= IOCTL_BUFSZ) {
+            memcpy(buf, view.buf, len);
+            memcpy(buf + len, guard, GUARDSZ);
             PyBuffer_Release(&view);
-            return NULL;
-        }
-        memcpy(buf, view.buf, len);
-        memcpy(buf + len, guard, GUARDSZ);
-        PyBuffer_Release(&view);
 
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            ret = ioctl(fd, code, buf);
-            Py_END_ALLOW_THREADS
-        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-        if (ret < 0) {
-            return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = ioctl(fd, code, buf);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            }
+            if (memcmp(buf + len, guard, GUARDSZ) != 0) {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                return NULL;
+            }
+            return PyBytes_FromStringAndSize(buf, len);
         }
-        if (memcmp(buf + len, guard, GUARDSZ) != 0) {
-            PyErr_SetString(PyExc_SystemError, "buffer overflow");
-            return NULL;
+        else {
+            PyBytesWriter *writer = PyBytesWriter_Create(len);
+            if (writer == NULL) {
+                PyBuffer_Release(&view);
+                return NULL;
+            }
+            char *ptr = PyBytesWriter_GetData(writer);
+            memcpy(ptr, view.buf, len);
+            PyBuffer_Release(&view);
+
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = ioctl(fd, code, ptr);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                if (!async_err) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                PyBytesWriter_Discard(writer);
+                return NULL;
+            }
+            if (ptr[len] != '\0') {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                PyBytesWriter_Discard(writer);
+                return NULL;
+            }
+            return PyBytesWriter_Finish(writer);
         }
-        return PyBytes_FromStringAndSize(buf, len);
 #undef IOCTL_BUFSZ
     }
     PyErr_Format(PyExc_TypeError,
@@ -350,6 +400,7 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
 
 
 /*[clinic input]
+@permit_long_docstring_body
 fcntl.lockf
 
     fd: fildes
@@ -386,7 +437,7 @@ starts.  `whence` is as with fileobj.seek(), specifically:
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence)
-/*[clinic end generated code: output=4985e7a172e7461a input=5480479fc63a04b8]*/
+/*[clinic end generated code: output=4985e7a172e7461a input=f666662ec2edd775]*/
 {
     int ret;
     int async_err = 0;

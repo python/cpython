@@ -21,7 +21,7 @@ import shlex
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_android, is_apple_mobile,
-                          is_emscripten, is_wasi,
+                          is_wasm32,
                           requires_venv_with_pip, TEST_HOME_DIR,
                           requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
@@ -42,7 +42,7 @@ requireVenvCreate = unittest.skipUnless(
     or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
-if is_android or is_apple_mobile or is_emscripten or is_wasi:
+if is_android or is_apple_mobile or is_wasm32:
     raise unittest.SkipTest("venv is not available on this platform")
 
 @requires_subprocess()
@@ -774,7 +774,7 @@ class BasicTest(BaseTest):
         with open(script_path, 'rb') as script:
             for i, line in enumerate(script, 1):
                 error_message = f"CR LF found in line {i}"
-                self.assertFalse(line.endswith(b'\r\n'), error_message)
+                self.assertNotEndsWith(line, b'\r\n', error_message)
 
     @requireVenvCreate
     def test_scm_ignore_files_git(self):
@@ -978,7 +978,7 @@ class EnsurePipTest(BaseTest):
         self.assertEqual(err, "")
         out = out.decode("latin-1") # Force to text, prevent decoding errors
         expected_version = "pip {}".format(ensurepip.version())
-        self.assertEqual(out[:len(expected_version)], expected_version)
+        self.assertStartsWith(out, expected_version)
         env_dir = os.fsencode(self.env_dir).decode("latin-1")
         self.assertIn(env_dir, out)
 
@@ -1008,7 +1008,7 @@ class EnsurePipTest(BaseTest):
                      err, flags=re.MULTILINE)
         # Ignore warning about missing optional module:
         try:
-            import ssl
+            import ssl  # noqa: F401
         except ImportError:
             err = re.sub(
                 "^WARNING: Disabling truststore since ssl support is missing$",

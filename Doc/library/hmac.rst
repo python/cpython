@@ -12,6 +12,9 @@
 --------------
 
 This module implements the HMAC algorithm as described by :rfc:`2104`.
+The interface allows to use any hash function with a *fixed* digest size.
+In particular, extendable output functions such as SHAKE-128 or SHAKE-256
+cannot be used with HMAC.
 
 
 .. function:: new(key, msg=None, digestmod)
@@ -47,7 +50,9 @@ This module implements the HMAC algorithm as described by :rfc:`2104`.
    .. versionadded:: 3.7
 
 
-An HMAC object has the following methods:
+.. class:: HMAC
+
+   An HMAC object has the following methods:
 
 .. method:: HMAC.update(msg)
 

@@ -757,11 +757,29 @@ class PosixTester(unittest.TestCase):
             self.assertRaises((ValueError, OverflowError), posix.makedev, x, minor)
             self.assertRaises((ValueError, OverflowError), posix.makedev, major, x)
 
-        if sys.platform == 'linux':
-            NODEV = -1
+        # The following tests are needed to test functions accepting or
+        # returning the special value NODEV (if it is defined). major(), minor()
+        # and makefile() are the only easily reproducible examples, but that
+        # behavior is platform specific -- on some platforms their code has
+        # a special case for NODEV, on others this is just an implementation
+        # artifact.
+        if (hasattr(posix, 'NODEV') and
+            sys.platform.startswith(('linux', 'macos', 'freebsd', 'dragonfly',
+                                     'sunos'))):
+            NODEV = posix.NODEV
             self.assertEqual(posix.major(NODEV), NODEV)
             self.assertEqual(posix.minor(NODEV), NODEV)
             self.assertEqual(posix.makedev(NODEV, NODEV), NODEV)
+
+    def test_nodev(self):
+        # NODEV is not a part of Posix, but is defined on many systems.
+        if (not hasattr(posix, 'NODEV')
+            and (not sys.platform.startswith(('linux', 'macos', 'freebsd',
+                                              'dragonfly', 'netbsd', 'openbsd',
+                                              'sunos'))
+                 or support.linked_to_musl())):
+            self.skipTest('not defined on this platform')
+        self.assertHasAttr(posix, 'NODEV')
 
     def _test_all_chown_common(self, chown_func, first_param, stat_func):
         """Common code for chown, fchown and lchown tests."""
@@ -1107,7 +1125,7 @@ class PosixTester(unittest.TestCase):
 
     def _test_chflags_regular_file(self, chflags_func, target_file, **kwargs):
         st = os.stat(target_file)
-        self.assertTrue(hasattr(st, 'st_flags'))
+        self.assertHasAttr(st, 'st_flags')
 
         # ZFS returns EOPNOTSUPP when attempting to set flag UF_IMMUTABLE.
         flags = st.st_flags | stat.UF_IMMUTABLE
@@ -1143,7 +1161,7 @@ class PosixTester(unittest.TestCase):
     def test_lchflags_symlink(self):
         testfn_st = os.stat(os_helper.TESTFN)
 
-        self.assertTrue(hasattr(testfn_st, 'st_flags'))
+        self.assertHasAttr(testfn_st, 'st_flags')
 
         self.addCleanup(os_helper.unlink, _DUMMY_SYMLINK)
         os.symlink(os_helper.TESTFN, _DUMMY_SYMLINK)
@@ -2036,6 +2054,12 @@ class _PosixSpawnMixin:
     @requires_sched
     @unittest.skipIf(sys.platform.startswith(('freebsd', 'netbsd')),
                      "bpo-34685: test can fail on BSD")
+    @unittest.skipIf(platform.libc_ver()[0] == 'glibc' and
+                     os.sched_getscheduler(0) in [
+                        os.SCHED_BATCH,
+                        os.SCHED_IDLE,
+                        os.SCHED_DEADLINE],
+                     "Skip test due to glibc posix_spawn policy")
     def test_setscheduler_with_policy(self):
         policy = os.sched_getscheduler(0)
         priority = os.sched_get_priority_min(policy)
@@ -2218,12 +2242,12 @@ class TestPosixWeaklinking(unittest.TestCase):
     def test_pwritev(self):
         self._verify_available("HAVE_PWRITEV")
         if self.mac_ver >= (10, 16):
-            self.assertTrue(hasattr(os, "pwritev"), "os.pwritev is not available")
-            self.assertTrue(hasattr(os, "preadv"), "os.readv is not available")
+            self.assertHasAttr(os, "pwritev")
+            self.assertHasAttr(os, "preadv")
 
         else:
-            self.assertFalse(hasattr(os, "pwritev"), "os.pwritev is available")
-            self.assertFalse(hasattr(os, "preadv"), "os.readv is available")
+            self.assertNotHasAttr(os, "pwritev")
+            self.assertNotHasAttr(os, "preadv")
 
     def test_stat(self):
         self._verify_available("HAVE_FSTATAT")
