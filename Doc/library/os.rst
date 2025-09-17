@@ -3377,7 +3377,7 @@ features:
 
 .. function:: statx(path, mask, *, dir_fd=None, follow_symlinks=True, sync=None)
 
-   Get the status of a file or file descriptor by performing a :c:func:`statx`
+   Get the status of a file or file descriptor by performing a :c:func:`!statx`
    system call on the given path. *path* may be specified as either a string or
    bytes -- directly or indirectly through the :class:`PathLike` interface --
    or as an open file descriptor. *mask* is a combination of the module-level
@@ -3389,9 +3389,10 @@ features:
    The optional parameter *sync* controls the freshness of the returned
    information.  ``sync=True`` requests that the kernel return up-to-date
    information, even when doing so is expensive (for example, requiring a
-   round-trip to the server for a file on a network filesystem).
+   round trip to the server for a file on a network filesystem).
    ``sync=False`` requests that the kernel return cached information if
-   available.
+   available.  ``sync=None`` expresses no preference, in which case the kernel
+   will return information as fresh as :func:`~os.stat` does.
 
    This function supports :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>`, and
@@ -3407,7 +3408,7 @@ features:
 .. class:: statx_result
 
    Object whose attributes correspond roughly to the members of the
-   :c:struct:`statx` structure. It is used for the result of :func:`os.statx`.
+   :c:struct:`!statx` structure. It is used for the result of :func:`os.statx`.
    :class:`!statx_result` has all of the attributes of :class:`stat_result`
    available on Linux, but is not a subclass of :class:`stat_result` nor a
    tuple.  :class:`!statx_result` has the following additional attributes:
