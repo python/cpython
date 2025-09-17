@@ -129,6 +129,9 @@ typedef struct {
     PyThread_type_lock lock;
 } BZ2Decompressor;
 
+#define _BZ2Compressor_CAST(op)     ((BZ2Compressor *)(op))
+#define _BZ2Decompressor_CAST(op)   ((BZ2Decompressor *)(op))
+
 /* Helper functions. */
 
 static int
@@ -376,8 +379,9 @@ error:
 }
 
 static void
-BZ2Compressor_dealloc(BZ2Compressor *self)
+BZ2Compressor_dealloc(PyObject *op)
 {
+    BZ2Compressor *self = _BZ2Compressor_CAST(op);
     BZ2_bzCompressEnd(&self->bzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
@@ -388,7 +392,7 @@ BZ2Compressor_dealloc(BZ2Compressor *self)
 }
 
 static int
-BZ2Compressor_traverse(BZ2Compressor *self, visitproc visit, void *arg)
+BZ2Compressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -594,6 +598,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _bz2.BZ2Decompressor.decompress
 
     data: Py_buffer
@@ -618,7 +623,7 @@ the unused_data attribute.
 static PyObject *
 _bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
                                      Py_ssize_t max_length)
-/*[clinic end generated code: output=23e41045deb240a3 input=52e1ffc66a8ea624]*/
+/*[clinic end generated code: output=23e41045deb240a3 input=3703e78f91757655]*/
 {
     PyObject *result = NULL;
 
@@ -664,9 +669,7 @@ _bz2_BZ2Decompressor_impl(PyTypeObject *type)
     self->bzs_avail_in_real = 0;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    self->unused_data = PyBytes_FromStringAndSize(NULL, 0);
-    if (self->unused_data == NULL)
-        goto error;
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
 
     bzerror = BZ2_bzDecompressInit(&self->bzs, 0, 0);
     if (catch_bz2_error(bzerror))
@@ -680,8 +683,10 @@ error:
 }
 
 static void
-BZ2Decompressor_dealloc(BZ2Decompressor *self)
+BZ2Decompressor_dealloc(PyObject *op)
 {
+    BZ2Decompressor *self = _BZ2Decompressor_CAST(op);
+
     if(self->input_buffer != NULL) {
         PyMem_Free(self->input_buffer);
     }
@@ -697,7 +702,7 @@ BZ2Decompressor_dealloc(BZ2Decompressor *self)
 }
 
 static int
-BZ2Decompressor_traverse(BZ2Decompressor *self, visitproc visit, void *arg)
+BZ2Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;

@@ -20,11 +20,10 @@ for parsing and creating XML data.
    The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
-.. warning::
+.. note::
 
-   The :mod:`xml.etree.ElementTree` module is not secure against
-   maliciously constructed data.  If you need to parse untrusted or
-   unauthenticated data see :ref:`xml-vulnerabilities`.
+   If you need to parse untrusted or unauthenticated data, see
+   :ref:`xml-security`.
 
 Tutorial
 --------
@@ -508,7 +507,7 @@ Functions
    `C14N 2.0 <https://www.w3.org/TR/xml-c14n2/>`_ transformation function.
 
    Canonicalization is a way to normalise XML output in a way that allows
-   byte-by-byte comparisons and digital signatures.  It reduced the freedom
+   byte-by-byte comparisons and digital signatures.  It reduces the freedom
    that XML serializers have and instead generates a more constrained XML
    representation.  The main restrictions regard the placement of namespace
    declarations, the ordering of attributes, and ignorable whitespace.
@@ -874,6 +873,7 @@ Element Objects
 
 .. module:: xml.etree.ElementTree
    :noindex:
+   :no-index:
 
 .. class:: Element(tag, attrib={}, **extra)
 
@@ -970,7 +970,7 @@ Element Objects
 
    .. method:: extend(subelements)
 
-      Appends *subelements* from a sequence object with zero or more elements.
+      Appends *subelements* from an iterable of elements.
       Raises :exc:`TypeError` if a subelement is not an :class:`Element`.
 
       .. versionadded:: 3.2
@@ -1058,9 +1058,10 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  Testing the
-   truth value of an Element is deprecated and will raise an exception in
-   Python 3.14.  Use specific ``len(elem)`` or ``elem is None`` test instead.::
+   Caution: Elements with no subelements will test as ``False``.  In a future
+   release of Python, all elements will test as ``True`` regardless of whether
+   subelements exist.  Instead, prefer explicit ``len(elem)`` or
+   ``elem is not None`` tests.::
 
      element = root.find('foo')
 
@@ -1373,7 +1374,7 @@ XMLParser Objects
 
    .. versionchanged:: 3.8
       Parameters are now :ref:`keyword-only <keyword-only_parameter>`.
-      The *html* argument no longer supported.
+      The *html* argument is no longer supported.
 
 
    .. method:: close()

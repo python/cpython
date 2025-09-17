@@ -1,2 +1,2 @@
 #!/bin/sh
-xcrun --sdk iphonesimulator${IOS_SDK_VERSION} clang -target arm64-apple-ios-simulator $@
+xcrun --sdk iphonesimulator${IOS_SDK_VERSION} clang -target arm64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-simulator "$@"

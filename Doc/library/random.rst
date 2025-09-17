@@ -200,8 +200,8 @@ Functions for sequences
 
    For a given seed, the :func:`choices` function with equal weighting
    typically produces a different sequence than repeated calls to
-   :func:`choice`.  The algorithm used by :func:`choices` uses floating
-   point arithmetic for internal consistency and speed.  The algorithm used
+   :func:`choice`.  The algorithm used by :func:`choices` uses floating-point
+   arithmetic for internal consistency and speed.  The algorithm used
    by :func:`choice` defaults to integer arithmetic with repeated selections
    to avoid small biases from round-off error.
 
@@ -298,12 +298,12 @@ be found in any statistics text.
 
 .. function:: random()
 
-   Return the next random floating point number in the range ``0.0 <= X < 1.0``
+   Return the next random floating-point number in the range ``0.0 <= X < 1.0``
 
 
 .. function:: uniform(a, b)
 
-   Return a random floating point number *N* such that ``a <= N <= b`` for
+   Return a random floating-point number *N* such that ``a <= N <= b`` for
    ``a <= b`` and ``b <= N <= a`` for ``b < a``.
 
    The end-point value ``b`` may or may not be included in the range
@@ -313,7 +313,7 @@ be found in any statistics text.
 
 .. function:: triangular(low, high, mode)
 
-   Return a random floating point number *N* such that ``low <= N <= high`` and
+   Return a random floating-point number *N* such that ``low <= N <= high`` and
    with the specified *mode* between those bounds.  The *low* and *high* bounds
    default to zero and one.  The *mode* argument defaults to the midpoint
    between the bounds, giving a symmetric distribution.
@@ -446,6 +446,11 @@ Alternative Generator
 
       Override this method in subclasses to customise the
       :meth:`~random.getrandbits` behaviour of :class:`!Random` instances.
+
+   .. method:: Random.randbytes(n)
+
+      Override this method in subclasses to customise the
+      :meth:`~random.randbytes` behaviour of :class:`!Random` instances.
 
 
 .. class:: SystemRandom([seed])
@@ -625,7 +630,8 @@ Recipes
 -------
 
 These recipes show how to efficiently make random selections
-from the combinatoric iterators in the :mod:`itertools` module:
+from the combinatoric iterators in the :mod:`itertools` module
+or the :pypi:`more-itertools` project:
 
 .. testcode::
    import random
@@ -655,6 +661,17 @@ from the combinatoric iterators in the :mod:`itertools` module:
        n = len(pool)
        indices = sorted(random.choices(range(n), k=r))
        return tuple(pool[i] for i in indices)
+
+   def random_derangement(iterable):
+       "Choose a permutation where no element is in its original position."
+       seq = tuple(iterable)
+       if len(seq) < 2:
+           raise ValueError('derangements require at least two values')
+       perm = list(seq)
+       while True:
+           random.shuffle(perm)
+           if all(p != q for p, q in zip(seq, perm)):
+               return tuple(perm)
 
 The default :func:`.random` returns multiples of 2⁻⁵³ in the range
 *0.0 ≤ x < 1.0*.  All such numbers are evenly spaced and are exactly
@@ -741,7 +758,7 @@ The following options are accepted:
 .. option:: -f <N>
             --float <N>
 
-   Print a random floating point number between 1 and N inclusive,
+   Print a random floating-point number between 0 and N inclusive,
    using :meth:`uniform`.
 
 If no options are given, the output depends on the input:

@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2006 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Author: Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -21,7 +21,7 @@ class MIMEMultipart(MIMEBase):
         Content-Type and MIME-Version headers.
 
         _subtype is the subtype of the multipart content type, defaulting to
-        `mixed'.
+        'mixed'.
 
         boundary is the multipart boundary string.  By default it is
         calculated as needed.

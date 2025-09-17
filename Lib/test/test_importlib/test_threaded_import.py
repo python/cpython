@@ -17,7 +17,7 @@ from test import support
 from test.support import verbose
 from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)
-from test.support import script_helper, threading_helper, requires_gil_enabled
+from test.support import script_helper, threading_helper
 
 threading_helper.requires_working_threading(module=True)
 
@@ -135,10 +135,12 @@ class ThreadedImportTests(unittest.TestCase):
             if verbose:
                 print("OK.")
 
-    def test_parallel_module_init(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_module_init(self, size):
         self.check_parallel_module_init()
 
-    def test_parallel_meta_path(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_meta_path(self, size):
         finder = Finder()
         sys.meta_path.insert(0, finder)
         try:
@@ -148,7 +150,8 @@ class ThreadedImportTests(unittest.TestCase):
         finally:
             sys.meta_path.remove(finder)
 
-    def test_parallel_path_hooks(self):
+    @support.bigmemtest(size=50, memuse=76*2**20, dry_run=False)
+    def test_parallel_path_hooks(self, size):
         # Here the Finder instance is only used to check concurrent calls
         # to path_hook().
         finder = Finder()
@@ -242,16 +245,15 @@ class ThreadedImportTests(unittest.TestCase):
             __import__(TESTFN)
         del sys.modules[TESTFN]
 
-    def test_concurrent_futures_circular_import(self):
+    @support.bigmemtest(size=1, memuse=1.8*2**30, dry_run=False)
+    def test_concurrent_futures_circular_import(self, size):
         # Regression test for bpo-43515
         fn = os.path.join(os.path.dirname(__file__),
                           'partial', 'cfimport.py')
         script_helper.assert_python_ok(fn)
 
-    # gh-118727 and gh-118729: pool_in_threads.py may crash in free-threaded
-    # builds, which can hang the Tsan test so temporarily skip it for now.
-    @requires_gil_enabled("gh-118727: test may crash in free-threaded builds")
-    def test_multiprocessing_pool_circular_import(self):
+    @support.bigmemtest(size=1, memuse=1.8*2**30, dry_run=False)
+    def test_multiprocessing_pool_circular_import(self, size):
         # Regression test for bpo-41567
         fn = os.path.join(os.path.dirname(__file__),
                           'partial', 'pool_in_threads.py')

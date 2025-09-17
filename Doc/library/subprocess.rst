@@ -25,7 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
-.. include:: ../includes/wasm-ios-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -52,7 +52,7 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   *stdout* and *stdin* both set to :data:`~subprocess.PIPE`.
+   *stdout* and *stderr* both set to :data:`~subprocess.PIPE`.
    The *stdout* and *stderr* arguments may not be supplied at the same time as *capture_output*.
    If you wish to capture and combine both streams into one,
    set *stdout* to :data:`~subprocess.PIPE`
@@ -608,7 +608,7 @@ functions.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   value is a string, it will be looked up via :func:`grp.getgrnam` and
    the value in ``gr_gid`` will be used. If the value is an integer, it
    will be passed verbatim. (POSIX only)
 
@@ -618,7 +618,7 @@ functions.
    If *extra_groups* is not ``None``, the setgroups() system call will be
    made in the child process prior to the execution of the subprocess.
    Strings provided in *extra_groups* will be looked up via
-   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   :func:`grp.getgrnam` and the values in ``gr_gid`` will be used.
    Integer values will be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
@@ -626,7 +626,7 @@ functions.
 
    If *user* is not ``None``, the setreuid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   value is a string, it will be looked up via :func:`pwd.getpwnam` and
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
@@ -1126,7 +1126,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: NORMAL_PRIORITY_CLASS
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will have an normal priority. (default)
+   will have a normal priority. (default)
 
    .. versionadded:: 3.7
 
@@ -1443,36 +1443,8 @@ Environment example::
 
 
 
-Replacing :func:`os.popen`, :func:`os.popen2`, :func:`os.popen3`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   (child_stdin, child_stdout) = os.popen2(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdin, child_stdout) = (p.stdin, p.stdout)
-
-::
-
-   (child_stdin,
-    child_stdout,
-    child_stderr) = os.popen3(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
-   (child_stdin,
-    child_stdout,
-    child_stderr) = (p.stdin, p.stdout, p.stderr)
-
-::
-
-   (child_stdin, child_stdout_and_stderr) = os.popen4(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-   (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
+Replacing :func:`os.popen`
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Return code handling translates as follows::
 
@@ -1487,44 +1459,6 @@ Return code handling translates as follows::
    process.stdin.close()
    if process.wait() != 0:
        print("There were some errors")
-
-
-Replacing functions from the :mod:`!popen2` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. note::
-
-   If the cmd argument to popen2 functions is a string, the command is executed
-   through /bin/sh.  If it is a list, the command is directly executed.
-
-::
-
-   (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
-   ==>
-   p = Popen("somestring", shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdout, child_stdin) = (p.stdout, p.stdin)
-
-::
-
-   (child_stdout, child_stdin) = popen2.popen2(["mycmd", "myarg"], bufsize, mode)
-   ==>
-   p = Popen(["mycmd", "myarg"], bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdout, child_stdin) = (p.stdout, p.stdin)
-
-:class:`popen2.Popen3` and :class:`popen2.Popen4` basically work as
-:class:`subprocess.Popen`, except that:
-
-* :class:`Popen` raises an exception if the execution fails.
-
-* The *capturestderr* argument is replaced with the *stderr* argument.
-
-* ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
-
-* popen2 closes all file descriptors by default, but you have to specify
-  ``close_fds=True`` with :class:`Popen` to guarantee this behavior on
-  all platforms or past Python versions.
 
 
 Legacy Shell Invocation Functions
@@ -1591,6 +1525,24 @@ handling consistency are valid for these functions.
 Notes
 -----
 
+.. _subprocess-timeout-behavior:
+
+Timeout Behavior
+^^^^^^^^^^^^^^^^
+
+When using the ``timeout`` parameter in functions like :func:`run`,
+:meth:`Popen.wait`, or :meth:`Popen.communicate`,
+users should be aware of the following behaviors:
+
+1. **Process Creation Delay**: The initial process creation itself cannot be interrupted
+   on many platform APIs. This means that even when specifying a timeout, you are not
+   guaranteed to see a timeout exception until at least after however long process
+   creation takes.
+
+2. **Extremely Small Timeout Values**: Setting very small timeout values (such as a few
+   milliseconds) may result in almost immediate :exc:`TimeoutExpired` exceptions because
+   process creation and system scheduling inherently require time.
+
 .. _converting-argument-sequence:
 
 Converting an argument sequence to a string on Windows
@@ -1627,36 +1579,22 @@ runtime):
       Module which provides function to parse and escape command lines.
 
 
-.. _disable_vfork:
 .. _disable_posix_spawn:
 
-Disabling use of ``vfork()`` or ``posix_spawn()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Disable use of ``posix_spawn()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 
-If you ever encounter a presumed highly unusual situation where you need to
-prevent ``vfork()`` from being used by Python, you can set the
-:const:`subprocess._USE_VFORK` attribute to a false value.
-
-::
-
-   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
-
-Setting this has no impact on use of ``posix_spawn()`` which could use
-``vfork()`` internally within its libc implementation.  There is a similar
-:const:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
-that.
-
 ::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
 
-It is safe to set these to false on any Python version. They will have no
-effect on older versions when unsupported. Do not assume the attributes are
-available to read. Despite their names, a true value does not indicate that the
+It is safe to set this to false on any Python version. It will have no
+effect on older or newer versions where unsupported. Do not assume the attribute
+is available to read. Despite the name, a true value does not indicate the
 corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
@@ -1664,4 +1602,3 @@ reproduce the issue you were seeing. Link to that issue from a comment in your
 code.
 
 .. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
-.. versionadded:: 3.11 ``_USE_VFORK``

@@ -69,7 +69,7 @@ in :mod:`logging` itself) and defining handlers which are declared either in
              dictConfigClass(config).configure()
 
    For example, a subclass of :class:`DictConfigurator` could call
-   ``DictConfigurator.__init__()`` in its own :meth:`__init__()`, then
+   ``DictConfigurator.__init__()`` in its own :meth:`__init__`, then
    set up custom prefixes which would be usable in the subsequent
    :meth:`configure` call. :attr:`dictConfigClass` would be bound to
    this new subclass, and then :func:`dictConfig` could be called exactly as
@@ -548,7 +548,7 @@ mnemonic that the corresponding value is a callable.
    The ``filters`` member of ``handlers`` and ``loggers`` can take
    filter instances in addition to ids.
 
-You can also specify a special key ``'.'`` whose value is a dictionary is a
+You can also specify a special key ``'.'`` whose value is a
 mapping of attribute names to values. If found, the specified attributes will
 be set on the user-defined object before it is returned. Thus, with the
 following configuration::
@@ -586,7 +586,7 @@ configuration dictionary for the handler named ``foo``, and later (once that
 handler has been configured) it points to the configured handler instance.
 Thus, ``cfg://handlers.foo`` could resolve to either a dictionary or a handler
 instance. In general, it is wise to name handlers in a way such that dependent
-handlers are configured _after_ any handlers they depend on; that allows
+handlers are configured *after* any handlers they depend on; that allows
 something like ``cfg://handlers.foo`` to be used in configuring a handler that
 depends on handler ``foo``. If that dependent handler were named ``bar``,
 problems would result, because the configuration of ``bar`` would be attempted
@@ -753,13 +753,17 @@ The ``queue`` and ``listener`` keys are optional.
 
 If the ``queue`` key is present, the corresponding value can be one of the following:
 
-* An actual instance of :class:`queue.Queue` or a subclass thereof. This is of course
-  only possible if you are constructing or modifying the configuration dictionary in
-  code.
+* An object implementing the :meth:`Queue.put_nowait <queue.Queue.put_nowait>`
+  and :meth:`Queue.get <queue.Queue.get>` public API. For instance, this may be
+  an actual instance of :class:`queue.Queue` or a subclass thereof, or a proxy
+  obtained by :meth:`multiprocessing.managers.SyncManager.Queue`.
+
+  This is of course only possible if you are constructing or modifying
+  the configuration dictionary in code.
 
 * A string that resolves to a callable which, when called with no arguments, returns
-  the :class:`queue.Queue` instance to use. That callable could be a
-  :class:`queue.Queue` subclass or a function which returns a suitable queue instance,
+  the queue instance to use. That callable could be a :class:`queue.Queue` subclass
+  or a function which returns a suitable queue instance,
   such as ``my.module.queue_factory()``.
 
 * A dict with a ``'()'`` key which is constructed in the usual way as discussed in
