@@ -3222,8 +3222,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
     int binary_adapt = ms.listlen >= 100;
     if (!binary_adapt) {
         do {
-            /* Identify next run. */
             Py_ssize_t n;
+
+            /* Identify next run. */
             n = count_run(&ms, &lo, nremaining);
             if (n < 0)
                 goto fail;
@@ -3263,8 +3264,9 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         int cd = 1;
         int abinret;
         do {
-            /* Identify next run. */
             Py_ssize_t n;
+
+            /* Identify next run. */
             n = count_run(&ms, &lo, nremaining);
             if (n < 0)
                 goto fail;
