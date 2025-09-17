@@ -62,11 +62,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "8fdf2e79a7ab46a3c76c74ed7e5fe641cbef308d"
+          "checksumValue": "c22196e3d8bee88fcdda715623b3b9d2119d2fb3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "ffb960af48b80935f3856a16e87023524b104f7fc1e58104f01db88ba7bfbcc9"
+          "checksumValue": "f2c2283ba03b057e92beefc7f81ba901ebb6dfc1a45b036c8a7d65808eb77a84"
         }
       ],
       "fileName": "Modules/expat/expat_external.h"
