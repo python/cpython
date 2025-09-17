@@ -151,13 +151,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Build with JIT enabled without optimizations
+      - name: Build with JIT
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           ./configure --enable-experimental-jit --with-pydebug
           make all --jobs 4
-      - name: Run tests
+      - name: Run tests without optimizations
         run: |
           PYTHON_UOPS_OPTIMIZE=0 ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
