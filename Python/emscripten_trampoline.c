@@ -17,15 +17,13 @@ _PyEM_TrampolineCall_inner, (int* success,
 // version.
 (function () {
     // iOS ships broken wasm-gc, so feature detect and turn it off
-    const isIOS =
-        globalThis.navigator &&
-        (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
-            // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
-            // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
-            // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
-            (navigator.platform === "MacIntel" &&
-                typeof navigator.maxTouchPoints !== "undefined" &&
-                navigator.maxTouchPoints > 1));
+    let isIOS = globalThis.navigator && (
+        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
+        // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
+        // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
+        (navigator.platform === 'MacIntel' && typeof navigator.maxTouchPoints !== 'undefined' && navigator.maxTouchPoints > 1)
+    );
     if (isIOS) {
         return;
     }
