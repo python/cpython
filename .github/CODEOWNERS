@@ -414,7 +414,7 @@ Lib/zoneinfo/                    @pganssle
 Lib/*time.py                     @pganssle @abalkin
 Lib/test/datetimetester.py       @pganssle @abalkin
 Lib/test/test_*time.py           @pganssle @abalkin
-Modules/**/*zoneinfo*            @pganssle
+Modules/*zoneinfo*               @pganssle
 Modules/*time*                   @pganssle @abalkin
 Python/pytime.c                  @pganssle @abalkin
 
