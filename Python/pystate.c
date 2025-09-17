@@ -22,6 +22,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
+#include "pycore_uop.h"           // UOP_BUFFER_SIZE
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 
@@ -550,6 +551,11 @@ init_interpreter(PyInterpreterState *interp,
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif
+
+#ifdef _Py_TIER2
+     // Ensure the buffer is to be set as NULL.
+    interp->jit_uop_buffer = NULL;
+#endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
     interp->asyncio_tasks_lock = (PyMutex){0};
@@ -565,6 +571,7 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->_code_object_generation = 0;
     interp->jit = false;
+    interp->compiling = false;
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_deletion_list_remaining_capacity = 0;
@@ -797,6 +804,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
+    if (interp->jit_uop_buffer != NULL) {
+        _PyObject_VirtualFree(interp->jit_uop_buffer, UOP_BUFFER_SIZE);
+        interp->jit_uop_buffer = NULL;
+    }
 #endif
     _PyAST_Fini(interp);
     _PyAtExit_Fini(interp);
