@@ -2820,7 +2820,7 @@ CPython bytecode changes
   (Contributed by Irit Katriel in :gh:`100239`.)
 
 
-C API Changes
+C API changes
 =============
 
 New features in the C API
@@ -2847,7 +2847,7 @@ New features in the C API
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
-* Add functions to configure Python initialization (:pep:`741`)
+* Add functions to configure Python initialization
   (:ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`):
 
   * :c:func:`Py_InitializeFromInitConfig`
@@ -2869,7 +2869,7 @@ New features in the C API
 
 * Add :c:func:`Py_fopen` function to open a file.
   This works similarly to the standard C :c:func:`!fopen` function,
-  accepting a Python object for the *path* parameter
+  instead accepting a Python object for the *path* parameter
   and setting an exception on error.
   The corresponding new :c:func:`Py_fclose` function should be used
   to close a file.
@@ -2888,12 +2888,12 @@ New features in the C API
   (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
 
 * Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
-  (Contributed by Sergey B. Kirpichev in :gh:`116560`.)
+  (Contributed by Sergey B Kirpichev in :gh:`116560`.)
 
 * Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
   and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
   is positive, negative, or zero, respectively.
-  (Contributed by James Roy and Sergey B. Kirpichev in :gh:`126061`.)
+  (Contributed by James Roy and Sergey B Kirpichev in :gh:`126061`.)
 
 * Add new functions to convert C ``<stdint.h>`` numbers to/from
   Python :class:`int` objects:
@@ -2919,7 +2919,7 @@ New features in the C API
   * :c:func:`PyLongWriter_Finish`
   * :c:func:`PyLongWriter_Discard`
 
-  (Contributed by Sergey B. Kirpichev and Victor Stinner in :gh:`102471`.)
+  (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
 * Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
   :c:func:`PyMonitoring_FireBranchRightEvent` for generating
@@ -2932,8 +2932,13 @@ New features in the C API
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot
   for easier superclass identification, which attempts to resolve the
-  type checking issue mentioned in :pep:`630 <630#type-checking>`.
+  type checking issue mentioned in :pep:`PEP 630 <630#type-checking>`.
   (Contributed in :gh:`124153`.)
+
+* Add a new :c:func:`PyUnicode_Equal` function to test if two
+  strings are equal.
+  The function is also added to the Limited C API.
+  (Contributed by Victor Stinner in :gh:`124502`.)
 
 * Add a new :c:type:`PyUnicodeWriter` API to create a Python :class:`str`
   object, with the following functions:
@@ -2987,10 +2992,6 @@ New features in the C API
 Limited C API changes
 ---------------------
 
-* Add :c:func:`PyUnicode_Equal` function to the limited C API:
-  test if two strings are equal.
-  (Contributed by Victor Stinner in :gh:`124502`.)
-
 * In the limited C API version 3.14 and newer, :c:func:`Py_TYPE` and
   :c:func:`Py_REFCNT` are now implemented as an opaque function call
   to hide implementation details.
@@ -3038,13 +3039,13 @@ Deprecated C APIs
 
 * The :c:macro:`!Py_HUGE_VAL` macro is now :term:`soft deprecated`.
   Use :c:macro:`!Py_INFINITY` instead.
-  (Contributed by Sergey B. Kirpichev in :gh:`120026`.)
+  (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
 * The :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`,
   and :c:macro:`!Py_IS_FINITE` macros are now :term:`soft deprecated`.
   Use :c:macro:`!isnan`, :c:macro:`!isinf` and :c:macro:`!isfinite`
   instead, available from :file:`math.h` since C99.
-  (Contributed by Sergey B. Kirpichev in :gh:`119613`.)
+  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
 * Non-tuple sequences are now deprecated as argument for the ``(items)``
   format unit in :c:func:`PyArg_ParseTuple` and other :ref:`argument
