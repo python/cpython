@@ -3,6 +3,12 @@
 // support wasm-gc yet. If the JS runtime does not support wasm-gc (or has buggy
 // support like iOS), we will use the JS trampoline fallback.
 
+// We can't import Python.h here because it is compiled/linked with -nostdlib.
+// We don't need to know what's inside PyObject* anyways. We could just call it
+// void* everywhere. There are two reasons to do this:
+// 1. to improve readability
+// 2. eventually when we are comfortable requiring wasm-gc, we can merge this
+//    into emscripten_trampoline.c without worrying about it.
 typedef void PyObject;
 
 typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
