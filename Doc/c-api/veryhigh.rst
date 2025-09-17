@@ -183,8 +183,8 @@ the same library that the Python runtime is using.
    objects *globals* and *locals* with the compiler flags specified by
    *flags*.  *globals* must be a dictionary; *locals* can be any object
    that implements the mapping protocol.  The parameter *start* specifies
-   the start symbol (e.g., :c:data:`Py_eval_input`) that should be used to
-   parse the source code.
+   the start symbol and must one of the following:
+   :c:data:`Py_eval_input`, :c:data:`Py_file_input`, or :c:data:`Py_single_input`.
 
    Returns the result of executing the code as a Python object, or ``NULL`` if an
    exception was raised.
