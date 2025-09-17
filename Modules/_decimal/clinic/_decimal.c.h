@@ -51,6 +51,166 @@ _decimal_Context_Etop(PyObject *self, PyObject *Py_UNUSED(ignored))
     return _decimal_Context_Etop_impl(self);
 }
 
+PyDoc_STRVAR(_decimal_Context_clear_traps__doc__,
+"clear_traps($self, /)\n"
+"--\n"
+"\n"
+"Set all traps to False.");
+
+#define _DECIMAL_CONTEXT_CLEAR_TRAPS_METHODDEF    \
+    {"clear_traps", (PyCFunction)_decimal_Context_clear_traps, METH_NOARGS, _decimal_Context_clear_traps__doc__},
+
+static PyObject *
+_decimal_Context_clear_traps_impl(PyObject *self);
+
+static PyObject *
+_decimal_Context_clear_traps(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_clear_traps_impl(self);
+}
+
+PyDoc_STRVAR(_decimal_Context_clear_flags__doc__,
+"clear_flags($self, /)\n"
+"--\n"
+"\n"
+"Reset all flags to False.");
+
+#define _DECIMAL_CONTEXT_CLEAR_FLAGS_METHODDEF    \
+    {"clear_flags", (PyCFunction)_decimal_Context_clear_flags, METH_NOARGS, _decimal_Context_clear_flags__doc__},
+
+static PyObject *
+_decimal_Context_clear_flags_impl(PyObject *self);
+
+static PyObject *
+_decimal_Context_clear_flags(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_clear_flags_impl(self);
+}
+
+PyDoc_STRVAR(context_init__doc__,
+"Context(prec=None, rounding=None, Emin=None, Emax=None, capitals=None,\n"
+"        clamp=None, flags=None, traps=None)\n"
+"--\n"
+"\n"
+"Create context.\n"
+"\n"
+"The context affects almost all operations and controls rounding,\n"
+"Over/Underflow, raising of exceptions and much more.  A new context\n"
+"can be constructed as follows:\n"
+"\n"
+"    >>> c = Context(prec=28, Emin=-425000000, Emax=425000000,\n"
+"    ...             rounding=ROUND_HALF_EVEN, capitals=1, clamp=1,\n"
+"    ...             traps=[InvalidOperation, DivisionByZero, Overflow],\n"
+"    ...             flags=[])\n"
+"    >>>");
+
+static int
+context_init_impl(PyObject *self, PyObject *prec, PyObject *rounding,
+                  PyObject *emin, PyObject *emax, PyObject *capitals,
+                  PyObject *clamp, PyObject *status, PyObject *traps);
+
+static int
+context_init(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int return_value = -1;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 8
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(prec), &_Py_ID(rounding), &_Py_ID(Emin), &_Py_ID(Emax), &_Py_ID(capitals), &_Py_ID(clamp), &_Py_ID(flags), &_Py_ID(traps), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"prec", "rounding", "Emin", "Emax", "capitals", "clamp", "flags", "traps", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "Context",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[8];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
+    PyObject *prec = Py_None;
+    PyObject *rounding = Py_None;
+    PyObject *emin = Py_None;
+    PyObject *emax = Py_None;
+    PyObject *capitals = Py_None;
+    PyObject *clamp = Py_None;
+    PyObject *status = Py_None;
+    PyObject *traps = Py_None;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 8, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (fastargs[0]) {
+        prec = fastargs[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[1]) {
+        rounding = fastargs[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[2]) {
+        emin = fastargs[2];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[3]) {
+        emax = fastargs[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[4]) {
+        capitals = fastargs[4];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[5]) {
+        clamp = fastargs[5];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (fastargs[6]) {
+        status = fastargs[6];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    traps = fastargs[7];
+skip_optional_pos:
+    return_value = context_init_impl(self, prec, rounding, emin, emax, capitals, clamp, status, traps);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_decimal_IEEEContext__doc__,
 "IEEEContext($module, bits, /)\n"
 "--\n"
@@ -88,6 +248,24 @@ _decimal_IEEEContext(PyObject *module, PyObject *arg)
 
 exit:
     return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_copy__doc__,
+"copy($self, /)\n"
+"--\n"
+"\n"
+"Return a duplicate of the context with all flags cleared.");
+
+#define _DECIMAL_CONTEXT_COPY_METHODDEF    \
+    {"copy", (PyCFunction)_decimal_Context_copy, METH_NOARGS, _decimal_Context_copy__doc__},
+
+static PyObject *
+_decimal_Context_copy_impl(PyObject *self);
+
+static PyObject *
+_decimal_Context_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _decimal_Context_copy_impl(self);
 }
 
 PyDoc_STRVAR(_decimal_getcontext__doc__,
@@ -311,6 +489,18 @@ _decimal_Decimal_from_number(PyObject *type, PyObject *number)
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_Context_create_decimal_from_float__doc__,
+"create_decimal_from_float($self, f, /)\n"
+"--\n"
+"\n"
+"Create a new Decimal instance from float f.\n"
+"\n"
+"Unlike the Decimal.from_float() class method, this function observes\n"
+"the context limits.");
+
+#define _DECIMAL_CONTEXT_CREATE_DECIMAL_FROM_FLOAT_METHODDEF    \
+    {"create_decimal_from_float", (PyCFunction)_decimal_Context_create_decimal_from_float, METH_O, _decimal_Context_create_decimal_from_float__doc__},
+
 PyDoc_STRVAR(dec_new__doc__,
 "Decimal(value=\'0\', context=None)\n"
 "--\n"
@@ -380,6 +570,41 @@ dec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     context = fastargs[1];
 skip_optional_pos:
     return_value = dec_new_impl(type, value, context);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_create_decimal__doc__,
+"create_decimal($self, num=\'0\', /)\n"
+"--\n"
+"\n"
+"Create a new Decimal instance from num, using self as the context.\n"
+"\n"
+"Unlike the Decimal constructor, this function observes the context\n"
+"limits.");
+
+#define _DECIMAL_CONTEXT_CREATE_DECIMAL_METHODDEF    \
+    {"create_decimal", _PyCFunction_CAST(_decimal_Context_create_decimal), METH_FASTCALL, _decimal_Context_create_decimal__doc__},
+
+static PyObject *
+_decimal_Context_create_decimal_impl(PyObject *context, PyObject *num);
+
+static PyObject *
+_decimal_Context_create_decimal(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *num = NULL;
+
+    if (!_PyArg_CheckPositional("create_decimal", nargs, 0, 1)) {
+        goto exit;
+    }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    num = args[0];
+skip_optional:
+    return_value = _decimal_Context_create_decimal_impl(context, num);
 
 exit:
     return return_value;
@@ -4011,6 +4236,36 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_decimal_Context_divmod__doc__,
+"divmod($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return quotient and remainder of the division x / y.");
+
+#define _DECIMAL_CONTEXT_DIVMOD_METHODDEF    \
+    {"divmod", _PyCFunction_CAST(_decimal_Context_divmod), METH_FASTCALL, _decimal_Context_divmod__doc__},
+
+static PyObject *
+_decimal_Context_divmod_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_divmod(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("divmod", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_divmod_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_decimal_Context_power__doc__,
 "power($self, /, a, b, modulo=None)\n"
 "--\n"
@@ -4225,6 +4480,73 @@ PyDoc_STRVAR(_decimal_Context_is_zero__doc__,
 #define _DECIMAL_CONTEXT_IS_ZERO_METHODDEF    \
     {"is_zero", (PyCFunction)_decimal_Context_is_zero, METH_O, _decimal_Context_is_zero__doc__},
 
+PyDoc_STRVAR(_decimal_Context_is_canonical__doc__,
+"is_canonical($self, x, /)\n"
+"--\n"
+"\n"
+"Return True if x is canonical, False otherwise.");
+
+#define _DECIMAL_CONTEXT_IS_CANONICAL_METHODDEF    \
+    {"is_canonical", (PyCFunction)_decimal_Context_is_canonical, METH_O, _decimal_Context_is_canonical__doc__},
+
+PyDoc_STRVAR(_decimal_Context__apply__doc__,
+"_apply($self, x, /)\n"
+"--\n"
+"\n"
+"Apply self to Decimal x.");
+
+#define _DECIMAL_CONTEXT__APPLY_METHODDEF    \
+    {"_apply", (PyCFunction)_decimal_Context__apply, METH_O, _decimal_Context__apply__doc__},
+
+#if defined(EXTRA_FUNCTIONALITY)
+
+PyDoc_STRVAR(_decimal_Context_apply__doc__,
+"apply($self, x, /)\n"
+"--\n"
+"\n"
+"Apply self to Decimal x.");
+
+#define _DECIMAL_CONTEXT_APPLY_METHODDEF    \
+    {"apply", (PyCFunction)_decimal_Context_apply, METH_O, _decimal_Context_apply__doc__},
+
+#endif /* defined(EXTRA_FUNCTIONALITY) */
+
+PyDoc_STRVAR(_decimal_Context_canonical__doc__,
+"canonical($self, x, /)\n"
+"--\n"
+"\n"
+"Return a new instance of x.");
+
+#define _DECIMAL_CONTEXT_CANONICAL_METHODDEF    \
+    {"canonical", (PyCFunction)_decimal_Context_canonical, METH_O, _decimal_Context_canonical__doc__},
+
+PyDoc_STRVAR(_decimal_Context_copy_abs__doc__,
+"copy_abs($self, x, /)\n"
+"--\n"
+"\n"
+"Return a copy of x with the sign set to 0.");
+
+#define _DECIMAL_CONTEXT_COPY_ABS_METHODDEF    \
+    {"copy_abs", (PyCFunction)_decimal_Context_copy_abs, METH_O, _decimal_Context_copy_abs__doc__},
+
+PyDoc_STRVAR(_decimal_Context_copy_decimal__doc__,
+"copy_decimal($self, x, /)\n"
+"--\n"
+"\n"
+"Return a copy of Decimal x.");
+
+#define _DECIMAL_CONTEXT_COPY_DECIMAL_METHODDEF    \
+    {"copy_decimal", (PyCFunction)_decimal_Context_copy_decimal, METH_O, _decimal_Context_copy_decimal__doc__},
+
+PyDoc_STRVAR(_decimal_Context_copy_negate__doc__,
+"copy_negate($self, x, /)\n"
+"--\n"
+"\n"
+"Return a copy of x with the sign inverted.");
+
+#define _DECIMAL_CONTEXT_COPY_NEGATE_METHODDEF    \
+    {"copy_negate", (PyCFunction)_decimal_Context_copy_negate, METH_O, _decimal_Context_copy_negate__doc__},
+
 PyDoc_STRVAR(_decimal_Context_logb__doc__,
 "logb($self, x, /)\n"
 "--\n"
@@ -4242,6 +4564,33 @@ PyDoc_STRVAR(_decimal_Context_logical_invert__doc__,
 
 #define _DECIMAL_CONTEXT_LOGICAL_INVERT_METHODDEF    \
     {"logical_invert", (PyCFunction)_decimal_Context_logical_invert, METH_O, _decimal_Context_logical_invert__doc__},
+
+PyDoc_STRVAR(_decimal_Context_number_class__doc__,
+"number_class($self, x, /)\n"
+"--\n"
+"\n"
+"Return an indication of the class of x.");
+
+#define _DECIMAL_CONTEXT_NUMBER_CLASS_METHODDEF    \
+    {"number_class", (PyCFunction)_decimal_Context_number_class, METH_O, _decimal_Context_number_class__doc__},
+
+PyDoc_STRVAR(_decimal_Context_to_sci_string__doc__,
+"to_sci_string($self, x, /)\n"
+"--\n"
+"\n"
+"Convert a number to a string using scientific notation.");
+
+#define _DECIMAL_CONTEXT_TO_SCI_STRING_METHODDEF    \
+    {"to_sci_string", (PyCFunction)_decimal_Context_to_sci_string, METH_O, _decimal_Context_to_sci_string__doc__},
+
+PyDoc_STRVAR(_decimal_Context_to_eng_string__doc__,
+"to_eng_string($self, x, /)\n"
+"--\n"
+"\n"
+"Convert a number to a string, using engineering notation.");
+
+#define _DECIMAL_CONTEXT_TO_ENG_STRING_METHODDEF    \
+    {"to_eng_string", (PyCFunction)_decimal_Context_to_eng_string, METH_O, _decimal_Context_to_eng_string__doc__},
 
 PyDoc_STRVAR(_decimal_Context_compare_total__doc__,
 "compare_total($self, x, y, /)\n"
@@ -4300,6 +4649,36 @@ _decimal_Context_compare_total_mag(PyObject *context, PyObject *const *args, Py_
     x = args[0];
     y = args[1];
     return_value = _decimal_Context_compare_total_mag_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_decimal_Context_copy_sign__doc__,
+"copy_sign($self, x, y, /)\n"
+"--\n"
+"\n"
+"Copy the sign from y to x.");
+
+#define _DECIMAL_CONTEXT_COPY_SIGN_METHODDEF    \
+    {"copy_sign", _PyCFunction_CAST(_decimal_Context_copy_sign), METH_FASTCALL, _decimal_Context_copy_sign__doc__},
+
+static PyObject *
+_decimal_Context_copy_sign_impl(PyObject *context, PyObject *x, PyObject *y);
+
+static PyObject *
+_decimal_Context_copy_sign(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("copy_sign", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_copy_sign_impl(context, x, y);
 
 exit:
     return return_value;
@@ -4486,4 +4865,39 @@ _decimal_Context_shift(PyObject *context, PyObject *const *args, Py_ssize_t narg
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=db00589bcc7a168d input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_decimal_Context_same_quantum__doc__,
+"same_quantum($self, x, y, /)\n"
+"--\n"
+"\n"
+"Return True if the two operands have the same exponent.");
+
+#define _DECIMAL_CONTEXT_SAME_QUANTUM_METHODDEF    \
+    {"same_quantum", _PyCFunction_CAST(_decimal_Context_same_quantum), METH_FASTCALL, _decimal_Context_same_quantum__doc__},
+
+static PyObject *
+_decimal_Context_same_quantum_impl(PyObject *context, PyObject *x,
+                                   PyObject *y);
+
+static PyObject *
+_decimal_Context_same_quantum(PyObject *context, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *x;
+    PyObject *y;
+
+    if (!_PyArg_CheckPositional("same_quantum", nargs, 2, 2)) {
+        goto exit;
+    }
+    x = args[0];
+    y = args[1];
+    return_value = _decimal_Context_same_quantum_impl(context, x, y);
+
+exit:
+    return return_value;
+}
+
+#ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
+    #define _DECIMAL_CONTEXT_APPLY_METHODDEF
+#endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
+/*[clinic end generated code: output=1e10ddd6610e17dc input=a9049054013a1b77]*/

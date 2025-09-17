@@ -1572,7 +1572,7 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            frame->return_offset = 1 ;
+            frame->return_offset = 1u ;
             DISPATCH();
         }
         """

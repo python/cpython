@@ -2200,6 +2200,56 @@ _ssl__SSLSocket_group_impl(PySSLSocket *self)
 #endif
 }
 
+static PyObject *
+ssl_socket_signame_impl(PySSLSocket *socket,
+                        enum py_ssl_server_or_client self_socket_type)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30500000L
+    int ret;
+    const char *sigalg;
+
+    if (socket->ssl == NULL) {
+        Py_RETURN_NONE;
+    }
+    ret = (socket->socket_type == self_socket_type)
+        ? SSL_get0_signature_name(socket->ssl, &sigalg)
+        : SSL_get0_peer_signature_name(socket->ssl, &sigalg);
+    if (ret == 0) {
+        Py_RETURN_NONE;
+    }
+    assert(sigalg != NULL);
+    return PyUnicode_DecodeFSDefault(sigalg);
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting sig algorithms requires OpenSSL 3.5 or later.");
+    return NULL;
+#endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLSocket.client_sigalg
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_client_sigalg_impl(PySSLSocket *self)
+/*[clinic end generated code: output=499dd7fbf021a47b input=a0d9696b5414c627]*/
+{
+    return ssl_socket_signame_impl(self, PY_SSL_CLIENT);
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLSocket.server_sigalg
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_server_sigalg_impl(PySSLSocket *self)
+/*[clinic end generated code: output=c508a766a8e275dc input=9063e562a1e6b946]*/
+{
+    return ssl_socket_signame_impl(self, PY_SSL_SERVER);
+}
+
 /*[clinic input]
 @critical_section
 _ssl._SSLSocket.version
@@ -3276,6 +3326,8 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_GROUP_METHODDEF
+    _SSL__SSLSOCKET_CLIENT_SIGALG_METHODDEF
+    _SSL__SSLSOCKET_SERVER_SIGALG_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
     _SSL__SSLSOCKET_VERSION_METHODDEF
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
@@ -3616,6 +3668,25 @@ _ssl__SSLContext_set_ciphers_impl(PySSLContext *self, const char *cipherlist)
 
 /*[clinic input]
 @critical_section
+_ssl._SSLContext.set_ciphersuites
+    ciphersuites: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_ciphersuites_impl(PySSLContext *self,
+                                       const char *ciphersuites)
+/*[clinic end generated code: output=9915bec58e54d76d input=2afcc3693392be41]*/
+{
+    if (!SSL_CTX_set_ciphersuites(self->ctx, ciphersuites)) {
+        _setSSLError(get_state_ctx(self), "No cipher suite can be selected.", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+@critical_section
 _ssl._SSLContext.get_ciphers
 [clinic start generated code]*/
 
@@ -3708,7 +3779,6 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
     num = sk_OPENSSL_CSTRING_num(groups);
     result = PyList_New(num);
     if (result == NULL) {
-        _setSSLError(get_state_ctx(self), "Can't allocate list", 0, __FILE__, __LINE__);
         goto error;
     }
 
@@ -3720,9 +3790,7 @@ _ssl__SSLContext_get_groups_impl(PySSLContext *self, int include_aliases)
         // Group names are plain ASCII, so there's no chance of a decoding
         // error here. However, an allocation failure could occur when
         // constructing the Unicode version of the names.
-        item = PyUnicode_DecodeASCII(group, strlen(group), "strict");
-        if (item == NULL) {
-            _setSSLError(get_state_ctx(self), "Can't allocate group name", 0, __FILE__, __LINE__);
+        if ((item = PyUnicode_DecodeFSDefault(group)) == NULL) {
             goto error;
         }
 
@@ -3740,6 +3808,49 @@ error:
                     "Getting implemented groups requires OpenSSL 3.5 or later.");
     return NULL;
 #endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.set_client_sigalgs
+    sigalgslist: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_client_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist)
+/*[clinic end generated code: output=f4f5be160a29c7d6 input=500d853ce9fd94ff]*/
+{
+#ifdef OPENSSL_IS_AWSLC
+    _setSSLError(get_state_ctx(self), "can't set client sigalgs on AWS-LC", 0, __FILE__, __LINE__);
+    return NULL;
+#else
+    if (!SSL_CTX_set1_client_sigalgs_list(self->ctx, sigalgslist)) {
+        _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+#endif
+}
+
+/*[clinic input]
+@critical_section
+_ssl._SSLContext.set_server_sigalgs
+    sigalgslist: str
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLContext_set_server_sigalgs_impl(PySSLContext *self,
+                                         const char *sigalgslist)
+/*[clinic end generated code: output=31ecb1d310285644 input=653b752e4f8d801b]*/
+{
+    if (!SSL_CTX_set1_sigalgs_list(self->ctx, sigalgslist)) {
+        _setSSLError(get_state_ctx(self), "unrecognized signature algorithm", 0, __FILE__, __LINE__);
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 static int
@@ -5595,7 +5706,10 @@ static struct PyMethodDef context_methods[] = {
     _SSL__SSLCONTEXT__WRAP_SOCKET_METHODDEF
     _SSL__SSLCONTEXT__WRAP_BIO_METHODDEF
     _SSL__SSLCONTEXT_SET_CIPHERS_METHODDEF
+    _SSL__SSLCONTEXT_SET_CIPHERSUITES_METHODDEF
     _SSL__SSLCONTEXT_SET_GROUPS_METHODDEF
+    _SSL__SSLCONTEXT_SET_CLIENT_SIGALGS_METHODDEF
+    _SSL__SSLCONTEXT_SET_SERVER_SIGALGS_METHODDEF
     _SSL__SSLCONTEXT__SET_ALPN_PROTOCOLS_METHODDEF
     _SSL__SSLCONTEXT_LOAD_CERT_CHAIN_METHODDEF
     _SSL__SSLCONTEXT_LOAD_DH_PARAMS_METHODDEF
@@ -5670,13 +5784,6 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
     self->eof_written = 0;
 
     return (PyObject *) self;
-}
-
-static int
-memory_bio_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
 }
 
 static void
@@ -5849,7 +5956,7 @@ static PyType_Slot PySSLMemoryBIO_slots[] = {
     {Py_tp_getset, memory_bio_getsetlist},
     {Py_tp_new, _ssl_MemoryBIO},
     {Py_tp_dealloc, memory_bio_dealloc},
-    {Py_tp_traverse, memory_bio_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {0, 0},
 };
 
@@ -6219,6 +6326,39 @@ _ssl_get_default_verify_paths_impl(PyObject *module)
     Py_XDECREF(odir_env);
     Py_XDECREF(odir);
     return NULL;
+}
+
+/*[clinic input]
+_ssl.get_sigalgs
+[clinic start generated code]*/
+
+static PyObject *
+_ssl_get_sigalgs_impl(PyObject *module)
+/*[clinic end generated code: output=ab0791b63856854b input=d96dd6cefec3f86b]*/
+{
+#if OPENSSL_VERSION_NUMBER >= 0x30400000L
+    const char *sigalgs;
+    PyObject *sigalgs_str, *sigalgs_list;
+
+    if ((sigalgs = SSL_get1_builtin_sigalgs(NULL)) == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    if ((sigalgs_str = PyUnicode_DecodeFSDefault(sigalgs)) == NULL) {
+        OPENSSL_free((void *)sigalgs);
+        return NULL;
+    }
+
+    OPENSSL_free((void *)sigalgs);
+    sigalgs_list = PyUnicode_Split(sigalgs_str, _Py_LATIN1_CHR(':'), -1);
+    Py_DECREF(sigalgs_str);
+    return sigalgs_list;
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "Getting signature algorithms requires OpenSSL 3.4 or later.");
+    return NULL;
+#endif
 }
 
 static PyObject*
@@ -6624,6 +6764,7 @@ static PyMethodDef PySSL_methods[] = {
     _SSL_RAND_BYTES_METHODDEF
     _SSL_RAND_STATUS_METHODDEF
     _SSL_GET_DEFAULT_VERIFY_PATHS_METHODDEF
+    _SSL_GET_SIGALGS_METHODDEF
     _SSL_ENUM_CERTIFICATES_METHODDEF
     _SSL_ENUM_CRLS_METHODDEF
     _SSL_TXT2OBJ_METHODDEF

@@ -293,6 +293,9 @@ General Options
 
 .. option:: --disable-gil
 
+   .. c:macro:: Py_GIL_DISABLED
+      :no-typesetting:
+
    Enables support for running Python without the :term:`global interpreter
    lock` (GIL): free threading build.
 

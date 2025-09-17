@@ -119,7 +119,7 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 #define JIT_CLEANUP_THRESHOLD 100000
 
 // This is the length of the trace we project initially.
-#define UOP_MAX_TRACE_LENGTH 800
+#define UOP_MAX_TRACE_LENGTH 1200
 
 #define TRACE_STACK_SIZE 5
 
@@ -252,6 +252,12 @@ PyJitRef_Wrap(JitOptSymbol *sym)
 }
 
 static inline JitOptRef
+PyJitRef_StripReferenceInfo(JitOptRef ref)
+{
+    return PyJitRef_Wrap(PyJitRef_Unwrap(ref));
+}
+
+static inline JitOptRef
 PyJitRef_Borrow(JitOptRef ref)
 {
     return (JitOptRef){ .bits = ref.bits | REF_IS_BORROWED };
@@ -332,8 +338,8 @@ extern bool _Py_uop_sym_is_bottom(JitOptRef sym);
 extern int _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptRef sym);
 extern PyTypeObject *_Py_uop_sym_get_type(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args);
-extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, int item);
-extern int _Py_uop_sym_tuple_length(JitOptRef sym);
+extern JitOptRef _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef sym, Py_ssize_t item);
+extern Py_ssize_t _Py_uop_sym_tuple_length(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptRef value, bool truthy);
 extern bool _Py_uop_sym_is_compact_int(JitOptRef sym);
 extern JitOptRef _Py_uop_sym_new_compact_int(JitOptContext *ctx);

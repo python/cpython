@@ -667,7 +667,7 @@ _Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptRef *args)
 }
 
 JitOptRef
-_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, int item)
+_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, Py_ssize_t item)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);
     assert(item >= 0);
@@ -683,7 +683,7 @@ _Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptRef ref, int item)
     return _Py_uop_sym_new_not_null(ctx);
 }
 
-int
+Py_ssize_t
 _Py_uop_sym_tuple_length(JitOptRef ref)
 {
     JitOptSymbol *sym = PyJitRef_Unwrap(ref);

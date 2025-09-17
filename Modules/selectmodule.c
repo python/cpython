@@ -433,7 +433,7 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
 
 typedef struct {
     PyObject_HEAD
-    PyObject *dict;
+    PyObject *dict;     // cannot create cycles as it only contains exact ints
     int ufd_uptodate;
     int ufd_len;
     struct pollfd *ufds;
@@ -2483,7 +2483,11 @@ static PyType_Slot poll_Type_slots[] = {
 static PyType_Spec poll_Type_spec = {
     .name = "select.poll",
     .basicsize = sizeof(pollObject),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .flags = (
+        Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_DISALLOW_INSTANTIATION
+        | Py_TPFLAGS_IMMUTABLETYPE
+    ),
     .slots = poll_Type_slots,
 };
 
@@ -2529,11 +2533,10 @@ static PyType_Slot pyEpoll_Type_slots[] = {
 };
 
 static PyType_Spec pyEpoll_Type_spec = {
-    "select.epoll",
-    sizeof(pyEpoll_Object),
-    0,
-    Py_TPFLAGS_DEFAULT,
-    pyEpoll_Type_slots
+    .name = "select.epoll",
+    .basicsize = sizeof(pyEpoll_Object),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE,
+    .slots = pyEpoll_Type_slots
 };
 
 #endif /* HAVE_EPOLL */
