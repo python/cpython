@@ -3101,6 +3101,12 @@ config.status:	$(srcdir)/configure
 Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
+Python/emscripten_trampoline_inner.wasm: $(srcdir)/Python/emscripten_trampoline_inner.c
+	# emcc has a path that ends with emsdk/upstream/emscripten/emcc, we're looking for emsdk/upstream/bin/clang.
+	$$(dirname $$(dirname $(CC)))/bin/clang -o $@ $< -mgc -O2 -Wl,--no-entry -Wl,--import-table -Wl,--import-memory -target wasm32-unknown-unknown -nostdlib
+
+Python/emscripten_trampoline_wasm.c: Python/emscripten_trampoline_inner.wasm
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/wasm/emscripten/prepare_external_wasm.py $< $@ getWasmTrampolineModule
 
 JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
