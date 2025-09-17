@@ -106,12 +106,16 @@ Module contents
      generated.
 
      .. versionchanged:: 3.13
-        The generated ``__eq__`` method now compares each field individually (e.g., ``self.a == other.a and self.b == other.b``), rather than comparing tuples of fields as in previous versions.
+        The generated ``__eq__`` method now compares each field individually
+        (for example, ``self.a == other.a and self.b == other.b``), rather than
+        comparing tuples of fields as in previous versions.
 
-     This method compares the class by comparing each field in order. Both instances in the comparison must
-     be of the identical type.
+     This method compares the class by comparing each field in order. Both
+     instances in the comparison must be of the identical type.
 
-     In Python 3.12 and earlier, the comparison was performed by creating tuples of the fields and comparing them (e.g., ``(self.a, self.b) == (other.a, other.b)``).
+     In Python 3.12 and earlier, the comparison was performed by creating
+     tuples of the fields and comparing them (for example,
+     ``(self.a, self.b) == (other.a, other.b)``).
 
      If the class already defines :meth:`!__eq__`, this parameter is
      ignored.

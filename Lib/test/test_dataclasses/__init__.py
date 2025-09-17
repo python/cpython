@@ -2636,6 +2636,16 @@ class TestEq(unittest.TestCase):
         f2 = Foo(AlwaysEqual(2), 2)
         self.assertTrue(f1 == f2)
 
+    def test_eq_nan_field(self):
+        @dataclasses.dataclass
+        class D:
+            x: float
+
+        nan = float('nan')
+        d1 = D(nan)
+        d2 = D(nan)
+        self.assertFalse(d1 == d2)
+
 
 class TestOrdering(unittest.TestCase):
     def test_functools_total_ordering(self):
