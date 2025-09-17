@@ -361,7 +361,7 @@ static Py_complex
 c_powi(Py_complex x, long n)
 {
     if (n < 0)
-        return _Py_c_quot(c_1, c_powu(x,-n));
+        return _Py_rc_quot(1.0, c_powu(x, -n));
     else
         return c_powu(x,n);
 }
