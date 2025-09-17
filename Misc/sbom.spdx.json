@@ -944,11 +944,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "873215c0c94112070d8123bcbea4f5d3bacc7a79"
+          "checksumValue": "0d83ed429ede0a2c6617cd2f24490be16d8393f4"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "14c8a80ceb5bda789e7059992aa9e1c24b4069db26e7d21b365ea6fedb0f85bb"
+          "checksumValue": "876f4486d08d3eac3581a8681d7fb3cec2fe5b823d1bef27cca15e755510365c"
         }
       ],
       "fileName": "Lib/ctypes/macholib/__init__.py"
