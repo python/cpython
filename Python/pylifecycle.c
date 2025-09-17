@@ -2128,9 +2128,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Block some operations.
     tstate->interp->finalizing = 1;
 
-    // This call stops the world and takes the pending calls lock.
-    make_pre_finalization_calls(tstate);
-
     /* Clean up any lingering subinterpreters.
 
        Two preconditions need to be met here:
@@ -2139,7 +2136,11 @@ _Py_Finalize(_PyRuntimeState *runtime)
           called, or else threads might get prematurely blocked.
         - The world must not be stopped, as finalizers can run.
     */
+    // TODO: Prevent new subinterpreters after this point
     finalize_subinterpreters();
+
+    // This call stops the world and takes the pending calls lock.
+    make_pre_finalization_calls(tstate);
 
     assert(_PyThreadState_GET() == tstate);
 
