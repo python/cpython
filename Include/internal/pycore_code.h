@@ -274,6 +274,8 @@ extern void _PyLineTable_InitAddressRange(
 /** API for traversing the line number table. */
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
+// This is used in dump_frame() in traceback.c without an attached tstate.
+extern int _PyCode_Addr2LineNoTstate(PyCodeObject *co, int addr);
 
 /** API for executors */
 extern void _PyCode_Clear_Executors(PyCodeObject *code);
