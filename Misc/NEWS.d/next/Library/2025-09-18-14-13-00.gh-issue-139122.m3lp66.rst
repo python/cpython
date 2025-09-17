@@ -1,0 +1,57 @@
+Reimplement base UUID type, uuid4(), and uuid7() in C
+
+The C implementation considerably boosts the performance of the key UUID
+operations:
+
+------------------------------------
+Operation                    Speedup
+------------------------------------ 
+uuid4() generation            15.01x
+uuid7() generation            29.64x
+UUID from string               6.76x
+UUID from bytes                5.16x
+str(uuid) conversion           6.66x
+------------------------------------
+
+Summary of changes:
+
+* The UUID type is reimplemented in C in its entirety.
+
+* The pure-Python is kept around and is used of the C implementation
+  isn't available for some reason.
+
+* Both implementations are tested extensively; additional tests are
+  added to ensure that the C implementation of the type follows the pure
+  Python implementation fully.
+
+* The Python implementation stores UUID values as int objects. The C
+  implementation stores them as `uint8_t[16]` array.
+
+* The C implementation has faster hash() implementation but also caches
+  the computed hash value to speedup cases when UUIDs are used as
+  set/dict keys.
+
+* The C implementation has a freelist to make new UUID object
+  instantiation as fast as possible.
+
+* uuid4() and uuid7() are now implmented in C. The most performance
+  boost (10x) comes from overfetching entropy to decrease the number of
+  _PyOS_URandom() calls. On its own it's a safe optimization with the
+  edge case that Unix fork needs to be explicitly handled. We do that by
+  comparing the current PID to the PID of when the random buffer was
+  populated.
+
+* Portions of code are coming from my implementation of faster UUID
+  in gel-python [1]. I did use AI during the development, but basically
+  had to rewrite the code it generated to be more idiomatic and
+  efficient.
+
+* The benchmark can be found here [2].
+
+* This PR makes Python UUID operations as fast as they are in NodeJS and
+  Bun runtimes.
+
+[1]
+https://github.com/MagicStack/py-pgproto/blob/b8109fb311a59f30f9947567a13508da9a776564/uuid.pyx
+
+[2] https://gist.github.com/1st1/f03e816f34a61e4d46c78ff98baf4818
