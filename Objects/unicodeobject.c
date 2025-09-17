@@ -7393,6 +7393,9 @@ unicode_encode_ucs1(PyObject *unicode,
             while ((collend < size) && (PyUnicode_READ(kind, data, collend) >= limit))
                 ++collend;
 
+            /* Only overallocate the buffer if it's not the last write */
+            writer->overallocate = (collend < size);
+
             /* cache callback name lookup (if not done yet, i.e. it's the first error) */
             if (error_handler == _Py_ERROR_UNKNOWN)
                 error_handler = _Py_GetErrorHandler(errors);
@@ -7457,6 +7460,10 @@ unicode_encode_ucs1(PyObject *unicode,
                         goto onError;
                     }
                 }
+                else {
+                    /* Only overallocate the buffer if it's not the last write */
+                    writer->overallocate = (newpos < size);
+                }
 
                 char *rep_str;
                 Py_ssize_t rep_len;
@@ -7492,6 +7499,10 @@ unicode_encode_ucs1(PyObject *unicode,
                 pos = newpos;
                 Py_CLEAR(rep);
             }
+
+            /* If overallocation was disabled, ensure that it was the last
+               write. Otherwise, we missed an optimization */
+            assert(writer->overallocate || pos == size);
         }
     }
 

@@ -326,6 +326,9 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
             while ((endpos < size) && Py_UNICODE_IS_SURROGATE(data[endpos]))
                 endpos++;
 
+            /* Only overallocate the buffer if it's not the last write */
+            writer->overallocate = (endpos < size);
+
             switch (error_handler)
             {
             case _Py_ERROR_REPLACE:
@@ -391,6 +394,10 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                         goto error;
                     }
                 }
+                else {
+                    /* Only overallocate the buffer if it's not the last write */
+                    writer->overallocate = (newpos < size);
+                }
 
                 char *rep_str;
                 Py_ssize_t rep_len;
@@ -421,6 +428,10 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 
                 i = newpos;
             }
+
+            /* If overallocation was disabled, ensure that it was the last
+               write. Otherwise, we missed an optimization */
+            assert(writer->overallocate || i == size);
         }
         else
 #if STRINGLIB_SIZEOF_CHAR > 2
