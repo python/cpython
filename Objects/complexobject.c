@@ -333,7 +333,11 @@ _Py_c_pow(Py_complex a, Py_complex b)
         r.real = len*cos(phase);
         r.imag = len*sin(phase);
 
-        _Py_ADJUST_ERANGE2(r.real, r.imag);
+        if (isfinite(a.real) && isfinite(a.imag)
+            && isfinite(b.real) && isfinite(b.imag))
+        {
+            _Py_ADJUST_ERANGE2(r.real, r.imag);
+        }
     }
     return r;
 }
@@ -753,9 +757,13 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     errno = 0;
     // Check whether the exponent has a small integer value, and if so use
     // a faster and more accurate algorithm.
-    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= INT_EXP_CUTOFF) {
+    if (b.imag == 0.0 && b.real == floor(b.real)
+        && fabs(b.real) <= INT_EXP_CUTOFF)
+    {
         p = c_powi(a, (long)b.real);
-        _Py_ADJUST_ERANGE2(p.real, p.imag);
+        if (isfinite(a.real) && isfinite(a.imag)) {
+            _Py_ADJUST_ERANGE2(p.real, p.imag);
+        }
     }
     else {
         p = _Py_c_pow(a, b);
