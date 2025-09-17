@@ -609,7 +609,9 @@ def _template_to_ast_literal(template, parsed):
                     str=part.expression,
                     value=parsed[interp_count],
                     conversion=ord(part.conversion) if part.conversion else -1,
-                    format_spec=part.format_spec or None,  # "" -> None
+                    format_spec=ast.Constant(value=part.format_spec)
+                    if part.format_spec
+                    else None,
                 )
                 values.append(interp)
                 interp_count += 1
