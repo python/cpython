@@ -3467,7 +3467,6 @@ sock_getsockopt(PyObject *self, PyObject *args)
     int level;
     int optname;
     int res;
-    PyObject *buf;
     socklen_t buflen = 0;
     int flag = 0;
     socklen_t flagsize;
@@ -3512,17 +3511,17 @@ sock_getsockopt(PyObject *self, PyObject *args)
                         "getsockopt buflen out of range");
         return NULL;
     }
-    buf = PyBytes_FromStringAndSize((char *)NULL, buflen);
-    if (buf == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(buflen);
+    if (writer == NULL) {
         return NULL;
+    }
     res = getsockopt(get_sock_fd(s), level, optname,
-                     (void *)PyBytes_AS_STRING(buf), &buflen);
+                     PyBytesWriter_GetData(writer), &buflen);
     if (res < 0) {
-        Py_DECREF(buf);
+        PyBytesWriter_Discard(writer);
         return s->errorhandler();
     }
-    _PyBytes_Resize(&buf, buflen);
-    return buf;
+    return PyBytesWriter_FinishWithSize(writer, buflen);
 }
 
 PyDoc_STRVAR(getsockopt_doc,
@@ -8528,6 +8527,43 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, J1939_EE_INFO_TX_ABORT);
 
     ADD_INT_MACRO(m, J1939_FILTER_MAX);
+#endif
+#ifdef HAVE_LINUX_CAN_ISOTP_H
+    ADD_INT_MACRO(m, SOL_CAN_ISOTP);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_OPTS);
+    ADD_INT_MACRO(m, CAN_ISOTP_RECV_FC);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_TX_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_LL_OPTS);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_LISTEN_MODE);
+    ADD_INT_MACRO(m, CAN_ISOTP_EXTEND_ADDR);
+    ADD_INT_MACRO(m, CAN_ISOTP_TX_PADDING);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_PADDING);
+    ADD_INT_MACRO(m, CAN_ISOTP_CHK_PAD_LEN);
+    ADD_INT_MACRO(m, CAN_ISOTP_CHK_PAD_DATA);
+    ADD_INT_MACRO(m, CAN_ISOTP_HALF_DUPLEX);
+    ADD_INT_MACRO(m, CAN_ISOTP_FORCE_TXSTMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_FORCE_RXSTMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_EXT_ADDR);
+    ADD_INT_MACRO(m, CAN_ISOTP_WAIT_TX_DONE);
+#ifdef CAN_ISOTP_SF_BROADCAST
+    ADD_INT_MACRO(m, CAN_ISOTP_SF_BROADCAST);
+#endif
+
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_FLAGS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_EXT_ADDRESS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_PAD_CONTENT);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_FRAME_TXTIME);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_BS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_WFTMAX);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_MTU);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_TX_DL);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_TX_FLAGS);
 #endif
 #ifdef SOL_RDS
     ADD_INT_MACRO(m, SOL_RDS);
