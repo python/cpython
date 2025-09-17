@@ -578,7 +578,7 @@ _sqlite3.Connection.blobopen as blobopen
         Table name.
     column as col: str
         Column name.
-    rowid: sqlite3_int64
+    rowid as row: sqlite3_int64
         Row id.
     /
     *
@@ -592,8 +592,8 @@ Open and return a BLOB object.
 
 static PyObject *
 blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
-              sqlite3_int64 rowid, int readonly, const char *name)
-/*[clinic end generated code: output=6a02d43efb885d1c input=23576bd1108d8774]*/
+              sqlite3_int64 row, int readonly, const char *name)
+/*[clinic end generated code: output=6a02d43efb885d1c input=cc3d4b47dac08401]*/
 {
     if (!pysqlite_check_thread(self) || !pysqlite_check_connection(self)) {
         return NULL;
@@ -603,7 +603,7 @@ blobopen_impl(pysqlite_Connection *self, const char *table, const char *col,
     sqlite3_blob *blob;
 
     Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_blob_open(self->db, name, table, col, rowid, !readonly, &blob);
+    rc = sqlite3_blob_open(self->db, name, table, col, row, !readonly, &blob);
     Py_END_ALLOW_THREADS
 
     if (rc == SQLITE_MISUSE) {
