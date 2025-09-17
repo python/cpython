@@ -26,8 +26,6 @@ class complex "PyComplexObject *" "&PyComplex_Type"
 
 /* elementary operations on complex numbers */
 
-static Py_complex c_1 = {1., 0.};
-
 Py_complex
 _Py_c_sum(Py_complex a, Py_complex b)
 {
@@ -347,7 +345,7 @@ _Py_c_pow(Py_complex a, Py_complex b)
 static Py_complex
 c_powu(Py_complex x, long n)
 {
-    Py_complex p = x, r = n-- ? p : c_1;
+    Py_complex p = x, r = n-- ? p : (Py_complex) {1., 0.};
     long mask = 1;
     assert(-1 <= n);
     assert(n < INT_EXP_CUTOFF);
