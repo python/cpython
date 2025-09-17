@@ -620,7 +620,7 @@ Connection objects
       supplied, this must be a :term:`callable` returning
       an instance of :class:`Cursor` or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+   .. method:: blobopen(table, column, rowid, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -632,7 +632,7 @@ Connection objects
           The name of the column where the blob is located.
 
       :param int rowid:
-          The rowid of the row where the blob is located.
+          The row id where the blob is located.
 
       :param bool readonly:
           Set to ``True`` if the blob should be opened without write
