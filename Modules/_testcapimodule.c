@@ -2319,6 +2319,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 struct simpletracer_data {
     int create_count;
     int destroy_count;
+    int tracker_removed;
     void* addresses[10];
 };
 
@@ -2326,10 +2327,18 @@ static int _simpletracer(PyObject *obj, PyRefTracerEvent event, void* data) {
     struct simpletracer_data* the_data = (struct simpletracer_data*)data;
     assert(the_data->create_count + the_data->destroy_count < (int)Py_ARRAY_LENGTH(the_data->addresses));
     the_data->addresses[the_data->create_count + the_data->destroy_count] = obj;
-    if (event == PyRefTracer_CREATE) {
-        the_data->create_count++;
-    } else {
-        the_data->destroy_count++;
+    switch (event) {
+        case PyRefTracer_CREATE:
+            the_data->create_count++;
+            break;
+        case PyRefTracer_DESTROY:
+            the_data->destroy_count++;
+            break;
+        case PyRefTracer_TRACKER_REMOVED:
+            the_data->tracker_removed++;
+            break;
+        default:
+            return -1;
     }
     return 0;
 }
@@ -2391,6 +2400,10 @@ test_reftracer(PyObject *ob, PyObject *Py_UNUSED(ignored))
         tracer_data.addresses[2] != obj ||
         tracer_data.addresses[3] != obj2) {
         PyErr_SetString(PyExc_ValueError, "The object destruction was not correctly traced");
+        goto failed;
+    }
+    if (tracer_data.tracker_removed != 1) {
+        PyErr_SetString(PyExc_ValueError, "The tracker removal was not correctly traced");
         goto failed;
     }
     PyRefTracer_SetTracer(current_tracer, current_data);
@@ -2533,11 +2546,15 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 static int
 _reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
 {
-    if (event == PyRefTracer_CREATE) {
-        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
-    }
-    else {  // PyRefTracer_DESTROY
-        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+    switch (event) {
+        case PyRefTracer_CREATE:
+            printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
+            break;
+        case PyRefTracer_DESTROY:
+            printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+            break;
+        case PyRefTracer_TRACKER_REMOVED:
+            return 0;
     }
     return 0;
 }

@@ -2560,15 +2560,6 @@ asyncio
          blocking_code()
          runner.run(operation_two())
 
-
-collections.abc
----------------
-
-* Remove :class:`!ByteString`, which has been deprecated since Python 3.12.
-  (Contributed by Nikita Sobolev in :gh:`118803`.)
-
-
-
 email
 -----
 
@@ -2645,13 +2636,6 @@ sqlite3
   raises a :exc:`~sqlite3.ProgrammingError`,
   having been deprecated since Python 3.12.
   (Contributed by Erlend E. Aasland in :gh:`118928` and :gh:`101693`.)
-
-
-typing
-------
-
-* Remove :class:`!ByteString`, which has been deprecated since Python 3.12.
-  (Contributed by Nikita Sobolev in :gh:`118803`.)
 
 
 urllib
@@ -2823,63 +2807,22 @@ CPython bytecode changes
 C API changes
 =============
 
-New features
-------------
+New features in the C API
+-------------------------
 
-* Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
-  (Contributed by Sergey B Kirpichev in :gh:`116560`.)
-
-* Add a new :c:type:`PyUnicodeWriter` API to create a Python :class:`str`
-  object:
-
-  * :c:func:`PyUnicodeWriter_Create`
-  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`
-  * :c:func:`PyUnicodeWriter_Discard`
-  * :c:func:`PyUnicodeWriter_Finish`
-  * :c:func:`PyUnicodeWriter_Format`
-  * :c:func:`PyUnicodeWriter_WriteASCII`
-  * :c:func:`PyUnicodeWriter_WriteChar`
-  * :c:func:`PyUnicodeWriter_WriteRepr`
-  * :c:func:`PyUnicodeWriter_WriteStr`
-  * :c:func:`PyUnicodeWriter_WriteSubstring`
-  * :c:func:`PyUnicodeWriter_WriteUCS4`
-  * :c:func:`PyUnicodeWriter_WriteUTF8`
-  * :c:func:`PyUnicodeWriter_WriteWideChar`
-
-  (Contributed by Victor Stinner in :gh:`119182`.)
-
-* Add :c:func:`PyIter_NextItem` to replace :c:func:`PyIter_Next`,
-  which has an ambiguous return value.
-  (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
-
-* Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
-  and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
-  is positive, negative, or zero, respectively.
-  (Contributed by James Roy and Sergey B Kirpichev in :gh:`126061`.)
-
-* Add new functions to convert C ``<stdint.h>`` numbers from/to Python
-  :class:`int`:
-
-  * :c:func:`PyLong_AsInt32`
-  * :c:func:`PyLong_AsInt64`
-  * :c:func:`PyLong_AsUInt32`
-  * :c:func:`PyLong_AsUInt64`
-  * :c:func:`PyLong_FromInt32`
-  * :c:func:`PyLong_FromInt64`
-  * :c:func:`PyLong_FromUInt32`
-  * :c:func:`PyLong_FromUInt64`
-
-  (Contributed by Victor Stinner in :gh:`120389`.)
+* Add :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION`,
+  two new macros for bit-packing Python version numbers.
+  This is useful for comparisons with :c:var:`Py_Version`
+  or :c:macro:`PY_VERSION_HEX`.
+  (Contributed by Petr Viktorin in :gh:`128629`.)
 
 * Add :c:func:`PyBytes_Join(sep, iterable) <PyBytes_Join>` function,
   similar to ``sep.join(iterable)`` in Python.
   (Contributed by Victor Stinner in :gh:`121645`.)
 
-* Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
-  (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
-
-* Add functions to get and set the current runtime Python configuration
-  (:pep:`741`):
+* Add functions to manipulate the configuration of the current
+  runtime Python interpreter
+  (:ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`):
 
   * :c:func:`PyConfig_Get`
   * :c:func:`PyConfig_GetInt`
@@ -2888,7 +2831,8 @@ New features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
-* Add functions to configure the Python initialization (:pep:`741`):
+* Add functions to configure Python initialization
+  (:ref:`PEP 741: Python configuration C API <whatsnew314-pep741>`):
 
   * :c:func:`Py_InitializeFromInitConfig`
   * :c:func:`PyInitConfig_AddModule`
@@ -2907,7 +2851,50 @@ New features
 
   (Contributed by Victor Stinner in :gh:`107954`.)
 
-* Add a new import and export API for Python :class:`int` objects (:pep:`757`):
+* Add :c:func:`Py_fopen` function to open a file.
+  This works similarly to the standard C :c:func:`!fopen` function,
+  instead accepting a Python object for the *path* parameter
+  and setting an exception on error.
+  The corresponding new :c:func:`Py_fclose` function should be used
+  to close a file.
+  (Contributed by Victor Stinner in :gh:`127350`.)
+
+* Add :c:func:`Py_HashBuffer` to compute and return the hash value of a buffer.
+  (Contributed by Antoine Pitrou and Victor Stinner in :gh:`122854`.)
+
+* Add :c:func:`PyImport_ImportModuleAttr` and
+  :c:func:`PyImport_ImportModuleAttrString` helper functions to import a module
+  and get an attribute of the module.
+  (Contributed by Victor Stinner in :gh:`128911`.)
+
+* Add :c:func:`PyIter_NextItem` to replace :c:func:`PyIter_Next`,
+  which has an ambiguous return value.
+  (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
+
+* Add :c:func:`PyLong_GetSign` function to get the sign of :class:`int` objects.
+  (Contributed by Sergey B Kirpichev in :gh:`116560`.)
+
+* Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
+  and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
+  is positive, negative, or zero, respectively.
+  (Contributed by James Roy and Sergey B Kirpichev in :gh:`126061`.)
+
+* Add new functions to convert C ``<stdint.h>`` numbers to/from
+  Python :class:`int` objects:
+
+  * :c:func:`PyLong_AsInt32`
+  * :c:func:`PyLong_AsInt64`
+  * :c:func:`PyLong_AsUInt32`
+  * :c:func:`PyLong_AsUInt64`
+  * :c:func:`PyLong_FromInt32`
+  * :c:func:`PyLong_FromInt64`
+  * :c:func:`PyLong_FromUInt32`
+  * :c:func:`PyLong_FromUInt64`
+
+  (Contributed by Victor Stinner in :gh:`120389`.)
+
+* Add a new import and export API for Python :class:`int` objects
+  (:pep:`757`):
 
   * :c:func:`PyLong_GetNativeLayout`
   * :c:func:`PyLong_Export`
@@ -2918,151 +2905,150 @@ New features
 
   (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
-* Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
-  superclass identification, which attempts to resolve the `type checking issue
-  <https://peps.python.org/pep-0630/#type-checking>`__ mentioned in :pep:`630`.
-  (Contributed in :gh:`124153`.)
-
-* Add :c:func:`PyUnicode_Equal` function to the limited C API:
-  test if two strings are equal.
-  (Contributed by Victor Stinner in :gh:`124502`.)
-
-* Add :c:func:`PyType_Freeze` function to make a type immutable.
-  (Contributed by Victor Stinner in :gh:`121654`.)
-
-* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
-  deferred reference counting, as outlined in :pep:`703`.
-
 * Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
   :c:func:`PyMonitoring_FireBranchRightEvent` for generating
   :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
   events, respectively.
+  (Contributed by Mark Shannon in :gh:`122548`.)
 
-* Add :c:func:`Py_fopen` function to open a file. Similar to the
-  :c:func:`!fopen` function, but the *path* parameter is a Python object and an
-  exception is set on error. Add also :c:func:`Py_fclose` function to close a
-  file.
-  (Contributed by Victor Stinner in :gh:`127350`.)
+* Add :c:func:`PyType_Freeze` function to make a type immutable.
+  (Contributed by Victor Stinner in :gh:`121654`.)
+
+* Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot
+  for easier superclass identification, which attempts to resolve the
+  type checking issue mentioned in :pep:`PEP 630 <630#type-checking>`.
+  (Contributed in :gh:`124153`.)
+
+* Add a new :c:func:`PyUnicode_Equal` function to test if two
+  strings are equal.
+  The function is also added to the Limited C API.
+  (Contributed by Victor Stinner in :gh:`124502`.)
+
+* Add a new :c:type:`PyUnicodeWriter` API to create a Python :class:`str`
+  object, with the following functions:
+
+  * :c:func:`PyUnicodeWriter_Create`
+  * :c:func:`PyUnicodeWriter_DecodeUTF8Stateful`
+  * :c:func:`PyUnicodeWriter_Discard`
+  * :c:func:`PyUnicodeWriter_Finish`
+  * :c:func:`PyUnicodeWriter_Format`
+  * :c:func:`PyUnicodeWriter_WriteASCII`
+  * :c:func:`PyUnicodeWriter_WriteChar`
+  * :c:func:`PyUnicodeWriter_WriteRepr`
+  * :c:func:`PyUnicodeWriter_WriteStr`
+  * :c:func:`PyUnicodeWriter_WriteSubstring`
+  * :c:func:`PyUnicodeWriter_WriteUCS4`
+  * :c:func:`PyUnicodeWriter_WriteUTF8`
+  * :c:func:`PyUnicodeWriter_WriteWideChar`
+
+  (Contributed by Victor Stinner in :gh:`119182`.)
 
 * The ``k`` and ``K`` formats in :c:func:`PyArg_ParseTuple` and
   similar functions now use :meth:`~object.__index__` if available,
   like all other integer formats.
   (Contributed by Serhiy Storchaka in :gh:`112068`.)
 
-* Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
-  bit-packing Python version numbers.
-  (Contributed by Petr Viktorin in :gh:`128629`.)
+* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue`
+  that produces a Python :class:`bool` object from a C integer.
+  (Contributed by Pablo Galindo in :issue:`45325`.)
 
-* Add :c:func:`PyUnstable_IsImmortal` for determining whether an object is :term:`immortal`,
-  for debugging purposes.
+* Add :c:func:`PyUnstable_IsImmortal` for determining if
+  an object is :term:`immortal`, for debugging purposes.
+  (Contributed by Peter Bierma in :gh:`128509`.)
 
-* Add :c:func:`PyImport_ImportModuleAttr` and
-  :c:func:`PyImport_ImportModuleAttrString` helper functions to import a module
-  and get an attribute of the module.
-  (Contributed by Victor Stinner in :gh:`128911`.)
+* Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
+  deferred reference counting, as outlined in :pep:`703`.
 
-* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue` that allows
-  taking a C integer and produces a Python :class:`bool` object. (Contributed by
-  Pablo Galindo in :issue:`45325`.)
-
-* Add :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` to determine if an object
-  is a unique temporary object on the interpreter's operand stack. This can
-  be used in some cases as a replacement for checking if :c:func:`Py_REFCNT`
-  is ``1`` for Python objects passed as arguments to C API functions.
-
-* Add :c:func:`PyUnstable_Object_IsUniquelyReferenced` as a replacement for
-  ``Py_REFCNT(op) == 1`` on :term:`free threaded <free threading>` builds.
+* Add :c:func:`PyUnstable_Object_IsUniquelyReferenced` as
+  a replacement for ``Py_REFCNT(op) == 1`` on :term:`free threaded
+  <free threading>` builds.
   (Contributed by Peter Bierma in :gh:`133140`.)
+
+* Add :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` to
+  determine if an object is a unique temporary object on the
+  interpreter's operand stack.
+  This can be used in some cases as a replacement for checking
+  if :c:func:`Py_REFCNT` is ``1`` for Python objects passed
+  as arguments to C API functions.
+  (Contributed by Sam Gross in :gh:`133164`.)
 
 
 Limited C API changes
 ---------------------
 
-* In the limited C API 3.14 and newer, :c:func:`Py_TYPE` and
-  :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
-  implementation details.
+* In the limited C API version 3.14 and newer, :c:func:`Py_TYPE` and
+  :c:func:`Py_REFCNT` are now implemented as an opaque function call
+  to hide implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
 * Remove the :c:macro:`PySequence_Fast_GET_SIZE`,
-  :c:macro:`PySequence_Fast_GET_ITEM` and :c:macro:`PySequence_Fast_ITEMS`
-  macros from the limited C API, since these macros never worked in the limited
-  C API. Keep :c:func:`PySequence_Fast` in the limited C API.
+  :c:macro:`PySequence_Fast_GET_ITEM`,
+  and :c:macro:`PySequence_Fast_ITEMS`
+  macros from the limited C API, since they have always been broken
+  in the limited C API.
   (Contributed by Victor Stinner in :gh:`91417`.)
+
+
+.. _whatsnew314-c-api-removed:
+
+Removed C APIs
+--------------
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with
+  mutable bases was deprecated in Python 3.12,
+  and now raises a :exc:`TypeError`.
+  (Contributed by Nikita Sobolev in :gh:`119775`.)
+
+* Remove ``PyDictObject.ma_version_tag`` member, which was deprecated
+  in Python 3.12.
+  Use the :c:func:`PyDict_AddWatcher` API instead.
+  (Contributed by Sam Gross in :gh:`124296`.)
+
+* Remove the private ``_Py_InitializeMain()`` function.
+  It was a :term:`provisional API` added to Python 3.8 by :pep:`587`.
+  (Contributed by Victor Stinner in :gh:`129033`.)
+
+* Remove the undocumented APIs :c:macro:`!Py_C_RECURSION_LIMIT`
+  and :c:member:`!PyThreadState.c_recursion_remaining`.
+  These were added in 3.13 and have been removed without deprecation.
+  Use :c:func:`Py_EnterRecursiveCall` to guard against runaway
+  recursion in C code.
+  (Removed by Petr Viktorin in :gh:`133079`, see also :gh:`130396`.)
 
 
 .. _whatsnew314-c-api-deprecated:
 
-Deprecated
-----------
+Deprecated C APIs
+-----------------
 
-* The :c:macro:`!Py_HUGE_VAL` macro is :term:`soft deprecated`,
-  use :c:macro:`!Py_INFINITY` instead.
+* The :c:macro:`!Py_HUGE_VAL` macro is now :term:`soft deprecated`.
+  Use :c:macro:`!Py_INFINITY` instead.
   (Contributed by Sergey B Kirpichev in :gh:`120026`.)
 
-* Macros :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`
-  and :c:macro:`!Py_IS_FINITE` are :term:`soft deprecated`,
-  use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
-  :c:macro:`!isfinite` available from :file:`math.h`
-  since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+* The :c:macro:`!Py_IS_NAN`, :c:macro:`!Py_IS_INFINITY`,
+  and :c:macro:`!Py_IS_FINITE` macros are now :term:`soft deprecated`.
+  Use :c:macro:`!isnan`, :c:macro:`!isinf` and :c:macro:`!isfinite`
+  instead, available from :file:`math.h` since C99.
+  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
 
-* Non-tuple sequences are deprecated as argument for the ``(items)``
-  format unit in :c:func:`PyArg_ParseTuple` and other
-  :ref:`argument parsing <arg-parsing>` functions if *items* contains
-  format units which store a :ref:`borrowed buffer <c-arg-borrowed-buffer>`
-  or a :term:`borrowed reference`.
+* Non-tuple sequences are now deprecated as argument for the ``(items)``
+  format unit in :c:func:`PyArg_ParseTuple` and other :ref:`argument
+  parsing <arg-parsing>` functions if *items* contains format units
+  which store a :ref:`borrowed buffer <c-arg-borrowed-buffer>` or a
+  :term:`borrowed reference`.
   (Contributed by Serhiy Storchaka in :gh:`50333`.)
 
-* The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
+* The ``_PyMonitoring_FireBranchEvent`` function is now deprecated
+  and should be replaced with calls to
+  :c:func:`PyMonitoring_FireBranchLeftEvent` and
+  :c:func:`PyMonitoring_FireBranchRightEvent`.
+
+* The previously undocumented function :c:func:`PySequence_In` is
+  now :term:`soft deprecated`.
   Use :c:func:`PySequence_Contains` instead.
   (Contributed by Yuki Kobayashi in :gh:`127896`.)
 
 .. Add C API deprecations above alphabetically, not here at the end.
-
-* The ``PyMonitoring_FireBranchEvent`` function is deprecated and should
-  be replaced with calls to :c:func:`PyMonitoring_FireBranchLeftEvent`
-  and :c:func:`PyMonitoring_FireBranchRightEvent`.
-
-* The following private functions are deprecated and planned for removal in
-  Python 3.18:
-
-  * :c:func:`!_PyBytes_Join`: use :c:func:`PyBytes_Join`.
-  * :c:func:`!_PyDict_GetItemStringWithError`: use :c:func:`PyDict_GetItemStringRef`.
-  * :c:func:`!_PyDict_Pop()`: use :c:func:`PyDict_Pop`.
-  * :c:func:`!_PyLong_Sign()`: use :c:func:`PyLong_GetSign`.
-  * :c:func:`!_PyLong_FromDigits` and :c:func:`!_PyLong_New`:
-    use :c:func:`PyLongWriter_Create`.
-  * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
-  * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
-  * :c:func:`!_PyUnicodeWriter_Init`:
-    replace ``_PyUnicodeWriter_Init(&writer)`` with
-    :c:func:`writer = PyUnicodeWriter_Create(0) <PyUnicodeWriter_Create>`.
-  * :c:func:`!_PyUnicodeWriter_Finish`:
-    replace ``_PyUnicodeWriter_Finish(&writer)`` with
-    :c:func:`PyUnicodeWriter_Finish(writer) <PyUnicodeWriter_Finish>`.
-  * :c:func:`!_PyUnicodeWriter_Dealloc`:
-    replace ``_PyUnicodeWriter_Dealloc(&writer)`` with
-    :c:func:`PyUnicodeWriter_Discard(writer) <PyUnicodeWriter_Discard>`.
-  * :c:func:`!_PyUnicodeWriter_WriteChar`:
-    replace ``_PyUnicodeWriter_WriteChar(&writer, ch)`` with
-    :c:func:`PyUnicodeWriter_WriteChar(writer, ch) <PyUnicodeWriter_WriteChar>`.
-  * :c:func:`!_PyUnicodeWriter_WriteStr`:
-    replace ``_PyUnicodeWriter_WriteStr(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteStr(writer, str) <PyUnicodeWriter_WriteStr>`.
-  * :c:func:`!_PyUnicodeWriter_WriteSubstring`:
-    replace ``_PyUnicodeWriter_WriteSubstring(&writer, str, start, end)`` with
-    :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
-  * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
-    replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteASCII(writer, str) <PyUnicodeWriter_WriteASCII>`.
-  * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
-    replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
-    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
-  * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
-  * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
-
-  The `pythoncapi-compat project`_ can be used to get these new public
-  functions on Python 3.13 and older.
-  (Contributed by Victor Stinner in :gh:`128863`.)
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
 
@@ -3071,30 +3057,6 @@ Deprecated
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-future.rst
-
-
-.. _whatsnew314-c-api-removed:
-
-Removed
--------
-
-* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
-  bases was deprecated since 3.12 and now raises a :exc:`TypeError`.
-
-* Remove ``PyDictObject.ma_version_tag`` member which was deprecated since
-  Python 3.12. Use the :c:func:`PyDict_AddWatcher` API instead.
-  (Contributed by Sam Gross in :gh:`124296`.)
-
-* Remove the private ``_Py_InitializeMain()`` function. It was a
-  :term:`provisional API` added to Python 3.8 by :pep:`587`.
-  (Contributed by Victor Stinner in :gh:`129033`.)
-
-* The undocumented APIs :c:macro:`!Py_C_RECURSION_LIMIT` and
-  :c:member:`!PyThreadState.c_recursion_remaining`, added in 3.13, are removed
-  without a deprecation period.
-  Please use :c:func:`Py_EnterRecursiveCall` to guard against runaway recursion
-  in C code.
-  (Removed in :gh:`133079`, see also :gh:`130396`.)
 
 
 Build Changes
