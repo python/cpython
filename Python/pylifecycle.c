@@ -2095,9 +2095,9 @@ make_pre_finalization_calls(PyThreadState *tstate)
          * Py_AddPendingCall() can be called without an attached thread state.
          */
 
+        PyMutex_Lock(&interp->ceval.pending.mutex);
         // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
         // being stopped?
-        PyMutex_Lock(&interp->ceval.pending.mutex);
         _PyEval_StopTheWorldAll(interp->runtime);
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
@@ -2128,6 +2128,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Block some operations.
     tstate->interp->finalizing = 1;
 
+    // This call stops the world and takes the pending calls lock.
     make_pre_finalization_calls(tstate);
 
     /* Clean up any lingering subinterpreters.
@@ -2533,6 +2534,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     }
     interp->finalizing = 1;
 
+    // This call stops the world and takes the pending calls lock.
     make_pre_finalization_calls(tstate);
 
     ASSERT_WORLD_STOPPED(interp);
