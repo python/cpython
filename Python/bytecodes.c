@@ -1898,7 +1898,7 @@ dummy_func(
                 const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
                                       ? CANNOT_DELETE_BUILTIN_ERROR_MSG
                                       : UNBOUNDLOCAL_ERROR_MSG;
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, err_msg);
+                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, err_msg, name);
                 ERROR_IF(true);
             }
             _PyStackRef tmp = GETLOCAL(oparg);
