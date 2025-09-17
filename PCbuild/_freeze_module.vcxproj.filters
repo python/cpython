@@ -34,7 +34,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_preprocess.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">
@@ -45,6 +45,9 @@
     </ClCompile>
     <ClCompile Include="..\Python\bltinmodule.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\brc.c">
+      <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\boolobject.c">
       <Filter>Source Files</Filter>
@@ -89,6 +92,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\perf_trampoline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\perf_jit_trampoline.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\codegen.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\compile.c">
@@ -223,7 +232,16 @@
     <ClCompile Include="..\Python\importdl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\index_pool.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\initconfig.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\instruction_sequence.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\interpconfig.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\intrinsics.c">
@@ -238,9 +256,6 @@
     <ClCompile Include="..\Python\lock.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\interpreteridobject.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\PC\invalid_parameter_handler.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -248,6 +263,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\iterobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\jit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\listobject.c">
@@ -289,6 +307,9 @@
     <ClCompile Include="..\Objects\object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\object_stack.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\obmalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -300,6 +321,9 @@
     </ClCompile>
     <ClCompile Include="..\Python\optimizer_analysis.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\optimizer_symbols.c">
+      <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Parser\parser.c">
       <Filter>Source Files</Filter>
@@ -367,6 +391,9 @@
     <ClCompile Include="..\Python\pytime.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\qsbr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\rangeobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -377,6 +404,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\sliceobject.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\remote_debugging.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\specialize.c">
@@ -443,6 +473,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\tracemalloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\uniqueid.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\tupleobject.c">

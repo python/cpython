@@ -1,2 +1,0 @@
-Fix :exc:`UnicodeEncodeError` in :mod:`email` when re-fold lines that
-contain unknown-8bit encoded part followed by non-unknown-8bit encoded part.

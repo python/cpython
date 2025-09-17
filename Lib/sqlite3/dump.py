@@ -15,7 +15,7 @@ def _quote_value(value):
     return "'{0}'".format(value.replace("'", "''"))
 
 
-def _iterdump(connection):
+def _iterdump(connection, *, filter=None):
     """
     Returns an iterator to the dump of the database in an SQL text format.
 
@@ -26,17 +26,30 @@ def _iterdump(connection):
 
     writeable_schema = False
     cu = connection.cursor()
+    cu.row_factory = None  # Make sure we get predictable results.
+    # Disable foreign key constraints, if there is any foreign key violation.
+    violations = cu.execute("PRAGMA foreign_key_check").fetchall()
+    if violations:
+        yield('PRAGMA foreign_keys=OFF;')
     yield('BEGIN TRANSACTION;')
 
+    if filter:
+        # Return database objects which match the filter pattern.
+        filter_name_clause = 'AND "name" LIKE ?'
+        params = [filter]
+    else:
+        filter_name_clause = ""
+        params = []
     # sqlite_master table contains the SQL CREATE statements for the database.
-    q = """
+    q = f"""
         SELECT "name", "type", "sql"
         FROM "sqlite_master"
             WHERE "sql" NOT NULL AND
             "type" == 'table'
+            {filter_name_clause}
             ORDER BY "name"
         """
-    schema_res = cu.execute(q)
+    schema_res = cu.execute(q, params)
     sqlite_sequence = []
     for table_name, type, sql in schema_res.fetchall():
         if table_name == 'sqlite_sequence':
@@ -78,13 +91,14 @@ def _iterdump(connection):
             yield("{0};".format(row[0]))
 
     # Now when the type is 'index', 'trigger', or 'view'
-    q = """
+    q = f"""
         SELECT "name", "type", "sql"
         FROM "sqlite_master"
             WHERE "sql" NOT NULL AND
             "type" IN ('index', 'trigger', 'view')
+            {filter_name_clause}
         """
-    schema_res = cu.execute(q)
+    schema_res = cu.execute(q, params)
     for name, type, sql in schema_res.fetchall():
         yield('{0};'.format(sql))
 

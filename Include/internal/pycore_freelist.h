@@ -8,36 +8,102 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#ifdef WITH_FREELISTS
-// with freelists
-#  define PyList_MAXFREELIST 80
-#  define PyFloat_MAXFREELIST 100
+#include "pycore_freelist_state.h"      // struct _Py_freelists
+#include "pycore_interp_structs.h"      // PyInterpreterState
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_PTR_RELAXED()
+#include "pycore_pystate.h"             // _PyThreadState_GET
+#include "pycore_stats.h"               // OBJECT_STAT_INC
+
+static inline struct _Py_freelists *
+_Py_freelists_GET(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+#ifdef Py_DEBUG
+    _Py_EnsureTstateNotNULL(tstate);
+#endif
+
+#ifdef Py_GIL_DISABLED
+    return &((_PyThreadStateImpl*)tstate)->freelists;
 #else
-#  define PyList_MAXFREELIST 0
-#  define PyFloat_MAXFREELIST 0
+    return &tstate->interp->object_state.freelists;
 #endif
+}
 
-struct _Py_list_state {
-#ifdef WITH_FREELISTS
-    PyListObject *free_list[PyList_MAXFREELIST];
-    int numfree;
-#endif
-};
+// Pushes `op` to the freelist, calls `freefunc` if the freelist is full
+#define _Py_FREELIST_FREE(NAME, op, freefunc) \
+    _PyFreeList_Free(&_Py_freelists_GET()->NAME, _PyObject_CAST(op), \
+                     Py_ ## NAME ## _MAXFREELIST, freefunc)
+// Pushes `op` to the freelist, returns 1 if successful, 0 if the freelist is full
+#define _Py_FREELIST_PUSH(NAME, op, limit) \
+    _PyFreeList_Push(&_Py_freelists_GET()->NAME, _PyObject_CAST(op), limit)
 
-struct _Py_float_state {
-#ifdef WITH_FREELISTS
-    /* Special free list
-       free_list is a singly-linked list of available PyFloatObjects,
-       linked via abuse of their ob_type members. */
-    int numfree;
-    PyFloatObject *free_list;
-#endif
-};
+// Pops a PyObject from the freelist, returns NULL if the freelist is empty.
+#define _Py_FREELIST_POP(TYPE, NAME) \
+    _Py_CAST(TYPE*, _PyFreeList_Pop(&_Py_freelists_GET()->NAME))
 
-typedef struct _Py_freelist_state {
-    struct _Py_float_state float_state;
-    struct _Py_list_state list_state;
-} _PyFreeListState;
+// Pops a non-PyObject data structure from the freelist, returns NULL if the
+// freelist is empty.
+#define _Py_FREELIST_POP_MEM(NAME) \
+    _PyFreeList_PopMem(&_Py_freelists_GET()->NAME)
+
+#define _Py_FREELIST_SIZE(NAME) (int)((_Py_freelists_GET()->NAME).size)
+
+static inline int
+_PyFreeList_Push(struct _Py_freelist *fl, void *obj, Py_ssize_t maxsize)
+{
+    if (fl->size < maxsize && fl->size >= 0) {
+        FT_ATOMIC_STORE_PTR_RELAXED(*(void **)obj, fl->freelist);
+        fl->freelist = obj;
+        fl->size++;
+        OBJECT_STAT_INC(to_freelist);
+        return 1;
+    }
+    return 0;
+}
+
+static inline void
+_PyFreeList_Free(struct _Py_freelist *fl, void *obj, Py_ssize_t maxsize,
+                 freefunc dofree)
+{
+    if (!_PyFreeList_Push(fl, obj, maxsize)) {
+        dofree(obj);
+    }
+}
+
+static inline void *
+_PyFreeList_PopNoStats(struct _Py_freelist *fl)
+{
+    void *obj = fl->freelist;
+    if (obj != NULL) {
+        assert(fl->size > 0);
+        fl->freelist = *(void **)obj;
+        fl->size--;
+    }
+    return obj;
+}
+
+static inline PyObject *
+_PyFreeList_Pop(struct _Py_freelist *fl)
+{
+    PyObject *op = _PyFreeList_PopNoStats(fl);
+    if (op != NULL) {
+        OBJECT_STAT_INC(from_freelist);
+        _Py_NewReference(op);
+    }
+    return op;
+}
+
+static inline void *
+_PyFreeList_PopMem(struct _Py_freelist *fl)
+{
+    void *op = _PyFreeList_PopNoStats(fl);
+    if (op != NULL) {
+        OBJECT_STAT_INC(from_freelist);
+    }
+    return op;
+}
+
+extern void _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization);
 
 #ifdef __cplusplus
 }

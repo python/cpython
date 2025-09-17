@@ -18,12 +18,13 @@
 #
 # In this case, there would have to be an additional reference to the argument...
 
-import _ctypes_test
 import unittest
 from ctypes import (CDLL, CFUNCTYPE, POINTER, ArgumentError,
                     pointer, byref, sizeof, addressof, create_string_buffer,
                     c_void_p, c_char_p, c_wchar_p, c_char, c_wchar,
                     c_short, c_int, c_long, c_longlong, c_double)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
 testdll = CDLL(_ctypes_test.__file__)
@@ -71,6 +72,32 @@ class CharPointersTestCase(unittest.TestCase):
         self.assertEqual(func(None), None)
         self.assertEqual(func(input=None), None)
 
+    def test_invalid_paramflags(self):
+        proto = CFUNCTYPE(c_int, c_char_p)
+        with self.assertRaises(ValueError):
+            func = proto(("myprintf", testdll), ((1, "fmt"), (1, "arg1")))
+
+    def test_invalid_setattr_argtypes(self):
+        proto = CFUNCTYPE(c_int, c_char_p)
+        func = proto(("myprintf", testdll), ((1, "fmt"),))
+
+        with self.assertRaisesRegex(TypeError, "_argtypes_ must be a sequence of types"):
+            func.argtypes = 123
+        self.assertEqual(func.argtypes, (c_char_p,))
+
+        with self.assertRaisesRegex(ValueError, "paramflags must have the same length as argtypes"):
+            func.argtypes = (c_char_p, c_int)
+        self.assertEqual(func.argtypes, (c_char_p,))
+
+    def test_paramflags_outarg(self):
+        proto = CFUNCTYPE(c_int, c_char_p, c_int)
+        with self.assertRaisesRegex(TypeError, "must be a pointer type"):
+            func = proto(("myprintf", testdll), ((1, "fmt"), (2, "out")))
+
+        proto = CFUNCTYPE(c_int, c_char_p, c_void_p)
+        func = proto(("myprintf", testdll), ((1, "fmt"), (2, "out")))
+        with self.assertRaisesRegex(TypeError, "must be a pointer type"):
+            func.argtypes = (c_char_p, c_int)
 
     def test_int_pointer_arg(self):
         func = testdll._testfunc_p_p

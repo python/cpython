@@ -11,14 +11,20 @@ from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import (open_urlresource, requires_resource, script_helper,
-                          cpython_only, check_disallow_instantiation)
+from test.support import (
+    open_urlresource,
+    requires_resource,
+    script_helper,
+    cpython_only,
+    check_disallow_instantiation,
+    force_not_colorized,
+)
 
 
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '63aa77dcb36b0e1df082ee2a6071caeda7f0955e'
+    expectedchecksum = '8b2615a9fc627676cbc0b6fac0191177df97ef5f'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -71,7 +77,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '232affd2a50ec4bd69d2482aa0291385cbdefaba'
+    expectedchecksum = '65670ae03a324c5f9e826a4de3e25bae4d73c9b7'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -114,7 +120,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     def test_lookup_nonexistant(self):
         # just make sure that lookup can fail
-        for nonexistant in [
+        for nonexistent in [
             "LATIN SMLL LETR A",
             "OPEN HANDS SIGHS",
             "DREGS",
@@ -122,7 +128,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
             "MODIFIER LETTER CYRILLIC SMALL QUESTION MARK",
             "???",
         ]:
-            self.assertRaises(KeyError, self.db.lookup, nonexistant)
+            self.assertRaises(KeyError, self.db.lookup, nonexistent)
 
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
@@ -277,6 +283,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         # Ensure that the type disallows instantiation (bpo-43916)
         check_disallow_instantiation(self, unicodedata.UCD)
 
+    @force_not_colorized
     def test_failed_import_during_compiling(self):
         # Issue 4367
         # Decoding \N escapes requires the unicodedata module. If it can't be
@@ -459,6 +466,29 @@ class NormalizationTest(unittest.TestCase):
     def test_bug_834676(self):
         # Check for bug 834676
         unicodedata.normalize('NFC', '\ud55c\uae00')
+
+    def test_normalize_return_type(self):
+        # gh-129569: normalize() return type must always be str
+        normalize = unicodedata.normalize
+
+        class MyStr(str):
+            pass
+
+        normalization_forms = ("NFC", "NFKC", "NFD", "NFKD")
+        input_strings = (
+            # normalized strings
+            "",
+            "ascii",
+            # unnormalized strings
+            "\u1e0b\u0323",
+            "\u0071\u0307\u0323",
+        )
+
+        for form in normalization_forms:
+            for input_str in input_strings:
+                with self.subTest(form=form, input_str=input_str):
+                    self.assertIs(type(normalize(form, input_str)), str)
+                    self.assertIs(type(normalize(form, MyStr(input_str))), str)
 
 
 if __name__ == "__main__":

@@ -125,6 +125,13 @@ class BaseProcess(object):
         del self._target, self._args, self._kwargs
         _children.add(self)
 
+    def interrupt(self):
+        '''
+        Terminate process; sends SIGINT signal
+        '''
+        self._check_closed()
+        self._popen.interrupt()
+
     def terminate(self):
         '''
         Terminate process; sends SIGTERM signal or uses TerminateProcess()
@@ -310,11 +317,8 @@ class BaseProcess(object):
                 # _run_after_forkers() is executed
                 del old_process
             util.info('child process calling self.run()')
-            try:
-                self.run()
-                exitcode = 0
-            finally:
-                util._exit_function()
+            self.run()
+            exitcode = 0
         except SystemExit as e:
             if e.code is None:
                 exitcode = 0

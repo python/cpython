@@ -1,2 +1,0 @@
-Check for a valid ``tp_version_tag`` before performing bytecode specializations that
-rely on this value being usable.

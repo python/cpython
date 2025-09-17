@@ -600,7 +600,8 @@ class _BinaryPlistParser:
             obj_refs = self._read_refs(s)
             result = []
             self._objects[ref] = result
-            result.extend(self._read_object(x) for x in obj_refs)
+            for x in obj_refs:
+                result.append(self._read_object(x))
 
         # tokenH == 0xB0 is documented as 'ordset', but is not actually
         # implemented in the Apple reference code.

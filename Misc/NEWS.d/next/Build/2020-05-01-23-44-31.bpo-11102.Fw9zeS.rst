@@ -1,2 +1,0 @@
-The :func:`os.major`, :func:`os.makedev`, and :func:`os.minor` functions are
-now available on HP-UX v3.

@@ -1,5 +1,6 @@
 import multiprocessing
 import sys
+import threading
 import time
 import unittest
 from concurrent import futures
@@ -9,7 +10,7 @@ from concurrent.futures._base import (
 from concurrent.futures.process import _check_system_limits
 
 from test import support
-from test.support import threading_helper
+from test.support import threading_helper, warnings_helper
 
 
 def create_future(state=PENDING, exception=None, result=None):
@@ -50,14 +51,20 @@ class ExecutorMixin:
                 max_workers=self.worker_count,
                 mp_context=self.get_context(),
                 **self.executor_kwargs)
+            with warnings_helper.ignore_fork_in_thread_deprecation_warnings():
+                self.manager = self.get_context().Manager()
         else:
             self.executor = self.executor_type(
                 max_workers=self.worker_count,
                 **self.executor_kwargs)
+            self.manager = None
 
     def tearDown(self):
         self.executor.shutdown(wait=True)
         self.executor = None
+        if self.manager is not None:
+            self.manager.shutdown()
+            self.manager = None
 
         dt = time.monotonic() - self.t1
         if support.verbose:
@@ -73,6 +80,17 @@ class ExecutorMixin:
 class ThreadPoolMixin(ExecutorMixin):
     executor_type = futures.ThreadPoolExecutor
 
+    def create_event(self):
+        return threading.Event()
+
+
+@support.skip_if_sanitizer("gh-129824: data races in InterpreterPool tests", thread=True)
+class InterpreterPoolMixin(ExecutorMixin):
+    executor_type = futures.InterpreterPoolExecutor
+
+    def create_event(self):
+        self.skipTest("InterpreterPoolExecutor doesn't support events")
+
 
 class ProcessPoolForkMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
@@ -85,7 +103,12 @@ class ProcessPoolForkMixin(ExecutorMixin):
             self.skipTest("ProcessPoolExecutor unavailable on this system")
         if sys.platform == "win32":
             self.skipTest("require unix system")
+        if support.check_sanitizer(thread=True):
+            self.skipTest("TSAN doesn't support threads after fork")
         return super().get_context()
+
+    def create_event(self):
+        return self.manager.Event()
 
 
 class ProcessPoolSpawnMixin(ExecutorMixin):
@@ -99,6 +122,9 @@ class ProcessPoolSpawnMixin(ExecutorMixin):
             self.skipTest("ProcessPoolExecutor unavailable on this system")
         return super().get_context()
 
+    def create_event(self):
+        return self.manager.Event()
+
 
 class ProcessPoolForkserverMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
@@ -111,11 +137,17 @@ class ProcessPoolForkserverMixin(ExecutorMixin):
             self.skipTest("ProcessPoolExecutor unavailable on this system")
         if sys.platform == "win32":
             self.skipTest("require unix system")
+        if support.check_sanitizer(thread=True):
+            self.skipTest("TSAN doesn't support threads after fork")
         return super().get_context()
+
+    def create_event(self):
+        return self.manager.Event()
 
 
 def create_executor_tests(remote_globals, mixin, bases=(BaseTestCase,),
                           executor_mixins=(ThreadPoolMixin,
+                                           InterpreterPoolMixin,
                                            ProcessPoolForkMixin,
                                            ProcessPoolForkserverMixin,
                                            ProcessPoolSpawnMixin)):
@@ -136,6 +168,12 @@ def create_executor_tests(remote_globals, mixin, bases=(BaseTestCase,),
 
 
 def setup_module():
-    unittest.addModuleCleanup(multiprocessing.util._cleanup_tests)
+    try:
+        _check_system_limits()
+    except NotImplementedError:
+        pass
+    else:
+        unittest.addModuleCleanup(multiprocessing.util._cleanup_tests)
+
     thread_info = threading_helper.threading_setup()
     unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)

@@ -3,9 +3,17 @@ from email import utils
 import test.support
 import time
 import unittest
-import sys
-import os.path
-import zoneinfo
+
+from test.support import cpython_only
+from test.support.import_helper import ensure_lazy_imports
+
+
+class TestImportTime(unittest.TestCase):
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("email.utils", {"random", "socket"})
+
 
 class DateTimeTests(unittest.TestCase):
 
@@ -147,17 +155,13 @@ class LocaltimeTests(unittest.TestCase):
     def test_variable_tzname(self):
         t0 = datetime.datetime(1984, 1, 1, tzinfo=datetime.timezone.utc)
         t1 = utils.localtime(t0)
-        if t1.tzname() == 'Europe':
+        if t1.tzname() in ('Europe', 'UTC'):
             self.skipTest("Can't find a Kyiv timezone database")
         self.assertEqual(t1.tzname(), 'MSK')
         t0 = datetime.datetime(1994, 1, 1, tzinfo=datetime.timezone.utc)
         t1 = utils.localtime(t0)
         self.assertEqual(t1.tzname(), 'EET')
 
-    def test_isdst_deprecation(self):
-        with self.assertWarns(DeprecationWarning):
-            t0 = datetime.datetime(1990, 1, 1)
-            t1 = utils.localtime(t0, isdst=True)
 
 # Issue #24836: The timezone files are out of date (pre 2011k)
 # on Mac OS X Snow Leopard.
