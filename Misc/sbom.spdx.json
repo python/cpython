@@ -132,11 +132,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "97e27b633549e2359401a6a7dfb4661e70f29684"
+          "checksumValue": "3989510a52c14ed8de4201dacd2fbd30ef2dc9b9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "8dec53bcc64db0f2d3f71aa99d7e2acaf2acc62576cc7065c72cbb6d674a5d70"
+          "checksumValue": "1e1a803db6762925f5e9241c82560f2a0d782a227ed57d0b8842c489db04584c"
         }
       ],
       "fileName": "Modules/expat/refresh.sh"
