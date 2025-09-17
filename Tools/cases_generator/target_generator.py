@@ -38,7 +38,7 @@ def function_proto(name: str) -> str:
 
 
 def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
-    out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256];\n")
+    out.emit("static py_tail_call_funcptr instruction_funcptr_table[256];\n")
     out.emit("\n")
 
     # Emit function prototypes for labels.
@@ -60,7 +60,7 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
     out.emit("\n")
 
     # Emit the dispatch table.
-    out.emit("static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {\n")
+    out.emit("static py_tail_call_funcptr instruction_funcptr_table[256] = {\n")
     for name in sorted(analysis.instructions.keys()):
         out.emit(f"[{name}] = _TAIL_CALL_{name},\n")
     named_values = analysis.opmap.values()
