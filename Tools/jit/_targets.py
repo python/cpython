@@ -235,6 +235,13 @@ class _Target(typing.Generic[_S, _R]):
             request = "Please report any issues you encounter.".center(len(warning))
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
+
+        if self.llvm_version != _llvm._LLVM_VERSION:
+            warning = f"LLVM version {self.llvm_version} is not officially supported!"
+            request = "Use custom LLVM version at your own rist.".center(len(warning))
+            outline = "=" * len(warning)
+            print("\n".join(["", outline, warning, request, outline, ""]))
+
         digest = f"// {self._compute_digest()}\n"
         if (
             not force
