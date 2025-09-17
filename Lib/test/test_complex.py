@@ -9,10 +9,7 @@ from test.support.numbers import (
 
 from random import random
 from math import isnan, copysign
-from functools import reduce
-from itertools import combinations_with_replacement
 import operator
-import _testcapi
 
 INF = float("inf")
 NAN = float("nan")
@@ -91,6 +88,10 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         """Return true iff complexes x and y "are close"."""
         self.assertCloseAbs(x.real, y.real, eps)
         self.assertCloseAbs(x.imag, y.imag, eps)
+
+    def assertSameSign(self, x, y):
+        if copysign(1., x) != copysign(1., y):
+            self.fail(f'{x!r} and {y!r} have different signs')
 
     def check_div(self, x, y):
         """Compute complex z=x*y, and check that z/x==y and z/y==x."""
@@ -452,44 +453,60 @@ class ComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # Check that complex numbers with special components
         # are correctly handled.
-        values = [complex(*_)
-                  for _ in combinations_with_replacement([1, -1, 0.0, 0, -0.0, 2,
-                                                          -3, INF, -INF, NAN], 2)]
-        exponents = [0, 1, 2, 3, 4, 5, 6, 19]
-        for z in values:
-            for e in exponents:
-                with self.subTest(value=z, exponent=e):
-                    try:
-                        r_pow = z**e
-                    except OverflowError:
-                        continue
-                    r_pro = reduce(lambda x, y: x*y, [z]*e) if e else 1+0j
-                    if str(r_pow) == str(r_pro):
-                        continue
+        values = [complex(x, y)
+                  for x in [5, -5, +0.0, -0.0, INF, -INF, NAN]
+                  for y in [12, -12, +0.0, -0.0, INF, -INF, NAN]]
+        for c in values:
+            with self.subTest(value=c):
+                self.assertComplexesAreIdentical(c**0, complex(1, +0.0))
+                self.assertComplexesAreIdentical(c**1, c)
+                self.assertComplexesAreIdentical(c**2, c*c)
+                self.assertComplexesAreIdentical(c**3, c*(c*c))
+                self.assertComplexesAreIdentical(c**3, (c*c)*c)
+                if not c:
+                    continue
+                for n in range(1, 9):
+                    with self.subTest(exponent=-n):
+                        self.assertComplexesAreIdentical(c**-n, 1/(c**n))
 
-                    self.assertNotIn(z.real, {0.0, -0.0, INF, -INF, NAN})
-                    self.assertNotIn(z.imag, {0.0, -0.0, INF, -INF, NAN})
+        # Special cases for complex division.
+        for x in [+2, -2]:
+            for y in [+0.0, -0.0]:
+                c = complex(x, y)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(1/x, -y))
+                c = complex(y, x)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(y, -1/x))
+        for x in [+INF, -INF]:
+            for y in [+1, -1]:
+                c = complex(x, y)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(1/x, -0.0*y))
+                    self.assertComplexesAreIdentical(c**-2, complex(0.0, -y/x))
+                c = complex(y, x)
+                with self.subTest(value=c):
+                    self.assertComplexesAreIdentical(c**-1, complex(+0.0*y, -1/x))
+                    self.assertComplexesAreIdentical(c**-2, complex(-0.0, -y/x))
 
-                    # We might fail here, because associativity of multiplication
-                    # is broken already for floats.
-                    # Consider z = 1-1j.  Then z*z*z*z = ((z*z)*z)*z = -4+0j,
-                    # while in the algorithm for pow() a diffenent grouping
-                    # of operations is used: z**4 = (z*z)*(z*z) = -4-0j.
-                    #
-                    # Fallback to the generic complex power algorithm.
-                    r_pro, r_pro_errno = _testcapi._py_c_pow(z, e)
-                    self.assertEqual(r_pro_errno, 0)
-                    self.assertClose(r_pow, r_pro)
-                    if isnan(r_pow.real):
-                        self.assertTrue(isnan(r_pro.real))
-                    else:
-                        self.assertEqual(copysign(1, r_pow.real),
-                                         copysign(1, r_pro.real))
-                    if isnan(r_pow.imag):
-                        self.assertTrue(isnan(r_pro.imag))
-                    else:
-                        self.assertEqual(copysign(1, r_pow.imag),
-                                         copysign(1, r_pro.imag))
+        # Test that zeroes has the same sign as small non-zero values.
+        eps = 1e-8
+        pairs = [(complex(x, y), complex(x, copysign(0.0, y)))
+                 for x in [+1, -1] for y in [+eps, -eps]]
+        pairs += [(complex(y, x), complex(copysign(0.0, y), x))
+                  for x in [+1, -1] for y in [+eps, -eps]]
+        for c1, c2 in pairs:
+            for n in exponents:
+                with self.subTest(value=c1, exponent=n):
+                    r1 = c1**n
+                    r2 = c2**n
+                    self.assertClose(r1, r2)
+                    self.assertSameSign(r1.real, r2.real)
+                    self.assertSameSign(r1.imag, r2.imag)
+                    self.assertNotEqual(r1.real, 0.0)
+                    if n != 0:
+                        self.assertNotEqual(r1.imag, 0.0)
+                    self.assertTrue(r2.real == 0.0 or r2.imag == 0.0)
 
     def test_boolcontext(self):
         for i in range(100):
