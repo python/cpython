@@ -577,7 +577,6 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->_code_object_generation = 0;
     interp->jit = false;
-    interp->compiling = false;
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_deletion_list_remaining_capacity = 0;

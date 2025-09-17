@@ -7651,11 +7651,9 @@
                         start--;
                     }
                     _PyExecutorObject *executor;
-                    assert(!_PyInterpreterState_GET()->compiling);
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int optimized = _PyOptimizer_Optimize(frame, start, &executor, 0);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    assert(!_PyInterpreterState_GET()->compiling);
                     if (optimized <= 0) {
                         this_instr[1].counter = restart_backoff_counter(counter);
                         if (optimized < 0) {

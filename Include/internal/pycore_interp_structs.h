@@ -899,6 +899,8 @@ struct _is {
     struct _stoptheworld_state stoptheworld;
     struct _qsbr_shared qsbr;
 
+    struct _PyUOpInstruction *jit_uop_buffer;
+
 #if defined(Py_GIL_DISABLED)
     struct _mimalloc_interp_state mimalloc;
     struct _brc_state brc;  // biased reference counting state
@@ -950,8 +952,6 @@ struct _is {
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
-    bool compiling;
-    struct _PyUOpInstruction *jit_uop_buffer;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;

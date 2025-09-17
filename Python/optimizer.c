@@ -116,10 +116,7 @@ _PyOptimizer_Optimize(
     _PyExecutorObject **executor_ptr, int chain_depth)
 {
     _PyStackRef *stack_pointer = frame->stackpointer;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->jit);
-    assert(!interp->compiling);
-    interp->compiling = true;
+    assert(_PyInterpreterState_GET()->jit);
     // The first executor in a chain and the MAX_CHAIN_DEPTH'th executor *must*
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
@@ -128,14 +125,12 @@ _PyOptimizer_Optimize(
     bool progress_needed = chain_depth == 0;
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(PyCode_Check(code));
-    int ret = 0;
     if (progress_needed && !has_space_for_executor(code, start)) {
-        goto end;
+        return 0;
     }
     int err = uop_optimize(frame, start, executor_ptr, (int)(stack_pointer - _PyFrame_Stackbase(frame)), progress_needed);
     if (err <= 0) {
-        ret = err;
-        goto end;
+        return err;
     }
     assert(*executor_ptr != NULL);
     if (progress_needed) {
@@ -148,7 +143,7 @@ _PyOptimizer_Optimize(
              * it might get confused by the executor disappearing,
              * but there is not much we can do about that here. */
             Py_DECREF(*executor_ptr);
-            goto end;
+            return 0;
         }
         insert_executor(code, start, index, *executor_ptr);
     }
@@ -157,9 +152,7 @@ _PyOptimizer_Optimize(
     }
     (*executor_ptr)->vm_data.chain_depth = chain_depth;
     assert((*executor_ptr)->vm_data.valid);
-end:
-    interp->compiling = false;
-    return ret;
+    return 1;
 }
 
 static _PyExecutorObject *
@@ -1288,7 +1281,6 @@ uop_optimize(
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(interp->compiling);
     if (interp->jit_uop_buffer == NULL) {
         interp->jit_uop_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
         if (interp->jit_uop_buffer == NULL) {
