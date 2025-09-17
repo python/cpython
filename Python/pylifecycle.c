@@ -2108,6 +2108,7 @@ make_pre_finalization_calls(PyThreadState *tstate)
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
     }
+    assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
     ASSERT_WORLD_STOPPED(interp);
 }
 
@@ -2538,8 +2539,6 @@ Py_EndInterpreter(PyThreadState *tstate)
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
-    _PyEval_StartTheWorldAll(interp->runtime);
-    PyMutex_Unlock(&interp->ceval.pending.mutex);
 
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
     for (PyThreadState *p = list; p != NULL; p = p->next) {
