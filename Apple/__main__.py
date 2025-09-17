@@ -798,10 +798,15 @@ def test(context: argparse.Namespace, host: str | None = None) -> None:
             + [
                 "--",
                 "test",
-                "-uall",
+                "--slow-ci" if context.slow else "--fast-ci",
                 "--single-process",
-                "--rerun",
-                "-W",
+                "--no-randomize",
+                # Timeout handling requires subprocesses; explicitly setting
+                # the timeout to -1 disables the faulthandler.
+                "--timeout=-1",
+                # Adding Python options requires the use of a subprocess to
+                # start a new Python interpreter.
+                "--dont-add-python-opts",
             ]
         )
 
