@@ -31,6 +31,7 @@
 #include "util.h"
 
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 typedef enum {
     TYPE_LONG,
@@ -43,6 +44,8 @@ typedef enum {
 #define clinic_state() (pysqlite_get_state_by_type(Py_TYPE(self)))
 #include "clinic/cursor.c.h"
 #undef clinic_state
+
+#define _pysqlite_Cursor_CAST(op)   ((pysqlite_Cursor *)(op))
 
 static inline int
 check_cursor_locked(pysqlite_Cursor *cur)
@@ -146,8 +149,9 @@ stmt_reset(pysqlite_Statement *self)
 }
 
 static int
-cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
+cursor_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->connection);
     Py_VISIT(self->description);
@@ -159,8 +163,9 @@ cursor_traverse(pysqlite_Cursor *self, visitproc visit, void *arg)
 }
 
 static int
-cursor_clear(pysqlite_Cursor *self)
+cursor_clear(PyObject *op)
 {
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     Py_CLEAR(self->connection);
     Py_CLEAR(self->description);
     Py_CLEAR(self->row_cast_map);
@@ -176,14 +181,13 @@ cursor_clear(pysqlite_Cursor *self)
 }
 
 static void
-cursor_dealloc(pysqlite_Cursor *self)
+cursor_dealloc(PyObject *op)
 {
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
-    }
-    tp->tp_clear((PyObject *)self);
+    FT_CLEAR_WEAKREFS(op, self->in_weakreflist);
+    (void)tp->tp_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -500,7 +504,7 @@ begin_transaction(pysqlite_Connection *self)
     Py_END_ALLOW_THREADS
 
     if (rc != SQLITE_OK) {
-        (void)_pysqlite_seterror(self->state, self->db);
+        set_error_from_db(self->state, self->db);
         return -1;
     }
 
@@ -710,7 +714,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             if (rc != SQLITE_OK) {
                 PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
-                _pysqlite_seterror(state, db);
+                set_error_from_db(state, db);
                 _PyErr_ChainExceptions1(exc);
                 return;
             }
@@ -759,7 +763,7 @@ bind_parameters(pysqlite_state *state, pysqlite_Statement *self,
             if (rc != SQLITE_OK) {
                 PyObject *exc = PyErr_GetRaisedException();
                 sqlite3 *db = sqlite3_db_handle(self->st);
-                _pysqlite_seterror(state, db);
+                set_error_from_db(state, db);
                 _PyErr_ChainExceptions1(exc);
                 return;
            }
@@ -891,7 +895,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* operation
                     PyErr_Clear();
                 }
             }
-            _pysqlite_seterror(state, self->connection->db);
+            set_error_from_db(state, self->connection->db);
             goto error;
         }
 
@@ -1082,13 +1086,14 @@ pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
     return Py_NewRef((PyObject *)self);
 
 error:
-    _pysqlite_seterror(self->connection->state, db);
+    set_error_from_db(self->connection->state, db);
     return NULL;
 }
 
 static PyObject *
-pysqlite_cursor_iternext(pysqlite_Cursor *self)
+pysqlite_cursor_iternext(PyObject *op)
 {
+    pysqlite_Cursor *self = _pysqlite_Cursor_CAST(op);
     if (!check_cursor(self)) {
         return NULL;
     }
@@ -1116,8 +1121,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
         Py_CLEAR(self->statement);
     }
     else if (rc != SQLITE_ROW) {
-        (void)_pysqlite_seterror(self->connection->state,
-                                 self->connection->db);
+        set_error_from_db(self->connection->state, self->connection->db);
         (void)stmt_reset(self->statement);
         Py_CLEAR(self->statement);
         Py_DECREF(row);
@@ -1125,7 +1129,7 @@ pysqlite_cursor_iternext(pysqlite_Cursor *self)
     }
     if (!Py_IsNone(self->row_factory)) {
         PyObject *factory = self->row_factory;
-        PyObject *args[] = { (PyObject *)self, row, };
+        PyObject *args[] = { op, row, };
         PyObject *new_row = PyObject_Vectorcall(factory, args, 2, NULL);
         Py_SETREF(row, new_row);
     }
@@ -1144,7 +1148,7 @@ pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self)
 {
     PyObject* row;
 
-    row = pysqlite_cursor_iternext(self);
+    row = pysqlite_cursor_iternext((PyObject *)self);
     if (!row && !PyErr_Occurred()) {
         Py_RETURN_NONE;
     }
@@ -1155,7 +1159,7 @@ pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self)
 /*[clinic input]
 _sqlite3.Cursor.fetchmany as pysqlite_cursor_fetchmany
 
-    size as maxrows: int(c_default='self->arraysize') = 1
+    size as maxrows: int(c_default='((pysqlite_Cursor *)self)->arraysize') = 1
         The default value is set by the Cursor.arraysize attribute.
 
 Fetches several rows from the resultset.
@@ -1163,7 +1167,7 @@ Fetches several rows from the resultset.
 
 static PyObject *
 pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows)
-/*[clinic end generated code: output=a8ef31fea64d0906 input=c26e6ca3f34debd0]*/
+/*[clinic end generated code: output=a8ef31fea64d0906 input=035dbe44a1005bf2]*/
 {
     PyObject* row;
     PyObject* list;
@@ -1174,7 +1178,7 @@ pysqlite_cursor_fetchmany_impl(pysqlite_Cursor *self, int maxrows)
         return NULL;
     }
 
-    while ((row = pysqlite_cursor_iternext(self))) {
+    while ((row = pysqlite_cursor_iternext((PyObject *)self))) {
         if (PyList_Append(list, row) < 0) {
             Py_DECREF(row);
             break;
@@ -1212,7 +1216,7 @@ pysqlite_cursor_fetchall_impl(pysqlite_Cursor *self)
         return NULL;
     }
 
-    while ((row = pysqlite_cursor_iternext(self))) {
+    while ((row = pysqlite_cursor_iternext((PyObject *)self))) {
         if (PyList_Append(list, row) < 0) {
             Py_DECREF(row);
             break;
@@ -1238,8 +1242,8 @@ Required by DB-API. Does nothing in sqlite3.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_cursor_setinputsizes(pysqlite_Cursor *self, PyObject *sizes)
-/*[clinic end generated code: output=893c817afe9d08ad input=de7950a3aec79bdf]*/
+pysqlite_cursor_setinputsizes_impl(pysqlite_Cursor *self, PyObject *sizes)
+/*[clinic end generated code: output=a06c12790bd05f2e input=de7950a3aec79bdf]*/
 {
     Py_RETURN_NONE;
 }

@@ -37,7 +37,7 @@ __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'captureWarnings', 'critical', 'debug', 'disable', 'error',
            'exception', 'fatal', 'getLevelName', 'getLogger', 'getLoggerClass',
            'info', 'log', 'makeLogRecord', 'setLoggerClass', 'shutdown',
-           'warning', 'getLogRecordFactory', 'setLogRecordFactory',
+           'warn', 'warning', 'getLogRecordFactory', 'setLogRecordFactory',
            'lastResort', 'raiseExceptions', 'getLevelNamesMapping',
            'getHandlerByName', 'getHandlerNames']
 
@@ -340,11 +340,14 @@ class LogRecord(object):
         self.lineno = lineno
         self.funcName = func
         self.created = ct / 1e9  # ns to float seconds
-
         # Get the number of whole milliseconds (0-999) in the fractional part of seconds.
         # Eg: 1_677_903_920_999_998_503 ns --> 999_998_503 ns--> 999 ms
         # Convert to float by adding 0.0 for historical reasons. See gh-89047
         self.msecs = (ct % 1_000_000_000) // 1_000_000 + 0.0
+        if self.msecs == 999.0 and int(self.created) != ct // 1_000_000_000:
+            # ns -> sec conversion can round up, e.g:
+            # 1_677_903_920_999_999_900 ns --> 1_677_903_921.0 sec
+            self.msecs = 0.0
 
         self.relativeCreated = (ct - _startTime) / 1e6
         if logThreads:
@@ -588,6 +591,7 @@ class Formatter(object):
     %(threadName)s      Thread name (if available)
     %(taskName)s        Task name (if available)
     %(process)d         Process ID (if available)
+    %(processName)s     Process name (if available)
     %(message)s         The result of record.getMessage(), computed just as
                         the record is emitted
     """
@@ -1527,6 +1531,11 @@ class Logger(Filterer):
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
 
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
+
     def error(self, msg, *args, **kwargs):
         """
         Log 'msg % args' with severity 'ERROR'.
@@ -1903,6 +1912,11 @@ class LoggerAdapter(object):
         """
         self.log(WARNING, msg, *args, **kwargs)
 
+    def warn(self, msg, *args, **kwargs):
+        warnings.warn("The 'warn' method is deprecated, "
+            "use 'warning' instead", DeprecationWarning, 2)
+        self.warning(msg, *args, **kwargs)
+
     def error(self, msg, *args, **kwargs):
         """
         Delegate an error call to the underlying logger.
@@ -2032,6 +2046,15 @@ def basicConfig(**kwargs):
               created FileHandler, causing it to be used when the file is
               opened in text mode. If not specified, the default value is
               `backslashreplace`.
+    formatter If specified, set this formatter instance for all involved
+              handlers.
+              If not specified, the default is to create and use an instance of
+              `logging.Formatter` based on arguments 'format', 'datefmt' and
+              'style'.
+              When 'formatter' is specified together with any of the three
+              arguments 'format', 'datefmt' and 'style', a `ValueError`
+              is raised to signal that these arguments would lose meaning
+              otherwise.
 
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
@@ -2054,6 +2077,9 @@ def basicConfig(**kwargs):
 
     .. versionchanged:: 3.9
        Added the ``encoding`` and ``errors`` parameters.
+
+    .. versionchanged:: 3.15
+       Added the ``formatter`` parameter.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
@@ -2089,13 +2115,19 @@ def basicConfig(**kwargs):
                     stream = kwargs.pop("stream", None)
                     h = StreamHandler(stream)
                 handlers = [h]
-            dfs = kwargs.pop("datefmt", None)
-            style = kwargs.pop("style", '%')
-            if style not in _STYLES:
-                raise ValueError('Style must be one of: %s' % ','.join(
-                                 _STYLES.keys()))
-            fs = kwargs.pop("format", _STYLES[style][1])
-            fmt = Formatter(fs, dfs, style)
+            fmt = kwargs.pop("formatter", None)
+            if fmt is None:
+                dfs = kwargs.pop("datefmt", None)
+                style = kwargs.pop("style", '%')
+                if style not in _STYLES:
+                    raise ValueError('Style must be one of: %s' % ','.join(
+                                    _STYLES.keys()))
+                fs = kwargs.pop("format", _STYLES[style][1])
+                fmt = Formatter(fs, dfs, style)
+            else:
+                for forbidden_key in ("datefmt", "format", "style"):
+                    if forbidden_key in kwargs:
+                        raise ValueError(f"{forbidden_key!r} should not be specified together with 'formatter'")
             for h in handlers:
                 if h.formatter is None:
                     h.setFormatter(fmt)
@@ -2165,6 +2197,11 @@ def warning(msg, *args, **kwargs):
     if len(root.handlers) == 0:
         basicConfig()
     root.warning(msg, *args, **kwargs)
+
+def warn(msg, *args, **kwargs):
+    warnings.warn("The 'warn' function is deprecated, "
+        "use 'warning' instead", DeprecationWarning, 2)
+    warning(msg, *args, **kwargs)
 
 def info(msg, *args, **kwargs):
     """

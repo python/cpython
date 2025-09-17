@@ -1,12 +1,10 @@
 import os
-from test.support import requires, load_package_tests
-from test.support.import_helper import import_module
+import sys
+from test.support import import_helper, load_package_tests
 
-# Optionally test pyrepl.  This currently requires that the
-# 'curses' resource be given on the regrtest command line using the -u
-# option.  Additionally, we need to attempt to import curses and readline.
-requires("curses")
-curses = import_module("curses")
+
+if sys.platform != "win32":
+    import_helper.import_module("termios")
 
 
 def load_tests(*args):

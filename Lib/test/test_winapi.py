@@ -2,10 +2,7 @@
 
 import os
 import pathlib
-import random
 import re
-import threading
-import time
 import unittest
 from test.support import import_helper, os_helper
 

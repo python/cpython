@@ -108,7 +108,7 @@ error:
 static PyObject *
 clear_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
-#if defined(PY_DEBUG)
+#if defined(Py_DEBUG)
     _PyPegen_clear_memo_statistics();
 #endif
     Py_RETURN_NONE;
@@ -117,7 +117,7 @@ clear_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 static PyObject *
 get_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
-#if defined(PY_DEBUG)
+#if defined(Py_DEBUG)
     return _PyPegen_get_memo_statistics();
 #else
     Py_RETURN_NONE;
@@ -128,7 +128,7 @@ get_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 static PyObject *
 dump_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 {
-#if defined(PY_DEBUG)
+#if defined(Py_DEBUG)
     PyObject *list = _PyPegen_get_memo_statistics();
     if (list == NULL) {
         return NULL;

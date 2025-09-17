@@ -26,9 +26,9 @@ static PyObject *
 winreg_HKEYType_Close_impl(PyHKEYObject *self);
 
 static PyObject *
-winreg_HKEYType_Close(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
+winreg_HKEYType_Close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return winreg_HKEYType_Close_impl(self);
+    return winreg_HKEYType_Close_impl((PyHKEYObject *)self);
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -56,9 +56,9 @@ static PyObject *
 winreg_HKEYType_Detach_impl(PyHKEYObject *self);
 
 static PyObject *
-winreg_HKEYType_Detach(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
+winreg_HKEYType_Detach(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return winreg_HKEYType_Detach_impl(self);
+    return winreg_HKEYType_Detach_impl((PyHKEYObject *)self);
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -77,12 +77,12 @@ static PyHKEYObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self);
 
 static PyObject *
-winreg_HKEYType___enter__(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
+winreg_HKEYType___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     PyHKEYObject *_return_value;
 
-    _return_value = winreg_HKEYType___enter___impl(self);
+    _return_value = winreg_HKEYType___enter___impl((PyHKEYObject *)self);
     return_value = (PyObject *)_return_value;
 
     return return_value;
@@ -105,7 +105,7 @@ winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *traceback);
 
 static PyObject *
-winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t nargs)
+winreg_HKEYType___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *exc_type;
@@ -118,7 +118,7 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t n
     exc_type = args[0];
     exc_value = args[1];
     traceback = args[2];
-    return_value = winreg_HKEYType___exit___impl(self, exc_type, exc_value, traceback);
+    return_value = winreg_HKEYType___exit___impl((PyHKEYObject *)self, exc_type, exc_value, traceback);
 
 exit:
     return return_value;
@@ -324,9 +324,11 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), },
     };
     #undef NUM_KEYWORDS
@@ -351,7 +353,8 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -508,9 +511,11 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(access), &_Py_ID(reserved), },
     };
     #undef NUM_KEYWORDS
@@ -534,7 +539,8 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -939,9 +945,11 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), },
     };
     #undef NUM_KEYWORDS
@@ -966,7 +974,8 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1056,9 +1065,11 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), },
     };
     #undef NUM_KEYWORDS
@@ -1083,7 +1094,8 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1621,6 +1633,70 @@ exit:
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
 
+PyDoc_STRVAR(winreg_DeleteTree__doc__,
+"DeleteTree($module, key, sub_key=None, /)\n"
+"--\n"
+"\n"
+"Deletes the specified key and all its subkeys and values recursively.\n"
+"\n"
+"  key\n"
+"    An already open key, or any one of the predefined HKEY_* constants.\n"
+"  sub_key\n"
+"    A string that names the subkey to delete. If None, deletes all subkeys\n"
+"    and values of the specified key.\n"
+"\n"
+"This function deletes a key and all its descendants. If sub_key is None,\n"
+"all subkeys and values of the specified key are deleted.");
+
+#define WINREG_DELETETREE_METHODDEF    \
+    {"DeleteTree", _PyCFunction_CAST(winreg_DeleteTree), METH_FASTCALL, winreg_DeleteTree__doc__},
+
+static PyObject *
+winreg_DeleteTree_impl(PyObject *module, HKEY key, const wchar_t *sub_key);
+
+static PyObject *
+winreg_DeleteTree(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    HKEY key;
+    const wchar_t *sub_key = NULL;
+
+    if (!_PyArg_CheckPositional("DeleteTree", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(_PyModule_GetState(module), args[0], &key)) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    if (args[1] == Py_None) {
+        sub_key = NULL;
+    }
+    else if (PyUnicode_Check(args[1])) {
+        sub_key = PyUnicode_AsWideCharString(args[1], NULL);
+        if (sub_key == NULL) {
+            goto exit;
+        }
+    }
+    else {
+        _PyArg_BadArgument("DeleteTree", "argument 2", "str or None", args[1]);
+        goto exit;
+    }
+skip_optional:
+    return_value = winreg_DeleteTree_impl(module, key, sub_key);
+
+exit:
+    /* Cleanup for sub_key */
+    PyMem_Free((void *)sub_key);
+
+    return return_value;
+}
+
+#endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)) */
+
+#if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) && (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM))
+
 PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "QueryReflectionKey($module, key, /)\n"
 "--\n"
@@ -1759,7 +1835,11 @@ exit:
     #define WINREG_ENABLEREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_ENABLEREFLECTIONKEY_METHODDEF) */
 
+#ifndef WINREG_DELETETREE_METHODDEF
+    #define WINREG_DELETETREE_METHODDEF
+#endif /* !defined(WINREG_DELETETREE_METHODDEF) */
+
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=1ee4098b2f143b6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce7e8e38884851fb input=a9049054013a1b77]*/

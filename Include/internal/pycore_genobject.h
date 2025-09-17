@@ -8,7 +8,18 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"
+#include "pycore_interpframe_structs.h" // _PyGenObject
+
+#include <stddef.h>               // offsetof()
+
+
+static inline
+PyGenObject *_PyGen_GetGeneratorFromFrame(_PyInterpreterFrame *frame)
+{
+    assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
+    size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
+    return (PyGenObject *)(((char *)frame) - offset_in_gen);
+}
 
 PyAPI_FUNC(PyObject *)_PyGen_yf(PyGenObject *);
 extern void _PyGen_Finalize(PyObject *self);
