@@ -590,6 +590,7 @@ class BaseTestUUID:
         # dependent on the underlying platform support.  At least it cannot be
         # unknown (unless I suppose the platform is buggy).
         self.assertNotEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+        self.assertEqual(u.version, 1)
 
     @contextlib.contextmanager
     def mock_generate_time_safe(self, safe_value):
@@ -612,24 +613,28 @@ class BaseTestUUID:
         with self.mock_generate_time_safe(None):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_safe(self):
         with self.mock_generate_time_safe(0):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.safe)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_is_unsafe(self):
         with self.mock_generate_time_safe(-1):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unsafe)
+            self.assertEqual(u.version, 1)
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_bogus_return_value(self):
         with self.mock_generate_time_safe(3):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+            self.assertEqual(u.version, 1)
 
     def test_uuid1_time(self):
         with mock.patch.object(self.uuid, '_generate_time_safe', None), \

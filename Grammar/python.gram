@@ -1315,6 +1315,14 @@ invalid_assert_stmt:
             a, b,
             "cannot assign to %s here. Maybe you meant '==' instead of '='?",
             _PyPegen_get_expr_name(a)) }
+    | 'assert' a=expression ':=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "cannot use named expression without parentheses here") }
+    | 'assert' expression ',' a=expression ':=' b=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "cannot use named expression without parentheses here") }
 invalid_block:
     | NEWLINE !INDENT { RAISE_INDENTATION_ERROR("expected an indented block") }
 invalid_comprehension:

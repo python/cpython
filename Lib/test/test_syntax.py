@@ -2690,10 +2690,15 @@ Invalid expressions in type scopes:
 Asserts:
 
     >>> assert (a := 1)  # ok
-    >>> # TODO(@sobolevn): improve this message in the next PR
+    >>> assert 1, (a := 1)  # ok
+
     >>> assert a := 1
     Traceback (most recent call last):
-    SyntaxError: invalid syntax
+    SyntaxError: cannot use named expression without parentheses here
+
+    >>> assert 1, a := 1
+    Traceback (most recent call last):
+    SyntaxError: cannot use named expression without parentheses here
 
     >>> assert 1 = 2 = 3
     Traceback (most recent call last):

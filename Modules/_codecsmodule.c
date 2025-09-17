@@ -202,55 +202,50 @@ _codecs_escape_encode_impl(PyObject *module, PyObject *data,
                            const char *errors)
 /*[clinic end generated code: output=4af1d477834bab34 input=8f4b144799a94245]*/
 {
-    Py_ssize_t size;
-    Py_ssize_t newsize;
-    PyObject *v;
-
-    size = PyBytes_GET_SIZE(data);
+    Py_ssize_t size = PyBytes_GET_SIZE(data);
     if (size > PY_SSIZE_T_MAX / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "string is too large to encode");
             return NULL;
     }
-    newsize = 4*size;
-    v = PyBytes_FromStringAndSize(NULL, newsize);
+    Py_ssize_t newsize = 4*size;
 
-    if (v == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(newsize);
+    if (writer == NULL) {
         return NULL;
     }
-    else {
-        Py_ssize_t i;
-        char c;
-        char *p = PyBytes_AS_STRING(v);
+    char *p = PyBytesWriter_GetData(writer);
 
-        for (i = 0; i < size; i++) {
-            /* There's at least enough room for a hex escape */
-            assert(newsize - (p - PyBytes_AS_STRING(v)) >= 4);
-            c = PyBytes_AS_STRING(data)[i];
-            if (c == '\'' || c == '\\')
-                *p++ = '\\', *p++ = c;
-            else if (c == '\t')
-                *p++ = '\\', *p++ = 't';
-            else if (c == '\n')
-                *p++ = '\\', *p++ = 'n';
-            else if (c == '\r')
-                *p++ = '\\', *p++ = 'r';
-            else if (c < ' ' || c >= 0x7f) {
-                *p++ = '\\';
-                *p++ = 'x';
-                *p++ = Py_hexdigits[(c & 0xf0) >> 4];
-                *p++ = Py_hexdigits[c & 0xf];
-            }
-            else
-                *p++ = c;
+    for (Py_ssize_t i = 0; i < size; i++) {
+        /* There's at least enough room for a hex escape */
+        assert(newsize - (p - (char*)PyBytesWriter_GetData(writer)) >= 4);
+
+        char c = PyBytes_AS_STRING(data)[i];
+        if (c == '\'' || c == '\\') {
+            *p++ = '\\'; *p++ = c;
         }
-        *p = '\0';
-        if (_PyBytes_Resize(&v, (p - PyBytes_AS_STRING(v)))) {
-            return NULL;
+        else if (c == '\t') {
+            *p++ = '\\'; *p++ = 't';
+        }
+        else if (c == '\n') {
+            *p++ = '\\'; *p++ = 'n';
+        }
+        else if (c == '\r') {
+            *p++ = '\\'; *p++ = 'r';
+        }
+        else if (c < ' ' || c >= 0x7f) {
+            *p++ = '\\';
+            *p++ = 'x';
+            *p++ = Py_hexdigits[(c & 0xf0) >> 4];
+            *p++ = Py_hexdigits[c & 0xf];
+        }
+        else {
+            *p++ = c;
         }
     }
 
-    return codec_tuple(v, size);
+    PyObject *decoded = PyBytesWriter_FinishWithPointer(writer, p);
+    return codec_tuple(decoded, size);
 }
 
 /* --- Decoder ------------------------------------------------------------ */
