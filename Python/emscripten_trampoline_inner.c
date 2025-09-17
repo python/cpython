@@ -1,9 +1,9 @@
 typedef void PyObject;
 
-typedef PyObject* (*zero_arg)(void);
-typedef PyObject* (*one_arg)(PyObject*);
-typedef PyObject* (*two_arg)(PyObject*, PyObject*);
 typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
+typedef PyObject* (*two_arg)(PyObject*, PyObject*);
+typedef PyObject* (*one_arg)(PyObject*);
+typedef PyObject* (*zero_arg)(void);
 
 #define TRY_RETURN_CALL(ty, args...) \
   if (__builtin_wasm_test_function_pointer_signature((ty)func)) { \
