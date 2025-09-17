@@ -2503,7 +2503,7 @@ process_frame_chain(
 
 static int
 get_thread_status(RemoteUnwinderObject *unwinder, uint64_t tid, uint64_t pthread_id) {
-#ifdef __APPLE__
+#if defined(__APPLE__) && TARGET_OS_OSX
    if (unwinder->thread_id_offset == 0) {
         uint64_t *tids = (uint64_t *)PyMem_Malloc(MAX_NATIVE_THREADS * sizeof(uint64_t));
         if (!tids) {
@@ -2886,7 +2886,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     }
 #endif
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) 
     self->thread_id_offset = 0;
 #endif
 
