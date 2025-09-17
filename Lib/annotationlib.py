@@ -560,30 +560,79 @@ class _Stringifier:
     del _make_unary_op
 
 
-def _template_to_ast(template):
+def _conversion_ast_value(conversion):
+    """Convert a `conversion` character to an AST-friendly Constant."""
+    return -1 if conversion is None else ord(conversion)
+
+
+def _format(format_spec):
+    """Convert a `format_spec` string to an AST-friendly Constant."""
+    value = format_spec or None  # empty string -> None
+    return ast.Constant(value=value)
+
+
+def _template_to_ast_constructor(template):
+    """Convert a `template` instance to a non-literal AST."""
+    args = []
+    for part in template:
+        match part:
+            case str():
+                args.append(ast.Constant(value=part))
+            case _:
+                interp = ast.Call(
+                    func=ast.Name(id="Interpolation"),
+                    args=[
+                        ast.Constant(value=part.value),
+                        ast.Constant(value=part.expression),
+                        ast.Constant(value=part.conversion),
+                        ast.Constant(value=part.format_spec),
+                    ]
+                )
+                args.append(interp)
+    return ast.Call(
+        func=ast.Name(id="Template"),
+        args=args,
+        keywords=[],
+    )
+
+
+def _template_to_ast_literal(template, parsed):
+    """Convert a `template` instance to a t-string literal AST."""
     values = []
+    interp_count = 0
     for part in template:
         match part:
             case str():
                 values.append(ast.Constant(value=part))
-            # Interpolation, but we don't want to import the string module
             case _:
                 interp = ast.Interpolation(
                     str=part.expression,
-                    value=ast.parse(part.expression),
-                    conversion=(
-                        ord(part.conversion)
-                        if part.conversion is not None
-                        else -1
-                    ),
-                    format_spec=(
-                        ast.Constant(value=part.format_spec)
-                        if part.format_spec != ""
-                        else None
-                    ),
+                    value=parsed[interp_count],
+                    conversion=ord(part.conversion) if part.conversion else -1,
+                    format_spec=part.format_spec or None,  # "" -> None
                 )
                 values.append(interp)
+                interp_count += 1
     return ast.TemplateStr(values=values)
+
+
+def _template_to_ast(template):
+    """Make a best-effort conversion of a `template` instance to an AST."""
+    # gh-138558: Not all Template instances can be represented as t-string
+    # literals. Return the most accurate AST we can. See issue for details.
+    if any(part.expression == "" for part in template.interpolations):
+        return _template_to_ast_constructor(template)
+
+    try:
+        # Wrap in parens to allow whitespace inside interpolation curly braces
+        parsed = tuple(
+            ast.parse(f"({part.expression})", mode="eval").body
+            for part in template.interpolations
+        )
+    except SyntaxError:
+        return _template_to_ast_constructor(template)
+
+    return _template_to_ast_literal(template, parsed)
 
 
 class _StringifierDict(dict):
