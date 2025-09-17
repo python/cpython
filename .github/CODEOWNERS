@@ -151,6 +151,7 @@ Lib/test/test_android.py      @mhsmith @freakboy3742
 Doc/using/ios.rst             @freakboy3742
 Lib/_ios_support.py           @freakboy3742
 Apple/                        @freakboy3742
+iOS/                          @freakboy3742
 
 # macOS
 Mac/                          @python/macos-team
