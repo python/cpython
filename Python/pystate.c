@@ -23,6 +23,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
+#include "pycore_uop.h".          // UOP_BUFFER_SIZE
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 
@@ -809,7 +810,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
     if (interp->jit_uop_buffer != NULL) {
-        PyMem_RawFree(interp->jit_uop_buffer);
+        _PyObject_VirtualFree(interp->jit_uop_buffer, UOP_BUFFER_SIZE);
         interp->jit_uop_buffer = NULL;
     }
 #endif

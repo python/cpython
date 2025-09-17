@@ -1282,7 +1282,7 @@ uop_optimize(
     _Py_BloomFilter_Init(&dependencies);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->jit_uop_buffer == NULL) {
-        interp->jit_uop_buffer = (_PyUOpInstruction *)PyMem_RawMalloc(UOP_MAX_TRACE_LENGTH*sizeof(_PyUOpInstruction));
+        interp->jit_uop_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
         if (interp->jit_uop_buffer == NULL) {
             return 0;
         }
