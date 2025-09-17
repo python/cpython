@@ -207,6 +207,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_IMPORT_FROM] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_IS_NONE] = HAS_ESCAPES_FLAG,
     [_GET_LEN] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_MATCH_CLASS_ISINSTANCE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_MATCH_CLASS_GET_OPT_ATTR] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MATCH_CLASS] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MATCH_MAPPING] = 0,
     [_MATCH_SEQUENCE] = 0,
@@ -586,6 +588,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_MAKE_WARM] = "_MAKE_WARM",
     [_MAP_ADD] = "_MAP_ADD",
     [_MATCH_CLASS] = "_MATCH_CLASS",
+    [_MATCH_CLASS_GET_OPT_ATTR] = "_MATCH_CLASS_GET_OPT_ATTR",
+    [_MATCH_CLASS_ISINSTANCE] = "_MATCH_CLASS_ISINSTANCE",
     [_MATCH_KEYS] = "_MATCH_KEYS",
     [_MATCH_MAPPING] = "_MATCH_MAPPING",
     [_MATCH_SEQUENCE] = "_MATCH_SEQUENCE",
@@ -1046,6 +1050,10 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _IS_NONE:
             return 1;
         case _GET_LEN:
+            return 0;
+        case _MATCH_CLASS_ISINSTANCE:
+            return 1;
+        case _MATCH_CLASS_GET_OPT_ATTR:
             return 0;
         case _MATCH_CLASS:
             return 3;
