@@ -1414,7 +1414,7 @@ class _DeleteDummyThreadOnDel:
         # the related _DummyThread will be kept forever!
         _thread_local_info._track_dummy_thread_ref = self
 
-    def __del__(self):
+    def __del__(self, _active_limbo_lock=_active_limbo_lock, _active=_active):
         with _active_limbo_lock:
             if _active.get(self._tident) is self._dummy_thread:
                 _active.pop(self._tident, None)

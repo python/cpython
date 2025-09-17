@@ -183,7 +183,8 @@ the same library that the Python runtime is using.
    objects *globals* and *locals* with the compiler flags specified by
    *flags*.  *globals* must be a dictionary; *locals* can be any object
    that implements the mapping protocol.  The parameter *start* specifies
-   the start token that should be used to parse the source code.
+   the start symbol and must one of the following:
+   :c:data:`Py_eval_input`, :c:data:`Py_file_input`, or :c:data:`Py_single_input`.
 
    Returns the result of executing the code as a Python object, or ``NULL`` if an
    exception was raised.
@@ -231,7 +232,7 @@ the same library that the Python runtime is using.
 .. c:function:: PyObject* Py_CompileStringObject(const char *str, PyObject *filename, int start, PyCompilerFlags *flags, int optimize)
 
    Parse and compile the Python source code in *str*, returning the resulting code
-   object.  The start token is given by *start*; this can be used to constrain the
+   object.  The start symbol is given by *start*; this can be used to constrain the
    code which can be compiled and should be :c:data:`Py_eval_input`,
    :c:data:`Py_file_input`, or :c:data:`Py_single_input`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
@@ -361,7 +362,7 @@ the same library that the Python runtime is using.
       :py:mod:`!ast` Python module, which exports these constants under
       the same names.
 
-   .. c:var:: int CO_FUTURE_DIVISION
-
-      This bit can be set in *flags* to cause division operator ``/`` to be
-      interpreted as "true division" according to :pep:`238`.
+   The "``PyCF``" flags above can be combined with "``CO_FUTURE``" flags such
+   as :c:macro:`CO_FUTURE_ANNOTATIONS` to enable features normally
+   selectable using :ref:`future statements <future>`.
+   See :ref:`c_codeobject_flags` for a complete list.

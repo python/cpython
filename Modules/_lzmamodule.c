@@ -1125,6 +1125,7 @@ error:
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _lzma.LZMADecompressor.decompress
 
     data: Py_buffer
@@ -1149,7 +1150,7 @@ the unused_data attribute.
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=ef4e20ec7122241d input=60c1f135820e309d]*/
+/*[clinic end generated code: output=ef4e20ec7122241d input=d5cbd45801b4b8b0]*/
 {
     PyObject *result = NULL;
 
@@ -1262,10 +1263,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
-    if (self->unused_data == NULL) {
-        goto error;
-    }
+    Py_XSETREF(self->unused_data, Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
 
     switch (format) {
         case FORMAT_AUTO:
@@ -1444,7 +1442,7 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
 {
     lzma_ret lzret;
     uint32_t encoded_size;
-    PyObject *result = NULL;
+    PyBytesWriter *writer = NULL;
     _lzma_state *state = get_lzma_state(module);
     assert(state != NULL);
 
@@ -1452,25 +1450,26 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
     if (catch_lzma_error(state, lzret))
         goto error;
 
-    result = PyBytes_FromStringAndSize(NULL, encoded_size);
-    if (result == NULL)
+    writer = PyBytesWriter_Create(encoded_size);
+    if (writer == NULL) {
         goto error;
+    }
 
-    lzret = lzma_properties_encode(
-            &filter, (uint8_t *)PyBytes_AS_STRING(result));
+    lzret = lzma_properties_encode(&filter, PyBytesWriter_GetData(writer));
     if (catch_lzma_error(state, lzret)) {
         goto error;
     }
 
-    return result;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_XDECREF(result);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
 
 /*[clinic input]
+@permit_long_summary
 _lzma._decode_filter_properties
     filter_id: lzma_vli
     encoded_props: Py_buffer
@@ -1484,7 +1483,7 @@ The result does not include the filter ID itself, only the options.
 static PyObject *
 _lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
                                      Py_buffer *encoded_props)
-/*[clinic end generated code: output=714fd2ef565d5c60 input=246410800782160c]*/
+/*[clinic end generated code: output=714fd2ef565d5c60 input=b9750bf909109bbe]*/
 {
     lzma_filter filter;
     lzma_ret lzret;

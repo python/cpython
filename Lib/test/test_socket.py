@@ -52,6 +52,7 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
+SOLARIS = sys.platform.startswith("sunos")
 WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
@@ -1537,6 +1538,40 @@ class GeneralModuleTests(unittest.TestCase):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.assertFalse(reuse == 0, "failed to set reuse mode")
+
+    def test_setsockopt_errors(self):
+        # See issue #107546.
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # No error expected.
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 2 ** 100)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, - 2 ** 100)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(socket.SOL_SOCKET, 2 ** 100, 1)
+
+        with self.assertRaises(OverflowError):
+            sock.setsockopt(2 ** 100, socket.SO_REUSEADDR, 1)
+
+        with self.assertRaisesRegex(TypeError, "socket option should be int, bytes-like object or None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, dict())
+
+        with self.assertRaisesRegex(TypeError, "requires 4 arguments when the third argument is None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, None)
+
+        with self.assertRaisesRegex(TypeError, "only takes 4 arguments when the third argument is None"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2)
+
+        with self.assertRaisesRegex(TypeError, "takes at least 3 arguments"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
+
+        with self.assertRaisesRegex(TypeError, "takes at most 4 arguments"):
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1, 2, 3)
 
     def testSendAfterClose(self):
         # testing send() after close() with timeout
@@ -3888,6 +3923,10 @@ class CmsgMacroTests(unittest.TestCase):
         # Test CMSG_SPACE() with various valid and invalid values,
         # checking the assumptions used by sendmsg().
         toobig = self.socklen_t_limit - socket.CMSG_SPACE(1) + 1
+        if SOLARIS and platform.processor() == "sparc":
+            # On Solaris SPARC, number of bytes returned by socket.CMSG_SPACE
+            # increases at different lengths; see gh-91214.
+            toobig -= 3
         values = list(range(257)) + list(range(toobig - 257, toobig))
 
         last = socket.CMSG_SPACE(0)
@@ -4034,6 +4073,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
@@ -4045,6 +4085,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparate.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
@@ -4058,6 +4099,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             len(MSG))
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
@@ -4072,6 +4114,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparateMinSpace.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)

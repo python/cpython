@@ -52,6 +52,59 @@ _PyModule_IsExtension(PyObject *obj)
 PyObject*
 PyModuleDef_Init(PyModuleDef* def)
 {
+#ifdef Py_GIL_DISABLED
+    // Check that this def does not come from a non-free-threading ABI.
+    //
+    // This is meant as a "sanity check"; users should never rely on it.
+    // In particular, if we run out of ob_flags bits, or otherwise need to
+    // change some of the internals, this check can go away. Still, it
+    // would be nice to keep it for the free-threading transition.
+    //
+    // A PyModuleDef must be initialized with PyModuleDef_HEAD_INIT,
+    // which (via PyObject_HEAD_INIT) sets _Py_STATICALLY_ALLOCATED_FLAG
+    // and not _Py_LEGACY_ABI_CHECK_FLAG. For PyModuleDef, these flags never
+    // change.
+    // This means that the lower nibble of a valid PyModuleDef's ob_flags is
+    // always `_10_` (in binary; `_` is don't care).
+    //
+    // So, a check for these bits won't reject valid PyModuleDef.
+    // Rejecting incompatible extensions is slightly less important; here's
+    // how that works:
+    //
+    // In the pre-free-threading stable ABI, PyModuleDef_HEAD_INIT is big
+    // enough to overlap with free-threading ABI's ob_flags, is all zeros
+    // except for the refcount field.
+    // The refcount field can be:
+    // - 1 (3.11 and below)
+    // - UINT_MAX >> 2 (32-bit 3.12 & 3.13)
+    // - UINT_MAX (64-bit 3.12 & 3.13)
+    // - 7L << 28 (3.14)
+    //
+    // This means that the lower nibble of *any byte* in PyModuleDef_HEAD_INIT
+    // is not `_10_` -- it can be:
+    // - 0b0000
+    // - 0b0001
+    // - 0b0011 (from UINT_MAX >> 2)
+    // - 0b0111 (from 7L << 28)
+    // - 0b1111 (e.g. from UINT_MAX)
+    // (The values may change at runtime as the PyModuleDef is used, but
+    // PyModuleDef_Init is required before using the def as a Python object,
+    // so we check at least once with the initial values.
+    uint16_t flags = ((PyObject*)def)->ob_flags;
+    uint16_t bits = _Py_STATICALLY_ALLOCATED_FLAG | _Py_LEGACY_ABI_CHECK_FLAG;
+    if ((flags & bits) != _Py_STATICALLY_ALLOCATED_FLAG) {
+        const char *message = "invalid PyModuleDef, extension possibly "
+            "compiled for non-free-threaded Python";
+        // Write the error as unraisable: if the extension tries calling
+        // any API, it's likely to segfault and lose the exception.
+        PyErr_SetString(PyExc_SystemError, message);
+        PyErr_WriteUnraisable(NULL);
+        // But also raise the exception normally -- this is technically
+        // a recoverable state.
+        PyErr_SetString(PyExc_SystemError, message);
+        return NULL;
+    }
+#endif
     assert(PyModuleDef_Type.tp_flags & Py_TPFLAGS_READY);
     if (def->m_base.m_index == 0) {
         Py_SET_REFCNT(def, 1);
@@ -340,6 +393,11 @@ PyModule_FromDefAndSpec2(PyModuleDef* def, PyObject *spec, int module_api_versio
                 gil_slot = cur_slot->value;
                 has_gil_slot = 1;
                 break;
+            case Py_mod_abi:
+                if (PyABIInfo_Check((PyABIInfo *)cur_slot->value, name) < 0) {
+                    goto error;
+                }
+                break;
             default:
                 assert(cur_slot->slot < 0 || cur_slot->slot > _Py_mod_LAST_SLOT);
                 PyErr_Format(
@@ -514,6 +572,7 @@ PyModule_ExecDef(PyObject *module, PyModuleDef *def)
                 break;
             case Py_mod_multiple_interpreters:
             case Py_mod_gil:
+            case Py_mod_abi:
                 /* handled in PyModule_FromDefAndSpec2 */
                 break;
             default:
@@ -1329,8 +1388,9 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                             Py_TYPE(annotations)->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                             "__annotate__() must return a dict, not %T",
+                             annotations);
                 Py_DECREF(annotate);
                 Py_DECREF(annotations);
                 Py_DECREF(dict);
