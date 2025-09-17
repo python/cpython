@@ -3,7 +3,7 @@
 // support wasm-gc yet. If the JS runtime does not support wasm-gc (or has buggy
 // support like iOS), we will use the JS trampoline fallback.
 
-typedef void PyObject;
+#define PyObject void;
 
 typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
 typedef PyObject* (*two_arg)(PyObject*, PyObject*);
