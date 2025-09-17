@@ -1,0 +1,1 @@
+Deleting builtin names with ``del`` now gives a clearer error message.

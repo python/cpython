@@ -1577,9 +1577,10 @@ dummy_func(
             err = PyObject_DelItem(ns, name);
             // Can't use ERROR_IF here.
             if (err != 0) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG,
-                                          name);
+                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
+                        ? CANNOT_DELETE_BUILTIN_ERROR_MSG
+                        : NAME_ERROR_MSG;
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError, err_msg, name);
                 ERROR_NO_POP();
             }
         }
@@ -1720,8 +1721,11 @@ dummy_func(
                 ERROR_NO_POP();
             }
             if (err == 0) {
+                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
+                                      ? CANNOT_DELETE_BUILTIN_ERROR_MSG
+                                      : NAME_ERROR_MSG;
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                                          NAME_ERROR_MSG, name);
+                                          err_msg, name);
                 ERROR_NO_POP();
             }
         }
@@ -1888,10 +1892,13 @@ dummy_func(
         inst(DELETE_FAST, (--)) {
             _PyStackRef v = GETLOCAL(oparg);
             if (PyStackRef_IsNull(v)) {
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                    UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-                );
+                PyObject *name;
+                name = PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames,
+                                       oparg);
+                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
+                                      ? CANNOT_DELETE_BUILTIN_ERROR_MSG
+                                      : UNBOUNDLOCAL_ERROR_MSG;
+                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, err_msg);
                 ERROR_IF(true);
             }
             _PyStackRef tmp = GETLOCAL(oparg);

@@ -5192,11 +5192,14 @@
             INSTRUCTION_STATS(DELETE_FAST);
             _PyStackRef v = GETLOCAL(oparg);
             if (PyStackRef_IsNull(v)) {
+                PyObject *name;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-                    UNBOUNDLOCAL_ERROR_MSG,
-                    PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-                );
+                name = PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames,
+                                       oparg);
+                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
+                ? CANNOT_DELETE_BUILTIN_ERROR_MSG
+            : UNBOUNDLOCAL_ERROR_MSG;
+                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, err_msg, name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
             }
@@ -5225,8 +5228,11 @@
             }
             if (err == 0) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
+                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
+                ? CANNOT_DELETE_BUILTIN_ERROR_MSG
+            : NAME_ERROR_MSG;
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    NAME_ERROR_MSG, name);
+                    err_msg, name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
             }
@@ -5256,9 +5262,10 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err != 0) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    NAME_ERROR_MSG,
-                    name);
+                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
+                ? CANNOT_DELETE_BUILTIN_ERROR_MSG
+            : NAME_ERROR_MSG;
+                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError, err_msg, name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
             }
