@@ -2817,9 +2817,8 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     /* We were built with statx support, so stat_result.st_birthtime[_ns]
        exists, but we fell back to stat because statx isn't available at
        runtime.  structseq members are _Py_T_OBJECT (for which NULL means None,
-       not AttributeError), but user programs assume st_birthtime is not None.
-       When the statx syscall wrapper is available but the syscall itself is
-       not, we end up setting the birthtime to 0, so do that here too. */
+       not AttributeError), but user programs assume st_birthtime, when
+       present, is not None. */
     SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(0.0));
     SET_ITEM(ST_BIRTHTIME_NS_IDX, _PyLong_GetZero());
 #elif defined(MS_WINDOWS)
@@ -2916,6 +2915,10 @@ error:
 
 /* POSIX methods */
 
+#ifdef HAVE_STATX
+/* set to 1 in posixmodule_exec after a successful test call */
+static int statx_works = 0;
+#endif
 
 static PyObject *
 posix_do_stat(PyObject *module, const char *function_name, path_t *path,
@@ -2940,8 +2943,7 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
 
 #ifdef HAVE_STATX
     struct statx stx = {};
-    static int statx_works = -1;
-    if (statx != NULL && statx_works != 0) {
+    if (statx_works != 0) {
         unsigned int mask = STATX_BASIC_STATS | STATX_BTIME;
         int flags = AT_NO_AUTOMOUNT;
         flags |= follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW;
@@ -2957,12 +2959,7 @@ posix_do_stat(PyObject *module, const char *function_name, path_t *path,
         Py_END_ALLOW_THREADS
 
         if (result == -1) {
-            if (statx_works == -1) {
-                statx_works = (errno != ENOSYS);
-            }
-            if (statx_works) {
-                return path_error(path);
-            }
+            return path_error(path);
         }
         else {
             return _pystat_fromstructstatx(module, &stx);
@@ -18646,12 +18643,15 @@ posixmodule_exec(PyObject *m)
     assert(used_slots == (1 << STATX_RESULT_CACHE_SLOTS) - 1);
 #endif
 
-    /* We retract os.statx in three cases:
+    /* statx is available unless:
        - the weakly-linked statx wrapper function is not available (old libc)
+       - the wrapper function fails with ENOSYS (libc built without fallback
+         running on an old kernel)
        - the wrapper function fails with EINVAL on sync flags (glibc's
          emulation of statx via stat fails in this way)
-       - the wrapper function fails with ENOSYS (libc built without fallback
-         running on an old kernel) */
+       In the last case, it is safe to use statx to implement os.stat, but
+       because glibc unconditionally makes the statx syscall before falling
+       back to fstatat, doing so is measurably slower. */
     struct statx stx;
     if (statx == NULL
         || (statx(-1, "/", AT_STATX_DONT_SYNC, 0, &stx) == -1
@@ -18665,6 +18665,8 @@ posixmodule_exec(PyObject *m)
         }
     }
     else {
+        statx_works = 1;
+
         statx_result_spec.name = "os.statx_result";
         state->StatxResultType = PyType_FromModuleAndSpec(m, &statx_result_spec, NULL);
         if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
