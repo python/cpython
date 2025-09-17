@@ -1040,6 +1040,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         return NULL;
     }
 
+    void **opcode_targets = opcode_targets_table;
+
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;

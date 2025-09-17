@@ -27,7 +27,7 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
         if op < 256:
             targets[op] = f"&&TARGET_{name},\n"
     out.emit("#if !Py_TAIL_CALL_INTERP\n")
-    out.emit("static void *opcode_targets[256] = {\n")
+    out.emit("static void *opcode_targets_table[256] = {\n")
     for target in targets:
         out.emit(target)
     out.emit("};\n")

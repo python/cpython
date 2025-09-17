@@ -1,5 +1,5 @@
 #if !Py_TAIL_CALL_INTERP
-static void *opcode_targets[256] = {
+static void *opcode_targets_table[256] = {
     &&TARGET_CACHE,
     &&TARGET_BINARY_SLICE,
     &&TARGET_BUILD_TEMPLATE,
