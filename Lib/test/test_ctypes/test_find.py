@@ -189,8 +189,6 @@ class FindLibraryEmscripten(unittest.TestCase):
             env.set('LD_LIBRARY_PATH', self.temp_dir)
             result = find_library('dummy')
             self.assertEqual(result, self.libdummy_so_path)
-
-
     def test_find_wasm_file_with_wasm_extension(self):
         with os_helper.EnvironmentVarGuard() as env:
             env.set('LD_LIBRARY_PATH', self.temp_dir)
