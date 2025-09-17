@@ -16,7 +16,9 @@ _PyEM_TrampolineCall_inner, (int* success,
 // Try to replace the JS definition of _PyEM_TrampolineCall_inner with a wasm
 // version.
 (function () {
-    // iOS ships broken wasm-gc, so feature detect and turn it off
+    // Starting with iOS 18.3.1, WebKit on iOS has an issue with the garbage
+    // collector that breaks the call trampoline. See #130418 and
+    // https://bugs.webkit.org/show_bug.cgi?id=293113 for details.
     let isIOS = globalThis.navigator && (
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
