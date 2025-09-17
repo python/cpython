@@ -320,6 +320,7 @@ class TestConsole(TestCase):
 
         console._polling_thread = None
         console.restore()
+
     @unittest.skipUnless(sys.platform == "darwin", "requires macOS")
     def test_restore_with_invalid_environ_on_macos(self, _os_write):
         # gh-128636 for macOS

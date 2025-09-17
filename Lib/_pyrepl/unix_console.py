@@ -386,9 +386,10 @@ class UnixConsole(Console):
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
         try:
-            tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
-            # Reset the state for the next prepare() call.
-            self.__svtermstate = None
+            if self.__svtermstate is not None:
+                tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+                # Reset the state for the next prepare() call.
+                self.__svtermstate = None
         except termios.error as e:
             if e.args[0] != errno.EIO:
                 raise
