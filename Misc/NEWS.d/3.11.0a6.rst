@@ -1054,7 +1054,7 @@ Patch by Victor Stinner.
 .. nonce: ajJjkh
 .. section: Build
 
-Building Python now requires support for floating point Not-a-Number (NaN):
+Building Python now requires support for floating-point Not-a-Number (NaN):
 remove the ``Py_NO_NAN`` macro. Patch by Victor Stinner.
 
 ..

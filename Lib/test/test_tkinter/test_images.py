@@ -581,13 +581,15 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         image.write(filename, background='#ff0000')
         image4 = tkinter.PhotoImage('::img::test4', master=self.root,
                                     format='ppm', file=filename)
-        self.assertEqual(image4.get(0, 0), (255, 0, 0))
+        self.assertEqual(image4.get(0, 0), (255, 0, 0) if self.wantobjects else '255 0 0')
         self.assertEqual(image4.get(4, 6), image.get(4, 6))
 
         image.write(filename, grayscale=True)
         image5 = tkinter.PhotoImage('::img::test5', master=self.root,
                                     format='ppm', file=filename)
         c = image5.get(4, 6)
+        if not self.wantobjects:
+            c = c.split()
         self.assertTrue(c[0] == c[1] == c[2], c)
 
     def test_data(self):
@@ -597,7 +599,10 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertIsInstance(data, tuple)
         for row in data:
             self.assertIsInstance(row, str)
-        self.assertEqual(data[6].split()[4], '#%02x%02x%02x' % image.get(4, 6))
+        c = image.get(4, 6)
+        if not self.wantobjects:
+            c = tuple(map(int, c.split()))
+        self.assertEqual(data[6].split()[4], '#%02x%02x%02x' % c)
 
         data = image.data('ppm')
         image2 = tkinter.PhotoImage('::img::test2', master=self.root,
@@ -622,13 +627,15 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         data = image.data('ppm', background='#ff0000')
         image4 = tkinter.PhotoImage('::img::test4', master=self.root,
                                     format='ppm', data=data)
-        self.assertEqual(image4.get(0, 0), (255, 0, 0))
+        self.assertEqual(image4.get(0, 0), (255, 0, 0) if self.wantobjects else '255 0 0')
         self.assertEqual(image4.get(4, 6), image.get(4, 6))
 
         data = image.data('ppm', grayscale=True)
         image5 = tkinter.PhotoImage('::img::test5', master=self.root,
                                     format='ppm', data=data)
         c = image5.get(4, 6)
+        if not self.wantobjects:
+            c = c.split()
         self.assertTrue(c[0] == c[1] == c[2], c)
 
 

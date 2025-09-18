@@ -21,7 +21,7 @@ static PyObject *
 OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value);
 
 static PyObject *
-OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_fromkeys(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -30,9 +30,11 @@ OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), &_Py_ID(value), },
     };
     #undef NUM_KEYWORDS
@@ -54,7 +56,8 @@ OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
     PyObject *seq;
     PyObject *value = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -64,7 +67,7 @@ OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
     }
     value = args[1];
 skip_optional_pos:
-    return_value = OrderedDict_fromkeys_impl(type, seq, value);
+    return_value = OrderedDict_fromkeys_impl((PyTypeObject *)type, seq, value);
 
 exit:
     return return_value;
@@ -86,7 +89,7 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
                             PyObject *default_value);
 
 static PyObject *
-OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -95,9 +98,11 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(default), },
     };
     #undef NUM_KEYWORDS
@@ -119,7 +124,8 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -129,7 +135,7 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
     }
     default_value = args[1];
 skip_optional_pos:
-    return_value = OrderedDict_setdefault_impl(self, key, default_value);
+    return_value = OrderedDict_setdefault_impl((PyODictObject *)self, key, default_value);
 
 exit:
     return return_value;
@@ -152,7 +158,7 @@ OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
                      PyObject *default_value);
 
 static PyObject *
-OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -161,9 +167,11 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(default), },
     };
     #undef NUM_KEYWORDS
@@ -185,7 +193,8 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *key;
     PyObject *default_value = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -195,7 +204,7 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     default_value = args[1];
 skip_optional_pos:
-    return_value = OrderedDict_pop_impl(self, key, default_value);
+    return_value = OrderedDict_pop_impl((PyODictObject *)self, key, default_value);
 
 exit:
     return return_value;
@@ -216,7 +225,7 @@ static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last);
 
 static PyObject *
-OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_popitem(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -225,9 +234,11 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(last), },
     };
     #undef NUM_KEYWORDS
@@ -248,7 +259,8 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int last = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -260,7 +272,7 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
 skip_optional_pos:
-    return_value = OrderedDict_popitem_impl(self, last);
+    return_value = OrderedDict_popitem_impl((PyODictObject *)self, last);
 
 exit:
     return return_value;
@@ -281,7 +293,7 @@ static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last);
 
 static PyObject *
-OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_move_to_end(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -290,9 +302,11 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(last), },
     };
     #undef NUM_KEYWORDS
@@ -314,7 +328,8 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
     PyObject *key;
     int last = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -327,9 +342,9 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional_pos:
-    return_value = OrderedDict_move_to_end_impl(self, key, last);
+    return_value = OrderedDict_move_to_end_impl((PyODictObject *)self, key, last);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=eff78d2a3f9379bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d8206823bb1f419 input=a9049054013a1b77]*/

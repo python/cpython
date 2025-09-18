@@ -1,0 +1,3 @@
+Fix multiprocessing interrupt test. Add an event to synchronize the parent
+process with the child process: wait until the child process starts
+sleeping. Patch by Victor Stinner.

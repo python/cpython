@@ -18,9 +18,9 @@ please see :ref:`cporting-howto`.
 
 The archived python-porting_ mailing list may contain some useful guidance.
 
-Since Python 3.13 the original porting guide was discontinued.
+Since Python 3.11 the original porting guide was discontinued.
 You can find the old guide in the
-`archive <https://docs.python.org/3.12/howto/pyporting.html>`_.
+`archive <https://docs.python.org/3.10/howto/pyporting.html>`_.
 
 
 Third-party guides

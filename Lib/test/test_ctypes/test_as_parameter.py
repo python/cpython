@@ -5,7 +5,7 @@ from ctypes import (Structure, CDLL, CFUNCTYPE,
                     c_short, c_int, c_long, c_longlong,
                     c_byte, c_wchar, c_float, c_double,
                     ArgumentError)
-from test.support import import_helper
+from test.support import import_helper, skip_if_sanitizer
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
@@ -192,14 +192,23 @@ class BasicWrapTestCase(unittest.TestCase):
         self.assertEqual((s8i.a, s8i.b, s8i.c, s8i.d, s8i.e, s8i.f, s8i.g, s8i.h),
                              (9*2, 8*3, 7*4, 6*5, 5*6, 4*7, 3*8, 2*9))
 
+    @skip_if_sanitizer('requires deep stack', thread=True)
     def test_recursive_as_param(self):
         class A:
             pass
 
         a = A()
         a._as_parameter_ = a
-        with self.assertRaises(RecursionError):
-            c_int.from_param(a)
+        for c_type in (
+            ctypes.c_wchar_p,
+            ctypes.c_char_p,
+            ctypes.c_void_p,
+            ctypes.c_int,  # PyCSimpleType
+            POINT,  # CDataType
+        ):
+            with self.subTest(c_type=c_type):
+                with self.assertRaises(RecursionError):
+                    c_type.from_param(a)
 
 
 class AsParamWrapper:

@@ -131,6 +131,10 @@ write code that handles both IP versions correctly.  Address objects are
 
       The appropriate version number: ``4`` for IPv4, ``6`` for IPv6.
 
+      .. versionchanged:: 3.14
+
+         Made available on the class.
+
    .. attribute:: max_prefixlen
 
       The total number of bits in the address representation for this
@@ -139,6 +143,10 @@ write code that handles both IP versions correctly.  Address objects are
       The prefix defines the number of leading bits in an  address that
       are compared to determine whether or not an address is part of a
       network.
+
+      .. versionchanged:: 3.14
+
+         Made available on the class.
 
    .. attribute:: compressed
    .. attribute:: exploded
@@ -232,7 +240,16 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_reserved
 
-      ``True`` if the address is otherwise IETF reserved.
+      ``True`` if the address is noted as reserved by the IETF.
+      For IPv4, this is only ``240.0.0.0/4``, the ``Reserved`` address block.
+      For IPv6, this is all addresses `allocated <iana-ipv6-address-space_>`__ as
+      ``Reserved by IETF`` for future use.
+
+      .. note:: For IPv4, ``is_reserved`` is not related to the address block value of the
+        ``Reserved-by-Protocol`` column in iana-ipv4-special-registry_.
+
+      .. caution:: For IPv6, ``fec0::/10`` a former Site-Local scoped address prefix is
+         currently excluded from that list (see :attr:`~IPv6Address.is_site_local` & :rfc:`3879`).
 
    .. attribute:: is_loopback
 
@@ -253,6 +270,7 @@ write code that handles both IP versions correctly.  Address objects are
 
 .. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
 .. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+.. _iana-ipv6-address-space: https://www.iana.org/assignments/ipv6-address-space/ipv6-address-space.xhtml
 
 .. method:: IPv4Address.__format__(fmt)
 
@@ -504,7 +522,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 32-bits integer, a 4-bytes packed
-      integer, or an existing IPv4Address object; and the netmask is either
+      integer, or an existing :class:`IPv4Address` object; and the netmask is either
       an integer representing the prefix length (e.g. ``24``) or a string
       representing the prefix mask (e.g. ``255.255.255.0``).
 
@@ -725,7 +743,7 @@ dictionaries.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 128-bits integer, a 16-bytes packed
-      integer, or an existing IPv6Address object; and the netmask is an
+      integer, or an existing :class:`IPv6Address` object; and the netmask is an
       integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
@@ -781,7 +799,7 @@ dictionaries.
 
    .. attribute:: is_site_local
 
-      These attribute is true for the network as a whole if it is true
+      This attribute is true for the network as a whole if it is true
       for both the network address and the broadcast address.
 
 
@@ -990,7 +1008,7 @@ The module also provides the following module level functions:
 .. function:: collapse_addresses(addresses)
 
    Return an iterator of the collapsed :class:`IPv4Network` or
-   :class:`IPv6Network` objects.  *addresses* is an iterator of
+   :class:`IPv6Network` objects.  *addresses* is an :term:`iterable` of
    :class:`IPv4Network` or :class:`IPv6Network` objects.  A :exc:`TypeError` is
    raised if *addresses* contains mixed version objects.
 
@@ -1010,7 +1028,7 @@ The module also provides the following module level functions:
 
    doesn't make sense.  There are some times however, where you may wish to
    have :mod:`ipaddress` sort these anyway.  If you need to do this, you can use
-   this function as the *key* argument to :func:`sorted()`.
+   this function as the *key* argument to :func:`sorted`.
 
    *obj* is either a network or address object.
 

@@ -14,7 +14,7 @@ import sys
 import threading
 import unittest
 import weakref
-import warnings
+from ast import literal_eval
 from unittest import mock
 
 from http.server import HTTPServer
@@ -28,7 +28,6 @@ except ImportError:  # pragma: no cover
 from asyncio import base_events
 from asyncio import events
 from asyncio import format_helpers
-from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
@@ -56,24 +55,8 @@ ONLYCERT = data_file('certdata', 'ssl_cert.pem')
 ONLYKEY = data_file('certdata', 'ssl_key.pem')
 SIGNED_CERTFILE = data_file('certdata', 'keycert3.pem')
 SIGNING_CA = data_file('certdata', 'pycacert.pem')
-PEERCERT = {
-    'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
-    'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
-    'crlDistributionPoints': ('http://testca.pythontest.net/testca/revocation.crl',),
-    'issuer': ((('countryName', 'XY'),),
-            (('organizationName', 'Python Software Foundation CA'),),
-            (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Oct 28 14:23:16 2037 GMT',
-    'notBefore': 'Aug 29 14:23:16 2018 GMT',
-    'serialNumber': 'CB2D80995A69525C',
-    'subject': ((('countryName', 'XY'),),
-             (('localityName', 'Castle Anthrax'),),
-             (('organizationName', 'Python Software Foundation'),),
-             (('commonName', 'localhost'),)),
-    'subjectAltName': (('DNS', 'localhost'),),
-    'version': 3
-}
-
+with open(data_file('certdata', 'keycert3.pem.reference')) as file:
+    PEERCERT = literal_eval(file.read())
 
 def simple_server_sslcontext():
     server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -120,7 +103,7 @@ def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
         loop.run_until_complete(tasks.sleep(delay))
         delay = max(delay * 2, 1.0)
     else:
-        raise futures.TimeoutError()
+        raise TimeoutError()
 
 
 def run_once(loop):
@@ -301,12 +284,17 @@ def run_udp_echo_server(*, host='127.0.0.1', port=0):
     family, type, proto, _, sockaddr = addr_info[0]
     sock = socket.socket(family, type, proto)
     sock.bind((host, port))
+    sockname = sock.getsockname()
     thread = threading.Thread(target=lambda: echo_datagrams(sock))
     thread.start()
     try:
-        yield sock.getsockname()
+        yield sockname
     finally:
-        sock.sendto(b'STOP', sock.getsockname())
+        # gh-122187: use a separate socket to send the stop message to avoid
+        # TSan reported race on the same socket.
+        sock2 = socket.socket(family, type, proto)
+        sock2.sendto(b'STOP', sockname)
+        sock2.close()
         thread.join()
 
 
@@ -547,25 +535,6 @@ class TestCase(unittest.TestCase):
                 loop._default_executor.shutdown(wait=True)
         loop.close()
 
-        policy = support.maybe_get_event_loop_policy()
-        if policy is not None:
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    watcher = policy.get_child_watcher()
-            except NotImplementedError:
-                # watcher is not implemented by EventLoopPolicy, e.g. Windows
-                pass
-            else:
-                if isinstance(watcher, asyncio.ThreadedChildWatcher):
-                    # Wait for subprocess to finish, but not forever
-                    for thread in list(watcher._threads.values()):
-                        thread.join(timeout=support.SHORT_TIMEOUT)
-                        if thread.is_alive():
-                            raise RuntimeError(f"thread {thread} still alive: "
-                                               "subprocess still running")
-
-
     def set_event_loop(self, loop, *, cleanup=True):
         if loop is None:
             raise AssertionError('loop is None')
@@ -632,3 +601,9 @@ async def await_without_task(coro):
     await asyncio.sleep(0)
     if exc is not None:
         raise exc
+
+
+if sys.platform == 'win32':
+    DefaultEventLoopPolicy = asyncio.windows_events._DefaultEventLoopPolicy
+else:
+    DefaultEventLoopPolicy = asyncio.unix_events._DefaultEventLoopPolicy

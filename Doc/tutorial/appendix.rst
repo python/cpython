@@ -14,13 +14,13 @@ There are two variants of the interactive :term:`REPL`.  The classic
 basic interpreter is supported on all platforms with minimal line
 control capabilities.
 
-On Unix-like systems (e.g. Linux or macOS) with :mod:`curses` and
-:mod:`readline` support, a new interactive shell is used by default.
+On Windows, or Unix-like systems with :mod:`curses` support,
+a new interactive shell is used by default since Python 3.13.
 This one supports color, multiline editing, history browsing, and
 paste mode.  To disable color, see :ref:`using-on-controlling-color` for
 details.  Function keys provide some additional functionality.
 :kbd:`F1` enters the interactive help browser :mod:`pydoc`.
-:kbd:`F2` allows for browsing command-line history without output nor the
+:kbd:`F2` allows for browsing command-line history with neither output nor the
 :term:`>>>` and :term:`...` prompts. :kbd:`F3` enters "paste mode", which
 makes pasting larger blocks of code easier. Press :kbd:`F3` to return to
 the regular prompt.

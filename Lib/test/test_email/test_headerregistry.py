@@ -7,7 +7,6 @@ from email.message import Message
 from test.test_email import TestEmailBase, parameterize
 from email import headerregistry
 from email.headerregistry import Address, Group
-from email.header import decode_header
 from test.support import ALWAYS_EQ
 
 
@@ -837,6 +836,11 @@ class TestContentTransferEncoding(TestHeaderBase):
             '7bit and a bunch more',
             '7bit',
             [errors.InvalidHeaderDefect]),
+
+        'extra_space_after_cte': (
+            'base64 ',
+            'base64',
+            []),
 
     }
 

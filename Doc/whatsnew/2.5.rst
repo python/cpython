@@ -1724,7 +1724,7 @@ attribute of the function object to  change this::
 :mod:`ctypes` also provides a wrapper for Python's C API  as the
 ``ctypes.pythonapi`` object.  This object does *not*  release the global
 interpreter lock before calling a function, because the lock must be held when
-calling into the interpreter's code.   There's a :class:`py_object()` type
+calling into the interpreter's code.   There's a :class:`~ctypes.py_object` type
 constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
 
    import ctypes
@@ -1734,7 +1734,7 @@ constructor that will create a  :c:expr:`PyObject *` pointer.  A simple usage::
              ctypes.py_object("abc"),  ctypes.py_object(1))
    # d is now {'abc', 1}.
 
-Don't forget to use :class:`py_object()`; if it's omitted you end  up with a
+Don't forget to use :func:`~ctypes.py_object`; if it's omitted you end  up with a
 segmentation fault.
 
 :mod:`ctypes` has been around for a while, but people still write  and

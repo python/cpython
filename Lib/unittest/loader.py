@@ -274,6 +274,8 @@ class TestLoader(object):
         self._top_level_dir = top_level_dir
 
         is_not_importable = False
+        is_namespace = False
+        tests = []
         if os.path.isdir(os.path.abspath(start_dir)):
             start_dir = os.path.abspath(start_dir)
             if start_dir != top_level_dir:
@@ -286,12 +288,25 @@ class TestLoader(object):
                 is_not_importable = True
             else:
                 the_module = sys.modules[start_dir]
-                top_part = start_dir.split('.')[0]
-                try:
-                    start_dir = os.path.abspath(
-                        os.path.dirname((the_module.__file__)))
-                except AttributeError:
-                    if the_module.__name__ in sys.builtin_module_names:
+                if not hasattr(the_module, "__file__") or the_module.__file__ is None:
+                    # look for namespace packages
+                    try:
+                        spec = the_module.__spec__
+                    except AttributeError:
+                        spec = None
+
+                    if spec and spec.submodule_search_locations is not None:
+                        is_namespace = True
+
+                        for path in the_module.__path__:
+                            if (not set_implicit_top and
+                                not path.startswith(top_level_dir)):
+                                continue
+                            self._top_level_dir = \
+                                (path.split(the_module.__name__
+                                        .replace(".", os.path.sep))[0])
+                            tests.extend(self._find_tests(path, pattern, namespace=True))
+                    elif the_module.__name__ in sys.builtin_module_names:
                         # builtin module
                         raise TypeError('Can not use builtin modules '
                                         'as dotted module names') from None
@@ -300,14 +315,27 @@ class TestLoader(object):
                             f"don't know how to discover from {the_module!r}"
                             ) from None
 
+                else:
+                    top_part = start_dir.split('.')[0]
+                    start_dir = os.path.abspath(os.path.dirname((the_module.__file__)))
+
                 if set_implicit_top:
-                    self._top_level_dir = self._get_directory_containing_module(top_part)
+                    if not is_namespace:
+                        if sys.modules[top_part].__file__ is None:
+                            self._top_level_dir = os.path.dirname(the_module.__file__)
+                            if self._top_level_dir not in sys.path:
+                                sys.path.insert(0, self._top_level_dir)
+                        else:
+                            self._top_level_dir = \
+                                self._get_directory_containing_module(top_part)
                     sys.path.remove(top_level_dir)
 
         if is_not_importable:
             raise ImportError('Start directory is not importable: %r' % start_dir)
 
-        tests = list(self._find_tests(start_dir, pattern))
+        if not is_namespace:
+            tests = list(self._find_tests(start_dir, pattern))
+
         self._top_level_dir = original_top_level_dir
         return self.suiteClass(tests)
 
@@ -343,7 +371,7 @@ class TestLoader(object):
         # override this method to use alternative matching strategy
         return fnmatch(path, pattern)
 
-    def _find_tests(self, start_dir, pattern):
+    def _find_tests(self, start_dir, pattern, namespace=False):
         """Used by discovery. Yields test suites it loads."""
         # Handle the __init__ in this package
         name = self._get_name_from_path(start_dir)
@@ -352,7 +380,8 @@ class TestLoader(object):
         if name != '.' and name not in self._loading_packages:
             # name is in self._loading_packages while we have called into
             # loadTestsFromModule with name.
-            tests, should_recurse = self._find_test_path(start_dir, pattern)
+            tests, should_recurse = self._find_test_path(
+                start_dir, pattern, namespace)
             if tests is not None:
                 yield tests
             if not should_recurse:
@@ -363,7 +392,8 @@ class TestLoader(object):
         paths = sorted(os.listdir(start_dir))
         for path in paths:
             full_path = os.path.join(start_dir, path)
-            tests, should_recurse = self._find_test_path(full_path, pattern)
+            tests, should_recurse = self._find_test_path(
+                full_path, pattern, False)
             if tests is not None:
                 yield tests
             if should_recurse:
@@ -371,11 +401,11 @@ class TestLoader(object):
                 name = self._get_name_from_path(full_path)
                 self._loading_packages.add(name)
                 try:
-                    yield from self._find_tests(full_path, pattern)
+                    yield from self._find_tests(full_path, pattern, False)
                 finally:
                     self._loading_packages.discard(name)
 
-    def _find_test_path(self, full_path, pattern):
+    def _find_test_path(self, full_path, pattern, namespace=False):
         """Used by discovery.
 
         Loads tests from a single file, or a directories' __init__.py when
@@ -419,7 +449,8 @@ class TestLoader(object):
                         msg % (mod_name, module_dir, expected_dir))
                 return self.loadTestsFromModule(module, pattern=pattern), False
         elif os.path.isdir(full_path):
-            if not os.path.isfile(os.path.join(full_path, '__init__.py')):
+            if (not namespace and
+                not os.path.isfile(os.path.join(full_path, '__init__.py'))):
                 return None, False
 
             load_tests = None
