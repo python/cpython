@@ -1,0 +1,2 @@
+Fix opening a :mod:`dbm.sqlite3` database for reading from read-only file
+or directory.
