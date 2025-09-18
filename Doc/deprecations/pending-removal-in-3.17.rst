@@ -1,6 +1,19 @@
 Pending removal in Python 3.17
 ------------------------------
 
+* :mod:`collections.abc`:
+
+  - :class:`collections.abc.ByteString` is scheduled for removal in Python 3.17.
+
+    ``ByteString`` was originally intended to be an abstract type that would serve as a
+    supertype of both :class:`bytes` and :class:`bytearray`, but its semantics were never
+    clearly specified, and it was never understood properly by type checkers. See
+    :pep:`PEP 688 <688#current-options>` for more details.
+
+    Prefer :class:`~collections.abc.Sequence` or :class:`~collections.abc.Buffer`. For
+    use in type annotations, prefer a union, like ``bytes | bytearray``, or
+    :class:`collections.abc.Buffer`. (Contributed by Shantanu Jain in :gh:`91896`.)
+
 * :mod:`typing`:
 
   - Before Python 3.14, old-style unions were implemented using the private class
@@ -20,16 +33,3 @@ Pending removal in Python 3.17
     use in type annotations, prefer a union, like ``bytes | bytearray``, or
     :class:`collections.abc.Buffer`.
     (Contributed by Shantanu Jain in :gh:`91896`.)
-
-* :mod:`collections.abc`:
-
-  - :class:`collections.abc.ByteString` is scheduled for removal in Python 3.17.
-
-    ``ByteString`` was originally intended to be an abstract type that would serve as a
-    supertype of both :class:`bytes` and :class:`bytearray`, but its semantics were never
-    clearly specified, and it was never understood properly by type checkers. See
-    :pep:`PEP 688 <688#current-options>` for more details.
-
-    Prefer :class:`~collections.abc.Sequence` or :class:`~collections.abc.Buffer`. For
-    use in type annotations, prefer a union, like ``bytes | bytearray``, or
-    :class:`collections.abc.Buffer`. (Contributed by Shantanu Jain in :gh:`91896`.)
