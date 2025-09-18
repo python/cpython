@@ -1518,7 +1518,7 @@ array.array.fromfile
 
     cls: defining_class
     f: object
-    n: Py_ssize_t
+    n: Py_ssize_t(allow_negative=False)
     /
 
 Read n objects from the file object f and append them to the end of the array.
@@ -1527,17 +1527,13 @@ Read n objects from the file object f and append them to the end of the array.
 static PyObject *
 array_array_fromfile_impl(arrayobject *self, PyTypeObject *cls, PyObject *f,
                           Py_ssize_t n)
-/*[clinic end generated code: output=83a667080b345ebc input=b2b4bdfb7ad4d4ae]*/
+/*[clinic end generated code: output=83a667080b345ebc input=db46b06ac1b6de87]*/
 {
     PyObject *b, *res;
     Py_ssize_t itemsize = self->ob_descr->itemsize;
     Py_ssize_t nbytes;
     int not_enough_bytes;
 
-    if (n < 0) {
-        PyErr_SetString(PyExc_ValueError, "negative count");
-        return NULL;
-    }
     if (n > PY_SSIZE_T_MAX / itemsize) {
         PyErr_NoMemory();
         return NULL;

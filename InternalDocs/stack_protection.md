@@ -4,7 +4,7 @@ CPython protects against stack overflow in the form of runaway, or just very dee
 Protection against pure Python stack recursion has existed since very early, but in 3.12 we added protection against stack overflow
 in C code. This was initially implemented using a counter and later improved in 3.14 to use the actual stack depth.
 For those platforms that support it (Windows, Mac, and most Linuxes) we query the operating system to find the stack bounds.
-For other platforms we use conserative estimates.
+For other platforms we use conservative estimates.
 
 
 The C stack looks like this:
