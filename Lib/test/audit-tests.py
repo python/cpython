@@ -8,6 +8,7 @@ module with arguments identifying each test.
 import contextlib
 import os
 import sys
+import unittest.mock
 
 
 class TestHook:
@@ -683,16 +684,16 @@ def test_import_module():
         importlib.import_module("test.audit_test_data.submodule2")  # absolute import
         importlib.import_module("_testcapi")  # extension module
 
-    actual = [a[0] for e, a in hook.seen if e == "import"]
+    actual = [a for e, a in hook.seen if e == "import"]
     assertSequenceEqual(
         [
-            "email",
-            "pythoninfo",
-            "test.audit_test_data.submodule",
-            "test.audit_test_data",
-            "test.audit_test_data.submodule2",
-            "_testcapi",
-            "_testcapi",
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
         ],
         actual,
     )
@@ -704,47 +705,52 @@ def test_builtin__import__():
         __import__("importlib")
         __import__("email")
         __import__("pythoninfo")
-        __import__("test.audit_test_data.submodule", fromlist=["audit_test_data"])
+        __import__("audit_test_data.submodule", level=1, globals={"__package__": "test"})
         __import__("test.audit_test_data.submodule2")
         __import__("_testcapi")
 
-    actual = [a[0] for e, a in hook.seen if e == "import"]
+    actual = [a for e, a in hook.seen if e == "import"]
     assertSequenceEqual(
         [
-            "email",
-            "pythoninfo",
-            "test.audit_test_data.submodule",
-            "test.audit_test_data",
-            "test.audit_test_data.submodule2",
-            "_testcapi",
-            "_testcapi",
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
         ],
         actual,
     )
 
 def test_import_statement():
     import importlib # noqa: F401
+    # Set __package__ so relative imports work
+    old_package = globals().get("__package__", None)
+    globals()["__package__"] = "test"
 
     with TestHook() as hook:
         import importlib # noqa: F401
         import email # noqa: F401
         import pythoninfo # noqa: F401
-        from test.audit_test_data import submodule # noqa: F401
+        from .audit_test_data import submodule # noqa: F401
         import test.audit_test_data.submodule2 # noqa: F401
         import _testcapi # noqa: F401
 
-    actual = [a[0] for e, a in hook.seen if e == "import"]
+    globals()["__package__"] = old_package
+
+    actual = [a for e, a in hook.seen if e == "import"]
     # Import statement ordering is different because the package is
     # loaded first and then the submodule
     assertSequenceEqual(
         [
-            "email",
-            "pythoninfo",
-            "test.audit_test_data",
-            "test.audit_test_data.submodule",
-            "test.audit_test_data.submodule2",
-            "_testcapi",
-            "_testcapi",
+            ("email", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("pythoninfo", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("test.audit_test_data.submodule2", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", None, sys.path, sys.meta_path, sys.path_hooks),
+            ("_testcapi", unittest.mock.ANY, None, None, None)
         ],
         actual,
     )
