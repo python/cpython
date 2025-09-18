@@ -1,6 +1,3 @@
-/* Copyright (c) Meta, Inc. and its affiliates. All Rights Reserved */
-/* File added for Lazy Imports */
-
 /* Lazy object implementation */
 
 #include "Python.h"
@@ -86,6 +83,24 @@ lazy_import_clear(PyLazyImportObject *m)
     return 0;
 }
 
+static PyObject *
+lazy_import_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    if (PyTuple_GET_SIZE(args) != 2 && PyTuple_GET_SIZE(args) != 3) {
+        PyErr_SetString(PyExc_ValueError, "lazy_import expected 2-3 arguments");
+        return NULL;
+    }
+
+    PyObject *builtins = PyTuple_GET_ITEM(args, 0);
+    PyObject *from = PyTuple_GET_ITEM(args, 1);
+    PyObject *attr = NULL;
+    if (PyTuple_GET_SIZE(args) == 3) {
+        attr = PyTuple_GET_ITEM(args, 2);
+    }
+
+    return _PyLazyImport_New(builtins, from, attr);
+}
+
 PyObject *
 _PyLazyImport_GetName(PyObject *lazy_import)
 {
@@ -132,6 +147,6 @@ PyTypeObject PyLazyImport_Type = {
     0,                                          /* tp_dictoffset */
     0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    PyType_GenericNew,                          /* tp_new */
+    lazy_import_new,                            /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
