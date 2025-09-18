@@ -1316,7 +1316,6 @@ class VarKeywordCConverter(CConverter):
 
 class var_keyword_dict_converter(VarKeywordCConverter):
     type = 'PyObject *'
-    format_unit = ''
     c_default = 'NULL'
 
     def cleanup(self) -> str:
@@ -1327,7 +1326,9 @@ class var_keyword_dict_converter(VarKeywordCConverter):
         return f"""
             if (kwargs == NULL) {{{{
                 {param_name} = PyDict_New();
-                if ({param_name} == NULL) goto exit;
+                if ({param_name} == NULL) {{{{
+                    goto exit;
+                }}}}
             }}}}
             else {{{{
                 {param_name} = Py_NewRef(kwargs);
