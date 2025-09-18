@@ -357,6 +357,32 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=6)
 
+    def test_double_star_after_var_keyword(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **kwds: dict
+                **
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
+
+    def test_var_keyword_after_star(self):
+        err = "Function 'my_test_func' has an invalid parameter declaration: '**'"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                pos_arg: object
+                **
+                **kwds: dict
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=5)
+
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
         block = """
@@ -748,6 +774,16 @@ class ClinicWholeFileTest(TestCase):
             """)
             self.clinic.parse(raw)
 
+    def test_var_keyword_non_dict(self):
+        err = "'var_keyword_object' is not a valid converter"
+        block = """
+            /*[clinic input]
+            my_test_func
+
+                **kwds: object
+            [clinic start generated code]*/
+        """
+        self.expect_failure(block, err, lineno=4)
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -1608,6 +1644,11 @@ class ClinicParserTest(TestCase):
                 [
                 a: object
                 ]
+        """, """
+            with_kwds
+                [
+                **kwds: dict
+                ]
         """)
         err = (
             "You cannot use optional groups ('[' and ']') unless all "
@@ -1991,6 +2032,44 @@ class ClinicParserTest(TestCase):
         err = "Function 'bar': '/' must precede '*'"
         self.expect_failure(block, err)
 
+    def test_slash_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+               /
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_star_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+               *
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_parameter_after_var_keyword(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               y: int
+               **kwds: dict
+               z: int
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
     def test_depr_star_must_come_after_slash(self):
         block = """
             module foo
@@ -2076,6 +2155,16 @@ class ClinicParserTest(TestCase):
             foo.bar
                *vararg1: tuple
                *vararg2: tuple
+        """
+        self.expect_failure(block, err, lineno=3)
+
+    def test_parameters_no_more_than_one_var_keyword(self):
+        err = "Encountered parameter line when not expecting parameters: **var_keyword_2: dict"
+        block = """
+            module foo
+            foo.bar
+               **var_keyword_1: dict
+               **var_keyword_2: dict
         """
         self.expect_failure(block, err, lineno=3)
 
@@ -2513,6 +2602,14 @@ class ClinicParserTest(TestCase):
         """
         self.expect_failure(block, err, lineno=1)
 
+    def test_var_keyword_cannot_take_default_value(self):
+        err = "Function 'fn' has an invalid parameter declaration:"
+        block = """
+            fn
+                **kwds: dict = None
+        """
+        self.expect_failure(block, err, lineno=1)
+
     def test_default_is_not_of_correct_type(self):
         err = ("int_converter: default value 2.5 for field 'a' "
                "is not of type 'int'")
@@ -2609,6 +2706,43 @@ class ClinicParserTest(TestCase):
                 cls: defining_class
         """
         self.expect_failure(block, err, lineno=2)
+
+    def test_var_keyword_with_pos_or_kw(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_var_keyword_with_kw_only(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               /
+               *
+               y: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
+
+    def test_var_keyword_with_pos_or_kw_and_kw_only(self):
+        block = """
+            module foo
+            foo.bar
+               x: int
+               /
+               y: int
+               *
+               z: int
+               **kwds: dict
+        """
+        err = "Function 'bar' has an invalid parameter declaration (**kwargs?): '**kwds: dict'"
+        self.expect_failure(block, err)
 
 
 class ClinicExternalTest(TestCase):

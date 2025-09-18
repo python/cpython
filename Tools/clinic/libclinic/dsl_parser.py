@@ -850,10 +850,6 @@ class DSLParser:
             # we indented, must be to new parameter docstring column
             return self.next(self.state_parameter_docstring_start, line)
 
-        if not self.expecting_parameters:
-            fail('Encountered parameter line when not expecting '
-                 f'parameters: {line}')
-
         line = line.rstrip()
         if line.endswith('\\'):
             self.parameter_continuation = line[:-1]
@@ -881,6 +877,10 @@ class DSLParser:
 
     def parse_parameter(self, line: str) -> None:
         assert self.function is not None
+
+        if not self.expecting_parameters:
+            fail('Encountered parameter line when not expecting '
+                 f'parameters: {line}')
 
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
@@ -1179,6 +1179,9 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
+        if not self.expecting_parameters:
+            fail("Encountered '*' when not expecting parameters")
+
         if version is None:
             self.check_previous_star()
             self.check_remaining_star()
@@ -1234,6 +1237,9 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
+        if not self.expecting_parameters:
+            fail("Encountered '/' when not expecting parameters")
+
         if version is None:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
