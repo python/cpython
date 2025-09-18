@@ -2084,6 +2084,7 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertEqual(err, b"")
 
     @requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', "signals don't work well on windows")
     def test_keyboard_interrupt_during_threading_shutdown(self):
         import subprocess
         source = f"""
