@@ -2799,7 +2799,7 @@ AC_MSG_RESULT([$tier2_flags $jit_flags])
 if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
   # GH-133171: This configuration builds the JIT but never actually uses it,
   # which is surprising (and strictly worse than not building it at all):
-  AC_MSG_ERROR([--enable-experimental-jit cannot be used with --disable-gil.])
+  AC_MSG_WARN([--enable-experimental-jit does not work correctly with --disable-gil.])
 fi
 
 case "$ac_cv_cc_name" in
