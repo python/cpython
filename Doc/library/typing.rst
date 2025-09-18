@@ -3790,11 +3790,25 @@ Aliases to container ABCs in :mod:`collections.abc`
 
 .. class:: ByteString(Sequence[int])
 
-   This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview` of byte sequences.
+   Deprecated alias to :class:`collections.abc.ByteString`.
+
+   Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+   implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use in
+   type annotations, either use :class:`~collections.abc.Buffer` or a union
+   that explicitly specifies the types your code supports (e.g.,
+   ``bytes | bytearray | memoryview``).
+
+   :class:`!ByteString` was originally intended to be an abstract class that
+   would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+   However, since the ABC never had any methods, knowing that an object was an
+   instance of :class:`!ByteString` never actually told you anything useful
+   about the object. Other common buffer types such as :class:`memoryview` were
+   also never understood as subtypes of :class:`!ByteString` (either at runtime
+   or by static type checkers).
+
+   See :pep:`PEP 688 <688#current-options>` for more details.
 
    .. deprecated-removed:: 3.9 3.17
-      Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
