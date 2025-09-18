@@ -2630,6 +2630,13 @@ features:
    Compose a raw device number from the major and minor device numbers.
 
 
+.. data:: NODEV
+
+   Non-existent device.
+
+   .. versionadded:: next
+
+
 .. function:: pathconf(path, name)
 
    Return system configuration information relevant to a named file. *name*
@@ -3757,9 +3764,9 @@ features:
 
       import os
       for root, dirs, files, rootfd in os.fwalk('python/Lib/xml'):
-          print(root, "consumes", end="")
+          print(root, "consumes", end=" ")
           print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
-                end="")
+                end=" ")
           print("bytes in", len(files), "non-directory files")
           if '__pycache__' in dirs:
               dirs.remove('__pycache__')  # don't visit __pycache__ directories

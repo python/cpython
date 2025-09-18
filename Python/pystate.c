@@ -8,7 +8,6 @@
 #include "pycore_codecs.h"        // _PyCodec_Fini()
 #include "pycore_critical_section.h" // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
-#include "pycore_emscripten_trampoline.h" // _Py_EmscriptenTrampoline_Init()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
@@ -23,6 +22,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
+#include "pycore_uop.h"           // UOP_BUFFER_SIZE
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 
@@ -353,11 +353,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->main_thread = PyThread_get_thread_ident();
 
     runtime->unicode_state.ids.next_index = unicode_next_index;
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    _Py_EmscriptenTrampoline_Init(runtime);
-#endif
-
     runtime->_initialized = 1;
 }
 
@@ -556,6 +551,11 @@ init_interpreter(PyInterpreterState *interp,
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif
+
+#ifdef _Py_TIER2
+     // Ensure the buffer is to be set as NULL.
+    interp->jit_uop_buffer = NULL;
+#endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
     interp->asyncio_tasks_lock = (PyMutex){0};
@@ -571,6 +571,7 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->_code_object_generation = 0;
     interp->jit = false;
+    interp->compiling = false;
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_deletion_list_remaining_capacity = 0;
@@ -803,6 +804,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
+    if (interp->jit_uop_buffer != NULL) {
+        _PyObject_VirtualFree(interp->jit_uop_buffer, UOP_BUFFER_SIZE);
+        interp->jit_uop_buffer = NULL;
+    }
 #endif
     _PyAST_Fini(interp);
     _PyAtExit_Fini(interp);
@@ -2253,13 +2258,15 @@ stop_the_world(struct _stoptheworld_state *stw)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    PyMutex_Lock(&stw->mutex);
+    // gh-137433: Acquire the rwmutex first to avoid deadlocks with daemon
+    // threads that may hang when blocked on lock acquisition.
     if (stw->is_global) {
         _PyRWMutex_Lock(&runtime->stoptheworld_mutex);
     }
     else {
         _PyRWMutex_RLock(&runtime->stoptheworld_mutex);
     }
+    PyMutex_Lock(&stw->mutex);
 
     HEAD_LOCK(runtime);
     stw->requested = 1;
@@ -2325,13 +2332,13 @@ start_the_world(struct _stoptheworld_state *stw)
     }
     stw->requester = NULL;
     HEAD_UNLOCK(runtime);
+    PyMutex_Unlock(&stw->mutex);
     if (stw->is_global) {
         _PyRWMutex_Unlock(&runtime->stoptheworld_mutex);
     }
     else {
         _PyRWMutex_RUnlock(&runtime->stoptheworld_mutex);
     }
-    PyMutex_Unlock(&stw->mutex);
 }
 #endif  // Py_GIL_DISABLED
 

@@ -28,10 +28,10 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 /* Remote debugger support */
-#define Py_MAX_SCRIPT_PATH_SIZE 512
+#define _Py_MAX_SCRIPT_PATH_SIZE 512
 typedef struct {
     int32_t debugger_pending_call;
-    char debugger_script_path[Py_MAX_SCRIPT_PATH_SIZE];
+    char debugger_script_path[_Py_MAX_SCRIPT_PATH_SIZE];
 } _PyRemoteDebuggerSupport;
 
 typedef struct _err_stackitem {
@@ -157,6 +157,11 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
+    /* List of objects that still need to be cleaned up, singly linked
+     * via their gc headers' gc_next pointers. The list is populated by
+     * _PyTrash_thread_deposit_object and cleaned up by
+     * _PyTrash_thread_destroy_chain.
+     */
     PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no

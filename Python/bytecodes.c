@@ -811,7 +811,7 @@ dummy_func(
             assert(next_instr->op.code == STORE_FAST);
             next_oparg = next_instr->op.arg;
         #else
-            next_oparg = CURRENT_OPERAND0();
+            next_oparg = (int)CURRENT_OPERAND0();
         #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
@@ -5250,7 +5250,7 @@ dummy_func(
             if (frame->lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %lu, temp %d, target %d -> %s]\n",
+                printf(", exit %tu, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyFrame_GetBytecode(frame)),
                     _PyOpcode_OpName[target->op.code]);
@@ -5343,12 +5343,6 @@ dummy_func(
             new = old;
             DEAD(old);
             value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
-        tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
-            assert(PyStackRef_FunctionCheck(frame->f_funcobj));
-            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-            DEOPT_IF(func->func_version != func_version);
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {

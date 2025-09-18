@@ -2718,7 +2718,13 @@ class TarFile(object):
                 if os.path.lexists(targetpath):
                     # Avoid FileExistsError on following os.symlink.
                     os.unlink(targetpath)
-                os.symlink(tarinfo.linkname, targetpath)
+                link_target = tarinfo.linkname
+                if os.name == "nt":
+                    # gh-57911: Posix-flavoured forward-slash path separators in
+                    # symlink targets aren't acknowledged by Windows, resulting
+                    # in corrupted links.
+                    link_target = link_target.replace("/", os.path.sep)
+                os.symlink(link_target, targetpath)
                 return
             else:
                 if os.path.exists(tarinfo._link_target):

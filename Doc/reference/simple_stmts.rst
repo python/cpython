@@ -465,8 +465,8 @@ Deletion of a target list recursively deletes each target, from left to right.
 
 Deletion of a name removes the binding of that name from the local or global
 namespace, depending on whether the name occurs in a :keyword:`global` statement
-in the same code block.  If the name is unbound, a :exc:`NameError` exception
-will be raised.
+in the same code block.  Trying to delete an unbound name raises a
+:exc:`NameError` exception.
 
 .. index:: pair: attribute; deletion
 
@@ -830,6 +830,9 @@ names defined in the module are bound in the local namespace for the scope
 where the :keyword:`import` statement occurs.
 
 .. index:: single: __all__ (optional module attribute)
+
+.. attribute:: module.__all__
+   :no-typesetting:
 
 The *public names* defined by a module are determined by checking the module's
 namespace for a variable named ``__all__``; if defined, it must be a sequence

@@ -866,13 +866,12 @@ error:
 static void
 Compressor_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     Compressor *self = Compressor_CAST(op);
     lzma_end(&self->lzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
+    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -934,7 +933,7 @@ static PyType_Spec lzma_compressor_type_spec = {
     // lzma_compressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lzma_compressor_type_slots,
 };
 
@@ -1264,10 +1263,7 @@ _lzma_LZMADecompressor_impl(PyTypeObject *type, int format,
     self->needs_input = 1;
     self->input_buffer = NULL;
     self->input_buffer_size = 0;
-    Py_XSETREF(self->unused_data, PyBytes_FromStringAndSize(NULL, 0));
-    if (self->unused_data == NULL) {
-        goto error;
-    }
+    Py_XSETREF(self->unused_data, Py_GetConstant(Py_CONSTANT_EMPTY_BYTES));
 
     switch (format) {
         case FORMAT_AUTO:
@@ -1315,8 +1311,6 @@ error:
 static void
 Decompressor_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(op);
-    PyObject_GC_UnTrack(op);
     Decompressor *self = Decompressor_CAST(op);
     if(self->input_buffer != NULL)
         PyMem_Free(self->input_buffer);
@@ -1326,6 +1320,7 @@ Decompressor_dealloc(PyObject *op)
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
+    PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1383,7 +1378,7 @@ static PyType_Spec lzma_decompressor_type_spec = {
     // lzma_decompressor_type_spec does not have Py_TPFLAGS_BASETYPE flag
     // which prevents to create a subclass.
     // So calling PyType_GetModuleState() in this file is always safe.
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_HAVE_GC),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = lzma_decompressor_type_slots,
 };
 
@@ -1447,7 +1442,7 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
 {
     lzma_ret lzret;
     uint32_t encoded_size;
-    PyObject *result = NULL;
+    PyBytesWriter *writer = NULL;
     _lzma_state *state = get_lzma_state(module);
     assert(state != NULL);
 
@@ -1455,20 +1450,20 @@ _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter)
     if (catch_lzma_error(state, lzret))
         goto error;
 
-    result = PyBytes_FromStringAndSize(NULL, encoded_size);
-    if (result == NULL)
+    writer = PyBytesWriter_Create(encoded_size);
+    if (writer == NULL) {
         goto error;
+    }
 
-    lzret = lzma_properties_encode(
-            &filter, (uint8_t *)PyBytes_AS_STRING(result));
+    lzret = lzma_properties_encode(&filter, PyBytesWriter_GetData(writer));
     if (catch_lzma_error(state, lzret)) {
         goto error;
     }
 
-    return result;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_XDECREF(result);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
