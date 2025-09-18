@@ -1,3 +1,0 @@
-Standardized non-zero-padded date formatting in
-:func:`datetime.datetime.strftime` and :func:`datetime.date.strftime` across
-Windows and Unix. (e.g. ``"m:%-m d:%-d y:%-y"``).
