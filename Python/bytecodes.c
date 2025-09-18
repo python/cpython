@@ -2960,19 +2960,26 @@ dummy_func(
                     oparg >>= 8;
                     start--;
                 }
-                _PyExecutorObject *executor;
-                int optimized = _PyOptimizer_Optimize(frame, start, &executor, 0);
-                if (optimized <= 0) {
-                    this_instr[1].counter = restart_backoff_counter(counter);
-                    ERROR_IF(optimized < 0);
+                if (tstate->interp->jit_tracer_code_buffer == NULL) {
+                    tstate->interp->jit_tracer_code_buffer = (_Py_CODEUNIT *)_PyObject_VirtualAlloc(TRACER_BUFFER_SIZE);
+                    tstate->interp->jit_tracer_code_curr_size = 0;
+                    if (tstate->interp->jit_tracer_code_buffer == NULL) {
+                        // Don't error, just go to next instruction.
+                        DISPATCH();
+                    }
                 }
-                else {
-                    this_instr[1].counter = initial_jump_backoff_counter();
-                    assert(tstate->current_executor == NULL);
-                    assert(executor != tstate->interp->cold_executor);
-                    tstate->jit_exit = NULL;
-                    TIER1_TO_TIER2(executor);
+                if (this_instr == tstate->interp->jit_tracer_initial_instr) {
+                    // Looped back to initial instr. End tracing.
+                    LEAVE_TRACING();
+                    DISPATCH();
                 }
+                ENTER_TRACING();
+                // Nothing in the buffer, begin tracing!
+                if (tstate->interp->jit_tracer_code_curr_size == 0) {
+                    tstate->interp->jit_tracer_initial_instr = this_instr;
+                }
+                // Not tracing dispatch, normal dispatch because we don't record the current instruction.
+                DISPATCH();
             }
             else {
                 ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);

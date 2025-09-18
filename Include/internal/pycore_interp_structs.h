@@ -943,6 +943,9 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
+    int jit_tracer_code_curr_size;
+    _Py_CODEUNIT *jit_tracer_code_buffer;
+    _Py_CODEUNIT *jit_tracer_initial_instr;
     bool jit;
     bool compiling;
     struct _PyUOpInstruction *jit_uop_buffer;

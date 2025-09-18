@@ -5,6 +5,7 @@ Writes the cases to generated_cases.c.h, which is #included in ceval.c.
 
 import argparse
 
+from tracer_generator import generate_tracer_cases
 from analyzer import (
     Analysis,
     Instruction,
@@ -167,7 +168,10 @@ def generate_tier1(
             {INSTRUCTION_START_MARKER}
 """
     )
-    generate_tier1_cases(analysis, outfile, lines)
+    out = CWriter(outfile, 2, lines)
+    emitter = Emitter(out, analysis.labels)
+    generate_tier1_cases(analysis, out, emitter)
+    generate_tracer_cases(analysis, out)
     outfile.write(f"""
             {INSTRUCTION_END_MARKER}
 #if !_Py_TAIL_CALL_INTERP
@@ -215,14 +219,13 @@ def get_popped(inst: Instruction, analysis: Analysis) -> str:
     return (-stack.base_offset).to_c()
 
 def generate_tier1_cases(
-    analysis: Analysis, outfile: TextIO, lines: bool
+    analysis: Analysis, out: CWriter, emitter: Emitter, is_tracing: bool = False
 ) -> None:
-    out = CWriter(outfile, 2, lines)
-    emitter = Emitter(out, analysis.labels)
+    tracing_prepend = "TRACING_" if is_tracing else ""
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
-        out.emit(f"TARGET({name}) {{\n")
+        out.emit(f"{tracing_prepend}TARGET({name}) {{\n")
         popped = get_popped(inst, analysis)
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.
@@ -230,7 +233,7 @@ def generate_tier1_cases(
         out.emit(f"int opcode = {name};\n")
         out.emit(f"(void)(opcode);\n")
         out.emit(f"#endif\n")
-        needs_this = uses_this(inst)
+        needs_this = is_tracing or uses_this(inst)
         unused_guard = "(void)this_instr;\n"
         if inst.properties.needs_prev:
             out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
@@ -244,7 +247,7 @@ def generate_tier1_cases(
         out.emit(f"next_instr += {inst.size};\n")
         out.emit(f"INSTRUCTION_STATS({name});\n")
         if inst.is_target:
-            out.emit(f"PREDICTED_{name}:;\n")
+            out.emit(f"PREDICTED_{tracing_prepend}{name}:;\n")
             if needs_this:
                 out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
@@ -265,7 +268,7 @@ def generate_tier1_cases(
         out.start_line()
         if reachable: # type: ignore[possibly-undefined]
             stack.flush(out)
-            out.emit("DISPATCH();\n")
+            out.emit(f"{tracing_prepend}DISPATCH();\n")
         out.start_line()
         out.emit("}")
         out.emit("\n")

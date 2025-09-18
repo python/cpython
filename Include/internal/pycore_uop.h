@@ -35,9 +35,14 @@ typedef struct _PyUOpInstruction{
 #endif
 } _PyUOpInstruction;
 
-// This is the length of the trace we project initially.
+// This is the length of the trace we translate initially.
 #define UOP_MAX_TRACE_LENGTH 1200
 #define UOP_BUFFER_SIZE (UOP_MAX_TRACE_LENGTH * sizeof(_PyUOpInstruction))
+
+// This is the length of the trace we record.
+// This includes the inline caches.
+#define TRACE_MAX_TRACE_LENGTH 1000
+#define TRACER_BUFFER_SIZE ((int)(TRACE_MAX_TRACE_LENGTH * sizeof(_Py_CODEUNIT)))
 
 #ifdef __cplusplus
 }

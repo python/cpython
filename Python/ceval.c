@@ -973,6 +973,21 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
     }
 }
 
+// 1 for trace full, 0 for successful write.
+static inline int
+add_to_code_trace(PyThreadState *tstate, _Py_CODEUNIT *this_instr)
+{
+    assert(tstate->interp->jit_tracer_code_curr_size < TRACE_MAX_TRACE_LENGTH);
+    int curr_size = tstate->interp->jit_tracer_code_curr_size;
+    int nsize = _PyOpcode_Caches[this_instr->op.code] + 1;
+    if (curr_size + nsize > TRACE_MAX_TRACE_LENGTH) {
+        return 1;
+    }
+    for (int i = 0; i < nsize; i++) {
+        tstate->interp->jit_tracer_code_buffer[curr_size + i] = *(this_instr + i);
+    }
+    return 0;
+}
 
 /* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
  */
@@ -1102,9 +1117,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         stack_pointer = _PyFrame_GetStackPointer(frame);
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, 0, lastopcode);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0, lastopcode);
 #   else
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, 0);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_handler_table, 0);
 #   endif
 #else
         goto error;
@@ -1113,9 +1128,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 #if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_table, 0, lastopcode);
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0, lastopcode);
 #   else
-        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_table, 0);
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_handler_table, 0);
 #   endif
 #else
     goto start_frame;

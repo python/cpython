@@ -78,6 +78,13 @@
 #   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
 #endif
 
+#  define TRACING_DISPATCH_GOTO() do { \
+    if (add_to_code_trace(tstate, this_instr)) { \
+        LEAVE_TRACING(); \
+    } \
+        DISPATCH_GOTO(); \
+    } while (0);
+
 #if _Py_TAIL_CALL_INTERP
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
 #   define Py_MUSTTAIL [[clang::musttail]]
@@ -85,6 +92,9 @@
     Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
 
 #   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
+#   define TRACING_TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_TRACING_##op(TAIL_CALL_PARAMS)
+#   define LEAVE_TRACING() instruction_funcptr_table = instruction_funcptr_handler_table;
+#   define ENTER_TRACING() instruction_funcptr_table = instruction_funcptr_tracing_table
 #   define DISPATCH_GOTO() \
         do { \
             Py_MUSTTAIL return (((py_tail_call_funcptr *)instruction_funcptr_table)[opcode])(TAIL_CALL_ARGS); \
@@ -107,7 +117,10 @@
 #    define LABEL(name) TARGET(name)
 #elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:
+#  define TRACING_TARGET(op) TARGET_TRACING_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
+#  define LEAVE_TRACING() opcode_targets = opcode_targets_table;
+#  define ENTER_TRACING() opcode_targets = opcode_tracing_targets_table;
 #  define JUMP_TO_LABEL(name) goto name;
 #  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
 #  define LABEL(name) name:
@@ -171,6 +184,14 @@ do { \
         CALL_STAT_INC(inlined_py_calls);                \
         JUMP_TO_LABEL(start_frame);                      \
     } while (0)
+
+#define TRACING_DISPATCH() \
+    { \
+        assert(frame->stackpointer == NULL); \
+        NEXTOPARG(); \
+        PRE_DISPATCH_GOTO(); \
+        TRACING_DISPATCH_GOTO(); \
+    }
 
 /* Tuple access macros */
 
