@@ -350,6 +350,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 break;
 
             case _Py_ERROR_BACKSLASHREPLACE:
+                /* subtract preallocated bytes */
+                writer->size -= max_char_size * (endpos - startpos);
                 p = backslashreplace(writer, p,
                                      unicode, startpos, endpos);
                 if (p == NULL)
@@ -358,6 +360,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 break;
 
             case _Py_ERROR_XMLCHARREFREPLACE:
+                /* subtract preallocated bytes */
+                writer->size -= max_char_size * (endpos - startpos);
                 p = xmlcharrefreplace(writer, p,
                                       unicode, startpos, endpos);
                 if (p == NULL)
@@ -396,6 +400,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     }
                 }
                 else {
+                    /* subtract preallocated bytes */
+                    writer->size -= max_char_size * (newpos - startpos);
                     /* Only overallocate the buffer if it's not the last write */
                     writer->overallocate = (newpos < size);
                 }
