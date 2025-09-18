@@ -1,0 +1,1 @@
+Fix ``pathlib.Path.copy()`` failing on Windows when copying files that require elevated privileges (e.g., hidden or system files) by adding a fallback mechanism when ``copyfile2`` encounters privilege-related errors.
