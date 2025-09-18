@@ -419,6 +419,22 @@ class InterpreterObjectTests(TestBase):
                 unpickled = pickle.loads(data)
                 self.assertEqual(unpickled, interp)
 
+    @support.requires_subprocess()
+    @force_not_colorized
+    def test_cleanup_in_repl(self):
+        # GH-135729: Using a subinterpreter in the REPL would lead to an unraisable
+        # exception during finalization
+        repl = script_helper.spawn_python("-i")
+        script = b"""if True:
+        from concurrent import interpreters
+        interpreters.create()
+        exit()"""
+        stdout, stderr = repl.communicate(script)
+        self.assertIsNone(stderr)
+        self.assertIn(b"remaining subinterpreters", stdout)
+        self.assertNotIn(b"Traceback", stdout)
+
+
 
 class TestInterpreterIsRunning(TestBase):
 
