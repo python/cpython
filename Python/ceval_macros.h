@@ -78,7 +78,7 @@
 #   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg
 #endif
 
-#if Py_TAIL_CALL_INTERP
+#if _Py_TAIL_CALL_INTERP
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
 #   define Py_MUSTTAIL [[clang::musttail]]
 #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
