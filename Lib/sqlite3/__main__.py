@@ -41,6 +41,13 @@ def execute(c, sql, suppress_errors=True, theme=theme_no_color):
             sys.exit(1)
 
 
+def _eof_key():
+    if sys.platform == "win32" and "idlelib.run" not in sys.modules:
+        return "CTRL-Z"
+    else:
+        return "CTRL-D"
+
+
 class SqliteInteractiveConsole(InteractiveConsole):
     """A simple SQLite REPL."""
 
@@ -69,7 +76,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
                     print(f"Enter SQL code or one of the below commands, and press enter.\n\n"
                           f"{t.builtin}.version{t.reset}    Print underlying SQLite library version\n"
                           f"{t.builtin}.help{t.reset}       Print this help message\n"
-                          f"{t.builtin}.quit{t.reset}       Exit the CLI, equivalent to CTRL-D\n")
+                          f"{t.builtin}.quit{t.reset}       Exit the CLI, equivalent to {_eof_key()}\n")
                 case "quit":
                     sys.exit(0)
                 case "":
@@ -117,16 +124,12 @@ def main(*args):
         db_name = repr(args.filename)
 
     # Prepare REPL banner and prompts.
-    if sys.platform == "win32" and "idlelib.run" not in sys.modules:
-        eofkey = "CTRL-Z"
-    else:
-        eofkey = "CTRL-D"
     banner = dedent(f"""
         sqlite3 shell, running on SQLite version {sqlite3.sqlite_version}
         Connected to {db_name}
 
         Each command will be run using execute() on the cursor.
-        Type ".help" for more information; type ".quit" or {eofkey} to quit.
+        Type ".help" for more information; type ".quit" or {_eof_key()} to quit.
     """).strip()
 
     theme = get_theme()
