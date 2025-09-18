@@ -1860,32 +1860,42 @@ make_freplacement(PyObject *object)
 static PyObject *
 make_dash_replacement(PyObject *object, Py_UCS4 ch, PyObject *timetuple)
 {
-    PyObject *strftime = PyImport_ImportModuleAttrString("time", "strftime");
-    if (!strftime) {
-        return NULL;
+    PyObject *strftime = NULL;
+    PyObject *fmt_obj = NULL;
+    PyObject *res = NULL;
+    PyObject *stripped = NULL;
+
+    strftime = PyImport_ImportModuleAttrString("time", "strftime");
+    if (strftime == NULL) {
+        goto error;
     }
 
-    char fmt[3] = {'%', (char)ch, 0};
-    PyObject *fmt_obj = PyUnicode_FromString(fmt);
-    if (!fmt_obj) {
-        Py_DECREF(strftime);
-        return NULL;
+    fmt_obj = PyUnicode_FromFormat("%%%c", (char)ch);
+    if (fmt_obj == NULL) {
+        goto error;
     }
 
-    PyObject *res = PyObject_CallFunctionObjArgs(strftime, fmt_obj, timetuple, NULL);
+    res = PyObject_CallFunctionObjArgs(strftime, fmt_obj, timetuple, NULL);
+    if (res == NULL) {
+        goto error;
+    }
+
+    stripped = PyObject_CallMethod(res, "lstrip", "s", "0");
+    if (stripped == NULL) {
+        goto error;
+    }
+
     Py_DECREF(fmt_obj);
     Py_DECREF(strftime);
-    if (!res) {
-        return NULL;
-    }
-
-    PyObject *stripped = PyObject_CallMethod(res, "lstrip", "s", "0");
     Py_DECREF(res);
-    if (!stripped) {
-        return NULL;
-    }
-
     return stripped;
+
+error:
+    Py_XDECREF(fmt_obj);
+    Py_XDECREF(strftime);
+    Py_XDECREF(res);
+    Py_XDECREF(stripped);
+    return NULL;
 }
 #endif
 
@@ -2036,7 +2046,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             continue;
         }
         #if defined(MS_WINDOWS) || defined(__ANDROID__)
-        /* non-0-pad Windows support */
+        /* non-0-pad Windows and Android support */
         else if (ch == '-' && i < flen) {
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
             i++;

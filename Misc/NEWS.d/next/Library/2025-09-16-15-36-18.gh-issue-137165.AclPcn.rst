@@ -1,2 +1,0 @@
-Add support for Windows non-zero-padded formatting directives in
-:func:`datetime.datetime.strftime` (e.g., ``"m:%-m d:%-d y:%-y"``).

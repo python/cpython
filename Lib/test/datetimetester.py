@@ -1592,10 +1592,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # SF bug #137165
         if platform.system() == 'Darwin':
             self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:05")
-        elif platform.system() == 'Windows':
-            self.assertEqual(t.strftime("m:%#m d:%#d y:%#y"), "m:3 d:2 y:5")
-            self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:5")
         else:
+            if platform.system() == 'Windows':
+                self.assertEqual(t.strftime("m:%#m d:%#d y:%#y"), "m:3 d:2 y:5")
             self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:5")
 
         self.assertRaises(TypeError, t.strftime) # needs an arg
