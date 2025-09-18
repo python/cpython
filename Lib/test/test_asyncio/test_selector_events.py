@@ -854,6 +854,22 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.assertTrue(self.sock.send.called)
         self.assertTrue(self.loop.writers)
 
+    def test_writelines_after_connection_lost(self):
+        # GH-136234
+        transport = self.socket_transport()
+        self.sock.send = mock.Mock()
+        self.sock.send.side_effect = ConnectionResetError
+        transport.write(b'data1')  # Will fail immediately, causing connection lost
+
+        transport.writelines([b'data2'])
+        self.assertFalse(transport._buffer)
+        self.assertFalse(self.loop.writers)
+
+        test_utils.run_briefly(self.loop)  # Allow _call_connection_lost to run
+        transport.writelines([b'data2'])
+        self.assertFalse(transport._buffer)
+        self.assertFalse(self.loop.writers)
+
     @unittest.skipUnless(selector_events._HAS_SENDMSG, 'no sendmsg')
     def test_write_sendmsg_full(self):
         data = memoryview(b'data')
