@@ -1192,6 +1192,12 @@ Deprecated
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 * :mod:`collections.abc`: Deprecated :class:`collections.abc.ByteString`.
+
+  ``ByteString`` was originally intended to be an abstract type that would
+  serve as a supertype of both :class:`bytes` and :class:`bytearray`, but its
+  semantics were never clearly specified, and it was never understood properly
+  by type checkers. See :pep:`PEP 688 <688#current-options>` for more details.
+
   Prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
   For use in type annotations, prefer a union, like ``bytes | bytearray``, or :class:`collections.abc.Buffer`.
   (Contributed by Shantanu Jain in :gh:`91896`.)

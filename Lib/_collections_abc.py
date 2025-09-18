@@ -1082,9 +1082,12 @@ class _DeprecateByteStringMeta(ABCMeta):
         return super().__instancecheck__(instance)
 
 class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
-    """This unifies bytes and bytearray.
+    """Deprecated ABC serving as a common supertype of ``bytes`` and ``bytearray``.
 
-    XXX Should add all their methods.
+    This ABC is scheduled for removal in Python 3.17.
+    For use in type annotations, prefer a union, like ``bytes | bytearray``, or
+    ``collections.abc.Buffer``. For use as an ABC, prefer ``Sequence`` or
+    ``collections.abc.Buffer``.
     """
 
     __slots__ = ()

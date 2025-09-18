@@ -291,6 +291,13 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. deprecated-removed:: 3.12 3.17
       The :class:`ByteString` ABC has been deprecated.
+
+      ``ByteString`` was originally intended to be an abstract type that would
+      serve as a supertype of both :class:`bytes` and :class:`bytearray`, but
+      its semantics were never clearly specified, and it was never understood
+      properly by type checkers. See :pep:`PEP 688 <688#current-options>` for
+      more details.
+
       For use in type annotations, prefer a union, like ``bytes | bytearray``, or
       :class:`collections.abc.Buffer`.
       For use as an ABC, prefer :class:`Sequence` or :class:`collections.abc.Buffer`.

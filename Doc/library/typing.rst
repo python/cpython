@@ -3790,8 +3790,13 @@ Aliases to container ABCs in :mod:`collections.abc`
 
 .. class:: ByteString(Sequence[int])
 
-   This type represents the types :class:`bytes`, :class:`bytearray`,
-   and :class:`memoryview` of byte sequences.
+   Deprecated alias to :class:`collections.abc.ByteString`.
+
+   ``ByteString`` was originally intended to be an abstract type that would
+   serve as a supertype of both :class:`bytes` and :class:`bytearray`. However,
+   its semantics were never clearly specified, and it was never understood
+   properly by type checkers. See :pep:`PEP 688 <688#current-options>` for more
+   details.
 
    .. deprecated-removed:: 3.9 3.17
       Prefer :class:`collections.abc.Buffer`, or a union like ``bytes | bytearray | memoryview``.
