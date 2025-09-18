@@ -1,5 +1,5 @@
-:mod:`pyclbr` --- Python module browser support
-===============================================
+:mod:`!pyclbr` --- Python module browser support
+================================================
 
 .. module:: pyclbr
    :synopsis: Supports information extraction for a Python module browser.
@@ -142,7 +142,7 @@ Class Objects
 
    .. attribute:: parent
 
-      For top-level classes, None.  For nested classes, the parent.
+      For top-level classes, ``None``.  For nested classes, the parent.
 
       .. versionadded:: 3.7
 

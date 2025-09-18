@@ -158,8 +158,9 @@ class IdleConf:
         self.defaultCfg = {}
         self.userCfg = {}
         self.cfg = {}  # TODO use to select userCfg vs defaultCfg
+
+        # See https://bugs.python.org/issue4630#msg356516 for following.
         # self.blink_off_time = <first editor text>['insertofftime']
-        # See https:/bugs.python.org/issue4630, msg356516.
 
         if not _utest:
             self.CreateConfigHandlers()
@@ -599,7 +600,7 @@ class IdleConf:
         """
         # TODO: = dict(sorted([(v-event, keys), ...]))?
         keyBindings={
-            # vitual-event: list of key events.
+            # virtual-event: list of key events.
             '<<copy>>': ['<Control-c>', '<Control-C>'],
             '<<cut>>': ['<Control-x>', '<Control-X>'],
             '<<paste>>': ['<Control-v>', '<Control-V>'],

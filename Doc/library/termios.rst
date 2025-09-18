@@ -1,5 +1,5 @@
-:mod:`termios` --- POSIX style tty control
-==========================================
+:mod:`!termios` --- POSIX style tty control
+===========================================
 
 .. module:: termios
    :platform: Unix

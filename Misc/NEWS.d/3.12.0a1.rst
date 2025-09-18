@@ -29,8 +29,7 @@ process. This was a potential privilege escalation. Filesystem based socket
 permissions restrict this to the *forkserver* process user as was the
 default in Python 3.8 and earlier.
 
-This prevents Linux `CVE-2022-42919
-<https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-42919>`_.
+This prevents Linux :cve:`2022-42919`.
 
 ..
 
@@ -103,7 +102,7 @@ well as generator expressions.
 .. section: Core and Builtins
 
 Added unicode check for ``name`` attribute of ``spec`` argument passed in
-:func:`_imp.create_builtin` function.
+:func:`!_imp.create_builtin` function.
 
 ..
 
@@ -484,7 +483,7 @@ Fix case of undefined behavior in ceval.c
 .. nonce: AfCi36
 .. section: Core and Builtins
 
-Convert :mod:`_functools` to argument clinic.
+Convert :mod:`!_functools` to argument clinic.
 
 ..
 
@@ -493,7 +492,7 @@ Convert :mod:`_functools` to argument clinic.
 .. nonce: wky0Fc
 .. section: Core and Builtins
 
-Do not expose ``KeyWrapper`` in :mod:`_functools`.
+Do not expose ``KeyWrapper`` in :mod:`!_functools`.
 
 ..
 
@@ -561,7 +560,7 @@ versions prior to 3.11
 .. nonce: 9lmTCC
 .. section: Core and Builtins
 
-Remove two cases of undefined behavoir, by adding NULL checks.
+Remove two cases of undefined behavior, by adding NULL checks.
 
 ..
 
@@ -1732,7 +1731,7 @@ tracing functions implemented in C.
 .. nonce: lenv9h
 .. section: Core and Builtins
 
-:meth:`_warnings.warn_explicit` is ported to Argument Clinic.
+:meth:`!_warnings.warn_explicit` is ported to Argument Clinic.
 
 ..
 
@@ -2592,7 +2591,7 @@ Update bundled pip to 22.2.2.
 
 Fix :class:`asyncio.TaskGroup` to propagate exception when
 :exc:`asyncio.CancelledError` was replaced with another exception by a
-context manger. Patch by Kumar Aditya and Guido van Rossum.
+context manager. Patch by Kumar Aditya and Guido van Rossum.
 
 ..
 
@@ -3143,8 +3142,8 @@ test.test_codecs.EncodedFileTest`` instead.
 .. nonce: VhS1eS
 .. section: Library
 
-Made :class:`_struct.Struct` GC-tracked in order to fix a reference leak in
-the :mod:`_struct` module.
+Made :class:`!_struct.Struct` GC-tracked in order to fix a reference leak in
+the :mod:`!_struct` module.
 
 ..
 
@@ -3200,9 +3199,8 @@ Remove the :func:`ssl.wrap_socket` function, deprecated in Python 3.7:
 instead, create a :class:`ssl.SSLContext` object and call its
 :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
 :func:`ssl.wrap_socket` is broken and insecure. The function neither sends a
-SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-<https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-Validation. Patch by Victor Stinner.
+SNI TLS extension nor validates server hostname. Code is subject to :cwe:`295`
+Improper Certificate Validation. Patch by Victor Stinner.
 
 ..
 
@@ -3223,9 +3221,9 @@ Stinner.
 .. section: Library
 
 :mod:`hashlib`: Remove the pure Python implementation of
-:func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
+:func:`hashlib.pbkdf2_hmac`, deprecated in Python 3.10. Python 3.10 and
 newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides a C
-implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster. Patch by
+implementation of :func:`~hashlib.pbkdf2_hmac` which is faster. Patch by
 Victor Stinner.
 
 ..
@@ -3260,7 +3258,7 @@ on the main thread
 
 Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
 3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
-function is a built-in function. Since Python 3.10, :func:`_pyio.open` is
+function is a built-in function. Since Python 3.10, :func:`!_pyio.open` is
 also a static method. Patch by Victor Stinner.
 
 ..
@@ -3500,7 +3498,7 @@ Illia Volochii.
 .. nonce: tjfu9L
 .. section: Library
 
-Deprecate :data:`sqlite3.version` and :data:`sqlite3.version_info`.
+Deprecate :data:`!version` and :data:`!version_info`.
 
 ..
 
@@ -3563,8 +3561,8 @@ with :func:`os.pidfd_open` in non-blocking mode. Patch by Kumar Aditya.
 .. nonce: mkYl5q
 .. section: Library
 
-Implement Enum __contains__ that returns True or False to replace the
-deprecated behaviour that would sometimes raise a TypeError.
+Implement ``Enum.__contains__`` that returns ``True`` or ``False`` to replace the
+deprecated behaviour that would sometimes raise a :exc:`TypeError`.
 
 ..
 
@@ -3731,7 +3729,7 @@ In a very special case, the email package tried to append the nonexistent
 .. nonce: e6uKxj
 .. section: Library
 
-Fix :func:`ast.unparse` when ``ImportFrom.level`` is None
+Fix :func:`ast.unparse` when ``ImportFrom.level`` is ``None``
 
 ..
 
@@ -3793,7 +3791,7 @@ the :c:type:`time_t` type in C.
 .. section: Library
 
 Fixed crash resulting from calling bisect.insort() or bisect.insort_left()
-with the key argument not equal to None.
+with the key argument not equal to ``None``.
 
 ..
 
@@ -4082,7 +4080,7 @@ replacement strings containing group references by 2--3 times.
 .. section: Library
 
 Fix findtext in the xml module to only give an empty string when the text
-attribute is set to None.
+attribute is set to ``None``.
 
 ..
 
@@ -4239,8 +4237,8 @@ by :mod:`asyncio` to AIX platform only.
 .. nonce: 4dzB80
 .. section: Library
 
-Set :attr:`doctest.DocTest.lineno` to ``None`` when object does not have
-:attr:`__doc__`.
+Set :attr:`doctest.DocTest.lineno` to ``None`` when an object does not have
+:attr:`~definition.__doc__`.
 
 ..
 
@@ -4332,7 +4330,7 @@ and ``sendfile`` inside ``IocpProactor``.
 .. nonce: GsBL9-
 .. section: Library
 
-Fixed :meth:`collections.UserDict.get` to not call :meth:`__missing__` when
+Fixed :meth:`collections.UserDict.get` to not call :meth:`~object.__missing__` when
 a value is not found. This matches the behavior of :class:`dict`. Patch by
 Bar Harel.
 
@@ -4404,8 +4402,7 @@ Remove extra row
 .. section: Documentation
 
 Deprecated tools ``make suspicious`` and ``rstlint.py`` are now removed.
-They have been replaced by `spinx-lint
-<https://pypi.org/project/sphinx-lint/>`_.
+They have been replaced by :pypi:`sphinx-lint`.
 
 ..
 
@@ -4479,7 +4476,7 @@ they are deprecated. Contributed by C.A.M. Gerlach.
 .. nonce: we7AFm
 .. section: Documentation
 
-Replaced incorrectly written true/false values in documentiation. Patch by
+Replaced incorrectly written true/false values in documentation. Patch by
 Robert O'Shea
 
 ..
@@ -5613,7 +5610,7 @@ Accept os.PathLike for the argument to winsound.PlaySound
 
 Support native Windows case-insensitive path comparisons by using
 ``LCMapStringEx`` instead of :func:`str.lower` in :func:`ntpath.normcase`.
-Add ``LCMapStringEx`` to the :mod:`_winapi` module.
+Add ``LCMapStringEx`` to the :mod:`!_winapi` module.
 
 ..
 

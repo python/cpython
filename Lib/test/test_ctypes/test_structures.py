@@ -1,196 +1,32 @@
-import _ctypes_test
+"""Tests for ctypes.Structure
+
+Features common with Union should go in test_structunion.py instead.
+"""
+
 from platform import architecture as _architecture
 import struct
 import sys
 import unittest
-from ctypes import (CDLL, Array, Structure, Union, POINTER, sizeof, byref, alignment,
+from ctypes import (CDLL, Structure, Union, POINTER, sizeof, byref,
                     c_void_p, c_char, c_wchar, c_byte, c_ubyte,
-                    c_uint8, c_uint16, c_uint32,
-                    c_short, c_ushort, c_int, c_uint,
-                    c_long, c_ulong, c_longlong, c_ulonglong, c_float, c_double)
+                    c_uint8, c_uint16, c_uint32, c_int, c_uint,
+                    c_long, c_ulong, c_longlong, c_float, c_double)
 from ctypes.util import find_library
-from struct import calcsize
 from collections import namedtuple
 from test import support
-from ._support import (_CData, PyCStructType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE)
+from test.support import import_helper
+from ._support import StructCheckMixin
+_ctypes_test = import_helper.import_module("_ctypes_test")
 
 
-class SubclassesTest(unittest.TestCase):
-    def test_subclass(self):
-        class X(Structure):
-            _fields_ = [("a", c_int)]
-
-        class Y(X):
-            _fields_ = [("b", c_int)]
-
-        class Z(X):
-            pass
-
-        self.assertEqual(sizeof(X), sizeof(c_int))
-        self.assertEqual(sizeof(Y), sizeof(c_int)*2)
-        self.assertEqual(sizeof(Z), sizeof(c_int))
-        self.assertEqual(X._fields_, [("a", c_int)])
-        self.assertEqual(Y._fields_, [("b", c_int)])
-        self.assertEqual(Z._fields_, [("a", c_int)])
-
-    def test_subclass_delayed(self):
-        class X(Structure):
-            pass
-        self.assertEqual(sizeof(X), 0)
-        X._fields_ = [("a", c_int)]
-
-        class Y(X):
-            pass
-        self.assertEqual(sizeof(Y), sizeof(X))
-        Y._fields_ = [("b", c_int)]
-
-        class Z(X):
-            pass
-
-        self.assertEqual(sizeof(X), sizeof(c_int))
-        self.assertEqual(sizeof(Y), sizeof(c_int)*2)
-        self.assertEqual(sizeof(Z), sizeof(c_int))
-        self.assertEqual(X._fields_, [("a", c_int)])
-        self.assertEqual(Y._fields_, [("b", c_int)])
-        self.assertEqual(Z._fields_, [("a", c_int)])
-
-
-class StructureTestCase(unittest.TestCase):
-    formats = {"c": c_char,
-               "b": c_byte,
-               "B": c_ubyte,
-               "h": c_short,
-               "H": c_ushort,
-               "i": c_int,
-               "I": c_uint,
-               "l": c_long,
-               "L": c_ulong,
-               "q": c_longlong,
-               "Q": c_ulonglong,
-               "f": c_float,
-               "d": c_double,
-               }
-
-    def test_inheritance_hierarchy(self):
-        self.assertEqual(Structure.mro(), [Structure, _CData, object])
-
-        self.assertEqual(PyCStructType.__name__, "PyCStructType")
-        self.assertEqual(type(PyCStructType), type)
-
-
-    def test_type_flags(self):
-        for cls in Structure, PyCStructType:
-            with self.subTest(cls=cls):
-                self.assertTrue(Structure.__flags__ & Py_TPFLAGS_IMMUTABLETYPE)
-                self.assertFalse(Structure.__flags__ & Py_TPFLAGS_DISALLOW_INSTANTIATION)
-
-    def test_simple_structs(self):
-        for code, tp in self.formats.items():
-            class X(Structure):
-                _fields_ = [("x", c_char),
-                            ("y", tp)]
-            self.assertEqual((sizeof(X), code),
-                                 (calcsize("c%c0%c" % (code, code)), code))
-
-    def test_unions(self):
-        for code, tp in self.formats.items():
-            class X(Union):
-                _fields_ = [("x", c_char),
-                            ("y", tp)]
-            self.assertEqual((sizeof(X), code),
-                                 (calcsize("%c" % (code)), code))
-
-    def test_struct_alignment(self):
-        class X(Structure):
-            _fields_ = [("x", c_char * 3)]
-        self.assertEqual(alignment(X), calcsize("s"))
-        self.assertEqual(sizeof(X), calcsize("3s"))
-
-        class Y(Structure):
-            _fields_ = [("x", c_char * 3),
-                        ("y", c_int)]
-        self.assertEqual(alignment(Y), alignment(c_int))
-        self.assertEqual(sizeof(Y), calcsize("3si"))
-
-        class SI(Structure):
-            _fields_ = [("a", X),
-                        ("b", Y)]
-        self.assertEqual(alignment(SI), max(alignment(Y), alignment(X)))
-        self.assertEqual(sizeof(SI), calcsize("3s0i 3si 0i"))
-
-        class IS(Structure):
-            _fields_ = [("b", Y),
-                        ("a", X)]
-
-        self.assertEqual(alignment(SI), max(alignment(X), alignment(Y)))
-        self.assertEqual(sizeof(IS), calcsize("3si 3s 0i"))
-
-        class XX(Structure):
-            _fields_ = [("a", X),
-                        ("b", X)]
-        self.assertEqual(alignment(XX), alignment(X))
-        self.assertEqual(sizeof(XX), calcsize("3s 3s 0s"))
-
-    def test_empty(self):
-        # I had problems with these
-        #
-        # Although these are pathological cases: Empty Structures!
-        class X(Structure):
-            _fields_ = []
-
-        class Y(Union):
-            _fields_ = []
-
-        # Is this really the correct alignment, or should it be 0?
-        self.assertTrue(alignment(X) == alignment(Y) == 1)
-        self.assertTrue(sizeof(X) == sizeof(Y) == 0)
-
-        class XX(Structure):
-            _fields_ = [("a", X),
-                        ("b", X)]
-
-        self.assertEqual(alignment(XX), 1)
-        self.assertEqual(sizeof(XX), 0)
-
-    def test_fields(self):
-        # test the offset and size attributes of Structure/Union fields.
-        class X(Structure):
-            _fields_ = [("x", c_int),
-                        ("y", c_char)]
-
-        self.assertEqual(X.x.offset, 0)
-        self.assertEqual(X.x.size, sizeof(c_int))
-
-        self.assertEqual(X.y.offset, sizeof(c_int))
-        self.assertEqual(X.y.size, sizeof(c_char))
-
-        # readonly
-        self.assertRaises((TypeError, AttributeError), setattr, X.x, "offset", 92)
-        self.assertRaises((TypeError, AttributeError), setattr, X.x, "size", 92)
-
-        class X(Union):
-            _fields_ = [("x", c_int),
-                        ("y", c_char)]
-
-        self.assertEqual(X.x.offset, 0)
-        self.assertEqual(X.x.size, sizeof(c_int))
-
-        self.assertEqual(X.y.offset, 0)
-        self.assertEqual(X.y.size, sizeof(c_char))
-
-        # readonly
-        self.assertRaises((TypeError, AttributeError), setattr, X.x, "offset", 92)
-        self.assertRaises((TypeError, AttributeError), setattr, X.x, "size", 92)
-
-        # XXX Should we check nested data types also?
-        # offset is always relative to the class...
-
+class StructureTestCase(unittest.TestCase, StructCheckMixin):
     def test_packed(self):
         class X(Structure):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 1
+            _layout_ = 'ms'
+        self.check_struct(X)
 
         self.assertEqual(sizeof(X), 9)
         self.assertEqual(X.b.offset, 1)
@@ -199,6 +35,8 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 2
+            _layout_ = 'ms'
+        self.check_struct(X)
         self.assertEqual(sizeof(X), 10)
         self.assertEqual(X.b.offset, 2)
 
@@ -209,6 +47,8 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 4
+            _layout_ = 'ms'
+        self.check_struct(X)
         self.assertEqual(sizeof(X), min(4, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(4, longlong_align))
 
@@ -216,26 +56,33 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 8
+            _layout_ = 'ms'
+        self.check_struct(X)
 
         self.assertEqual(sizeof(X), min(8, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(8, longlong_align))
 
-
-        d = {"_fields_": [("a", "b"),
-                          ("b", "q")],
-             "_pack_": -1}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", "b"), ("b", "q")]
+                _pack_ = -1
+                _layout_ = "ms"
 
     @support.cpython_only
     def test_packed_c_limits(self):
         # Issue 15989
         import _testcapi
-        d = {"_fields_": [("a", c_byte)],
-             "_pack_": _testcapi.INT_MAX + 1}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
-        d = {"_fields_": [("a", c_byte)],
-             "_pack_": _testcapi.UINT_MAX + 2}
-        self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", c_byte)]
+                _pack_ = _testcapi.INT_MAX + 1
+                _layout_ = "ms"
+
+        with self.assertRaises(ValueError):
+            class X(Structure):
+                _fields_ = [("a", c_byte)]
+                _pack_ = _testcapi.UINT_MAX + 2
+                _layout_ = "ms"
 
     def test_initializers(self):
         class Person(Structure):
@@ -256,6 +103,7 @@ class StructureTestCase(unittest.TestCase):
     def test_conflicting_initializers(self):
         class POINT(Structure):
             _fields_ = [("phi", c_float), ("rho", c_float)]
+        self.check_struct(POINT)
         # conflicting positional and keyword args
         self.assertRaisesRegex(TypeError, "phi", POINT, 2, 3, phi=4)
         self.assertRaisesRegex(TypeError, "rho", POINT, 2, 3, rho=4)
@@ -266,52 +114,25 @@ class StructureTestCase(unittest.TestCase):
     def test_keyword_initializers(self):
         class POINT(Structure):
             _fields_ = [("x", c_int), ("y", c_int)]
+        self.check_struct(POINT)
         pt = POINT(1, 2)
         self.assertEqual((pt.x, pt.y), (1, 2))
 
         pt = POINT(y=2, x=1)
         self.assertEqual((pt.x, pt.y), (1, 2))
 
-    def test_invalid_field_types(self):
-        class POINT(Structure):
-            pass
-        self.assertRaises(TypeError, setattr, POINT, "_fields_", [("x", 1), ("y", 2)])
-
-    def test_invalid_name(self):
-        # field name must be string
-        def declare_with_name(name):
-            class S(Structure):
-                _fields_ = [(name, c_int)]
-
-        self.assertRaises(TypeError, declare_with_name, b"x")
-
-    def test_intarray_fields(self):
-        class SomeInts(Structure):
-            _fields_ = [("a", c_int * 4)]
-
-        # can use tuple to initialize array (but not list!)
-        self.assertEqual(SomeInts((1, 2)).a[:], [1, 2, 0, 0])
-        self.assertEqual(SomeInts((1, 2)).a[::], [1, 2, 0, 0])
-        self.assertEqual(SomeInts((1, 2)).a[::-1], [0, 0, 2, 1])
-        self.assertEqual(SomeInts((1, 2)).a[::2], [1, 0])
-        self.assertEqual(SomeInts((1, 2)).a[1:5:6], [2])
-        self.assertEqual(SomeInts((1, 2)).a[6:4:-1], [])
-        self.assertEqual(SomeInts((1, 2, 3, 4)).a[:], [1, 2, 3, 4])
-        self.assertEqual(SomeInts((1, 2, 3, 4)).a[::], [1, 2, 3, 4])
-        # too long
-        # XXX Should raise ValueError?, not RuntimeError
-        self.assertRaises(RuntimeError, SomeInts, (1, 2, 3, 4, 5))
-
     def test_nested_initializers(self):
         # test initializing nested structures
         class Phone(Structure):
             _fields_ = [("areacode", c_char*6),
                         ("number", c_char*12)]
+        self.check_struct(Phone)
 
         class Person(Structure):
             _fields_ = [("name", c_char * 12),
                         ("phone", Phone),
                         ("age", c_int)]
+        self.check_struct(Person)
 
         p = Person(b"Someone", (b"1234", b"5678"), 5)
 
@@ -324,6 +145,7 @@ class StructureTestCase(unittest.TestCase):
         class PersonW(Structure):
             _fields_ = [("name", c_wchar * 12),
                         ("age", c_int)]
+        self.check_struct(PersonW)
 
         p = PersonW("Someone \xe9")
         self.assertEqual(p.name, "Someone \xe9")
@@ -339,11 +161,13 @@ class StructureTestCase(unittest.TestCase):
         class Phone(Structure):
             _fields_ = [("areacode", c_char*6),
                         ("number", c_char*12)]
+        self.check_struct(Phone)
 
         class Person(Structure):
             _fields_ = [("name", c_char * 12),
                         ("phone", Phone),
                         ("age", c_int)]
+        self.check_struct(Person)
 
         cls, msg = self.get_except(Person, b"Someone", (1, 2))
         self.assertEqual(cls, RuntimeError)
@@ -356,47 +180,29 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(msg,
                              "(Phone) TypeError: too many initializers")
 
-    def test_huge_field_name(self):
-        # issue12881: segfault with large structure field names
-        def create_class(length):
-            class S(Structure):
-                _fields_ = [('x' * length, c_int)]
-
-        for length in [10 ** i for i in range(0, 8)]:
-            try:
-                create_class(length)
-            except MemoryError:
-                # MemoryErrors are OK, we just don't want to segfault
-                pass
-
     def get_except(self, func, *args):
         try:
             func(*args)
         except Exception as detail:
             return detail.__class__, str(detail)
 
-    def test_abstract_class(self):
-        class X(Structure):
-            _abstract_ = "something"
-        # try 'X()'
-        cls, msg = self.get_except(eval, "X()", locals())
-        self.assertEqual((cls, msg), (TypeError, "abstract class"))
-
-    def test_methods(self):
-        self.assertIn("in_dll", dir(type(Structure)))
-        self.assertIn("from_address", dir(type(Structure)))
-        self.assertIn("in_dll", dir(type(Structure)))
-
     def test_positional_args(self):
         # see also http://bugs.python.org/issue5042
         class W(Structure):
             _fields_ = [("a", c_int), ("b", c_int)]
+        self.check_struct(W)
+
         class X(W):
             _fields_ = [("c", c_int)]
+        self.check_struct(X)
+
         class Y(X):
             pass
+        self.check_struct(Y)
+
         class Z(Y):
             _fields_ = [("d", c_int), ("e", c_int), ("f", c_int)]
+        self.check_struct(Z)
 
         z = Z(1, 2, 3, 4, 5, 6)
         self.assertEqual((z.a, z.b, z.c, z.d, z.e, z.f),
@@ -415,6 +221,7 @@ class StructureTestCase(unittest.TestCase):
                 ('second', c_ulong),
                 ('third', c_ulong),
             ]
+        self.check_struct(Test)
 
         s = Test()
         s.first = 0xdeadbeef
@@ -444,6 +251,7 @@ class StructureTestCase(unittest.TestCase):
             ]
             def __del__(self):
                 finalizer_calls.append("called")
+        self.check_struct(Test)
 
         s = Test(1, 2, 3)
         # Test the StructUnionType_paramfunc() code path which copies the
@@ -473,6 +281,7 @@ class StructureTestCase(unittest.TestCase):
                 ('first', c_uint),
                 ('second', c_uint)
             ]
+        self.check_struct(X)
 
         s = X()
         s.first = 0xdeadbeef
@@ -484,11 +293,15 @@ class StructureTestCase(unittest.TestCase):
         func(s)
         self.assertEqual(s.first, 0xdeadbeef)
         self.assertEqual(s.second, 0xcafebabe)
-        got = X.in_dll(dll, "last_tfrsuv_arg")
+        dll.get_last_tfrsuv_arg.argtypes = ()
+        dll.get_last_tfrsuv_arg.restype = X
+        got = dll.get_last_tfrsuv_arg()
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
     def _test_issue18060(self, Vector):
+        # Regression tests for gh-62260
+
         # The call to atan2() should succeed if the
         # class fields were correctly cloned in the
         # subclasses. Otherwise, it will segfault.
@@ -507,8 +320,8 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_a(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
-        # _fields_ assignment, and PyCStgDict_clone()
+        # PyCStructUnionType_update_stginfo() for each
+        # _fields_ assignment, and PyCStgInfo_clone()
         # for the Mid and Vector class definitions.
         class Base(Structure):
             _fields_ = [('y', c_double),
@@ -523,7 +336,7 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_b(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
+        # PyCStructUnionType_update_stginfo() for each
         # _fields_ assignment.
         class Base(Structure):
             _fields_ = [('y', c_double),
@@ -538,7 +351,7 @@ class StructureTestCase(unittest.TestCase):
     @unittest.skipUnless(sys.byteorder == 'little', "can't test on this platform")
     def test_issue18060_c(self):
         # This test case calls
-        # PyCStructUnionType_update_stgdict() for each
+        # PyCStructUnionType_update_stginfo() for each
         # _fields_ assignment.
         class Base(Structure):
             _fields_ = [('y', c_double)]
@@ -559,36 +372,43 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [
                 ('data', c_ubyte * 16),
             ]
+        self.check_struct(Test2)
 
         class Test3AParent(Structure):
             _fields_ = [
                 ('data', c_float * 2),
             ]
+        self.check_struct(Test3AParent)
 
         class Test3A(Test3AParent):
             _fields_ = [
                 ('more_data', c_float * 2),
             ]
+        self.check_struct(Test3A)
 
         class Test3B(Structure):
             _fields_ = [
                 ('data', c_double * 2),
             ]
+        self.check_struct(Test3B)
 
         class Test3C(Structure):
             _fields_ = [
                 ("data", c_double * 4)
             ]
+        self.check_struct(Test3C)
 
         class Test3D(Structure):
             _fields_ = [
                 ("data", c_double * 8)
             ]
+        self.check_struct(Test3D)
 
         class Test3E(Structure):
             _fields_ = [
                 ("data", c_double * 9)
             ]
+        self.check_struct(Test3E)
 
 
         # Tests for struct Test2
@@ -680,12 +500,15 @@ class StructureTestCase(unittest.TestCase):
                 self.assertEqual(result.data[i], float(i+1))
 
     def test_38368(self):
+        # Regression test for gh-82549
         class U(Union):
             _fields_ = [
                 ('f1', c_uint8 * 16),
                 ('f2', c_uint16 * 8),
                 ('f3', c_uint32 * 4),
             ]
+        self.check_union(U)
+
         u = U()
         u.f3[0] = 0x01234567
         u.f3[1] = 0x89ABCDEF
@@ -701,9 +524,9 @@ class StructureTestCase(unittest.TestCase):
             self.assertEqual(f2, [0x4567, 0x0123, 0xcdef, 0x89ab,
                                   0x3210, 0x7654, 0xba98, 0xfedc])
 
-    @unittest.skipIf(True, 'Test disabled for now - see bpo-16575/bpo-16576')
+    @unittest.skipIf(True, 'Test disabled for now - see gh-60779/gh-60780')
     def test_union_by_value(self):
-        # See bpo-16575
+        # See gh-60779
 
         # These should mirror the structures in Modules/_ctypes/_ctypes_test.c
 
@@ -712,18 +535,21 @@ class StructureTestCase(unittest.TestCase):
                 ('an_int', c_int),
                 ('another_int', c_int),
             ]
+        self.check_struct(Nested1)
 
         class Test4(Union):
             _fields_ = [
                 ('a_long', c_long),
                 ('a_struct', Nested1),
             ]
+        self.check_struct(Test4)
 
         class Nested2(Structure):
             _fields_ = [
                 ('an_int', c_int),
                 ('a_union', Test4),
             ]
+        self.check_struct(Nested2)
 
         class Test5(Structure):
             _fields_ = [
@@ -731,6 +557,7 @@ class StructureTestCase(unittest.TestCase):
                 ('nested', Nested2),
                 ('another_int', c_int),
             ]
+        self.check_struct(Test5)
 
         test4 = Test4()
         dll = CDLL(_ctypes_test.__file__)
@@ -782,9 +609,9 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(test5.nested.an_int, 0)
         self.assertEqual(test5.another_int, 0)
 
-    @unittest.skipIf(True, 'Test disabled for now - see bpo-16575/bpo-16576')
+    @unittest.skipIf(True, 'Test disabled for now - see gh-60779/gh-60780')
     def test_bitfield_by_value(self):
-        # See bpo-16576
+        # See gh-60780
 
         # These should mirror the structures in Modules/_ctypes/_ctypes_test.c
 
@@ -795,6 +622,7 @@ class StructureTestCase(unittest.TestCase):
                 ('C', c_int, 3),
                 ('D', c_int, 2),
             ]
+        self.check_struct(Test6)
 
         test6 = Test6()
         # As these are signed int fields, all are logically -1 due to sign
@@ -830,6 +658,8 @@ class StructureTestCase(unittest.TestCase):
                 ('C', c_uint, 3),
                 ('D', c_uint, 2),
             ]
+        self.check_struct(Test7)
+
         test7 = Test7()
         test7.A = 1
         test7.B = 3
@@ -853,6 +683,7 @@ class StructureTestCase(unittest.TestCase):
                 ('C', c_int, 3),
                 ('D', c_int, 2),
             ]
+        self.check_union(Test8)
 
         test8 = Test8()
         with self.assertRaises(TypeError) as ctx:
@@ -863,75 +694,29 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
 
+    def test_do_not_share_pointer_type_cache_via_stginfo_clone(self):
+        # This test case calls PyCStgInfo_clone()
+        # for the Mid and Vector class definitions
+        # and checks that pointer_type cache not shared
+        # between subclasses.
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+        base_ptr = POINTER(Base)
 
-class PointerMemberTestCase(unittest.TestCase):
+        class Mid(Base):
+            pass
+        Mid._fields_ = []
+        mid_ptr = POINTER(Mid)
 
-    def test(self):
-        # a Structure with a POINTER field
-        class S(Structure):
-            _fields_ = [("array", POINTER(c_int))]
-
-        s = S()
-        # We can assign arrays of the correct type
-        s.array = (c_int * 3)(1, 2, 3)
-        items = [s.array[i] for i in range(3)]
-        self.assertEqual(items, [1, 2, 3])
-
-        # The following are bugs, but are included here because the unittests
-        # also describe the current behaviour.
-        #
-        # This fails with SystemError: bad arg to internal function
-        # or with IndexError (with a patch I have)
-
-        s.array[0] = 42
-
-        items = [s.array[i] for i in range(3)]
-        self.assertEqual(items, [42, 2, 3])
-
-        s.array[0] = 1
-
-        items = [s.array[i] for i in range(3)]
-        self.assertEqual(items, [1, 2, 3])
-
-    def test_none_to_pointer_fields(self):
-        class S(Structure):
-            _fields_ = [("x", c_int),
-                        ("p", POINTER(c_int))]
-
-        s = S()
-        s.x = 12345678
-        s.p = None
-        self.assertEqual(s.x, 12345678)
-
-
-class TestRecursiveStructure(unittest.TestCase):
-    def test_contains_itself(self):
-        class Recursive(Structure):
+        class Vector(Mid):
             pass
 
-        try:
-            Recursive._fields_ = [("next", Recursive)]
-        except AttributeError as details:
-            self.assertIn("Structure or union cannot contain itself",
-                          str(details))
-        else:
-            self.fail("Structure or union cannot contain itself")
+        vector_ptr = POINTER(Vector)
 
-
-    def test_vice_versa(self):
-        class First(Structure):
-            pass
-        class Second(Structure):
-            pass
-
-        First._fields_ = [("second", Second)]
-
-        try:
-            Second._fields_ = [("first", First)]
-        except AttributeError as details:
-            self.assertIn("_fields_ is final", str(details))
-        else:
-            self.fail("AttributeError not raised")
+        self.assertIsNot(base_ptr, mid_ptr)
+        self.assertIsNot(base_ptr, vector_ptr)
+        self.assertIsNot(mid_ptr, vector_ptr)
 
 
 if __name__ == '__main__':

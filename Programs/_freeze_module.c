@@ -22,17 +22,6 @@
 #  include <unistd.h>
 #endif
 
-/* Empty initializer for deepfrozen modules */
-int _Py_Deepfreeze_Init(void)
-{
-    return 0;
-}
-/* Empty finalizer for deepfrozen modules */
-void
-_Py_Deepfreeze_Fini(void)
-{
-}
-
 /* To avoid a circular dependency on frozen.o, we create our own structure
    of frozen modules instead, left deliberately blank so as to avoid
    unintentional import of a stale version of _frozen_importlib. */
@@ -56,27 +45,40 @@ static const char header[] =
 static void
 runtime_init(void)
 {
-    PyConfig config;
-    PyConfig_InitIsolatedConfig(&config);
+    PyInitConfig *config = PyInitConfig_Create();
+    if (config == NULL) {
+        printf("memory allocation failed\n");
+        exit(1);
+    }
 
-    config.site_import = 0;
-
-    PyStatus status;
-    status = PyConfig_SetString(&config, &config.program_name,
-                                L"./_freeze_module");
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
+    if (PyInitConfig_SetInt(config, "site_import", 0) < 0) {
+        goto error;
+    }
+    if (PyInitConfig_SetStr(config, "program_name", "./_freeze_module") < 0) {
+        goto error;
     }
 
     /* Don't install importlib, since it could execute outdated bytecode. */
-    config._install_importlib = 0;
-    config._init_main = 0;
+    if (PyInitConfig_SetInt(config, "_install_importlib", 0) < 0) {
+        goto error;
+    }
+    if (PyInitConfig_SetInt(config, "_init_main", 0) < 0) {
+        goto error;
+    }
 
-    status = Py_InitializeFromConfig(&config);
-    PyConfig_Clear(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
+    if (Py_InitializeFromInitConfig(config) < 0) {
+        goto error;
+    }
+    PyInitConfig_Free(config);
+    return;
+
+error:
+    {
+        const char *err_msg;
+        (void)PyInitConfig_GetError(config, &err_msg);
+        printf("Python init error: %s\n", err_msg);
+        PyInitConfig_Free(config);
+        exit(1);
     }
 }
 
@@ -121,6 +123,9 @@ static PyObject *
 compile_and_marshal(const char *name, const char *text)
 {
     char *filename = (char *) malloc(strlen(name) + 10);
+    if (filename == NULL) {
+        return PyErr_NoMemory();
+    }
     sprintf(filename, "<frozen %s>", name);
     PyObject *code = Py_CompileStringExFlags(text, filename,
                                              Py_file_input, NULL, 0);
@@ -129,6 +134,7 @@ compile_and_marshal(const char *name, const char *text)
         return NULL;
     }
 
+    assert(Py_MARSHAL_VERSION >= 5);
     PyObject *marshalled = PyMarshal_WriteObjectToString(code, Py_MARSHAL_VERSION);
     Py_CLEAR(code);
     if (marshalled == NULL) {
@@ -144,6 +150,9 @@ get_varname(const char *name, const char *prefix)
 {
     size_t n = strlen(prefix);
     char *varname = (char *) malloc(strlen(name) + n + 1);
+    if (varname == NULL) {
+        return NULL;
+    }
     (void)strcpy(varname, prefix);
     for (size_t i = 0; name[i] != '\0'; i++) {
         if (name[i] == '.') {
@@ -189,6 +198,11 @@ write_frozen(const char *outpath, const char *inpath, const char *name,
 
     fprintf(outfile, "%s\n", header);
     char *arrayname = get_varname(name, "_Py_M__");
+    if (arrayname == NULL) {
+        fprintf(stderr, "memory error: could not allocate varname\n");
+        fclose(outfile);
+        return -1;
+    }
     write_code(outfile, marshalled, arrayname);
     free(arrayname);
 

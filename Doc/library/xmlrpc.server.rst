@@ -1,5 +1,5 @@
-:mod:`xmlrpc.server` --- Basic XML-RPC servers
-==============================================
+:mod:`!xmlrpc.server` --- Basic XML-RPC servers
+===============================================
 
 .. module:: xmlrpc.server
    :synopsis: Basic XML-RPC server implementations.
@@ -20,8 +20,8 @@ servers written in Python.  Servers can either be free standing, using
 .. warning::
 
    The :mod:`xmlrpc.server` module is not secure against maliciously
-   constructed data.  If you need to parse untrusted or unauthenticated data see
-   :ref:`xml-vulnerabilities`.
+   constructed data.  If you need to parse untrusted or unauthenticated data,
+   see :ref:`xml-security`.
 
 .. include:: ../includes/wasm-notavail.rst
 

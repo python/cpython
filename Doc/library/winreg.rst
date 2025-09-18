@@ -1,5 +1,5 @@
-:mod:`winreg` --- Windows registry access
-=========================================
+:mod:`!winreg` --- Windows registry access
+==========================================
 
 .. module:: winreg
    :platform: Windows
@@ -171,6 +171,24 @@ This module offers the following functions:
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
+
+
+.. function:: DeleteTree(key, sub_key=None)
+
+   Deletes the specified key and all its subkeys and values recursively.
+
+   *key* is an already open key, or one of the predefined
+   :ref:`HKEY_* constants <hkey-constants>`.
+
+   *sub_key* is a string that names the subkey to delete. If ``None``,
+   deletes all subkeys and values of the specified key.
+
+   This function deletes a key and all its descendants. If *sub_key* is
+   ``None``, all subkeys and values of the specified key are deleted.
+
+   .. audit-event:: winreg.DeleteTree key,sub_key winreg.DeleteTree
+
+   .. versionadded:: next
 
 
 .. function:: DeleteValue(key, value)

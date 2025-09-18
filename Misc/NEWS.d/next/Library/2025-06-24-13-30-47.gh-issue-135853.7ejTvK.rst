@@ -1,0 +1,2 @@
+Add :func:`math.fmax` and :func:`math.fmin` to get the larger and smaller of
+two floating-point values. Patch by Bénédikt Tran.

@@ -1,5 +1,5 @@
-:mod:`re` --- Regular expression operations
-===========================================
+:mod:`!re` --- Regular expression operations
+============================================
 
 .. module:: re
    :synopsis: Regular expression operations.
@@ -48,7 +48,7 @@ fine-tuning parameters.
 
 .. seealso::
 
-   The third-party `regex <https://pypi.org/project/regex/>`_ module,
+   The third-party :pypi:`regex` module,
    which has an API compatible with the standard library :mod:`re` module,
    but offers additional functionality and a more thorough Unicode support.
 
@@ -101,7 +101,7 @@ The special characters are:
 ``.``
    (Dot.)  In the default mode, this matches any character except a newline.  If
    the :const:`DOTALL` flag has been specified, this matches any character
-   including a newline.
+   including a newline.  ``(?s:.)`` matches any character regardless of flags.
 
 .. index:: single: ^ (caret); in regular expressions
 
@@ -250,14 +250,23 @@ The special characters are:
      ``[a\-z]``) or if it's placed as the first or last character
      (e.g. ``[-a]`` or ``[a-]``), it will match a literal ``'-'``.
 
-   * Special characters lose their special meaning inside sets.  For example,
+   * Special characters except backslash lose their special meaning inside sets.
+     For example,
      ``[(+*)]`` will match any of the literal characters ``'('``, ``'+'``,
      ``'*'``, or ``')'``.
 
    .. index:: single: \ (backslash); in regular expressions
 
-   * Character classes such as ``\w`` or ``\S`` (defined below) are also accepted
-     inside a set, although the characters they match depend on the flags_ used.
+   * Backslash either escapes characters which have special meaning in a set
+     such as ``'-'``, ``']'``, ``'^'`` and ``'\\'`` itself or signals
+     a special sequence which represents a single character such as
+     ``\xa0`` or ``\n`` or a character class such as ``\w`` or ``\S``
+     (defined below).
+     Note that ``\b`` represents a single "backspace" character,
+     not a word boundary as outside a set, and numeric escapes
+     such as ``\1`` are always octal escapes, not group references.
+     Special sequences which do not match a single character such as ``\A``
+     and ``\z`` are not allowed.
 
    .. index:: single: ^ (caret); in regular expressions
 
@@ -572,6 +581,9 @@ character ``'$'``.
    Word boundaries are determined by the current locale
    if the :py:const:`~re.LOCALE` flag is used.
 
+   .. versionchanged:: 3.14
+      ``\B`` now matches empty input string.
+
 .. index:: single: \d; in regular expressions
 
 ``\d``
@@ -600,10 +612,9 @@ character ``'$'``.
 
 ``\s``
    For Unicode (str) patterns:
-      Matches Unicode whitespace characters (which includes
-      ``[ \t\n\r\f\v]``, and also many other characters, for example the
-      non-breaking spaces mandated by typography rules in many
-      languages).
+      Matches Unicode whitespace characters (as defined by :py:meth:`str.isspace`).
+      This includes ``[ \t\n\r\f\v]``, and also many other characters, for example the
+      non-breaking spaces mandated by typography rules in many languages.
 
       Matches ``[ \t\n\r\f\v]`` if the :py:const:`~re.ASCII` flag is used.
 
@@ -650,10 +661,16 @@ character ``'$'``.
    matches characters which are neither alphanumeric in the current locale
    nor the underscore.
 
-.. index:: single: \Z; in regular expressions
+.. index:: single: \z; in regular expressions
+           single: \Z; in regular expressions
+
+``\z``
+   Matches only at the end of the string.
+
+   .. versionadded:: 3.14
 
 ``\Z``
-   Matches only at the end of the string.
+   The same as ``\z``.  For compatibility with old Python versions.
 
 .. index::
    single: \a; in regular expressions
@@ -911,6 +928,10 @@ Functions
    ``None`` if no position in the string matches the pattern; note that this is
    different from finding a zero-length match at some point in the string.
 
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
 
 .. function:: match(pattern, string, flags=0)
 
@@ -925,12 +946,20 @@ Functions
    If you want to locate a match anywhere in *string*, use :func:`search`
    instead (see also :ref:`search-vs-match`).
 
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
 
 .. function:: fullmatch(pattern, string, flags=0)
 
    If the whole *string* matches the regular expression *pattern*, return a
    corresponding :class:`~re.Match`.  Return ``None`` if the string does not match
    the pattern; note that this is different from a zero-length match.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
    .. versionadded:: 3.4
 
@@ -962,8 +991,8 @@ Functions
    That way, separator components are always found at the same relative
    indices within the result list.
 
-   Empty matches for the pattern split the string only when not adjacent
-   to a previous empty match.
+   Adjacent empty matches are not possible, but an empty match can occur
+   immediately after a non-empty match.
 
    .. code:: pycon
 
@@ -973,6 +1002,10 @@ Functions
       ['', '', 'w', 'o', 'r', 'd', 's', '', '']
       >>> re.split(r'(\W*)', '...words...')
       ['', '...', '', '', 'w', '', 'o', '', 'r', '', 'd', '', 's', '...', '', '', '']
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
    .. versionchanged:: 3.1
       Added the optional flags argument.
@@ -1004,6 +1037,10 @@ Functions
       >>> re.findall(r'(\w+)=(\d+)', 'set width=20 and height=10')
       [('width', '20'), ('height', '10')]
 
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
+
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
 
@@ -1014,6 +1051,10 @@ Functions
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
    is scanned left-to-right, and matches are returned in the order found.  Empty
    matches are included in the result.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
    .. versionchanged:: 3.7
       Non-empty matches can now start just after a previous empty match.
@@ -1054,9 +1095,12 @@ Functions
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
-   occurrences will be replaced. Empty matches for the pattern are replaced only
-   when not adjacent to a previous empty match, so ``sub('x*', '-', 'abxd')`` returns
-   ``'-a-b--d-'``.
+   occurrences will be replaced.
+
+   Adjacent empty matches are not possible, but an empty match can occur
+   immediately after a non-empty match.
+   As a result, ``sub('x*', '-', 'abxd')`` returns ``'-a-b--d-'``
+   instead of ``'-a-b-d-'``.
 
    .. index:: single: \g; in regular expressions
 
@@ -1069,6 +1113,10 @@ Functions
    reference to group 20, not a reference to group 2 followed by the literal
    character ``'0'``.  The backreference ``\g<0>`` substitutes in the entire
    substring matched by the RE.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
    .. versionchanged:: 3.1
       Added the optional flags argument.
@@ -1083,8 +1131,7 @@ Functions
    .. versionchanged:: 3.7
       Unknown escapes in *repl* consisting of ``'\'`` and an ASCII letter
       now are errors.
-      Empty matches for the pattern are replaced when adjacent to a previous
-      non-empty match.
+      An empty match can occur immediately after a non-empty match.
 
    .. versionchanged:: 3.12
       Group *id* can only contain ASCII digits.
@@ -1101,6 +1148,10 @@ Functions
 
    Perform the same operation as :func:`sub`, but return a tuple ``(new_string,
    number_of_subs_made)``.
+
+   The expression's behaviour can be modified by specifying a *flags* value.
+   Values can be any of the `flags`_ variables, combined using bitwise OR
+   (the ``|`` operator).
 
 
 .. function:: escape(pattern)

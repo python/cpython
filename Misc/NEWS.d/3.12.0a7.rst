@@ -219,7 +219,7 @@ Aasland.
 .. nonce: DqNehf
 .. section: Library
 
-Pure python :func:`locale.getencoding()` will not warn deprecation.
+Pure python :func:`locale.getencoding` will not warn deprecation.
 
 ..
 
