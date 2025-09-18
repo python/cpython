@@ -34,7 +34,7 @@ from fcntl import ioctl
 
 from . import curses
 from .console import Console, Event
-from .fancy_termios import tcgetattr, tcsetattr
+from .fancy_termios import tcgetattr, tcsetattr, TermState
 from .trace import trace
 from .unix_eventqueue import EventQueue
 from .utils import wlen
@@ -44,16 +44,19 @@ TYPE_CHECKING = False
 
 # types
 if TYPE_CHECKING:
-    from typing import IO, Literal, overload
+    from typing import AbstractSet, IO, Literal, overload, cast
 else:
     overload = lambda func: None
+    cast = lambda typ, val: val
 
 
 class InvalidTerminal(RuntimeError):
-    pass
+    def __init__(self, message: str) -> None:
+        super().__init__(errno.EIO, message)
 
 
 _error = (termios.error, curses.error, InvalidTerminal)
+_error_codes_to_ignore = frozenset([errno.EIO, errno.ENXIO, errno.EPERM])
 
 SIGWINCH_EVENT = "repaint"
 
@@ -118,12 +121,13 @@ except AttributeError:
 
         def register(self, fd, flag):
             self.fd = fd
+
         # note: The 'timeout' argument is received as *milliseconds*
         def poll(self, timeout: float | None = None) -> list[int]:
             if timeout is None:
                 r, w, e = select.select([self.fd], [], [])
             else:
-                r, w, e = select.select([self.fd], [], [], timeout/1000)
+                r, w, e = select.select([self.fd], [], [], timeout / 1000)
             return r
 
     poll = MinimalPoll  # type: ignore[assignment]
@@ -154,9 +158,20 @@ class UnixConsole(Console):
         self.input_buffer_pos = 0
         curses.setupterm(term or None, self.output_fd)
         self.term = term
+        self.is_apple_terminal = (
+            platform.system() == "Darwin"
+            and os.getenv("TERM_PROGRAM") == "Apple_Terminal"
+        )
+
+        try:
+            self.__input_fd_set(tcgetattr(self.input_fd), ignore=frozenset())
+        except _error as e:
+            raise RuntimeError(f"termios failure ({e.args[1]})")
 
         @overload
-        def _my_getstr(cap: str, optional: Literal[False] = False) -> bytes: ...
+        def _my_getstr(
+            cap: str, optional: Literal[False] = False
+        ) -> bytes: ...
 
         @overload
         def _my_getstr(cap: str, optional: bool) -> bytes | None: ...
@@ -221,7 +236,6 @@ class UnixConsole(Console):
             self.input_buffer = b""
             self.input_buffer_pos = 0
         return ret
-
 
     def change_encoding(self, encoding: str) -> None:
         """
@@ -334,6 +348,8 @@ class UnixConsole(Console):
         """
         Prepare the console for input/output operations.
         """
+        self.__buffer = []
+
         self.__svtermstate = tcgetattr(self.input_fd)
         raw = self.__svtermstate.copy()
         raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
@@ -345,16 +361,14 @@ class UnixConsole(Console):
         raw.lflag |= termios.ISIG
         raw.cc[termios.VMIN] = 1
         raw.cc[termios.VTIME] = 0
-        tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
+        self.__input_fd_set(raw)
 
         # In macOS terminal we need to deactivate line wrap via ANSI escape code
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7l")
 
         self.screen = []
         self.height, self.width = self.getheightwidth()
-
-        self.__buffer = []
 
         self.posxy = 0, 0
         self.__gone_tall = 0
@@ -377,9 +391,9 @@ class UnixConsole(Console):
         self.__disable_bracketed_paste()
         self.__maybe_write_code(self._rmkx)
         self.flushoutput()
-        tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
+        self.__input_fd_set(self.__svtermstate)
 
-        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+        if self.is_apple_terminal:
             os.write(self.output_fd, b"\033[?7h")
 
         if hasattr(self, "old_sigwinch"):
@@ -416,6 +430,8 @@ class UnixConsole(Console):
                             return self.event_queue.get()
                         else:
                             continue
+                    elif err.errno == errno.EIO:
+                        raise SystemExit(errno.EIO)
                     else:
                         raise
                 else:
@@ -814,3 +830,17 @@ class UnixConsole(Console):
                 os.write(self.output_fd, self._pad * nchars)
             else:
                 time.sleep(float(delay) / 1000.0)
+
+    def __input_fd_set(
+        self,
+        state: TermState,
+        ignore: AbstractSet[int] = _error_codes_to_ignore,
+    ) -> bool:
+        try:
+            tcsetattr(self.input_fd, termios.TCSADRAIN, state)
+        except termios.error as te:
+            if te.args[0] not in ignore:
+                raise
+            return False
+        else:
+            return True
