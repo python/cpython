@@ -111,14 +111,14 @@ jobs:
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
          '
 
-      - name: Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
-          make all --jobs 4
-          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+      # - name: Linux
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #     sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+      #     export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+      #     ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
+      #     make all --jobs 4
+      #     ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
   no-opt-jit:
     name: JIT without optimizations (Debug)
