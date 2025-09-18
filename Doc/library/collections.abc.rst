@@ -291,9 +291,22 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. deprecated-removed:: 3.12 3.17
       The :class:`ByteString` ABC has been deprecated.
-      For use in type annotations, prefer a union, like ``bytes | bytearray``, or
-      :class:`collections.abc.Buffer`.
-      For use as an ABC, prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
+
+      Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+      implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use
+      in type annotations, either use :class:`Buffer` or a union that
+      explicitly specifies the types your code supports (e.g.,
+      ``bytes | bytearray | memoryview``).
+
+      :class:`!ByteString` was originally intended to be an abstract class that
+      would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+      However, since the ABC never had any methods, knowing that an object was
+      an instance of :class:`!ByteString` never actually told you anything
+      useful about the object. Other common buffer types such as
+      :class:`memoryview` were also never understood as subtypes of
+      :class:`!ByteString` (either at runtime or by static type checkers).
+
+      See :pep:`PEP 688 <688#current-options>` for more details.
 
 .. class:: Set
            MutableSet
