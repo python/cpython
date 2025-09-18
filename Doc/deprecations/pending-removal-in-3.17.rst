@@ -7,8 +7,8 @@ Pending removal in Python 3.17
 
     Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
     implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use
-    in type annotations, either use :class:`Buffer` or a union that explicitly
-    specifies the types your code supports (e.g.,
+    in type annotations, either use :class:`~collections.abc.Buffer` or a union
+    that explicitly specifies the types your code supports (e.g.,
     ``bytes | bytearray | memoryview``).
 
     :class:`!ByteString` was originally intended to be an abstract class that
