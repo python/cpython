@@ -2336,7 +2336,7 @@ static PyObject *
 lone_kwds_impl(PyObject *module, PyObject *kwds)
 /*[clinic end generated code: output=572549c687a0432e input=6ef338b913ecae17]*/
 {
-    Py_RETURN_NONE;
+    return pack_arguments_newref(1, kwds);
 }
 
 
@@ -2353,7 +2353,7 @@ kwds_with_pos_only_impl(PyObject *module, PyObject *a, PyObject *b,
                         PyObject *kwds)
 /*[clinic end generated code: output=573096d3a7efcce5 input=da081a5d9ae8878a]*/
 {
-    Py_RETURN_NONE;
+    return pack_arguments_newref(3, a, b, kwds);
 }
 
 
@@ -2367,7 +2367,7 @@ static PyObject *
 kwds_with_stararg_impl(PyObject *module, PyObject *args, PyObject *kwds)
 /*[clinic end generated code: output=d4b0064626a25208 input=1be404572d685859]*/
 {
-    Py_RETURN_NONE;
+    return pack_arguments_newref(2, args, kwds);
 }
 
 
@@ -2386,7 +2386,7 @@ kwds_with_pos_only_and_stararg_impl(PyObject *module, PyObject *a,
                                     PyObject *kwds)
 /*[clinic end generated code: output=af7df7640c792246 input=2fe330c7981f0829]*/
 {
-    Py_RETURN_NONE;
+    return pack_arguments_newref(4, a, b, args, kwds);
 }
 
 
