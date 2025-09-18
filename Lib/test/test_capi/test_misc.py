@@ -1980,6 +1980,41 @@ class SubinterpreterTest(unittest.TestCase):
         subinterp_attr_id = os.read(r, 100)
         self.assertEqual(main_attr_id, subinterp_attr_id)
 
+    @threading_helper.requires_working_threading()
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @requires_subinterpreters
+    def test_pending_call_creates_thread_subinterpreter(self):
+        interpreters = import_helper.import_module("concurrent.interpreters")
+        r, w = os.pipe()
+        source = f"""if True:
+        import _testinternalcapi
+        import threading
+        import time
+        import os
+
+
+        def output():
+            time.sleep(1)
+            os.write({w}, b"x")
+
+
+        def callback():
+            threading.Thread(target=output).start()
+
+
+        def create_pending_call():
+            time.sleep(1)
+            _testinternalcapi.simple_pending_call(callback)
+
+
+        threading.Thread(target=create_pending_call).start()
+        """
+        interp = interpreters.create()
+        interp.exec(source)
+        interp.close()
+        data = os.read(r, 1)
+        self.assertEqual(data, b"x")
+
 
 @requires_subinterpreters
 class InterpreterConfigTests(unittest.TestCase):
