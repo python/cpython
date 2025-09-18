@@ -1,0 +1,2 @@
+Add support for single-dash long options and alternate prefix characters in
+:class:`argparse.BooleanOptionalAction`.

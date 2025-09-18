@@ -933,15 +933,24 @@ class BooleanOptionalAction(Action):
                  deprecated=False):
 
         _option_strings = []
+        neg_option_strings = []
         for option_string in option_strings:
             _option_strings.append(option_string)
 
-            if option_string.startswith('--'):
-                if option_string.startswith('--no-'):
+            if len(option_string) > 2 and option_string[0] == option_string[1]:
+                if option_string.startswith('no-', 2):
                     raise ValueError(f'invalid option name {option_string!r} '
                                      f'for BooleanOptionalAction')
-                option_string = '--no-' + option_string[2:]
+                option_string = option_string[:2] + 'no-' + option_string[2:]
                 _option_strings.append(option_string)
+                neg_option_strings.append(option_string)
+            elif len(option_string) > 2 and option_string[0] != option_string[1]:
+                if option_string.startswith('no-', 1):
+                    raise ValueError(f'invalid option name {option_string!r} '
+                                     f'for BooleanOptionalAction')
+                option_string = option_string[:1] + 'no-' + option_string[1:]
+                _option_strings.append(option_string)
+                neg_option_strings.append(option_string)
 
         super().__init__(
             option_strings=_option_strings,
@@ -951,11 +960,12 @@ class BooleanOptionalAction(Action):
             required=required,
             help=help,
             deprecated=deprecated)
+        self.neg_option_strings = neg_option_strings
 
 
     def __call__(self, parser, namespace, values, option_string=None):
         if option_string in self.option_strings:
-            setattr(namespace, self.dest, not option_string.startswith('--no-'))
+            setattr(namespace, self.dest, option_string not in self.neg_option_strings)
 
     def format_usage(self):
         return ' | '.join(self.option_strings)
