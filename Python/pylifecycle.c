@@ -2060,8 +2060,18 @@ interp_has_atexit_callbacks(PyInterpreterState *interp)
     return PyList_GET_SIZE(interp->atexit.callbacks) != 0;
 }
 
+static int
+runtime_has_subinterpreters(_PyRuntimeState *runtime)
+{
+    assert(runtime != NULL);
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = runtime->interpreters.head;
+    HEAD_UNLOCK(runtime);
+    return interp->next != NULL;
+}
+
 static void
-make_pre_finalization_calls(PyThreadState *tstate)
+make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
 {
     assert(tstate != NULL);
     PyInterpreterState *interp = tstate->interp;
@@ -2089,6 +2099,19 @@ make_pre_finalization_calls(PyThreadState *tstate)
 
         _PyAtExit_Call(tstate->interp);
 
+        if (subinterpreters) {
+            /* Clean up any lingering subinterpreters.
+
+            Two preconditions need to be met here:
+
+                - This has to happen before _PyRuntimeState_SetFinalizing is
+                called, or else threads might get prematurely blocked.
+                - The world must not be stopped, as finalizers can run.
+            */
+            finalize_subinterpreters();
+        }
+
+
         /* Stop the world to prevent other threads from creating threads or
          * atexit callbacks. On the default build, this is simply locked by
          * the GIL. For pending calls, we acquire the dedicated mutex, because
@@ -2099,9 +2122,13 @@ make_pre_finalization_calls(PyThreadState *tstate)
         // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
         // being stopped?
         _PyEval_StopTheWorldAll(interp->runtime);
+        int has_subinterpreters = subinterpreters
+                                    ? runtime_has_subinterpreters(interp->runtime)
+                                    : 0;
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
-                              || interp_has_pending_calls(interp));
+                              || interp_has_pending_calls(interp)
+                              || has_subinterpreters);
         if (!should_continue) {
             break;
         }
@@ -2128,19 +2155,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Block some operations.
     tstate->interp->finalizing = 1;
 
-    /* Clean up any lingering subinterpreters.
-
-       Two preconditions need to be met here:
-
-        - This has to happen before _PyRuntimeState_SetFinalizing is
-          called, or else threads might get prematurely blocked.
-        - The world must not be stopped, as finalizers can run.
-    */
-    // TODO: Prevent new subinterpreters after this point
-    finalize_subinterpreters();
-
     // This call stops the world and takes the pending calls lock.
-    make_pre_finalization_calls(tstate);
+    make_pre_finalization_calls(tstate, /*subinterpreters=*/1);
 
     assert(_PyThreadState_GET() == tstate);
 
@@ -2536,7 +2552,7 @@ Py_EndInterpreter(PyThreadState *tstate)
     interp->finalizing = 1;
 
     // This call stops the world and takes the pending calls lock.
-    make_pre_finalization_calls(tstate);
+    make_pre_finalization_calls(tstate, /*subinterpreters=*/0);
 
     ASSERT_WORLD_STOPPED(interp);
     /* Remaining daemon threads will automatically exit
