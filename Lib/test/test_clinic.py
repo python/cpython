@@ -367,7 +367,7 @@ class ClinicWholeFileTest(TestCase):
                 invalid_arg: object
             [clinic start generated code]*/
         """
-        self.expect_failure(block, err, lineno=7)
+        self.expect_failure(block, err, lineno=5)
 
     def test_module_already_got_one(self):
         err = "Already defined module 'm'!"
