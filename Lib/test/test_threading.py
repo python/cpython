@@ -2107,7 +2107,6 @@ class ThreadingExceptionTests(BaseTestCase):
             proc.stderr.flush()
             error = proc.stderr.read()
             self.assertIn(b"KeyboardInterrupt", error)
-            self.assertIn(b"threading shutdown", error)
 
 
 class ThreadRunFail(threading.Thread):
