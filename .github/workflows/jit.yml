@@ -98,7 +98,7 @@ jobs:
         run: |
           arch -x86_64 /bin/bash -c '
           brew update
-          find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
+          find /usr/local/bin -lname "*/Library/Frameworks/Python.framework/*" -delete
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
           # Set MACOSX_DEPLOYMENT_TARGET and -Werror=unguarded-availability to
