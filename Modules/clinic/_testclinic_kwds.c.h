@@ -26,17 +26,23 @@ static PyObject *
 lone_kwds(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    PyObject *kwds = NULL;
+    PyObject *__clinic_kwds = NULL;
 
     if (!_PyArg_NoPositional("lone_kwds", args)) {
         goto exit;
     }
-    kwds = (kwargs != NULL) ? Py_NewRef(kwargs) : PyDict_New();
-    return_value = lone_kwds_impl(module, kwds);
+    if (kwargs == NULL) {
+        __clinic_kwds = PyDict_New();
+        if (__clinic_kwds == NULL) goto exit;
+    }
+    else {
+        __clinic_kwds = Py_NewRef(kwargs);
+    }
+    return_value = lone_kwds_impl(module, __clinic_kwds);
 
 exit:
     /* Cleanup for kwds */
-    Py_XDECREF(kwds);
+    Py_XDECREF(__clinic_kwds);
 
     return return_value;
 }
@@ -59,19 +65,25 @@ kwds_with_pos_only(PyObject *module, PyObject *args, PyObject *kwargs)
     PyObject *return_value = NULL;
     PyObject *a;
     PyObject *b;
-    PyObject *kwds = NULL;
+    PyObject *__clinic_kwds = NULL;
 
     if (!_PyArg_CheckPositional("kwds_with_pos_only", PyTuple_GET_SIZE(args), 2, 2)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
     b = PyTuple_GET_ITEM(args, 1);
-    kwds = (kwargs != NULL) ? Py_NewRef(kwargs) : PyDict_New();
-    return_value = kwds_with_pos_only_impl(module, a, b, kwds);
+    if (kwargs == NULL) {
+        __clinic_kwds = PyDict_New();
+        if (__clinic_kwds == NULL) goto exit;
+    }
+    else {
+        __clinic_kwds = Py_NewRef(kwargs);
+    }
+    return_value = kwds_with_pos_only_impl(module, a, b, __clinic_kwds);
 
 exit:
     /* Cleanup for kwds */
-    Py_XDECREF(kwds);
+    Py_XDECREF(__clinic_kwds);
 
     return return_value;
 }
@@ -92,16 +104,23 @@ kwds_with_stararg(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     PyObject *__clinic_args = NULL;
-    PyObject *kwds = NULL;
+    PyObject *__clinic_kwds = NULL;
 
     __clinic_args = Py_NewRef(args);
-    kwds = (kwargs != NULL) ? Py_NewRef(kwargs) : PyDict_New();
-    return_value = kwds_with_stararg_impl(module, __clinic_args, kwds);
+    if (kwargs == NULL) {
+        __clinic_kwds = PyDict_New();
+        if (__clinic_kwds == NULL) goto exit;
+    }
+    else {
+        __clinic_kwds = Py_NewRef(kwargs);
+    }
+    return_value = kwds_with_stararg_impl(module, __clinic_args, __clinic_kwds);
 
+exit:
     /* Cleanup for args */
     Py_XDECREF(__clinic_args);
     /* Cleanup for kwds */
-    Py_XDECREF(kwds);
+    Py_XDECREF(__clinic_kwds);
 
     return return_value;
 }
@@ -126,7 +145,7 @@ kwds_with_pos_only_and_stararg(PyObject *module, PyObject *args, PyObject *kwarg
     PyObject *a;
     PyObject *b;
     PyObject *__clinic_args = NULL;
-    PyObject *kwds = NULL;
+    PyObject *__clinic_kwds = NULL;
 
     if (!_PyArg_CheckPositional("kwds_with_pos_only_and_stararg", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
         goto exit;
@@ -137,15 +156,21 @@ kwds_with_pos_only_and_stararg(PyObject *module, PyObject *args, PyObject *kwarg
     if (!__clinic_args) {
         goto exit;
     }
-    kwds = (kwargs != NULL) ? Py_NewRef(kwargs) : PyDict_New();
-    return_value = kwds_with_pos_only_and_stararg_impl(module, a, b, __clinic_args, kwds);
+    if (kwargs == NULL) {
+        __clinic_kwds = PyDict_New();
+        if (__clinic_kwds == NULL) goto exit;
+    }
+    else {
+        __clinic_kwds = Py_NewRef(kwargs);
+    }
+    return_value = kwds_with_pos_only_and_stararg_impl(module, a, b, __clinic_args, __clinic_kwds);
 
 exit:
     /* Cleanup for args */
     Py_XDECREF(__clinic_args);
     /* Cleanup for kwds */
-    Py_XDECREF(kwds);
+    Py_XDECREF(__clinic_kwds);
 
     return return_value;
 }
-/*[clinic end generated code: output=0a1e2c2244a10a50 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c391b2a6f7d5ab41 input=a9049054013a1b77]*/

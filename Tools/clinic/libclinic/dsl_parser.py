@@ -246,6 +246,7 @@ class IndentStack:
 class DSLParser:
     function: Function | None
     state: StateKeeper
+    expecting_parameters: bool
     keyword_only: bool
     positional_only: bool
     deprecated_positional: VersionTuple | None
@@ -285,6 +286,7 @@ class DSLParser:
     def reset(self) -> None:
         self.function = None
         self.state = self.state_dsl_start
+        self.expecting_parameters = True
         self.keyword_only = False
         self.positional_only = False
         self.deprecated_positional = None
@@ -848,6 +850,10 @@ class DSLParser:
             # we indented, must be to new parameter docstring column
             return self.next(self.state_parameter_docstring_start, line)
 
+        if not self.expecting_parameters:
+            fail('Encountered parameter line when not expecting '
+                 f'parameters: {line}')
+
         line = line.rstrip()
         if line.endswith('\\'):
             self.parameter_continuation = line[:-1]
@@ -1128,8 +1134,10 @@ class DSLParser:
         key = f"{parameter_name}_as_{c_name}" if c_name else parameter_name
         self.function.parameters[key] = p
 
-        if is_vararg or is_var_keyword:
+        if is_vararg:
             self.keyword_only = True
+        if is_var_keyword:
+            self.expecting_parameters = False
 
     @staticmethod
     def parse_converter(

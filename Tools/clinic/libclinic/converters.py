@@ -1304,5 +1304,11 @@ class var_keyword_dict_converter(VarKeywordCConverter):
     def parse_var_keyword(self) -> str:
         param_name = self.parser_name
         return f"""
-            {param_name} = (kwargs != NULL) ? Py_NewRef(kwargs) : PyDict_New();
+            if (kwargs == NULL) {{{{
+                {param_name} = PyDict_New();
+                if ({param_name} == NULL) goto exit;
+            }}}}
+            else {{{{
+                {param_name} = Py_NewRef(kwargs);
+            }}}}
             """
