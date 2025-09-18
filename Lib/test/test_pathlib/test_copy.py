@@ -3,7 +3,10 @@ Tests for copying from pathlib.types._ReadablePath to _WritablePath.
 """
 
 import contextlib
+import errno
+import os
 import unittest
+from unittest import mock
 
 from .support import is_pypi
 from .support.local_path import LocalPathGround
@@ -168,6 +171,74 @@ if not is_pypi:
     class LocalToLocalPathCopyTest(CopyTestBase, unittest.TestCase):
         source_ground = LocalPathGround(Path)
         target_ground = LocalPathGround(Path)
+
+        @unittest.skipUnless(os.name == 'nt', 'needs Windows for CopyFile2 fallback')
+        def test_copy_hidden_file_fallback_on_access_denied(self):
+            import _winapi
+            import ctypes
+            import pathlib
+
+            if pathlib.copyfile2 is None:
+                self.skipTest('copyfile2 unavailable')
+
+            source = self.source_root / 'fileA'
+            target = self.target_root / 'copy_hidden'
+
+            kernel32 = ctypes.windll.kernel32
+            GetFileAttributesW = kernel32.GetFileAttributesW
+            SetFileAttributesW = kernel32.SetFileAttributesW
+            GetFileAttributesW.argtypes = [ctypes.c_wchar_p]
+            GetFileAttributesW.restype = ctypes.c_uint32
+            SetFileAttributesW.argtypes = [ctypes.c_wchar_p, ctypes.c_uint32]
+            SetFileAttributesW.restype = ctypes.c_int
+
+            path_str = str(source)
+            original_attrs = GetFileAttributesW(path_str)
+            if original_attrs in (0xFFFFFFFF, ctypes.c_uint32(-1).value):
+                self.skipTest('GetFileAttributesW failed')
+            hidden_attrs = original_attrs | 0x2  # FILE_ATTRIBUTE_HIDDEN
+            if not SetFileAttributesW(path_str, hidden_attrs):
+                self.skipTest('SetFileAttributesW failed')
+            self.addCleanup(SetFileAttributesW, path_str, original_attrs)
+
+            def raise_access_denied(*args, **kwargs):
+                exc = OSError(errno.EACCES, 'Access denied')
+                exc.winerror = _winapi.ERROR_ACCESS_DENIED
+                raise exc
+
+            with mock.patch('pathlib.copyfile2', side_effect=raise_access_denied) as mock_copy:
+                result = source.copy(target)
+
+            self.assertEqual(result, target)
+            self.assertTrue(self.target_ground.isfile(result))
+            self.assertEqual(self.source_ground.readbytes(source),
+                             self.target_ground.readbytes(result))
+            self.assertEqual(mock_copy.call_count, 1)
+
+        @unittest.skipUnless(os.name == 'nt', 'needs Windows for CopyFile2 fallback')
+        def test_copy_file_fallback_on_privilege_not_held(self):
+            import _winapi
+            import pathlib
+
+            if pathlib.copyfile2 is None:
+                self.skipTest('copyfile2 unavailable')
+
+            source = self.source_root / 'fileA'
+            target = self.target_root / 'copy_privilege'
+
+            def raise_privilege_not_held(*args, **kwargs):
+                exc = OSError(errno.EPERM, 'Privilege not held')
+                exc.winerror = _winapi.ERROR_PRIVILEGE_NOT_HELD
+                raise exc
+
+            with mock.patch('pathlib.copyfile2', side_effect=raise_privilege_not_held) as mock_copy:
+                result = source.copy(target)
+
+            self.assertEqual(result, target)
+            self.assertTrue(self.target_ground.isfile(result))
+            self.assertEqual(self.source_ground.readbytes(source),
+                             self.target_ground.readbytes(result))
+            self.assertEqual(mock_copy.call_count, 1)
 
 
 if __name__ == "__main__":
