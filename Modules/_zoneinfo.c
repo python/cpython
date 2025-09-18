@@ -2197,7 +2197,22 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
         return NULL;
     }
 
-    unsigned char fold = PyDateTime_DATE_GET_FOLD(dt);
+    unsigned char fold;
+    if (PyDateTime_Check(dt)) {
+        fold = PyDateTime_DATE_GET_FOLD(dt);
+    } else {
+        PyObject *fold_obj = PyObject_GetAttrString(dt, "fold");
+        if (fold_obj == NULL) {
+            return NULL;
+        }
+
+        fold = (unsigned char)PyLong_AsLong(fold_obj);
+        Py_DECREF(fold_obj);
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+    }
+
     assert(fold < 2);
     int64_t *local_transitions = self->trans_list_wall[fold];
     size_t num_trans = self->num_transitions;
@@ -2206,10 +2221,23 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
         return self->ttinfo_before;
     }
     else if (!num_trans || ts > local_transitions[self->num_transitions - 1]) {
-        return find_tzrule_ttinfo(&(self->tzrule_after), ts, fold,
-                                  PyDateTime_GET_YEAR(dt));
-    }
-    else {
+        int year;
+        if (PyDateTime_Check(dt)) {
+            year = PyDateTime_GET_YEAR(dt);
+        } else {
+            PyObject *year_obj = PyObject_GetAttrString(dt, "year");
+            if (year_obj == NULL) {
+                return NULL;
+            }
+
+            year = PyLong_AsLong(year_obj);
+            Py_DECREF(year_obj);
+            if (PyErr_Occurred()) {
+                return NULL;
+            }
+        }
+        return find_tzrule_ttinfo(&(self->tzrule_after), ts, fold, year);
+    } else {
         size_t idx = _bisect(ts, local_transitions, self->num_transitions) - 1;
         assert(idx < self->num_transitions);
         return self->trans_ttinfos[idx];
