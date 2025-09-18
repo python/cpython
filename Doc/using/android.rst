@@ -48,7 +48,7 @@ link to the relevant file.
 
   * Or if you want to build it yourself, follow the instructions in
     :source:`Android/README.md`. The ``prefix`` directory will be created under
-    ``cross-build/HOST``.
+    :samp:`cross-build/{HOST}`.
 
 * Add code to your :source:`build.gradle <Android/testbed/app/build.gradle.kts>`
   file to copy the following items into your project. All except your own Python
