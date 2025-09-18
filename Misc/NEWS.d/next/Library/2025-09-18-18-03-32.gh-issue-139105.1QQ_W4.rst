@@ -1,1 +1,1 @@
-Fix the EOF key shows in sqlite3 ``.help`` command on Windows.
+Correct the EOF key shown in the :mod:`sqlite3` CLI ``.help`` text on Windows.
