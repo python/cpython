@@ -151,7 +151,10 @@ class Interpreter:
 
     # gh-135729: Globals might be destroyed by the time this is called, so we
     # need to keep references ourself
-    def _decref(self, InterpreterNotFoundError=InterpreterNotFoundError, _interp_decref=_interpreters.decref):
+    def _decref(self, *,
+                InterpreterNotFoundError=InterpreterNotFoundError,
+                _interp_decref=_interpreters.decref,
+                ):
         if not self._ownsref:
             return
         self._ownsref = False
