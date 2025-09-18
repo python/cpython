@@ -27,6 +27,10 @@ try:
     import grp
 except ImportError:
     grp = None
+try:
+    import _winapi
+except ImportError:
+    _winapi = None
 
 from pathlib._os import (
     vfsopen, vfspath,
@@ -1382,11 +1386,20 @@ class Path(PurePath):
         _copy_from_file_fallback = _copy_from_file
         def _copy_from_file(self, source, preserve_metadata=False):
             try:
-                source = os.fspath(source)
+                source_fspath = os.fspath(source)
             except TypeError:
                 pass
             else:
-                copyfile2(source, str(self))
+                try:
+                    copyfile2(source_fspath, str(self))
+                except OSError as exc:
+                    winerror = getattr(exc, 'winerror', None)
+                    if (_winapi is not None and
+                        winerror in (_winapi.ERROR_PRIVILEGE_NOT_HELD,
+                                     _winapi.ERROR_ACCESS_DENIED)):
+                        self._copy_from_file_fallback(source, preserve_metadata)
+                        return
+                    raise
                 return
             self._copy_from_file_fallback(source, preserve_metadata)
 
