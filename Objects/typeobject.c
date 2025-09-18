@@ -752,6 +752,22 @@ lookup_tp_subclasses(PyTypeObject *self)
     return (PyObject *)self->tp_subclasses;
 }
 
+PyObject *
+_PyType_LookupSubclasses(PyTypeObject *self)
+{
+    return lookup_tp_subclasses(self);
+}
+
+PyObject *
+_PyType_InitSubclasses(PyTypeObject *self)
+{
+    PyObject *existing = lookup_tp_subclasses(self);
+    if (existing != NULL) {
+        return existing;
+    }
+    return init_tp_subclasses(self);
+}
+
 int
 _PyType_HasSubclasses(PyTypeObject *self)
 {
@@ -1748,7 +1764,7 @@ type_get_mro(PyObject *tp, void *Py_UNUSED(closure))
 static PyTypeObject *find_best_base(PyObject *);
 static int mro_internal(PyTypeObject *, int, PyObject **);
 static int type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
-static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, const char *);
+static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, const char *, int);
 static int add_subclass(PyTypeObject*, PyTypeObject*);
 static int add_all_subclasses(PyTypeObject *type, PyObject *bases);
 static void remove_subclass(PyTypeObject *, PyTypeObject *);
@@ -1886,7 +1902,7 @@ type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **bes
     if (*best_base == NULL)
         return -1;
 
-    if (!compatible_for_assignment(type->tp_base, *best_base, "__bases__")) {
+    if (!compatible_for_assignment(type, *best_base, "__bases__", 0)) {
         return -1;
     }
 
@@ -7263,10 +7279,6 @@ compatible_with_tp_base(PyTypeObject *child)
     return (parent != NULL &&
             child->tp_basicsize == parent->tp_basicsize &&
             child->tp_itemsize == parent->tp_itemsize &&
-            child->tp_dictoffset == parent->tp_dictoffset &&
-            child->tp_weaklistoffset == parent->tp_weaklistoffset &&
-            ((child->tp_flags & Py_TPFLAGS_HAVE_GC) ==
-             (parent->tp_flags & Py_TPFLAGS_HAVE_GC)) &&
             (child->tp_dealloc == subtype_dealloc ||
              child->tp_dealloc == parent->tp_dealloc));
 }
@@ -7301,11 +7313,24 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 }
 
 static int
-compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* attr)
+compatible_flags(int setclass, PyTypeObject *origto, PyTypeObject *newto, unsigned long flags)
+{
+    /* For __class__ assignment, the flags should be the same.
+       For __bases__ assignment, the new base flags can only be set
+       if the original class flags are set.
+     */
+    return setclass ? (origto->tp_flags & flags) == (newto->tp_flags & flags)
+                    : !(~(origto->tp_flags & flags) & (newto->tp_flags & flags));
+}
+
+static int
+compatible_for_assignment(PyTypeObject *origto, PyTypeObject *newto,
+                          const char *attr, int setclass)
 {
     PyTypeObject *newbase, *oldbase;
+    PyTypeObject *oldto = setclass ? origto : origto->tp_base;
 
-    if (newto->tp_free != oldto->tp_free) {
+    if (setclass && newto->tp_free != oldto->tp_free) {
         PyErr_Format(PyExc_TypeError,
                      "%s assignment: "
                      "'%s' deallocator differs from '%s'",
@@ -7313,6 +7338,28 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
                      newto->tp_name,
                      oldto->tp_name);
         return 0;
+    }
+    if (!compatible_flags(setclass, origto, newto,
+                          Py_TPFLAGS_HAVE_GC |
+                          Py_TPFLAGS_INLINE_VALUES |
+                          Py_TPFLAGS_PREHEADER))
+    {
+        goto differs;
+    }
+    /* For __class__ assignment, tp_dictoffset and tp_weaklistoffset should
+       be the same for old and new types.
+       For __bases__ assignment, they can only be set in the new base
+       if they are set in the original class with the same value.
+     */
+    if ((setclass || newto->tp_dictoffset)
+        && origto->tp_dictoffset != newto->tp_dictoffset)
+    {
+        goto differs;
+    }
+    if ((setclass || newto->tp_weaklistoffset)
+        && origto->tp_weaklistoffset != newto->tp_weaklistoffset)
+    {
+        goto differs;
     }
     /*
      It's tricky to tell if two arbitrary types are sufficiently compatible as
@@ -7335,17 +7382,7 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
          !same_slots_added(newbase, oldbase))) {
         goto differs;
     }
-    if ((oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) !=
-        ((newto->tp_flags & Py_TPFLAGS_INLINE_VALUES)))
-    {
-        goto differs;
-    }
-    /* The above does not check for the preheader */
-    if ((oldto->tp_flags & Py_TPFLAGS_PREHEADER) ==
-        ((newto->tp_flags & Py_TPFLAGS_PREHEADER)))
-    {
-        return 1;
-    }
+    return 1;
 differs:
     PyErr_Format(PyExc_TypeError,
                     "%s assignment: "
@@ -7422,7 +7459,7 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
         return -1;
     }
 
-    if (compatible_for_assignment(oldto, newto, "__class__")) {
+    if (compatible_for_assignment(oldto, newto, "__class__", 1)) {
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
         if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
