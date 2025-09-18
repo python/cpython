@@ -435,8 +435,11 @@ Disallow: /f*$**$$z
 Disallow: /g$*$$**
 Disallow: /h$*$$**z
     """
-    good = ['/b', '/bz', '/ax', '/d', '/f', '/fz', '/gx', '/h', '/hz']
-    bad = ['/a', '/c', '/cxy', '/dz', '/dxyz', '/dxzy', '/e', '/exy', '/g']
+    good = ['/ax', '/a$$', '/b', '/bz', '/b$z', '/d', '/f', '/fz',
+            '/f$$$z', '/fx$y$$z', '/gx', '/g$$$', '/g$x$$y', '/h', '/hz',
+            '/h$$$z', '/h$x$$yz']
+    bad = ['/a', '/c', '/cxy', '/dz', '/dxyz', '/dxzy', '/e', '/exy',
+           '/e$$', '/ex$y$', '/g']
     expected_output = """\
 User-agent: *
 Disallow: /c*
@@ -470,7 +473,8 @@ Disallow: /yet/one/path?name=value&more
     good = ['/some/path', '/some/path?',
             '/some/path%3Fname=value', '/some/path?name%3Dvalue',
             '/another/path', '/another/path%3F',
-            '/yet/one/path?name=value%26more']
+            '/yet/one/path?name=value%26more',
+            '/some/pathxname=value']
     bad = ['/some/path?name=value'
            '/another/path?', '/another/path?name=value',
            '/yet/one/path?name=value&more']
