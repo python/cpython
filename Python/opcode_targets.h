@@ -1,4 +1,4 @@
-#if !Py_TAIL_CALL_INTERP
+#if !_Py_TAIL_CALL_INTERP
 static void *opcode_targets[256] = {
     &&TARGET_CACHE,
     &&TARGET_BINARY_SLICE,
@@ -257,7 +257,7 @@ static void *opcode_targets[256] = {
     &&TARGET_INSTRUMENTED_LINE,
     &&TARGET_ENTER_EXECUTOR,
 };
-#else /* Py_TAIL_CALL_INTERP */
+#else /* _Py_TAIL_CALL_INTERP */
 static py_tail_call_funcptr INSTRUCTION_TABLE[256];
 
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_2_error(TAIL_CALL_PARAMS);
@@ -761,4 +761,4 @@ static py_tail_call_funcptr INSTRUCTION_TABLE[256] = {
     [232] = _TAIL_CALL_UNKNOWN_OPCODE,
     [233] = _TAIL_CALL_UNKNOWN_OPCODE,
 };
-#endif /* Py_TAIL_CALL_INTERP */
+#endif /* _Py_TAIL_CALL_INTERP */
