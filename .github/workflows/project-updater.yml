@@ -1,7 +1,10 @@
 name: Update GH projects
 
 on:
-  issues:
+
+# Temporarily disabled for JIT-focused development
+if: false
+issues:
     types:
       - opened
       - labeled

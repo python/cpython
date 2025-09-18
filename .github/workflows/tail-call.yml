@@ -1,7 +1,10 @@
 name: Tail calling interpreter
 on:
   pull_request:
-    paths:
+
+# Temporarily disabled for JIT-focused development
+if: false
+  paths:
       - '.github/workflows/tail-call.yml'
       - 'Python/bytecodes.c'
       - 'Python/ceval.c'

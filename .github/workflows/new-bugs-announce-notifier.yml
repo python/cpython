@@ -1,7 +1,10 @@
 name: new-bugs-announce notifier
 
 on:
-  issues:
+
+# Temporarily disabled for JIT-focused development
+if: false
+issues:
     types:
       - opened
 

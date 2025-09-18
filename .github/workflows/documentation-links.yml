@@ -2,6 +2,8 @@ name: Read the Docs PR preview
 # Automatically edits a pull request's descriptions with a link
 # to the documentation's preview on Read the Docs.
 
+# Temporarily disabled for JIT-focused development
+if: false
 on:
   pull_request_target:
     types:

@@ -1,7 +1,10 @@
 name: Verify bundled wheels
 
 on:
-  workflow_dispatch:
+
+# Temporarily disabled for JIT-focused development
+if: false
+workflow_dispatch:
   push:
     paths:
       - 'Lib/ensurepip/_bundled/**'

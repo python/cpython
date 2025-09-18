@@ -111,6 +111,7 @@ jobs:
         # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
         # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
       - name: macOS
+      # also see: rosetta https://github.com/numpy/numpy/pull/29756/files
         if: runner.os == 'macOS'
         run: |
         arch -x86_64 /bin/bash -c '

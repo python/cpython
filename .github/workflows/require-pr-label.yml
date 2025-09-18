@@ -1,7 +1,10 @@
 name: Check labels
 
 on:
-  pull_request:
+
+# Temporarily disabled for JIT-focused development
+if: false
+pull_request:
     types: [opened, reopened, labeled, unlabeled, synchronize]
 
 jobs:

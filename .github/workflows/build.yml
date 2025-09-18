@@ -11,6 +11,10 @@ on:
     - 'main'
     - '3.*'
 
+# Temporarily disabled for JIT-focused development
+# Remove this if block to re-enable
+if: false
+
 permissions:
   contents: read
 

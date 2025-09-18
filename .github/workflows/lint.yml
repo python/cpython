@@ -2,6 +2,9 @@ name: Lint
 
 on: [push, pull_request, workflow_dispatch]
 
+# Temporarily disabled for JIT-focused development
+if: false
+
 permissions:
   contents: read
 
