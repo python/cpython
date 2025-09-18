@@ -7453,6 +7453,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     goto onError;
 
                 if (newpos < collstart) {
+                    writer->overallocate = 1;
                     str = PyBytesWriter_GrowAndUpdatePointer(writer,
                                                              collstart - newpos,
                                                              str);

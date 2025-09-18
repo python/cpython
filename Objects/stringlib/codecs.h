@@ -387,6 +387,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     goto error;
 
                 if (newpos < startpos) {
+                    writer->overallocate = 1;
                     p = PyBytesWriter_GrowAndUpdatePointer(writer,
                                                max_char_size * (startpos - newpos),
                                                p);
