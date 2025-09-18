@@ -1,0 +1,235 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import schedule
+import time
+from datetime import datetime
+import sqlite3
+
+class StockMoneyFlowAnalyzer:
+    def __init__(self):
+        self.data = pd.DataFrame()
+        self.connection = sqlite3.connect('stock_data.db')
+        
+    def crawl_cafef_foreign_trading(self, date_str):
+        """
+        Thu thập dữ liệu giao dịch nước ngoài từ Cafef
+        """
+        url = f"https://cafef.vn/du-lieu-ngoanh.chn?date={date_str}"
+        try:
+            response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Tìm bảng dữ liệu
+            table = soup.find('table', {'id': 'tblForeignTrading'})
+            if table:
+                rows = table.find_all('tr')[1:]  # Bỏ qua header
+                
+                data = []
+                for row in rows:
+                    cols = row.find_all('td')
+                    if len(cols) > 8:
+                        stock_data = {
+                            'ma_ck': cols[0].text.strip(),
+                            'gia': self.parse_number(cols[1].text),
+                            'thay_doi': self.parse_number(cols[2].text),
+                            'kl_khop_lenh': self.parse_number(cols[3].text),
+                            'gt_khop_lenh': self.parse_number(cols[4].text),
+                            'kl_thoa_thuan': self.parse_number(cols[5].text),
+                            'room_kha_dung': self.parse_number(cols[6].text),
+                            'room_con_lai': self.parse_number(cols[7].text),
+                            'danh_gia': cols[8].text.strip(),
+                            'ngay': date_str
+                        }
+                        data.append(stock_data)
+                
+                return pd.DataFrame(data)
+            else:
+                print("Không tìm thấy bảng dữ liệu trên Cafef")
+                return pd.DataFrame()
+                
+        except Exception as e:
+            print(f"Lỗi khi thu thập dữ liệu từ Cafef: {e}")
+            return pd.DataFrame()
+    
+    def crawl_cafef_volume(self, date_str):
+        """
+        Thu thập dữ liệu khối lượng giao dịch từ Cafef
+        """
+        url = f"https://cafef.vn/khoi-ngoai-dang-mua-ban-cp-nao-{date_str.replace('-', '')}.chn"
+        try:
+            response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # Phân tích HTML để lấy dữ liệu
+            # (Cần điều chỉnh dựa trên cấu trúc thực tế của trang)
+            # Đây chỉ là mã giả định - cần điều chỉnh cho phù hợp
+            
+            data = []
+            table = soup.find('table', {'class': 'some-table-class'})  # Cần thay đổi class thực
+            if table:
+                rows = table.find_all('tr')[1:]
+                
+                for row in rows:
+                    cols = row.find_all('td')
+                    if len(cols) > 5:
+                        stock_data = {
+                            'ma_ck': cols[0].text.strip(),
+                            'nn_mua': self.parse_number(cols[1].text),
+                            'nn_ban': self.parse_number(cols[2].text),
+                            'mua_rong': self.parse_number(cols[3].text),
+                            'ngay': date_str
+                        }
+                        data.append(stock_data)
+                
+                return pd.DataFrame(data)
+            return pd.DataFrame()
+                
+        except Exception as e:
+            print(f"Lỗi khi thu thập dữ liệu khối lượng: {e}")
+            return pd.DataFrame()
+    
+    def parse_number(self, text):
+        """
+        Chuyển đổi chuỗi số có định dạng thành số
+        """
+        try:
+            text = text.replace(',', '').replace('%', '').strip()
+            if text == '' or text == '-':
+                return 0
+            return float(text)
+        except:
+            return 0
+    
+    def calculate_money_flow_indicators(self, df):
+        """
+        Tính các chỉ số đánh giá dòng tiền
+        """
+        if df.empty:
+            return df
+        
+        # Tỷ lệ khối lượng thỏa thuận
+        df['ty_le_gd_thoa_thuan'] = df.apply(
+            lambda x: x['kl_thoa_thuan'] / x['kl_khop_lenh'] if x['kl_khop_lenh'] > 0 else 0, axis=1)
+        
+        # Điểm số dòng tiền cơ bản
+        df['diem_so_dong_tien'] = (
+            df['mua_rong'] * 0.4 + 
+            df['ty_le_gd_thoa_thuan'] * 0.3 + 
+            np.log1p(df['kl_khop_lenh']) * 0.3
+        )
+        
+        # Xác định xu hướng
+        df['xac_dinh_dong_tien'] = df.apply(
+            lambda x: 'MẠNH VÀO' if x['diem_so_dong_tien'] > 0.7 else 
+                     ('VÀO' if x['diem_so_dong_tien'] > 0.3 else 
+                     ('RA' if x['diem_so_dong_tien'] < -0.3 else 
+                     ('MẠNH RA' if x['diem_so_dong_tien'] < -0.7 else 'TRUNG LẬP'))), axis=1)
+        
+        return df
+    
+    def analyze_money_flow(self, date_str=None):
+        """
+        Phân tích dòng tiền tổng hợp
+        """
+        if not date_str:
+            date_str = datetime.now().strftime("%Y-%m-%d")
+        
+        print(f"Phân tích dòng tiền ngày {date_str}...")
+        
+        # Thu thập dữ liệu
+        foreign_df = self.crawl_cafef_foreign_trading(date_str)
+        volume_df = self.crawl_cafef_volume(date_str)
+        
+        # Kết hợp dữ liệu
+        if not foreign_df.empty and not volume_df.empty:
+            merged_df = pd.merge(foreign_df, volume_df, on=['ma_ck', 'ngay'], how='outer')
+            analyzed_df = self.calculate_money_flow_indicators(merged_df)
+            
+            # Lưu vào database
+            analyzed_df.to_sql('stock_money_flow', self.connection, if_exists='append', index=False)
+            
+            # Hiển thị kết quả
+            top_inflow = analyzed_df.nlargest(10, 'diem_so_dong_tien')
+            top_outflow = analyzed_df.nsmallest(10, 'diem_so_dong_tien')
+            
+            print("\nTOP MÃ CÓ DÒNG TIỀN VÀO MẠNH:")
+            print(top_inflow[['ma_ck', 'diem_so_dong_tien', 'xac_dinh_dong_tien']].to_string(index=False))
+            
+            print("\nTOP MÃ CÓ DÒNG TIỀN RA MẠNH:")
+            print(top_outflow[['ma_ck', 'diem_so_dong_tien', 'xac_dinh_dong_tien']].to_string(index=False))
+            
+            return analyzed_df
+        else:
+            print("Không thu thập được dữ liệu để phân tích")
+            return pd.DataFrame()
+    
+    def visualize_data(self, df):
+        """
+        Trực quan hóa dữ liệu
+        """
+        if df.empty:
+            print("Không có dữ liệu để trực quan hóa")
+            return
+        
+        # Vẽ biểu đồ top mã có dòng tiền vào
+        top_inflow = df.nlargest(10, 'diem_so_dong_tien')
+        
+        plt.figure(figsize=(12, 6))
+        plt.barh(top_inflow['ma_ck'], top_inflow['diem_so_dong_tien'], color='green')
+        plt.xlabel('Điểm số dòng tiền')
+        plt.title('Top 10 mã có dòng tiền vào mạnh nhất')
+        plt.tight_layout()
+        plt.savefig('top_inflow.png')
+        plt.show()
+        
+        # Vẽ biểu đồ top mã có dòng tiền ra
+        top_outflow = df.nsmallest(10, 'diem_so_dong_tien')
+        
+        plt.figure(figsize=(12, 6))
+        plt.barh(top_outflow['ma_ck'], top_outflow['diem_so_dong_tien'], color='red')
+        plt.xlabel('Điểm số dòng tiền')
+        plt.title('Top 10 mã có dòng tiền ra mạnh nhất')
+        plt.tight_layout()
+        plt.savefig('top_outflow.png')
+        plt.show()
+    
+    def run_daily_analysis(self):
+        """
+        Chạy phân tích hàng ngày
+        """
+        today = datetime.now().strftime("%Y-%m-%d")
+        result_df = self.analyze_money_flow(today)
+        if not result_df.empty:
+            self.visualize_data(result_df)
+            
+            # Xuất báo cáo ra file Excel
+            report_filename = f"bao_cao_dong_tien_{today}.xlsx"
+            result_df.to_excel(report_filename, index=False)
+            print(f"\nĐã xuất báo cáo ra file: {report_filename}")
+    
+    def schedule_daily_job(self):
+        """
+        Lập lịch chạy hàng ngày sau khi thị trường đóng cửa
+        """
+        # Lập lịch chạy lúc 17:00 hàng ngày
+        schedule.every().day.at("17:00").do(self.run_daily_analysis)
+        
+        print("Đã lập lịch phân tích hàng ngày lúc 17:00")
+        print("Chương trình sẽ chạy liên tục. Nhấn Ctrl+C để dừng.")
+        
+        while True:
+            schedule.run_pending()
+            time.sleep(60)  # Kiểm tra mỗi phút
+
+# Sử dụng công cụ
+if __name__ == "__main__":
+    analyzer = StockMoneyFlowAnalyzer()
+    
+    # Phân tích cho ngày hôm nay
+    today_data = analyzer.analyze_money_flow()
+    
+    # Hoặc lập lịch chạy tự động hàng ngày
+    # analyzer.schedule_daily_job()
