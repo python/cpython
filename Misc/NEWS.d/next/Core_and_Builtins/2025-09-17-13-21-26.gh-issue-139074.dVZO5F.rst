@@ -1,2 +1,0 @@
-Fixed a missing case in :func:`math.sumprod` where a low precision path was
-taken when an int/int input pair followed a float input.
