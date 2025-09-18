@@ -1139,7 +1139,7 @@ class TestGrammarVisualizer(unittest.TestCase):
         # Test multi-flag rule
         multi_flag_rule = rules['multi_flag_rule']
         self.assertTrue('memo' in simple_rule.flags,
-                        "multi_flag_rule should have memo=True")
+                        "multi_flag_rule should have memo")
         self.assertEqual(multi_flag_rule.flags, frozenset({'memo', 'custom', 'test'}),
                         f"multi_flag_rule flags should contain memo, custom, test, got {multi_flag_rule.flags}")
 
@@ -1153,6 +1153,6 @@ class TestGrammarVisualizer(unittest.TestCase):
         # Test no flags rule
         no_flags_rule = rules['no_flags_rule']
         self.assertFalse('memo' not in simple_rule.flags,
-                         "no_flags_rule should have memo=False")
+                         "no_flags_rule should not have memo")
         self.assertEqual(no_flags_rule.flags, frozenset(),
                         f"no_flags_rule flags should be the empty set, got {no_flags_rule.flags}")
