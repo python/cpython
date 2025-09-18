@@ -130,6 +130,16 @@ class CopyTestBase:
         self.assertRaises(OSError, source.copy, target)
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
 
+    def test_copy_dir_backslash_name(self):
+        if '\\' in self.source_ground.seps:
+            self.skipTest('backslash is a source path separator')
+        elif '\\' not in self.target_ground.seps:
+            self.skipTest('backslash is not a target path separator')
+        source = self.source_root / 'dirC'
+        target = self.target_root / 'copyC'
+        self.source_ground.create_file(source / 'back\\slash', b'')
+        self.assertRaises(ValueError, source.copy, target)
+
     def test_copy_into(self):
         source = self.source_root / 'fileA'
         target_dir = self.target_root / 'dirA'
@@ -144,6 +154,15 @@ class CopyTestBase:
         source = self.source_root.with_segments()
         target_dir = self.target_root / 'dirA'
         self.target_ground.create_dir(target_dir)
+        self.assertRaises(ValueError, source.copy_into, target_dir)
+
+    def test_copy_into_backslash_name(self):
+        if '\\' in self.source_ground.seps:
+            self.skipTest('backslash is a source path separator')
+        elif '\\' not in self.target_ground.seps:
+            self.skipTest('backslash is not a target path separator')
+        source = self.source_root / 'back\\slash'
+        target_dir = self.target_root / 'dirA'
         self.assertRaises(ValueError, source.copy_into, target_dir)
 
 
