@@ -2630,6 +2630,13 @@ features:
    Compose a raw device number from the major and minor device numbers.
 
 
+.. data:: NODEV
+
+   Non-existent device.
+
+   .. versionadded:: next
+
+
 .. function:: pathconf(path, name)
 
    Return system configuration information relevant to a named file. *name*

@@ -140,6 +140,9 @@ ABC                            Inherits from          Abstract Methods        Mi
                                                       ``__len__``,
                                                       ``insert``
 
+:class:`ByteString`            :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods
+                                                      ``__len__``
+
 :class:`Set`                   :class:`Collection`    ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                                                       ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
                                                       ``__len__``             ``__sub__``, ``__rsub__``, ``__xor__``, ``__rxor__``
@@ -260,6 +263,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
 .. class:: Sequence
            MutableSequence
+           ByteString
 
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
@@ -284,6 +288,12 @@ Collections Abstract Base Classes -- Detailed Descriptions
       .. versionchanged:: 3.5
          The :meth:`~sequence.index` method gained support for
          the *stop* and *start* arguments.
+
+   .. deprecated-removed:: 3.12 3.17
+      The :class:`ByteString` ABC has been deprecated.
+      For use in type annotations, prefer a union, like ``bytes | bytearray``, or
+      :class:`collections.abc.Buffer`.
+      For use as an ABC, prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
 
 .. class:: Set
            MutableSet

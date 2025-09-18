@@ -49,7 +49,7 @@ class BadIndex:
         1/0
 
 
-class IOTest(unittest.TestCase):
+class IOTest:
 
     def setUp(self):
         os_helper.unlink(os_helper.TESTFN)
@@ -1980,6 +1980,10 @@ class BufferedRWPairTest:
                 self.assertEqual(getattr(pair, method)(data), 5)
                 self.assertEqual(bytes(data), b"abcde")
 
+        # gh-138720: C BufferedRWPair would destruct in a bad order resulting in
+        # an unraisable exception.
+        support.gc_collect()
+
     def test_write(self):
         w = self.MockRawIO()
         pair = self.tp(self.MockRawIO(), w)
@@ -2535,7 +2539,7 @@ class StatefulIncrementalDecoderTest(unittest.TestCase):
         self.assertEqual(d.decode(b'oiabcd'), '')
         self.assertEqual(d.decode(b'', 1), 'abcd.')
 
-class TextIOWrapperTest(unittest.TestCase):
+class TextIOWrapperTest:
 
     def setUp(self):
         self.testdata = b"AAA\r\nBBB\rCCC\r\nDDD\nEEE\r\n"
@@ -3893,7 +3897,7 @@ class PyTextIOWrapperTest(TextIOWrapperTest, PyTestCase):
     shutdown_error = "LookupError: unknown encoding: ascii"
 
 
-class IncrementalNewlineDecoderTest(unittest.TestCase):
+class IncrementalNewlineDecoderTest:
 
     def check_newline_decoding_utf8(self, decoder):
         # UTF-8 specific tests for a newline decoder
@@ -4010,7 +4014,7 @@ class IncrementalNewlineDecoderTest(unittest.TestCase):
         decoder = self.IncrementalNewlineDecoder(decoder, translate=0)
         self.assertEqual(decoder.decode(b"\r\r\n"), "\r\r\n")
 
-class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
+class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest, unittest.TestCase):
     IncrementalNewlineDecoder = io.IncrementalNewlineDecoder
 
     @support.cpython_only
@@ -4023,13 +4027,13 @@ class CIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
         self.assertRaises(ValueError, uninitialized.reset)
 
 
-class PyIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest):
+class PyIncrementalNewlineDecoderTest(IncrementalNewlineDecoderTest, unittest.TestCase):
     IncrementalNewlineDecoder = pyio.IncrementalNewlineDecoder
 
 
 # XXX Tests for open()
 
-class MiscIOTest(unittest.TestCase):
+class MiscIOTest:
 
     # for test__all__, actual values are set in subclasses
     name_of_module = None
@@ -4465,7 +4469,7 @@ class PyMiscIOTest(MiscIOTest, PyTestCase):
 
 
 @unittest.skipIf(os.name == 'nt', 'POSIX signals required for this test.')
-class SignalsTest(unittest.TestCase):
+class SignalsTest:
 
     def setUp(self):
         self.oldalrm = signal.signal(signal.SIGALRM, self.alarm_interrupt)
@@ -4748,25 +4752,6 @@ class ProtocolsTest(unittest.TestCase):
         self.assertIsSubclass(self.MyWriter, io.Writer)
         self.assertNotIsSubclass(str, io.Writer)
 
-
-def load_tests(loader, tests, pattern):
-    tests = (CIOTest, PyIOTest, APIMismatchTest,
-             CBufferedReaderTest, PyBufferedReaderTest,
-             CBufferedWriterTest, PyBufferedWriterTest,
-             CBufferedRWPairTest, PyBufferedRWPairTest,
-             CBufferedRandomTest, PyBufferedRandomTest,
-             StatefulIncrementalDecoderTest,
-             CIncrementalNewlineDecoderTest, PyIncrementalNewlineDecoderTest,
-             CTextIOWrapperTest, PyTextIOWrapperTest,
-             CMiscIOTest, PyMiscIOTest,
-             CSignalsTest, PySignalsTest, TestIOCTypes,
-             ProtocolsTest,
-             )
-
-    suite = loader.suiteClass()
-    for test in tests:
-        suite.addTest(loader.loadTestsFromTestCase(test))
-    return suite
 
 if __name__ == "__main__":
     unittest.main()

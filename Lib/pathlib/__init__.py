@@ -28,7 +28,7 @@ except ImportError:
 
 from pathlib._os import (
     PathInfo, DirEntryInfo,
-    magic_open, vfspath,
+    vfsopen, vfspath,
     ensure_different_files, ensure_distinct_paths,
     copyfile2, copyfileobj, copy_info,
 )
@@ -1129,7 +1129,7 @@ class Path(PurePath):
 
     def _copy_from_file(self, source, preserve_metadata=False):
         ensure_different_files(source, self)
-        with magic_open(source, 'rb') as source_f:
+        with vfsopen(source, 'rb') as source_f:
             with open(self, 'wb') as target_f:
                 copyfileobj(source_f, target_f)
         if preserve_metadata:

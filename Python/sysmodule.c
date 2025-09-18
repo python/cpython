@@ -3045,7 +3045,7 @@ get_warnoptions(PyThreadState *tstate)
     return warnoptions;
 }
 
-void
+PyAPI_FUNC(void)
 PySys_ResetWarnOptions(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();

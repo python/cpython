@@ -272,25 +272,26 @@ class TestSampleProfilerComponents(unittest.TestCase):
 
         # Test with empty frames
         collector.collect([])
-        self.assertEqual(len(collector.call_trees), 0)
+        self.assertEqual(len(collector.stack_counter), 0)
 
         # Test with single frame stack
         test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, [("file.py", 10, "func")])])]
         collector.collect(test_frames)
-        self.assertEqual(len(collector.call_trees), 1)
-        self.assertEqual(collector.call_trees[0], [("file.py", 10, "func")])
+        self.assertEqual(len(collector.stack_counter), 1)
+        ((path,), count), = collector.stack_counter.items()
+        self.assertEqual(path, ("file.py", 10, "func"))
+        self.assertEqual(count, 1)
 
         # Test with very deep stack
         deep_stack = [(f"file{i}.py", i, f"func{i}") for i in range(100)]
         test_frames = [MockInterpreterInfo(0, [MockThreadInfo(1, deep_stack)])]
         collector = CollapsedStackCollector()
         collector.collect(test_frames)
-        self.assertEqual(len(collector.call_trees[0]), 100)
-        # Check it's properly reversed
-        self.assertEqual(
-            collector.call_trees[0][0], ("file99.py", 99, "func99")
-        )
-        self.assertEqual(collector.call_trees[0][-1], ("file0.py", 0, "func0"))
+        # One aggregated path with 100 frames (reversed)
+        (path_tuple,), = (collector.stack_counter.keys(),)
+        self.assertEqual(len(path_tuple), 100)
+        self.assertEqual(path_tuple[0], ("file99.py", 99, "func99"))
+        self.assertEqual(path_tuple[-1], ("file0.py", 0, "func0"))
 
     def test_pstats_collector_basic(self):
         """Test basic PstatsCollector functionality."""
@@ -382,8 +383,7 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector = CollapsedStackCollector()
 
         # Test empty state
-        self.assertEqual(len(collector.call_trees), 0)
-        self.assertEqual(len(collector.function_samples), 0)
+        self.assertEqual(len(collector.stack_counter), 0)
 
         # Test collecting sample data
         test_frames = [
@@ -391,18 +391,12 @@ class TestSampleProfilerComponents(unittest.TestCase):
         ]
         collector.collect(test_frames)
 
-        # Should store call tree (reversed)
-        self.assertEqual(len(collector.call_trees), 1)
-        expected_tree = [("file.py", 20, "func2"), ("file.py", 10, "func1")]
-        self.assertEqual(collector.call_trees[0], expected_tree)
-
-        # Should count function samples
-        self.assertEqual(
-            collector.function_samples[("file.py", 10, "func1")], 1
-        )
-        self.assertEqual(
-            collector.function_samples[("file.py", 20, "func2")], 1
-        )
+        # Should store one reversed path
+        self.assertEqual(len(collector.stack_counter), 1)
+        (path, count), = collector.stack_counter.items()
+        expected_tree = (("file.py", 20, "func2"), ("file.py", 10, "func1"))
+        self.assertEqual(path, expected_tree)
+        self.assertEqual(count, 1)
 
     def test_collapsed_stack_collector_export(self):
         collapsed_out = tempfile.NamedTemporaryFile(delete=False)
@@ -441,9 +435,13 @@ class TestSampleProfilerComponents(unittest.TestCase):
         """Test basic FlamegraphCollector functionality."""
         collector = FlamegraphCollector()
 
-        # Test empty state (inherits from StackTraceCollector)
-        self.assertEqual(len(collector.call_trees), 0)
-        self.assertEqual(len(collector.function_samples), 0)
+        # Empty collector should produce 'No Data'
+        data = collector._convert_to_flamegraph_format()
+        # With string table, name is now an index - resolve it using the strings array
+        strings = data.get("strings", [])
+        name_index = data.get("name", 0)
+        resolved_name = strings[name_index] if isinstance(name_index, int) and 0 <= name_index < len(strings) else str(name_index)
+        self.assertIn(resolved_name, ("No Data", "No significant data"))
 
         # Test collecting sample data
         test_frames = [
@@ -454,18 +452,22 @@ class TestSampleProfilerComponents(unittest.TestCase):
         ]
         collector.collect(test_frames)
 
-        # Should store call tree (reversed)
-        self.assertEqual(len(collector.call_trees), 1)
-        expected_tree = [("file.py", 20, "func2"), ("file.py", 10, "func1")]
-        self.assertEqual(collector.call_trees[0], expected_tree)
-
-        # Should count function samples
-        self.assertEqual(
-            collector.function_samples[("file.py", 10, "func1")], 1
-        )
-        self.assertEqual(
-            collector.function_samples[("file.py", 20, "func2")], 1
-        )
+        # Convert and verify structure: func2 -> func1 with counts = 1
+        data = collector._convert_to_flamegraph_format()
+        # Expect promotion: root is the single child (func2), with func1 as its only child
+        strings = data.get("strings", [])
+        name_index = data.get("name", 0)
+        name = strings[name_index] if isinstance(name_index, int) and 0 <= name_index < len(strings) else str(name_index)
+        self.assertIsInstance(name, str)
+        self.assertTrue(name.startswith("Program Root: "))
+        self.assertIn("func2 (file.py:20)", name)  # formatted name
+        children = data.get("children", [])
+        self.assertEqual(len(children), 1)
+        child = children[0]
+        child_name_index = child.get("name", 0)
+        child_name = strings[child_name_index] if isinstance(child_name_index, int) and 0 <= child_name_index < len(strings) else str(child_name_index)
+        self.assertIn("func1 (file.py:10)", child_name)  # formatted name
+        self.assertEqual(child["value"], 1)
 
     def test_flamegraph_collector_export(self):
         """Test flamegraph HTML export functionality."""
@@ -1508,28 +1510,29 @@ class TestRecursiveFunctionProfiling(unittest.TestCase):
         for frames in recursive_frames:
             collector.collect([frames])
 
-        # Should capture both call trees
-        self.assertEqual(len(collector.call_trees), 2)
+        # Should capture both call paths
+        self.assertEqual(len(collector.stack_counter), 2)
 
-        # First tree should be longer (deeper recursion)
-        tree1 = collector.call_trees[0]
-        tree2 = collector.call_trees[1]
-
-        # Trees should be different lengths due to different recursion depths
-        self.assertNotEqual(len(tree1), len(tree2))
+        # First path should be longer (deeper recursion) than the second
+        paths = list(collector.stack_counter.keys())
+        lengths = [len(p) for p in paths]
+        self.assertNotEqual(lengths[0], lengths[1])
 
         # Both should contain factorial calls
-        self.assertTrue(any("factorial" in str(frame) for frame in tree1))
-        self.assertTrue(any("factorial" in str(frame) for frame in tree2))
+        self.assertTrue(any(any(f[2] == "factorial" for f in p) for p in paths))
 
-        # Function samples should count all occurrences
+        # Verify total occurrences via aggregation
         factorial_key = ("factorial.py", 10, "factorial")
         main_key = ("main.py", 5, "main")
 
-        # factorial appears 5 times total (3 + 2)
-        self.assertEqual(collector.function_samples[factorial_key], 5)
-        # main appears 2 times total
-        self.assertEqual(collector.function_samples[main_key], 2)
+        def total_occurrences(func):
+            total = 0
+            for path, count in collector.stack_counter.items():
+                total += sum(1 for f in path if f == func) * count
+            return total
+
+        self.assertEqual(total_occurrences(factorial_key), 5)
+        self.assertEqual(total_occurrences(main_key), 2)
 
 
 @requires_subprocess()
