@@ -5848,30 +5848,29 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 /*[clinic end generated code: output=a657aa1e79cd01b3 input=21046f2d7dac3a90]*/
 {
     int avail, nbytes;
-    PyObject *result;
 
     avail = (int)Py_MIN(BIO_ctrl_pending(self->bio), INT_MAX);
     if ((len < 0) || (len > avail))
         len = avail;
 
-    result = PyBytes_FromStringAndSize(NULL, len);
-    if ((result == NULL) || (len == 0))
-        return result;
+    if (len == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
 
-    nbytes = BIO_read(self->bio, PyBytes_AS_STRING(result), len);
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    nbytes = BIO_read(self->bio, PyBytesWriter_GetData(writer), len);
     if (nbytes < 0) {
         _sslmodulestate *state = get_state_mbio(self);
-        Py_DECREF(result);
+        PyBytesWriter_Discard(writer);
         _setSSLError(state, NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
 
-    /* There should never be any short reads but check anyway. */
-    if (nbytes < len) {
-        _PyBytes_Resize(&result, nbytes);
-    }
-
-    return result;
+    return PyBytesWriter_FinishWithSize(writer, nbytes);
 }
 
 /*[clinic input]
