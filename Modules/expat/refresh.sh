@@ -54,6 +54,13 @@ rm libexpat.tar.gz
 # Step 3: Add the namespacing include to expat_external.h
 sed -i 's/#  define Expat_External_INCLUDED 1/&\n\/* Namespace external symbols to allow multiple libexpat version to\n   co-exist. \*\/\n#include "pyexpatns.h"/' expat_external.h
 
+if ! grep -q '#include "pyexpatns\.h"' expat_external.h; then
+  echo "
+Error: namespacing include not found in expat_external.h;
+This may be due to source changes and will require updating this script" >&2
+  exit 1
+fi
+
 echo "
 Updated! next steps:
 - Verify all is okay:
