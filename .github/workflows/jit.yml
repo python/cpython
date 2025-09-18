@@ -109,7 +109,7 @@ jobs:
           ./configure --enable-experimental-jit --enable-universalsdk --with-universal-archs=universal2 ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-         '
+          '
 
       # - name: Linux
       #   if: runner.os == 'Linux'
