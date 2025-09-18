@@ -2,8 +2,6 @@ name: Add issue header
 # Automatically edits an issue's descriptions with a header,
 # one of:
 
-# Temporarily disabled for JIT-focused development
-if: false
 
 #
 # - Bug report

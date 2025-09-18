@@ -2,8 +2,6 @@ name: Mark stale pull requests
 
 on:
 
-# Temporarily disabled for JIT-focused development
-if: false
 schedule:
   - cron: "0 */6 * * *"
 

@@ -2,8 +2,6 @@ name: Check labels
 
 on:
 
-# Temporarily disabled for JIT-focused development
-if: false
 pull_request:
     types: [opened, reopened, labeled, unlabeled, synchronize]
 

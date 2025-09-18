@@ -2,8 +2,6 @@ name: Verify bundled wheels
 
 on:
 
-# Temporarily disabled for JIT-focused development
-if: false
 workflow_dispatch:
   push:
     paths:

@@ -7,8 +7,6 @@ on:
       - main
   pull_request:
 
-# Temporarily disabled for JIT-focused development
-if: false
     paths:
       - ".github/workflows/mypy.yml"
       - "Lib/_colorize.py"
