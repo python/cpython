@@ -1,25 +1,7 @@
 name: JIT
 on:
   pull_request:
-    paths:
-      - '**jit**'
-      - 'Python/bytecodes.c'
-      - 'Python/optimizer*.c'
-      - 'Python/executor_cases.c.h'
-      - 'Python/optimizer_cases.c.h'
-      - '!Python/perf_jit_trampoline.c'
-      - '!**/*.md'
-      - '!**/*.ini'
   push:
-    paths:
-      - '**jit**'
-      - 'Python/bytecodes.c'
-      - 'Python/optimizer*.c'
-      - 'Python/executor_cases.c.h'
-      - 'Python/optimizer_cases.c.h'
-      - '!Python/perf_jit_trampoline.c'
-      - '!**/*.md'
-      - '!**/*.ini'
   workflow_dispatch:
 
 permissions:
