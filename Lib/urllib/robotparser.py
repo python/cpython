@@ -180,6 +180,9 @@ class RobotFileParser:
         url = normalize_uri(url)
         if not url:
             url = "/"
+        if url == '/robots.txt':
+            # The /robots.txt URI is implicitly allowed.
+            return True
         entry = self._find_entry(useragent)
         if entry is None:
             return True

@@ -158,7 +158,7 @@ class RejectAllRobotsTest(BaseRobotTest, unittest.TestCase):
 User-agent: *
 Disallow: /
     """
-    good = []
+    good = ['/robots.txt']
     bad = ['/cyberworld/map/index.html', '/', '/tmp/']
 
 
