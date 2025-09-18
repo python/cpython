@@ -35,6 +35,10 @@ extern PyObject *
 _PyImport_ResolveName(PyThreadState *tstate, PyObject *name, PyObject *globals, int level);
 extern PyObject *
 _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import);
+extern PyObject *
+_PyImport_LazyImportModuleLevelObject(PyThreadState *tstate, PyObject *name, PyObject *builtins, PyObject *globals,
+                                      PyObject *locals, PyObject *fromlist,
+                                      int level);
 
 
 #ifdef HAVE_DLOPEN
@@ -76,6 +80,10 @@ extern void _PyImport_ClearModulesByIndex(PyInterpreterState *interp);
 
 extern int _PyImport_InitDefaultImportFunc(PyInterpreterState *interp);
 extern int _PyImport_IsDefaultImportFunc(
+        PyInterpreterState *interp,
+        PyObject *func);
+
+extern int _PyImport_IsDefaultLazyImportFunc(
         PyInterpreterState *interp,
         PyObject *func);
 

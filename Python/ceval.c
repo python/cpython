@@ -3027,32 +3027,37 @@ _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
 
 PyObject *
 _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
-            PyObject *name, PyObject *fromlist, PyObject *level)
+            PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level)
 {
-    PyObject *res = NULL;
-    PyObject *abs_name = NULL;
-    int ilevel = PyLong_AsInt(level);
-    if (ilevel == -1 && PyErr_Occurred()) {
-        goto error;
+    PyObject *import_func;
+    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__lazy_import__), &import_func) < 0) {
+        return NULL;
     }
-    if (ilevel > 0) {
-        abs_name = _PyImport_ResolveName(tstate, name, globals, ilevel);
-        if (abs_name == NULL) {
-            goto error;
-        }
-    } else {  /* ilevel == 0 */
-        if (PyUnicode_GET_LENGTH(name) == 0) {
-            PyErr_SetString(PyExc_ValueError, "Empty module name");
-            goto error;
-        }
-        abs_name = name;
-        Py_INCREF(abs_name);
+    if (import_func == NULL) {
+        _PyErr_SetString(tstate, PyExc_ImportError, "__lazy_import__ not found");
+        return NULL;
     }
 
-    // TODO: check sys.modules for module
-    res = _PyLazyImport_New(builtins, abs_name, fromlist);
-error:
-    Py_XDECREF(abs_name);
+    if (locals == NULL) {
+        locals = Py_None;
+    }
+
+    if (_PyImport_IsDefaultLazyImportFunc(tstate->interp, import_func)) {
+        Py_DECREF(import_func);
+
+        int ilevel = PyLong_AsInt(level);
+        if (ilevel == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+
+        return _PyImport_LazyImportModuleLevelObject(
+            tstate, name, builtins, globals, locals, fromlist, ilevel
+        );
+    }
+
+    PyObject* args[5] = {name, globals, locals, fromlist, level};
+    PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
+    Py_DECREF(import_func);
     return res;
 }
 

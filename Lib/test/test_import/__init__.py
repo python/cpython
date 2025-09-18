@@ -2540,6 +2540,31 @@ class SubinterpImportTests(unittest.TestCase):
         self.assertIsNot(excsnap, None)
 
 
+class LazyImportTests(unittest.TestCase):
+    def tearDown(self):
+        """Make sure no modules pre-exist in sys.modules which are being used to
+        test."""
+        for key in list(sys.modules.keys()):
+            if key.startswith('test.test_import.data.lazy_imports'):
+                del sys.modules[key]
+
+    def test_basic_unused(self):
+        try:
+            import test.test_import.data.lazy_imports.basic_unused
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_basic_used(self):
+        try:
+            import test.test_import.data.lazy_imports.basic_used
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+
 class TestSinglePhaseSnapshot(ModuleSnapshot):
     """A representation of a single-phase init module for testing.
 

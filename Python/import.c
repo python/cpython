@@ -99,6 +99,9 @@ static struct _inittab *inittab_copy = NULL;
 #define IMPORT_FUNC(interp) \
     (interp)->imports.import_func
 
+#define LAZY_IMPORT_FUNC(interp) \
+    (interp)->imports.lazy_import_func
+
 #define IMPORT_LOCK(interp) \
     (interp)->imports.lock
 
@@ -3400,6 +3403,12 @@ _PyImport_InitDefaultImportFunc(PyInterpreterState *interp)
         return -1;
     }
     IMPORT_FUNC(interp) = import_func;
+
+    // Get the __lazy_import__ function
+    if (PyDict_GetItemStringRef(interp->builtins, "__lazy_import__", &import_func) <= 0) {
+        return -1;
+    }
+    LAZY_IMPORT_FUNC(interp) = import_func;
     return 0;
 }
 
@@ -3409,6 +3418,11 @@ _PyImport_IsDefaultImportFunc(PyInterpreterState *interp, PyObject *func)
     return func == IMPORT_FUNC(interp);
 }
 
+int
+_PyImport_IsDefaultLazyImportFunc(PyInterpreterState *interp, PyObject *func)
+{
+    return func == LAZY_IMPORT_FUNC(interp);
+}
 
 /* Import a module, either built-in, frozen, or external, and return
    its module object WITH INCREMENTED REFERENCE COUNT */
@@ -3685,8 +3699,6 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     PyObject *fromlist = NULL;
     assert(lazy_import != NULL);
     assert(PyLazyImport_CheckExact(lazy_import));
-    PyObject *state_dict = _PyThreadState_GetDict(tstate);
-    assert(state_dict != NULL);
 
     PyLazyImportObject *lz = (PyLazyImportObject *)lazy_import;
 
@@ -3822,6 +3834,19 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 }
 
 PyObject *
+get_abs_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level)
+{
+    if (level > 0) {
+        return resolve_name(tstate, name, globals, level);
+    }
+    if (PyUnicode_GET_LENGTH(name) == 0) {
+        _PyErr_SetString(tstate, PyExc_ValueError, "Empty module name");
+        return NULL;
+    }
+    return Py_NewRef(name);
+}
+
+PyObject *
 PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  PyObject *locals, PyObject *fromlist,
                                  int level)
@@ -3852,17 +3877,9 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         goto error;
     }
 
-    if (level > 0) {
-        abs_name = resolve_name(tstate, name, globals, level);
-        if (abs_name == NULL)
-            goto error;
-    }
-    else {  /* level == 0 */
-        if (PyUnicode_GET_LENGTH(name) == 0) {
-            _PyErr_SetString(tstate, PyExc_ValueError, "Empty module name");
-            goto error;
-        }
-        abs_name = Py_NewRef(name);
+    abs_name = get_abs_name(tstate, name, globals, level);
+    if (abs_name == NULL) {
+        goto error;
     }
 
     mod = import_get_module(tstate, abs_name);
@@ -3964,6 +3981,28 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         remove_importlib_frames(tstate);
     }
     return final_mod;
+}
+
+PyObject *
+_PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
+                                      PyObject *name, PyObject *builtins,
+                                      PyObject *globals, PyObject *locals,
+                                      PyObject *fromlist, int level)
+{
+    PyObject *abs_name = get_abs_name(tstate, name, globals, level);
+    if (abs_name == NULL) {
+        return NULL;
+    }
+
+    PyObject *mod = PyImport_GetModule(abs_name);
+    if (mod != NULL) {
+        Py_DECREF(abs_name);
+        return mod;
+    }
+
+    PyObject *res = _PyLazyImport_New(builtins, abs_name, fromlist);
+    Py_DECREF(abs_name);
+    return res;
 }
 
 PyObject *
@@ -4172,6 +4211,7 @@ _PyImport_ClearCore(PyInterpreterState *interp)
     Py_CLEAR(MODULES_BY_INDEX(interp));
     Py_CLEAR(IMPORTLIB(interp));
     Py_CLEAR(IMPORT_FUNC(interp));
+    Py_CLEAR(LAZY_IMPORT_FUNC(interp));
 }
 
 void

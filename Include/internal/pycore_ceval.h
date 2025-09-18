@@ -298,7 +298,7 @@ PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *c
 PyAPI_FUNC(void) _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwargs);
 PyAPI_FUNC(PyObject *) _PyEval_ImportFrom(PyThreadState *, PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals, 
-            PyObject *name, PyObject *fromlist, PyObject *level);
+            PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level);
 PyAPI_FUNC(PyObject *) _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name);
 PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals, PyObject *locals,
             PyObject *name, PyObject *fromlist, PyObject *level);

@@ -6225,7 +6225,7 @@
             PyObject *res_o;
             if (oparg & 0x01) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(),  name,
+                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
                     PyStackRef_AsPyObjectBorrow(fromlist),
                     PyStackRef_AsPyObjectBorrow(level));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
