@@ -1168,5 +1168,6 @@ def __getattr__(attr):
     if attr == "ByteString":
         import warnings
         warnings._deprecated("collections.abc.ByteString", remove=(3, 17))
+        globals()["ByteString"] = _deprecated_ByteString
         return _deprecated_ByteString
     raise AttributeError(f"module 'collections.abc' has no attribute {attr!r}")

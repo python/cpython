@@ -3783,7 +3783,14 @@ def __getattr__(attr):
     elif attr == "ByteString":
         import warnings
 
-        warnings._deprecated("typing.ByteString", remove=(3, 17))
+        warnings._deprecated(
+            "typing.ByteString",
+            message=(
+                "{name!r} and 'collections.abc.ByteString' are deprecated "
+                "and slated for removal in Python {remove}"
+            ),
+            remove=(3, 17)
+        )
 
         class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
             def __init__(

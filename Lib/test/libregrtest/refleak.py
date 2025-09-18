@@ -96,7 +96,8 @@ def runtest_refleak(test_name, test_func,
     # `ByteString` is not included in `collections.abc.__all__`
     with warnings.catch_warnings(action='ignore', category=DeprecationWarning):
         ByteString = collections.abc.ByteString
-    for obj in ByteString.__subclasses__() + [ByteString]:
+    # Mypy doesn't even think `ByteString` is a class, hence the `type: ignore`
+    for obj in ByteString.__subclasses__() + [ByteString]:  # type: ignore[attr-defined]
         abcs[obj] = _get_dump(obj)[0]
 
     # bpo-31217: Integer pool to get a single integer object for the same

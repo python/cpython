@@ -1936,6 +1936,12 @@ class TestCollectionABCs(ABCTestCase):
                             nativeseq, seqseq, (letter, start, stop))
 
     def test_ByteString(self):
+        previous_sys_modules = sys.modules.copy()
+        self.addCleanup(sys.modules.update, previous_sys_modules)
+
+        for module in "collections", "_collections_abc", "collections.abc":
+            sys.modules.pop(module, None)
+
         with self.assertWarns(DeprecationWarning):
             from collections.abc import ByteString
         for sample in [bytes, bytearray]:
