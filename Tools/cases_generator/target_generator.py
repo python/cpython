@@ -26,12 +26,12 @@ def write_opcode_targets(analysis: Analysis, out: CWriter) -> None:
     for name, op in analysis.opmap.items():
         if op < 256:
             targets[op] = f"&&TARGET_{name},\n"
-    out.emit("#if !Py_TAIL_CALL_INTERP\n")
+    out.emit("#if !_Py_TAIL_CALL_INTERP\n")
     out.emit("static void *opcode_targets[256] = {\n")
     for target in targets:
         out.emit(target)
     out.emit("};\n")
-    out.emit("#else /* Py_TAIL_CALL_INTERP */\n")
+    out.emit("#else /* _Py_TAIL_CALL_INTERP */\n")
 
 def function_proto(name: str) -> str:
     return f"Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_{name}(TAIL_CALL_PARAMS)"
@@ -68,7 +68,7 @@ def write_tailcall_dispatch_table(analysis: Analysis, out: CWriter) -> None:
         if rest not in named_values:
             out.emit(f"[{rest}] = _TAIL_CALL_UNKNOWN_OPCODE,\n")
     out.emit("};\n")
-    outfile.write("#endif /* Py_TAIL_CALL_INTERP */\n")
+    outfile.write("#endif /* _Py_TAIL_CALL_INTERP */\n")
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the file with dispatch targets.",
