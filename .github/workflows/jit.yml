@@ -134,7 +134,7 @@ jobs:
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
- 
+
  jit-with-disabled-gil:
    name: Free-Threaded (Debug)
    needs: interpreter
