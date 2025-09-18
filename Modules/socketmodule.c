@@ -3978,7 +3978,6 @@ sock_recv(PyObject *self, PyObject *args)
 
     Py_ssize_t recvlen, outlen;
     int flags = 0;
-    PyObject *buf;
 
     if (!PyArg_ParseTuple(args, "n|i:recv", &recvlen, &flags))
         return NULL;
@@ -3990,25 +3989,21 @@ sock_recv(PyObject *self, PyObject *args)
     }
 
     /* Allocate a new string. */
-    buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
-    if (buf == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(recvlen);
+    if (writer == NULL) {
         return NULL;
+    }
 
     /* Call the guts */
-    outlen = sock_recv_guts(s, PyBytes_AS_STRING(buf), recvlen, flags);
+    outlen = sock_recv_guts(s, PyBytesWriter_GetData(writer), recvlen, flags);
     if (outlen < 0) {
         /* An error occurred, release the string and return an
            error. */
-        Py_DECREF(buf);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
-    if (outlen != recvlen) {
-        /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be successful. */
-        _PyBytes_Resize(&buf, outlen);
-    }
 
-    return buf;
+    return PyBytesWriter_FinishWithSize(writer, outlen);
 }
 
 PyDoc_STRVAR(recv_doc,
@@ -4164,7 +4159,6 @@ sock_recvfrom(PyObject *self, PyObject *args)
 {
     PySocketSockObject *s = _PySocketSockObject_CAST(self);
 
-    PyObject *buf = NULL;
     PyObject *addr = NULL;
     PyObject *ret = NULL;
     int flags = 0;
@@ -4179,28 +4173,26 @@ sock_recvfrom(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    buf = PyBytes_FromStringAndSize((char *) 0, recvlen);
-    if (buf == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(recvlen);
+    if (writer == NULL) {
         return NULL;
+    }
 
-    outlen = sock_recvfrom_guts(s, PyBytes_AS_STRING(buf),
+    outlen = sock_recvfrom_guts(s, PyBytesWriter_GetData(writer),
                                 recvlen, flags, &addr);
     if (outlen < 0) {
+        PyBytesWriter_Discard(writer);
         goto finally;
     }
 
-    if (outlen != recvlen) {
-        /* We did not read as many bytes as we anticipated, resize the
-           string if possible and be successful. */
-        if (_PyBytes_Resize(&buf, outlen) < 0)
-            /* Oopsy, not so successful after all. */
-            goto finally;
+    PyObject *buf = PyBytesWriter_FinishWithSize(writer, outlen);
+    if (buf == NULL) {
+        goto finally;
     }
 
     ret = PyTuple_Pack(2, buf, addr);
 
 finally:
-    Py_XDECREF(buf);
     Py_XDECREF(addr);
     return ret;
 }
@@ -8527,6 +8519,43 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, J1939_EE_INFO_TX_ABORT);
 
     ADD_INT_MACRO(m, J1939_FILTER_MAX);
+#endif
+#ifdef HAVE_LINUX_CAN_ISOTP_H
+    ADD_INT_MACRO(m, SOL_CAN_ISOTP);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_OPTS);
+    ADD_INT_MACRO(m, CAN_ISOTP_RECV_FC);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_TX_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_LL_OPTS);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_LISTEN_MODE);
+    ADD_INT_MACRO(m, CAN_ISOTP_EXTEND_ADDR);
+    ADD_INT_MACRO(m, CAN_ISOTP_TX_PADDING);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_PADDING);
+    ADD_INT_MACRO(m, CAN_ISOTP_CHK_PAD_LEN);
+    ADD_INT_MACRO(m, CAN_ISOTP_CHK_PAD_DATA);
+    ADD_INT_MACRO(m, CAN_ISOTP_HALF_DUPLEX);
+    ADD_INT_MACRO(m, CAN_ISOTP_FORCE_TXSTMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_FORCE_RXSTMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_RX_EXT_ADDR);
+    ADD_INT_MACRO(m, CAN_ISOTP_WAIT_TX_DONE);
+#ifdef CAN_ISOTP_SF_BROADCAST
+    ADD_INT_MACRO(m, CAN_ISOTP_SF_BROADCAST);
+#endif
+
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_FLAGS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_EXT_ADDRESS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_PAD_CONTENT);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_FRAME_TXTIME);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_BS);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_STMIN);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_RECV_WFTMAX);
+
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_MTU);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_TX_DL);
+    ADD_INT_MACRO(m, CAN_ISOTP_DEFAULT_LL_TX_FLAGS);
 #endif
 #ifdef SOL_RDS
     ADD_INT_MACRO(m, SOL_RDS);
