@@ -9,6 +9,7 @@ import contextlib
 import os
 import sys
 import unittest.mock
+from test.support import swap_item
 
 
 class TestHook:
@@ -726,18 +727,14 @@ def test_builtin__import__():
 def test_import_statement():
     import importlib # noqa: F401
     # Set __package__ so relative imports work
-    old_package = globals().get("__package__", None)
-    globals()["__package__"] = "test"
-
-    with TestHook() as hook:
-        import importlib # noqa: F401
-        import email # noqa: F401
-        import pythoninfo # noqa: F401
-        from .audit_test_data import submodule # noqa: F401
-        import test.audit_test_data.submodule2 # noqa: F401
-        import _testcapi # noqa: F401
-
-    globals()["__package__"] = old_package
+    with swap_item(globals(), "__package__", "test"):
+        with TestHook() as hook:
+            import importlib # noqa: F401
+            import email # noqa: F401
+            import pythoninfo # noqa: F401
+            from .audit_test_data import submodule # noqa: F401
+            import test.audit_test_data.submodule2 # noqa: F401
+            import _testcapi # noqa: F401
 
     actual = [a for e, a in hook.seen if e == "import"]
     # Import statement ordering is different because the package is
