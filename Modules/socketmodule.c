@@ -4425,11 +4425,10 @@ err_closefds:
 static PyObject *
 makeval_recvmsg(ssize_t received, void *data)
 {
-    PyObject **buf = data;
-
-    if (received < PyBytes_GET_SIZE(*buf))
-        _PyBytes_Resize(buf, received);
-    return Py_XNewRef(*buf);
+    PyBytesWriter **writer = data;
+    PyObject *buf = PyBytesWriter_FinishWithSize(*writer, received);
+    *writer = NULL;
+    return buf;
 }
 
 /* s.recvmsg(bufsize[, ancbufsize[, flags]]) method */
@@ -4437,13 +4436,8 @@ makeval_recvmsg(ssize_t received, void *data)
 static PyObject *
 sock_recvmsg(PyObject *self, PyObject *args)
 {
-    PySocketSockObject *s = _PySocketSockObject_CAST(self);
-
     Py_ssize_t bufsize, ancbufsize = 0;
     int flags = 0;
-    struct iovec iov;
-    PyObject *buf = NULL, *retval = NULL;
-
     if (!PyArg_ParseTuple(args, "n|ni:recvmsg", &bufsize, &ancbufsize, &flags))
         return NULL;
 
@@ -4451,17 +4445,23 @@ sock_recvmsg(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "negative buffer size in recvmsg()");
         return NULL;
     }
-    if ((buf = PyBytes_FromStringAndSize(NULL, bufsize)) == NULL)
+
+    PyBytesWriter *writer = PyBytesWriter_Create(bufsize);
+    if (writer == NULL) {
         return NULL;
-    iov.iov_base = PyBytes_AS_STRING(buf);
+    }
+    struct iovec iov;
+    iov.iov_base = PyBytesWriter_GetData(writer);
     iov.iov_len = bufsize;
 
     /* Note that we're passing a pointer to *our pointer* to the bytes
-       object here (&buf); makeval_recvmsg() may incref the object, or
-       deallocate it and set our pointer to NULL. */
+       writer (&writer); makeval_recvmsg() finish it and set our pointer to
+       NULL. */
+    PyObject *retval;
+    PySocketSockObject *s = _PySocketSockObject_CAST(self);
     retval = sock_recvmsg_guts(s, &iov, 1, flags, ancbufsize,
-                               &makeval_recvmsg, &buf);
-    Py_XDECREF(buf);
+                               &makeval_recvmsg, &writer);
+    PyBytesWriter_Discard(writer);
     return retval;
 }
 
