@@ -7511,6 +7511,10 @@ class CollectionsAbcTests(BaseTestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIsInstance(bytearray(b''), ByteString)
         with self.assertWarns(DeprecationWarning):
+            self.assertIsSubclass(bytes, ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsSubclass(bytearray, ByteString)
+        with self.assertWarns(DeprecationWarning):
             class Foo(ByteString): ...
         with self.assertWarns(DeprecationWarning):
             class Bar(ByteString, typing.Awaitable): ...

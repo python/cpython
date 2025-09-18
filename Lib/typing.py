@@ -3806,6 +3806,13 @@ def __getattr__(attr):
                 )
                 return super().__instancecheck__(inst)
 
+            def __subclasscheck__(self, cls):
+                import warnings
+                warnings._deprecated(
+                    f"{self.__module__}.{self._name}", remove=self._removal_version
+                )
+                return super().__subclasscheck__(cls)
+
         with warnings.catch_warnings(
             action="ignore", category=DeprecationWarning
         ):
