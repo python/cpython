@@ -1022,6 +1022,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
 /* Import the static jump table */
 #include "opcode_targets.h"
+    void **opcode_targets = opcode_targets_table;
 #endif
 
 #ifdef Py_STATS
@@ -1031,7 +1032,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
-    void **opcode_targets = opcode_targets_table;
 #endif
     _PyEntryFrame entry;
 
