@@ -65,7 +65,6 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
-    'ByteString',
     'Container',
     'ContextManager',
     'Hashable',
@@ -1603,21 +1602,6 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
         return Union[left, self]
 
 
-class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
-    def __init__(
-        self, origin, nparams, *, removal_version, inst=True, name=None
-    ):
-        super().__init__(origin, nparams, inst=inst, name=name)
-        self._removal_version = removal_version
-
-    def __instancecheck__(self, inst):
-        import warnings
-        warnings._deprecated(
-            f"{self.__module__}.{self._name}", remove=self._removal_version
-        )
-        return super().__instancecheck__(inst)
-
-
 class _CallableGenericAlias(_NotIterable, _GenericAlias, _root=True):
     def __repr__(self):
         assert self._name == 'Callable'
@@ -2805,9 +2789,6 @@ Mapping = _alias(collections.abc.Mapping, 2)
 MutableMapping = _alias(collections.abc.MutableMapping, 2)
 Sequence = _alias(collections.abc.Sequence, 1)
 MutableSequence = _alias(collections.abc.MutableSequence, 1)
-ByteString = _DeprecatedGenericAlias(
-    collections.abc.ByteString, 0, removal_version=(3, 17)  # Not generic.
-)
 # Tuple accepts variable number of parameters.
 Tuple = _TupleType(tuple, -1, inst=False, name='Tuple')
 Tuple.__doc__ = \
@@ -3799,6 +3780,48 @@ def __getattr__(attr):
         )
         warnings.warn(depr_message, category=DeprecationWarning, stacklevel=2)
         obj = _collect_type_parameters
+    elif attr == "ByteString":
+        import warnings
+
+        warnings._deprecated(
+            "typing.ByteString",
+            message=(
+                "{name!r} and 'collections.abc.ByteString' are deprecated "
+                "and slated for removal in Python {remove}"
+            ),
+            remove=(3, 17)
+        )
+
+        class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
+            def __init__(
+                self, origin, nparams, *, removal_version, inst=True, name=None
+            ):
+                super().__init__(origin, nparams, inst=inst, name=name)
+                self._removal_version = removal_version
+
+            def __instancecheck__(self, inst):
+                import warnings
+                warnings._deprecated(
+                    f"{self.__module__}.{self._name}", remove=self._removal_version
+                )
+                return super().__instancecheck__(inst)
+
+            def __subclasscheck__(self, cls):
+                import warnings
+                warnings._deprecated(
+                    f"{self.__module__}.{self._name}", remove=self._removal_version
+                )
+                return super().__subclasscheck__(cls)
+
+        with warnings.catch_warnings(
+            action="ignore", category=DeprecationWarning
+        ):
+            # Not generic
+            ByteString = globals()["ByteString"] = _DeprecatedGenericAlias(
+                collections.abc.ByteString, 0, removal_version=(3, 17)
+            )
+
+        return ByteString
     else:
         raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
     globals()[attr] = obj
