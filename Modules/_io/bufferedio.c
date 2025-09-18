@@ -553,8 +553,8 @@ _io__Buffered_close_impl(buffered *self)
     if (!ENTER_BUFFERED(self)) {
         return NULL;
     }
-
-    r = buffered_closed(self);
+    /* gh-138720: Use IS_CLOSED to match flush CHECK_CLOSED. */
+    r = IS_CLOSED(self);
     if (r < 0)
         goto end;
     if (r > 0) {
@@ -1789,18 +1789,18 @@ _bufferedreader_read_fast(buffered *self, Py_ssize_t n)
 static PyObject *
 _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
 {
-    PyObject *res = NULL;
     Py_ssize_t current_size, remaining, written;
-    char *out;
 
     current_size = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (n <= current_size)
         return _bufferedreader_read_fast(self, n);
 
-    res = PyBytes_FromStringAndSize(NULL, n);
-    if (res == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(n);
+    if (writer == NULL) {
         goto error;
-    out = PyBytes_AS_STRING(res);
+    }
+    char *out = PyBytesWriter_GetData(writer);
+
     remaining = n;
     written = 0;
     if (current_size > 0) {
@@ -1829,11 +1829,9 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
         if (r == 0 || r == -2) {
             /* EOF occurred or read() would block. */
             if (r == 0 || written > 0) {
-                if (_PyBytes_Resize(&res, written))
-                    goto error;
-                return res;
+                return PyBytesWriter_FinishWithSize(writer, written);
             }
-            Py_DECREF(res);
+            PyBytesWriter_Discard(writer);
             Py_RETURN_NONE;
         }
         remaining -= r;
@@ -1853,11 +1851,9 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
         if (r == 0 || r == -2) {
             /* EOF occurred or read() would block. */
             if (r == 0 || written > 0) {
-                if (_PyBytes_Resize(&res, written))
-                    goto error;
-                return res;
+                return PyBytesWriter_FinishWithSize(writer, written);
             }
-            Py_DECREF(res);
+            PyBytesWriter_Discard(writer);
             Py_RETURN_NONE;
         }
         if (remaining > r) {
@@ -1876,10 +1872,10 @@ _bufferedreader_read_generic(buffered *self, Py_ssize_t n)
             break;
     }
 
-    return res;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_XDECREF(res);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
