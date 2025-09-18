@@ -86,7 +86,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
-          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} \
+            -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: macOS
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
