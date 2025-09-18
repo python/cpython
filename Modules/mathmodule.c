@@ -2937,24 +2937,10 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
 
             if (!finished) {
                 double flt_p, flt_q;
-                bool p_type_float = PyFloat_CheckExact(p_i);
-                bool q_type_float = PyFloat_CheckExact(q_i);
-                if (p_type_float && q_type_float) {
+
+                if (PyFloat_CheckExact(p_i)) {
                     flt_p = PyFloat_AS_DOUBLE(p_i);
-                    flt_q = PyFloat_AS_DOUBLE(q_i);
-                } else if (p_type_float && (PyLong_CheckExact(q_i) || PyBool_Check(q_i))) {
-                    /* We care about float/int pairs and int/float pairs because
-                       they arise naturally in several use cases such as price
-                       times quantity, measurements with integer weights, or
-                       data selected by a vector of bools. */
-                    flt_p = PyFloat_AS_DOUBLE(p_i);
-                    flt_q = PyLong_AsDouble(q_i);
-                    if (flt_q == -1.0 && PyErr_Occurred()) {
-                        PyErr_Clear();
-                        goto finalize_flt_path;
-                    }
-                } else if (q_type_float && (PyLong_CheckExact(p_i) || PyBool_Check(p_i))) {
-                    flt_q = PyFloat_AS_DOUBLE(q_i);
+                } else if (PyLong_CheckExact(p_i) || PyBool_Check(p_i)) {
                     flt_p = PyLong_AsDouble(p_i);
                     if (flt_p == -1.0 && PyErr_Occurred()) {
                         PyErr_Clear();
@@ -2963,6 +2949,19 @@ math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q)
                 } else {
                     goto finalize_flt_path;
                 }
+
+                if (PyFloat_CheckExact(q_i)) {
+                    flt_q = PyFloat_AS_DOUBLE(q_i);
+                } else if (PyLong_CheckExact(q_i) || PyBool_Check(q_i)) {
+                    flt_q = PyLong_AsDouble(q_i);
+                    if (flt_q == -1.0 && PyErr_Occurred()) {
+                        PyErr_Clear();
+                        goto finalize_flt_path;
+                    }
+                } else {
+                    goto finalize_flt_path;
+                }
+
                 TripleLength new_flt_total = tl_fma(flt_p, flt_q, flt_total);
                 if (isfinite(new_flt_total.hi)) {
                     flt_total = new_flt_total;
