@@ -3801,7 +3801,7 @@ byteswriter_allocated(PyBytesWriter *writer)
 
 
 static inline int
-byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
+byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int resize)
 {
     assert(size >= 0);
 
@@ -3810,7 +3810,7 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
         return 0;
     }
 
-    if (overallocate & writer->overallocate) {
+    if (resize & writer->overallocate) {
         if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
             size += size / OVERALLOCATE_FACTOR;
         }
@@ -3834,25 +3834,29 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
         if (writer->obj == NULL) {
             return -1;
         }
-        assert((size_t)size > sizeof(writer->small_buffer));
-        memcpy(PyByteArray_AS_STRING(writer->obj),
-               writer->small_buffer,
-               sizeof(writer->small_buffer));
+        if (resize) {
+            assert((size_t)size > sizeof(writer->small_buffer));
+            memcpy(PyByteArray_AS_STRING(writer->obj),
+                   writer->small_buffer,
+                   sizeof(writer->small_buffer));
+        }
     }
     else {
         writer->obj = PyBytes_FromStringAndSize(NULL, size);
         if (writer->obj == NULL) {
             return -1;
         }
-        assert((size_t)size > sizeof(writer->small_buffer));
-        memcpy(PyBytes_AS_STRING(writer->obj),
-               writer->small_buffer,
-               sizeof(writer->small_buffer));
+        if (resize) {
+            assert((size_t)size > sizeof(writer->small_buffer));
+            memcpy(PyBytes_AS_STRING(writer->obj),
+                   writer->small_buffer,
+                   sizeof(writer->small_buffer));
+        }
     }
 
 #ifdef Py_DEBUG
     Py_ssize_t allocated = byteswriter_allocated(writer);
-    if (overallocate && allocated > old_allocated) {
+    if (resize && allocated > old_allocated) {
         memset(byteswriter_data(writer) + old_allocated, 0xff,
                allocated - old_allocated);
     }
