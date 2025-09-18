@@ -1885,6 +1885,10 @@ make_dash_replacement(PyObject *object, Py_UCS4 ch, PyObject *timetuple)
         goto error;
     }
 
+    if (PyUnicode_GET_LENGTH(stripped) == 0) {
+        stripped = PyUnicode_FromString("0");
+    }
+
     Py_DECREF(fmt_obj);
     Py_DECREF(strftime);
     Py_DECREF(res);

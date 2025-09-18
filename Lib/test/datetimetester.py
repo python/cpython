@@ -1589,7 +1589,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime(""), "") # SF bug #761337
         self.assertEqual(t.strftime('x'*1000), 'x'*1000) # SF bug #1556784
 
-        # SF bug #137165
+        # See gh-137165
         if platform.system() in ('Darwin', 'iOS'):
             self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:05")
         else:
@@ -3901,10 +3901,13 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         # A naive object replaces %z, %:z and %Z with empty strings.
         self.assertEqual(t.strftime("'%z' '%:z' '%Z'"), "'' '' ''")
 
-        # SF bug #137165
+        # See gh-137165
         self.assertEqual(t.strftime('%-H %-M %-S %f'), "1 2 3 000004")
         if platform.system() == 'Windows':
             self.assertEqual(t.strftime('%#H %#M %#S %f'), "1 2 3 000004")
+
+        t_zero = self.theclass(0, 0, 0, 4)
+        self.assertEqual(t_zero.strftime('%-H %-M %-S %f'), "0 0 0 000004")
 
         # bpo-34482: Check that surrogates don't cause a crash.
         try:
