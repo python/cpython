@@ -1,1 +1,1 @@
-Fix the EOF key shows in sqlite3 `.help` command on Windows.
+Fix the EOF key shows in sqlite3 ``.help`` command on Windows.
