@@ -1645,7 +1645,7 @@ class TestPendingCalls(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_pending_call_creates_thread(self):
         source = """
-        import _testcapi
+        import _testinternalcapi
         import threading
         import time
 
@@ -1662,7 +1662,7 @@ class TestPendingCalls(unittest.TestCase):
 
         def create_pending_call():
             time.sleep(1)
-            _testcapi.simple_pending_call(callback)
+            _testinternalcapi.simple_pending_call(callback)
 
 
         threading.Thread(target=create_pending_call).start()
