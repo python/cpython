@@ -2606,8 +2606,8 @@ class TestEq(unittest.TestCase):
         p1 = Point(1, 2)
         p2 = Point(1, 2)
         p3 = Point(2, 1)
-        self.assertTrue(p1 == p2)
-        self.assertFalse(p1 == p3)
+        self.assertEqual(p1, p2)
+        self.assertNotEqual(p1, p3)
 
     def test_eq_type_check(self):
         @dataclasses.dataclass
@@ -2620,7 +2620,7 @@ class TestEq(unittest.TestCase):
 
         a = A(1)
         b = B(1)
-        self.assertFalse(a == b)
+        self.assertNotEqual(a, b)
 
     def test_eq_custom_field(self):
         class AlwaysEqual(int):
@@ -2634,7 +2634,7 @@ class TestEq(unittest.TestCase):
 
         f1 = Foo(AlwaysEqual(1), 2)
         f2 = Foo(AlwaysEqual(2), 2)
-        self.assertTrue(f1 == f2)
+        self.assertEqual(f1, f2)
 
     def test_eq_nan_field(self):
         @dataclasses.dataclass
@@ -2644,7 +2644,7 @@ class TestEq(unittest.TestCase):
         nan = float('nan')
         d1 = D(nan)
         d2 = D(nan)
-        self.assertFalse(d1 == d2)
+        self.assertNotEqual(d1, d2)
 
 
 class TestOrdering(unittest.TestCase):
