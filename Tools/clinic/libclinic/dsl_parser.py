@@ -927,8 +927,11 @@ class DSLParser:
             # (var-positional), then we allow ``**kwds`` (var-keyword).
             # Currently, pos-or-keyword or keyword-only arguments are not
             # allowed with the ``**kwds`` converter.
-            if not all(p.is_positional_only() or p.is_vararg()
-                       for p in self.function.parameters.values()):
+            has_non_positional_param = any(
+                p.is_positional_or_keyword() or p.is_keyword_only()
+                for p in self.function.parameters.values()
+            )
+            if has_non_positional_param:
                 fail(f"Function {self.function.name!r} has an "
                      f"invalid parameter declaration (**kwargs?): {line!r}")
             is_var_keyword = True
