@@ -2429,10 +2429,8 @@ thread_shutdown(PyObject *self, PyObject *args)
         // Wait for the thread to finish. If we're interrupted, such
         // as by a ctrl-c we print the error and exit early.
         if (ThreadHandle_join(handle, -1) < 0) {
-            PyErr_FormatUnraisable("Exception ignored while joining a thread "
-                                   "in _thread._shutdown()");
             ThreadHandle_decref(handle);
-            Py_RETURN_NONE;
+            return NULL;
         }
 
         ThreadHandle_decref(handle);
