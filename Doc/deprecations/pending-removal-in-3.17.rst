@@ -5,14 +5,23 @@ Pending removal in Python 3.17
 
   - :class:`collections.abc.ByteString` is scheduled for removal in Python 3.17.
 
-    ``ByteString`` was originally intended to be an abstract type that would serve as a
-    supertype of both :class:`bytes` and :class:`bytearray`, but its semantics were never
-    clearly specified, and it was never understood properly by type checkers. See
-    :pep:`PEP 688 <688#current-options>` for more details.
+    Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+    implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use
+    in type annotations, either use :class:`Buffer` or a union that explicitly
+    specifies the types your code supports (e.g.,
+    ``bytes | bytearray | memoryview``).
 
-    Prefer :class:`~collections.abc.Sequence` or :class:`~collections.abc.Buffer`. For
-    use in type annotations, prefer a union, like ``bytes | bytearray``, or
-    :class:`collections.abc.Buffer`. (Contributed by Shantanu Jain in :gh:`91896`.)
+    :class:`!ByteString` was originally intended to be an abstract class that
+    would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+    However, since the ABC never had any methods, knowing that an object was an
+    instance of :class:`!ByteString` never actually told you anything useful
+    about the object. Other common buffer types such as :class:`memoryview`
+    were also never understood as subtypes of :class:`!ByteString` (either at
+    runtime or by static type checkers).
+
+    See :pep:`PEP 688 <688#current-options>` for more details.
+    (Contributed by Shantanu Jain in :gh:`91896`.)
+
 
 * :mod:`typing`:
 
@@ -24,12 +33,19 @@ Pending removal in Python 3.17
   - :class:`typing.ByteString`, deprecated since Python 3.9, is scheduled for removal in
     Python 3.17.
 
-   ``ByteString`` was originally intended to be an abstract type that would serve as a
-    supertype of both :class:`bytes` and :class:`bytearray`, but its semantics were never
-    clearly specified, and it was never understood properly by type checkers. See
-    :pep:`PEP 688 <688#current-options>` for more details.
+    Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+    implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use
+    in type annotations, either use :class:`~collections.abc.Buffer` or a union
+    that explicitly specifies the types your code supports (e.g.,
+    ``bytes | bytearray | memoryview``).
 
-    Prefer :class:`~collections.abc.Sequence` or :class:`~collections.abc.Buffer`. For
-    use in type annotations, prefer a union, like ``bytes | bytearray``, or
-    :class:`collections.abc.Buffer`.
+    :class:`!ByteString` was originally intended to be an abstract class that
+    would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+    However, since the ABC never had any methods, knowing that an object was an
+    instance of :class:`!ByteString` never actually told you anything useful
+    about the object. Other common buffer types such as :class:`memoryview`
+    were also never understood as subtypes of :class:`!ByteString` (either at
+    runtime or by static type checkers).
+
+    See :pep:`PEP 688 <688#current-options>` for more details.
     (Contributed by Shantanu Jain in :gh:`91896`.)

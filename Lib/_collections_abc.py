@@ -1085,9 +1085,10 @@ class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
     """Deprecated ABC serving as a common supertype of ``bytes`` and ``bytearray``.
 
     This ABC is scheduled for removal in Python 3.17.
-    For use in type annotations, prefer a union, like ``bytes | bytearray``, or
-    ``collections.abc.Buffer``. For use as an ABC, prefer ``Sequence`` or
-    ``collections.abc.Buffer``.
+    Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+    implements the buffer protocol at runtime. For use in type annotations,
+    either use ``Buffer`` or a union that explicitly specifies the types your
+    code supports (e.g., ``bytes | bytearray | memoryview``).
     """
 
     __slots__ = ()
