@@ -96,7 +96,7 @@ jobs:
       # also see: rosetta https://github.com/numpy/numpy/pull/29756/files
         if: runner.os == 'macOS'
         run: |
-        arch -x86_64 /bin/bash -c '
+          arch -x86_64 /bin/bash -c '
           brew update
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
