@@ -2432,7 +2432,9 @@ PyDoc_STRVAR(_decimal_Decimal_logical_invert__doc__,
 "logical_invert($self, /, context=None)\n"
 "--\n"
 "\n"
-"Return the digit-wise inversion of the (logical) operand.");
+"Invert all its digits.\n"
+"\n"
+"The self should have zero sign and exponent, and digits either 0 or 1.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_INVERT_METHODDEF    \
     {"logical_invert", _PyCFunction_CAST(_decimal_Decimal_logical_invert), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_invert__doc__},
@@ -3020,7 +3022,10 @@ PyDoc_STRVAR(_decimal_Decimal_logical_and__doc__,
 "logical_and($self, /, other, context=None)\n"
 "--\n"
 "\n"
-"Return the digit-wise \'and\' of the two (logical) operands.");
+"Applies an \'and\' operation between self and other\'s digits.\n"
+"\n"
+"Both self and other should have zero sign and exponent,\n"
+"and digits either 0 or 1.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_AND_METHODDEF    \
     {"logical_and", _PyCFunction_CAST(_decimal_Decimal_logical_and), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_and__doc__},
@@ -3086,7 +3091,10 @@ PyDoc_STRVAR(_decimal_Decimal_logical_or__doc__,
 "logical_or($self, /, other, context=None)\n"
 "--\n"
 "\n"
-"Return the digit-wise \'or\' of the two (logical) operands.");
+"Applies an \'or\' operation between self and other\'s digits.\n"
+"\n"
+"Both self and other should have zero sign and exponent,\n"
+"and digits either 0 or 1.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_OR_METHODDEF    \
     {"logical_or", _PyCFunction_CAST(_decimal_Decimal_logical_or), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_or__doc__},
@@ -3152,7 +3160,10 @@ PyDoc_STRVAR(_decimal_Decimal_logical_xor__doc__,
 "logical_xor($self, /, other, context=None)\n"
 "--\n"
 "\n"
-"Return the digit-wise \'xor\' of the two (logical) operands.");
+"Applies an \'xor\' operation between self and other\'s digits.\n"
+"\n"
+"Both self and other should have zero sign and exponent,\n"
+"and digits either 0 or 1.");
 
 #define _DECIMAL_DECIMAL_LOGICAL_XOR_METHODDEF    \
     {"logical_xor", _PyCFunction_CAST(_decimal_Decimal_logical_xor), METH_FASTCALL|METH_KEYWORDS, _decimal_Decimal_logical_xor__doc__},
@@ -4560,7 +4571,21 @@ PyDoc_STRVAR(_decimal_Context_logical_invert__doc__,
 "logical_invert($self, x, /)\n"
 "--\n"
 "\n"
-"Invert all digits of x.");
+"Invert all the digits in the operand.\n"
+"\n"
+"The operand should have zero sign and exponent, and digits\n"
+"either 0 or 1.\n"
+"\n"
+"    >>> ExtendedContext.logical_invert(Decimal(\'0\'))\n"
+"    Decimal(\'111111111\')\n"
+"    >>> ExtendedContext.logical_invert(Decimal(\'1\'))\n"
+"    Decimal(\'111111110\')\n"
+"    >>> ExtendedContext.logical_invert(Decimal(\'111111111\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_invert(Decimal(\'101010101\'))\n"
+"    Decimal(\'10101010\')\n"
+"    >>> ExtendedContext.logical_invert(1101)\n"
+"    Decimal(\'111110010\')");
 
 #define _DECIMAL_CONTEXT_LOGICAL_INVERT_METHODDEF    \
     {"logical_invert", (PyCFunction)_decimal_Context_logical_invert, METH_O, _decimal_Context_logical_invert__doc__},
@@ -4688,7 +4713,29 @@ PyDoc_STRVAR(_decimal_Context_logical_and__doc__,
 "logical_and($self, x, y, /)\n"
 "--\n"
 "\n"
-"Digit-wise and of x and y.");
+"Applies the logical operation \'and\' between each operand\'s digits.\n"
+"\n"
+"Both operands should have zero sign and exponent, and\n"
+"digits either 0 or 1.\n"
+"\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'0\'), Decimal(\'0\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'0\'), Decimal(\'1\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'1\'), Decimal(\'0\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'1\'), Decimal(\'1\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'1100\'), Decimal(\'1010\'))\n"
+"    Decimal(\'1000\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(\'1111\'), Decimal(\'10\'))\n"
+"    Decimal(\'10\')\n"
+"    >>> ExtendedContext.logical_and(110, 1101)\n"
+"    Decimal(\'100\')\n"
+"    >>> ExtendedContext.logical_and(Decimal(110), 1101)\n"
+"    Decimal(\'100\')\n"
+"    >>> ExtendedContext.logical_and(110, Decimal(1101))\n"
+"    Decimal(\'100\')");
 
 #define _DECIMAL_CONTEXT_LOGICAL_AND_METHODDEF    \
     {"logical_and", _PyCFunction_CAST(_decimal_Context_logical_and), METH_FASTCALL, _decimal_Context_logical_and__doc__},
@@ -4719,7 +4766,29 @@ PyDoc_STRVAR(_decimal_Context_logical_or__doc__,
 "logical_or($self, x, y, /)\n"
 "--\n"
 "\n"
-"Digit-wise or of x and y.");
+"Applies the logical operation \'or\' between each operand\'s digits.\n"
+"\n"
+"Both operands should have zero sign and exponent, and digits\n"
+"either 0 or 1.\n"
+"\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'0\'), Decimal(\'0\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'0\'), Decimal(\'1\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'1\'), Decimal(\'0\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'1\'), Decimal(\'1\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'1100\'), Decimal(\'1010\'))\n"
+"    Decimal(\'1110\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(\'1110\'), Decimal(\'10\'))\n"
+"    Decimal(\'1110\')\n"
+"    >>> ExtendedContext.logical_or(110, 1101)\n"
+"    Decimal(\'1111\')\n"
+"    >>> ExtendedContext.logical_or(Decimal(110), 1101)\n"
+"    Decimal(\'1111\')\n"
+"    >>> ExtendedContext.logical_or(110, Decimal(1101))\n"
+"    Decimal(\'1111\')");
 
 #define _DECIMAL_CONTEXT_LOGICAL_OR_METHODDEF    \
     {"logical_or", _PyCFunction_CAST(_decimal_Context_logical_or), METH_FASTCALL, _decimal_Context_logical_or__doc__},
@@ -4749,7 +4818,29 @@ PyDoc_STRVAR(_decimal_Context_logical_xor__doc__,
 "logical_xor($self, x, y, /)\n"
 "--\n"
 "\n"
-"Digit-wise xor of x and y.");
+"Applies the logical operation \'xor\' between each operand\'s digits.\n"
+"\n"
+"Both operands should have zero sign and exponent, and digits\n"
+"either 0 or 1.\n"
+"\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'0\'), Decimal(\'0\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'0\'), Decimal(\'1\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'1\'), Decimal(\'0\'))\n"
+"    Decimal(\'1\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'1\'), Decimal(\'1\'))\n"
+"    Decimal(\'0\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'1100\'), Decimal(\'1010\'))\n"
+"    Decimal(\'110\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(\'1111\'), Decimal(\'10\'))\n"
+"    Decimal(\'1101\')\n"
+"    >>> ExtendedContext.logical_xor(110, 1101)\n"
+"    Decimal(\'1011\')\n"
+"    >>> ExtendedContext.logical_xor(Decimal(110), 1101)\n"
+"    Decimal(\'1011\')\n"
+"    >>> ExtendedContext.logical_xor(110, Decimal(1101))\n"
+"    Decimal(\'1011\')");
 
 #define _DECIMAL_CONTEXT_LOGICAL_XOR_METHODDEF    \
     {"logical_xor", _PyCFunction_CAST(_decimal_Context_logical_xor), METH_FASTCALL, _decimal_Context_logical_xor__doc__},
@@ -4900,4 +4991,4 @@ exit:
 #ifndef _DECIMAL_CONTEXT_APPLY_METHODDEF
     #define _DECIMAL_CONTEXT_APPLY_METHODDEF
 #endif /* !defined(_DECIMAL_CONTEXT_APPLY_METHODDEF) */
-/*[clinic end generated code: output=1e10ddd6610e17dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee7dc1edab96bdc1 input=a9049054013a1b77]*/
