@@ -1615,6 +1615,17 @@ class TestSpecifics(unittest.TestCase):
         def f():
             a if (1 if b else c) else d
 
+    def test_lineno_propagation_empty_blocks(self):
+        # Smoke test. See gh-138714.
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
     def test_global_declaration_in_except_used_in_else(self):
         # See gh-111123
         code = textwrap.dedent("""\
