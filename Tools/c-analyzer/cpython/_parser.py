@@ -80,6 +80,7 @@ EXCLUDED = format_conf_lines([
     'Python/generated_cases.c.h',
     'Python/executor_cases.c.h',
     'Python/optimizer_cases.c.h',
+    'Python/opcode_targets.h',
     # XXX: Throws errors if PY_VERSION_HEX is not mocked out
     'Modules/clinic/_testclinic_depr.c.h',
 
