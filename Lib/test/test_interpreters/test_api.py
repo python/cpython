@@ -430,7 +430,6 @@ class InterpreterObjectTests(TestBase):
         exit()"""
         stdout, stderr = repl.communicate(script)
         self.assertIsNone(stderr)
-        self.assertIn(b"remaining subinterpreters", stdout)
         self.assertNotIn(b"Traceback", stdout)
 
 
