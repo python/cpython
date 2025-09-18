@@ -88,11 +88,11 @@ jobs:
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
+      - name: macOS
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
         # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
         # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
-      - name: macOS
         # also see: rosetta https://github.com/numpy/numpy/pull/29756/files
         if: runner.os == 'macOS'
         run: |
