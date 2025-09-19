@@ -9,7 +9,7 @@ from _pyrepl import readline
 from _colorize import ANSIColors, get_colors
 import rlcompleter
 import types
-
+import keyword
 
 class DefaultConfig:
 
@@ -88,7 +88,6 @@ class Completer(rlcompleter.Completer):
         return word
 
     def global_matches(self, text):
-        import keyword
         names = rlcompleter.Completer.global_matches(self, text)
         prefix = commonprefix(names)
         if prefix and prefix != text:
