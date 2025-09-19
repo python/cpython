@@ -2766,8 +2766,8 @@ Notes:
    for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
 
-   When used with the :meth:`~.datetime.strftime` method, the leading zero is optional
-   for formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
+   When used with the :meth:`~.datetime.strftime` method, leading zeroes are included
+   by default for formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, ``%V`` and ``%y``. The ``%-`` flag (for example, ``%-d``) will produce
    non-zero-padded output, except for ``%-y`` on Apple platforms, which is still
    zero-padded.
