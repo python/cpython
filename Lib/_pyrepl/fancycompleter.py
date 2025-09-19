@@ -160,11 +160,11 @@ class Completer(rlcompleter.Completer):
             return []
 
         if len(names) == 1:
-            return ['%s.%s' % (expr, names[0])]  # only option, no coloring.
+            return [f'{expr}.{names[0]}']  # only option, no coloring.
 
         prefix = commonprefix(names)
         if prefix and prefix != attr:
-            return ['%s.%s' % (expr, prefix)]  # autocomplete prefix
+            return [f'{expr}.{prefix}']  # autocomplete prefix
 
         if self.config.use_colors:
             return self.colorize_matches(names, values)
