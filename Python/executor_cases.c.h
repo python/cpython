@@ -4171,31 +4171,9 @@
             break;
         }
 
-        case _POP_JUMP_IF_FALSE: {
-            TIER2_JUMPBY(2);
-            _PyStackRef cond;
-            oparg = CURRENT_OPARG();
-            cond = stack_pointer[-1];
-            assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsFalse(cond);
-            TIER2_JUMPBY(flag ? oparg : 0);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
+        /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 because it is replaced */
 
-        case _POP_JUMP_IF_TRUE: {
-            TIER2_JUMPBY(2);
-            _PyStackRef cond;
-            oparg = CURRENT_OPARG();
-            cond = stack_pointer[-1];
-            assert(PyStackRef_BoolCheck(cond));
-            int flag = PyStackRef_IsTrue(cond);
-            TIER2_JUMPBY(flag ? oparg : 0);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
+        /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is replaced */
 
         case _IS_NONE: {
             _PyStackRef value;

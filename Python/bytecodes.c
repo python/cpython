@@ -3050,18 +3050,20 @@ dummy_func(
             #endif /* _Py_TIER2 */
         }
 
-        op(_POP_JUMP_IF_FALSE, (cond -- )) {
+        replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
             DEAD(cond);
-            JUMPBY(flag ? oparg : 0);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
         }
 
-        op(_POP_JUMP_IF_TRUE, (cond -- )) {
+        replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
             DEAD(cond);
-            JUMPBY(flag ? oparg : 0);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
         }
 
         op(_IS_NONE, (value -- b)) {

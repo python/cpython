@@ -57,6 +57,33 @@ class TracerEmitter(Emitter):
         self.emit("TRACING_DISPATCH")
         return False
 
+    def deopt_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.start_line()
+        self.out.emit("if (")
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(") {\n")
+        next(tkn_iter)  # Semi colon
+        assert inst is not None
+        assert inst.family is not None
+        family_name = inst.family.name
+        self.emit(f"UPDATE_MISS_STATS({family_name});\n")
+        self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
+        self.emit(f"JUMP_TO_PREDICTED(TRACING_{family_name});\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+    exit_if = deopt_if
+
 def generate_tracer_cases(
     analysis: Analysis, out: CWriter
 ):

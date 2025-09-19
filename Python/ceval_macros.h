@@ -144,7 +144,7 @@
     DISPATCH();
 #  define RECORD_TRACE() do { \
         frame->instr_ptr = next_instr; \
-        if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, oparg)) { \
+        if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, opcode, oparg)) { \
             BAIL_TRACING(); \
         } \
     } while (0);
@@ -407,6 +407,7 @@ do {                                                   \
     }                                                  \
     if (keep_tracing_bit) { \
         ENTER_TRACING(); \
+        _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0); \
     } \
     else { \
         LEAVE_TRACING(); \

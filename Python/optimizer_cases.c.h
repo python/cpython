@@ -2092,17 +2092,9 @@
             break;
         }
 
-        case _POP_JUMP_IF_FALSE: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
+        /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
 
-        case _POP_JUMP_IF_TRUE: {
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
+        /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
 
         case _IS_NONE: {
             JitOptRef b;

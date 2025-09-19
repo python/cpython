@@ -10325,6 +10325,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
@@ -10333,7 +10335,8 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
-            JUMPBY(flag ? oparg : 0);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -10346,6 +10349,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NONE);
@@ -10374,7 +10379,8 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsTrue(cond);
-                JUMPBY(flag ? oparg : 0);
+                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+                JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -10388,6 +10394,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NOT_NONE);
@@ -10416,7 +10424,8 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsFalse(cond);
-                JUMPBY(flag ? oparg : 0);
+                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+                JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -10430,6 +10439,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_TRUE);
@@ -10438,7 +10449,8 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
-            JUMPBY(flag ? oparg : 0);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -12557,6 +12569,7 @@
 
 
         TRACING_TARGET(BINARY_OP) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP;
             (void)(opcode);
@@ -12622,6 +12635,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_ADD_FLOAT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_ADD_FLOAT;
             (void)(opcode);
@@ -12645,7 +12659,7 @@
                 if (!PyFloat_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_FLOAT
@@ -12655,7 +12669,7 @@
                 if (!PyFloat_CheckExact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -12682,6 +12696,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_ADD_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_ADD_INT;
             (void)(opcode);
@@ -12705,7 +12720,7 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_INT
@@ -12715,7 +12730,7 @@
                 if (!_PyLong_CheckExactAndCompact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -12732,7 +12747,7 @@
                 if (PyStackRef_IsNull(res)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
@@ -12744,6 +12759,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_ADD_UNICODE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_ADD_UNICODE;
             (void)(opcode);
@@ -12768,7 +12784,7 @@
                 if (!PyUnicode_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_UNICODE
@@ -12778,7 +12794,7 @@
                 if (!PyUnicode_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -12806,6 +12822,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_EXTEND) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_EXTEND;
             (void)(opcode);
@@ -12838,7 +12855,7 @@
                 if (!res) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip -4 cache entry */
@@ -12872,6 +12889,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_INPLACE_ADD_UNICODE;
             (void)(opcode);
@@ -12895,7 +12913,7 @@
                 if (!PyUnicode_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_UNICODE
@@ -12905,7 +12923,7 @@
                 if (!PyUnicode_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -12928,7 +12946,7 @@
                 if (PyStackRef_AsPyObjectBorrow(*target_local) != left_o) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
                 assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
@@ -12957,6 +12975,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_MULTIPLY_FLOAT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_MULTIPLY_FLOAT;
             (void)(opcode);
@@ -12980,7 +12999,7 @@
                 if (!PyFloat_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_FLOAT
@@ -12990,7 +13009,7 @@
                 if (!PyFloat_CheckExact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13017,6 +13036,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_MULTIPLY_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_MULTIPLY_INT;
             (void)(opcode);
@@ -13040,7 +13060,7 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_INT
@@ -13050,7 +13070,7 @@
                 if (!_PyLong_CheckExactAndCompact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13067,7 +13087,7 @@
                 if (PyStackRef_IsNull(res)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
@@ -13079,6 +13099,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_SUBSCR_DICT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_DICT;
             (void)(opcode);
@@ -13102,7 +13123,7 @@
                 if (!PyDict_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13147,6 +13168,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_SUBSCR_GETITEM) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_GETITEM;
             (void)(opcode);
@@ -13169,7 +13191,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _BINARY_OP_SUBSCR_CHECK_FUNC
@@ -13179,28 +13201,28 @@
                 if (!PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 PyHeapTypeObject *ht = (PyHeapTypeObject *)tp;
                 PyObject *getitem_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(ht->_spec_cache.getitem);
                 if (getitem_o == NULL) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 assert(PyFunction_Check(getitem_o));
                 uint32_t cached_version = FT_ATOMIC_LOAD_UINT32_RELAXED(ht->_spec_cache.getitem_version);
                 if (((PyFunctionObject *)getitem_o)->func_version != cached_version) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 PyCodeObject *code = (PyCodeObject *)PyFunction_GET_CODE(getitem_o);
                 assert(code->co_argcount == 2);
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 getitem = PyStackRef_FromPyObjectNew(getitem_o);
                 STAT_INC(BINARY_OP, hit);
@@ -13233,6 +13255,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_SUBSCR_LIST_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_LIST_INT;
             (void)(opcode);
@@ -13257,7 +13280,7 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_LIST
@@ -13267,7 +13290,7 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13282,7 +13305,7 @@
                 if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 #ifdef Py_GIL_DISABLED
@@ -13292,7 +13315,7 @@
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
                 res = PyStackRef_FromPyObjectSteal(res_o);
@@ -13300,7 +13323,7 @@
                 if (index >= PyList_GET_SIZE(list)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = PyList_GET_ITEM(list, index);
@@ -13325,6 +13348,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_SUBSCR_LIST_SLICE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_LIST_SLICE;
             (void)(opcode);
@@ -13349,7 +13373,7 @@
                 if (!PySlice_Check(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_LIST
@@ -13359,7 +13383,7 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13399,6 +13423,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_SUBSCR_STR_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_STR_INT;
             (void)(opcode);
@@ -13423,7 +13448,7 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_UNICODE
@@ -13433,7 +13458,7 @@
                 if (!PyUnicode_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13448,19 +13473,19 @@
                 if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (PyUnicode_GET_LENGTH(str) <= index) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 Py_UCS4 c = PyUnicode_READ_CHAR(str, index);
                 if (Py_ARRAY_LENGTH(_Py_SINGLETON(strings).ascii) <= c) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = (PyObject*)&_Py_SINGLETON(strings).ascii[c];
@@ -13479,6 +13504,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_SUBSCR_TUPLE_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_TUPLE_INT;
             (void)(opcode);
@@ -13503,7 +13529,7 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_TUPLE
@@ -13513,7 +13539,7 @@
                 if (!PyTuple_CheckExact(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13528,13 +13554,13 @@
                 if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (index >= PyTuple_GET_SIZE(tuple)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 STAT_INC(BINARY_OP, hit);
                 PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
@@ -13554,6 +13580,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_SUBTRACT_FLOAT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBTRACT_FLOAT;
             (void)(opcode);
@@ -13577,7 +13604,7 @@
                 if (!PyFloat_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_FLOAT
@@ -13587,7 +13614,7 @@
                 if (!PyFloat_CheckExact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13614,6 +13641,7 @@
         }
 
         TRACING_TARGET(BINARY_OP_SUBTRACT_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBTRACT_INT;
             (void)(opcode);
@@ -13637,7 +13665,7 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             // _GUARD_NOS_INT
@@ -13647,7 +13675,7 @@
                 if (!_PyLong_CheckExactAndCompact(left_o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
             }
             /* Skip 5 cache entries */
@@ -13664,7 +13692,7 @@
                 if (PyStackRef_IsNull(res)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
+                    JUMP_TO_PREDICTED(TRACING_BINARY_OP);
                 }
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
@@ -13676,6 +13704,7 @@
         }
 
         TRACING_TARGET(BINARY_SLICE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BINARY_SLICE;
             (void)(opcode);
@@ -13736,6 +13765,7 @@
         }
 
         TRACING_TARGET(BUILD_INTERPOLATION) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BUILD_INTERPOLATION;
             (void)(opcode);
@@ -13798,6 +13828,7 @@
         }
 
         TRACING_TARGET(BUILD_LIST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BUILD_LIST;
             (void)(opcode);
@@ -13826,6 +13857,7 @@
         }
 
         TRACING_TARGET(BUILD_MAP) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BUILD_MAP;
             (void)(opcode);
@@ -13882,6 +13914,7 @@
         }
 
         TRACING_TARGET(BUILD_SET) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BUILD_SET;
             (void)(opcode);
@@ -13943,6 +13976,7 @@
         }
 
         TRACING_TARGET(BUILD_SLICE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BUILD_SLICE;
             (void)(opcode);
@@ -13982,6 +14016,7 @@
         }
 
         TRACING_TARGET(BUILD_STRING) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BUILD_STRING;
             (void)(opcode);
@@ -14033,6 +14068,7 @@
         }
 
         TRACING_TARGET(BUILD_TEMPLATE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BUILD_TEMPLATE;
             (void)(opcode);
@@ -14075,6 +14111,7 @@
         }
 
         TRACING_TARGET(BUILD_TUPLE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = BUILD_TUPLE;
             (void)(opcode);
@@ -14101,6 +14138,7 @@
         }
 
         TRACING_TARGET(CACHE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CACHE;
             (void)(opcode);
@@ -14118,6 +14156,7 @@
         }
 
         TRACING_TARGET(CALL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL;
             (void)(opcode);
@@ -14298,6 +14337,7 @@
         }
 
         TRACING_TARGET(CALL_ALLOC_AND_ENTER_INIT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_ALLOC_AND_ENTER_INIT;
             (void)(opcode);
@@ -14323,7 +14363,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_AND_ALLOCATE_OBJECT
@@ -14335,18 +14375,18 @@
                 if (!PyStackRef_IsNull(self_or_null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (!PyType_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyTypeObject *tp = (PyTypeObject *)callable_o;
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 assert(tp->tp_new == PyBaseObject_Type.tp_new);
                 assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -14357,7 +14397,7 @@
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize + _Py_InitCleanup.co_framesize)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -14421,6 +14461,7 @@
         }
 
         TRACING_TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_BOUND_METHOD_EXACT_ARGS;
             (void)(opcode);
@@ -14444,7 +14485,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_CALL_BOUND_METHOD_EXACT_ARGS
@@ -14454,12 +14495,12 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (Py_TYPE(PyStackRef_AsPyObjectBorrow(callable)) != &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _INIT_CALL_BOUND_METHOD_EXACT_ARGS
@@ -14485,13 +14526,13 @@
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_FUNCTION_EXACT_ARGS
@@ -14503,7 +14544,7 @@
                 if (code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null))) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_STACK_SPACE
@@ -14514,7 +14555,7 @@
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_RECURSION_REMAINING
@@ -14522,7 +14563,7 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _INIT_CALL_PY_EXACT_ARGS
@@ -14566,6 +14607,7 @@
         }
 
         TRACING_TARGET(CALL_BOUND_METHOD_GENERAL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_BOUND_METHOD_GENERAL;
             (void)(opcode);
@@ -14589,7 +14631,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_METHOD_VERSION
@@ -14601,23 +14643,23 @@
                 if (Py_TYPE(callable_o) != &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyObject *func = ((PyMethodObject *)callable_o)->im_func;
                 if (!PyFunction_Check(func)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (((PyFunctionObject *)func)->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _EXPAND_METHOD
@@ -14642,7 +14684,7 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _PY_FRAME_GENERAL
@@ -14696,6 +14738,7 @@
         }
 
         TRACING_TARGET(CALL_BUILTIN_CLASS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_BUILTIN_CLASS;
             (void)(opcode);
@@ -14723,7 +14766,7 @@
                 if (!PyType_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyTypeObject *tp = (PyTypeObject *)callable_o;
                 int total_args = oparg;
@@ -14735,7 +14778,7 @@
                 if (tp->tp_vectorcall == NULL) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
@@ -14803,6 +14846,7 @@
         }
 
         TRACING_TARGET(CALL_BUILTIN_FAST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_BUILTIN_FAST;
             (void)(opcode);
@@ -14836,12 +14880,12 @@
                 if (!PyCFunction_CheckExact(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
@@ -14914,6 +14958,7 @@
         }
 
         TRACING_TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_BUILTIN_FAST_WITH_KEYWORDS;
             (void)(opcode);
@@ -14947,12 +14992,12 @@
                 if (!PyCFunction_CheckExact(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (PyCFunction_GET_FLAGS(callable_o) != (METH_FASTCALL | METH_KEYWORDS)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -15025,6 +15070,7 @@
         }
 
         TRACING_TARGET(CALL_BUILTIN_O) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_BUILTIN_O;
             (void)(opcode);
@@ -15057,22 +15103,22 @@
                 if (total_args != 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (!PyCFunction_CheckExact(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (PyCFunction_GET_FLAGS(callable_o) != METH_O) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
@@ -15111,6 +15157,7 @@
         }
 
         TRACING_TARGET(CALL_FUNCTION_EX) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_FUNCTION_EX;
             (void)(opcode);
@@ -15280,6 +15327,7 @@
         }
 
         TRACING_TARGET(CALL_INTRINSIC_1) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_INTRINSIC_1;
             (void)(opcode);
@@ -15314,6 +15362,7 @@
         }
 
         TRACING_TARGET(CALL_INTRINSIC_2) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_INTRINSIC_2;
             (void)(opcode);
@@ -15357,6 +15406,7 @@
         }
 
         TRACING_TARGET(CALL_ISINSTANCE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_ISINSTANCE;
             (void)(opcode);
@@ -15382,7 +15432,7 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _GUARD_CALLABLE_ISINSTANCE
@@ -15393,7 +15443,7 @@
                 if (callable_o != interp->callable_cache.isinstance) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CALL_ISINSTANCE
@@ -15435,6 +15485,7 @@
         }
 
         TRACING_TARGET(CALL_KW) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_KW;
             (void)(opcode);
@@ -15619,6 +15670,7 @@
         }
 
         TRACING_TARGET(CALL_KW_BOUND_METHOD) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_KW_BOUND_METHOD;
             (void)(opcode);
@@ -15643,7 +15695,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
             }
             // _CHECK_METHOD_VERSION_KW
@@ -15655,23 +15707,23 @@
                 if (Py_TYPE(callable_o) != &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
                 PyObject *func = ((PyMethodObject *)callable_o)->im_func;
                 if (!PyFunction_Check(func)) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
                 if (((PyFunctionObject *)func)->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
             }
             // _EXPAND_METHOD_KW
@@ -15751,6 +15803,7 @@
         }
 
         TRACING_TARGET(CALL_KW_NON_PY) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_KW_NON_PY;
             (void)(opcode);
@@ -15778,12 +15831,12 @@
                 if (PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
                 if (Py_TYPE(callable_o) == &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
             }
             // _CALL_KW_NON_PY
@@ -15880,6 +15933,7 @@
         }
 
         TRACING_TARGET(CALL_KW_PY) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_KW_PY;
             (void)(opcode);
@@ -15903,7 +15957,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
             }
             // _CHECK_FUNCTION_VERSION_KW
@@ -15914,13 +15968,13 @@
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
             }
             // _CHECK_RECURSION_REMAINING
@@ -15928,7 +15982,7 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL_KW);
                     assert(_PyOpcode_Deopt[opcode] == (CALL_KW));
-                    JUMP_TO_PREDICTED(CALL_KW);
+                    JUMP_TO_PREDICTED(TRACING_CALL_KW);
                 }
             }
             // _PY_FRAME_KW
@@ -15992,6 +16046,7 @@
         }
 
         TRACING_TARGET(CALL_LEN) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_LEN;
             (void)(opcode);
@@ -16016,7 +16071,7 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _GUARD_CALLABLE_LEN
@@ -16027,7 +16082,7 @@
                 if (callable_o != interp->callable_cache.len) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CALL_LEN
@@ -16066,6 +16121,7 @@
         }
 
         TRACING_TARGET(CALL_LIST_APPEND) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_LIST_APPEND;
             (void)(opcode);
@@ -16092,7 +16148,7 @@
                 if (callable_o != interp->callable_cache.list_append) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _GUARD_NOS_NOT_NULL
@@ -16102,7 +16158,7 @@
                 if (o == NULL) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _GUARD_NOS_LIST
@@ -16111,7 +16167,7 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CALL_LIST_APPEND
@@ -16123,12 +16179,12 @@
                 if (!PyList_CheckExact(self_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (!LOCK_OBJECT(self_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 int err = _PyList_AppendTakeRef((PyListObject *)self_o, PyStackRef_AsPyObjectSteal(arg));
@@ -16156,6 +16212,7 @@
         }
 
         TRACING_TARGET(CALL_METHOD_DESCRIPTOR_FAST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_METHOD_DESCRIPTOR_FAST;
             (void)(opcode);
@@ -16189,26 +16246,26 @@
                 if (total_args == 0) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyMethodDef *meth = method->d_method;
                 if (meth->ml_flags != METH_FASTCALL) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
                 assert(self != NULL);
                 if (!Py_IS_TYPE(self, method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 int nargs = total_args - 1;
@@ -16279,6 +16336,7 @@
         }
 
         TRACING_TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
             (void)(opcode);
@@ -16312,19 +16370,19 @@
                 if (total_args == 0) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyMethodDef *meth = method->d_method;
                 if (meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyTypeObject *d_type = method->d_common.d_type;
                 PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
@@ -16332,7 +16390,7 @@
                 if (!Py_IS_TYPE(self, d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 int nargs = total_args - 1;
@@ -16404,6 +16462,7 @@
         }
 
         TRACING_TARGET(CALL_METHOD_DESCRIPTOR_NOARGS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_METHOD_DESCRIPTOR_NOARGS;
             (void)(opcode);
@@ -16437,13 +16496,13 @@
                 if (total_args != 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
                 if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyMethodDef *meth = method->d_method;
                 _PyStackRef self_stackref = args[0];
@@ -16451,17 +16510,17 @@
                 if (!Py_IS_TYPE(self, method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (meth->ml_flags != METH_NOARGS) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = meth->ml_meth;
@@ -16499,6 +16558,7 @@
         }
 
         TRACING_TARGET(CALL_METHOD_DESCRIPTOR_O) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_METHOD_DESCRIPTOR_O;
             (void)(opcode);
@@ -16533,23 +16593,23 @@
                 if (total_args != 2) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (!Py_IS_TYPE(method, &PyMethodDescr_Type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyMethodDef *meth = method->d_method;
                 if (meth->ml_flags != METH_O) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 _PyStackRef arg_stackref = arguments[1];
                 _PyStackRef self_stackref = arguments[0];
@@ -16557,7 +16617,7 @@
                                 method->d_common.d_type)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 STAT_INC(CALL, hit);
                 PyCFunction cfunc = meth->ml_meth;
@@ -16607,6 +16667,7 @@
         }
 
         TRACING_TARGET(CALL_NON_PY_GENERAL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_NON_PY_GENERAL;
             (void)(opcode);
@@ -16633,12 +16694,12 @@
                 if (PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 if (Py_TYPE(callable_o) == &PyMethod_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CALL_NON_PY_GENERAL
@@ -16724,6 +16785,7 @@
         }
 
         TRACING_TARGET(CALL_PY_EXACT_ARGS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_PY_EXACT_ARGS;
             (void)(opcode);
@@ -16746,7 +16808,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_FUNCTION_VERSION
@@ -16757,13 +16819,13 @@
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_FUNCTION_EXACT_ARGS
@@ -16776,7 +16838,7 @@
                 if (code->co_argcount != oparg + (!PyStackRef_IsNull(self_or_null))) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_STACK_SPACE
@@ -16787,7 +16849,7 @@
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_RECURSION_REMAINING
@@ -16795,7 +16857,7 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _INIT_CALL_PY_EXACT_ARGS
@@ -16839,6 +16901,7 @@
         }
 
         TRACING_TARGET(CALL_PY_GENERAL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_PY_GENERAL;
             (void)(opcode);
@@ -16861,7 +16924,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_FUNCTION_VERSION
@@ -16872,13 +16935,13 @@
                 if (!PyFunction_Check(callable_o)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
                 PyFunctionObject *func = (PyFunctionObject *)callable_o;
                 if (func->func_version != func_version) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CHECK_RECURSION_REMAINING
@@ -16886,7 +16949,7 @@
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _PY_FRAME_GENERAL
@@ -16941,6 +17004,7 @@
         }
 
         TRACING_TARGET(CALL_STR_1) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_STR_1;
             (void)(opcode);
@@ -16965,7 +17029,7 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _GUARD_CALLABLE_STR_1
@@ -16975,7 +17039,7 @@
                 if (callable_o != (PyObject *)&PyUnicode_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CALL_STR_1
@@ -17015,6 +17079,7 @@
         }
 
         TRACING_TARGET(CALL_TUPLE_1) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_TUPLE_1;
             (void)(opcode);
@@ -17039,7 +17104,7 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _GUARD_CALLABLE_TUPLE_1
@@ -17049,7 +17114,7 @@
                 if (callable_o != (PyObject *)&PyTuple_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CALL_TUPLE_1
@@ -17089,6 +17154,7 @@
         }
 
         TRACING_TARGET(CALL_TYPE_1) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CALL_TYPE_1;
             (void)(opcode);
@@ -17113,7 +17179,7 @@
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _GUARD_CALLABLE_TYPE_1
@@ -17123,7 +17189,7 @@
                 if (callable_o != (PyObject *)&PyType_Type) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
+                    JUMP_TO_PREDICTED(TRACING_CALL);
                 }
             }
             // _CALL_TYPE_1
@@ -17146,6 +17212,7 @@
         }
 
         TRACING_TARGET(CHECK_EG_MATCH) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CHECK_EG_MATCH;
             (void)(opcode);
@@ -17221,6 +17288,7 @@
         }
 
         TRACING_TARGET(CHECK_EXC_MATCH) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CHECK_EXC_MATCH;
             (void)(opcode);
@@ -17262,6 +17330,7 @@
         }
 
         TRACING_TARGET(CLEANUP_THROW) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CLEANUP_THROW;
             (void)(opcode);
@@ -17323,6 +17392,7 @@
         }
 
         TRACING_TARGET(COMPARE_OP) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = COMPARE_OP;
             (void)(opcode);
@@ -17398,6 +17468,7 @@
         }
 
         TRACING_TARGET(COMPARE_OP_FLOAT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = COMPARE_OP_FLOAT;
             (void)(opcode);
@@ -17421,7 +17492,7 @@
                 if (!PyFloat_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    JUMP_TO_PREDICTED(COMPARE_OP);
+                    JUMP_TO_PREDICTED(TRACING_COMPARE_OP);
                 }
             }
             // _GUARD_NOS_FLOAT
@@ -17431,7 +17502,7 @@
                 if (!PyFloat_CheckExact(left_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    JUMP_TO_PREDICTED(COMPARE_OP);
+                    JUMP_TO_PREDICTED(TRACING_COMPARE_OP);
                 }
             }
             /* Skip 1 cache entry */
@@ -17455,6 +17526,7 @@
         }
 
         TRACING_TARGET(COMPARE_OP_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = COMPARE_OP_INT;
             (void)(opcode);
@@ -17478,7 +17550,7 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    JUMP_TO_PREDICTED(COMPARE_OP);
+                    JUMP_TO_PREDICTED(TRACING_COMPARE_OP);
                 }
             }
             // _GUARD_NOS_INT
@@ -17488,7 +17560,7 @@
                 if (!_PyLong_CheckExactAndCompact(left_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    JUMP_TO_PREDICTED(COMPARE_OP);
+                    JUMP_TO_PREDICTED(TRACING_COMPARE_OP);
                 }
             }
             /* Skip 1 cache entry */
@@ -17516,6 +17588,7 @@
         }
 
         TRACING_TARGET(COMPARE_OP_STR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = COMPARE_OP_STR;
             (void)(opcode);
@@ -17540,7 +17613,7 @@
                 if (!PyUnicode_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    JUMP_TO_PREDICTED(COMPARE_OP);
+                    JUMP_TO_PREDICTED(TRACING_COMPARE_OP);
                 }
             }
             // _GUARD_NOS_UNICODE
@@ -17550,7 +17623,7 @@
                 if (!PyUnicode_CheckExact(o)) {
                     UPDATE_MISS_STATS(COMPARE_OP);
                     assert(_PyOpcode_Deopt[opcode] == (COMPARE_OP));
-                    JUMP_TO_PREDICTED(COMPARE_OP);
+                    JUMP_TO_PREDICTED(TRACING_COMPARE_OP);
                 }
             }
             /* Skip 1 cache entry */
@@ -17577,6 +17650,7 @@
         }
 
         TRACING_TARGET(CONTAINS_OP) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CONTAINS_OP;
             (void)(opcode);
@@ -17639,6 +17713,7 @@
         }
 
         TRACING_TARGET(CONTAINS_OP_DICT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CONTAINS_OP_DICT;
             (void)(opcode);
@@ -17662,7 +17737,7 @@
                 if (!PyDict_CheckExact(o)) {
                     UPDATE_MISS_STATS(CONTAINS_OP);
                     assert(_PyOpcode_Deopt[opcode] == (CONTAINS_OP));
-                    JUMP_TO_PREDICTED(CONTAINS_OP);
+                    JUMP_TO_PREDICTED(TRACING_CONTAINS_OP);
                 }
             }
             /* Skip 1 cache entry */
@@ -17699,6 +17774,7 @@
         }
 
         TRACING_TARGET(CONTAINS_OP_SET) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CONTAINS_OP_SET;
             (void)(opcode);
@@ -17722,7 +17798,7 @@
                 if (!PyAnySet_CheckExact(o)) {
                     UPDATE_MISS_STATS(CONTAINS_OP);
                     assert(_PyOpcode_Deopt[opcode] == (CONTAINS_OP));
-                    JUMP_TO_PREDICTED(CONTAINS_OP);
+                    JUMP_TO_PREDICTED(TRACING_CONTAINS_OP);
                 }
             }
             /* Skip 1 cache entry */
@@ -17759,6 +17835,7 @@
         }
 
         TRACING_TARGET(CONVERT_VALUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = CONVERT_VALUE;
             (void)(opcode);
@@ -17795,6 +17872,7 @@
         }
 
         TRACING_TARGET(COPY) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = COPY;
             (void)(opcode);
@@ -17817,6 +17895,7 @@
         }
 
         TRACING_TARGET(COPY_FREE_VARS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = COPY_FREE_VARS;
             (void)(opcode);
@@ -17842,6 +17921,7 @@
         }
 
         TRACING_TARGET(DELETE_ATTR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_ATTR;
             (void)(opcode);
@@ -17871,6 +17951,7 @@
         }
 
         TRACING_TARGET(DELETE_DEREF) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_DEREF;
             (void)(opcode);
@@ -17897,6 +17978,7 @@
         }
 
         TRACING_TARGET(DELETE_FAST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_FAST;
             (void)(opcode);
@@ -17927,6 +18009,7 @@
         }
 
         TRACING_TARGET(DELETE_GLOBAL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_GLOBAL;
             (void)(opcode);
@@ -17956,6 +18039,7 @@
         }
 
         TRACING_TARGET(DELETE_NAME) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_NAME;
             (void)(opcode);
@@ -17992,6 +18076,7 @@
         }
 
         TRACING_TARGET(DELETE_SUBSCR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = DELETE_SUBSCR;
             (void)(opcode);
@@ -18028,6 +18113,7 @@
         }
 
         TRACING_TARGET(DICT_MERGE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = DICT_MERGE;
             (void)(opcode);
@@ -18071,6 +18157,7 @@
         }
 
         TRACING_TARGET(DICT_UPDATE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = DICT_UPDATE;
             (void)(opcode);
@@ -18118,6 +18205,7 @@
         }
 
         TRACING_TARGET(END_ASYNC_FOR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = END_ASYNC_FOR;
             (void)(opcode);
@@ -18165,6 +18253,7 @@
         }
 
         TRACING_TARGET(END_FOR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = END_FOR;
             (void)(opcode);
@@ -18186,6 +18275,7 @@
         }
 
         TRACING_TARGET(END_SEND) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = END_SEND;
             (void)(opcode);
@@ -18213,6 +18303,7 @@
         }
 
         TRACING_TARGET(ENTER_EXECUTOR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = ENTER_EXECUTOR;
             (void)(opcode);
@@ -18251,6 +18342,7 @@
         }
 
         TRACING_TARGET(EXIT_INIT_CHECK) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = EXIT_INIT_CHECK;
             (void)(opcode);
@@ -18278,6 +18370,7 @@
         }
 
         TRACING_TARGET(EXTENDED_ARG) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = EXTENDED_ARG;
             (void)(opcode);
@@ -18298,6 +18391,7 @@
         }
 
         TRACING_TARGET(FORMAT_SIMPLE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = FORMAT_SIMPLE;
             (void)(opcode);
@@ -18338,6 +18432,7 @@
         }
 
         TRACING_TARGET(FORMAT_WITH_SPEC) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = FORMAT_WITH_SPEC;
             (void)(opcode);
@@ -18378,6 +18473,7 @@
         }
 
         TRACING_TARGET(FOR_ITER) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER;
             (void)(opcode);
@@ -18434,6 +18530,7 @@
         }
 
         TRACING_TARGET(FOR_ITER_GEN) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_GEN;
             (void)(opcode);
@@ -18455,7 +18552,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
             }
             // _FOR_ITER_GEN_FRAME
@@ -18465,19 +18562,19 @@
                 if (Py_TYPE(gen) != &PyGen_Type) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 #ifdef Py_GIL_DISABLED
                 if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 #endif
                 if (gen->gi_frame_state >= FRAME_EXECUTING) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 STAT_INC(FOR_ITER, hit);
                 _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
@@ -18507,6 +18604,7 @@
         }
 
         TRACING_TARGET(FOR_ITER_LIST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_LIST;
             (void)(opcode);
@@ -18531,14 +18629,14 @@
                 if (Py_TYPE(iter_o) != &PyList_Type) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 assert(PyStackRef_IsTaggedInt(null_or_index));
                 #ifdef Py_GIL_DISABLED
                 if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 #endif
             }
@@ -18572,7 +18670,7 @@
                 if (result < 0) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 if (result == 0) {
                     null_or_index = PyStackRef_TagInt(-1);
@@ -18593,6 +18691,7 @@
         }
 
         TRACING_TARGET(FOR_ITER_RANGE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_RANGE;
             (void)(opcode);
@@ -18615,13 +18714,13 @@
                 if (Py_TYPE(r) != &PyRangeIter_Type) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 #ifdef Py_GIL_DISABLED
                 if (!_PyObject_IsUniquelyReferenced((PyObject *)r)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 #endif
             }
@@ -18662,6 +18761,7 @@
         }
 
         TRACING_TARGET(FOR_ITER_TUPLE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_TUPLE;
             (void)(opcode);
@@ -18686,7 +18786,7 @@
                 if (Py_TYPE(iter_o) != &PyTuple_Type) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
+                    JUMP_TO_PREDICTED(TRACING_FOR_ITER);
                 }
                 assert(PyStackRef_IsTaggedInt(null_or_index));
             }
@@ -18720,6 +18820,7 @@
         }
 
         TRACING_TARGET(GET_AITER) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = GET_AITER;
             (void)(opcode);
@@ -18785,6 +18886,7 @@
         }
 
         TRACING_TARGET(GET_ANEXT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = GET_ANEXT;
             (void)(opcode);
@@ -18813,6 +18915,7 @@
         }
 
         TRACING_TARGET(GET_AWAITABLE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = GET_AWAITABLE;
             (void)(opcode);
@@ -18846,6 +18949,7 @@
         }
 
         TRACING_TARGET(GET_ITER) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = GET_ITER;
             (void)(opcode);
@@ -18896,6 +19000,7 @@
         }
 
         TRACING_TARGET(GET_LEN) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = GET_LEN;
             (void)(opcode);
@@ -18928,6 +19033,7 @@
         }
 
         TRACING_TARGET(GET_YIELD_FROM_ITER) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = GET_YIELD_FROM_ITER;
             (void)(opcode);
@@ -18977,6 +19083,7 @@
         }
 
         TRACING_TARGET(IMPORT_FROM) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = IMPORT_FROM;
             (void)(opcode);
@@ -19006,6 +19113,7 @@
         }
 
         TRACING_TARGET(IMPORT_NAME) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = IMPORT_NAME;
             (void)(opcode);
@@ -19049,6 +19157,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_CALL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_CALL;
             (void)(opcode);
@@ -19239,6 +19348,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_CALL_FUNCTION_EX) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             (void)(opcode);
@@ -19408,6 +19518,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_CALL_KW) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_CALL_KW;
             (void)(opcode);
@@ -19596,6 +19707,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_END_ASYNC_FOR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_END_ASYNC_FOR;
             (void)(opcode);
@@ -19651,6 +19763,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_END_FOR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_END_FOR;
             (void)(opcode);
@@ -19682,6 +19795,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_END_SEND) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_END_SEND;
             (void)(opcode);
@@ -19718,6 +19832,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_FOR_ITER) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_FOR_ITER;
             (void)(opcode);
@@ -19756,6 +19871,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_INSTRUCTION) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_INSTRUCTION;
             (void)(opcode);
@@ -19785,6 +19901,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_JUMP_BACKWARD) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_JUMP_BACKWARD;
             (void)(opcode);
@@ -19814,6 +19931,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_JUMP_FORWARD) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_JUMP_FORWARD;
             (void)(opcode);
@@ -19830,6 +19948,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_LINE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_LINE;
             (void)(opcode);
@@ -19872,6 +19991,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_LOAD_SUPER_ATTR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
             (void)(opcode);
@@ -19994,6 +20114,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_NOT_TAKEN) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_NOT_TAKEN;
             (void)(opcode);
@@ -20012,6 +20133,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_POP_ITER) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_ITER;
             (void)(opcode);
@@ -20039,6 +20161,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_JUMP_IF_FALSE;
             (void)(opcode);
@@ -20065,6 +20188,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_JUMP_IF_NONE;
             (void)(opcode);
@@ -20098,6 +20222,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
@@ -20129,6 +20254,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_POP_JUMP_IF_TRUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_JUMP_IF_TRUE;
             (void)(opcode);
@@ -20155,6 +20281,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_RESUME) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_RESUME;
             (void)(opcode);
@@ -20237,6 +20364,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_RETURN_VALUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_RETURN_VALUE;
             (void)(opcode);
@@ -20291,6 +20419,7 @@
         }
 
         TRACING_TARGET(INSTRUMENTED_YIELD_VALUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_YIELD_VALUE;
             (void)(opcode);
@@ -20364,6 +20493,7 @@
         }
 
         TRACING_TARGET(INTERPRETER_EXIT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = INTERPRETER_EXIT;
             (void)(opcode);
@@ -20403,6 +20533,7 @@
         }
 
         TRACING_TARGET(IS_OP) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = IS_OP;
             (void)(opcode);
@@ -20440,6 +20571,7 @@
         }
 
         TRACING_TARGET(JUMP_BACKWARD) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = JUMP_BACKWARD;
             (void)(opcode);
@@ -20483,6 +20615,7 @@
         }
 
         TRACING_TARGET(JUMP_BACKWARD_JIT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = JUMP_BACKWARD_JIT;
             (void)(opcode);
@@ -20546,6 +20679,7 @@
         }
 
         TRACING_TARGET(JUMP_BACKWARD_NO_INTERRUPT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = JUMP_BACKWARD_NO_INTERRUPT;
             (void)(opcode);
@@ -20565,6 +20699,7 @@
         }
 
         TRACING_TARGET(JUMP_BACKWARD_NO_JIT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = JUMP_BACKWARD_NO_JIT;
             (void)(opcode);
@@ -20598,6 +20733,7 @@
         }
 
         TRACING_TARGET(JUMP_FORWARD) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = JUMP_FORWARD;
             (void)(opcode);
@@ -20614,6 +20750,7 @@
         }
 
         TRACING_TARGET(LIST_APPEND) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LIST_APPEND;
             (void)(opcode);
@@ -20640,6 +20777,7 @@
         }
 
         TRACING_TARGET(LIST_EXTEND) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LIST_EXTEND;
             (void)(opcode);
@@ -20691,6 +20829,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR;
             (void)(opcode);
@@ -20774,6 +20913,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_CLASS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_CLASS;
             (void)(opcode);
@@ -20798,13 +20938,13 @@
                 if (!PyType_Check(owner_o)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 assert(type_version != 0);
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             /* Skip 2 cache entries */
@@ -20834,6 +20974,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_CLASS_WITH_METACLASS_CHECK;
             (void)(opcode);
@@ -20858,13 +20999,13 @@
                 if (!PyType_Check(owner_o)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 assert(type_version != 0);
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(((PyTypeObject *)owner_o)->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _GUARD_TYPE_VERSION
@@ -20875,7 +21016,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _LOAD_ATTR_CLASS
@@ -20904,6 +21045,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN;
             (void)(opcode);
@@ -20927,14 +21069,14 @@
             if (tstate->interp->eval_frame) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                JUMP_TO_PREDICTED(LOAD_ATTR);
+                JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
             }
             PyTypeObject *cls = Py_TYPE(owner_o);
             assert(type_version != 0);
             if (FT_ATOMIC_LOAD_UINT_RELAXED(cls->tp_version_tag) != type_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                JUMP_TO_PREDICTED(LOAD_ATTR);
+                JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
             }
             assert(Py_IS_TYPE(getattribute, &PyFunction_Type));
             PyFunctionObject *f = (PyFunctionObject *)getattribute;
@@ -20942,14 +21084,14 @@
             if (f->func_version != func_version) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                JUMP_TO_PREDICTED(LOAD_ATTR);
+                JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
             }
             PyCodeObject *code = (PyCodeObject *)f->func_code;
             assert(code->co_argcount == 2);
             if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                 UPDATE_MISS_STATS(LOAD_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                JUMP_TO_PREDICTED(LOAD_ATTR);
+                JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
             }
             STAT_INC(LOAD_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
@@ -20964,6 +21106,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_INSTANCE_VALUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_INSTANCE_VALUE;
             (void)(opcode);
@@ -20989,7 +21132,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _CHECK_MANAGED_OBJECT_HAS_VALUES
@@ -21000,7 +21143,7 @@
                 if (!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _LOAD_ATTR_INSTANCE_VALUE
@@ -21012,7 +21155,7 @@
                 if (attr_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 #ifdef Py_GIL_DISABLED
                 int increfed = _Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr);
@@ -21020,7 +21163,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                     }
                 }
                 #else
@@ -21046,6 +21189,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_METHOD_LAZY_DICT;
             (void)(opcode);
@@ -21071,7 +21215,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _CHECK_ATTR_METHOD_LAZY_DICT
@@ -21082,7 +21226,7 @@
                 if (dict != NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             /* Skip 1 cache entry */
@@ -21104,6 +21248,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_METHOD_NO_DICT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_METHOD_NO_DICT;
             (void)(opcode);
@@ -21129,7 +21274,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             /* Skip 2 cache entries */
@@ -21152,6 +21297,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_METHOD_WITH_VALUES;
             (void)(opcode);
@@ -21177,7 +21323,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
@@ -21188,7 +21334,7 @@
                 if (!FT_ATOMIC_LOAD_UINT8(ivs->valid)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _GUARD_KEYS_VERSION
@@ -21200,7 +21346,7 @@
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _LOAD_ATTR_METHOD_WITH_VALUES
@@ -21221,6 +21367,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_MODULE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_MODULE;
             (void)(opcode);
@@ -21246,7 +21393,7 @@
                 if (Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
                 assert(dict != NULL);
@@ -21254,7 +21401,7 @@
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != dict_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 assert(keys->dk_kind == DICT_KEYS_UNICODE);
                 assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(keys->dk_nentries));
@@ -21263,7 +21410,7 @@
                 if (attr_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 #ifdef Py_GIL_DISABLED
                 int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
@@ -21271,7 +21418,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                     }
                 }
                 #else
@@ -21297,6 +21444,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
             (void)(opcode);
@@ -21321,7 +21469,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             /* Skip 2 cache entries */
@@ -21346,6 +21494,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
             (void)(opcode);
@@ -21370,7 +21519,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
@@ -21381,7 +21530,7 @@
                 if (!FT_ATOMIC_LOAD_UINT8(ivs->valid)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _GUARD_KEYS_VERSION
@@ -21393,7 +21542,7 @@
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != keys_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES
@@ -21416,6 +21565,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_PROPERTY) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_PROPERTY;
             (void)(opcode);
@@ -21436,7 +21586,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _GUARD_TYPE_VERSION
@@ -21448,7 +21598,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             /* Skip 2 cache entries */
@@ -21462,22 +21612,22 @@
                 if ((code->co_flags & (CO_VARKEYWORDS | CO_VARARGS | CO_OPTIMIZED)) != CO_OPTIMIZED) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 if (code->co_kwonlyargcount) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 if (code->co_argcount != 1) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 STAT_INC(LOAD_ATTR, hit);
                 _PyInterpreterFrame *pushed_frame = _PyFrame_PushUnchecked(tstate, PyStackRef_FromPyObjectNew(fget), 1, frame);
@@ -21512,6 +21662,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_SLOT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_SLOT;
             (void)(opcode);
@@ -21537,7 +21688,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _LOAD_ATTR_SLOT
@@ -21549,14 +21700,14 @@
                 if (attr_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 #ifdef Py_GIL_DISABLED
                 int increfed = _Py_TryIncrefCompareStackRef(addr, attr_o, &attr);
                 if (!increfed) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 #else
                 attr = PyStackRef_FromPyObjectNew(attr_o);
@@ -21583,6 +21734,7 @@
         }
 
         TRACING_TARGET(LOAD_ATTR_WITH_HINT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_WITH_HINT;
             (void)(opcode);
@@ -21608,7 +21760,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
             }
             // _LOAD_ATTR_WITH_HINT
@@ -21620,7 +21772,7 @@
                 if (dict == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 PyDictKeysObject *dk = FT_ATOMIC_LOAD_PTR(dict->ma_keys);
                 assert(PyDict_CheckExact((PyObject *)dict));
@@ -21628,7 +21780,7 @@
                 if (!_Py_IsOwnedByCurrentThread((PyObject *)dict) && !_PyObject_GC_IS_SHARED(dict)) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                    JUMP_TO_PREDICTED(LOAD_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                 }
                 #endif
                 PyObject *attr_o;
@@ -21636,7 +21788,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                     }
                 }
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
@@ -21644,7 +21796,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                     }
                 }
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dk) + hint;
@@ -21652,7 +21804,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                     }
                 }
                 attr_o = FT_ATOMIC_LOAD_PTR(ep->me_value);
@@ -21660,7 +21812,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                     }
                 }
                 STAT_INC(LOAD_ATTR, hit);
@@ -21670,7 +21822,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_LOAD_ATTR);
                     }
                 }
                 #else
@@ -21695,6 +21847,7 @@
         }
 
         TRACING_TARGET(LOAD_BUILD_CLASS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_BUILD_CLASS;
             (void)(opcode);
@@ -21729,6 +21882,7 @@
         }
 
         TRACING_TARGET(LOAD_COMMON_CONSTANT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_COMMON_CONSTANT;
             (void)(opcode);
@@ -21750,6 +21904,7 @@
         }
 
         TRACING_TARGET(LOAD_CONST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_CONST;
             (void)(opcode);
@@ -21771,6 +21926,7 @@
         }
 
         TRACING_TARGET(LOAD_DEREF) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_DEREF;
             (void)(opcode);
@@ -21803,6 +21959,7 @@
         }
 
         TRACING_TARGET(LOAD_FAST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST;
             (void)(opcode);
@@ -21824,6 +21981,7 @@
         }
 
         TRACING_TARGET(LOAD_FAST_AND_CLEAR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST_AND_CLEAR;
             (void)(opcode);
@@ -21845,6 +22003,7 @@
         }
 
         TRACING_TARGET(LOAD_FAST_BORROW) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST_BORROW;
             (void)(opcode);
@@ -21866,6 +22025,7 @@
         }
 
         TRACING_TARGET(LOAD_FAST_BORROW_LOAD_FAST_BORROW) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST_BORROW_LOAD_FAST_BORROW;
             (void)(opcode);
@@ -21891,6 +22051,7 @@
         }
 
         TRACING_TARGET(LOAD_FAST_CHECK) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST_CHECK;
             (void)(opcode);
@@ -21921,6 +22082,7 @@
         }
 
         TRACING_TARGET(LOAD_FAST_LOAD_FAST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST_LOAD_FAST;
             (void)(opcode);
@@ -21946,6 +22108,7 @@
         }
 
         TRACING_TARGET(LOAD_FROM_DICT_OR_DEREF) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_FROM_DICT_OR_DEREF;
             (void)(opcode);
@@ -21995,6 +22158,7 @@
         }
 
         TRACING_TARGET(LOAD_FROM_DICT_OR_GLOBALS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_FROM_DICT_OR_GLOBALS;
             (void)(opcode);
@@ -22074,6 +22238,7 @@
         }
 
         TRACING_TARGET(LOAD_GLOBAL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_GLOBAL;
             (void)(opcode);
@@ -22132,6 +22297,7 @@
         }
 
         TRACING_TARGET(LOAD_GLOBAL_BUILTIN) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_GLOBAL_BUILTIN;
             (void)(opcode);
@@ -22154,13 +22320,13 @@
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 assert(DK_IS_UNICODE(keys));
             }
@@ -22172,13 +22338,13 @@
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 assert(DK_IS_UNICODE(keys));
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
@@ -22186,14 +22352,14 @@
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 #if Py_GIL_DISABLED
                 int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
                 if (!increfed) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 #else
                 res = PyStackRef_FromPyObjectNew(res_o);
@@ -22214,6 +22380,7 @@
         }
 
         TRACING_TARGET(LOAD_GLOBAL_MODULE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_GLOBAL_MODULE;
             (void)(opcode);
@@ -22240,13 +22407,13 @@
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
                 if (FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != version) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 assert(DK_IS_UNICODE(keys));
                 PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
@@ -22255,14 +22422,14 @@
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 #if Py_GIL_DISABLED
                 int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
                 if (!increfed) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
-                    JUMP_TO_PREDICTED(LOAD_GLOBAL);
+                    JUMP_TO_PREDICTED(TRACING_LOAD_GLOBAL);
                 }
                 #else
                 res = PyStackRef_FromPyObjectNew(res_o);
@@ -22283,6 +22450,7 @@
         }
 
         TRACING_TARGET(LOAD_LOCALS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_LOCALS;
             (void)(opcode);
@@ -22311,6 +22479,7 @@
         }
 
         TRACING_TARGET(LOAD_NAME) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_NAME;
             (void)(opcode);
@@ -22338,6 +22507,7 @@
         }
 
         TRACING_TARGET(LOAD_SMALL_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_SMALL_INT;
             (void)(opcode);
@@ -22360,6 +22530,7 @@
         }
 
         TRACING_TARGET(LOAD_SPECIAL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_SPECIAL;
             (void)(opcode);
@@ -22410,6 +22581,7 @@
         }
 
         TRACING_TARGET(LOAD_SUPER_ATTR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_SUPER_ATTR;
             (void)(opcode);
@@ -22549,6 +22721,7 @@
         }
 
         TRACING_TARGET(LOAD_SUPER_ATTR_ATTR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_SUPER_ATTR_ATTR;
             (void)(opcode);
@@ -22576,12 +22749,12 @@
             if (global_super != (PyObject *)&PySuper_Type) {
                 UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-                JUMP_TO_PREDICTED(LOAD_SUPER_ATTR);
+                JUMP_TO_PREDICTED(TRACING_LOAD_SUPER_ATTR);
             }
             if (!PyType_Check(class)) {
                 UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-                JUMP_TO_PREDICTED(LOAD_SUPER_ATTR);
+                JUMP_TO_PREDICTED(TRACING_LOAD_SUPER_ATTR);
             }
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
@@ -22613,6 +22786,7 @@
         }
 
         TRACING_TARGET(LOAD_SUPER_ATTR_METHOD) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = LOAD_SUPER_ATTR_METHOD;
             (void)(opcode);
@@ -22641,12 +22815,12 @@
             if (global_super != (PyObject *)&PySuper_Type) {
                 UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-                JUMP_TO_PREDICTED(LOAD_SUPER_ATTR);
+                JUMP_TO_PREDICTED(TRACING_LOAD_SUPER_ATTR);
             }
             if (!PyType_Check(class)) {
                 UPDATE_MISS_STATS(LOAD_SUPER_ATTR);
                 assert(_PyOpcode_Deopt[opcode] == (LOAD_SUPER_ATTR));
-                JUMP_TO_PREDICTED(LOAD_SUPER_ATTR);
+                JUMP_TO_PREDICTED(TRACING_LOAD_SUPER_ATTR);
             }
             STAT_INC(LOAD_SUPER_ATTR, hit);
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
@@ -22693,6 +22867,7 @@
         }
 
         TRACING_TARGET(MAKE_CELL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = MAKE_CELL;
             (void)(opcode);
@@ -22718,6 +22893,7 @@
         }
 
         TRACING_TARGET(MAKE_FUNCTION) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = MAKE_FUNCTION;
             (void)(opcode);
@@ -22755,6 +22931,7 @@
         }
 
         TRACING_TARGET(MAP_ADD) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = MAP_ADD;
             (void)(opcode);
@@ -22790,6 +22967,7 @@
         }
 
         TRACING_TARGET(MATCH_CLASS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = MATCH_CLASS;
             (void)(opcode);
@@ -22846,6 +23024,7 @@
         }
 
         TRACING_TARGET(MATCH_KEYS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = MATCH_KEYS;
             (void)(opcode);
@@ -22877,6 +23056,7 @@
         }
 
         TRACING_TARGET(MATCH_MAPPING) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = MATCH_MAPPING;
             (void)(opcode);
@@ -22900,6 +23080,7 @@
         }
 
         TRACING_TARGET(MATCH_SEQUENCE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = MATCH_SEQUENCE;
             (void)(opcode);
@@ -22923,6 +23104,7 @@
         }
 
         TRACING_TARGET(NOP) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = NOP;
             (void)(opcode);
@@ -22938,6 +23120,7 @@
         }
 
         TRACING_TARGET(NOT_TAKEN) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = NOT_TAKEN;
             (void)(opcode);
@@ -22953,6 +23136,7 @@
         }
 
         TRACING_TARGET(POP_EXCEPT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = POP_EXCEPT;
             (void)(opcode);
@@ -22978,6 +23162,7 @@
         }
 
         TRACING_TARGET(POP_ITER) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = POP_ITER;
             (void)(opcode);
@@ -23003,6 +23188,7 @@
         }
 
         TRACING_TARGET(POP_JUMP_IF_FALSE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = POP_JUMP_IF_FALSE;
             (void)(opcode);
@@ -23019,13 +23205,15 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
-            JUMPBY(flag ? oparg : 0);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             TRACING_DISPATCH();
         }
 
         TRACING_TARGET(POP_JUMP_IF_NONE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = POP_JUMP_IF_NONE;
             (void)(opcode);
@@ -23062,7 +23250,8 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsTrue(cond);
-                JUMPBY(flag ? oparg : 0);
+                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+                JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -23070,6 +23259,7 @@
         }
 
         TRACING_TARGET(POP_JUMP_IF_NOT_NONE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
@@ -23106,7 +23296,8 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsFalse(cond);
-                JUMPBY(flag ? oparg : 0);
+                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+                JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -23114,6 +23305,7 @@
         }
 
         TRACING_TARGET(POP_JUMP_IF_TRUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = POP_JUMP_IF_TRUE;
             (void)(opcode);
@@ -23130,13 +23322,15 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
-            JUMPBY(flag ? oparg : 0);
+            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             TRACING_DISPATCH();
         }
 
         TRACING_TARGET(POP_TOP) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = POP_TOP;
             (void)(opcode);
@@ -23159,6 +23353,7 @@
         }
 
         TRACING_TARGET(PUSH_EXC_INFO) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = PUSH_EXC_INFO;
             (void)(opcode);
@@ -23192,6 +23387,7 @@
         }
 
         TRACING_TARGET(PUSH_NULL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = PUSH_NULL;
             (void)(opcode);
@@ -23212,6 +23408,7 @@
         }
 
         TRACING_TARGET(RAISE_VARARGS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = RAISE_VARARGS;
             (void)(opcode);
@@ -23243,6 +23440,7 @@
         }
 
         TRACING_TARGET(RERAISE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = RERAISE;
             (void)(opcode);
@@ -23273,6 +23471,7 @@
         }
 
         TRACING_TARGET(RESERVED) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = RESERVED;
             (void)(opcode);
@@ -23290,6 +23489,7 @@
         }
 
         TRACING_TARGET(RESUME) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = RESUME;
             (void)(opcode);
@@ -23368,6 +23568,7 @@
         }
 
         TRACING_TARGET(RESUME_CHECK) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = RESUME_CHECK;
             (void)(opcode);
@@ -23384,7 +23585,7 @@
             if (_Py_emscripten_signal_clock == 0) {
                 UPDATE_MISS_STATS(RESUME);
                 assert(_PyOpcode_Deopt[opcode] == (RESUME));
-                JUMP_TO_PREDICTED(RESUME);
+                JUMP_TO_PREDICTED(TRACING_RESUME);
             }
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
             #endif
@@ -23394,20 +23595,21 @@
             if (eval_breaker != version) {
                 UPDATE_MISS_STATS(RESUME);
                 assert(_PyOpcode_Deopt[opcode] == (RESUME));
-                JUMP_TO_PREDICTED(RESUME);
+                JUMP_TO_PREDICTED(TRACING_RESUME);
             }
             #ifdef Py_GIL_DISABLED
             if (frame->tlbc_index !=
                 ((_PyThreadStateImpl *)tstate)->tlbc_index) {
                 UPDATE_MISS_STATS(RESUME);
                 assert(_PyOpcode_Deopt[opcode] == (RESUME));
-                JUMP_TO_PREDICTED(RESUME);
+                JUMP_TO_PREDICTED(TRACING_RESUME);
             }
             #endif
             TRACING_DISPATCH();
         }
 
         TRACING_TARGET(RETURN_GENERATOR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = RETURN_GENERATOR;
             (void)(opcode);
@@ -23454,6 +23656,7 @@
         }
 
         TRACING_TARGET(RETURN_VALUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = RETURN_VALUE;
             (void)(opcode);
@@ -23492,6 +23695,7 @@
         }
 
         TRACING_TARGET(SEND) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = SEND;
             (void)(opcode);
@@ -23599,6 +23803,7 @@
         }
 
         TRACING_TARGET(SEND_GEN) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = SEND_GEN;
             (void)(opcode);
@@ -23621,7 +23826,7 @@
                 if (tstate->interp->eval_frame) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
-                    JUMP_TO_PREDICTED(SEND);
+                    JUMP_TO_PREDICTED(TRACING_SEND);
                 }
             }
             // _SEND_GEN_FRAME
@@ -23632,12 +23837,12 @@
                 if (Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
-                    JUMP_TO_PREDICTED(SEND);
+                    JUMP_TO_PREDICTED(TRACING_SEND);
                 }
                 if (gen->gi_frame_state >= FRAME_EXECUTING) {
                     UPDATE_MISS_STATS(SEND);
                     assert(_PyOpcode_Deopt[opcode] == (SEND));
-                    JUMP_TO_PREDICTED(SEND);
+                    JUMP_TO_PREDICTED(TRACING_SEND);
                 }
                 STAT_INC(SEND, hit);
                 _PyInterpreterFrame *pushed_frame = &gen->gi_iframe;
@@ -23670,6 +23875,7 @@
         }
 
         TRACING_TARGET(SETUP_ANNOTATIONS) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = SETUP_ANNOTATIONS;
             (void)(opcode);
@@ -23720,6 +23926,7 @@
         }
 
         TRACING_TARGET(SET_ADD) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = SET_ADD;
             (void)(opcode);
@@ -23748,6 +23955,7 @@
         }
 
         TRACING_TARGET(SET_FUNCTION_ATTRIBUTE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = SET_FUNCTION_ATTRIBUTE;
             (void)(opcode);
@@ -23780,6 +23988,7 @@
         }
 
         TRACING_TARGET(SET_UPDATE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = SET_UPDATE;
             (void)(opcode);
@@ -23811,6 +24020,7 @@
         }
 
         TRACING_TARGET(STORE_ATTR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_ATTR;
             (void)(opcode);
@@ -23870,6 +24080,7 @@
         }
 
         TRACING_TARGET(STORE_ATTR_INSTANCE_VALUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_ATTR_INSTANCE_VALUE;
             (void)(opcode);
@@ -23894,7 +24105,7 @@
                 if (!LOCK_OBJECT(owner_o)) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    JUMP_TO_PREDICTED(STORE_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                 }
                 PyTypeObject *tp = Py_TYPE(owner_o);
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
@@ -23902,7 +24113,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        JUMP_TO_PREDICTED(STORE_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                     }
                 }
             }
@@ -23917,7 +24128,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        JUMP_TO_PREDICTED(STORE_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                     }
                 }
             }
@@ -23948,6 +24159,7 @@
         }
 
         TRACING_TARGET(STORE_ATTR_SLOT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_ATTR_SLOT;
             (void)(opcode);
@@ -23972,7 +24184,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    JUMP_TO_PREDICTED(STORE_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                 }
             }
             // _STORE_ATTR_SLOT
@@ -23983,7 +24195,7 @@
                 if (!LOCK_OBJECT(owner_o)) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    JUMP_TO_PREDICTED(STORE_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                 }
                 char *addr = (char *)owner_o + index;
                 STAT_INC(STORE_ATTR, hit);
@@ -24001,6 +24213,7 @@
         }
 
         TRACING_TARGET(STORE_ATTR_WITH_HINT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_ATTR_WITH_HINT;
             (void)(opcode);
@@ -24025,7 +24238,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    JUMP_TO_PREDICTED(STORE_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                 }
             }
             // _STORE_ATTR_WITH_HINT
@@ -24038,12 +24251,12 @@
                 if (dict == NULL) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    JUMP_TO_PREDICTED(STORE_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                 }
                 if (!LOCK_OBJECT(dict)) {
                     UPDATE_MISS_STATS(STORE_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                    JUMP_TO_PREDICTED(STORE_ATTR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                 }
                 assert(PyDict_CheckExact((PyObject *)dict));
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
@@ -24053,7 +24266,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        JUMP_TO_PREDICTED(STORE_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                     }
                 }
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
@@ -24062,7 +24275,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        JUMP_TO_PREDICTED(STORE_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                     }
                 }
                 PyObject *old_value = ep->me_value;
@@ -24071,7 +24284,7 @@
                     if (true) {
                         UPDATE_MISS_STATS(STORE_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_ATTR));
-                        JUMP_TO_PREDICTED(STORE_ATTR);
+                        JUMP_TO_PREDICTED(TRACING_STORE_ATTR);
                     }
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -24091,6 +24304,7 @@
         }
 
         TRACING_TARGET(STORE_DEREF) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_DEREF;
             (void)(opcode);
@@ -24114,6 +24328,7 @@
         }
 
         TRACING_TARGET(STORE_FAST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_FAST;
             (void)(opcode);
@@ -24138,6 +24353,7 @@
         }
 
         TRACING_TARGET(STORE_FAST_LOAD_FAST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_FAST_LOAD_FAST;
             (void)(opcode);
@@ -24165,6 +24381,7 @@
         }
 
         TRACING_TARGET(STORE_FAST_STORE_FAST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_FAST_STORE_FAST;
             (void)(opcode);
@@ -24200,6 +24417,7 @@
         }
 
         TRACING_TARGET(STORE_GLOBAL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_GLOBAL;
             (void)(opcode);
@@ -24229,6 +24447,7 @@
         }
 
         TRACING_TARGET(STORE_NAME) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_NAME;
             (void)(opcode);
@@ -24279,6 +24498,7 @@
         }
 
         TRACING_TARGET(STORE_SLICE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_SLICE;
             (void)(opcode);
@@ -24343,6 +24563,7 @@
         }
 
         TRACING_TARGET(STORE_SUBSCR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_SUBSCR;
             (void)(opcode);
@@ -24404,6 +24625,7 @@
         }
 
         TRACING_TARGET(STORE_SUBSCR_DICT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_SUBSCR_DICT;
             (void)(opcode);
@@ -24427,7 +24649,7 @@
                 if (!PyDict_CheckExact(o)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    JUMP_TO_PREDICTED(STORE_SUBSCR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_SUBSCR);
                 }
             }
             /* Skip 1 cache entry */
@@ -24457,6 +24679,7 @@
         }
 
         TRACING_TARGET(STORE_SUBSCR_LIST_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = STORE_SUBSCR_LIST_INT;
             (void)(opcode);
@@ -24480,7 +24703,7 @@
                 if (!_PyLong_CheckExactAndCompact(value_o)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    JUMP_TO_PREDICTED(STORE_SUBSCR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_SUBSCR);
                 }
             }
             // _GUARD_NOS_LIST
@@ -24490,7 +24713,7 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    JUMP_TO_PREDICTED(STORE_SUBSCR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_SUBSCR);
                 }
             }
             /* Skip 1 cache entry */
@@ -24506,20 +24729,20 @@
                 if (!_PyLong_IsNonNegativeCompact((PyLongObject *)sub)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    JUMP_TO_PREDICTED(STORE_SUBSCR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_SUBSCR);
                 }
                 Py_ssize_t index = ((PyLongObject*)sub)->long_value.ob_digit[0];
                 if (!LOCK_OBJECT(list)) {
                     UPDATE_MISS_STATS(STORE_SUBSCR);
                     assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                    JUMP_TO_PREDICTED(STORE_SUBSCR);
+                    JUMP_TO_PREDICTED(TRACING_STORE_SUBSCR);
                 }
                 if (index >= PyList_GET_SIZE(list)) {
                     UNLOCK_OBJECT(list);
                     if (true) {
                         UPDATE_MISS_STATS(STORE_SUBSCR);
                         assert(_PyOpcode_Deopt[opcode] == (STORE_SUBSCR));
-                        JUMP_TO_PREDICTED(STORE_SUBSCR);
+                        JUMP_TO_PREDICTED(TRACING_STORE_SUBSCR);
                     }
                 }
                 STAT_INC(STORE_SUBSCR, hit);
@@ -24540,6 +24763,7 @@
         }
 
         TRACING_TARGET(SWAP) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = SWAP;
             (void)(opcode);
@@ -24564,6 +24788,7 @@
         }
 
         TRACING_TARGET(TO_BOOL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL;
             (void)(opcode);
@@ -24618,6 +24843,7 @@
         }
 
         TRACING_TARGET(TO_BOOL_ALWAYS_TRUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_ALWAYS_TRUE;
             (void)(opcode);
@@ -24643,7 +24869,7 @@
                 if (FT_ATOMIC_LOAD_UINT_RELAXED(tp->tp_version_tag) != type_version) {
                     UPDATE_MISS_STATS(TO_BOOL);
                     assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                    JUMP_TO_PREDICTED(TO_BOOL);
+                    JUMP_TO_PREDICTED(TRACING_TO_BOOL);
                 }
             }
             // _REPLACE_WITH_TRUE
@@ -24663,6 +24889,7 @@
         }
 
         TRACING_TARGET(TO_BOOL_BOOL) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_BOOL;
             (void)(opcode);
@@ -24682,13 +24909,14 @@
             if (!PyStackRef_BoolCheck(value)) {
                 UPDATE_MISS_STATS(TO_BOOL);
                 assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                JUMP_TO_PREDICTED(TO_BOOL);
+                JUMP_TO_PREDICTED(TRACING_TO_BOOL);
             }
             STAT_INC(TO_BOOL, hit);
             TRACING_DISPATCH();
         }
 
         TRACING_TARGET(TO_BOOL_INT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_INT;
             (void)(opcode);
@@ -24710,7 +24938,7 @@
             if (!PyLong_CheckExact(value_o)) {
                 UPDATE_MISS_STATS(TO_BOOL);
                 assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                JUMP_TO_PREDICTED(TO_BOOL);
+                JUMP_TO_PREDICTED(TRACING_TO_BOOL);
             }
             STAT_INC(TO_BOOL, hit);
             if (_PyLong_IsZero((PyLongObject *)value_o)) {
@@ -24731,6 +24959,7 @@
         }
 
         TRACING_TARGET(TO_BOOL_LIST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_LIST;
             (void)(opcode);
@@ -24753,7 +24982,7 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(TO_BOOL);
                     assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                    JUMP_TO_PREDICTED(TO_BOOL);
+                    JUMP_TO_PREDICTED(TRACING_TO_BOOL);
                 }
             }
             /* Skip 1 cache entry */
@@ -24776,6 +25005,7 @@
         }
 
         TRACING_TARGET(TO_BOOL_NONE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_NONE;
             (void)(opcode);
@@ -24796,7 +25026,7 @@
             if (!PyStackRef_IsNone(value)) {
                 UPDATE_MISS_STATS(TO_BOOL);
                 assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                JUMP_TO_PREDICTED(TO_BOOL);
+                JUMP_TO_PREDICTED(TRACING_TO_BOOL);
             }
             STAT_INC(TO_BOOL, hit);
             res = PyStackRef_False;
@@ -24805,6 +25035,7 @@
         }
 
         TRACING_TARGET(TO_BOOL_STR) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_STR;
             (void)(opcode);
@@ -24826,7 +25057,7 @@
                 if (!PyUnicode_CheckExact(value_o)) {
                     UPDATE_MISS_STATS(TO_BOOL);
                     assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                    JUMP_TO_PREDICTED(TO_BOOL);
+                    JUMP_TO_PREDICTED(TRACING_TO_BOOL);
                 }
             }
             /* Skip 1 cache entry */
@@ -24855,6 +25086,7 @@
         }
 
         TRACING_TARGET(UNARY_INVERT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNARY_INVERT;
             (void)(opcode);
@@ -24888,6 +25120,7 @@
         }
 
         TRACING_TARGET(UNARY_NEGATIVE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNARY_NEGATIVE;
             (void)(opcode);
@@ -24921,6 +25154,7 @@
         }
 
         TRACING_TARGET(UNARY_NOT) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNARY_NOT;
             (void)(opcode);
@@ -24943,6 +25177,7 @@
         }
 
         TRACING_TARGET(UNPACK_EX) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNPACK_EX;
             (void)(opcode);
@@ -24974,6 +25209,7 @@
         }
 
         TRACING_TARGET(UNPACK_SEQUENCE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNPACK_SEQUENCE;
             (void)(opcode);
@@ -25027,6 +25263,7 @@
         }
 
         TRACING_TARGET(UNPACK_SEQUENCE_LIST) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNPACK_SEQUENCE_LIST;
             (void)(opcode);
@@ -25049,7 +25286,7 @@
                 if (!PyList_CheckExact(o)) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
+                    JUMP_TO_PREDICTED(TRACING_UNPACK_SEQUENCE);
                 }
             }
             /* Skip 1 cache entry */
@@ -25062,14 +25299,14 @@
                 if (!LOCK_OBJECT(seq_o)) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
+                    JUMP_TO_PREDICTED(TRACING_UNPACK_SEQUENCE);
                 }
                 if (PyList_GET_SIZE(seq_o) != oparg) {
                     UNLOCK_OBJECT(seq_o);
                     if (true) {
                         UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                         assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                        JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
+                        JUMP_TO_PREDICTED(TRACING_UNPACK_SEQUENCE);
                     }
                 }
                 STAT_INC(UNPACK_SEQUENCE, hit);
@@ -25088,6 +25325,7 @@
         }
 
         TRACING_TARGET(UNPACK_SEQUENCE_TUPLE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNPACK_SEQUENCE_TUPLE;
             (void)(opcode);
@@ -25110,7 +25348,7 @@
                 if (!PyTuple_CheckExact(o)) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
+                    JUMP_TO_PREDICTED(TRACING_UNPACK_SEQUENCE);
                 }
             }
             /* Skip 1 cache entry */
@@ -25123,7 +25361,7 @@
                 if (PyTuple_GET_SIZE(seq_o) != oparg) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
+                    JUMP_TO_PREDICTED(TRACING_UNPACK_SEQUENCE);
                 }
                 STAT_INC(UNPACK_SEQUENCE, hit);
                 PyObject **items = _PyTuple_ITEMS(seq_o);
@@ -25140,6 +25378,7 @@
         }
 
         TRACING_TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = UNPACK_SEQUENCE_TWO_TUPLE;
             (void)(opcode);
@@ -25163,7 +25402,7 @@
                 if (!PyTuple_CheckExact(o)) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
+                    JUMP_TO_PREDICTED(TRACING_UNPACK_SEQUENCE);
                 }
             }
             /* Skip 1 cache entry */
@@ -25176,7 +25415,7 @@
                 if (PyTuple_GET_SIZE(seq_o) != 2) {
                     UPDATE_MISS_STATS(UNPACK_SEQUENCE);
                     assert(_PyOpcode_Deopt[opcode] == (UNPACK_SEQUENCE));
-                    JUMP_TO_PREDICTED(UNPACK_SEQUENCE);
+                    JUMP_TO_PREDICTED(TRACING_UNPACK_SEQUENCE);
                 }
                 STAT_INC(UNPACK_SEQUENCE, hit);
                 val0 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 0));
@@ -25193,6 +25432,7 @@
         }
 
         TRACING_TARGET(WITH_EXCEPT_START) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = WITH_EXCEPT_START;
             (void)(opcode);
@@ -25242,6 +25482,7 @@
         }
 
         TRACING_TARGET(YIELD_VALUE) {
+            assert(IS_JIT_TRACING());
             #if _Py_TAIL_CALL_INTERP
             int opcode = YIELD_VALUE;
             (void)(opcode);

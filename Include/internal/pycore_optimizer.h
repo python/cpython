@@ -359,10 +359,12 @@ extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
 int
 _PyJIT_translate_single_bytecode_to_trace(
     PyThreadState *tstate,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *this_instr,
     _Py_CODEUNIT *next_instr,
     PyCodeObject *code,
     PyFunctionObject *func,
+    int opcode,
     int oparg);
 
 void

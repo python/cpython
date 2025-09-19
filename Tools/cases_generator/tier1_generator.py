@@ -226,6 +226,8 @@ def generate_tier1_cases(
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
         out.emit(f"{tracing_prepend}TARGET({name}) {{\n")
+        if is_tracing:
+            out.emit(f"assert(IS_JIT_TRACING());\n")
         popped = get_popped(inst, analysis)
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.

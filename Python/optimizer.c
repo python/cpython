@@ -457,6 +457,18 @@ is_for_iter_test[MAX_UOP_ID + 1] = {
     [_FOR_ITER_TIER_TWO] = 1,
 };
 
+static const uint16_t
+BRANCH_TO_GUARD[4][2] = {
+    [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_TRUE_POP,
+    [POP_JUMP_IF_FALSE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_FALSE_POP,
+    [POP_JUMP_IF_TRUE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_FALSE_POP,
+    [POP_JUMP_IF_TRUE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_TRUE_POP,
+    [POP_JUMP_IF_NONE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_NOT_NONE_POP,
+    [POP_JUMP_IF_NONE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_NONE_POP,
+    [POP_JUMP_IF_NOT_NONE - POP_JUMP_IF_FALSE][0] = _GUARD_IS_NONE_POP,
+    [POP_JUMP_IF_NOT_NONE - POP_JUMP_IF_FALSE][1] = _GUARD_IS_NOT_NONE_POP,
+};
+
 
 #define CONFIDENCE_RANGE 1000
 #define CONFIDENCE_CUTOFF 333
@@ -525,10 +537,12 @@ add_to_trace(
 int
 _PyJIT_translate_single_bytecode_to_trace(
     PyThreadState *tstate,
+    _PyInterpreterFrame *frame,
     _Py_CODEUNIT *this_instr,
     _Py_CODEUNIT *next_instr,
-    PyCodeObject *code,
+    PyCodeObject *old_code,
     PyFunctionObject *func,
+    int opcode,
     int oparg)
 {
     if (Py_IsNone((PyObject *)func)) {
@@ -536,7 +550,7 @@ _PyJIT_translate_single_bytecode_to_trace(
     }
     bool progress_needed = (tstate->interp->jit_tracer_initial_chain_depth % MAX_CHAIN_DEPTH) == 0;;
     _PyBloomFilter *dependencies = &tstate->interp->jit_tracer_dependencies;
-    _Py_BloomFilter_Add(dependencies, code);
+    _Py_BloomFilter_Add(dependencies, old_code);
     _Py_CODEUNIT *target_instr = this_instr;
     int trace_length = tstate->interp->jit_tracer_code_curr_size;
     _PyUOpInstruction *trace = tstate->interp->jit_tracer_code_buffer;
@@ -552,10 +566,9 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     uint32_t target = 0;
 
-    target = INSTR_IP(target_instr, code);
+    target = INSTR_IP(target_instr, old_code);
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     max_length-=2;
-    uint32_t opcode = this_instr->op.code;
     if ((uint16_t)oparg != (uint64_t)oparg) {
         goto full;
     }
@@ -565,12 +578,14 @@ _PyJIT_translate_single_bytecode_to_trace(
     if (opcode == EXTENDED_ARG) {
         return 1;
     }
-    if (opcode == ENTER_EXECUTOR) {
-        goto full;
-    }
     assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
     if (opcode == NOP) {
         return 1;
+    }
+
+    // Unsupported opcodes
+    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW) {
+        goto full;
     }
 
     RESERVE_RAW(1, "_CHECK_VALIDITY");
@@ -583,7 +598,8 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode] &&
         !(opcode == FOR_ITER_RANGE || opcode == FOR_ITER_LIST || opcode == FOR_ITER_TUPLE) &&
-        !(opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_JIT);
+        !(opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_JIT) &&
+        !(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_NONE || opcode == POP_JUMP_IF_NOT_NONE);
 
     if (needs_guard_ip) {
         RESERVE_RAW(1, "_GUARD_IP");
@@ -617,6 +633,19 @@ _PyJIT_translate_single_bytecode_to_trace(
     }
 
     switch (opcode) {
+        case POP_JUMP_IF_NONE:
+        case POP_JUMP_IF_NOT_NONE:
+        case POP_JUMP_IF_FALSE:
+        case POP_JUMP_IF_TRUE:
+        {
+            RESERVE(1);
+            int counter = this_instr[1].cache;
+            int bitcount = counter & 1;
+            int jump_likely = bitcount;
+            uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
+            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(target_instr, old_code));
+            break;
+        }
         case JUMP_BACKWARD_JIT:
         case JUMP_BACKWARD:
             ADD_TO_TRACE(_CHECK_PERIODIC, 0, 0, target);
@@ -678,8 +707,8 @@ _PyJIT_translate_single_bytecode_to_trace(
 #ifdef Py_DEBUG
                             else {
                                 uint32_t jump_target = next_inst + oparg;
-                                assert(_Py_GetBaseCodeUnit(code, jump_target).op.code == END_FOR);
-                                assert(_Py_GetBaseCodeUnit(code, jump_target+1).op.code == POP_ITER);
+                                assert(_Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR);
+                                assert(_Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER);
                             }
 #endif
                             break;
@@ -707,11 +736,12 @@ _PyJIT_translate_single_bytecode_to_trace(
                             Py_FatalError("garbled expansion");
                     }
                     if (uop == _PUSH_FRAME || uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
+                        PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
                         if (func != NULL) {
                             operand = (uintptr_t)func;
                         }
-                        else if (code != NULL) {
-                            operand = (uintptr_t)code | 1;
+                        else if (new_code != NULL) {
+                            operand = (uintptr_t)new_code | 1;
                         }
                         else {
                             operand = 0;
@@ -1091,7 +1121,7 @@ uop_optimize(
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
     bool is_noopt = true;
     if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
-        is_noopt = false;
+        is_noopt = true;
     }
     int curr_stackentries = tstate->interp->jit_tracer_initial_stack_depth;
     int length = interp->jit_tracer_code_curr_size;

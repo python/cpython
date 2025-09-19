@@ -205,8 +205,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_EXC_MATCH] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_IMPORT_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_IMPORT_FROM] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_POP_JUMP_IF_FALSE] = HAS_ARG_FLAG | HAS_JUMP_FLAG,
-    [_POP_JUMP_IF_TRUE] = HAS_ARG_FLAG | HAS_JUMP_FLAG,
     [_IS_NONE] = HAS_ESCAPES_FLAG,
     [_JUMP_BACKWARD_NO_INTERRUPT] = HAS_ARG_FLAG | HAS_JUMP_FLAG,
     [_GET_LEN] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -608,8 +606,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW",
     [_POP_EXCEPT] = "_POP_EXCEPT",
     [_POP_ITER] = "_POP_ITER",
-    [_POP_JUMP_IF_FALSE] = "_POP_JUMP_IF_FALSE",
-    [_POP_JUMP_IF_TRUE] = "_POP_JUMP_IF_TRUE",
     [_POP_TOP] = "_POP_TOP",
     [_POP_TOP_FLOAT] = "_POP_TOP_FLOAT",
     [_POP_TOP_INT] = "_POP_TOP_INT",
@@ -1053,10 +1049,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _IMPORT_FROM:
             return 0;
-        case _POP_JUMP_IF_FALSE:
-            return 1;
-        case _POP_JUMP_IF_TRUE:
-            return 1;
         case _IS_NONE:
             return 1;
         case _JUMP_BACKWARD_NO_INTERRUPT:
