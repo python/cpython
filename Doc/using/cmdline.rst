@@ -1283,6 +1283,13 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_BASIC_COMPLETER
+
+   If this variable is set to any value, PyREPL will use :mod:`rlcompleter` to
+   implement tab complition, instead of the default :mod:`_pyrepl.fancycompleter`.
+
+   .. versionadded:: 3.15
+
 .. envvar:: PYTHON_HISTORY
 
    This environment variable can be used to set the location of a
