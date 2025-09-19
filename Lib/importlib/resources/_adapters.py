@@ -9,7 +9,7 @@ class SpecLoaderAdapter:
     Adapt a package spec to adapt the underlying loader.
     """
 
-    def __init__(self, spec, adapter):
+    def __init__(self, spec, adapter=lambda spec: spec.loader):
         self.spec = spec
         self.loader = adapter(spec)
 
