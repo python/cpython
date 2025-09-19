@@ -1267,6 +1267,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(size));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sizehint));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(skip_file_prefixes));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(skip_non_matching_threads));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sleep));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sock));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sort));

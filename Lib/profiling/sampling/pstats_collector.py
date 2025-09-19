@@ -5,7 +5,7 @@ from .collector import Collector
 
 
 class PstatsCollector(Collector):
-    def __init__(self, sample_interval_usec):
+    def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
         )
@@ -14,6 +14,7 @@ class PstatsCollector(Collector):
         self.callers = collections.defaultdict(
             lambda: collections.defaultdict(int)
         )
+        self.skip_idle = skip_idle
 
     def _process_frames(self, frames):
         """Process a single thread's frame stack."""
@@ -40,7 +41,7 @@ class PstatsCollector(Collector):
             self.callers[callee][caller] += 1
 
     def collect(self, stack_frames):
-        for frames in self._iter_all_frames(stack_frames):
+        for frames in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
             self._process_frames(frames)
 
     def export(self, filename):
