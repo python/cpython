@@ -315,7 +315,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
 }
 
 PyDoc_STRVAR(send_doc,
-"send(arg) -> send 'arg' into generator,\n\
+"send(value) -> send 'value' into generator,\n\
 return next yielded value or raise StopIteration.");
 
 static PyObject *
