@@ -2127,6 +2127,7 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         int has_subinterpreters = subinterpreters
                                     ? runtime_has_subinterpreters(interp->runtime)
                                     : 0;
+        // TODO: The interpreter reference countdown probably isn't very efficient.
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
@@ -2135,9 +2136,12 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         if (!should_continue) {
             break;
         }
+        // Temporarily let other threads execute
+        _PyThreadState_Detach(tstate);
         _PyRWMutex_Unlock(&interp->references.lock);
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
+        _PyThreadState_Attach(tstate);
     }
     assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
     ASSERT_WORLD_STOPPED(interp);

@@ -2763,6 +2763,15 @@ test_weak_interpreter_ref_after_shutdown(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+foo(PyObject *self, PyObject *foo)
+{
+    PyInterpreterRef ref;
+    PyInterpreterRef_Get(&ref);
+    PyInterpreterRef_Close(ref);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2861,6 +2870,7 @@ static PyMethodDef TestMethods[] = {
     {"test_thread_state_ensure_nested", test_thread_state_ensure_nested, METH_NOARGS},
     {"test_thread_state_ensure_crossinterp", test_thread_state_ensure_crossinterp, METH_NOARGS},
     {"test_weak_interpreter_ref_after_shutdown", test_weak_interpreter_ref_after_shutdown, METH_NOARGS},
+    {"foo", foo, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
