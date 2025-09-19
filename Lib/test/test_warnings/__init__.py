@@ -1869,6 +1869,25 @@ class DeprecatedTests(PyPublicAPITests):
 
         self.assertEqual(D.inited, 3)
 
+    def test_existing_init_subclass_in_sibling_base(self):
+        @deprecated("A will go away soon")
+        class A:
+            pass
+        class B:
+            def __init_subclass__(cls, x):
+                super().__init_subclass__()
+                cls.inited = x
+
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            class C(A, B, x=42):
+                pass
+        self.assertEqual(C.inited, 42)
+
+        with self.assertWarnsRegex(DeprecationWarning, "A will go away soon"):
+            class D(B, A, x=42):
+                pass
+        self.assertEqual(D.inited, 42)
+
     def test_init_subclass_has_correct_cls(self):
         init_subclass_saw = None
 
