@@ -293,7 +293,7 @@ project, and then boot and prepare the iOS simulator.
 Debugging test failures
 -----------------------
 
-Running ``make test`` generates a standalone version of the ``iOS/testbed``
+Running ``make testios`` generates a standalone version of the ``iOS/testbed``
 project, and runs the full test suite. It does this using ``iOS/testbed``
 itself - the folder is an executable module that can be used to create and run
 a clone of the testbed project.
@@ -316,11 +316,25 @@ This is the equivalent of running ``python -m test -W test_os`` on a desktop
 Python build. Any arguments after the ``--`` will be passed to testbed as if
 they were arguments to ``python -m`` on a desktop machine.
 
+Testing in Xcode
+^^^^^^^^^^^^^^^^
+
 You can also open the testbed project in Xcode by running::
 
     $ open my-testbed/iOSTestbed.xcodeproj
 
 This will allow you to use the full Xcode suite of tools for debugging.
+
+The arguments used to run the test suite are defined as part of the test plan.
+To modify the test plan, select the test plan node of the project tree (it
+should be the first child of the root node), and select the "Configurations"
+tab. Modify the "Arguments Passed On Launch" value to change the testing
+arguments.
+
+The test plan also disables parallel testing, and specifies the use of the
+``iOSTestbed.lldbinit`` file for providing configuration of the debugger. The
+default debugger configuration disables automatic breakpoints on the
+``SIGINT``, ``SIGUSR1``, ``SIGUSR2``, and ``SIGXFSZ`` signals.
 
 Testing on an iOS device
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -336,40 +350,3 @@ select the root node of the project tree (labeled "iOSTestbed"), then the
 (this will likely be your own name), and plug in a physical device to your
 macOS machine with a USB cable. You should then be able to select your physical
 device from the list of targets in the pulldown in the Xcode titlebar.
-
-Running specific tests
-^^^^^^^^^^^^^^^^^^^^^^
-
-As the test suite is being executed on an iOS simulator, it is not possible to
-pass in command line arguments to configure test suite operation. To work
-around this limitation, the arguments that would normally be passed as command
-line arguments are configured as part of the ``iOSTestbed-Info.plist`` file
-that is used to configure the iOS testbed app. In this file, the ``TestArgs``
-key is an array containing the arguments that would be passed to ``python -m``
-on the command line (including ``test`` in position 0, the name of the test
-module to be executed).
-
-Disabling automated breakpoints
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-By default, Xcode will inserts an automatic breakpoint whenever a signal is
-raised. The Python test suite raises many of these signals as part of normal
-operation; unless you are trying to diagnose an issue with signals, the
-automatic breakpoints can be inconvenient. However, they can be disabled by
-creating a symbolic breakpoint that is triggered at the start of the test run.
-
-Select "Debug > Breakpoints > Create Symbolic Breakpoint" from the Xcode menu, and
-populate the new brewpoint with the following details:
-
-* **Name**: IgnoreSignals
-* **Symbol**: UIApplicationMain
-* **Action**: Add debugger commands for:
-  - ``process handle SIGINT -n true -p true -s false``
-  - ``process handle SIGUSR1 -n true -p true -s false``
-  - ``process handle SIGUSR2 -n true -p true -s false``
-  - ``process handle SIGXFSZ -n true -p true -s false``
-* Check the "Automatically continue after evaluating" box.
-
-All other details can be left blank. When the process executes the
-``UIApplicationMain`` entry point, the breakpoint will trigger, run the debugger
-commands to disable the automatic breakpoints, and automatically resume.

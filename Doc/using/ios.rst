@@ -374,6 +374,17 @@ You can also open the testbed project in Xcode by running:
 
 This will allow you to use the full Xcode suite of tools for debugging.
 
+The arguments used to run the test suite are defined as part of the test plan.
+To modify the test plan, select the test plan node of the project tree (it
+should be the first child of the root node), and select the "Configurations"
+tab. Modify the "Arguments Passed On Launch" value to change the testing
+arguments.
+
+The test plan also disables parallel testing, and specifies the use of the
+``iOSTestbed.lldbinit`` file for providing configuration of the debugger. The
+default debugger configuration disables automatic breakpoints on the
+``SIGINT``, ``SIGUSR1``, ``SIGUSR2``, and ``SIGXFSZ`` signals.
+
 App Store Compliance
 ====================
 

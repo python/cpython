@@ -6592,7 +6592,7 @@ functions, deprecated in Python 3.9. Patch by Victor Stinner.
 
 Deprecate old Python initialization functions:
 
-* :c:func:`PySys_ResetWarnOptions`
+* :c:func:`!PySys_ResetWarnOptions`
 * :c:func:`!Py_GetExecPrefix`
 * :c:func:`!Py_GetPath`
 * :c:func:`!Py_GetPrefix`
