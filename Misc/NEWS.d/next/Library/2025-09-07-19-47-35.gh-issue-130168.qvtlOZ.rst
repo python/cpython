@@ -1,0 +1,2 @@
+Make sure that the new REPL does not get scrambled when a signal handler
+uses interactive input.
