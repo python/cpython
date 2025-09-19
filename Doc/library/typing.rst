@@ -3953,7 +3953,7 @@ convenience. This is subject to change, and not all deprecations are listed.
      - :pep:`585`
    * - :class:`typing.ByteString`
      - 3.9
-     - 3.14
+     - 3.17
      - :gh:`91896`
    * - :data:`typing.Text`
      - 3.11
