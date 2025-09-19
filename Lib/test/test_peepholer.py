@@ -292,6 +292,7 @@ class TestTranforms(BytecodeTestCase):
             ('---x', 'UNARY_NEGATIVE', None, False, None, None),
             ('~~~x', 'UNARY_INVERT', None, False, None, None),
             ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False, None, None),
+            ('~True', 'UNARY_INVERT', None, False, None, None),
         ]
 
         for (
@@ -1115,6 +1116,13 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
+    def test_import_from_doesnt_clobber_load_fast_borrow(self):
+        def f(self):
+            if x: pass
+            self.x
+            from shutil import ExecError
+            print(ExecError)
+        self.assertInBytecode(f, "LOAD_FAST_BORROW", "self")
 
 class DirectCfgOptimizerTests(CfgOptimizationTestCase):
 

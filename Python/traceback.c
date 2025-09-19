@@ -993,8 +993,8 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     } else {
         PUTS(fd, "???");
     }
-
-    int lineno = PyUnstable_InterpreterFrame_GetLine(frame);
+    int lasti = PyUnstable_InterpreterFrame_GetLasti(frame);
+    int lineno = _PyCode_Addr2LineNoTstate(code, lasti);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
@@ -1326,3 +1326,13 @@ _Py_DumpStack(int fd)
     PUTS(fd, "  <cannot get C stack on this system>\n");
 }
 #endif
+
+void
+_Py_InitDumpStack(void)
+{
+#ifdef CAN_C_BACKTRACE
+    // gh-137185: Call backtrace() once to force libgcc to be loaded early.
+    void *callstack[1];
+    (void)backtrace(callstack, 1);
+#endif
+}

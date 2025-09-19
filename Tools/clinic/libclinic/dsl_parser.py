@@ -246,6 +246,7 @@ class IndentStack:
 class DSLParser:
     function: Function | None
     state: StateKeeper
+    expecting_parameters: bool
     keyword_only: bool
     positional_only: bool
     deprecated_positional: VersionTuple | None
@@ -262,6 +263,8 @@ class DSLParser:
     target_critical_section: list[str]
     disable_fastcall: bool
     from_version_re = re.compile(r'([*/]) +\[from +(.+)\]')
+    permit_long_summary = False
+    permit_long_docstring_body = False
 
     def __init__(self, clinic: Clinic) -> None:
         self.clinic = clinic
@@ -283,6 +286,7 @@ class DSLParser:
     def reset(self) -> None:
         self.function = None
         self.state = self.state_dsl_start
+        self.expecting_parameters = True
         self.keyword_only = False
         self.positional_only = False
         self.deprecated_positional = None
@@ -298,6 +302,8 @@ class DSLParser:
         self.critical_section = False
         self.target_critical_section = []
         self.disable_fastcall = False
+        self.permit_long_summary = False
+        self.permit_long_docstring_body = False
 
     def directive_module(self, name: str) -> None:
         fields = name.split('.')[:-1]
@@ -469,6 +475,16 @@ class DSLParser:
         if self.forced_text_signature:
             fail("Called @text_signature twice!")
         self.forced_text_signature = text_signature
+
+    def at_permit_long_summary(self) -> None:
+        if self.permit_long_summary:
+            fail("Called @permit_long_summary twice!")
+        self.permit_long_summary = True
+
+    def at_permit_long_docstring_body(self) -> None:
+        if self.permit_long_docstring_body:
+            fail("Called @permit_long_docstring_body twice!")
+        self.permit_long_docstring_body = True
 
     def parse(self, block: Block) -> None:
         self.reset()
@@ -862,6 +878,10 @@ class DSLParser:
     def parse_parameter(self, line: str) -> None:
         assert self.function is not None
 
+        if not self.expecting_parameters:
+            fail('Encountered parameter line when not expecting '
+                 f'parameters: {line}')
+
         match self.parameter_state:
             case ParamState.START | ParamState.REQUIRED:
                 self.to_required()
@@ -877,43 +897,16 @@ class DSLParser:
 
         # handle "as" for  parameters too
         c_name = None
-        name, have_as_token, trailing = line.partition(' as ')
-        if have_as_token:
-            name = name.strip()
-            if ' ' not in name:
-                fields = trailing.strip().split(' ')
-                if not fields:
-                    fail("Invalid 'as' clause!")
-                c_name = fields[0]
-                if c_name.endswith(':'):
-                    name += ':'
-                    c_name = c_name[:-1]
-                fields[0] = name
-                line = ' '.join(fields)
+        m = re.match(r'(?:\* *)?\w+( +as +(\w+))', line)
+        if m:
+            c_name = m[2]
+            line = line[:m.start(1)] + line[m.end(1):]
 
-        default: str | None
-        base, equals, default = line.rpartition('=')
-        if not equals:
-            base = default
-            default = None
-
-        module = None
         try:
-            ast_input = f"def x({base}): pass"
+            ast_input = f"def x({line}\n): pass"
             module = ast.parse(ast_input)
         except SyntaxError:
-            try:
-                # the last = was probably inside a function call, like
-                #   c: int(accept={str})
-                # so assume there was no actual default value.
-                default = None
-                ast_input = f"def x({line}): pass"
-                module = ast.parse(ast_input)
-            except SyntaxError:
-                pass
-        if not module:
-            fail(f"Function {self.function.name!r} has an invalid parameter declaration:\n\t",
-                 repr(line))
+            fail(f"Function {self.function.name!r} has an invalid parameter declaration: {line!r}")
 
         function = module.body[0]
         assert isinstance(function, ast.FunctionDef)
@@ -922,30 +915,40 @@ class DSLParser:
         if len(function_args.args) > 1:
             fail(f"Function {self.function.name!r} has an "
                  f"invalid parameter declaration (comma?): {line!r}")
-        if function_args.defaults or function_args.kw_defaults:
-            fail(f"Function {self.function.name!r} has an "
-                 f"invalid parameter declaration (default value?): {line!r}")
-        if function_args.kwarg:
-            fail(f"Function {self.function.name!r} has an "
-                 f"invalid parameter declaration (**kwargs?): {line!r}")
 
+        is_vararg = is_var_keyword = False
         if function_args.vararg:
             self.check_previous_star()
             self.check_remaining_star()
             is_vararg = True
             parameter = function_args.vararg
+        elif function_args.kwarg:
+            # If the existing parameters are all positional only or ``*args``
+            # (var-positional), then we allow ``**kwds`` (var-keyword).
+            # Currently, pos-or-keyword or keyword-only arguments are not
+            # allowed with the ``**kwds`` converter.
+            has_non_positional_param = any(
+                p.is_positional_or_keyword() or p.is_keyword_only()
+                for p in self.function.parameters.values()
+            )
+            if has_non_positional_param:
+                fail(f"Function {self.function.name!r} has an "
+                     f"invalid parameter declaration (**kwargs?): {line!r}")
+            is_var_keyword = True
+            parameter = function_args.kwarg
         else:
-            is_vararg = False
             parameter = function_args.args[0]
 
         parameter_name = parameter.arg
         name, legacy, kwargs = self.parse_converter(parameter.annotation)
         if is_vararg:
-            name = 'varpos_' + name
+            name = f'varpos_{name}'
+        elif is_var_keyword:
+            name = f'var_keyword_{name}'
 
         value: object
-        if not default:
-            if is_vararg:
+        if not function_args.defaults:
+            if is_vararg or is_var_keyword:
                 value = NULL
             else:
                 if self.parameter_state is ParamState.OPTIONAL:
@@ -955,17 +958,13 @@ class DSLParser:
             if 'py_default' in kwargs:
                 fail("You can't specify py_default without specifying a default value!")
         else:
-            if is_vararg:
-                fail("Vararg can't take a default value!")
+            expr = function_args.defaults[0]
+            default = ast_input[expr.col_offset: expr.end_col_offset].strip()
 
             if self.parameter_state is ParamState.REQUIRED:
                 self.parameter_state = ParamState.OPTIONAL
-            default = default.strip()
             bad = False
-            ast_input = f"x = {default}"
             try:
-                module = ast.parse(ast_input)
-
                 if 'c_default' not in kwargs:
                     # we can only represent very simple data values in C.
                     # detect whether default is okay, via a denylist
@@ -992,13 +991,14 @@ class DSLParser:
                         visit_Starred = bad_node
 
                     denylist = DetectBadNodes()
-                    denylist.visit(module)
+                    denylist.visit(expr)
                     bad = denylist.bad
                 else:
                     # if they specify a c_default, we can be more lenient about the default value.
                     # but at least make an attempt at ensuring it's a valid expression.
+                    code = compile(ast.Expression(expr), '<expr>', 'eval')
                     try:
-                        value = eval(default)
+                        value = eval(code)
                     except NameError:
                         pass # probably a named constant
                     except Exception as e:
@@ -1010,9 +1010,6 @@ class DSLParser:
                 if bad:
                     fail(f"Unsupported expression as default value: {default!r}")
 
-                assignment = module.body[0]
-                assert isinstance(assignment, ast.Assign)
-                expr = assignment.value
                 # mild hack: explicitly support NULL as a default value
                 c_default: str | None
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
@@ -1064,8 +1061,6 @@ class DSLParser:
                     else:
                         c_default = py_default
 
-            except SyntaxError as e:
-                fail(f"Syntax error: {e.text!r}")
             except (ValueError, AttributeError):
                 value = unknown
                 c_default = kwargs.get("c_default")
@@ -1089,6 +1084,8 @@ class DSLParser:
         kind: inspect._ParameterKind
         if is_vararg:
             kind = inspect.Parameter.VAR_POSITIONAL
+        elif is_var_keyword:
+            kind = inspect.Parameter.VAR_KEYWORD
         elif self.keyword_only:
             kind = inspect.Parameter.KEYWORD_ONLY
         else:
@@ -1142,6 +1139,8 @@ class DSLParser:
 
         if is_vararg:
             self.keyword_only = True
+        if is_var_keyword:
+            self.expecting_parameters = False
 
     @staticmethod
     def parse_converter(
@@ -1183,6 +1182,9 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
+        if not self.expecting_parameters:
+            fail("Encountered '*' when not expecting parameters")
+
         if version is None:
             self.check_previous_star()
             self.check_remaining_star()
@@ -1238,6 +1240,9 @@ class DSLParser:
         The 'version' parameter signifies the future version from which
         the marker will take effect (None means it is already in effect).
         """
+        if not self.expecting_parameters:
+            fail("Encountered '/' when not expecting parameters")
+
         if version is None:
             if self.deprecated_keyword:
                 fail(f"Function {function.name!r}: '/' must precede '/ [from ...]'")
@@ -1474,11 +1479,13 @@ class DSLParser:
                 if p.is_vararg():
                     p_lines.append("*")
                     added_star = True
+                if p.is_var_keyword():
+                    p_lines.append("**")
 
                 name = p.converter.signature_name or p.name
                 p_lines.append(name)
 
-                if not p.is_vararg() and p.converter.is_optional():
+                if not p.is_variable_length() and p.converter.is_optional():
                     p_lines.append('=')
                     value = p.converter.py_default
                     if not value:
@@ -1553,6 +1560,30 @@ class DSLParser:
             # between it and the {parameters} we're about to add.
             lines.append('')
 
+        # Fail if the summary line is too long.
+        # Warn if any of the body lines are too long.
+        # Existing violations are recorded in OVERLONG_{SUMMARY,BODY}.
+        max_width = f.docstring_line_width
+        summary_len = len(lines[0])
+        max_body = max(map(len, lines[1:]))
+        if summary_len > max_width:
+            if not self.permit_long_summary:
+                fail(f"Summary line for {f.full_name!r} is too long!\n"
+                     f"The summary line must be no longer than {max_width} characters.")
+        else:
+            if self.permit_long_summary:
+                warn("Remove the @permit_long_summary decorator from "
+                     f"{f.full_name!r}!\n")
+
+        if max_body > max_width:
+            if not self.permit_long_docstring_body:
+                warn(f"Docstring lines for {f.full_name!r} are too long!\n"
+                     f"Lines should be no longer than {max_width} characters.")
+        else:
+            if self.permit_long_docstring_body:
+                warn("Remove the @permit_long_docstring_body decorator from "
+                     f"{f.full_name!r}!\n")
+
         parameters_marker_count = len(f.docstring.split('{parameters}')) - 1
         if parameters_marker_count > 1:
             fail('You may not specify {parameters} more than once in a docstring!')
@@ -1583,8 +1614,11 @@ class DSLParser:
 
         for p in reversed(self.function.parameters.values()):
             if self.keyword_only:
-                if (p.kind == inspect.Parameter.KEYWORD_ONLY or
-                    p.kind == inspect.Parameter.VAR_POSITIONAL):
+                if p.kind in {
+                    inspect.Parameter.KEYWORD_ONLY,
+                    inspect.Parameter.VAR_POSITIONAL,
+                    inspect.Parameter.VAR_KEYWORD
+                }:
                     return
             elif self.deprecated_positional:
                 if p.deprecated_positional == self.deprecated_positional:

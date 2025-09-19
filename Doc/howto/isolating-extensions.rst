@@ -626,8 +626,7 @@ Open Issues
 
 Several issues around per-module state and heap types are still open.
 
-Discussions about improving the situation are best held on the `capi-sig
-mailing list <https://mail.python.org/mailman3/lists/capi-sig.python.org/>`__.
+Discussions about improving the situation are best held on the `discuss forum under c-api tag <https://discuss.python.org/c/core-dev/c-api/30>`__.
 
 
 Per-Class Scope

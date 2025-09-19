@@ -30,7 +30,7 @@ increase and decrease the objects reference count.
 
 In order to offer sufficient resilience to C extensions using the stable ABI
 compiled against 3.11 or earlier, we set the initial value near the
-middle of the range (2**31, 2**32). That way the the refcount can be
+middle of the range (2**31, 2**32). That way the refcount can be
 off by ~1 billion without affecting immortality.
 
 Reference count increases will use saturated arithmetic, taking advantage of
@@ -117,6 +117,7 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
     #endif
 #endif
 
+#ifndef _Py_OPAQUE_PYOBJECT
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
 #if defined(Py_GIL_DISABLED)
@@ -140,6 +141,7 @@ static inline Py_ALWAYS_INLINE int _Py_IsStaticImmortal(PyObject *op)
 #endif
 }
 #define _Py_IsStaticImmortal(op) _Py_IsStaticImmortal(_PyObject_CAST(op))
+#endif // !defined(_Py_OPAQUE_PYOBJECT)
 
 // Py_SET_REFCNT() implementation for stable ABI
 PyAPI_FUNC(void) _Py_SetRefcnt(PyObject *ob, Py_ssize_t refcnt);
@@ -243,20 +245,6 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 // Private functions used by Py_INCREF() and Py_DECREF().
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
-
-#ifndef Py_GIL_DISABLED
-static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
-{
-    assert(!_Py_IsStaticImmortal(op));
-    op->ob_refcnt++;
-    _Py_INCREF_STAT_INC();
-#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
-    if (!_Py_IsImmortal(op)) {
-        _Py_INCREF_IncRefTotal();
-    }
-#endif
-}
-#endif
 
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
