@@ -73,6 +73,7 @@
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
+    <TargetName>$(PyWExeName)</TargetName>
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
@@ -89,10 +90,16 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <StackReserveSize Condition="$(Configuration) != 'Debug'">2000000</StackReserveSize>
-      <StackReserveSize Condition="$(Configuration) == 'Debug'">8000000</StackReserveSize>
+      <StackReserveSize>2000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'Debug'">12000000</StackReserveSize>
+      <StackReserveSize Condition="$(Configuration) == 'PGInstrument'">12000000</StackReserveSize>
+      <!-- HACK: Need additional memory to avoid crashing until gh-113655 is fixed -->
+      <StackReserveSize Condition="$(Configuration) == 'PGUpdate' and $(UseExtraStackReserve) == 'true'">3000000</StackReserveSize>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="..\PC\icons\pythonw.ico" />
+  </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\pythonw_exe.rc" />
   </ItemGroup>

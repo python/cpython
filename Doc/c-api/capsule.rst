@@ -64,7 +64,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 
    The *name* parameter must compare exactly to the name stored in the capsule.
    If the name stored in the capsule is ``NULL``, the *name* passed in must also
-   be ``NULL``.  Python uses the C function :c:func:`strcmp` to compare capsule
+   be ``NULL``.  Python uses the C function :c:func:`!strcmp` to compare capsule
    names.
 
 
@@ -105,8 +105,18 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    ``module.attribute``.  The *name* stored in the capsule must match this
    string exactly.
 
+   This function splits *name* on the ``.`` character, and imports the first
+   element. It then processes further elements using attribute lookups.
+
    Return the capsule's internal *pointer* on success.  On failure, set an
    exception and return ``NULL``.
+
+   .. note::
+
+      If *name* points to an attribute of some submodule or subpackage, this
+      submodule or subpackage must be previously imported using other means
+      (for example, by using :c:func:`PyImport_ImportModule`) for the
+      attribute lookups to succeed.
 
    .. versionchanged:: 3.3
       *no_block* has no effect anymore.
@@ -121,7 +131,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    compared.)
 
    In other words, if :c:func:`PyCapsule_IsValid` returns a true value, calls to
-   any of the accessors (any function starting with :c:func:`PyCapsule_Get`) are
+   any of the accessors (any function starting with ``PyCapsule_Get``) are
    guaranteed to succeed.
 
    Return a nonzero value if the object is valid and matches the name passed in.

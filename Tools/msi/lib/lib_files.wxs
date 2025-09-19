@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_uuid;_wmi;_zoneinfo ?>
+    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_remote_debugging;_uuid;_wmi;_zoneinfo;_zstd ?>
     <Fragment>
         <DirectoryRef Id="Lib_venv_scripts_nt" />
 
@@ -26,10 +26,10 @@
                 <File Name="libffi-8.dll" KeyPath="yes" />
             </Component>
             <Component Id="venvlauncher.exe" Directory="Lib_venv_scripts_nt" Guid="*">
-                <File Name="python.exe" Source="venvlauncher.exe" KeyPath="yes" />
+                <File Name="venvlauncher.exe" KeyPath="yes" />
             </Component>
             <Component Id="venvwlauncher.exe" Directory="Lib_venv_scripts_nt" Guid="*">
-                <File Name="pythonw.exe" Source="venvwlauncher.exe" KeyPath="yes" />
+                <File Name="venvwlauncher.exe" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -63,10 +63,10 @@
                 <File Name="libssl$(var.ssltag).pdb" KeyPath="yes" />
             </Component>
             <Component Id="venvlauncher.pdb" Directory="Lib_venv_scripts_nt__pdbs" Guid="*">
-                <File Name="python.pdb" Source="venvlauncher.pdb" KeyPath="yes" />
+                <File Name="venvlauncher.pdb" KeyPath="yes" />
             </Component>
             <Component Id="venvwlauncher.pdb" Directory="Lib_venv_scripts_nt__pdbs" Guid="*">
-                <File Name="pythonw.pdb" Source="venvwlauncher.pdb" KeyPath="yes" />
+                <File Name="venvwlauncher.pdb" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>
@@ -100,10 +100,10 @@
                 <File Name="sqlite3_d.pdb" KeyPath="yes" />
             </Component>
             <Component Id="venvlauncher_d.exe" Directory="Lib_venv_scripts_nt__d" Guid="*">
-                <File Name="python_d.exe" Source="venvlauncher_d.exe" KeyPath="yes" />
+                <File Name="venvlauncher_d.exe" KeyPath="yes" />
             </Component>
             <Component Id="venvwlauncher_d.exe" Directory="Lib_venv_scripts_nt__d" Guid="*">
-                <File Name="pythonw_d.exe" Source="venvwlauncher_d.exe" KeyPath="yes" />
+                <File Name="venvwlauncher_d.exe" KeyPath="yes" />
             </Component>
         </ComponentGroup>
     </Fragment>

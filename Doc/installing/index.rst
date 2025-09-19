@@ -19,7 +19,9 @@ solutions to the common pool.
 
 This guide covers the installation part of the process. For a guide to
 creating and sharing your own Python projects, refer to the
-:ref:`distribution guide <distributing-index>`.
+`Python packaging user guide`_.
+
+.. _Python Packaging User Guide: https://packaging.python.org/en/latest/tutorials/packaging-projects/
 
 .. note::
 
@@ -186,7 +188,7 @@ switch::
    Once the Development & Deployment part of PPUG is fleshed out, some of
    those sections should be linked from new questions here (most notably,
    we should have a question about avoiding depending on PyPI that links to
-   https://packaging.python.org/en/latest/mirrors/)
+   https://packaging.python.org/en/latest/guides/index-mirrors-and-caches/)
 
 
 Common installation issues

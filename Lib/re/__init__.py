@@ -61,7 +61,7 @@ below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.
     \number  Matches the contents of the group of the same number.
     \A       Matches only at the start of the string.
-    \Z       Matches only at the end of the string.
+    \z       Matches only at the end of the string.
     \b       Matches the empty string, but only at the start or end of a word.
     \B       Matches the empty string, but not at the start or end of a word.
     \d       Matches any decimal digit; equivalent to the set [0-9] in
@@ -117,7 +117,8 @@ A, L, and U are mutually exclusive.
     U  UNICODE     For compatibility only. Ignored for string patterns (it
                    is the default), and forbidden for bytes patterns.
 
-This module also defines an exception 'error'.
+This module also defines exception 'PatternError', aliased to 'error' for
+backward compatibility.
 
 """
 
@@ -133,7 +134,7 @@ __all__ = [
     "findall", "finditer", "compile", "purge", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE", "NOFLAG", "RegexFlag",
+    "UNICODE", "NOFLAG", "RegexFlag", "PatternError"
 ]
 
 __version__ = "2.2.1"
@@ -155,7 +156,7 @@ class RegexFlag:
     _numeric_repr_ = hex
 
 # sre exception
-error = _compiler.error
+PatternError = error = _compiler.PatternError
 
 # --------------------------------------------------------------------
 # public interface
@@ -175,16 +176,39 @@ def search(pattern, string, flags=0):
     a Match object, or None if no match was found."""
     return _compile(pattern, flags).search(string)
 
-def sub(pattern, repl, string, count=0, flags=0):
+class _ZeroSentinel(int):
+    pass
+_zero_sentinel = _ZeroSentinel()
+
+def sub(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentinel):
     """Return the string obtained by replacing the leftmost
     non-overlapping occurrences of the pattern in string by the
     replacement repl.  repl can be either a string or a callable;
     if a string, backslash escapes in it are processed.  If it is
     a callable, it's passed the Match object and must return
     a replacement string to be used."""
-    return _compile(pattern, flags).sub(repl, string, count)
+    if args:
+        if count is not _zero_sentinel:
+            raise TypeError("sub() got multiple values for argument 'count'")
+        count, *args = args
+        if args:
+            if flags is not _zero_sentinel:
+                raise TypeError("sub() got multiple values for argument 'flags'")
+            flags, *args = args
+            if args:
+                raise TypeError("sub() takes from 3 to 5 positional arguments "
+                                "but %d were given" % (5 + len(args)))
 
-def subn(pattern, repl, string, count=0, flags=0):
+        import warnings
+        warnings.warn(
+            "'count' is passed as positional argument",
+            DeprecationWarning, stacklevel=2
+        )
+
+    return _compile(pattern, flags).sub(repl, string, count)
+sub.__text_signature__ = '(pattern, repl, string, count=0, flags=0)'
+
+def subn(pattern, repl, string, *args, count=_zero_sentinel, flags=_zero_sentinel):
     """Return a 2-tuple containing (new_string, number).
     new_string is the string obtained by replacing the leftmost
     non-overlapping occurrences of the pattern in the source
@@ -193,9 +217,28 @@ def subn(pattern, repl, string, count=0, flags=0):
     callable; if a string, backslash escapes in it are processed.
     If it is a callable, it's passed the Match object and must
     return a replacement string to be used."""
-    return _compile(pattern, flags).subn(repl, string, count)
+    if args:
+        if count is not _zero_sentinel:
+            raise TypeError("subn() got multiple values for argument 'count'")
+        count, *args = args
+        if args:
+            if flags is not _zero_sentinel:
+                raise TypeError("subn() got multiple values for argument 'flags'")
+            flags, *args = args
+            if args:
+                raise TypeError("subn() takes from 3 to 5 positional arguments "
+                                "but %d were given" % (5 + len(args)))
 
-def split(pattern, string, maxsplit=0, flags=0):
+        import warnings
+        warnings.warn(
+            "'count' is passed as positional argument",
+            DeprecationWarning, stacklevel=2
+        )
+
+    return _compile(pattern, flags).subn(repl, string, count)
+subn.__text_signature__ = '(pattern, repl, string, count=0, flags=0)'
+
+def split(pattern, string, *args, maxsplit=_zero_sentinel, flags=_zero_sentinel):
     """Split the source string by the occurrences of the pattern,
     returning a list containing the resulting substrings.  If
     capturing parentheses are used in pattern, then the text of all
@@ -203,7 +246,26 @@ def split(pattern, string, maxsplit=0, flags=0):
     list.  If maxsplit is nonzero, at most maxsplit splits occur,
     and the remainder of the string is returned as the final element
     of the list."""
+    if args:
+        if maxsplit is not _zero_sentinel:
+            raise TypeError("split() got multiple values for argument 'maxsplit'")
+        maxsplit, *args = args
+        if args:
+            if flags is not _zero_sentinel:
+                raise TypeError("split() got multiple values for argument 'flags'")
+            flags, *args = args
+            if args:
+                raise TypeError("split() takes from 2 to 4 positional arguments "
+                                "but %d were given" % (4 + len(args)))
+
+        import warnings
+        warnings.warn(
+            "'maxsplit' is passed as positional argument",
+            DeprecationWarning, stacklevel=2
+        )
+
     return _compile(pattern, flags).split(string, maxsplit)
+split.__text_signature__ = '(pattern, string, maxsplit=0, flags=0)'
 
 def findall(pattern, string, flags=0):
     """Return a list of all non-overlapping matches in the string.

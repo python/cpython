@@ -26,10 +26,8 @@ class CreationTestCase(unittest.TestCase):
     """Test case for socket.gettimeout() and socket.settimeout()"""
 
     def setUp(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    def tearDown(self):
-        self.sock.close()
+        self.sock = self.enterContext(
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM))
 
     def testObjectCreation(self):
         # Test Socket creation
@@ -113,8 +111,6 @@ class TimeoutTestCase(unittest.TestCase):
     def setUp(self):
         raise NotImplementedError()
 
-    tearDown = setUp
-
     def _sock_operation(self, count, timeout, method, *args):
         """
         Test the specified socket method.
@@ -142,19 +138,16 @@ class TCPTimeoutTestCase(TimeoutTestCase):
     """TCP test case for socket.socket() timeout functions"""
 
     def setUp(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock = self.enterContext(
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM))
         self.addr_remote = resolve_address('www.python.org.', 80)
 
-    def tearDown(self):
-        self.sock.close()
-
-    @unittest.skipIf(True, 'need to replace these hosts; see bpo-35518')
     def testConnectTimeout(self):
         # Testing connect timeout is tricky: we need to have IP connectivity
         # to a host that silently drops our packets.  We can't simulate this
         # from Python because it's a function of the underlying TCP/IP stack.
-        # So, the following Snakebite host has been defined:
-        blackhole = resolve_address('blackhole.snakebite.net', 56666)
+        # So, the following port on the pythontest.net host has been defined:
+        blackhole = resolve_address('pythontest.net', 56666)
 
         # Blackhole has been configured to silently drop any incoming packets.
         # No RSTs (for TCP) or ICMP UNREACH (for UDP/ICMP) will be sent back
@@ -166,7 +159,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         # to firewalling or general network configuration.  In order to improve
         # our confidence in testing the blackhole, a corresponding 'whitehole'
         # has also been set up using one port higher:
-        whitehole = resolve_address('whitehole.snakebite.net', 56667)
+        whitehole = resolve_address('pythontest.net', 56667)
 
         # This address has been configured to immediately drop any incoming
         # packets as well, but it does it respectfully with regards to the
@@ -180,35 +173,27 @@ class TCPTimeoutTestCase(TimeoutTestCase):
         # timeframe).
 
         # For the records, the whitehole/blackhole configuration has been set
-        # up using the 'pf' firewall (available on BSDs), using the following:
+        # up using the 'iptables' firewall, using the following rules:
         #
-        #   ext_if="bge0"
+        # -A INPUT -p tcp --destination-port 56666 -j DROP
+        # -A INPUT -p udp --destination-port 56666 -j DROP
+        # -A INPUT -p tcp --destination-port 56667 -j REJECT
+        # -A INPUT -p udp --destination-port 56667 -j REJECT
         #
-        #   blackhole_ip="35.8.247.6"
-        #   whitehole_ip="35.8.247.6"
-        #   blackhole_port="56666"
-        #   whitehole_port="56667"
-        #
-        #   block return in log quick on $ext_if proto { tcp udp } \
-        #       from any to $whitehole_ip port $whitehole_port
-        #   block drop in log quick on $ext_if proto { tcp udp } \
-        #       from any to $blackhole_ip port $blackhole_port
-        #
+        # See https://github.com/python/psf-salt/blob/main/pillar/base/firewall/snakebite.sls
+        # for the current configuration.
 
         skip = True
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        timeout = support.LOOPBACK_TIMEOUT
-        sock.settimeout(timeout)
-        try:
-            sock.connect((whitehole))
-        except TimeoutError:
-            pass
-        except OSError as err:
-            if err.errno == errno.ECONNREFUSED:
-                skip = False
-        finally:
-            sock.close()
-            del sock
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            try:
+                timeout = support.LOOPBACK_TIMEOUT
+                sock.settimeout(timeout)
+                sock.connect((whitehole))
+            except TimeoutError:
+                pass
+            except OSError as err:
+                if err.errno == errno.ECONNREFUSED:
+                    skip = False
 
         if skip:
             self.skipTest(
@@ -275,10 +260,8 @@ class UDPTimeoutTestCase(TimeoutTestCase):
     """UDP test case for socket.socket() timeout functions"""
 
     def setUp(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-    def tearDown(self):
-        self.sock.close()
+        self.sock = self.enterContext(
+            socket.socket(socket.AF_INET, socket.SOCK_DGRAM))
 
     def testRecvfromTimeout(self):
         # Test recvfrom() timeout

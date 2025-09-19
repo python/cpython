@@ -15,12 +15,12 @@
 
 MAGIC = 20230612
 
-from _sre import MAXREPEAT, MAXGROUPS
+from _sre import MAXREPEAT, MAXGROUPS  # noqa: F401
 
 # SRE standard exception (access as sre.error)
 # should this really be here?
 
-class error(Exception):
+class PatternError(Exception):
     """Exception raised for invalid regular expressions.
 
     Attributes:
@@ -52,6 +52,9 @@ class error(Exception):
             self.lineno = self.colno = None
         super().__init__(msg)
 
+
+# Backward compatibility after renaming in 3.13
+error = PatternError
 
 class _NamedIntConstant(int):
     def __new__(cls, value, name):
@@ -202,6 +205,8 @@ CH_UNICODE = {
     CATEGORY_LINEBREAK: CATEGORY_UNI_LINEBREAK,
     CATEGORY_NOT_LINEBREAK: CATEGORY_UNI_NOT_LINEBREAK
 }
+
+CH_NEGATE = dict(zip(CHCODES[::2] + CHCODES[1::2], CHCODES[1::2] + CHCODES[::2]))
 
 # flags
 SRE_FLAG_IGNORECASE = 2 # case insensitive

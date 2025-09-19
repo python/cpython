@@ -1,5 +1,5 @@
-:mod:`curses.ascii` --- Utilities for ASCII characters
-======================================================
+:mod:`!curses.ascii` --- Utilities for ASCII characters
+=======================================================
 
 .. module:: curses.ascii
    :synopsis: Constants and set-membership functions for ASCII characters.

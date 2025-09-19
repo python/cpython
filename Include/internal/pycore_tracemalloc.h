@@ -11,10 +11,6 @@ extern "C" {
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 
 
-/* Trace memory blocks allocated by PyMem_RawMalloc() */
-#define TRACE_RAW_MALLOC
-
-
 struct _PyTraceMalloc_Config {
     /* Module initialized?
        Variable protected by the GIL */
@@ -25,7 +21,7 @@ struct _PyTraceMalloc_Config {
     } initialized;
 
     /* Is tracemalloc tracing memory allocations?
-       Variable protected by the GIL */
+       Variable protected by the TABLES_LOCK(). */
     int tracing;
 
     /* limit of the number of frames in a traceback, 1 by default.
@@ -74,9 +70,7 @@ struct _tracemalloc_runtime_state {
         PyMemAllocatorEx obj;
     } allocators;
 
-#if defined(TRACE_RAW_MALLOC)
-    PyThread_type_lock tables_lock;
-#endif
+    PyMutex tables_lock;
     /* Size in bytes of currently traced memory.
        Protected by TABLES_LOCK(). */
     size_t traced_memory;
@@ -85,14 +79,14 @@ struct _tracemalloc_runtime_state {
     size_t peak_traced_memory;
     /* Hash table used as a set to intern filenames:
        PyObject* => PyObject*.
-       Protected by the GIL */
+       Protected by the TABLES_LOCK(). */
     _Py_hashtable_t *filenames;
     /* Buffer to store a new traceback in traceback_new().
-       Protected by the GIL. */
+       Protected by the TABLES_LOCK(). */
     struct tracemalloc_traceback *traceback;
     /* Hash table used as a set to intern tracebacks:
        traceback_t* => traceback_t*
-       Protected by the GIL */
+       Protected by the TABLES_LOCK(). */
     _Py_hashtable_t *tracebacks;
     /* pointer (void*) => trace (trace_t*).
        Protected by TABLES_LOCK(). */
@@ -117,14 +111,16 @@ struct _tracemalloc_runtime_state {
     }
 
 
-/* Get the traceback where a memory block was allocated.
-
-   Return a tuple of (filename: str, lineno: int) tuples.
-
-   Return None if the tracemalloc module is disabled or if the memory block
-   is not tracked by tracemalloc.
-
-   Raise an exception and return NULL on error. */
+// Get the traceback where a memory block was allocated.
+//
+// Return a tuple of (filename: str, lineno: int) tuples.
+//
+// Return None if the tracemalloc module is disabled or if the memory block
+// is not tracked by tracemalloc.
+//
+// Raise an exception and return NULL on error.
+//
+// Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
     unsigned int domain,
     uintptr_t ptr);
@@ -142,7 +138,7 @@ extern PyObject* _PyTraceMalloc_GetTraces(void);
 extern PyObject* _PyTraceMalloc_GetObjectTraceback(PyObject *obj);
 
 /* Initialize tracemalloc */
-extern int _PyTraceMalloc_Init(void);
+extern PyStatus _PyTraceMalloc_Init(void);
 
 /* Start tracemalloc */
 extern int _PyTraceMalloc_Start(int max_nframe);

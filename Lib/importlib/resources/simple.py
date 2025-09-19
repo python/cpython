@@ -77,7 +77,7 @@ class ResourceHandle(Traversable):
 
     def __init__(self, parent: ResourceContainer, name: str):
         self.parent = parent
-        self.name = name  # type: ignore
+        self.name = name  # type: ignore[misc]
 
     def is_file(self):
         return True
@@ -88,7 +88,7 @@ class ResourceHandle(Traversable):
     def open(self, mode='r', *args, **kwargs):
         stream = self.parent.reader.open_binary(self.name)
         if 'b' not in mode:
-            stream = io.TextIOWrapper(*args, **kwargs)
+            stream = io.TextIOWrapper(stream, *args, **kwargs)
         return stream
 
     def joinpath(self, name):

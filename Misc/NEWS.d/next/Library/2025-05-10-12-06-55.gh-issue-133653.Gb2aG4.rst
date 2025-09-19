@@ -1,0 +1,7 @@
+Fix :class:`argparse.ArgumentParser` with the *formatter_class* argument.
+Fix TypeError when *formatter_class* is a custom subclass of
+:class:`!HelpFormatter`.
+Fix TypeError when *formatter_class* is not a subclass of
+:class:`!HelpFormatter` and non-standard *prefix_char* is used.
+Fix support of colorizing when *formatter_class* is not a subclass of
+:class:`!HelpFormatter`.

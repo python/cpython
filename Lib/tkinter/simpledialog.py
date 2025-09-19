@@ -262,7 +262,7 @@ def _setup_dialog(w):
         w.tk.call("::tk::unsupported::MacWindowStyle", "style",
                   w, "moveableModal", "")
     elif w._windowingsystem == "x11":
-        w.wm_attributes("-type", "dialog")
+        w.wm_attributes(type="dialog")
 
 # --------------------------------------------------------------------
 # convenience dialogues
@@ -357,7 +357,7 @@ def askinteger(title, prompt, **kw):
 
 
 class _QueryFloat(_QueryDialog):
-    errormessage = "Not a floating point value."
+    errormessage = "Not a floating-point value."
 
     def getresult(self):
         return self.getdouble(self.entry.get())

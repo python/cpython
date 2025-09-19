@@ -43,13 +43,9 @@ Py_TRACE_REFS
 
 Build option: ``./configure --with-trace-refs``.
 
-Turn on heavy reference debugging.  This is major surgery.  Every PyObject grows
-two more pointers, to maintain a doubly-linked list of all live heap-allocated
-objects.  Most built-in type objects are not in this list, as they're statically
-allocated.
-
-Note that because the fundamental PyObject layout changes, Python modules
-compiled with Py_TRACE_REFS are incompatible with modules compiled without it.
+Turn on heavy reference debugging.  This is major surgery.  All live
+heap-allocated objects are traced in a hash table.  Most built-in type objects
+are not in this list, as they're statically allocated.
 
 Special gimmicks:
 
@@ -82,22 +78,16 @@ Py_DEBUG
 
 This is what is generally meant by "a debug build" of Python.
 
-Py_DEBUG implies LLTRACE and Py_REF_DEBUG. In addition, C assert()s are enabled
+Py_DEBUG implies Py_REF_DEBUG. In addition, C assert()s are enabled
 (via the C way: by not defining NDEBUG), and some routines do additional sanity
 checks inside "#ifdef Py_DEBUG" blocks.
 
-
-LLTRACE
--------
-
-Compile in support for Low Level TRACE-ing of the main interpreter loop.
-
-When this preprocessor symbol is defined, before PyEval_EvalFrame executes a
-frame's code it checks the frame's global namespace for a variable
-"__lltrace__".  If such a variable is found, mounds of information about what
-the interpreter is doing are sprayed to stdout, such as every opcode and opcode
-argument and values pushed onto and popped off the value stack.
-
-Not useful very often, but very useful when needed.
-
-Py_DEBUG implies LLTRACE.
+Also, compile in support for "lltrace" (Low Level TRACE-ing) of the main
+interpreter loop. Before _PyEval_EvalFrameDefault executes a frame's code, it
+checks the frame's global namespace for a variable "__lltrace__" (as well as for
+the environment variable PYTHON_LLTRACE"). If such a variable is found, mounds
+of information about what the interpreter is doing are sprayed to stdout, such
+as every opcode and opcode argument and values pushed onto and popped off the
+value stack. Higher integer values for the environment variable result in more
+and more detail being printed (the global __lltrace__ always enables the maximum
+output). Not useful very often, but *very* useful when needed.

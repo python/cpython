@@ -1,16 +1,15 @@
 /* Testing module for multi-phase initialization of extension modules (PEP 489)
  */
 
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
+// Need limited C API version 3.13 for Py_mod_gil
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "Python.h"
 
 #ifdef MS_WINDOWS
-
-#include "pycore_fileutils.h"     // _Py_get_osfhandle()
-#include "pycore_runtime.h"       // _Py_ID()
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -32,28 +31,50 @@ static int execfunc(PyObject *m)
 PyModuleDef_Slot testconsole_slots[] = {
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
+
+/*[python input]
+class HANDLE_converter(CConverter):
+    type = 'void *'
+    format_unit = '"_Py_PARSE_UINTPTR"'
+
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=380aa5c91076742b]*/
+/*[python end generated code:]*/
 
 /*[clinic input]
 module _testconsole
 
 _testconsole.write_input
     file: object
-    s: PyBytesObject
+    s: Py_buffer
 
 Writes UTF-16-LE encoded bytes to the console as if typed by a user.
 [clinic start generated code]*/
 
 static PyObject *
-_testconsole_write_input_impl(PyObject *module, PyObject *file,
-                              PyBytesObject *s)
-/*[clinic end generated code: output=48f9563db34aedb3 input=4c774f2d05770bc6]*/
+_testconsole_write_input_impl(PyObject *module, PyObject *file, Py_buffer *s)
+/*[clinic end generated code: output=58631a8985426ad3 input=68062f1bb2e52206]*/
 {
     INPUT_RECORD *rec = NULL;
 
-    PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
-            &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
+    PyObject *mod = PyImport_ImportModule("_io");
+    if (mod == NULL) {
+        return NULL;
+    }
+
+    PyTypeObject *winconsoleio_type = (PyTypeObject *)PyObject_GetAttrString(mod, "_WindowsConsoleIO");
+    Py_DECREF(mod);
     if (winconsoleio_type == NULL) {
         return NULL;
     }
@@ -64,8 +85,8 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
         return NULL;
     }
 
-    const wchar_t *p = (const wchar_t *)PyBytes_AS_STRING(s);
-    DWORD size = (DWORD)PyBytes_GET_SIZE(s) / sizeof(wchar_t);
+    const wchar_t *p = (const wchar_t *)s->buf;
+    DWORD size = (DWORD)s->len / sizeof(wchar_t);
 
     rec = (INPUT_RECORD*)PyMem_Calloc(size, sizeof(INPUT_RECORD));
     if (!rec)
@@ -79,9 +100,11 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
         prec->Event.KeyEvent.uChar.UnicodeChar = *p;
     }
 
-    HANDLE hInput = _Py_get_osfhandle(((winconsoleio*)file)->fd);
-    if (hInput == INVALID_HANDLE_VALUE)
+    HANDLE hInput = (HANDLE)_get_osfhandle(((winconsoleio*)file)->fd);
+    if (hInput == INVALID_HANDLE_VALUE) {
+        PyErr_SetFromErrno(PyExc_OSError);
         goto error;
+    }
 
     DWORD total = 0;
     while (total < size) {
@@ -116,6 +139,7 @@ _testconsole_read_output_impl(PyObject *module, PyObject *file)
     Py_RETURN_NONE;
 }
 
+
 #include "clinic\_testconsole.c.h"
 
 PyMethodDef testconsole_methods[] = {
@@ -137,7 +161,7 @@ static PyModuleDef testconsole_def = {
 };
 
 PyMODINIT_FUNC
-PyInit__testconsole(PyObject *spec)
+PyInit__testconsole(void)
 {
     return PyModuleDef_Init(&testconsole_def);
 }

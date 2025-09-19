@@ -38,9 +38,12 @@ List Objects
    .. note::
 
       If *len* is greater than zero, the returned list object's items are
-      set to ``NULL``.  Thus you cannot use abstract API functions such as
-      :c:func:`PySequence_SetItem`  or expose the object to Python code before
-      setting all items to a real object with :c:func:`PyList_SetItem`.
+      set to ``NULL``. Thus you cannot use abstract API functions such as
+      :c:func:`PySequence_SetItem` or expose the object to Python code before
+      setting all items to a real object with :c:func:`PyList_SetItem` or
+      :c:func:`PyList_SET_ITEM()`. The following APIs are safe APIs before
+      the list is fully initialized: :c:func:`PyList_SetItem()` and :c:func:`PyList_SET_ITEM()`.
+
 
 
 .. c:function:: Py_ssize_t PyList_Size(PyObject *list)
@@ -56,12 +59,20 @@ List Objects
    Similar to :c:func:`PyList_Size`, but without error checking.
 
 
-.. c:function:: PyObject* PyList_GetItem(PyObject *list, Py_ssize_t index)
+.. c:function:: PyObject* PyList_GetItemRef(PyObject *list, Py_ssize_t index)
 
    Return the object at position *index* in the list pointed to by *list*.  The
    position must be non-negative; indexing from the end of the list is not
-   supported.  If *index* is out of bounds (<0 or >=len(list)),
+   supported.  If *index* is out of bounds (:code:`<0 or >=len(list)`),
    return ``NULL`` and set an :exc:`IndexError` exception.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: PyObject* PyList_GetItem(PyObject *list, Py_ssize_t index)
+
+   Like :c:func:`PyList_GetItemRef`, but returns a
+   :term:`borrowed reference` instead of a :term:`strong reference`.
 
 
 .. c:function:: PyObject* PyList_GET_ITEM(PyObject *list, Py_ssize_t i)
@@ -126,6 +137,30 @@ List Objects
    be ``NULL``, indicating the assignment of an empty list (slice deletion).
    Return ``0`` on success, ``-1`` on failure.  Indexing from the end of the
    list is not supported.
+
+
+.. c:function:: int PyList_Extend(PyObject *list, PyObject *iterable)
+
+   Extend *list* with the contents of *iterable*.  This is the same as
+   ``PyList_SetSlice(list, PY_SSIZE_T_MAX, PY_SSIZE_T_MAX, iterable)``
+   and analogous to ``list.extend(iterable)`` or ``list += iterable``.
+
+   Raise an exception and return ``-1`` if *list* is not a :class:`list`
+   object. Return 0 on success.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyList_Clear(PyObject *list)
+
+   Remove all items from *list*.  This is the same as
+   ``PyList_SetSlice(list, 0, PY_SSIZE_T_MAX, NULL)`` and analogous to
+   ``list.clear()`` or ``del list[:]``.
+
+   Raise an exception and return ``-1`` if *list* is not a :class:`list`
+   object.  Return 0 on success.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyList_Sort(PyObject *list)

@@ -1,0 +1,3 @@
+The :code:`INT` opcode of the C accelerator :mod:`!_pickle` module was updated
+to look only for "00" and "01" to push booleans onto the stack, aligning with
+the Python :mod:`pickle` module.

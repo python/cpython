@@ -1,0 +1,4 @@
+Fix quadratic complexity in processing specially crafted input in
+:class:`html.parser.HTMLParser`. End-of-file errors are now handled according
+to the HTML5 specs -- comments and declarations are automatically closed,
+tags are ignored.
