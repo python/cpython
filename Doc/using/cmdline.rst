@@ -1286,7 +1286,7 @@ conflict.
 .. envvar:: PYTHON_BASIC_COMPLETER
 
    If this variable is set to any value, PyREPL will use :mod:`rlcompleter` to
-   implement tab completion, instead of the default :mod:`_pyrepl.fancycompleter`.
+   implement tab completion, instead of the default one which uses colors.
 
    .. versionadded:: 3.15
 
