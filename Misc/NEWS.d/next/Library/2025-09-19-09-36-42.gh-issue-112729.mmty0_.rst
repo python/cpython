@@ -1,0 +1,2 @@
+Fix crash when calling ``_interpreters.create`` when the
+process is out of memory.
