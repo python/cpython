@@ -3144,11 +3144,19 @@ else ifneq ($(filter x86_64-%-linux-gnu,$(HOST_GNU_TYPE)),)
 JIT_STENCIL_HEADER = jit_stencils-$(HOST_GNU_TYPE).h
 endif
 
+ifdef JIT_STENCIL_HEADER
 jit_stencils.h $(JIT_STENCIL_HEADER): $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
 Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h $(JIT_STENCIL_HEADER)
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+else
+jit_stencils.h: $(JIT_DEPS)
+	@REGEN_JIT_COMMAND@
+
+Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+endif
 
 .PHONY: regen-jit
 regen-jit:
