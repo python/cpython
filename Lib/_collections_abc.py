@@ -49,7 +49,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
-           "ByteString", "Buffer",
+           "Buffer",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -1082,9 +1082,13 @@ class _DeprecateByteStringMeta(ABCMeta):
         return super().__instancecheck__(instance)
 
 class ByteString(Sequence, metaclass=_DeprecateByteStringMeta):
-    """This unifies bytes and bytearray.
+    """Deprecated ABC serving as a common supertype of ``bytes`` and ``bytearray``.
 
-    XXX Should add all their methods.
+    This ABC is scheduled for removal in Python 3.17.
+    Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+    implements the buffer protocol at runtime. For use in type annotations,
+    either use ``Buffer`` or a union that explicitly specifies the types your
+    code supports (e.g., ``bytes | bytearray | memoryview``).
     """
 
     __slots__ = ()
@@ -1161,3 +1165,13 @@ class MutableSequence(Sequence):
 
 MutableSequence.register(list)
 MutableSequence.register(bytearray)
+
+_deprecated_ByteString = globals().pop("ByteString")
+
+def __getattr__(attr):
+    if attr == "ByteString":
+        import warnings
+        warnings._deprecated("collections.abc.ByteString", remove=(3, 17))
+        globals()["ByteString"] = _deprecated_ByteString
+        return _deprecated_ByteString
+    raise AttributeError(f"module 'collections.abc' has no attribute {attr!r}")
