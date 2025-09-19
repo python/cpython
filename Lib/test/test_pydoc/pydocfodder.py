@@ -188,4 +188,4 @@ __repr__ = object.__repr__  # same name
 object_repr = object.__repr__
 get = {}.get  # same name
 dict_get = {}.get
-from math import sin
+from math import sin  # noqa: F401
