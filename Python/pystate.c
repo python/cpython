@@ -2783,13 +2783,13 @@ PyGILState_Ensure(void)
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
         // XXX Use PyInterpreterState_EnsureThreadState()?
-        if (PyInterpreterRef_Main(&ref) < 0) {
+        if (PyUnstable_GetDefaultInterpreterRef(&ref) < 0) {
             // The main interpreter has finished, so we don't have
             // any intepreter to make a thread state for. Hang the
             // thread to act as failure.
             PyThread_hang_thread();
         }
-        tcur = new_threadstate(PyInterpreterRef_AsInterpreter(ref),
+        tcur = new_threadstate(PyInterpreterRef_GetInterpreter(ref),
                                _PyThreadState_WHENCE_GILSTATE);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
@@ -3182,7 +3182,7 @@ ref_as_interp(PyInterpreterRef ref)
 }
 
 int
-PyInterpreterRef_Get(PyInterpreterRef *ref)
+PyInterpreterRef_FromCurrent(PyInterpreterRef *ref)
 {
     assert(ref != NULL);
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -3217,14 +3217,14 @@ PyInterpreterRef_Close(PyInterpreterRef ref)
 }
 
 PyInterpreterState *
-PyInterpreterRef_AsInterpreter(PyInterpreterRef ref)
+PyInterpreterRef_GetInterpreter(PyInterpreterRef ref)
 {
     PyInterpreterState *interp = ref_as_interp(ref);
     return interp;
 }
 
 int
-PyInterpreterWeakRef_Get(PyInterpreterWeakRef *wref_ptr)
+PyInterpreterWeakRef_FromCurrent(PyInterpreterWeakRef *wref_ptr)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     /* PyInterpreterWeakRef_Close() can be called without an attached thread
@@ -3270,7 +3270,7 @@ PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref_handle)
 }
 
 int
-PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref_handle, PyInterpreterRef *strong_ptr)
+PyInterpreterWeakRef_Promote(PyInterpreterWeakRef wref_handle, PyInterpreterRef *strong_ptr)
 {
     assert(strong_ptr != NULL);
     _PyInterpreterWeakRef *wref = wref_handle_as_ptr(wref_handle);
@@ -3291,7 +3291,7 @@ PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref_handle, PyInterpreterRef
 }
 
 int
-PyInterpreterRef_Main(PyInterpreterRef *strong_ptr)
+PyUnstable_GetDefaultInterpreterRef(PyInterpreterRef *strong_ptr)
 {
     assert(strong_ptr != NULL);
     _PyRuntimeState *runtime = &_PyRuntime;

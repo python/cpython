@@ -286,11 +286,11 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
 
 typedef uintptr_t PyInterpreterRef;
 
-PyAPI_FUNC(int) PyInterpreterRef_Get(PyInterpreterRef *ref);
+PyAPI_FUNC(int) PyInterpreterRef_FromCurrent(PyInterpreterRef *ref);
 PyAPI_FUNC(PyInterpreterRef) PyInterpreterRef_Dup(PyInterpreterRef ref);
-PyAPI_FUNC(int) PyInterpreterRef_Main(PyInterpreterRef *ref);
+PyAPI_FUNC(int) PyUnstable_GetDefaultInterpreterRef(PyInterpreterRef *ref);
 PyAPI_FUNC(void) PyInterpreterRef_Close(PyInterpreterRef ref);
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterRef_AsInterpreter(PyInterpreterRef ref);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterRef_GetInterpreter(PyInterpreterRef ref);
 
 #define PyInterpreterRef_Close(ref) do {    \
     PyInterpreterRef_Close(ref);            \
@@ -306,9 +306,9 @@ typedef struct _PyInterpreterWeakRef {
 
 typedef _PyInterpreterWeakRef *PyInterpreterWeakRef;
 
-PyAPI_FUNC(int) PyInterpreterWeakRef_Get(PyInterpreterWeakRef *ptr);
+PyAPI_FUNC(int) PyInterpreterWeakRef_FromCurrent(PyInterpreterWeakRef *ptr);
 PyAPI_FUNC(PyInterpreterWeakRef) PyInterpreterWeakRef_Dup(PyInterpreterWeakRef wref);
-PyAPI_FUNC(int) PyInterpreterWeakRef_AsStrong(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr);
+PyAPI_FUNC(int) PyInterpreterWeakRef_Promote(PyInterpreterWeakRef wref, PyInterpreterRef *strong_ptr);
 PyAPI_FUNC(void) PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref);
 
 #define PyInterpreterWeakRef_Close(ref) do {    \

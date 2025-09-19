@@ -2352,7 +2352,7 @@ test_thread_state_ensure(void)
     PyThread_handle_t handle;
     PyThread_ident_t ident;
     PyInterpreterRef ref;
-    if (PyInterpreterRef_Get(&ref) < 0) {
+    if (PyInterpreterRef_FromCurrent(&ref) < 0) {
         return -1;
     };
     ThreadData data = { ref };
@@ -2401,22 +2401,22 @@ test_main_interpreter_ref(void)
 {
     // It should not work before the runtime has started.
     PyInterpreterRef ref;
-    int res = PyInterpreterRef_Main(&ref);
+    int res = PyUnstable_GetDefaultInterpreterRef(&ref);
     (void)res;
     assert(res == -1);
 
     _testembed_initialize();
 
     // Main interpreter is initialized and ready.
-    res = PyInterpreterRef_Main(&ref);
+    res = PyUnstable_GetDefaultInterpreterRef(&ref);
     assert(res == 0);
-    assert(PyInterpreterRef_AsInterpreter(ref) == PyInterpreterState_Main());
+    assert(PyInterpreterRef_GetInterpreter(ref) == PyInterpreterState_Main());
     PyInterpreterRef_Close(ref);
 
     Py_Finalize();
 
     // Main interpreter is dead, we can no longer acquire references to it.
-    res = PyInterpreterRef_Main(&ref);
+    res = PyUnstable_GetDefaultInterpreterRef(&ref);
     assert(res == -1);
     return 0;
 }

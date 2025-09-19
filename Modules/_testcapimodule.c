@@ -2576,7 +2576,7 @@ static PyInterpreterRef
 get_strong_ref(void)
 {
     PyInterpreterRef ref;
-    if (PyInterpreterRef_Get(&ref) < 0) {
+    if (PyInterpreterRef_FromCurrent(&ref) < 0) {
         Py_FatalError("strong reference should not have failed");
     }
     return ref;
@@ -2587,10 +2587,10 @@ test_interp_ref_common(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     PyInterpreterRef ref = get_strong_ref();
-    assert(PyInterpreterRef_AsInterpreter(ref) == interp);
+    assert(PyInterpreterRef_GetInterpreter(ref) == interp);
 
     PyInterpreterRef ref_2 = PyInterpreterRef_Dup(ref);
-    assert(PyInterpreterRef_AsInterpreter(ref_2) == interp);
+    assert(PyInterpreterRef_GetInterpreter(ref_2) == interp);
 
     // We can close the references in any order
     PyInterpreterRef_Close(ref);
@@ -2708,7 +2708,7 @@ test_thread_state_ensure_crossinterp(PyObject *self, PyObject *unused)
 
     PyThreadState *ensured_tstate = PyThreadState_Get();
     assert(ensured_tstate != save_tstate);
-    assert(PyInterpreterState_Get() == PyInterpreterRef_AsInterpreter(ref));
+    assert(PyInterpreterState_Get() == PyInterpreterRef_GetInterpreter(ref));
     assert(PyGILState_GetThisThreadState() == ensured_tstate);
 
     // Now though, we should reactivate the thread state
@@ -2743,20 +2743,20 @@ test_weak_interpreter_ref_after_shutdown(PyObject *self, PyObject *unused)
         return PyErr_NoMemory();
     }
 
-    int res = PyInterpreterWeakRef_Get(&wref);
+    int res = PyInterpreterWeakRef_FromCurrent(&wref);
     (void)res;
     assert(res == 0);
 
     // As a sanity check, ensure that the weakref actually works
     PyInterpreterRef ref;
-    res = PyInterpreterWeakRef_AsStrong(wref, &ref);
+    res = PyInterpreterWeakRef_Promote(wref, &ref);
     assert(res == 0);
     PyInterpreterRef_Close(ref);
 
     // Now, destroy the interpreter and try to acquire a weak reference.
     // It should fail.
     Py_EndInterpreter(interp_tstate);
-    res = PyInterpreterWeakRef_AsStrong(wref, &ref);
+    res = PyInterpreterWeakRef_Promote(wref, &ref);
     assert(res == -1);
 
     PyThreadState_Swap(save_tstate);
@@ -2767,7 +2767,7 @@ static PyObject *
 foo(PyObject *self, PyObject *foo)
 {
     PyInterpreterRef ref;
-    PyInterpreterRef_Get(&ref);
+    PyInterpreterRef_FromCurrent(&ref);
     PyInterpreterRef_Close(ref);
     Py_RETURN_NONE;
 }

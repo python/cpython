@@ -2395,7 +2395,7 @@ test_interp_refcount(PyObject *self, PyObject *unused)
     assert(_PyInterpreterState_Refcount(interp) == 0);
     PyInterpreterRef refs[NUM_REFS];
     for (int i = 0; i < NUM_REFS; ++i) {
-        int res = PyInterpreterRef_Get(&refs[i]);
+        int res = PyInterpreterRef_FromCurrent(&refs[i]);
         (void)res;
         assert(res == 0);
         assert(_PyInterpreterState_Refcount(interp) == i + 1);
@@ -2414,7 +2414,7 @@ test_interp_weakref_incref(PyObject *self, PyObject *unused)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     PyInterpreterWeakRef wref;
-    if (PyInterpreterWeakRef_Get(&wref) < 0) {
+    if (PyInterpreterWeakRef_FromCurrent(&wref) < 0) {
         return NULL;
     }
     assert(_PyInterpreterState_Refcount(interp) == 0);
@@ -2422,10 +2422,10 @@ test_interp_weakref_incref(PyObject *self, PyObject *unused)
     PyInterpreterRef refs[NUM_REFS];
 
     for (int i = 0; i < NUM_REFS; ++i) {
-        int res = PyInterpreterWeakRef_AsStrong(wref, &refs[i]);
+        int res = PyInterpreterWeakRef_Promote(wref, &refs[i]);
         (void)res;
         assert(res == 0);
-        assert(PyInterpreterRef_AsInterpreter(refs[i]) == interp);
+        assert(PyInterpreterRef_GetInterpreter(refs[i]) == interp);
         assert(_PyInterpreterState_Refcount(interp) == i + 1);
     }
 
