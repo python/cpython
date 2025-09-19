@@ -39,10 +39,13 @@ typedef struct _PyUOpInstruction{
 #define UOP_MAX_TRACE_LENGTH 1200
 #define UOP_BUFFER_SIZE (UOP_MAX_TRACE_LENGTH * sizeof(_PyUOpInstruction))
 
-// This is the length of the trace we record.
-// This includes the inline caches.
-#define TRACE_MAX_TRACE_LENGTH 2000
-#define TRACER_BUFFER_SIZE ((int)(TRACE_MAX_TRACE_LENGTH * sizeof(_Py_CODEUNIT)))
+/* Bloom filter with m = 256
+ * https://en.wikipedia.org/wiki/Bloom_filter */
+#define _Py_BLOOM_FILTER_WORDS 8
+
+typedef struct {
+    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
+} _PyBloomFilter;
 
 #ifdef __cplusplus
 }

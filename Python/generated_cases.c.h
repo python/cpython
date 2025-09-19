@@ -7663,25 +7663,16 @@
                     }
                     if (tstate->interp->jit_tracer_code_buffer == NULL) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
-                        tstate->interp->jit_tracer_code_buffer = (_Py_CODEUNIT *)_PyObject_VirtualAlloc(TRACER_BUFFER_SIZE);
+                        tstate->interp->jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (tstate->interp->jit_tracer_code_buffer == NULL) {
                             DISPATCH();
                         }
-                        tstate->interp->jit_tracer_code_curr_size = 0;
                     }
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     ENTER_TRACING();
-                    if (tstate->interp->jit_tracer_code_curr_size == 0) {
-                        tstate->interp->jit_tracer_initial_instr = next_instr;
-                        tstate->interp->jit_tracer_initial_code = _PyFrame_GetCode(frame);
-                        _PyFrame_SetStackPointer(frame, stack_pointer);
-                        tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
-                        stack_pointer = _PyFrame_GetStackPointer(frame);
-                        tstate->interp->jit_tracer_seen_initial_before = 0;
-                        tstate->interp->jit_completed_loop = false;
-                        tstate->interp->jit_tracer_initial_stack_depth = (int)STACK_LEVEL();
-                        tstate->interp->jit_tracer_initial_chain_depth = 0;
-                    }
                     DISPATCH();
                 }
                 else {
@@ -11425,41 +11416,6 @@
             top = temp;
             stack_pointer[-2 - (oparg-2)] = bottom;
             stack_pointer[-1] = top;
-            DISPATCH();
-        }
-
-        TARGET(TIER1_GUARD_IP) {
-            #if _Py_TAIL_CALL_INTERP
-            int opcode = TIER1_GUARD_IP;
-            (void)(opcode);
-            #endif
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
-            next_instr += 5;
-            INSTRUCTION_STATS(TIER1_GUARD_IP);
-            PyObject *func_ptr = read_obj(&this_instr[1].cache);
-            (void)func_ptr;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            (void)(func_ptr);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            DISPATCH();
-        }
-
-        TARGET(TIER1_SET_IP) {
-            #if _Py_TAIL_CALL_INTERP
-            int opcode = TIER1_SET_IP;
-            (void)(opcode);
-            #endif
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
-            frame->instr_ptr = next_instr;
-            next_instr += 5;
-            INSTRUCTION_STATS(TIER1_SET_IP);
-            PyObject *ip = read_obj(&this_instr[1].cache);
-            (void)ip;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            (void)(ip);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             DISPATCH();
         }
 
@@ -19877,25 +19833,16 @@
                     }
                     if (tstate->interp->jit_tracer_code_buffer == NULL) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
-                        tstate->interp->jit_tracer_code_buffer = (_Py_CODEUNIT *)_PyObject_VirtualAlloc(TRACER_BUFFER_SIZE);
+                        tstate->interp->jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (tstate->interp->jit_tracer_code_buffer == NULL) {
                             TRACING_DISPATCH();
                         }
-                        tstate->interp->jit_tracer_code_curr_size = 0;
                     }
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     ENTER_TRACING();
-                    if (tstate->interp->jit_tracer_code_curr_size == 0) {
-                        tstate->interp->jit_tracer_initial_instr = next_instr;
-                        tstate->interp->jit_tracer_initial_code = _PyFrame_GetCode(frame);
-                        _PyFrame_SetStackPointer(frame, stack_pointer);
-                        tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
-                        stack_pointer = _PyFrame_GetStackPointer(frame);
-                        tstate->interp->jit_tracer_seen_initial_before = 0;
-                        tstate->interp->jit_completed_loop = false;
-                        tstate->interp->jit_tracer_initial_stack_depth = (int)STACK_LEVEL();
-                        tstate->interp->jit_tracer_initial_chain_depth = 0;
-                    }
                     TRACING_DISPATCH();
                 }
                 else {
@@ -23747,41 +23694,6 @@
             top = temp;
             stack_pointer[-2 - (oparg-2)] = bottom;
             stack_pointer[-1] = top;
-            TRACING_DISPATCH();
-        }
-
-        TRACING_TARGET(TIER1_GUARD_IP) {
-            #if _Py_TAIL_CALL_INTERP
-            int opcode = TIER1_GUARD_IP;
-            (void)(opcode);
-            #endif
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
-            next_instr += 5;
-            INSTRUCTION_STATS(TIER1_GUARD_IP);
-            PyObject *func_ptr = read_obj(&this_instr[1].cache);
-            (void)func_ptr;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            (void)(func_ptr);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            TRACING_DISPATCH();
-        }
-
-        TRACING_TARGET(TIER1_SET_IP) {
-            #if _Py_TAIL_CALL_INTERP
-            int opcode = TIER1_SET_IP;
-            (void)(opcode);
-            #endif
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
-            frame->instr_ptr = next_instr;
-            next_instr += 5;
-            INSTRUCTION_STATS(TIER1_SET_IP);
-            PyObject *ip = read_obj(&this_instr[1].cache);
-            (void)ip;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            (void)(ip);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             TRACING_DISPATCH();
         }
 

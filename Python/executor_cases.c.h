@@ -7560,15 +7560,9 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
-                tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
-                tstate->interp->jit_tracer_initial_instr = target;
-                tstate->interp->jit_tracer_initial_code = _PyFrame_GetCode(frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
+                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                tstate->interp->jit_tracer_seen_initial_before = 0;
-                tstate->interp->jit_completed_loop = false;
-                exit->temperature = restart_backoff_counter(temperature);
                 GOTO_TIER_ONE(target, 1);
             }
             assert(tstate->jit_exit == exit);
@@ -7580,9 +7574,6 @@
         case _GUARD_IP: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
             if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                fprintf(stdout, "d:%p:%p\n", frame->instr_ptr, ip);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 GOTO_TIER_ONE(frame->instr_ptr, 1);
             }
             break;

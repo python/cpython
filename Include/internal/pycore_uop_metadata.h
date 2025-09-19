@@ -341,7 +341,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_ERROR_POP_N] = HAS_ARG_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_PERIODIC_FLAG,
     [_COLD_EXIT] = HAS_ESCAPES_FLAG,
-    [_GUARD_IP] = HAS_ESCAPES_FLAG,
+    [_GUARD_IP] = 0,
     [_DYNAMIC_EXIT] = 0,
 };
 

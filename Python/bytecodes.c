@@ -2970,24 +2970,14 @@ dummy_func(
                     start--;
                 }
                 if (tstate->interp->jit_tracer_code_buffer == NULL) {
-                    tstate->interp->jit_tracer_code_buffer = (_Py_CODEUNIT *)_PyObject_VirtualAlloc(TRACER_BUFFER_SIZE);
+                    tstate->interp->jit_tracer_code_buffer = (_PyUOpInstruction *)_PyObject_VirtualAlloc(UOP_BUFFER_SIZE);
                     if (tstate->interp->jit_tracer_code_buffer == NULL) {
                         // Don't error, just go to next instruction.
                         DISPATCH();
                     }
-                    tstate->interp->jit_tracer_code_curr_size = 0;
                 }
+                _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0);
                 ENTER_TRACING();
-                // Nothing in the buffer, begin tracing!
-                if (tstate->interp->jit_tracer_code_curr_size == 0) {
-                    tstate->interp->jit_tracer_initial_instr = next_instr;
-                    tstate->interp->jit_tracer_initial_code = _PyFrame_GetCode(frame);
-                    tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
-                    tstate->interp->jit_tracer_seen_initial_before = 0;
-                    tstate->interp->jit_completed_loop = false;
-                    tstate->interp->jit_tracer_initial_stack_depth = (int)STACK_LEVEL();
-                    tstate->interp->jit_tracer_initial_chain_depth = 0;
-                }
                 // Don't add the JUMP_BACKWARD_JIT instruction to the trace.
                 DISPATCH();
             }
@@ -5443,13 +5433,7 @@ dummy_func(
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
-                tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
-                tstate->interp->jit_tracer_initial_instr = target;
-                tstate->interp->jit_tracer_initial_code = _PyFrame_GetCode(frame);
-                tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
-                tstate->interp->jit_tracer_seen_initial_before = 0;
-                tstate->interp->jit_completed_loop = false;
-                exit->temperature = restart_backoff_counter(temperature);
+                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth);
                 GOTO_TIER_ONE(target, 1);
             }
             assert(tstate->jit_exit == exit);
@@ -5457,14 +5441,8 @@ dummy_func(
             TIER2_TO_TIER2(exit->executor);
         }
 
-
-        no_save_ip tier1 inst(TIER1_GUARD_IP, (func_ptr/4 --)) {
-            (void)(func_ptr);
-        }
-
         tier2 op(_GUARD_IP, (ip/4 --)) {
             if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
-                fprintf(stdout, "d:%p:%p\n", frame->instr_ptr, ip);
                 GOTO_TIER_ONE(frame->instr_ptr, 1);
             }
         }
@@ -5472,11 +5450,6 @@ dummy_func(
         tier2 op(_DYNAMIC_EXIT, (ip/4 --)) {
             GOTO_TIER_ONE(frame->instr_ptr, 1);
         }
-
-        tier1 inst(TIER1_SET_IP, (ip/4 --)) {
-            (void)(ip);
-        }
-
 
         label(pop_2_error) {
             stack_pointer -= 2;

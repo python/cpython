@@ -21,14 +21,6 @@ typedef struct _PyExecutorLinkListNode {
 } _PyExecutorLinkListNode;
 
 
-/* Bloom filter with m = 256
- * https://en.wikipedia.org/wiki/Bloom_filter */
-#define _Py_BLOOM_FILTER_WORDS 8
-
-typedef struct {
-    uint32_t bits[_Py_BLOOM_FILTER_WORDS];
-} _PyBloomFilter;
-
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
@@ -364,6 +356,17 @@ PyAPI_FUNC(int) _PyDumpExecutors(FILE *out);
 extern void _Py_ClearExecutorDeletionList(PyInterpreterState *interp);
 #endif
 
+int
+_PyJIT_translate_single_bytecode_to_trace(
+    PyThreadState *tstate,
+    _Py_CODEUNIT *this_instr,
+    _Py_CODEUNIT *next_instr,
+    PyCodeObject *code,
+    PyFunctionObject *func,
+    int oparg);
+
+void
+_PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int curr_stackdepth, int chain_depth);
 #ifdef __cplusplus
 }
 #endif

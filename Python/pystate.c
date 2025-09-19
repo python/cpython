@@ -815,7 +815,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         interp->jit_uop_buffer = NULL;
     }
     if (interp->jit_tracer_code_buffer != NULL) {
-        _PyObject_VirtualFree(interp->jit_tracer_code_buffer, TRACER_BUFFER_SIZE);
+        _PyObject_VirtualFree(interp->jit_tracer_code_buffer, UOP_BUFFER_SIZE);
         interp->jit_tracer_code_buffer = NULL;
     }
 #endif
