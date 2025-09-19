@@ -1,0 +1,3 @@
+:func:`tempfile.TemporaryFile` no longer uses :data:`os.O_EXCL` with
+:data:`os.O_TMPFILE`, so it's possible to use ``linkat()`` on the file
+descriptor. Patch by Victor Stinner.

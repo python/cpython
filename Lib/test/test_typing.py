@@ -13,6 +13,7 @@ import os
 import pickle
 import re
 import sys
+import warnings
 from unittest import TestCase, main, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
@@ -3958,6 +3959,7 @@ class ProtocolTests(BaseTestCase):
 
     def test_defining_generic_protocols(self):
         T = TypeVar('T')
+        T2 = TypeVar('T2')
         S = TypeVar('S')
 
         @runtime_checkable
@@ -3967,17 +3969,26 @@ class ProtocolTests(BaseTestCase):
         class P(PR[int, T], Protocol[T]):
             y = 1
 
+        self.assertEqual(P.__parameters__, (T,))
+
         with self.assertRaises(TypeError):
             PR[int]
         with self.assertRaises(TypeError):
             P[int, str]
+        with self.assertRaisesRegex(
+            TypeError,
+            re.escape('Some type variables (~S) are not listed in Protocol[~T, ~T2]'),
+        ):
+            class ExtraTypeVars(P[S], Protocol[T, T2]): ...
 
         class C(PR[int, T]): pass
 
+        self.assertEqual(C.__parameters__, (T,))
         self.assertIsInstance(C[str](), C)
 
     def test_defining_generic_protocols_old_style(self):
         T = TypeVar('T')
+        T2 = TypeVar('T2')
         S = TypeVar('S')
 
         @runtime_checkable
@@ -3996,8 +4007,18 @@ class ProtocolTests(BaseTestCase):
         class P1(Protocol, Generic[T]):
             def bar(self, x: T) -> str: ...
 
+        self.assertEqual(P1.__parameters__, (T,))
+
         class P2(Generic[T], Protocol):
             def bar(self, x: T) -> str: ...
+
+        self.assertEqual(P2.__parameters__, (T,))
+
+        msg = re.escape('Some type variables (~S) are not listed in Protocol[~T, ~T2]')
+        with self.assertRaisesRegex(TypeError, msg):
+            class ExtraTypeVars(P1[S], Protocol[T, T2]): ...
+        with self.assertRaisesRegex(TypeError, msg):
+            class ExtraTypeVars(P2[S], Protocol[T, T2]): ...
 
         @runtime_checkable
         class PSub(P1[str], Protocol):
@@ -4010,6 +4031,28 @@ class ProtocolTests(BaseTestCase):
                 return x
 
         self.assertIsInstance(Test(), PSub)
+
+    def test_protocol_parameter_order(self):
+        # https://github.com/python/cpython/issues/137191
+        T1 = TypeVar("T1")
+        T2 = TypeVar("T2", default=object)
+
+        class A(Protocol[T1]): ...
+
+        class B0(A[T2], Generic[T1, T2]): ...
+        self.assertEqual(B0.__parameters__, (T1, T2))
+
+        class B1(A[T2], Protocol, Generic[T1, T2]): ...
+        self.assertEqual(B1.__parameters__, (T1, T2))
+
+        class B2(A[T2], Protocol[T1, T2]): ...
+        self.assertEqual(B2.__parameters__, (T1, T2))
+
+        class B3[T1, T2](A[T2], Protocol):
+            @staticmethod
+            def get_typeparams():
+                return (T1, T2)
+        self.assertEqual(B3.__parameters__, B3.get_typeparams())
 
     def test_pep695_generic_protocol_callable_members(self):
         @runtime_checkable
@@ -5802,6 +5845,23 @@ class GenericTests(BaseTestCase):
                     with self.assertRaises(TypeError):
                         a[int]
 
+    def test_return_non_tuple_while_unpacking(self):
+        # GH-138497: GenericAlias objects didn't ensure that __typing_subst__ actually
+        # returned a tuple
+        class EvilTypeVar:
+            __typing_is_unpacked_typevartuple__ = True
+            def __typing_prepare_subst__(*_):
+                return None  # any value
+            def __typing_subst__(*_):
+                return 42  # not tuple
+
+        evil = EvilTypeVar()
+        # Create a dummy TypeAlias that will be given the evil generic from
+        # above.
+        type type_alias[*_] = 0
+        with self.assertRaisesRegex(TypeError, ".+__typing_subst__.+tuple.+int.*"):
+            type_alias[evil][0]
+
 
 class ClassVarTests(BaseTestCase):
 
@@ -7113,6 +7173,19 @@ class GetTypeHintsTests(BaseTestCase):
         assert isinstance(get_type_hints(func)['x'], MyAlias)
         assert isinstance(get_type_hints(func)['y'], MyAlias)
 
+    def test_stringified_typeddict(self):
+        ns = run_code(
+            """
+            from __future__ import annotations
+            from typing import TypedDict
+            class TD[UniqueT](TypedDict):
+                a: UniqueT
+            """
+        )
+        TD = ns['TD']
+        self.assertEqual(TD.__annotations__, {'a': EqualToForwardRef('UniqueT', owner=TD, module=TD.__module__)})
+        self.assertEqual(get_type_hints(TD), {'a': TD.__type_params__[0]})
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -7426,6 +7499,25 @@ class CollectionsAbcTests(BaseTestCase):
     def test_mutablesequence(self):
         self.assertIsInstance([], typing.MutableSequence)
         self.assertNotIsInstance((), typing.MutableSequence)
+
+    def test_bytestring(self):
+        previous_typing_module = sys.modules.pop("typing", None)
+        self.addCleanup(sys.modules.__setitem__, "typing", previous_typing_module)
+
+        with self.assertWarns(DeprecationWarning):
+            from typing import ByteString
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(b'', ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(bytearray(b''), ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsSubclass(bytes, ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsSubclass(bytearray, ByteString)
+        with self.assertWarns(DeprecationWarning):
+            class Foo(ByteString): ...
+        with self.assertWarns(DeprecationWarning):
+            class Bar(ByteString, typing.Awaitable): ...
 
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
@@ -8598,8 +8690,8 @@ class TypedDictTests(BaseTestCase):
                     child = _make_td(
                         child_future, "Child", {"child": "int"}, "Base", {"Base": base}
                     )
-                    base_anno = ForwardRef("int", module="builtins") if base_future else int
-                    child_anno = ForwardRef("int", module="builtins") if child_future else int
+                    base_anno = ForwardRef("int", module="builtins", owner=base) if base_future else int
+                    child_anno = ForwardRef("int", module="builtins", owner=child) if child_future else int
                     self.assertEqual(base.__annotations__, {'base': base_anno})
                     self.assertEqual(
                         child.__annotations__, {'child': child_anno, 'base': base_anno}
@@ -9746,6 +9838,19 @@ class AnnotatedTests(BaseTestCase):
         self.assertIs(type(field_c2.__metadata__[0]), float)
         self.assertIs(type(field_c3.__metadata__[0]), bool)
 
+    def test_forwardref_partial_evaluation(self):
+        # Test that Annotated partially evaluates if it contains a ForwardRef
+        # See: https://github.com/python/cpython/issues/137706
+        def f(x: Annotated[undefined, '']): pass
+
+        ann = annotationlib.get_annotations(f, format=annotationlib.Format.FORWARDREF)
+
+        # Test that the attributes are retrievable from the partially evaluated annotation
+        x_ann = ann['x']
+        self.assertIs(get_origin(x_ann), Annotated)
+        self.assertEqual(x_ann.__origin__, EqualToForwardRef('undefined', owner=f))
+        self.assertEqual(x_ann.__metadata__, ('',))
+
 
 class TypeAliasTests(BaseTestCase):
     def test_canonical_usage_with_variable_annotation(self):
@@ -10360,6 +10465,10 @@ SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 class SpecialAttrsTests(BaseTestCase):
 
     def test_special_attrs(self):
+        with warnings.catch_warnings(
+            action='ignore', category=DeprecationWarning
+        ):
+            typing_ByteString = typing.ByteString
         cls_to_check = {
             # ABC classes
             typing.AbstractSet: 'AbstractSet',
@@ -10368,6 +10477,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.AsyncIterable: 'AsyncIterable',
             typing.AsyncIterator: 'AsyncIterator',
             typing.Awaitable: 'Awaitable',
+            typing_ByteString: 'ByteString',
             typing.Callable: 'Callable',
             typing.ChainMap: 'ChainMap',
             typing.Collection: 'Collection',
@@ -10720,7 +10830,8 @@ class AllTests(BaseTestCase):
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and
                 not k.upper() == k and
-                # but export all things that have __module__ == 'typing'
+                k not in {"ByteString"} and
+                # but export all other things that have __module__ == 'typing'
                 getattr(v, '__module__', None) == typing.__name__
             )
         }

@@ -1,0 +1,1 @@
+Ensure reproducible builds by making JIT stencil header generation deterministic.

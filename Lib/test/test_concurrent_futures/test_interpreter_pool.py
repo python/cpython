@@ -1,3 +1,4 @@
+import _thread
 import asyncio
 import contextlib
 import io
@@ -498,6 +499,20 @@ class InterpreterPoolExecutorTest(
         self.assertEqual(p.stdout.decode(), '')
         self.assertEqual(p.stderr.decode(), '')
 
+    def test_thread_name_prefix(self):
+        self.assertStartsWith(self.executor._thread_name_prefix,
+                              "InterpreterPoolExecutor-")
+
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_thread_name_prefix_with_thread_get_name(self):
+        def get_thread_name():
+            import _thread
+            return _thread._get_name()
+
+        # Some platforms (Linux) are using 16 bytes to store the thread name,
+        # so only compare the first 15 bytes (without the trailing \n).
+        self.assertStartsWith(self.executor.submit(get_thread_name).result(),
+                              "InterpreterPoolExecutor-"[:15])
 
 class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
 
@@ -512,7 +527,7 @@ class AsyncioTest(InterpretersMixin, testasyncio_utils.TestCase):
         # tests left a policy in place, just in case.
         policy = support.maybe_get_event_loop_policy()
         assert policy is None, policy
-        cls.addClassCleanup(lambda: asyncio._set_event_loop_policy(None))
+        cls.addClassCleanup(lambda: asyncio.events._set_event_loop_policy(None))
 
     def setUp(self):
         super().setUp()
