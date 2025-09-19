@@ -2594,6 +2594,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_ast \
 		test/test_ast/data \
 		test/archivetestdata \
+		test/audit_test_data \
 		test/audiodata \
 		test/certdata \
 		test/certdata/capath \
