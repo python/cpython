@@ -1,2 +1,0 @@
-``make clinic`` now runs Argument Clinic using the ``--force`` option,
-thus forcefully regenerating generated code.

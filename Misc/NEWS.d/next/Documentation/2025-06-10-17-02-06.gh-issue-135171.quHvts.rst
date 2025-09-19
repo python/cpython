@@ -1,0 +1,2 @@
+Document that the :term:`iterator` for the leftmost :keyword:`!for` clause
+in the generator expression is created immediately.

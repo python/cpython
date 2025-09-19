@@ -1,0 +1,3 @@
+:mod:`xml.etree.ElementTree`: Fix a crash in :meth:`Element.__deepcopy__
+<object.__deepcopy__>` when the element is concurrently mutated.
+Patch by Bénédikt Tran.

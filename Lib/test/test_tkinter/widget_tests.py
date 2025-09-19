@@ -6,17 +6,16 @@ from test.test_tkinter.support import (AbstractTkTest, requires_tk, tk_version,
                                   pixels_conv, tcl_obj_eq)
 import test.support
 
-
 _sentinel = object()
 
+# Options which accept all values allowed by Tk_GetPixels
+# borderwidth = bd
+
 class AbstractWidgetTest(AbstractTkTest):
-    _default_pixels = '' if tk_version >= (9, 0) else -1 if tk_version >= (8, 7) else ''
-    _conv_pixels = round
-    _conv_pad_pixels = None
-    _stringify = False
-    _clip_highlightthickness = True
-    _clip_pad = False
-    _clip_borderwidth = False
+    _default_pixels = ''   # Value for unset pixel options.
+    _rounds_pixels = True  # True if some pixel options are rounded.
+    _no_round = {}         # Pixel options which are not rounded nonetheless
+    _stringify = False     # Whether to convert tuples to strings
     _allow_empty_justify = False
 
     @property
@@ -44,6 +43,9 @@ class AbstractWidgetTest(AbstractTkTest):
         widget[name] = value
         if expected is _sentinel:
             expected = value
+        if name in self._clipped:
+            if not isinstance(expected, str):
+                expected = max(expected, 0)
         if conv:
             expected = conv(expected)
         if self._stringify or not self.wantobjects:
@@ -63,7 +65,7 @@ class AbstractWidgetTest(AbstractTkTest):
         orig = widget[name]
         if errmsg is not None:
             errmsg = errmsg.format(re.escape(str(value)))
-            errmsg = fr'\A{errmsg}\Z'
+            errmsg = fr'\A{errmsg}\z'
         with self.assertRaisesRegex(tkinter.TclError, errmsg or ''):
             widget[name] = value
         self.assertEqual(widget[name], orig)
@@ -140,14 +142,17 @@ class AbstractWidgetTest(AbstractTkTest):
             errmsg = 'bad' + errmsg2
         self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
 
-    def checkPixelsParam(self, widget, name, *values,
-                         conv=None, **kwargs):
-        if conv is None:
-            conv = self._conv_pixels
+    def checkPixelsParam(self, widget, name, *values, conv=None, **kwargs):
+        if not self._rounds_pixels or name in self._no_round:
+            conv = False
+        elif conv != str:
+            conv = round
         for value in values:
             expected = _sentinel
             conv1 = conv
             if isinstance(value, str):
+                if not getattr(self, '_converts_pixels', True):
+                    conv1 = str
                 if conv1 and conv1 is not str:
                     expected = pixels_conv(value) * self.scaling
                     conv1 = round
@@ -172,8 +177,12 @@ class AbstractWidgetTest(AbstractTkTest):
     def checkImageParam(self, widget, name):
         image = tkinter.PhotoImage(master=self.root, name='image1')
         self.checkParam(widget, name, image, conv=str)
+        if tk_version < (9, 0):
+            errmsg = 'image "spam" doesn\'t exist'
+        else:
+            errmsg = 'image "spam" does not exist'
         self.checkInvalidParam(widget, name, 'spam',
-                errmsg='image "spam" doesn\'t exist')
+                               errmsg=errmsg)
         widget[name] = ''
 
     def checkVariableParam(self, widget, name, var):
@@ -215,30 +224,79 @@ class AbstractWidgetTest(AbstractTkTest):
                     print('%s.OPTIONS doesn\'t contain "%s"' %
                           (self.__class__.__name__, k))
 
+class PixelOptionsTests:
+    """Standard options that accept all formats acceptable to Tk_GetPixels.
 
-class StandardOptionsTests:
-    STANDARD_OPTIONS = (
-        'activebackground', 'activeborderwidth', 'activeforeground', 'anchor',
-        'background', 'bitmap', 'borderwidth', 'compound', 'cursor',
-        'disabledforeground', 'exportselection', 'font', 'foreground',
-        'highlightbackground', 'highlightcolor', 'highlightthickness',
-        'image', 'insertbackground', 'insertborderwidth',
-        'insertofftime', 'insertontime', 'insertwidth',
-        'jump', 'justify', 'orient', 'padx', 'pady', 'relief',
-        'repeatdelay', 'repeatinterval',
-        'selectbackground', 'selectborderwidth', 'selectforeground',
-        'setgrid', 'takefocus', 'text', 'textvariable', 'troughcolor',
-        'underline', 'wraplength', 'xscrollcommand', 'yscrollcommand',
-    )
-
-    def test_configure_activebackground(self):
-        widget = self.create()
-        self.checkColorParam(widget, 'activebackground')
+    In addition to numbers, these options can be set with distances
+    specified as a string consisting of a number followed by a single
+    character giving the unit of distance. The allowed units are:
+    millimeters ('m'), centimeters ('c'), inches ('i') or points ('p').
+    In Tk 9 a cget call for one of these options returns a Tcl_Obj of
+    type "pixels", whose string representation is the distance string
+    passed to configure.
+    """
+    PIXEL_OPTIONS = ('activeborderwidth', 'borderwidth', 'highlightthickness',
+      'insertborderwidth', 'insertwidth', 'padx', 'pady', 'selectborderwidth')
 
     def test_configure_activeborderwidth(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'activeborderwidth',
                               0, 1.3, 2.9, 6, -2, '10p')
+
+    def test_configure_borderwidth(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'borderwidth',
+                              0, 1.3, 2.6, 6, '10p')
+        self.checkParam(widget, 'borderwidth', -2)
+        if 'bd' in self.OPTIONS:
+            self.checkPixelsParam(widget, 'bd', 0, 1.3, 2.6, 6, '10p')
+            self.checkParam(widget, 'bd', -2, expected=expected)
+
+    def test_configure_highlightthickness(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'highlightthickness',
+                              0, 1.3, 2.6, 6, '10p')
+        self.checkParam(widget, 'highlightthickness', -2)
+
+    def test_configure_insertborderwidth(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'insertborderwidth',
+                              0, 1.3, 2.6, 6, '10p')
+        self.checkParam(widget, 'insertborderwidth', -2)
+
+    def test_configure_insertwidth(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'insertwidth', 1.3, 2.6, -2, '10p')
+
+    def test_configure_padx(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m')
+        self.checkParam(widget, 'padx', -2)
+
+    def test_configure_pady(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m')
+        self.checkParam(widget, 'pady', -2)
+
+    def test_configure_selectborderwidth(self):
+        widget = self.create()
+        self.checkPixelsParam(widget, 'selectborderwidth', 1.3, 2.6, -2, '10p')
+
+class StandardOptionsTests(PixelOptionsTests):
+
+    STANDARD_OPTIONS = ( 'activebackground', 'activeforeground',
+    'anchor', 'background', 'bitmap', 'compound', 'cursor',
+    'disabledforeground', 'exportselection', 'font', 'foreground',
+    'highlightbackground', 'highlightcolor', 'image',
+    'insertbackground', 'insertofftime', 'insertontime', 'jump',
+    'justify', 'orient', 'relief', 'repeatdelay', 'repeatinterval',
+    'selectbackground', 'selectforeground', 'setgrid', 'takefocus',
+    'text', 'textvariable', 'troughcolor', 'underline', 'wraplength',
+    'xscrollcommand', 'yscrollcommand', ) + PixelOptionsTests.PIXEL_OPTIONS
+
+    def test_configure_activebackground(self):
+        widget = self.create()
+        self.checkColorParam(widget, 'activebackground')
 
     def test_configure_activeforeground(self):
         widget = self.create()
@@ -277,18 +335,6 @@ class StandardOptionsTests:
             self.checkInvalidParam(widget, 'bitmap', 'spam',
                     errmsg='bitmap "spam" not defined')
 
-    def test_configure_borderwidth(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'borderwidth',
-                              0, 1.3, 2.6, 6, '10p')
-        expected = 0 if self._clip_borderwidth else -2
-        self.checkParam(widget, 'borderwidth', -2, expected=expected,
-                        conv=self._conv_pixels)
-        if 'bd' in self.OPTIONS:
-            self.checkPixelsParam(widget, 'bd', 0, 1.3, 2.6, 6, '10p')
-            self.checkParam(widget, 'bd', -2, expected=expected,
-                            conv=self._conv_pixels)
-
     def test_configure_compound(self):
         widget = self.create()
         self.checkEnumParam(widget, 'compound',
@@ -312,8 +358,8 @@ class StandardOptionsTests:
                         '-Adobe-Helvetica-Medium-R-Normal--*-120-*-*-*-*-*-*')
         is_ttk = widget.__class__.__module__ == 'tkinter.ttk'
         if not is_ttk:
-            self.checkInvalidParam(widget, 'font', '',
-                                   errmsg='font "" doesn\'t exist')
+            errmsg = 'font "" does ?n[o\']t exist'
+            self.checkInvalidParam(widget, 'font', '', errmsg=errmsg)
 
     def test_configure_foreground(self):
         widget = self.create()
@@ -329,14 +375,6 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'highlightcolor')
 
-    def test_configure_highlightthickness(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'highlightthickness',
-                              0, 1.3, 2.6, 6, '10p')
-        expected = 0 if self._clip_highlightthickness else -2
-        self.checkParam(widget, 'highlightthickness', -2, expected=expected,
-                        conv=self._conv_pixels)
-
     def test_configure_image(self):
         widget = self.create()
         self.checkImageParam(widget, 'image')
@@ -345,11 +383,6 @@ class StandardOptionsTests:
         widget = self.create()
         self.checkColorParam(widget, 'insertbackground')
 
-    def test_configure_insertborderwidth(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'insertborderwidth',
-                              0, 1.3, 2.6, 6, -2, '10p')
-
     def test_configure_insertofftime(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'insertofftime', 100)
@@ -357,10 +390,6 @@ class StandardOptionsTests:
     def test_configure_insertontime(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'insertontime', 100)
-
-    def test_configure_insertwidth(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'insertwidth', 1.3, 2.6, -2, '10p')
 
     def test_configure_jump(self):
         widget = self.create()
@@ -378,22 +407,6 @@ class StandardOptionsTests:
         widget = self.create()
         self.assertEqual(str(widget['orient']), self.default_orient)
         self.checkEnumParam(widget, 'orient', 'horizontal', 'vertical')
-
-    def test_configure_padx(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'padx', 3, 4.4, 5.6, '12m',
-                              conv=self._conv_pad_pixels)
-        expected = 0 if self._clip_pad else -2
-        self.checkParam(widget, 'padx', -2, expected=expected,
-                        conv=self._conv_pad_pixels)
-
-    def test_configure_pady(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'pady', 3, 4.4, 5.6, '12m',
-                              conv=self._conv_pad_pixels)
-        expected = 0 if self._clip_pad else -2
-        self.checkParam(widget, 'pady', -2, expected=expected,
-                        conv=self._conv_pad_pixels)
 
     @requires_tk(8, 7)
     def test_configure_placeholder(self):
@@ -420,10 +433,6 @@ class StandardOptionsTests:
     def test_configure_selectbackground(self):
         widget = self.create()
         self.checkColorParam(widget, 'selectbackground')
-
-    def test_configure_selectborderwidth(self):
-        widget = self.create()
-        self.checkPixelsParam(widget, 'selectborderwidth', 1.3, 2.6, -2, '10p')
 
     def test_configure_selectforeground(self):
         widget = self.create()
@@ -534,6 +543,7 @@ class StandardOptionsTests:
 
 
 class IntegerSizeTests:
+    """ Tests widgets which only accept integral width and height."""
     def test_configure_height(self):
         widget = self.create()
         self.checkIntegerParam(widget, 'height', 100, -100, 0)
@@ -544,6 +554,7 @@ class IntegerSizeTests:
 
 
 class PixelSizeTests:
+    """ Tests widgets which accept screen distances for width and height."""
     def test_configure_height(self):
         widget = self.create()
         self.checkPixelsParam(widget, 'height', 100, 101.2, 102.6, -100, 0, '3c')
@@ -553,7 +564,7 @@ class PixelSizeTests:
         self.checkPixelsParam(widget, 'width', 402, 403.4, 404.6, -402, 0, '5i')
 
 
-def add_standard_options(*source_classes):
+def add_configure_tests(*source_classes):
     # This decorator adds test_configure_xxx methods from source classes for
     # every xxx option in the OPTIONS class attribute if they are not defined
     # explicitly.

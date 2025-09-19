@@ -8,18 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* GC information is stored BEFORE the object structure. */
-typedef struct {
-    // Pointer to next object in the list.
-    // 0 means the object is not tracked
-    uintptr_t _gc_next;
-
-    // Pointer to previous object in the list.
-    // Lowest two bits are used for flags documented later.
-    uintptr_t _gc_prev;
-} PyGC_Head;
-
-#define _PyGC_Head_UNUSED PyGC_Head
+#include "pycore_interp_structs.h" // PyGC_Head
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 
 /* Get an object's GC head */
@@ -45,13 +36,13 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
  * the per-object lock.
  */
 #ifdef Py_GIL_DISABLED
-#  define _PyGC_BITS_TRACKED        (1)     // Tracked by the GC
-#  define _PyGC_BITS_FINALIZED      (2)     // tp_finalize was called
-#  define _PyGC_BITS_UNREACHABLE    (4)
-#  define _PyGC_BITS_FROZEN         (8)
-#  define _PyGC_BITS_SHARED         (16)
-#  define _PyGC_BITS_SHARED_INLINE  (32)
-#  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
+#  define _PyGC_BITS_TRACKED        (1<<0)     // Tracked by the GC
+#  define _PyGC_BITS_FINALIZED      (1<<1)     // tp_finalize was called
+#  define _PyGC_BITS_UNREACHABLE    (1<<2)
+#  define _PyGC_BITS_FROZEN         (1<<3)
+#  define _PyGC_BITS_SHARED         (1<<4)
+#  define _PyGC_BITS_ALIVE          (1<<5)    // Reachable from a known root.
+#  define _PyGC_BITS_DEFERRED       (1<<6)    // Use deferred reference counting
 #endif
 
 #ifdef Py_GIL_DISABLED
@@ -118,23 +109,6 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
     _PyObject_SET_GC_BITS(op, _PyGC_BITS_SHARED);
 }
 #define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
-
-/* True if the memory of the object is shared between multiple
- * threads and needs special purpose when freeing due to
- * the possibility of in-flight lock-free reads occurring.
- * Objects with this bit that are GC objects will automatically
- * delay-freed by PyObject_GC_Del. */
-static inline int _PyObject_GC_IS_SHARED_INLINE(PyObject *op) {
-    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_SHARED_INLINE);
-}
-#define _PyObject_GC_IS_SHARED_INLINE(op) \
-    _PyObject_GC_IS_SHARED_INLINE(_Py_CAST(PyObject*, op))
-
-static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
-    _PyObject_SET_GC_BITS(op, _PyGC_BITS_SHARED_INLINE);
-}
-#define _PyObject_GC_SET_SHARED_INLINE(op) \
-    _PyObject_GC_SET_SHARED_INLINE(_Py_CAST(PyObject*, op))
 
 #endif
 
@@ -232,11 +206,85 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
 }
 
 
-/* GC runtime state */
+/* Tell the GC to track this object.
+ *
+ * The object must not be tracked by the GC.
+ *
+ * NB: While the object is tracked by the collector, it must be safe to call the
+ * ob_traverse method.
+ *
+ * Internal note: interp->gc.generation0->_gc_prev doesn't have any bit flags
+ * because it's not object header.  So we don't use _PyGCHead_PREV() and
+ * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
+ *
+ * See also the public PyObject_GC_Track() function.
+ */
+static inline void _PyObject_GC_TRACK(
+// The preprocessor removes _PyObject_ASSERT_FROM() calls if NDEBUG is defined
+#ifndef NDEBUG
+    const char *filename, int lineno,
+#endif
+    PyObject *op)
+{
+    _PyObject_ASSERT_FROM(op, !_PyObject_GC_IS_TRACKED(op),
+                          "object already tracked by the garbage collector",
+                          filename, lineno, __func__);
+#ifdef Py_GIL_DISABLED
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_TRACKED);
+#else
+    PyGC_Head *gc = _Py_AS_GC(op);
+    _PyObject_ASSERT_FROM(op,
+                          (gc->_gc_prev & _PyGC_PREV_MASK_COLLECTING) == 0,
+                          "object is in generation which is garbage collected",
+                          filename, lineno, __func__);
 
-/* If we change this, we need to change the default value in the
-   signature of gc.collect. */
-#define NUM_GENERATIONS 3
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyGC_Head *generation0 = &interp->gc.young.head;
+    PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
+    _PyGCHead_SET_NEXT(last, gc);
+    _PyGCHead_SET_PREV(gc, last);
+    uintptr_t not_visited = 1 ^ interp->gc.visited_space;
+    gc->_gc_next = ((uintptr_t)generation0) | not_visited;
+    generation0->_gc_prev = (uintptr_t)gc;
+#endif
+}
+
+/* Tell the GC to stop tracking this object.
+ *
+ * Internal note: This may be called while GC. So _PyGC_PREV_MASK_COLLECTING
+ * must be cleared. But _PyGC_PREV_MASK_FINALIZED bit is kept.
+ *
+ * The object must be tracked by the GC.
+ *
+ * See also the public PyObject_GC_UnTrack() which accept an object which is
+ * not tracked.
+ */
+static inline void _PyObject_GC_UNTRACK(
+// The preprocessor removes _PyObject_ASSERT_FROM() calls if NDEBUG is defined
+#ifndef NDEBUG
+    const char *filename, int lineno,
+#endif
+    PyObject *op)
+{
+    _PyObject_ASSERT_FROM(op, _PyObject_GC_IS_TRACKED(op),
+                          "object not tracked by the garbage collector",
+                          filename, lineno, __func__);
+
+#ifdef Py_GIL_DISABLED
+    _PyObject_CLEAR_GC_BITS(op, _PyGC_BITS_TRACKED);
+#else
+    PyGC_Head *gc = _Py_AS_GC(op);
+    PyGC_Head *prev = _PyGCHead_PREV(gc);
+    PyGC_Head *next = _PyGCHead_NEXT(gc);
+    _PyGCHead_SET_NEXT(prev, next);
+    _PyGCHead_SET_PREV(next, prev);
+    gc->_gc_next = 0;
+    gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+#endif
+}
+
+
+
 /*
    NOTE: about untracking of mutable objects.
 
@@ -278,81 +326,6 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
    the algorithm was refined in response to issue #14775.
 */
 
-struct gc_generation {
-    PyGC_Head head;
-    int threshold; /* collection threshold */
-    int count; /* count of allocations or collections of younger
-                  generations */
-};
-
-struct gc_collection_stats {
-    /* number of collected objects */
-    Py_ssize_t collected;
-    /* total number of uncollectable objects (put into gc.garbage) */
-    Py_ssize_t uncollectable;
-};
-
-/* Running stats per generation */
-struct gc_generation_stats {
-    /* total number of collections */
-    Py_ssize_t collections;
-    /* total number of collected objects */
-    Py_ssize_t collected;
-    /* total number of uncollectable objects (put into gc.garbage) */
-    Py_ssize_t uncollectable;
-};
-
-struct _gc_runtime_state {
-    /* List of objects that still need to be cleaned up, singly linked
-     * via their gc headers' gc_prev pointers.  */
-    PyObject *trash_delete_later;
-    /* Current call-stack depth of tp_dealloc calls. */
-    int trash_delete_nesting;
-
-    /* Is automatic collection enabled? */
-    int enabled;
-    int debug;
-    /* linked lists of container objects */
-    struct gc_generation young;
-    struct gc_generation old[2];
-    /* a permanent generation which won't be collected */
-    struct gc_generation permanent_generation;
-    struct gc_generation_stats generation_stats[NUM_GENERATIONS];
-    /* true if we are currently running the collector */
-    int collecting;
-    /* list of uncollectable objects */
-    PyObject *garbage;
-    /* a list of callbacks to be invoked when collection is performed */
-    PyObject *callbacks;
-
-    Py_ssize_t heap_size;
-    Py_ssize_t work_to_do;
-    /* Which of the old spaces is the visited space */
-    int visited_space;
-
-#ifdef Py_GIL_DISABLED
-    /* This is the number of objects that survived the last full
-       collection. It approximates the number of long lived objects
-       tracked by the GC.
-
-       (by "full collection", we mean a collection of the oldest
-       generation). */
-    Py_ssize_t long_lived_total;
-    /* This is the number of objects that survived all "non-full"
-       collections, and are awaiting to undergo a full collection for
-       the first time. */
-    Py_ssize_t long_lived_pending;
-#endif
-};
-
-#ifdef Py_GIL_DISABLED
-struct _gc_thread_state {
-    /* Thread-local allocation count. */
-    Py_ssize_t alloc_count;
-};
-#endif
-
-
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 
 extern Py_ssize_t _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason);
@@ -376,18 +349,8 @@ extern void _Py_RunGC(PyThreadState *tstate);
 union _PyStackRef;
 
 // GC visit callback for tracked interpreter frames
-extern int _PyGC_VisitFrameStack(struct _PyInterpreterFrame *frame, visitproc visit, void *arg);
+extern int _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
-
-// Like Py_VISIT but for _PyStackRef fields
-#define _Py_VISIT_STACKREF(ref)                                         \
-    do {                                                                \
-        if (!PyStackRef_IsNull(ref)) {                                  \
-            int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
-            if (vret)                                                   \
-                return vret;                                            \
-        }                                                               \
-    } while (0)
 
 #ifdef Py_GIL_DISABLED
 extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,

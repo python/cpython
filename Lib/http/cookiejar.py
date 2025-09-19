@@ -430,6 +430,7 @@ def split_header_words(header_values):
         if pairs: result.append(pairs)
     return result
 
+HEADER_JOIN_TOKEN_RE = re.compile(r"[!#$%&'*+\-.^_`|~0-9A-Za-z]+")
 HEADER_JOIN_ESCAPE_RE = re.compile(r"([\"\\])")
 def join_header_words(lists):
     """Do the inverse (almost) of the conversion done by split_header_words.
@@ -437,10 +438,10 @@ def join_header_words(lists):
     Takes a list of lists of (key, value) pairs and produces a single header
     value.  Attribute values are quoted if needed.
 
-    >>> join_header_words([[("text/plain", None), ("charset", "iso-8859-1")]])
-    'text/plain; charset="iso-8859-1"'
-    >>> join_header_words([[("text/plain", None)], [("charset", "iso-8859-1")]])
-    'text/plain, charset="iso-8859-1"'
+    >>> join_header_words([[("text/plain", None), ("charset", "iso-8859/1")]])
+    'text/plain; charset="iso-8859/1"'
+    >>> join_header_words([[("text/plain", None)], [("charset", "iso-8859/1")]])
+    'text/plain, charset="iso-8859/1"'
 
     """
     headers = []
@@ -448,7 +449,7 @@ def join_header_words(lists):
         attr = []
         for k, v in pairs:
             if v is not None:
-                if not re.search(r"^\w+$", v):
+                if not HEADER_JOIN_TOKEN_RE.fullmatch(v):
                     v = HEADER_JOIN_ESCAPE_RE.sub(r"\\\1", v)  # escape " and \
                     v = '"%s"' % v
                 k = "%s=%s" % (k, v)

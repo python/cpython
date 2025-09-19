@@ -109,7 +109,7 @@ PSF LICENSE AGREEMENT FOR PYTHON 3.9
    analyze, test, perform and/or display publicly, prepare derivative works,
    distribute, and otherwise use Python 3.9 alone or in any derivative
    version, provided, however, that PSF's License Agreement and PSF's notice of
-   copyright, i.e., "Copyright © 2001-2018 Python Software Foundation; All Rights
+   copyright, i.e., "Copyright © 2001 Python Software Foundation; All Rights
    Reserved" are retained in Python 3.9 alone or in any derivative version
    prepared by Licensee.
 

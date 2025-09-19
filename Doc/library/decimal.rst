@@ -2,7 +2,7 @@
 =====================================================================
 
 .. module:: decimal
-   :synopsis: Implementation of the General Decimal Arithmetic  Specification.
+   :synopsis: Implementation of the General Decimal Arithmetic Specification.
 
 .. moduleauthor:: Eric Price <eprice at tjhsst.edu>
 .. moduleauthor:: Facundo Batista <facundo at taniquetil.com.ar>
@@ -121,7 +121,7 @@ reset them before monitoring a calculation.
 
 .. _decimal-tutorial:
 
-Quick-start Tutorial
+Quick-start tutorial
 --------------------
 
 The usual start to using decimals is importing the module, viewing the current
@@ -367,6 +367,8 @@ Decimal objects
    appears above.  These include decimal digits from various other
    alphabets (for example, Arabic-Indic and Devanāgarī digits) along
    with the fullwidth digits ``'\uff10'`` through ``'\uff19'``.
+   Case is not significant, so, for example, ``inf``, ``Inf``, ``INFINITY``,
+   and ``iNfINity`` are all acceptable spellings for positive infinity.
 
    If *value* is a :class:`tuple`, it should have three components, a sign
    (``0`` for positive or ``1`` for negative), a :class:`tuple` of
@@ -571,7 +573,7 @@ Decimal objects
       >>> Decimal(321).exp()
       Decimal('2.561702493119680037517373933E+139')
 
-   .. classmethod:: from_float(f)
+   .. classmethod:: from_float(f, /)
 
       Alternative constructor that only accepts instances of :class:`float` or
       :class:`int`.
@@ -598,7 +600,7 @@ Decimal objects
 
       .. versionadded:: 3.1
 
-   .. classmethod:: from_number(number)
+   .. classmethod:: from_number(number, /)
 
       Alternative constructor that only accepts instances of
       :class:`float`, :class:`int` or :class:`Decimal`, but not strings
@@ -989,7 +991,7 @@ Each thread has its own current context which is accessed or changed using the
    Return the current context for the active thread.
 
 
-.. function:: setcontext(c)
+.. function:: setcontext(c, /)
 
    Set the current context for the active thread to *c*.
 
@@ -1029,11 +1031,19 @@ function to temporarily change the active context.
    .. versionchanged:: 3.11
       :meth:`localcontext` now supports setting context attributes through the use of keyword arguments.
 
+.. function:: IEEEContext(bits)
+
+   Return a context object initialized to the proper values for one of the
+   IEEE interchange formats.  The argument must be a multiple of 32 and less
+   than :const:`IEEE_CONTEXT_MAX_BITS`.
+
+   .. versionadded:: 3.14
+
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
 
 
-.. class:: BasicContext
+.. data:: BasicContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1044,7 +1054,7 @@ described below. In addition, the module provides three pre-made contexts:
    Because many of the traps are enabled, this context is useful for debugging.
 
 
-.. class:: ExtendedContext
+.. data:: ExtendedContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1057,7 +1067,7 @@ described below. In addition, the module provides three pre-made contexts:
    presence of conditions that would otherwise halt the program.
 
 
-.. class:: DefaultContext
+.. data:: DefaultContext
 
    This context is used by the :class:`Context` constructor as a prototype for new
    contexts.  Changing a field (such a precision) has the effect of changing the
@@ -1086,40 +1096,52 @@ In addition to the three supplied contexts, new contexts can be created with the
    default values are copied from the :const:`DefaultContext`.  If the *flags*
    field is not specified or is :const:`None`, all flags are cleared.
 
-   *prec* is an integer in the range [``1``, :const:`MAX_PREC`] that sets
-   the precision for arithmetic operations in the context.
+   .. attribute:: prec
 
-   The *rounding* option is one of the constants listed in the section
-   `Rounding Modes`_.
+      An integer in the range [``1``, :const:`MAX_PREC`] that sets
+      the precision for arithmetic operations in the context.
 
-   The *traps* and *flags* fields list any signals to be set. Generally, new
-   contexts should only set traps and leave the flags clear.
+   .. attribute:: rounding
 
-   The *Emin* and *Emax* fields are integers specifying the outer limits allowable
-   for exponents. *Emin* must be in the range [:const:`MIN_EMIN`, ``0``],
-   *Emax* in the range [``0``, :const:`MAX_EMAX`].
+      One of the constants listed in the section `Rounding Modes`_.
 
-   The *capitals* field is either ``0`` or ``1`` (the default). If set to
-   ``1``, exponents are printed with a capital ``E``; otherwise, a
-   lowercase ``e`` is used: ``Decimal('6.02e+23')``.
+   .. attribute:: traps
+                  flags
 
-   The *clamp* field is either ``0`` (the default) or ``1``.
-   If set to ``1``, the exponent ``e`` of a :class:`Decimal`
-   instance representable in this context is strictly limited to the
-   range ``Emin - prec + 1 <= e <= Emax - prec + 1``.  If *clamp* is
-   ``0`` then a weaker condition holds: the adjusted exponent of
-   the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
-   ``1``, a large normal number will, where possible, have its
-   exponent reduced and a corresponding number of zeros added to its
-   coefficient, in order to fit the exponent constraints; this
-   preserves the value of the number but loses information about
-   significant trailing zeros.  For example::
+      Lists of any signals to be set. Generally, new contexts should only set
+      traps and leave the flags clear.
 
-      >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
-      Decimal('1.23000E+999')
+   .. attribute:: Emin
+                  Emax
 
-   A *clamp* value of ``1`` allows compatibility with the
-   fixed-width decimal interchange formats specified in IEEE 754.
+      Integers specifying the outer limits allowable for exponents. *Emin* must
+      be in the range [:const:`MIN_EMIN`, ``0``], *Emax* in the range
+      [``0``, :const:`MAX_EMAX`].
+
+   .. attribute:: capitals
+
+      Either ``0`` or ``1`` (the default). If set to
+      ``1``, exponents are printed with a capital ``E``; otherwise, a
+      lowercase ``e`` is used: ``Decimal('6.02e+23')``.
+
+   .. attribute:: clamp
+
+      Either ``0`` (the default) or ``1``.  If set to ``1``, the exponent ``e``
+      of a :class:`Decimal` instance representable in this context is strictly
+      limited to the range ``Emin - prec + 1 <= e <= Emax - prec + 1``.
+      If *clamp* is ``0`` then a weaker condition holds: the adjusted exponent of
+      the :class:`Decimal` instance is at most :attr:`~Context.Emax`.  When *clamp* is
+      ``1``, a large normal number will, where possible, have its
+      exponent reduced and a corresponding number of zeros added to its
+      coefficient, in order to fit the exponent constraints; this
+      preserves the value of the number but loses information about
+      significant trailing zeros.  For example::
+
+         >>> Context(prec=6, Emax=999, clamp=1).create_decimal('1.23e999')
+         Decimal('1.23000E+999')
+
+      A *clamp* value of ``1`` allows compatibility with the
+      fixed-width decimal interchange formats specified in IEEE 754.
 
    The :class:`Context` class defines several general purpose methods as well as
    a large number of methods for doing arithmetic directly in a given context.
@@ -1146,11 +1168,11 @@ In addition to the three supplied contexts, new contexts can be created with the
 
       Return a duplicate of the context.
 
-   .. method:: copy_decimal(num)
+   .. method:: copy_decimal(num, /)
 
       Return a copy of the Decimal instance num.
 
-   .. method:: create_decimal(num)
+   .. method:: create_decimal(num='0', /)
 
       Creates a new Decimal instance from *num* but using *self* as
       context. Unlike the :class:`Decimal` constructor, the context precision,
@@ -1174,7 +1196,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       If the argument is a string, no leading or trailing whitespace or
       underscores are permitted.
 
-   .. method:: create_decimal_from_float(f)
+   .. method:: create_decimal_from_float(f, /)
 
       Creates a new Decimal instance from a float *f* but rounding using *self*
       as the context.  Unlike the :meth:`Decimal.from_float` class method,
@@ -1212,222 +1234,222 @@ In addition to the three supplied contexts, new contexts can be created with the
    recounted here.
 
 
-   .. method:: abs(x)
+   .. method:: abs(x, /)
 
       Returns the absolute value of *x*.
 
 
-   .. method:: add(x, y)
+   .. method:: add(x, y, /)
 
       Return the sum of *x* and *y*.
 
 
-   .. method:: canonical(x)
+   .. method:: canonical(x, /)
 
       Returns the same Decimal object *x*.
 
 
-   .. method:: compare(x, y)
+   .. method:: compare(x, y, /)
 
       Compares *x* and *y* numerically.
 
 
-   .. method:: compare_signal(x, y)
+   .. method:: compare_signal(x, y, /)
 
       Compares the values of the two operands numerically.
 
 
-   .. method:: compare_total(x, y)
+   .. method:: compare_total(x, y, /)
 
       Compares two operands using their abstract representation.
 
 
-   .. method:: compare_total_mag(x, y)
+   .. method:: compare_total_mag(x, y, /)
 
       Compares two operands using their abstract representation, ignoring sign.
 
 
-   .. method:: copy_abs(x)
+   .. method:: copy_abs(x, /)
 
       Returns a copy of *x* with the sign set to 0.
 
 
-   .. method:: copy_negate(x)
+   .. method:: copy_negate(x, /)
 
       Returns a copy of *x* with the sign inverted.
 
 
-   .. method:: copy_sign(x, y)
+   .. method:: copy_sign(x, y, /)
 
       Copies the sign from *y* to *x*.
 
 
-   .. method:: divide(x, y)
+   .. method:: divide(x, y, /)
 
       Return *x* divided by *y*.
 
 
-   .. method:: divide_int(x, y)
+   .. method:: divide_int(x, y, /)
 
       Return *x* divided by *y*, truncated to an integer.
 
 
-   .. method:: divmod(x, y)
+   .. method:: divmod(x, y, /)
 
       Divides two numbers and returns the integer part of the result.
 
 
-   .. method:: exp(x)
+   .. method:: exp(x, /)
 
       Returns ``e ** x``.
 
 
-   .. method:: fma(x, y, z)
+   .. method:: fma(x, y, z, /)
 
       Returns *x* multiplied by *y*, plus *z*.
 
 
-   .. method:: is_canonical(x)
+   .. method:: is_canonical(x, /)
 
       Returns ``True`` if *x* is canonical; otherwise returns ``False``.
 
 
-   .. method:: is_finite(x)
+   .. method:: is_finite(x, /)
 
       Returns ``True`` if *x* is finite; otherwise returns ``False``.
 
 
-   .. method:: is_infinite(x)
+   .. method:: is_infinite(x, /)
 
       Returns ``True`` if *x* is infinite; otherwise returns ``False``.
 
 
-   .. method:: is_nan(x)
+   .. method:: is_nan(x, /)
 
       Returns ``True`` if *x* is a qNaN or sNaN; otherwise returns ``False``.
 
 
-   .. method:: is_normal(x)
+   .. method:: is_normal(x, /)
 
       Returns ``True`` if *x* is a normal number; otherwise returns ``False``.
 
 
-   .. method:: is_qnan(x)
+   .. method:: is_qnan(x, /)
 
       Returns ``True`` if *x* is a quiet NaN; otherwise returns ``False``.
 
 
-   .. method:: is_signed(x)
+   .. method:: is_signed(x, /)
 
       Returns ``True`` if *x* is negative; otherwise returns ``False``.
 
 
-   .. method:: is_snan(x)
+   .. method:: is_snan(x, /)
 
       Returns ``True`` if *x* is a signaling NaN; otherwise returns ``False``.
 
 
-   .. method:: is_subnormal(x)
+   .. method:: is_subnormal(x, /)
 
       Returns ``True`` if *x* is subnormal; otherwise returns ``False``.
 
 
-   .. method:: is_zero(x)
+   .. method:: is_zero(x, /)
 
       Returns ``True`` if *x* is a zero; otherwise returns ``False``.
 
 
-   .. method:: ln(x)
+   .. method:: ln(x, /)
 
       Returns the natural (base e) logarithm of *x*.
 
 
-   .. method:: log10(x)
+   .. method:: log10(x, /)
 
       Returns the base 10 logarithm of *x*.
 
 
-   .. method:: logb(x)
+   .. method:: logb(x, /)
 
        Returns the exponent of the magnitude of the operand's MSD.
 
 
-   .. method:: logical_and(x, y)
+   .. method:: logical_and(x, y, /)
 
       Applies the logical operation *and* between each operand's digits.
 
 
-   .. method:: logical_invert(x)
+   .. method:: logical_invert(x, /)
 
       Invert all the digits in *x*.
 
 
-   .. method:: logical_or(x, y)
+   .. method:: logical_or(x, y, /)
 
       Applies the logical operation *or* between each operand's digits.
 
 
-   .. method:: logical_xor(x, y)
+   .. method:: logical_xor(x, y, /)
 
       Applies the logical operation *xor* between each operand's digits.
 
 
-   .. method:: max(x, y)
+   .. method:: max(x, y, /)
 
       Compares two values numerically and returns the maximum.
 
 
-   .. method:: max_mag(x, y)
+   .. method:: max_mag(x, y, /)
 
       Compares the values numerically with their sign ignored.
 
 
-   .. method:: min(x, y)
+   .. method:: min(x, y, /)
 
       Compares two values numerically and returns the minimum.
 
 
-   .. method:: min_mag(x, y)
+   .. method:: min_mag(x, y, /)
 
       Compares the values numerically with their sign ignored.
 
 
-   .. method:: minus(x)
+   .. method:: minus(x, /)
 
       Minus corresponds to the unary prefix minus operator in Python.
 
 
-   .. method:: multiply(x, y)
+   .. method:: multiply(x, y, /)
 
       Return the product of *x* and *y*.
 
 
-   .. method:: next_minus(x)
+   .. method:: next_minus(x, /)
 
       Returns the largest representable number smaller than *x*.
 
 
-   .. method:: next_plus(x)
+   .. method:: next_plus(x, /)
 
       Returns the smallest representable number larger than *x*.
 
 
-   .. method:: next_toward(x, y)
+   .. method:: next_toward(x, y, /)
 
       Returns the number closest to *x*, in direction towards *y*.
 
 
-   .. method:: normalize(x)
+   .. method:: normalize(x, /)
 
       Reduces *x* to its simplest form.
 
 
-   .. method:: number_class(x)
+   .. method:: number_class(x, /)
 
       Returns an indication of the class of *x*.
 
 
-   .. method:: plus(x)
+   .. method:: plus(x, /)
 
       Plus corresponds to the unary prefix plus operator in Python.  This
       operation applies the context precision and rounding, so it is *not* an
@@ -1468,7 +1490,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       always exact.
 
 
-   .. method:: quantize(x, y)
+   .. method:: quantize(x, y, /)
 
       Returns a value equal to *x* (rounded), having the exponent of *y*.
 
@@ -1478,7 +1500,7 @@ In addition to the three supplied contexts, new contexts can be created with the
       Just returns 10, as this is Decimal, :)
 
 
-   .. method:: remainder(x, y)
+   .. method:: remainder(x, y, /)
 
       Returns the remainder from integer division.
 
@@ -1486,43 +1508,43 @@ In addition to the three supplied contexts, new contexts can be created with the
       dividend.
 
 
-   .. method:: remainder_near(x, y)
+   .. method:: remainder_near(x, y, /)
 
       Returns ``x - y * n``, where *n* is the integer nearest the exact value
       of ``x / y`` (if the result is 0 then its sign will be the sign of *x*).
 
 
-   .. method:: rotate(x, y)
+   .. method:: rotate(x, y, /)
 
       Returns a rotated copy of *x*, *y* times.
 
 
-   .. method:: same_quantum(x, y)
+   .. method:: same_quantum(x, y, /)
 
       Returns ``True`` if the two operands have the same exponent.
 
 
-   .. method:: scaleb (x, y)
+   .. method:: scaleb (x, y, /)
 
       Returns the first operand after adding the second value its exp.
 
 
-   .. method:: shift(x, y)
+   .. method:: shift(x, y, /)
 
       Returns a shifted copy of *x*, *y* times.
 
 
-   .. method:: sqrt(x)
+   .. method:: sqrt(x, /)
 
       Square root of a non-negative number to context precision.
 
 
-   .. method:: subtract(x, y)
+   .. method:: subtract(x, y, /)
 
       Return the difference between *x* and *y*.
 
 
-   .. method:: to_eng_string(x)
+   .. method:: to_eng_string(x, /)
 
       Convert to a string, using engineering notation if an exponent is needed.
 
@@ -1531,12 +1553,12 @@ In addition to the three supplied contexts, new contexts can be created with the
       require the addition of either one or two trailing zeros.
 
 
-   .. method:: to_integral_exact(x)
+   .. method:: to_integral_exact(x, /)
 
       Rounds to an integer.
 
 
-   .. method:: to_sci_string(x)
+   .. method:: to_sci_string(x, /)
 
       Converts a number to a string using scientific notation.
 
@@ -1550,18 +1572,19 @@ Constants
 The constants in this section are only relevant for the C module. They
 are also included in the pure Python version for compatibility.
 
-+---------------------+---------------------+-------------------------------+
-|                     |       32-bit        |            64-bit             |
-+=====================+=====================+===============================+
-| .. data:: MAX_PREC  |    ``425000000``    |    ``999999999999999999``     |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MAX_EMAX  |    ``425000000``    |    ``999999999999999999``     |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MIN_EMIN  |    ``-425000000``   |    ``-999999999999999999``    |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MIN_ETINY |    ``-849999999``   |    ``-1999999999999999997``   |
-+---------------------+---------------------+-------------------------------+
-
++---------------------------------+---------------------+-------------------------------+
+|                                 |       32-bit        |            64-bit             |
++=================================+=====================+===============================+
+| .. data:: MAX_PREC              |    ``425000000``    |    ``999999999999999999``     |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MAX_EMAX              |    ``425000000``    |    ``999999999999999999``     |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MIN_EMIN              |    ``-425000000``   |    ``-999999999999999999``    |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MIN_ETINY             |    ``-849999999``   |    ``-1999999999999999997``   |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: IEEE_CONTEXT_MAX_BITS |    ``256``          |    ``512``                    |
++---------------------------------+---------------------+-------------------------------+
 
 .. data:: HAVE_THREADS
 
@@ -1758,7 +1781,7 @@ The following table summarizes the hierarchy of signals::
 
 .. _decimal-notes:
 
-Floating-Point Notes
+Floating-point notes
 --------------------
 
 
@@ -1884,13 +1907,20 @@ the current thread.
 
 If :func:`setcontext` has not been called before :func:`getcontext`, then
 :func:`getcontext` will automatically create a new context for use in the
-current thread.
+current thread.  New context objects have default values set from the
+:data:`decimal.DefaultContext` object.
 
-The new context is copied from a prototype context called *DefaultContext*. To
-control the defaults so that each thread will use the same values throughout the
-application, directly modify the *DefaultContext* object. This should be done
-*before* any threads are started so that there won't be a race condition between
-threads calling :func:`getcontext`. For example::
+The :data:`sys.flags.thread_inherit_context` flag affects the context for
+new threads.  If the flag is false, new threads will start with an empty
+context.  In this case, :func:`getcontext` will create a new context object
+when called and use the default values from *DefaultContext*.  If the flag
+is true, new threads will start with a copy of context from the caller of
+:meth:`threading.Thread.start`.
+
+To control the defaults so that each thread will use the same values throughout
+the application, directly modify the *DefaultContext* object. This should be
+done *before* any threads are started so that there won't be a race condition
+between threads calling :func:`getcontext`. For example::
 
    # Set applicationwide defaults for all threads about to be launched
    DefaultContext.prec = 12
@@ -2262,7 +2292,7 @@ value for :attr:`~Context.prec` as well [#]_::
     Decimal('904625697166532776746648320380374280103671755200316906558262375061821325312')
 
 
-For inexact results, :attr:`MAX_PREC` is far too large on 64-bit platforms and
+For inexact results, :const:`MAX_PREC` is far too large on 64-bit platforms and
 the available memory will be insufficient::
 
    >>> Decimal(1) / 3

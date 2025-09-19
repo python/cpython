@@ -4,10 +4,13 @@ import linecache
 import unittest
 import os.path
 import tempfile
+import threading
 import tokenize
 from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
+from test.support import threading_helper
+from test.support.script_helper import assert_python_ok
 
 
 FILENAME = linecache.__file__
@@ -280,6 +283,19 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(linecache.getlines(filename, module_globals),
                          ['source for x.y.z\n'])
 
+    def test_frozen(self):
+        filename = '<frozen fakemodule>'
+        module_globals = {'__file__': FILENAME}
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+        lines = linecache.getlines(filename, module_globals)
+        self.assertGreater(len(lines), 0)
+        lines_cached = linecache.getlines(filename)
+        self.assertEqual(lines, lines_cached)
+        linecache.clearcache()
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+
     def test_invalid_names(self):
         for name, desc in [
             ('\x00', 'NUL bytes filename'),
@@ -311,6 +327,12 @@ class LineCacheTests(unittest.TestCase):
         # just to be sure that we did not mess with cache
         linecache.clearcache()
 
+    def test_linecache_python_string(self):
+        cmdline = "import linecache;assert len(linecache.cache) == 0"
+        retcode, stdout, stderr = assert_python_ok('-c', cmdline)
+        self.assertEqual(retcode, 0)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
 
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):
@@ -352,6 +374,41 @@ class LineCacheInvalidationTests(unittest.TestCase):
         self.assertNotIn(self.deleted_file, linecache.cache)
         self.assertNotIn(self.modified_file, linecache.cache)
         self.assertIn(self.unchanged_file, linecache.cache)
+
+
+class MultiThreadingTest(unittest.TestCase):
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_read_write_safety(self):
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            filenames = []
+            for i in range(10):
+                name = os.path.join(tmpdirname, f"test_{i}.py")
+                with open(name, "w") as h:
+                    h.write("import time\n")
+                    h.write("import system\n")
+                filenames.append(name)
+
+            def linecache_get_line(b):
+                b.wait()
+                for _ in range(100):
+                    for name in filenames:
+                        linecache.getline(name, 1)
+
+            def check(funcs):
+                barrier = threading.Barrier(len(funcs))
+                threads = []
+
+                for func in funcs:
+                    thread = threading.Thread(target=func, args=(barrier,))
+
+                    threads.append(thread)
+
+                with threading_helper.start_threads(threads):
+                    pass
+
+            check([linecache_get_line] * 20)
 
 
 if __name__ == "__main__":

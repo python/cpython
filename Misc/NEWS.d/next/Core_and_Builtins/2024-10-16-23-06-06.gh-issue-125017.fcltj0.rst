@@ -1,2 +1,0 @@
-Fix crash on certain accesses to the ``__annotations__`` of
-:class:`staticmethod` and :class:`classmethod` objects.

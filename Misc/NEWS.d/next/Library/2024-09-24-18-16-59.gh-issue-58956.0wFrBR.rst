@@ -1,1 +1,0 @@
-Fixed a bug in :mod:`pdb` where sometimes the breakpoint won't trigger if it was set on a function which is already in the call stack.

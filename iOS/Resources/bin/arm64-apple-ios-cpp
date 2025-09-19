@@ -1,2 +1,2 @@
 #!/bin/sh
-xcrun --sdk iphoneos${IOS_SDK_VERSION} clang -target arm64-apple-ios -E $@
+xcrun --sdk iphoneos${IOS_SDK_VERSION} clang -target arm64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET} -E "$@"

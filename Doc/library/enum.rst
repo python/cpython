@@ -110,6 +110,10 @@ Module Contents
       ``KEEP`` which allows for more fine-grained control over how invalid values
       are dealt with in an enumeration.
 
+   :class:`EnumDict`
+
+      A subclass of :class:`dict` for use when subclassing :class:`EnumType`.
+
    :class:`auto`
 
       Instances are replaced with an appropriate value for Enum members.
@@ -152,6 +156,7 @@ Module Contents
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 .. versionadded:: 3.11  ``StrEnum``, ``EnumCheck``, ``ReprEnum``, ``FlagBoundary``, ``property``, ``member``, ``nonmember``, ``global_enum``, ``show_flag_values``
+.. versionadded:: 3.13  ``EnumDict``
 
 ---------------
 
@@ -169,6 +174,10 @@ Data Types
    :meth:`!__str__`, :meth:`!__format__`, and :meth:`!__reduce__` methods on the
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
+
+   .. versionadded:: 3.11
+
+      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
 
    .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
 
@@ -201,7 +210,7 @@ Data Types
         >>> Color.RED.value in Color
         True
 
-   .. versionchanged:: 3.12
+      .. versionchanged:: 3.12
 
          Before Python 3.12, a ``TypeError`` is raised if a
          non-Enum-member is used in a containment check.
@@ -245,20 +254,6 @@ Data Types
 
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
-
-   .. method:: EnumType._add_alias_
-
-      Adds a new name as an alias to an existing member.  Raises a
-      :exc:`NameError` if the name is already assigned to a different member.
-
-   .. method:: EnumType._add_value_alias_
-
-      Adds a new value as an alias to an existing member.  Raises a
-      :exc:`ValueError` if the value is already linked with a different member.
-
-   .. versionadded:: 3.11
-
-      Before 3.11 ``EnumType`` was called ``EnumMeta``, which is still available as an alias.
 
 
 .. class:: Enum
@@ -465,6 +460,30 @@ Data Types
 
    .. versionchanged:: 3.12 Added :ref:`enum-dataclass-support`
 
+   .. method:: Enum._add_alias_
+
+      Adds a new name as an alias to an existing member::
+
+         >>> Color.RED._add_alias_("ERROR")
+         >>> Color.ERROR
+         <Color.RED: 1>
+
+      Raises a :exc:`NameError` if the name is already assigned to a different member.
+
+      .. versionadded:: 3.13
+
+   .. method:: Enum._add_value_alias_
+
+      Adds a new value as an alias to an existing member::
+
+         >>> Color.RED._add_value_alias_(42)
+         >>> Color(42)
+         <Color.RED: 1>
+
+      Raises a :exc:`ValueError` if the value is already linked with a different member.
+
+      .. versionadded:: 3.13
+
 
 .. class:: IntEnum
 
@@ -499,16 +518,31 @@ Data Types
 
 .. class:: StrEnum
 
-   ``StrEnum`` is the same as :class:`Enum`, but its members are also strings and can be used
-   in most of the same places that a string can be used.  The result of any string
-   operation performed on or with a *StrEnum* member is not part of the enumeration.
+   *StrEnum* is the same as :class:`Enum`, but its members are also strings and
+   can be used in most of the same places that a string can be used. The result
+   of any string operation performed on or with a *StrEnum* member is not part
+   of the enumeration.
+
+   >>> from enum import StrEnum, auto
+   >>> class Color(StrEnum):
+   ...     RED = 'r'
+   ...     GREEN = 'g'
+   ...     BLUE = 'b'
+   ...     UNKNOWN = auto()
+   ...
+   >>> Color.RED
+   <Color.RED: 'r'>
+   >>> Color.UNKNOWN
+   <Color.UNKNOWN: 'unknown'>
+   >>> str(Color.UNKNOWN)
+   'unknown'
 
    .. note::
 
       There are places in the stdlib that check for an exact :class:`str`
       instead of a :class:`str` subclass (i.e. ``type(unknown) == str``
       instead of ``isinstance(unknown, str)``), and in those locations you
-      will need to use ``str(StrEnum.member)``.
+      will need to use ``str(MyStrEnum.MY_MEMBER)``.
 
    .. note::
 
@@ -663,7 +697,7 @@ Data Types
    * the result is a valid *IntFlag*: an *IntFlag* is returned
    * the result is not a valid *IntFlag*: the result depends on the :class:`FlagBoundary` setting
 
-   The :func:`repr` of unnamed zero-valued flags has changed.  It is now:
+   The :func:`repr` of unnamed zero-valued flags has changed.  It is now::
 
       >>> Color(0)
       <Color: 0>
@@ -821,7 +855,27 @@ Data Types
          >>> KeepFlag(2**2 + 2**4)
          <KeepFlag.BLUE|16: 20>
 
-.. versionadded:: 3.11
+   .. versionadded:: 3.11
+
+.. class:: EnumDict
+
+   *EnumDict* is a subclass of :class:`dict` that is used as the namespace
+   for defining enum classes (see :ref:`prepare`).
+   It is exposed to allow subclasses of :class:`EnumType` with advanced
+   behavior like having multiple values per member.
+   It should be called with the name of the enum class being created, otherwise
+   private names and internal classes will not be handled correctly.
+
+   Note that only the :class:`~collections.abc.MutableMapping` interface
+   (:meth:`~object.__setitem__` and :meth:`~dict.update`) is overridden.
+   It may be possible to bypass the checks using other :class:`!dict`
+   operations like :meth:`|= <object.__ior__>`.
+
+   .. attribute:: EnumDict.member_names
+
+      A list of member names.
+
+   .. versionadded:: 3.13
 
 ---------------
 
@@ -839,10 +893,6 @@ Once all the members are created it is no longer used.
 Supported ``_sunder_`` names
 """"""""""""""""""""""""""""
 
-- :meth:`~EnumType._add_alias_` -- adds a new name as an alias to an existing
-  member.
-- :meth:`~EnumType._add_value_alias_` -- adds a new value as an alias to an
-  existing member.
 - :attr:`~Enum._name_` -- name of the member
 - :attr:`~Enum._value_` -- value of the member; can be set in ``__new__``
 - :meth:`~Enum._missing_` -- a lookup function used when a value is not found;
@@ -862,6 +912,11 @@ Supported ``_sunder_`` names
 
      For :class:`Flag` classes the next value chosen will be the next highest
      power-of-two.
+
+- :meth:`~Enum._add_alias_` -- adds a new name as an alias to an existing
+  member.
+- :meth:`~Enum._add_value_alias_` -- adds a new value as an alias to an
+  existing member.
 
 - While ``_sunder_`` names are generally reserved for the further development
   of the :class:`Enum` class and can not be used, some are explicitly allowed:

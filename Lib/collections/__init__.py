@@ -59,6 +59,8 @@ try:
 except ImportError:
     pass
 
+heapq = None  # Lazily imported
+
 
 ################################################################################
 ### OrderedDict
@@ -593,7 +595,7 @@ class Counter(dict):
     # References:
     #   http://en.wikipedia.org/wiki/Multiset
     #   http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html
-    #   http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
+    #   http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
     #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
@@ -633,7 +635,10 @@ class Counter(dict):
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
         # Lazy import to speedup Python startup time
-        import heapq
+        global heapq
+        if heapq is None:
+            import heapq
+
         return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
@@ -771,23 +776,26 @@ class Counter(dict):
     # When the multiplicities are all zero or one, multiset operations
     # are guaranteed to be equivalent to the corresponding operations
     # for regular sets.
+    #
     #     Given counter multisets such as:
     #         cp = Counter(a=1, b=0, c=1)
     #         cq = Counter(c=1, d=0, e=1)
+    #
     #     The corresponding regular sets would be:
     #         sp = {'a', 'c'}
     #         sq = {'c', 'e'}
+    #
     #     All of the following relations would hold:
-    #         set(cp + cq) == sp | sq
-    #         set(cp - cq) == sp - sq
-    #         set(cp | cq) == sp | sq
-    #         set(cp & cq) == sp & sq
     #         (cp == cq) == (sp == sq)
     #         (cp != cq) == (sp != sq)
     #         (cp <= cq) == (sp <= sq)
     #         (cp < cq) == (sp < sq)
     #         (cp >= cq) == (sp >= sq)
     #         (cp > cq) == (sp > sq)
+    #         set(cp + cq) == sp | sq
+    #         set(cp - cq) == sp - sq
+    #         set(cp | cq) == sp | sq
+    #         set(cp & cq) == sp & sq
 
     def __eq__(self, other):
         'True if all counts agree. Missing counts are treated as zero.'

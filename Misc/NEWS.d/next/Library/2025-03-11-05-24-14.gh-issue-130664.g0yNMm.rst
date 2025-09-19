@@ -1,0 +1,4 @@
+Handle corner-case for :class:`~fractions.Fraction`'s formatting: treat
+zero-padding (preceding the width field by a zero (``'0'``) character) as an
+equivalent to a fill character of ``'0'`` with an alignment type of ``'='``,
+just as in case of :class:`float`'s.
