@@ -3127,7 +3127,7 @@ JIT_DEPS = \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
 
-JIT_STENCIL_HEADER :=		
+JIT_STENCIL_HEADER :=
 ifneq ($(filter aarch64-apple-darwin%,$(HOST_GNU_TYPE)),)
 JIT_STENCIL_HEADER = jit_stencils-aarch64-apple-darwin.h
 else ifneq ($(filter x86_64-apple-darwin%,$(HOST_GNU_TYPE)),)
