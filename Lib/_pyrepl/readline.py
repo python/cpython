@@ -35,12 +35,12 @@ import os
 from site import gethistoryfile
 import sys
 from rlcompleter import Completer as RLCompleter
-from .fancycompleter import Completer as FancyCompleter
 
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
 from ._module_completer import ModuleCompleter, make_default_module_completer
+from .fancycompleter import Completer as FancyCompleter
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
