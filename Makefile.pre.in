@@ -3127,21 +3127,11 @@ JIT_DEPS = \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
 
-JIT_STENCIL_HEADER := @JIT_STENCIL_HEADER@
-
-ifneq ($(JIT_STENCIL_HEADER),)
-jit_stencils.h $(JIT_STENCIL_HEADER): $(JIT_DEPS)
+@JIT_STENCILS_H@: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
-Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h $(JIT_STENCIL_HEADER)
+Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
-else
-jit_stencils.h: $(JIT_DEPS)
-	@REGEN_JIT_COMMAND@
-
-Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
-endif
 
 .PHONY: regen-jit
 regen-jit:
