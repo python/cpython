@@ -1,0 +1,2 @@
+Fix an assertion failure when sending :exc:`KeyboardInterrupt` to a Python
+process running a subinterpreter in a separate thread.
