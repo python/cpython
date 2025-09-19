@@ -1,8 +1,6 @@
 import unittest
-import sys
 
 from _colorize import ANSIColors
-import _pyrepl.readline
 from _pyrepl.fancycompleter import Completer, DefaultConfig, commonprefix
 
 
