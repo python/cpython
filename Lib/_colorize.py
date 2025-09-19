@@ -23,7 +23,6 @@ class ANSIColors:
     MAGENTA = "\x1b[35m"
     RED = "\x1b[31m"
     WHITE = "\x1b[37m"  # more like LIGHT GRAY
-    TEAL = "\x1b[36m"
     YELLOW = "\x1b[33m"
 
     BOLD = "\x1b[1m"
@@ -33,7 +32,6 @@ class ANSIColors:
     BOLD_GREEN = "\x1b[1;32m"
     BOLD_MAGENTA = "\x1b[1;35m"
     BOLD_RED = "\x1b[1;31m"
-    BOLD_TEAL = "\x1b[1;36m"
     BOLD_WHITE = "\x1b[1;37m"  # actual WHITE
     BOLD_YELLOW = "\x1b[1;33m"
 

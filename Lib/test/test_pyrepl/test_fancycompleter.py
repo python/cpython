@@ -147,21 +147,21 @@ class FancyCompleterTests(unittest.TestCase):
             bbb = None
         compl = Completer({'A': A}, ConfigForTest)
         #
-        # in this case, we want to display all attributes which start with
-        # 'a'. MOREOVER, we also include a space to prevent readline to
+        # In this case, we want to display all attributes which start with
+        # 'a'. Moreover, we also include a space to prevent readline to
         # automatically insert the common prefix (which will the the ANSI escape
-        # sequence if we use colors)
+        # sequence if we use colors).
         matches = compl.attr_matches('A.a')
         self.assertEqual(sorted(matches), [' ', 'aaa', 'abc_1', 'abc_2', 'abc_3'])
         #
-        # IF there is an actual common prefix, we return just it, so that readline
+        # If there is an actual common prefix, we return just it, so that readline
         # will insert it into place
         matches = compl.attr_matches('A.ab')
         self.assertEqual(matches, ['A.abc_'])
         #
-        # finally, at the next TAB, we display again all the completions available
-        # for this common prefix. Agai, we insert a spurious space to prevent the
-        # automatic completion of ANSI sequences
+        # Finally, at the next tab, we display again all the completions available
+        # for this common prefix. Again, we insert a spurious space to prevent the
+        # automatic completion of ANSI sequences.
         matches = compl.attr_matches('A.abc_')
         self.assertEqual(sorted(matches), [' ', 'abc_1', 'abc_2', 'abc_3'])
 

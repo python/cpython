@@ -3,7 +3,7 @@
 #
 #                        All Rights Reserved
 """
-Colorful TAB completion for Python prompt
+Colorful tab completion for Python prompt
 """
 from _pyrepl import readline
 from _colorize import ANSIColors
@@ -18,18 +18,18 @@ class DefaultConfig:
     use_colors = 'auto'
 
     color_by_type = {
-        types.BuiltinMethodType: ANSIColors.BOLD_TEAL,
-        types.MethodType: ANSIColors.BOLD_TEAL,
-        type((42).__add__): ANSIColors.BOLD_TEAL,
-        type(int.__add__): ANSIColors.BOLD_TEAL,
-        type(str.replace): ANSIColors.BOLD_TEAL,
+        types.BuiltinMethodType: ANSIColors.BOLD_CYAN,
+        types.MethodType: ANSIColors.BOLD_CYAN,
+        type((42).__add__): ANSIColors.BOLD_CYAN,
+        type(int.__add__): ANSIColors.BOLD_CYAN,
+        type(str.replace): ANSIColors.BOLD_CYAN,
 
         types.FunctionType: ANSIColors.BOLD_BLUE,
         types.BuiltinFunctionType: ANSIColors.BOLD_BLUE,
 
         type: ANSIColors.BOLD_MAGENTA,
 
-        types.ModuleType: ANSIColors.TEAL,
+        types.ModuleType: ANSIColors.CYAN,
         type(None): ANSIColors.GREY,
         str: ANSIColors.BOLD_GREEN,
         bytes: ANSIColors.BOLD_GREEN,
@@ -48,7 +48,7 @@ class DefaultConfig:
 
 class Completer(rlcompleter.Completer):
     """
-    When doing someting like a.b.<TAB>, display only the attributes of
+    When doing someting like a.b.<tab>, display only the attributes of
     b instead of the full a.b.attr string.
 
     Optionally, display the various completions in different colors
@@ -61,10 +61,10 @@ class Completer(rlcompleter.Completer):
 
         # XXX: double check what happens in this case once fancycompleter works
         if False and hasattr(readline, '_setup'):
-            # this is needed to offer pyrepl a better chance to patch
-            # raw_input. Usually, it does at import time, but is we are under
+            # This is needed to offer PyREPL a better chance to patch
+            # raw_input. Usually, it does at import time, but if we are under
             # pytest with output captured, at import time we don't have a
-            # terminal and thus the raw_input hook is not installed
+            # terminal and thus the raw_input hook is not installed.
             readline._setup()
 
         if self.config.use_colors:
@@ -178,7 +178,7 @@ class Completer(rlcompleter.Completer):
                    for i, name, obj
                    in zip(count(), names, values)]
         # We add a space at the end to prevent the automatic completion of the
-        # common prefix, which is the ANSI ESCAPE sequence.
+        # common prefix, which is the ANSI escape sequence.
         return matches + [' ']
 
     def color_for_obj(self, i, name, value):
