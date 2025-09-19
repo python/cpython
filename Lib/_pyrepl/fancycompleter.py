@@ -6,7 +6,7 @@
 Colorful tab completion for Python prompt
 """
 from _pyrepl import readline
-from _colorize import ANSIColors
+from _colorize import ANSIColors, get_colors
 import rlcompleter
 import types
 
@@ -39,9 +39,8 @@ class DefaultConfig:
     }
 
     def setup(self):
-        import _colorize
         if self.use_colors == 'auto':
-            colors = _colorize.get_colors()
+            colors = get_colors()
             self.use_colors = colors.RED != ""
 
 
@@ -139,7 +138,7 @@ class Completer(rlcompleter.Completer):
         while True:
             for word in words:
                 if (
-                    word[:n] == attr 
+                    word[:n] == attr
                     and not (noprefix and word[:n+1] == noprefix)
                 ):
                     try:
