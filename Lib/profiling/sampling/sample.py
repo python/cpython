@@ -12,16 +12,19 @@ from collections import deque
 from _colorize import ANSIColors
 
 from .pstats_collector import PstatsCollector
-from .stack_collector import CollapsedStackCollector
+from .stack_collector import CollapsedStackCollector, FlamegraphCollector
 
 _FREE_THREADED_BUILD = sysconfig.get_config_var("Py_GIL_DISABLED") is not None
-_MAX_STARTUP_ATTEMPTS = 5
-_STARTUP_RETRY_DELAY_SECONDS = 0.1
 _HELP_DESCRIPTION = """Sample a process's stack frames and generate profiling data.
 Supports the following target modes:
   - -p PID: Profile an existing process by PID
   - -m MODULE [ARGS...]: Profile a module as python -m module ...
   - filename [ARGS...]: Profile the specified script by running it in a subprocess
+
+Supports the following output formats:
+  - --pstats: Detailed profiling statistics with sorting options
+  - --collapsed: Stack traces for generating flamegraphs
+  - --flamegraph Interactive HTML flamegraph visualization (requires web browser)
 
 Examples:
   # Profile process 1234 for 10 seconds with default settings
@@ -38,6 +41,9 @@ Examples:
 
   # Generate collapsed stacks for flamegraph
   python -m profiling.sampling --collapsed -p 1234
+
+  # Generate a HTML flamegraph
+  python -m profiling.sampling --flamegraph -p 1234
 
   # Profile all threads, sort by total time
   python -m profiling.sampling -a --sort-tottime -p 1234
@@ -185,9 +191,16 @@ class SampleProfiler:
         if self.realtime_stats and len(self.sample_intervals) > 0:
             print()  # Add newline after real-time stats
 
+        sample_rate = num_samples / running_time
+        error_rate = (errors / num_samples) * 100 if num_samples > 0 else 0
+
         print(f"Captured {num_samples} samples in {running_time:.2f} seconds")
-        print(f"Sample rate: {num_samples / running_time:.2f} samples/sec")
-        print(f"Error rate: {(errors / num_samples) * 100:.2f}%")
+        print(f"Sample rate: {sample_rate:.2f} samples/sec")
+        print(f"Error rate: {error_rate:.2f}%")
+
+        # Pass stats to flamegraph collector if it's the right type
+        if hasattr(collector, 'set_stats'):
+            collector.set_stats(self.sample_interval_usec, running_time, sample_rate, error_rate)
 
         expected_samples = int(duration_sec / sample_interval_sec)
         if num_samples < expected_samples:
@@ -596,6 +609,9 @@ def sample(
         case "collapsed":
             collector = CollapsedStackCollector()
             filename = filename or f"collapsed.{pid}.txt"
+        case "flamegraph":
+            collector = FlamegraphCollector()
+            filename = filename or f"flamegraph.{pid}.html"
         case _:
             raise ValueError(f"Invalid output format: {output_format}")
 
@@ -728,12 +744,20 @@ def main():
         dest="format",
         help="Generate collapsed stack traces for flamegraphs",
     )
+    output_format.add_argument(
+        "--flamegraph",
+        action="store_const",
+        const="flamegraph",
+        dest="format",
+        help="Generate HTML flamegraph visualization",
+    )
 
     output_group.add_argument(
         "-o",
         "--outfile",
         help="Save output to a file (if omitted, prints to stdout for pstats, "
-        "or saves to collapsed.<pid>.txt for collapsed format)",
+        "or saves to collapsed.<pid>.txt or flamegraph.<pid>.html for the "
+        "respective output formats)"
     )
 
     # pstats-specific options

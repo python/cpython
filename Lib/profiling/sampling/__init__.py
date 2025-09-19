@@ -7,5 +7,6 @@ call stack rather than tracing every function call.
 from .collector import Collector
 from .pstats_collector import PstatsCollector
 from .stack_collector import CollapsedStackCollector
+from .string_table import StringTable
 
-__all__ = ("Collector", "PstatsCollector", "CollapsedStackCollector")
+__all__ = ("Collector", "PstatsCollector", "CollapsedStackCollector", "StringTable")

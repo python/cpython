@@ -1636,10 +1636,9 @@ then
       HOSTRUNNER="$NODE"
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
-    dnl TODO: support other WASI runtimes
-    dnl wasmtime starts the process with "/" as CWD. For OOT builds add the
-    dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=16777216 --wasi preview2=n --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
+    [WASI], [
+      AC_MSG_ERROR([HOSTRUNNER must be set when cross-compiling to WASI])
+    ],
     [HOSTRUNNER='']
   )
 fi
@@ -2344,7 +2343,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV,HEAPU32,TTY"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,_PyGILState_GetThisThreadState,__Py_DumpTraceback"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
     dnl Avoid bugs in JS fallback string decoding path
     AS_VAR_APPEND([LINKFORSHARED], [" -sTEXTDECODER=2"])
@@ -2788,13 +2787,11 @@ AS_VAR_IF([jit_flags],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
                       ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host} --output-dir . --pyconfig-dir . --cflags=\"$CFLAGS_JIT\""])
-           AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
            AS_VAR_IF([Py_DEBUG],
                      [true],
                      [AS_VAR_APPEND([REGEN_JIT_COMMAND], [" --debug"])],
                      [])])
 AC_SUBST([REGEN_JIT_COMMAND])
-AC_SUBST([JIT_STENCILS_H])
 AC_MSG_RESULT([$tier2_flags $jit_flags])
 
 if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
@@ -3054,10 +3051,10 @@ AC_CHECK_HEADERS([linux/vm_sockets.h], [], [], [
 #endif
 ])
 
-# On Linux, can.h, can/bcm.h, can/j1939.h, can/raw.h require sys/socket.h
+# On Linux, can.h, can/bcm.h, can/isotp.h, can/j1939.h, can/raw.h require sys/socket.h
 # On NetBSD, netcan/can.h requires sys/socket.h
 AC_CHECK_HEADERS(
-[linux/can.h linux/can/bcm.h linux/can/j1939.h linux/can/raw.h netcan/can.h],
+[linux/can.h linux/can/bcm.h linux/can/isotp.h linux/can/j1939.h linux/can/raw.h netcan/can.h],
 [], [], [
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -5147,7 +5144,7 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_syscalls.o'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o Python/emscripten_trampoline_wasm.o Python/emscripten_syscalls.o'])
     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
@@ -7108,13 +7105,13 @@ AC_ARG_WITH(
 [
 if test "$withval" = yes
 then
-  AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
+  AC_DEFINE([_Py_TAIL_CALL_INTERP], [1],
   [Define if you want to use tail-calling interpreters in CPython.])
   AC_MSG_RESULT([yes])
 fi
 if test "$withval" = no
 then
-  AC_DEFINE([Py_TAIL_CALL_INTERP], [0],
+  AC_DEFINE([_Py_TAIL_CALL_INTERP], [0],
   [Define if you want to use tail-calling interpreters in CPython.])
   AC_MSG_RESULT([no])
 fi

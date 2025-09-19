@@ -2376,6 +2376,16 @@ emscripten_set_up_async_input_device(PyObject *self, PyObject *Py_UNUSED(ignored
 }
 #endif
 
+static PyObject *
+simple_pending_call(PyObject *self, PyObject *callable)
+{
+    if (_PyEval_AddPendingCall(_PyInterpreterState_GET(), _pending_callback, Py_NewRef(callable), 0) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2481,6 +2491,7 @@ static PyMethodDef module_functions[] = {
 #ifdef __EMSCRIPTEN__
     {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
 #endif
+    {"simple_pending_call", simple_pending_call, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

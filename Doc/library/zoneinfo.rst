@@ -349,7 +349,7 @@ Functions
 
     This function only includes canonical zone names and does not include
     "special" zones such as those under the ``posix/`` and ``right/``
-    directories, or the ``posixrules`` zone.
+    directories, the ``posixrules``  or the ``localtime`` zone.
 
     .. caution::
 
