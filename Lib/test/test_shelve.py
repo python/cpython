@@ -5,7 +5,7 @@ import shelve
 import pickle
 import os
 
-from test.support import import_helper, os_helper
+from test.support import import_helper, os_helper, subTests
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
@@ -241,20 +241,24 @@ class TestCase(unittest.TestCase):
                              deserializer=deserializer) as s:
                 s["foo"] = "bar"
 
-    def test_custom_invalid_serializer(self):
-        os.mkdir(self.dirname)
-        self.addCleanup(os_helper.rmtree, self.dirname)
+    @subTests("serialized", [None, ["invalid type"]])
+    def test_custom_invalid_serializer(self, serialized):
+        test_dir = f"{self.dirname}_{id(serialized)}"
+        os.mkdir(test_dir)
+        self.addCleanup(os_helper.rmtree, test_dir)
+        test_fn = os.path.join(test_dir, "shelftemp.db")
 
         def serializer(obj, protocol=None):
-            return ["value with invalid type"]
+            return serialized
 
         def deserializer(data):
             return data.decode("utf-8")
 
-        # Since the serializer returns None, dbm.error is raised
-        # by dbm.sqlite3 and TypeError is raised by other backends.
+        # Since the serializer returns an invalid type or None,
+        # dbm.error is raised by dbm.sqlite3 and TypeError is raised
+        # by other backends.
         with self.assertRaises((TypeError, dbm.error)):
-            with shelve.open(self.fn, serializer=serializer,
+            with shelve.open(test_fn, serializer=serializer,
                              deserializer=deserializer) as s:
                 s["foo"] = "bar"
 
