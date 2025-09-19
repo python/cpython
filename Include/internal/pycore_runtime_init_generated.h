@@ -831,6 +831,7 @@ extern "C" {
     INIT_ID(byte_size), \
     INIT_ID(byteorder), \
     INIT_ID(bytes), \
+    INIT_ID(bytes_le), \
     INIT_ID(bytes_per_sep), \
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
@@ -1011,6 +1012,7 @@ extern "C" {
     INIT_ID(hash_name), \
     INIT_ID(header), \
     INIT_ID(headers), \
+    INIT_ID(hex), \
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
@@ -1042,6 +1044,7 @@ extern "C" {
     INIT_ID(insert_comments), \
     INIT_ID(insert_pis), \
     INIT_ID(instructions), \
+    INIT_ID(int), \
     INIT_ID(intern), \
     INIT_ID(intersection), \
     INIT_ID(interval), \
@@ -1049,6 +1052,7 @@ extern "C" {
     INIT_ID(is_compress), \
     INIT_ID(is_raw), \
     INIT_ID(is_running), \
+    INIT_ID(is_safe), \
     INIT_ID(is_struct), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \
