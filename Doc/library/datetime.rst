@@ -2772,7 +2772,7 @@ Notes:
    non-zero-padded output, except for ``%-y`` on Apple platforms, which is still
    zero-padded.
 
-(11)
+(10)
    When parsing a month and day using :meth:`~.datetime.strptime`, always
    include a year in the format.  If the value you need to parse lacks a year,
    append an explicit dummy leap year.  Otherwise your code will raise an
