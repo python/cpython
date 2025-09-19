@@ -224,23 +224,6 @@ class TestCase(unittest.TestCase):
                         s["array_data"], array_data.tobytes().decode()
                     )
 
-    def test_custom_incomplete_serializer(self):
-        os.mkdir(self.dirname)
-        self.addCleanup(os_helper.rmtree, self.dirname)
-
-        def serializer(obj, protocol=None):
-            pass
-
-        def deserializer(data):
-            return data.decode("utf-8")
-
-        # Since the serializer returns None, dbm.error is raised
-        # by dbm.sqlite3 and TypeError is raised by other backends.
-        with self.assertRaises((TypeError, dbm.error)):
-            with shelve.open(self.fn, serializer=serializer,
-                             deserializer=deserializer) as s:
-                s["foo"] = "bar"
-
     @subTests("serialized", [None, ["invalid type"]])
     def test_custom_invalid_serializer(self, serialized):
         test_dir = f"{self.dirname}_{id(serialized)}"
