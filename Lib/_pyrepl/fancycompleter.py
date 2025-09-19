@@ -2,9 +2,7 @@
 #                       Daniel Hahler
 #
 #                        All Rights Reserved
-"""
-Colorful tab completion for Python prompt
-"""
+"""Colorful tab completion for Python prompt"""
 from _colorize import ANSIColors, get_colors, get_theme
 import rlcompleter
 import types
