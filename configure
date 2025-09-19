@@ -644,6 +644,7 @@ ac_includes_default="\
 ac_header_c_list=
 ac_subst_vars='LTLIBOBJS
 MODULE_BLOCK
+JIT_STENCIL_HEADER
 MODULE_XXLIMITED_35_FALSE
 MODULE_XXLIMITED_35_TRUE
 MODULE_XXLIMITED_FALSE
@@ -34188,6 +34189,38 @@ fi
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_xxlimited_35" >&5
 printf "%s\n" "$py_cv_module_xxlimited_35" >&6; }
+
+
+# Determine JIT stencil header based on platform
+JIT_STENCIL_HEADER=""
+case "$host" in
+    aarch64-apple-darwin*)
+        JIT_STENCIL_HEADER="jit_stencils-aarch64-apple-darwin.h"
+        ;;
+    x86_64-apple-darwin*)
+        JIT_STENCIL_HEADER="jit_stencils-x86_64-apple-darwin.h"
+        ;;
+    aarch64-pc-windows-msvc)
+        JIT_STENCIL_HEADER="jit_stencils-aarch64-pc-windows-msvc.h"
+        ;;
+    i686-pc-windows-msvc)
+        JIT_STENCIL_HEADER="jit_stencils-i686-pc-windows-msvc.h"
+        ;;
+    x86_64-pc-windows-msvc)
+        JIT_STENCIL_HEADER="jit_stencils-x86_64-pc-windows-msvc.h"
+        ;;
+    aarch64-*-linux-gnu)
+        JIT_STENCIL_HEADER="jit_stencils-$host.h"
+        ;;
+    x86_64-*-linux-gnu)
+        JIT_STENCIL_HEADER="jit_stencils-$host.h"
+        ;;
+    *)
+        # Unsupported platform - leave empty for fallback
+        JIT_STENCIL_HEADER=""
+        ;;
+esac
+
 
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()

@@ -8171,6 +8171,38 @@ dnl Emscripten does not support shared libraries yet.
 PY_STDLIB_MOD([xxlimited], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 
+# Determine JIT stencil header based on platform
+JIT_STENCIL_HEADER=""
+case "$host" in
+    aarch64-apple-darwin*)
+        JIT_STENCIL_HEADER="jit_stencils-aarch64-apple-darwin.h"
+        ;;
+    x86_64-apple-darwin*)
+        JIT_STENCIL_HEADER="jit_stencils-x86_64-apple-darwin.h"
+        ;;
+    aarch64-pc-windows-msvc)
+        JIT_STENCIL_HEADER="jit_stencils-aarch64-pc-windows-msvc.h"
+        ;;
+    i686-pc-windows-msvc)
+        JIT_STENCIL_HEADER="jit_stencils-i686-pc-windows-msvc.h"
+        ;;
+    x86_64-pc-windows-msvc)
+        JIT_STENCIL_HEADER="jit_stencils-x86_64-pc-windows-msvc.h"
+        ;;
+    aarch64-*-linux-gnu)
+        JIT_STENCIL_HEADER="jit_stencils-$host.h"
+        ;;
+    x86_64-*-linux-gnu)
+        JIT_STENCIL_HEADER="jit_stencils-$host.h"
+        ;;
+    *)
+        # Unsupported platform - leave empty for fallback
+        JIT_STENCIL_HEADER=""
+        ;;
+esac
+
+AC_SUBST([JIT_STENCIL_HEADER])
+
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
 
