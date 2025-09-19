@@ -9,7 +9,6 @@ from _pyrepl import readline
 from _colorize import ANSIColors
 import rlcompleter
 import types
-from itertools import count
 
 
 class DefaultConfig:
@@ -30,7 +29,7 @@ class DefaultConfig:
         type: ANSIColors.BOLD_MAGENTA,
 
         types.ModuleType: ANSIColors.CYAN,
-        type(None): ANSIColors.GREY,
+        types.NoneType: ANSIColors.GREY,
         str: ANSIColors.BOLD_GREEN,
         bytes: ANSIColors.BOLD_GREEN,
         int: ANSIColors.BOLD_YELLOW,
@@ -81,7 +80,7 @@ class Completer(rlcompleter.Completer):
         http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/496812
         """
         if text == "":
-            return ['\t', None][state]
+            return ('\t', None)[state]
         else:
             return rlcompleter.Completer.complete(self, text, state)
 
@@ -122,8 +121,7 @@ class Completer(rlcompleter.Completer):
             return []
 
         # get the content of the object, except __builtins__
-        words = set(dir(thisobject))
-        words.discard("__builtins__")
+        words = set(dir(thisobject)) - {'__builtins__'}
 
         if hasattr(thisobject, '__class__'):
             words.add('__class__')
@@ -140,8 +138,10 @@ class Completer(rlcompleter.Completer):
         words = sorted(words)
         while True:
             for word in words:
-                if (word[:n] == attr and
-                        not (noprefix and word[:n+1] == noprefix)):
+                if (
+                    word[:n] == attr 
+                    and not (noprefix and word[:n+1] == noprefix)
+                ):
                     try:
                         val = getattr(thisobject, word)
                     except Exception:
@@ -175,8 +175,8 @@ class Completer(rlcompleter.Completer):
 
     def colorize_matches(self, names, values):
         matches = [self.color_for_obj(i, name, obj)
-                   for i, name, obj
-                   in zip(count(), names, values)]
+                   for i, (name, obj)
+                   in enumerate(zip(names, values))]
         # We add a space at the end to prevent the automatic completion of the
         # common prefix, which is the ANSI escape sequence.
         return matches + [' ']
@@ -191,8 +191,7 @@ class Completer(rlcompleter.Completer):
 
 
 def commonprefix(names, base=''):
-    """ return the common prefix of all 'names' starting with 'base'
-    """
+    """Return the common prefix of all 'names' starting with 'base'"""
     if base:
         names = [x for x in names if x.startswith(base)]
     if not names:
