@@ -1,4 +1,13 @@
-// UUID accelerator base type.
+/*
+ * Python UUID module:
+ * - wraps libuuid or Windows rpcrt4.dll.
+ * - implements fast version of the uuid.py:UUID class.
+ * - re-implements uuid4() and uuid7() functions with improved performance
+ *   by virtue of them being implemented in C and better entropy fetching
+ *   strategy.
+ *
+ * DCE compatible Universally Unique Identifier library.
+ */
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
@@ -136,6 +145,8 @@ typedef struct uuidobject {
 // Bytes 6-7:   time_hi_and_version      (16 bits)
 // Bytes 8-9:   clock_seq_and_variant    (16 bits)
 // Bytes 10-15: node                     (48 bits)
+//
+// Note that the time attributes are only relevant to versions 1, 6 and 7.
 //
 // Version field is located in byte 6; most significant 4 bits:
 //
@@ -486,8 +497,7 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
         if (validated == NULL) {
             return -1;
         }
-        Py_CLEAR(self->is_safe);
-        self->is_safe = validated;  // reuse reference
+        Py_XSETREF(self->is_safe, validated);
     }
 
     return 0;
@@ -734,12 +744,12 @@ extract_field(
     int overflow;
     uint64_t value = PyLong_AsLongLongAndOverflow(field, &overflow);
     if (overflow || (value == (uint64_t)-1 && PyErr_Occurred())) {
-        PyErr_Format(PyExc_ValueError, "%s", error_msg);
+        PyErr_SetString(PyExc_ValueError, error_msg);
         goto fail;
     }
 
     if (value > max_value) {
-        PyErr_Format(PyExc_ValueError, "%s", error_msg);
+        PyErr_SetString(PyExc_ValueError, error_msg);
         goto fail;
     }
 
@@ -767,14 +777,16 @@ from_fields(uuidobject *self, PyObject *fields)
         return -1;
     }
 
-    #define EXTRACT_FIELD(field_num, max_value, error_msg, type, name)          \
+#   define EXTRACT_FIELD(field_num, max_value, error_msg, type, name)           \
         type name;                                                              \
-        uint64_t name##_extracted;                                              \
-        if (extract_field(fields, field_num, max_value, error_msg,              \
-                          &(name##_extracted)) < 0) {                           \
-            return -1;                                                          \
-        }                                                                       \
-        name = (type)name##_extracted;
+        do {                                                                    \
+            uint64_t name##_extracted;                                          \
+            if (extract_field(fields, field_num, max_value, error_msg,          \
+                            &(name##_extracted)) < 0) {                         \
+                return -1;                                                      \
+            }                                                                   \
+            name = (type)name##_extracted;                                      \
+        } while(0)
 
     EXTRACT_FIELD(
         0, (1ULL << 32) - 1, "field 1 out of range (need a 32-bit value)",
