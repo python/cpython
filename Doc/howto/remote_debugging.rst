@@ -40,9 +40,13 @@ This can also be configured persistently, usually in ``/etc/sysctl.d``.
    in low-security environments.
 
 It is also possible that the ``ptrace`` system call is disabled because of a
-security filter. In particular, this was common with older versions of Docker.
-Docker 19.03 or higher (released 2019) running on Linux kernel 4.8 or higher
-(released 2016) allow usage of the ``ptrace`` system call inside containers.
+security filter. In particular, this was common with older versions of some
+container software. Docker 19.03 or newer (released 2019) and containerd 1.6.7
+or newer (released 2022) will automatically allow usage of the ``ptrace``
+system call inside containers, when running on Linux kernel 4.8 or higher. If
+you cannot upgrade to these versions, you can create your container with an
+option like ``--security-opt seccomp=unconfined`` to disable the system call
+security filter for that container.
 
 If you need to trace a process that you *do not* own, you will need superuser
 access or equivalent. This also applies to processes that have changed their
@@ -68,29 +72,23 @@ get around this restriction.)
 By default, macOS disables the ability to debug other processes.
 
 You can modify your Python binary to opt in to being debugged by giving it an
-**ad-hoc code signature**. (An ad-hoc "signature" is just a configuration
-without any actual cryptographic signature or a need for a certificate or
-anything else such as an Apple developer program membership.)
+**ad-hoc code signature** with an **entitlement** enabling it to be debugged.
+(An ad-hoc "signature" is just a configuration without any actual cryptographic
+signature or a need for a certificate or anything else such as an Apple
+developer program membership.)
 
-Create an entitlement property list file with the following contents:
+The following commands will create a file ``get-task-allow.plist`` with the
+necessary entitlement and add it to the Python binary:
 
-.. code-block:: xml
+.. code-block:: sh
 
-    <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-    <plist version="1.0">
-    <dict>
-        <key>com.apple.security.get-task-allow</key>
-        <true/>
-    </dict>
-    </plist>
+    echo '{"com.apple.security.get-task-allow": true}' | plutil -convert xml1 -o get-task-allow.plist -
+    codesign --sign - --entitlements get-task-allow.plist path/to/bin/python3
 
-Save it to a file e.g. ``get-task-allow.plist``, and then run
-
-    ``codesign --sign - --entitlements get-task-allow.plist path/to/bin/python3``
-
-(These instructions are for a non-framework build of Python. Framework builds
-may need to be configured differently.)
+where ``path/to/bin/python3`` is the path to your Python binary, which you can
+find by e.g. running ``which python3`` or evaluating ``sys.base_executable`` at
+the Python REPL. (These instructions are for a non-framework build of Python.
+Framework builds may need to be configured differently.)
 
 You should then be able to debug your own Python processes started with that
 binary.
