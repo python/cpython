@@ -394,12 +394,6 @@ class StrptimeTests(unittest.TestCase):
         one_hour = 60 * 60
         half_hour = 30 * 60
         half_minute = 30
-        (*_, offset), _, offset_fraction = _strptime._strptime("+09", "%z")
-        self.assertEqual(offset, 9 * one_hour)
-        self.assertEqual(offset_fraction, 0)
-        (*_, offset), _, offset_fraction = _strptime._strptime("-01", "%z")
-        self.assertEqual(offset, -one_hour)
-        self.assertEqual(offset_fraction, 0)
         (*_, offset), _, offset_fraction = _strptime._strptime("+0130", "%z")
         self.assertEqual(offset, one_hour + half_hour)
         self.assertEqual(offset_fraction, 0)
@@ -414,6 +408,8 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual(offset_fraction, -1)
 
         cases = [
+            ("-01", -one_hour, 0),
+            ("+09", 9 * one_hour, 0),
             ("+01:00", one_hour, 0),
             ("-01:30", -(one_hour + half_hour), 0),
             ("-01:30:30", -(one_hour + half_hour + half_minute), 0),
