@@ -4191,6 +4191,7 @@ sock_recvfrom(PyObject *self, PyObject *args)
     }
 
     ret = PyTuple_Pack(2, buf, addr);
+    Py_DECREF(buf);
 
 finally:
     Py_XDECREF(addr);
