@@ -544,7 +544,7 @@ _PyJIT_translate_single_bytecode_to_trace(
 
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
-    int lltrace = 3;
+    int lltrace = 0;
     if (python_lltrace != NULL && *python_lltrace >= '0') {
         lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
     }
@@ -755,7 +755,7 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     PyCodeObject *code = _PyFrame_GetCode(frame);
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
-    int lltrace = 3;
+    int lltrace = 0;
     if (python_lltrace != NULL && *python_lltrace >= '0') {
         lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
     }

@@ -23,6 +23,8 @@
             int opcode = BINARY_OP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP);
@@ -86,6 +88,8 @@
             int opcode = BINARY_OP_ADD_FLOAT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -144,6 +148,8 @@
             int opcode = BINARY_OP_ADD_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -204,6 +210,8 @@
             int opcode = BINARY_OP_ADD_UNICODE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -264,6 +272,8 @@
             int opcode = BINARY_OP_EXTEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -328,6 +338,8 @@
             int opcode = BINARY_OP_INPLACE_ADD_UNICODE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -411,6 +423,8 @@
             int opcode = BINARY_OP_MULTIPLY_FLOAT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -469,6 +483,8 @@
             int opcode = BINARY_OP_MULTIPLY_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -529,6 +545,8 @@
             int opcode = BINARY_OP_SUBSCR_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -595,6 +613,8 @@
             int opcode = BINARY_OP_SUBSCR_GETITEM;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -679,6 +699,8 @@
             int opcode = BINARY_OP_SUBSCR_LIST_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -769,6 +791,8 @@
             int opcode = BINARY_OP_SUBSCR_LIST_SLICE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -841,6 +865,8 @@
             int opcode = BINARY_OP_SUBSCR_STR_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -919,6 +945,8 @@
             int opcode = BINARY_OP_SUBSCR_TUPLE_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -992,6 +1020,8 @@
             int opcode = BINARY_OP_SUBTRACT_FLOAT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1050,6 +1080,8 @@
             int opcode = BINARY_OP_SUBTRACT_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1110,6 +1142,8 @@
             int opcode = BINARY_SLICE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BINARY_SLICE);
@@ -1166,6 +1200,8 @@
             int opcode = BUILD_INTERPOLATION;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_INTERPOLATION);
@@ -1224,6 +1260,8 @@
             int opcode = BUILD_LIST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_LIST);
@@ -1248,6 +1286,8 @@
             int opcode = BUILD_MAP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_MAP);
@@ -1300,6 +1340,8 @@
             int opcode = BUILD_SET;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SET);
@@ -1357,6 +1399,8 @@
             int opcode = BUILD_SLICE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_SLICE);
@@ -1392,6 +1436,8 @@
             int opcode = BUILD_STRING;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_STRING);
@@ -1439,6 +1485,8 @@
             int opcode = BUILD_TEMPLATE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_TEMPLATE);
@@ -1477,6 +1525,8 @@
             int opcode = BUILD_TUPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_TUPLE);
@@ -1499,6 +1549,8 @@
             int opcode = CACHE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CACHE);
@@ -1512,6 +1564,8 @@
             int opcode = CALL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL);
@@ -1690,6 +1744,8 @@
             int opcode = CALL_ALLOC_AND_ENTER_INIT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1811,6 +1867,8 @@
             int opcode = CALL_BOUND_METHOD_EXACT_ARGS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -1954,6 +2012,8 @@
             int opcode = CALL_BOUND_METHOD_GENERAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2082,6 +2142,8 @@
             int opcode = CALL_BUILTIN_CLASS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2187,6 +2249,8 @@
             int opcode = CALL_BUILTIN_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2296,6 +2360,8 @@
             int opcode = CALL_BUILTIN_FAST_WITH_KEYWORDS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2405,6 +2471,8 @@
             int opcode = CALL_BUILTIN_O;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2489,6 +2557,8 @@
             int opcode = CALL_FUNCTION_EX;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2656,6 +2726,8 @@
             int opcode = CALL_INTRINSIC_1;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_INTRINSIC_1);
@@ -2686,6 +2758,8 @@
             int opcode = CALL_INTRINSIC_2;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CALL_INTRINSIC_2);
@@ -2725,6 +2799,8 @@
             int opcode = CALL_ISINSTANCE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -2801,6 +2877,8 @@
             int opcode = CALL_KW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW);
@@ -2983,6 +3061,8 @@
             int opcode = CALL_KW_BOUND_METHOD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3113,6 +3193,8 @@
             int opcode = CALL_KW_NON_PY;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3240,6 +3322,8 @@
             int opcode = CALL_KW_PY;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3350,6 +3434,8 @@
             int opcode = CALL_LEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3422,6 +3508,8 @@
             int opcode = CALL_LIST_APPEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3510,6 +3598,8 @@
             int opcode = CALL_METHOD_DESCRIPTOR_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3631,6 +3721,8 @@
             int opcode = CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3754,6 +3846,8 @@
             int opcode = CALL_METHOD_DESCRIPTOR_NOARGS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3847,6 +3941,8 @@
             int opcode = CALL_METHOD_DESCRIPTOR_O;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -3953,6 +4049,8 @@
             int opcode = CALL_NON_PY_GENERAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4068,6 +4166,8 @@
             int opcode = CALL_PY_EXACT_ARGS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4181,6 +4281,8 @@
             int opcode = CALL_PY_GENERAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4281,6 +4383,8 @@
             int opcode = CALL_STR_1;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4353,6 +4457,8 @@
             int opcode = CALL_TUPLE_1;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4425,6 +4531,8 @@
             int opcode = CALL_TYPE_1;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4480,6 +4588,8 @@
             int opcode = CHECK_EG_MATCH;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CHECK_EG_MATCH);
@@ -4551,6 +4661,8 @@
             int opcode = CHECK_EXC_MATCH;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CHECK_EXC_MATCH);
@@ -4588,6 +4700,8 @@
             int opcode = CLEANUP_THROW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4647,6 +4761,8 @@
             int opcode = COMPARE_OP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP);
@@ -4720,6 +4836,8 @@
             int opcode = COMPARE_OP_FLOAT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4775,6 +4893,8 @@
             int opcode = COMPARE_OP_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4834,6 +4954,8 @@
             int opcode = COMPARE_OP_STR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -4893,6 +5015,8 @@
             int opcode = CONTAINS_OP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP);
@@ -4953,6 +5077,8 @@
             int opcode = CONTAINS_OP_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5011,6 +5137,8 @@
             int opcode = CONTAINS_OP_SET;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5069,6 +5197,8 @@
             int opcode = CONVERT_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(CONVERT_VALUE);
@@ -5101,6 +5231,8 @@
             int opcode = COPY;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(COPY);
@@ -5119,6 +5251,8 @@
             int opcode = COPY_FREE_VARS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(COPY_FREE_VARS);
@@ -5140,6 +5274,8 @@
             int opcode = DELETE_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_ATTR);
@@ -5165,6 +5301,8 @@
             int opcode = DELETE_DEREF;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_DEREF);
@@ -5187,6 +5325,8 @@
             int opcode = DELETE_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_FAST);
@@ -5213,6 +5353,8 @@
             int opcode = DELETE_GLOBAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_GLOBAL);
@@ -5238,6 +5380,8 @@
             int opcode = DELETE_NAME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_NAME);
@@ -5270,6 +5414,8 @@
             int opcode = DELETE_SUBSCR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DELETE_SUBSCR);
@@ -5302,6 +5448,8 @@
             int opcode = DICT_MERGE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DICT_MERGE);
@@ -5341,6 +5489,8 @@
             int opcode = DICT_UPDATE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(DICT_UPDATE);
@@ -5384,6 +5534,8 @@
             int opcode = END_ASYNC_FOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5429,6 +5581,8 @@
             int opcode = END_FOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             next_instr += 1;
             INSTRUCTION_STATS(END_FOR);
             _PyStackRef value;
@@ -5446,6 +5600,8 @@
             int opcode = END_SEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(END_SEND);
@@ -5469,6 +5625,8 @@
             int opcode = ENTER_EXECUTOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5505,6 +5663,8 @@
             int opcode = EXIT_INIT_CHECK;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXIT_INIT_CHECK);
@@ -5528,6 +5688,8 @@
             int opcode = EXTENDED_ARG;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(EXTENDED_ARG);
@@ -5544,6 +5706,8 @@
             int opcode = FORMAT_SIMPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(FORMAT_SIMPLE);
@@ -5580,6 +5744,8 @@
             int opcode = FORMAT_WITH_SPEC;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(FORMAT_WITH_SPEC);
@@ -5616,6 +5782,8 @@
             int opcode = FOR_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER);
@@ -5670,6 +5838,8 @@
             int opcode = FOR_ITER_GEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5741,6 +5911,8 @@
             int opcode = FOR_ITER_LIST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5825,6 +5997,8 @@
             int opcode = FOR_ITER_RANGE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5892,6 +6066,8 @@
             int opcode = FOR_ITER_TUPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -5948,6 +6124,8 @@
             int opcode = GET_AITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AITER);
@@ -6009,6 +6187,8 @@
             int opcode = GET_ANEXT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_ANEXT);
@@ -6033,6 +6213,8 @@
             int opcode = GET_AWAITABLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_AWAITABLE);
@@ -6062,6 +6244,8 @@
             int opcode = GET_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_ITER);
@@ -6108,6 +6292,8 @@
             int opcode = GET_LEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_LEN);
@@ -6136,6 +6322,8 @@
             int opcode = GET_YIELD_FROM_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(GET_YIELD_FROM_ITER);
@@ -6181,6 +6369,8 @@
             int opcode = IMPORT_FROM;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IMPORT_FROM);
@@ -6206,6 +6396,8 @@
             int opcode = IMPORT_NAME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IMPORT_NAME);
@@ -6245,6 +6437,8 @@
             int opcode = INSTRUMENTED_CALL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6433,6 +6627,8 @@
             int opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6600,6 +6796,8 @@
             int opcode = INSTRUMENTED_CALL_KW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6786,6 +6984,8 @@
             int opcode = INSTRUMENTED_END_ASYNC_FOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6839,6 +7039,8 @@
             int opcode = INSTRUMENTED_END_FOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             next_instr += 1;
@@ -6868,6 +7070,8 @@
             int opcode = INSTRUMENTED_END_SEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6902,6 +7106,8 @@
             int opcode = INSTRUMENTED_FOR_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6938,6 +7144,8 @@
             int opcode = INSTRUMENTED_INSTRUCTION;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6965,6 +7173,8 @@
             int opcode = INSTRUMENTED_JUMP_BACKWARD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6992,6 +7202,8 @@
             int opcode = INSTRUMENTED_JUMP_FORWARD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7006,6 +7218,8 @@
             int opcode = INSTRUMENTED_LINE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
@@ -7046,6 +7260,8 @@
             int opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7166,6 +7382,8 @@
             int opcode = INSTRUMENTED_NOT_TAKEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
@@ -7182,6 +7400,8 @@
             int opcode = INSTRUMENTED_POP_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
@@ -7207,6 +7427,8 @@
             int opcode = INSTRUMENTED_POP_JUMP_IF_FALSE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7231,6 +7453,8 @@
             int opcode = INSTRUMENTED_POP_JUMP_IF_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7262,6 +7486,8 @@
             int opcode = INSTRUMENTED_POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7291,6 +7517,8 @@
             int opcode = INSTRUMENTED_POP_JUMP_IF_TRUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7315,6 +7543,8 @@
             int opcode = INSTRUMENTED_RESUME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7395,6 +7625,8 @@
             int opcode = INSTRUMENTED_RETURN_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7447,6 +7679,8 @@
             int opcode = INSTRUMENTED_YIELD_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7518,6 +7752,8 @@
             int opcode = INTERPRETER_EXIT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INTERPRETER_EXIT);
@@ -7553,6 +7789,8 @@
             int opcode = IS_OP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(IS_OP);
@@ -7586,6 +7824,8 @@
             int opcode = JUMP_BACKWARD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
@@ -7627,6 +7867,8 @@
             int opcode = JUMP_BACKWARD_JIT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7688,6 +7930,8 @@
             int opcode = JUMP_BACKWARD_NO_INTERRUPT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_INTERRUPT);
@@ -7703,6 +7947,8 @@
             int opcode = JUMP_BACKWARD_NO_JIT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD_NO_JIT);
@@ -7732,6 +7978,8 @@
             int opcode = JUMP_FORWARD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(JUMP_FORWARD);
@@ -7744,6 +7992,8 @@
             int opcode = LIST_APPEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_APPEND);
@@ -7766,6 +8016,8 @@
             int opcode = LIST_EXTEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LIST_EXTEND);
@@ -7813,6 +8065,8 @@
             int opcode = LOAD_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR);
@@ -7894,6 +8148,8 @@
             int opcode = LOAD_ATTR_CLASS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -7952,6 +8208,8 @@
             int opcode = LOAD_ATTR_CLASS_WITH_METACLASS_CHECK;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8020,6 +8278,8 @@
             int opcode = LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8078,6 +8338,8 @@
             int opcode = LOAD_ATTR_INSTANCE_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8158,6 +8420,8 @@
             int opcode = LOAD_ATTR_METHOD_LAZY_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8214,6 +8478,8 @@
             int opcode = LOAD_ATTR_METHOD_NO_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8260,6 +8526,8 @@
             int opcode = LOAD_ATTR_METHOD_WITH_VALUES;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8327,6 +8595,8 @@
             int opcode = LOAD_ATTR_MODULE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8401,6 +8671,8 @@
             int opcode = LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8448,6 +8720,8 @@
             int opcode = LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8516,6 +8790,8 @@
             int opcode = LOAD_ATTR_PROPERTY;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8610,6 +8886,8 @@
             int opcode = LOAD_ATTR_SLOT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8679,6 +8957,8 @@
             int opcode = LOAD_ATTR_WITH_HINT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -8789,6 +9069,8 @@
             int opcode = LOAD_BUILD_CLASS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_BUILD_CLASS);
@@ -8819,6 +9101,8 @@
             int opcode = LOAD_COMMON_CONSTANT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
@@ -8836,6 +9120,8 @@
             int opcode = LOAD_CONST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_CONST);
@@ -8853,6 +9139,8 @@
             int opcode = LOAD_DEREF;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_DEREF);
@@ -8881,6 +9169,8 @@
             int opcode = LOAD_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST);
@@ -8898,6 +9188,8 @@
             int opcode = LOAD_FAST_AND_CLEAR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_AND_CLEAR);
@@ -8915,6 +9207,8 @@
             int opcode = LOAD_FAST_BORROW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_BORROW);
@@ -8932,6 +9226,8 @@
             int opcode = LOAD_FAST_BORROW_LOAD_FAST_BORROW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_BORROW_LOAD_FAST_BORROW);
@@ -8953,6 +9249,8 @@
             int opcode = LOAD_FAST_CHECK;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_CHECK);
@@ -8979,6 +9277,8 @@
             int opcode = LOAD_FAST_LOAD_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_LOAD_FAST);
@@ -9000,6 +9300,8 @@
             int opcode = LOAD_FROM_DICT_OR_DEREF;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FROM_DICT_OR_DEREF);
@@ -9045,6 +9347,8 @@
             int opcode = LOAD_FROM_DICT_OR_GLOBALS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FROM_DICT_OR_GLOBALS);
@@ -9120,6 +9424,8 @@
             int opcode = LOAD_GLOBAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL);
@@ -9176,6 +9482,8 @@
             int opcode = LOAD_GLOBAL_BUILTIN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9256,6 +9564,8 @@
             int opcode = LOAD_GLOBAL_MODULE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9323,6 +9633,8 @@
             int opcode = LOAD_LOCALS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_LOCALS);
@@ -9347,6 +9659,8 @@
             int opcode = LOAD_NAME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_NAME);
@@ -9370,6 +9684,8 @@
             int opcode = LOAD_SMALL_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_SMALL_INT);
@@ -9388,6 +9704,8 @@
             int opcode = LOAD_SPECIAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_SPECIAL);
@@ -9434,6 +9752,8 @@
             int opcode = LOAD_SUPER_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR);
@@ -9571,6 +9891,8 @@
             int opcode = LOAD_SUPER_ATTR_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9633,6 +9955,8 @@
             int opcode = LOAD_SUPER_ATTR_METHOD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -9711,6 +10035,8 @@
             int opcode = MAKE_CELL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAKE_CELL);
@@ -9732,6 +10058,8 @@
             int opcode = MAKE_FUNCTION;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAKE_FUNCTION);
@@ -9765,6 +10093,8 @@
             int opcode = MAP_ADD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MAP_ADD);
@@ -9796,6 +10126,8 @@
             int opcode = MATCH_CLASS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_CLASS);
@@ -9848,6 +10180,8 @@
             int opcode = MATCH_KEYS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_KEYS);
@@ -9875,6 +10209,8 @@
             int opcode = MATCH_MAPPING;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_MAPPING);
@@ -9894,6 +10230,8 @@
             int opcode = MATCH_SEQUENCE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(MATCH_SEQUENCE);
@@ -9913,6 +10251,8 @@
             int opcode = NOP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(NOP);
@@ -9924,6 +10264,8 @@
             int opcode = NOT_TAKEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(NOT_TAKEN);
@@ -9935,6 +10277,8 @@
             int opcode = POP_EXCEPT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_EXCEPT);
@@ -9956,6 +10300,8 @@
             int opcode = POP_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_ITER);
@@ -9977,6 +10323,8 @@
             int opcode = POP_JUMP_IF_FALSE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
@@ -9996,6 +10344,8 @@
             int opcode = POP_JUMP_IF_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NONE);
@@ -10036,6 +10386,8 @@
             int opcode = POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NOT_NONE);
@@ -10076,6 +10428,8 @@
             int opcode = POP_JUMP_IF_TRUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_TRUE);
@@ -10095,6 +10449,8 @@
             int opcode = POP_TOP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(POP_TOP);
@@ -10113,6 +10469,8 @@
             int opcode = PUSH_EXC_INFO;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(PUSH_EXC_INFO);
@@ -10142,6 +10500,8 @@
             int opcode = PUSH_NULL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(PUSH_NULL);
@@ -10158,6 +10518,8 @@
             int opcode = RAISE_VARARGS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10187,6 +10549,8 @@
             int opcode = RERAISE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10215,6 +10579,8 @@
             int opcode = RESERVED;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESERVED);
@@ -10228,6 +10594,8 @@
             int opcode = RESUME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESUME);
@@ -10304,6 +10672,8 @@
             int opcode = RESUME_CHECK;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10342,6 +10712,8 @@
             int opcode = RETURN_GENERATOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_GENERATOR);
@@ -10384,6 +10756,8 @@
             int opcode = RETURN_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RETURN_VALUE);
@@ -10418,6 +10792,8 @@
             int opcode = SEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(SEND);
@@ -10523,6 +10899,8 @@
             int opcode = SEND_GEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10592,6 +10970,8 @@
             int opcode = SETUP_ANNOTATIONS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SETUP_ANNOTATIONS);
@@ -10638,6 +11018,8 @@
             int opcode = SET_ADD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_ADD);
@@ -10662,6 +11044,8 @@
             int opcode = SET_FUNCTION_ATTRIBUTE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_FUNCTION_ATTRIBUTE);
@@ -10690,6 +11074,8 @@
             int opcode = SET_UPDATE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SET_UPDATE);
@@ -10717,6 +11103,8 @@
             int opcode = STORE_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR);
@@ -10774,6 +11162,8 @@
             int opcode = STORE_ATTR_INSTANCE_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10850,6 +11240,8 @@
             int opcode = STORE_ATTR_SLOT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10901,6 +11293,8 @@
             int opcode = STORE_ATTR_WITH_HINT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -10989,6 +11383,8 @@
             int opcode = STORE_DEREF;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_DEREF);
@@ -11008,6 +11404,8 @@
             int opcode = STORE_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST);
@@ -11028,6 +11426,8 @@
             int opcode = STORE_FAST_LOAD_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST_LOAD_FAST);
@@ -11051,6 +11451,8 @@
             int opcode = STORE_FAST_STORE_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_FAST_STORE_FAST);
@@ -11082,6 +11484,8 @@
             int opcode = STORE_GLOBAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_GLOBAL);
@@ -11107,6 +11511,8 @@
             int opcode = STORE_NAME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_NAME);
@@ -11153,6 +11559,8 @@
             int opcode = STORE_SLICE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(STORE_SLICE);
@@ -11213,6 +11621,8 @@
             int opcode = STORE_SUBSCR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR);
@@ -11272,6 +11682,8 @@
             int opcode = STORE_SUBSCR_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11323,6 +11735,8 @@
             int opcode = STORE_SUBSCR_LIST_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11404,6 +11818,8 @@
             int opcode = SWAP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SWAP);
@@ -11424,6 +11840,8 @@
             int opcode = TO_BOOL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL);
@@ -11476,6 +11894,8 @@
             int opcode = TO_BOOL_ALWAYS_TRUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11519,6 +11939,8 @@
             int opcode = TO_BOOL_BOOL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11543,6 +11965,8 @@
             int opcode = TO_BOOL_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11583,6 +12007,8 @@
             int opcode = TO_BOOL_LIST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11626,6 +12052,8 @@
             int opcode = TO_BOOL_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11653,6 +12081,8 @@
             int opcode = TO_BOOL_STR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11701,6 +12131,8 @@
             int opcode = UNARY_INVERT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_INVERT);
@@ -11730,6 +12162,8 @@
             int opcode = UNARY_NEGATIVE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_NEGATIVE);
@@ -11759,6 +12193,8 @@
             int opcode = UNARY_NOT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNARY_NOT);
@@ -11777,6 +12213,8 @@
             int opcode = UNPACK_EX;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(UNPACK_EX);
@@ -11804,6 +12242,8 @@
             int opcode = UNPACK_SEQUENCE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE);
@@ -11855,6 +12295,8 @@
             int opcode = UNPACK_SEQUENCE_LIST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11914,6 +12356,8 @@
             int opcode = UNPACK_SEQUENCE_TUPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -11964,6 +12408,8 @@
             int opcode = UNPACK_SEQUENCE_TWO_TUPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12015,6 +12461,8 @@
             int opcode = WITH_EXCEPT_START;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(WITH_EXCEPT_START);
@@ -12060,6 +12508,8 @@
             int opcode = YIELD_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(YIELD_VALUE);
@@ -12111,6 +12561,8 @@
             int opcode = BINARY_OP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(BINARY_OP);
@@ -12174,6 +12626,8 @@
             int opcode = BINARY_OP_ADD_FLOAT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12232,6 +12686,8 @@
             int opcode = BINARY_OP_ADD_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12292,6 +12748,8 @@
             int opcode = BINARY_OP_ADD_UNICODE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12352,6 +12810,8 @@
             int opcode = BINARY_OP_EXTEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12416,6 +12876,8 @@
             int opcode = BINARY_OP_INPLACE_ADD_UNICODE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12499,6 +12961,8 @@
             int opcode = BINARY_OP_MULTIPLY_FLOAT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12557,6 +13021,8 @@
             int opcode = BINARY_OP_MULTIPLY_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12617,6 +13083,8 @@
             int opcode = BINARY_OP_SUBSCR_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12683,6 +13151,8 @@
             int opcode = BINARY_OP_SUBSCR_GETITEM;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12767,6 +13237,8 @@
             int opcode = BINARY_OP_SUBSCR_LIST_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12857,6 +13329,8 @@
             int opcode = BINARY_OP_SUBSCR_LIST_SLICE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -12929,6 +13403,8 @@
             int opcode = BINARY_OP_SUBSCR_STR_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13007,6 +13483,8 @@
             int opcode = BINARY_OP_SUBSCR_TUPLE_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13080,6 +13558,8 @@
             int opcode = BINARY_OP_SUBTRACT_FLOAT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13138,6 +13618,8 @@
             int opcode = BINARY_OP_SUBTRACT_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13198,6 +13680,8 @@
             int opcode = BINARY_SLICE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13256,6 +13740,8 @@
             int opcode = BUILD_INTERPOLATION;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13316,6 +13802,8 @@
             int opcode = BUILD_LIST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13342,6 +13830,8 @@
             int opcode = BUILD_MAP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13396,6 +13886,8 @@
             int opcode = BUILD_SET;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13455,6 +13947,8 @@
             int opcode = BUILD_SLICE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13492,6 +13986,8 @@
             int opcode = BUILD_STRING;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13541,6 +14037,8 @@
             int opcode = BUILD_TEMPLATE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13581,6 +14079,8 @@
             int opcode = BUILD_TUPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13605,6 +14105,8 @@
             int opcode = CACHE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13620,6 +14122,8 @@
             int opcode = CALL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL);
@@ -13798,6 +14302,8 @@
             int opcode = CALL_ALLOC_AND_ENTER_INIT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -13919,6 +14425,8 @@
             int opcode = CALL_BOUND_METHOD_EXACT_ARGS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14062,6 +14570,8 @@
             int opcode = CALL_BOUND_METHOD_GENERAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14190,6 +14700,8 @@
             int opcode = CALL_BUILTIN_CLASS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14295,6 +14807,8 @@
             int opcode = CALL_BUILTIN_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14404,6 +14918,8 @@
             int opcode = CALL_BUILTIN_FAST_WITH_KEYWORDS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14513,6 +15029,8 @@
             int opcode = CALL_BUILTIN_O;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14597,6 +15115,8 @@
             int opcode = CALL_FUNCTION_EX;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14764,6 +15284,8 @@
             int opcode = CALL_INTRINSIC_1;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14796,6 +15318,8 @@
             int opcode = CALL_INTRINSIC_2;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14837,6 +15361,8 @@
             int opcode = CALL_ISINSTANCE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -14913,6 +15439,8 @@
             int opcode = CALL_KW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_KW);
@@ -15095,6 +15623,8 @@
             int opcode = CALL_KW_BOUND_METHOD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -15225,6 +15755,8 @@
             int opcode = CALL_KW_NON_PY;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -15352,6 +15884,8 @@
             int opcode = CALL_KW_PY;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -15462,6 +15996,8 @@
             int opcode = CALL_LEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -15534,6 +16070,8 @@
             int opcode = CALL_LIST_APPEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -15622,6 +16160,8 @@
             int opcode = CALL_METHOD_DESCRIPTOR_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -15743,6 +16283,8 @@
             int opcode = CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -15866,6 +16408,8 @@
             int opcode = CALL_METHOD_DESCRIPTOR_NOARGS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -15959,6 +16503,8 @@
             int opcode = CALL_METHOD_DESCRIPTOR_O;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16065,6 +16611,8 @@
             int opcode = CALL_NON_PY_GENERAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16180,6 +16728,8 @@
             int opcode = CALL_PY_EXACT_ARGS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16293,6 +16843,8 @@
             int opcode = CALL_PY_GENERAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16393,6 +16945,8 @@
             int opcode = CALL_STR_1;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16465,6 +17019,8 @@
             int opcode = CALL_TUPLE_1;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16537,6 +17093,8 @@
             int opcode = CALL_TYPE_1;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16592,6 +17150,8 @@
             int opcode = CHECK_EG_MATCH;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16665,6 +17225,8 @@
             int opcode = CHECK_EXC_MATCH;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16704,6 +17266,8 @@
             int opcode = CLEANUP_THROW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16763,6 +17327,8 @@
             int opcode = COMPARE_OP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP);
@@ -16836,6 +17402,8 @@
             int opcode = COMPARE_OP_FLOAT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16891,6 +17459,8 @@
             int opcode = COMPARE_OP_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -16950,6 +17520,8 @@
             int opcode = COMPARE_OP_STR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17009,6 +17581,8 @@
             int opcode = CONTAINS_OP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(CONTAINS_OP);
@@ -17069,6 +17643,8 @@
             int opcode = CONTAINS_OP_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17127,6 +17703,8 @@
             int opcode = CONTAINS_OP_SET;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17185,6 +17763,8 @@
             int opcode = CONVERT_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17219,6 +17799,8 @@
             int opcode = COPY;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17239,6 +17821,8 @@
             int opcode = COPY_FREE_VARS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17262,6 +17846,8 @@
             int opcode = DELETE_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17289,6 +17875,8 @@
             int opcode = DELETE_DEREF;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17313,6 +17901,8 @@
             int opcode = DELETE_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17341,6 +17931,8 @@
             int opcode = DELETE_GLOBAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17368,6 +17960,8 @@
             int opcode = DELETE_NAME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17402,6 +17996,8 @@
             int opcode = DELETE_SUBSCR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17436,6 +18032,8 @@
             int opcode = DICT_MERGE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17477,6 +18075,8 @@
             int opcode = DICT_UPDATE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17522,6 +18122,8 @@
             int opcode = END_ASYNC_FOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17567,6 +18169,8 @@
             int opcode = END_FOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             next_instr += 1;
@@ -17586,6 +18190,8 @@
             int opcode = END_SEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17611,6 +18217,8 @@
             int opcode = ENTER_EXECUTOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17647,6 +18255,8 @@
             int opcode = EXIT_INIT_CHECK;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17672,6 +18282,8 @@
             int opcode = EXTENDED_ARG;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17690,6 +18302,8 @@
             int opcode = FORMAT_SIMPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17728,6 +18342,8 @@
             int opcode = FORMAT_WITH_SPEC;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17766,6 +18382,8 @@
             int opcode = FOR_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER);
@@ -17820,6 +18438,8 @@
             int opcode = FOR_ITER_GEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17891,6 +18511,8 @@
             int opcode = FOR_ITER_LIST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -17975,6 +18597,8 @@
             int opcode = FOR_ITER_RANGE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18042,6 +18666,8 @@
             int opcode = FOR_ITER_TUPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18098,6 +18724,8 @@
             int opcode = GET_AITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18161,6 +18789,8 @@
             int opcode = GET_ANEXT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18187,6 +18817,8 @@
             int opcode = GET_AWAITABLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18218,6 +18850,8 @@
             int opcode = GET_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18266,6 +18900,8 @@
             int opcode = GET_LEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18296,6 +18932,8 @@
             int opcode = GET_YIELD_FROM_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18343,6 +18981,8 @@
             int opcode = IMPORT_FROM;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18370,6 +19010,8 @@
             int opcode = IMPORT_NAME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18411,6 +19053,8 @@
             int opcode = INSTRUMENTED_CALL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18599,6 +19243,8 @@
             int opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18766,6 +19412,8 @@
             int opcode = INSTRUMENTED_CALL_KW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -18952,6 +19600,8 @@
             int opcode = INSTRUMENTED_END_ASYNC_FOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19005,6 +19655,8 @@
             int opcode = INSTRUMENTED_END_FOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             next_instr += 1;
@@ -19034,6 +19686,8 @@
             int opcode = INSTRUMENTED_END_SEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19068,6 +19722,8 @@
             int opcode = INSTRUMENTED_FOR_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19104,6 +19760,8 @@
             int opcode = INSTRUMENTED_INSTRUCTION;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19131,6 +19789,8 @@
             int opcode = INSTRUMENTED_JUMP_BACKWARD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19158,6 +19818,8 @@
             int opcode = INSTRUMENTED_JUMP_FORWARD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19172,6 +19834,8 @@
             int opcode = INSTRUMENTED_LINE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
@@ -19212,6 +19876,8 @@
             int opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19332,6 +19998,8 @@
             int opcode = INSTRUMENTED_NOT_TAKEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
@@ -19348,6 +20016,8 @@
             int opcode = INSTRUMENTED_POP_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
@@ -19373,6 +20043,8 @@
             int opcode = INSTRUMENTED_POP_JUMP_IF_FALSE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19397,6 +20069,8 @@
             int opcode = INSTRUMENTED_POP_JUMP_IF_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19428,6 +20102,8 @@
             int opcode = INSTRUMENTED_POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19457,6 +20133,8 @@
             int opcode = INSTRUMENTED_POP_JUMP_IF_TRUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19481,6 +20159,8 @@
             int opcode = INSTRUMENTED_RESUME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19561,6 +20241,8 @@
             int opcode = INSTRUMENTED_RETURN_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19613,6 +20295,8 @@
             int opcode = INSTRUMENTED_YIELD_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19684,6 +20368,8 @@
             int opcode = INTERPRETER_EXIT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19721,6 +20407,8 @@
             int opcode = IS_OP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19756,6 +20444,8 @@
             int opcode = JUMP_BACKWARD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
@@ -19797,6 +20487,8 @@
             int opcode = JUMP_BACKWARD_JIT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19858,6 +20550,8 @@
             int opcode = JUMP_BACKWARD_NO_INTERRUPT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19875,6 +20569,8 @@
             int opcode = JUMP_BACKWARD_NO_JIT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19906,6 +20602,8 @@
             int opcode = JUMP_FORWARD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19920,6 +20618,8 @@
             int opcode = LIST_APPEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19944,6 +20644,8 @@
             int opcode = LIST_EXTEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -19993,6 +20695,8 @@
             int opcode = LOAD_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR);
@@ -20074,6 +20778,8 @@
             int opcode = LOAD_ATTR_CLASS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20132,6 +20838,8 @@
             int opcode = LOAD_ATTR_CLASS_WITH_METACLASS_CHECK;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20200,6 +20908,8 @@
             int opcode = LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20258,6 +20968,8 @@
             int opcode = LOAD_ATTR_INSTANCE_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20338,6 +21050,8 @@
             int opcode = LOAD_ATTR_METHOD_LAZY_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20394,6 +21108,8 @@
             int opcode = LOAD_ATTR_METHOD_NO_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20440,6 +21156,8 @@
             int opcode = LOAD_ATTR_METHOD_WITH_VALUES;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20507,6 +21225,8 @@
             int opcode = LOAD_ATTR_MODULE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20581,6 +21301,8 @@
             int opcode = LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20628,6 +21350,8 @@
             int opcode = LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20696,6 +21420,8 @@
             int opcode = LOAD_ATTR_PROPERTY;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20790,6 +21516,8 @@
             int opcode = LOAD_ATTR_SLOT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20859,6 +21587,8 @@
             int opcode = LOAD_ATTR_WITH_HINT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -20969,6 +21699,8 @@
             int opcode = LOAD_BUILD_CLASS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21001,6 +21733,8 @@
             int opcode = LOAD_COMMON_CONSTANT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21020,6 +21754,8 @@
             int opcode = LOAD_CONST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21039,6 +21775,8 @@
             int opcode = LOAD_DEREF;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21069,6 +21807,8 @@
             int opcode = LOAD_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21088,6 +21828,8 @@
             int opcode = LOAD_FAST_AND_CLEAR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21107,6 +21849,8 @@
             int opcode = LOAD_FAST_BORROW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21126,6 +21870,8 @@
             int opcode = LOAD_FAST_BORROW_LOAD_FAST_BORROW;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21149,6 +21895,8 @@
             int opcode = LOAD_FAST_CHECK;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21177,6 +21925,8 @@
             int opcode = LOAD_FAST_LOAD_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21200,6 +21950,8 @@
             int opcode = LOAD_FROM_DICT_OR_DEREF;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21247,6 +21999,8 @@
             int opcode = LOAD_FROM_DICT_OR_GLOBALS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21324,6 +22078,8 @@
             int opcode = LOAD_GLOBAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL);
@@ -21380,6 +22136,8 @@
             int opcode = LOAD_GLOBAL_BUILTIN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21460,6 +22218,8 @@
             int opcode = LOAD_GLOBAL_MODULE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21527,6 +22287,8 @@
             int opcode = LOAD_LOCALS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21553,6 +22315,8 @@
             int opcode = LOAD_NAME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21578,6 +22342,8 @@
             int opcode = LOAD_SMALL_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21598,6 +22364,8 @@
             int opcode = LOAD_SPECIAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21646,6 +22414,8 @@
             int opcode = LOAD_SUPER_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR);
@@ -21783,6 +22553,8 @@
             int opcode = LOAD_SUPER_ATTR_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21845,6 +22617,8 @@
             int opcode = LOAD_SUPER_ATTR_METHOD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21923,6 +22697,8 @@
             int opcode = MAKE_CELL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21946,6 +22722,8 @@
             int opcode = MAKE_FUNCTION;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -21981,6 +22759,8 @@
             int opcode = MAP_ADD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22014,6 +22794,8 @@
             int opcode = MATCH_CLASS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22068,6 +22850,8 @@
             int opcode = MATCH_KEYS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22097,6 +22881,8 @@
             int opcode = MATCH_MAPPING;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22118,6 +22904,8 @@
             int opcode = MATCH_SEQUENCE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22139,6 +22927,8 @@
             int opcode = NOP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22152,6 +22942,8 @@
             int opcode = NOT_TAKEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22165,6 +22957,8 @@
             int opcode = POP_EXCEPT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22188,6 +22982,8 @@
             int opcode = POP_ITER;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22211,6 +23007,8 @@
             int opcode = POP_JUMP_IF_FALSE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22232,6 +23030,8 @@
             int opcode = POP_JUMP_IF_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22274,6 +23074,8 @@
             int opcode = POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22316,6 +23118,8 @@
             int opcode = POP_JUMP_IF_TRUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22337,6 +23141,8 @@
             int opcode = POP_TOP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22357,6 +23163,8 @@
             int opcode = PUSH_EXC_INFO;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22388,6 +23196,8 @@
             int opcode = PUSH_NULL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22406,6 +23216,8 @@
             int opcode = RAISE_VARARGS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22435,6 +23247,8 @@
             int opcode = RERAISE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22463,6 +23277,8 @@
             int opcode = RESERVED;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22478,6 +23294,8 @@
             int opcode = RESUME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(RESUME);
@@ -22554,6 +23372,8 @@
             int opcode = RESUME_CHECK;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22592,6 +23412,8 @@
             int opcode = RETURN_GENERATOR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22636,6 +23458,8 @@
             int opcode = RETURN_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22672,6 +23496,8 @@
             int opcode = SEND;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(SEND);
@@ -22777,6 +23603,8 @@
             int opcode = SEND_GEN;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22846,6 +23674,8 @@
             int opcode = SETUP_ANNOTATIONS;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22894,6 +23724,8 @@
             int opcode = SET_ADD;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22920,6 +23752,8 @@
             int opcode = SET_FUNCTION_ATTRIBUTE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22950,6 +23784,8 @@
             int opcode = SET_UPDATE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -22979,6 +23815,8 @@
             int opcode = STORE_ATTR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 5;
             INSTRUCTION_STATS(STORE_ATTR);
@@ -23036,6 +23874,8 @@
             int opcode = STORE_ATTR_INSTANCE_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23112,6 +23952,8 @@
             int opcode = STORE_ATTR_SLOT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23163,6 +24005,8 @@
             int opcode = STORE_ATTR_WITH_HINT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23251,6 +24095,8 @@
             int opcode = STORE_DEREF;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23272,6 +24118,8 @@
             int opcode = STORE_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23294,6 +24142,8 @@
             int opcode = STORE_FAST_LOAD_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23319,6 +24169,8 @@
             int opcode = STORE_FAST_STORE_FAST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23352,6 +24204,8 @@
             int opcode = STORE_GLOBAL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23379,6 +24233,8 @@
             int opcode = STORE_NAME;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23427,6 +24283,8 @@
             int opcode = STORE_SLICE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23489,6 +24347,8 @@
             int opcode = STORE_SUBSCR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR);
@@ -23548,6 +24408,8 @@
             int opcode = STORE_SUBSCR_DICT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23599,6 +24461,8 @@
             int opcode = STORE_SUBSCR_LIST_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23680,6 +24544,8 @@
             int opcode = SWAP;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23702,6 +24568,8 @@
             int opcode = TO_BOOL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL);
@@ -23754,6 +24622,8 @@
             int opcode = TO_BOOL_ALWAYS_TRUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23797,6 +24667,8 @@
             int opcode = TO_BOOL_BOOL;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23821,6 +24693,8 @@
             int opcode = TO_BOOL_INT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23861,6 +24735,8 @@
             int opcode = TO_BOOL_LIST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23904,6 +24780,8 @@
             int opcode = TO_BOOL_NONE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23931,6 +24809,8 @@
             int opcode = TO_BOOL_STR;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -23979,6 +24859,8 @@
             int opcode = UNARY_INVERT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -24010,6 +24892,8 @@
             int opcode = UNARY_NEGATIVE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -24041,6 +24925,8 @@
             int opcode = UNARY_NOT;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -24061,6 +24947,8 @@
             int opcode = UNPACK_EX;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -24090,6 +24978,8 @@
             int opcode = UNPACK_SEQUENCE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE);
@@ -24141,6 +25031,8 @@
             int opcode = UNPACK_SEQUENCE_LIST;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -24200,6 +25092,8 @@
             int opcode = UNPACK_SEQUENCE_TUPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -24250,6 +25144,8 @@
             int opcode = UNPACK_SEQUENCE_TWO_TUPLE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -24301,6 +25197,8 @@
             int opcode = WITH_EXCEPT_START;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -24348,6 +25246,8 @@
             int opcode = YIELD_VALUE;
             (void)(opcode);
             #endif
+            PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+            (void)old_code;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;

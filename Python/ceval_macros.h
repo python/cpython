@@ -144,7 +144,7 @@
     DISPATCH();
 #  define RECORD_TRACE() do { \
         frame->instr_ptr = next_instr; \
-        if (add_to_code_trace(tstate, frame, this_instr, next_instr, oparg)) { \
+        if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, oparg)) { \
             BAIL_TRACING(); \
         } \
     } while (0);
