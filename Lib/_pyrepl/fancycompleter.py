@@ -66,10 +66,8 @@ class Completer(rlcompleter.Completer):
             readline.set_completer_delims(delims)
 
     def complete(self, text, state):
-        """
-        stolen from:
-        http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/496812
-        """
+        # if you press <tab> at the beginning of a line, insert an actual
+        # \t. Else, trigger completion.
         if text == "":
             return ('\t', None)[state]
         else:
