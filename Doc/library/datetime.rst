@@ -2762,16 +2762,15 @@ Notes:
    interchangeable.
 
 (9)
-   When used with the :meth:`~.datetime.strftime` method, the leading zero is optional
-   for formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
-   ``%W``, ``%V`` and ``%y`` (except that on Apple platforms, ``%y`` always produces
-   a leading zero). Use the ``%-`` flag to produce non-zero-padded output
-   (for example, ``%-d``).
-
-(10)
    When used with the :meth:`~.datetime.strptime` method, the leading zero is optional
    for  formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, and ``%V``. Format ``%y`` does require a leading zero.
+
+   When used with the :meth:`~.datetime.strftime` method, the leading zero is optional
+   for formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
+   ``%W``, ``%V`` and ``%y``. The ``%-`` flag (for example, ``%-d``) will produce
+   non-zero-padded output, except for ``%-y`` on Apple platforms, which is still
+   zero-padded.
 
 (11)
    When parsing a month and day using :meth:`~.datetime.strptime`, always

@@ -293,7 +293,7 @@ def _wrap_strftime(object, format, timetuple):
                     if i < n:
                         next_ch = format[i]
                         i += 1
-                        if sys.platform.startswith('win') or sys.platform.startswith('android'):
+                        if sys.platform in ['win32', 'android']:
                             push(_make_dash_replacement(next_ch, timetuple))
                         else:
                             push('%-' + next_ch)
