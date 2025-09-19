@@ -3158,7 +3158,7 @@ static int
 try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
 {
     _PyRWMutex_RLock(&interp->references.lock);
-    if (_PyInterpreterState_GetFinalizing(interp) == NULL) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         *strong_ptr = 0;
         _PyRWMutex_RUnlock(&interp->references.lock);
         return -1;
@@ -3356,7 +3356,6 @@ PyThreadState_Release(PyThreadRef thread_ref)
         Py_FatalError("PyThreadState_Release() called more times than PyThreadState_Ensure()");
     }
     // The thread reference might be NULL
-    assert(thread_ref >= 0);
     PyThreadState *to_restore = (PyThreadState *)thread_ref;
     if (remaining == 0) {
         if (tstate->ensure.delete_on_release) {
