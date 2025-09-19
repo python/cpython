@@ -1760,6 +1760,24 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     return 0;
 }
 
+/* Check whether year with century should be normalized for strftime. */
+inline static int
+normalize_century(void)
+{
+    static int cache = -1;
+    if (cache < 0) {
+        char year[5];
+        struct tm date = {
+            .tm_year = -1801,
+            .tm_mon = 0,
+            .tm_mday = 1
+        };
+        cache = (strftime(year, sizeof(year), "%Y", &date) &&
+                 strcmp(year, "0099") != 0);
+    }
+    return cache;
+}
+
 static PyObject *
 make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
 {
@@ -1931,10 +1949,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             replacement = freplacement;
         }
-#ifdef _Py_NORMALIZE_CENTURY
-        else if (ch == 'Y' || ch == 'G'
-                 || ch == 'F' || ch == 'C'
-        ) {
+        else if (normalize_century()
+                 && (ch == 'Y' || ch == 'G' || ch == 'F' || ch == 'C'))
+        {
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
             if (item == NULL) {
@@ -1985,7 +2002,6 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
-#endif
         else {
             /* percent followed by something else */
             continue;
@@ -3275,24 +3291,37 @@ static PyObject *
 datetime_date_today_impl(PyTypeObject *type)
 /*[clinic end generated code: output=d5474697df6b251c input=21688afa289c0a06]*/
 {
-    PyObject *time;
-    PyObject *result;
-    time = time_time();
-    if (time == NULL)
-        return NULL;
+    /* Use C implementation to boost performance for date type */
+    if (type == &PyDateTime_DateType) {
+        struct tm tm;
+        time_t t;
+        time(&t);
 
-    /* Note well:  today() is a class method, so this may not call
-     * date.fromtimestamp.  For example, it may call
-     * datetime.fromtimestamp.  That's why we need all the accuracy
-     * time.time() delivers; if someone were gonzo about optimization,
-     * date.today() could get away with plain C time().
+        if (_PyTime_localtime(t, &tm) != 0) {
+            return NULL;
+        }
+
+        return new_date_ex(tm.tm_year + 1900,
+                           tm.tm_mon + 1,
+                           tm.tm_mday,
+                           type);
+    }
+
+    PyObject *time = time_time();
+    if (time == NULL) {
+        return NULL;
+    }
+
+    /* Note well: since today() is a class method, it may not call
+     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
      */
-    result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
+    PyObject *result = PyObject_CallMethodOneArg((PyObject*)type, &_Py_ID(fromtimestamp), time);
     Py_DECREF(time);
     return result;
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 datetime.date.fromtimestamp
 
@@ -3307,7 +3336,7 @@ as local time.
 
 static PyObject *
 datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=59def4e32c028fb6 input=eabb3fe7f40491fe]*/
+/*[clinic end generated code: output=59def4e32c028fb6 input=55ff6940f0a8339f]*/
 {
     return date_fromtimestamp(type, timestamp);
 }
@@ -3451,12 +3480,15 @@ datetime.date.strptime
     /
 
 Parse string according to the given date format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=454d473bee2d5161 input=001904ab34f594a1]*/
+/*[clinic end generated code: output=454d473bee2d5161 input=31d57bb789433e99]*/
 {
     PyObject *result;
 
@@ -3591,11 +3623,14 @@ datetime.date.strftime
 Format using strftime().
 
 Example: "%d/%m/%Y, %H:%M:%S".
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_date_strftime_impl(PyObject *self, PyObject *format)
-/*[clinic end generated code: output=6529b70095e16778 input=72af55077e606ed8]*/
+/*[clinic end generated code: output=6529b70095e16778 input=b6fd4a2ded27b557]*/
 {
     /* This method can be inherited, and needs to call the
      * timetuple() method appropriate to self's class.
@@ -4694,12 +4729,15 @@ datetime.time.strptime
     /
 
 Parse string according to the given time format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_time_strptime_impl(PyTypeObject *type, PyObject *string,
                             PyObject *format)
-/*[clinic end generated code: output=ae05a9bc0241d3bf input=6d0f263a5f94d78d]*/
+/*[clinic end generated code: output=ae05a9bc0241d3bf input=82ba425ecacc54aa]*/
 {
     PyObject *result;
 
@@ -4866,6 +4904,7 @@ datetime_time_isoformat_impl(PyDateTime_Time *self, const char *timespec)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 datetime.time.strftime
 
     format: unicode
@@ -4873,11 +4912,14 @@ datetime.time.strftime
 Format using strftime().
 
 The date part of the timestamp passed to underlying strftime should not be used.
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_time_strftime_impl(PyDateTime_Time *self, PyObject *format)
-/*[clinic end generated code: output=10f65af20e2a78c7 input=7dd9df1acbf37b50]*/
+/*[clinic end generated code: output=10f65af20e2a78c7 input=c4a5bbecd798654b]*/
 {
     PyObject *result;
     PyObject *tuple;
@@ -5682,6 +5724,7 @@ datetime_datetime_utcnow_impl(PyTypeObject *type)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 @classmethod
 datetime.datetime.fromtimestamp
 
@@ -5697,7 +5740,7 @@ as local time.
 static PyObject *
 datetime_datetime_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp,
                                      PyObject *tzinfo)
-/*[clinic end generated code: output=9c47ea2b2ebdaded input=34721a5facc94215]*/
+/*[clinic end generated code: output=9c47ea2b2ebdaded input=d6b5b2095c5a34b2]*/
 {
     PyObject *self;
     if (check_tzinfo_subclass(tzinfo) < 0)
@@ -5759,6 +5802,7 @@ datetime_datetime_utcfromtimestamp_impl(PyTypeObject *type,
 }
 
 /*[clinic input]
+@permit_long_summary
 @classmethod
 datetime.datetime.strptime
 
@@ -5767,12 +5811,15 @@ datetime.datetime.strptime
     /
 
 Parse string according to the given date and time format (like time.strptime()).
+
+For a list of supported format codes, see the documentation:
+    https://docs.python.org/3/library/datetime.html#format-codes
 [clinic start generated code]*/
 
 static PyObject *
 datetime_datetime_strptime_impl(PyTypeObject *type, PyObject *string,
                                 PyObject *format)
-/*[clinic end generated code: output=af2c2d024f3203f5 input=b3918835524a1f22]*/
+/*[clinic end generated code: output=af2c2d024f3203f5 input=ef7807589f1d50e7]*/
 {
     PyObject *result;
 
@@ -7596,6 +7643,7 @@ finally:
 }
 
 static PyModuleDef_Slot module_slots[] = {
+    _Py_INTERNAL_ABI_SLOT,
     {Py_mod_exec, _datetime_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},

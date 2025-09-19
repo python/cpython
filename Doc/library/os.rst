@@ -1501,6 +1501,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    - :data:`RWF_HIPRI`
    - :data:`RWF_NOWAIT`
+   - :data:`RWF_DONTCACHE`
 
    Return the total number of bytes actually read which can be less than the
    total capacity of all the objects.
@@ -1546,6 +1547,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.7
 
 
+.. data:: RWF_DONTCACHE
+
+   Use uncached buffered IO.
+
+   .. availability:: Linux >= 6.14
+
+   .. versionadded:: next
+
+
 .. function:: ptsname(fd, /)
 
    Return the name of the slave pseudo-terminal device associated with the
@@ -1587,6 +1597,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
+   - :data:`RWF_DONTCACHE`
 
    Return the total number of bytes actually written.
 
@@ -2628,6 +2639,13 @@ features:
 .. function:: makedev(major, minor, /)
 
    Compose a raw device number from the major and minor device numbers.
+
+
+.. data:: NODEV
+
+   Non-existent device.
+
+   .. versionadded:: next
 
 
 .. function:: pathconf(path, name)
@@ -3757,9 +3775,9 @@ features:
 
       import os
       for root, dirs, files, rootfd in os.fwalk('python/Lib/xml'):
-          print(root, "consumes", end="")
+          print(root, "consumes", end=" ")
           print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
-                end="")
+                end=" ")
           print("bytes in", len(files), "non-directory files")
           if '__pycache__' in dirs:
               dirs.remove('__pycache__')  # don't visit __pycache__ directories

@@ -517,6 +517,21 @@ class Win64WinregTests(BaseWinregTests):
         with self.assertRaises(FileNotFoundError) as ctx:
             QueryValue(HKEY_CLASSES_ROOT, 'some_value_that_does_not_exist')
 
+    def test_delete_tree(self):
+        with CreateKey(HKEY_CURRENT_USER, test_key_name) as main_key:
+            with CreateKey(main_key, "subkey1") as subkey1:
+                SetValueEx(subkey1, "value1", 0, REG_SZ, "test_value1")
+                with CreateKey(subkey1, "subsubkey1") as subsubkey1:
+                    SetValueEx(subsubkey1, "value2", 0, REG_DWORD, 42)
+
+            with CreateKey(main_key, "subkey2") as subkey2:
+                SetValueEx(subkey2, "value3", 0, REG_SZ, "test_value3")
+
+        DeleteTree(HKEY_CURRENT_USER, test_key_name)
+
+        with self.assertRaises(OSError):
+            OpenKey(HKEY_CURRENT_USER, test_key_name)
+
 
 if __name__ == "__main__":
     if not REMOTE_NAME:
