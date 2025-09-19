@@ -1,4 +1,6 @@
 import unittest
+import os
+from unittest.mock import patch
 
 from _colorize import ANSIColors, get_theme
 from _pyrepl.fancycompleter import Completer, commonprefix
@@ -57,6 +59,7 @@ class FancyCompleterTests(unittest.TestCase):
         compl = Completer({'a': None}, use_colors=False)
         self.assertEqual(compl.attr_matches('a._'), ['a.__'])
 
+    @patch.dict(os.environ, {'PYTHON_COLORS': '1'})
     def test_complete_attribute_colored(self):
         theme = get_theme()
         compl = Completer({'a': 42}, use_colors=True)
@@ -93,6 +96,7 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('foobaz'), ['foobazzz'])
         self.assertEqual(compl.global_matches('nothing'), [])
 
+    @patch.dict(os.environ, {'PYTHON_COLORS': '1'})
     def test_complete_global_colored(self):
         compl = Completer({'foobar': 1, 'foobazzz': 2}, use_colors=True)
         self.assertEqual(compl.global_matches('foo'), ['fooba'])
@@ -111,6 +115,7 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('foobaz'), ['foobazzz'])
         self.assertEqual(compl.global_matches('nothing'), [])
 
+    @patch.dict(os.environ, {'PYTHON_COLORS': '1'})
     def test_complete_global_colored_exception(self):
         compl = Completer({'tryme': 42}, use_colors=True)
         N0 = f"\x1b[000;00m"
