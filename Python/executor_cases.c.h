@@ -2209,12 +2209,17 @@
             err = PyObject_DelItem(ns, name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err != 0) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
-                ? CANNOT_DELETE_BUILTIN_ERROR_MSG
-            : NAME_ERROR_MSG;
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError, err_msg, name);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                        CANNOT_DELETE_BUILTIN_ERROR_MSG, name);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                } else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                        NAME_ERROR_MSG, name);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
                 JUMP_TO_ERROR();
             }
             break;
@@ -2421,13 +2426,17 @@
                 JUMP_TO_ERROR();
             }
             if (err == 0) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
-                ? CANNOT_DELETE_BUILTIN_ERROR_MSG
-            : NAME_ERROR_MSG;
-                _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
-                    err_msg, name);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                        CANNOT_DELETE_BUILTIN_ERROR_MSG, name);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                } else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
+                        NAME_ERROR_MSG, name);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
                 JUMP_TO_ERROR();
             }
             break;
@@ -2592,15 +2601,21 @@
             oparg = CURRENT_OPARG();
             _PyStackRef v = GETLOCAL(oparg);
             if (PyStackRef_IsNull(v)) {
-                PyObject *name;
+                PyObject *localsplusnames = _PyFrame_GetCode(frame)->co_localsplusnames;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                name = PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames,
-                                       oparg);
-                const char *err_msg = PyMapping_HasKey(BUILTINS(), name)
-                ? CANNOT_DELETE_BUILTIN_ERROR_MSG
-            : UNBOUNDLOCAL_ERROR_MSG;
-                _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, err_msg, name);
+                PyObject *name = PyTuple_GetItem(localsplusnames, oparg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (PyMapping_HasKeyWithError(BUILTINS(), name) == 1) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
+                        CANNOT_DELETE_BUILTIN_ERROR_MSG, name);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                } else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
+                        UNBOUNDLOCAL_ERROR_MSG, name);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
                 JUMP_TO_ERROR();
             }
             _PyStackRef tmp = GETLOCAL(oparg);
