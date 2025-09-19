@@ -1534,7 +1534,13 @@ static PyType_Slot Uuid_slots[] = {
 
 
 static PyType_Spec Uuid_spec = {
+    // We use "uuid.UUID" here and not "_uuid.UUID" to have full
+    // compatibility with old pickled UUIDs. There's no workaround
+    // if we want both to produce compatible pickles that can be read
+    // by older Pythons (using ancient pickle protocol verions) and
+    // restore from pickles produced by old Python versions.
     .name = "uuid.UUID",
+
     .basicsize = sizeof(uuidobject),
     .flags = (
         Py_TPFLAGS_DEFAULT
