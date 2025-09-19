@@ -6,7 +6,7 @@ import test.support
 from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import ensure_lazy_imports, import_module
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure, spawn_python
 from test.support import force_not_colorized
 
 import random
@@ -2082,6 +2082,32 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertEqual(rc, 0)
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
+
+    @requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', "signals don't work well on windows")
+    def test_keyboard_interrupt_during_threading_shutdown(self):
+        import subprocess
+        source = f"""
+        from threading import Thread
+        import time
+        import os
+
+
+        def test():
+            print('a', flush=True, end='')
+            time.sleep(10)
+
+
+        for _ in range(3):
+            Thread(target=test).start()
+        """
+
+        with spawn_python("-c", source, stderr=subprocess.PIPE) as proc:
+            self.assertEqual(proc.stdout.read(3), b'aaa')
+            proc.send_signal(signal.SIGINT)
+            proc.stderr.flush()
+            error = proc.stderr.read()
+            self.assertIn(b"KeyboardInterrupt", error)
 
 
 class ThreadRunFail(threading.Thread):

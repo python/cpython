@@ -13,6 +13,7 @@ import os
 import pickle
 import re
 import sys
+import warnings
 from unittest import TestCase, main, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
@@ -7500,14 +7501,23 @@ class CollectionsAbcTests(BaseTestCase):
         self.assertNotIsInstance((), typing.MutableSequence)
 
     def test_bytestring(self):
+        previous_typing_module = sys.modules.pop("typing", None)
+        self.addCleanup(sys.modules.__setitem__, "typing", previous_typing_module)
+
         with self.assertWarns(DeprecationWarning):
-            self.assertIsInstance(b'', typing.ByteString)
+            from typing import ByteString
         with self.assertWarns(DeprecationWarning):
-            self.assertIsInstance(bytearray(b''), typing.ByteString)
+            self.assertIsInstance(b'', ByteString)
         with self.assertWarns(DeprecationWarning):
-            class Foo(typing.ByteString): ...
+            self.assertIsInstance(bytearray(b''), ByteString)
         with self.assertWarns(DeprecationWarning):
-            class Bar(typing.ByteString, typing.Awaitable): ...
+            self.assertIsSubclass(bytes, ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsSubclass(bytearray, ByteString)
+        with self.assertWarns(DeprecationWarning):
+            class Foo(ByteString): ...
+        with self.assertWarns(DeprecationWarning):
+            class Bar(ByteString, typing.Awaitable): ...
 
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
@@ -10455,6 +10465,10 @@ SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 class SpecialAttrsTests(BaseTestCase):
 
     def test_special_attrs(self):
+        with warnings.catch_warnings(
+            action='ignore', category=DeprecationWarning
+        ):
+            typing_ByteString = typing.ByteString
         cls_to_check = {
             # ABC classes
             typing.AbstractSet: 'AbstractSet',
@@ -10463,7 +10477,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.AsyncIterable: 'AsyncIterable',
             typing.AsyncIterator: 'AsyncIterator',
             typing.Awaitable: 'Awaitable',
-            typing.ByteString: 'ByteString',
+            typing_ByteString: 'ByteString',
             typing.Callable: 'Callable',
             typing.ChainMap: 'ChainMap',
             typing.Collection: 'Collection',
@@ -10816,7 +10830,8 @@ class AllTests(BaseTestCase):
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and
                 not k.upper() == k and
-                # but export all things that have __module__ == 'typing'
+                k not in {"ByteString"} and
+                # but export all other things that have __module__ == 'typing'
                 getattr(v, '__module__', None) == typing.__name__
             )
         }

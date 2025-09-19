@@ -987,7 +987,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
 #endif
 
-#if Py_TAIL_CALL_INTERP
+#if _Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
 #endif
@@ -1019,15 +1019,16 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     check_invalid_reentrancy();
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
+#if USE_COMPUTED_GOTOS && !_Py_TAIL_CALL_INTERP
 /* Import the static jump table */
 #include "opcode_targets.h"
+    void **opcode_targets = opcode_targets_table;
 #endif
 
 #ifdef Py_STATS
     int lastopcode = 0;
 #endif
-#if !Py_TAIL_CALL_INTERP
+#if !_Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
@@ -1099,22 +1100,22 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         next_instr = frame->instr_ptr;
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
-#if Py_TAIL_CALL_INTERP
+#if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, 0, lastopcode);
 #   else
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, 0);
 #   endif
 #else
         goto error;
 #endif
     }
 
-#if Py_TAIL_CALL_INTERP
+#if _Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0, lastopcode);
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_table, 0, lastopcode);
 #   else
-        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, instruction_funcptr_table, 0);
 #   endif
 #else
     goto start_frame;

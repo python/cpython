@@ -1461,7 +1461,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     assert(tstate->prev == NULL);
 
     assert(tstate->_whence == _PyThreadState_WHENCE_NOTSET);
-    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_EXEC);
+    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_THREADING_DAEMON);
     tstate->_whence = whence;
 
     assert(id > 0);
@@ -1625,7 +1625,11 @@ PyThreadState_Clear(PyThreadState *tstate)
 {
     assert(tstate->_status.initialized && !tstate->_status.cleared);
     assert(current_fast_get()->interp == tstate->interp);
-    assert(!_PyThreadState_IsRunningMain(tstate));
+    // GH-126016: In the _interpreters module, KeyboardInterrupt exceptions
+    // during PyEval_EvalCode() are sent to finalization, which doesn't let us
+    // mark threads as "not running main". So, for now this assertion is
+    // disabled.
+    // XXX assert(!_PyThreadState_IsRunningMain(tstate));
     // XXX assert(!tstate->_status.bound || tstate->_status.unbound);
     tstate->_status.finalizing = 1;  // just in case
 
