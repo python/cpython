@@ -392,17 +392,6 @@ Object Protocol
    class, are considered classes.  However, objects can override this by having
    a :attr:`~type.__bases__` attribute (which must be a tuple of base classes).
 
-   Another attribute, ``__base__`` corresponds to the :c:member:`~PyTypeObject.tp_base`
-   in a type object. At the C level, Python has a single inheritance model
-   that determines the memory layout of instances. There is a chain involving
-   base classes that contribute to the instance layout. ``__base__`` is the base
-   class that is involved in that chain. When such a class takes arguments in
-   the correct order, then starting leftmost.
-
-   .. impl-detail::
-      Note that behavior of the ``__base__`` attribute is dependent on the
-      :term:`CPython` implementation.
-
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 
