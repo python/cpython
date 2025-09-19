@@ -1083,7 +1083,7 @@ class _DeprecateByteStringMeta(ABCMeta):
 
             warnings._deprecated(
                 "collections.abc.ByteString",
-                remove=(3, 14),
+                remove=(3, 17),
             )
         return super().__new__(cls, name, bases, namespace, **kwargs)
 
@@ -1092,7 +1092,7 @@ class _DeprecateByteStringMeta(ABCMeta):
 
         warnings._deprecated(
             "collections.abc.ByteString",
-            remove=(3, 14),
+            remove=(3, 17),
         )
         return super().__instancecheck__(instance)
 
