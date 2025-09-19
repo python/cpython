@@ -1,14 +1,7 @@
 import unittest
 
-from _colorize import ANSIColors
-from _pyrepl.fancycompleter import Completer, DefaultConfig, commonprefix
-
-
-class ConfigForTest(DefaultConfig):
-    use_colors = False
-
-class ColorConfig(DefaultConfig):
-    use_colors = True
+from _colorize import ANSIColors, get_theme
+from _pyrepl.fancycompleter import Completer, commonprefix
 
 class MockPatch:
     def __init__(self):
@@ -41,7 +34,7 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(commonprefix(['aaa', 'bbb'], base='x'), '')
 
     def test_complete_attribute(self):
-        compl = Completer({'a': None}, ConfigForTest)
+        compl = Completer({'a': None}, use_colors=False)
         self.assertEqual(compl.attr_matches('a.'), ['a.__'])
         matches = compl.attr_matches('a.__')
         self.assertNotIn('a.__class__', matches)
@@ -53,7 +46,7 @@ class FancyCompleterTests(unittest.TestCase):
             attr = 1
             _attr = 2
             __attr__attr = 3
-        compl = Completer({'a': C}, ConfigForTest)
+        compl = Completer({'a': C}, use_colors=False)
         self.assertEqual(compl.attr_matches('a.'), ['attr', 'mro'])
         self.assertEqual(compl.attr_matches('a._'), ['_C__attr__attr', '_attr', ' '])
         matches = compl.attr_matches('a.__')
@@ -61,15 +54,15 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertIn('__class__', matches)
         self.assertEqual(compl.attr_matches('a.__class'), ['a.__class__'])
 
-        compl = Completer({'a': None}, ConfigForTest)
+        compl = Completer({'a': None}, use_colors=False)
         self.assertEqual(compl.attr_matches('a._'), ['a.__'])
 
     def test_complete_attribute_colored(self):
-        compl = Completer({'a': 42}, ColorConfig)
+        theme = get_theme()
+        compl = Completer({'a': 42}, use_colors=True)
         matches = compl.attr_matches('a.__')
         self.assertGreater(len(matches), 2)
-        expected_color = compl.config.color_by_type.get(type(compl.__class__))
-        self.assertEqual(expected_color, ANSIColors.BOLD_MAGENTA)
+        expected_color = theme.fancycompleter.type
         expected_part = f'{expected_color}__class__{ANSIColors.RESET}'
         for match in matches:
             if expected_part in match:
@@ -80,7 +73,7 @@ class FancyCompleterTests(unittest.TestCase):
 
     def test_complete_colored_single_match(self):
         """No coloring, via commonprefix."""
-        compl = Completer({'foobar': 42}, ColorConfig)
+        compl = Completer({'foobar': 42}, use_colors=True)
         matches = compl.global_matches('foob')
         self.assertEqual(matches, ['foobar'])
 
@@ -88,12 +81,12 @@ class FancyCompleterTests(unittest.TestCase):
         class obj:
             msgs = []
 
-        compl = Completer({'obj': obj}, ColorConfig)
+        compl = Completer({'obj': obj}, use_colors=True)
         matches = compl.attr_matches('obj.msgs')
         self.assertEqual(matches, ['obj.msgs'])
 
     def test_complete_global(self):
-        compl = Completer({'foobar': 1, 'foobazzz': 2}, ConfigForTest)
+        compl = Completer({'foobar': 1, 'foobazzz': 2}, use_colors=False)
         self.assertEqual(compl.global_matches('foo'), ['fooba'])
         matches = compl.global_matches('fooba')
         self.assertEqual(set(matches), set(['foobar', 'foobazzz']))
@@ -101,7 +94,7 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('nothing'), [])
 
     def test_complete_global_colored(self):
-        compl = Completer({'foobar': 1, 'foobazzz': 2}, ColorConfig)
+        compl = Completer({'foobar': 1, 'foobazzz': 2}, use_colors=True)
         self.assertEqual(compl.global_matches('foo'), ['fooba'])
         matches = compl.global_matches('fooba')
 
@@ -119,7 +112,7 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('nothing'), [])
 
     def test_complete_global_colored_exception(self):
-        compl = Completer({'tryme': 42}, ColorConfig)
+        compl = Completer({'tryme': 42}, use_colors=True)
         N0 = f"\x1b[000;00m"
         N1 = f"\x1b[001;00m"
         self.assertEqual(compl.global_matches('try'), [
@@ -129,7 +122,7 @@ class FancyCompleterTests(unittest.TestCase):
         ])
 
     def test_complete_with_indexer(self):
-        compl = Completer({'lst': [None, 2, 3]}, ConfigForTest)
+        compl = Completer({'lst': [None, 2, 3]}, use_colors=False)
         self.assertEqual(compl.attr_matches('lst[0].'), ['lst[0].__'])
         matches = compl.attr_matches('lst[0].__')
         self.assertNotIn('lst[0].__class__', matches)
@@ -143,7 +136,7 @@ class FancyCompleterTests(unittest.TestCase):
             abc_2 = None
             abc_3 = None
             bbb = None
-        compl = Completer({'A': A}, ConfigForTest)
+        compl = Completer({'A': A}, use_colors=False)
         #
         # In this case, we want to display all attributes which start with
         # 'a'. Moreover, we also include a space to prevent readline to
@@ -164,15 +157,15 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(sorted(matches), [' ', 'abc_1', 'abc_2', 'abc_3'])
 
     def test_complete_exception(self):
-        compl = Completer({}, ConfigForTest)
+        compl = Completer({}, use_colors=False)
         self.assertEqual(compl.attr_matches('xxx.'), [])
 
     def test_complete_invalid_attr(self):
-        compl = Completer({'str': str}, ConfigForTest)
+        compl = Completer({'str': str}, use_colors=False)
         self.assertEqual(compl.attr_matches('str.xx'), [])
 
     def test_complete_function_skipped(self):
-        compl = Completer({'str': str}, ConfigForTest)
+        compl = Completer({'str': str}, use_colors=False)
         self.assertEqual(compl.attr_matches('str.split().'), [])
 
     def test_unicode_in___dir__(self):
@@ -180,7 +173,7 @@ class FancyCompleterTests(unittest.TestCase):
             def __dir__(self):
                 return ['hello', 'world']
 
-        compl = Completer({'a': Foo()}, ConfigForTest)
+        compl = Completer({'a': Foo()}, use_colors=False)
         matches = compl.attr_matches('a.')
         self.assertEqual(matches, ['hello', 'world'])
         self.assertIs(type(matches[0]), str)
