@@ -5,7 +5,6 @@
 """
 Colorful tab completion for Python prompt
 """
-from _pyrepl import readline
 from _colorize import ANSIColors, get_colors
 import rlcompleter
 import types
@@ -53,6 +52,7 @@ class Completer(rlcompleter.Completer):
     depending on the type.
     """
     def __init__(self, namespace=None, Config=DefaultConfig):
+        from _pyrepl import readline
         rlcompleter.Completer.__init__(self, namespace)
         self.config = Config()
         self.config.setup()
