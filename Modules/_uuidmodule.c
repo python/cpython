@@ -925,14 +925,15 @@ Uuid_dealloc(PyObject *obj)
 
 
 static PyObject *
-Uuid_get_int(uuidobject *self, void *closure)
+Uuid_get_int(PyObject *o, void *closure)
 {
-    return get_int(self);
+    return get_int((uuidobject *)o);
 }
 
 static PyObject *
-Uuid_get_is_safe(uuidobject *self, void *closure)
+Uuid_get_is_safe(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     if (self->is_safe == NULL) {
         Py_RETURN_NONE;
     }
@@ -940,8 +941,9 @@ Uuid_get_is_safe(uuidobject *self, void *closure)
 }
 
 static PyObject *
-Uuid_get_hex(uuidobject *self, void *closure)
+Uuid_get_hex(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     char hex[32];
     for (int i = 0; i < 16; i++) {
         byte_to_hex(self->bytes[i], &hex[i * 2]);
@@ -950,8 +952,9 @@ Uuid_get_hex(uuidobject *self, void *closure)
 }
 
 static PyObject *
-Uuid_get_variant(uuidobject *self, void *closure)
+Uuid_get_variant(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     uuid_state *state = get_uuid_state_by_cls(Py_TYPE(self));
 
     uint8_t variant_byte = self->bytes[8];
@@ -997,8 +1000,9 @@ get_version(uuidobject *self)
 }
 
 static PyObject *
-Uuid_get_version(uuidobject *self, void *closure)
+Uuid_get_version(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     if (!is_rfc_4122(self)) {
         Py_RETURN_NONE;
     }
@@ -1052,38 +1056,45 @@ get_node(uuidobject *self)
 }
 
 static PyObject *
-Uuid_get_time_low(uuidobject *self, void *closure)
+Uuid_get_time_low(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     return PyLong_FromUnsignedLong(get_time_low(self));
 }
 
 static PyObject *
-Uuid_get_time_mid(uuidobject *self, void *closure)
+Uuid_get_time_mid(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     return PyLong_FromUnsignedLong(get_time_mid(self));
 }
 
 static PyObject *
-Uuid_get_time_hi_version(uuidobject *self, void *closure)
+Uuid_get_time_hi_version(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     return PyLong_FromUnsignedLong(get_time_hi_version(self));
 }
 
 static PyObject *
-Uuid_get_clock_seq_hi_variant(uuidobject *self, void *closure)
+Uuid_get_clock_seq_hi_variant(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     return PyLong_FromUnsignedLong(get_clock_seq_hi_variant(self));
 }
 
 static PyObject *
-Uuid_get_clock_seq_low(uuidobject *self, void *closure)
+Uuid_get_clock_seq_low(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     return PyLong_FromUnsignedLong(get_clock_seq_low(self));
 }
 
 static PyObject *
-Uuid_get_time(uuidobject *self, void *closure)
+Uuid_get_time(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
+
     long version = get_version(self);
 
     if (version == 6) {
@@ -1125,8 +1136,9 @@ Uuid_get_time(uuidobject *self, void *closure)
 }
 
 static PyObject *
-Uuid_get_clock_seq(uuidobject *self, void *closure)
+Uuid_get_clock_seq(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     // clock_seq_hi_variant (byte 8) & 0x3f, then clock_seq_low (byte 9)
     uint16_t clock_seq = ((uint16_t)(get_clock_seq_hi_variant(self) & 0x3f) << 8) |
                          ((uint16_t)get_clock_seq_low(self));
@@ -1134,20 +1146,23 @@ Uuid_get_clock_seq(uuidobject *self, void *closure)
 }
 
 static PyObject *
-Uuid_get_node(uuidobject *self, void *closure)
+Uuid_get_node(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     return PyLong_FromUnsignedLongLong(get_node(self));
 }
 
 static PyObject *
-Uuid_get_bytes(uuidobject *self, void *closure)
+Uuid_get_bytes(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     return PyBytes_FromStringAndSize((const char *)self->bytes, 16);
 }
 
 static PyObject *
-Uuid_get_bytes_le(uuidobject *self, void *closure)
+Uuid_get_bytes_le(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     // UUID fields in little-endian order need to be byte-swapped:
     // - time_low (4 bytes) - reversed
     // - time_mid (2 bytes) - reversed
@@ -1177,8 +1192,9 @@ Uuid_get_bytes_le(uuidobject *self, void *closure)
 }
 
 static PyObject *
-Uuid_get_fields(uuidobject *self, void *closure)
+Uuid_get_fields(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     uint32_t time_low = get_time_low(self);
     uint16_t time_mid = get_time_mid(self);
     uint16_t time_hi_version = get_time_hi_version(self);
@@ -1324,8 +1340,9 @@ Uuid_setattr(PyObject *self, PyObject *name, PyObject *value)
 }
 
 static PyObject *
-Uuid_get_urn(uuidobject *self, void *closure)
+Uuid_get_urn(PyObject *o, void *closure)
 {
+    uuidobject *self = (uuidobject *)o;
     PyObject *str_obj = Uuid_str((PyObject *)self);
     if (str_obj == NULL) {
         return NULL;
@@ -1337,9 +1354,9 @@ Uuid_get_urn(uuidobject *self, void *closure)
 }
 
 static Py_hash_t
-Uuid_hash(PyObject *self)
+Uuid_hash(PyObject *o)
 {
-    uuidobject *uuid = (uuidobject *)self;
+    uuidobject *uuid = (uuidobject *)o;
     if (uuid->cached_hash != -1) {
         // UUIDs are very often used in dicts/sets, so it makes
         // sense to cache the computed hash (like we do for str)
@@ -1387,30 +1404,28 @@ _uuid_UUID__from_int_impl(PyTypeObject *type, PyObject *value)
 }
 
 static PyGetSetDef Uuid_getset[] = {
-    {"int", (getter)Uuid_get_int, NULL, "UUID as a 128-bit integer", NULL},
-    {"is_safe", (getter)Uuid_get_is_safe, NULL, "UUID safety status", NULL},
-    {"fields", (getter)Uuid_get_fields, NULL, "UUID as a 6-tuple", NULL},
-    {"hex", (getter)Uuid_get_hex, NULL, "UUID as a 32-character hex string", NULL},
-    {"urn", (getter)Uuid_get_urn, NULL, "UUID as a URN", NULL},
-    {"variant", (getter)Uuid_get_variant, NULL, "UUID variant", NULL},
-    {"version", (getter)Uuid_get_version, NULL, "UUID version", NULL},
-    {"time_low", (getter)Uuid_get_time_low, NULL, "Time low field (32 bits)", NULL},
-    {"time_mid", (getter)Uuid_get_time_mid, NULL, "Time mid field (16 bits)", NULL},
-    {"bytes", (getter)Uuid_get_bytes, NULL, "UUID as a 16-byte string", NULL},
-    {"bytes_le", (getter)Uuid_get_bytes_le, NULL,
+    {"int", Uuid_get_int, NULL, "UUID as a 128-bit integer", NULL},
+    {"is_safe", Uuid_get_is_safe, NULL, "UUID safety status", NULL},
+    {"fields", Uuid_get_fields, NULL, "UUID as a 6-tuple", NULL},
+    {"hex", Uuid_get_hex, NULL, "UUID as a 32-character hex string", NULL},
+    {"urn", Uuid_get_urn, NULL, "UUID as a URN", NULL},
+    {"variant", Uuid_get_variant, NULL, "UUID variant", NULL},
+    {"version", Uuid_get_version, NULL, "UUID version", NULL},
+    {"time_low", Uuid_get_time_low, NULL, "Time low field (32 bits)", NULL},
+    {"time_mid", Uuid_get_time_mid, NULL, "Time mid field (16 bits)", NULL},
+    {"bytes", Uuid_get_bytes, NULL, "UUID as a 16-byte string", NULL},
+    {"bytes_le", Uuid_get_bytes_le, NULL,
         "UUID as a 16-byte string in little-endian byte order", NULL},
-    {"time_hi_version", (getter)Uuid_get_time_hi_version, NULL,
+    {"time_hi_version", Uuid_get_time_hi_version, NULL,
         "Time high and version field (16 bits)", NULL},
-    {"clock_seq_hi_variant", (getter)Uuid_get_clock_seq_hi_variant, NULL,
+    {"clock_seq_hi_variant", Uuid_get_clock_seq_hi_variant, NULL,
         "Clock sequence high and variant field (8 bits)", NULL},
-    {"clock_seq_low", (getter)Uuid_get_clock_seq_low, NULL,
+    {"clock_seq_low", Uuid_get_clock_seq_low, NULL,
         "Clock sequence low field (8 bits)", NULL},
-    {"time", (getter)Uuid_get_time, NULL,
+    {"time", Uuid_get_time, NULL,
         "Time field (60 bits for v1/v6, 48 bits for v7)", NULL},
-    {"clock_seq", (getter)Uuid_get_clock_seq, NULL,
-        "Clock sequence field (14 bits)", NULL},
-    {"node", (getter)Uuid_get_node, NULL,
-        "Node field (48 bits)", NULL},
+    {"clock_seq", Uuid_get_clock_seq, NULL, "Clock sequence field (14 bits)", NULL},
+    {"node", Uuid_get_node, NULL, "Node field (48 bits)", NULL},
     {NULL}
 };
 
