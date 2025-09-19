@@ -8174,32 +8174,28 @@ PY_STDLIB_MOD([xxlimited], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlop
 PY_STDLIB_MOD([xxlimited_35], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 
 # Determine JIT stencils header files based on target platform
-JIT_STENCILS_H="jit_stencils.h"
+JIT_STENCILS_H=""
 case "$host" in
   aarch64-apple-darwin*)
-    JIT_STENCILS_H="jit_stencils.h jit_stencils-aarch64-apple-darwin.h"
+    JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
     ;;
   x86_64-apple-darwin*)
-    JIT_STENCILS_H="jit_stencils.h jit_stencils-x86_64-apple-darwin.h"
+    JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
     ;;
   aarch64-pc-windows-msvc)
-    JIT_STENCILS_H="jit_stencils.h jit_stencils-aarch64-pc-windows-msvc.h"
+    JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
     ;;
   i686-pc-windows-msvc)
-    JIT_STENCILS_H="jit_stencils.h jit_stencils-i686-pc-windows-msvc.h"
+    JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
     ;;
   x86_64-pc-windows-msvc)
-    JIT_STENCILS_H="jit_stencils.h jit_stencils-x86_64-pc-windows-msvc.h"
+    JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
     ;;
   aarch64-*-linux-gnu)
-    JIT_STENCILS_H="jit_stencils.h jit_stencils-$host.h"
+    JIT_STENCILS_H="jit_stencils-$host.h"
     ;;
   x86_64-*-linux-gnu)
-    JIT_STENCILS_H="jit_stencils.h jit_stencils-$host.h"
-    ;;
-  *)
-    # Unsupported platform - use generic header only
-    JIT_STENCILS_H="jit_stencils.h"
+    JIT_STENCILS_H="jit_stencils-$host.h"
     ;;
 esac
 
