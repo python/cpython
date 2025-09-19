@@ -180,7 +180,7 @@ class FancyCompleterTests(unittest.TestCase):
     def test_unicode_in___dir__(self):
         class Foo(object):
             def __dir__(self):
-                return [u'hello', 'world']
+                return ['hello', 'world']
 
         compl = Completer({'a': Foo()}, ConfigForTest)
         matches = compl.attr_matches('a.')
