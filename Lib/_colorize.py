@@ -239,8 +239,8 @@ class FancyCompleter(ThemeSection):
     type: str = ANSIColors.BOLD_MAGENTA
     module: str = ANSIColors.CYAN
     NoneType: str = ANSIColors.GREY
-    str: str = ANSIColors.BOLD_GREEN
     bytes: str = ANSIColors.BOLD_GREEN
+    str: str = ANSIColors.BOLD_GREEN
 
 
 @dataclass(frozen=True, kw_only=True)
