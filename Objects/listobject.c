@@ -1903,72 +1903,92 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
     Py_ssize_t M, L, R;
     Py_ssize_t nsorted = ok;
     Py_ssize_t last = ok >> 1;
-    Py_ssize_t std = ok >> 2;
+    Py_ssize_t std = last;
     Py_ssize_t mu = last;
-    Py_ssize_t nbad = 0;          // badness of fit
+    Py_ssize_t nbad = 0;    // badness of fit
 
     if (adapt) {
         for (; ok < n; ++ok) {
             pivot = a[ok];
 
-            IFLT(pivot, a[mu]) {
-                L = 0;
-                R = mu;
-                if (L < R) {
-                    // To not affect diff for measure counting
-                    std += (std == 0);
-                    M = R - std;
-                    if (M < L)
-                        M = L;
-                    IFLT(pivot, a[M]) {
-                        R = M;
-                        if (L < R) {
-                            M = R - std;
-                            if (M < L)
-                                M = L;
-                            IFLT(pivot, a[M])
-                                R = M;
-                            else
-                                L = M + 1;
+            if (std < ok / 4) {
+                M = mu;
+                IFLT(pivot, a[M]) {
+                    L = 0;
+                    R = M;
+                    if (L < R) {
+                        std += !std;
+                        M = R - std;
+                        if (M < L)
+                            M = L;
+                        IFLT(pivot, a[M]) {
+                            R = M;
+                            if (L < R) {
+                                M = R - std;
+                                if (M < L)
+                                    M = L;
+                                IFLT(pivot, a[M])
+                                    R = M;
+                                else
+                                    L = M + 1;
+                            }
+                        }
+                        else {
+                            L = M + 1;
                         }
                     }
-                    else {
-                        L = M + 1;
+                }
+                else {
+                    L = M + 1;
+                    R = ok;
+                    if (L < R) {
+                        M = L + std;
+                        if (M >= R)
+                            M = R - 1;
+                        IFLT(pivot, a[M]) {
+                            R = M;
+                        }
+                        else {
+                            L = M + 1;
+                            if (L < R) {
+                                M = L + std;
+                                if (M >= R)
+                                    M = R - 1;
+                                IFLT(pivot, a[M])
+                                    R = M;
+                                else
+                                    L = M + 1;
+                            }
+                        }
                     }
+                }
+                // Binary Insertion
+                while (L < R) {
+                    M = (L + R) >> 1;
+                    IFLT(pivot, a[M])
+                        R = M;
+                    else
+                        L = M + 1;
                 }
             }
             else {
-                L = mu + 1;
-                R = ok;
-                if (L < R) {
-                    M = L + std;
-                    if (M >= R)
-                        M = R - 1;
-                    IFLT(pivot, a[M]) {
-                        R = M;
-                    }
-                    else {
-                        L = M + 1;
-                        if (L < R) {
-                            M = L + std;
-                            if (M >= R)
-                                M = R - 1;
-                            IFLT(pivot, a[M])
-                                R = M;
-                            else
-                                L = M + 1;
-                        }
-                    }
-                }
-            }
-
-            // Binary Insertion
-            while (L < R) {
-                M = (L + R) >> 1;
-                IFLT(pivot, a[M])
+                // Binary Insertion
+                M = ok >> 1;
+                IFLT(pivot, a[M]) {
+                    L = 0;
                     R = M;
-                else
+                }
+                else {
                     L = M + 1;
+                    R = ok;
+                }
+                while (L < R) {
+                    M = (L + R) >> 1;
+                    IFLT(pivot, a[M])
+                        R = M;
+                    else
+                        L = M + 1;
+                }
             }
 
             for (M = ok; M > L; --M)
@@ -1992,10 +2012,17 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
     else {
         for (; ok < n; ++ok) {
             pivot = a[ok];
-            L = 0;
-            R = ok;
 
             // Binary Insertion
+            M = ok >> 1;
+            IFLT(pivot, a[M]) {
+                L = 0;
+                R = M;
+            }
+            else {
+                L = M + 1;
+                R = ok;
+            }
             while (L < R) {
                 M = (L + R) >> 1;
                 IFLT(pivot, a[M])
@@ -3253,12 +3280,8 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         } while (nremaining);
     }
     else {
-        // NOTE:WIP: Only 1% out of 6% worst case is due to
+        // NOTE:WIP: Only 1% difference is due to
         //           extra calculations in simple binary sort
-        //           removing big branch in `abinarysort` also has not effect
-        //           this has something to do with higher level branch prediction
-        //           doing if (0) removes only 1% extra == 2%
-        //           and commenting out code still 2% slower...???
         int adapt = 0;  // do not run binarysort adaptivity on 1st run
         int cs = 0;     // but do check goodness of adaptive fit
         int cd = 1;
