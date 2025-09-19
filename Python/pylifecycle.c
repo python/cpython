@@ -97,7 +97,6 @@ static PyStatus init_android_streams(PyThreadState *tstate);
 static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
-static void wait_for_interp_references(PyInterpreterState *interp);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -757,6 +756,11 @@ pycore_init_types(PyInterpreterState *interp)
     }
 
     status = _PyInterpolation_InitTypes(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyDateTime_InitTypes(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1698,6 +1702,7 @@ finalize_modules(PyThreadState *tstate)
 
     // Invalidate all executors and turn off JIT:
     interp->jit = false;
+    interp->compiling = false;
 #ifdef _Py_TIER2
     _Py_Executors_InvalidateAll(interp, 0);
 #endif
@@ -1902,6 +1907,7 @@ finalize_interp_clear(PyThreadState *tstate)
     _PyXI_Fini(tstate->interp);
     _PyExc_ClearExceptionGroupType(tstate->interp);
     _Py_clear_generic_types(tstate->interp);
+    _PyTypes_FiniCachedDescriptors(tstate->interp);
 
     /* Clear interpreter state and all thread states */
     _PyInterpreterState_Clear(tstate);
@@ -1995,6 +2001,7 @@ resolve_final_tstate(_PyRuntimeState *runtime)
             }
             else {
                 /* Fall back to the current tstate.  It's better than nothing. */
+                // XXX No it's not
                 main_tstate = tstate;
             }
         }
@@ -2004,6 +2011,136 @@ resolve_final_tstate(_PyRuntimeState *runtime)
     /* We might want to warn if main_tstate->current_frame != NULL. */
 
     return main_tstate;
+}
+
+#ifdef Py_GIL_DISABLED
+#define ASSERT_WORLD_STOPPED(interp) assert(interp->runtime->stoptheworld.world_stopped)
+#else
+#define ASSERT_WORLD_STOPPED(interp)
+#endif
+
+static int
+interp_has_threads(PyInterpreterState *interp)
+{
+    /* This needs to check for non-daemon threads only, otherwise we get stuck
+     * in an infinite loop. */
+    assert(interp != NULL);
+    ASSERT_WORLD_STOPPED(interp);
+    assert(interp->threads.head != NULL);
+    if (interp->threads.head->next == NULL) {
+        // No other threads active, easy way out.
+        return 0;
+    }
+
+    // We don't have to worry about locking this because the
+    // world is stopped.
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
+        if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int
+interp_has_pending_calls(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    ASSERT_WORLD_STOPPED(interp);
+    return interp->ceval.pending.npending != 0;
+}
+
+static int
+interp_has_atexit_callbacks(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    assert(interp->atexit.callbacks != NULL);
+    ASSERT_WORLD_STOPPED(interp);
+    assert(PyList_CheckExact(interp->atexit.callbacks));
+    return PyList_GET_SIZE(interp->atexit.callbacks) != 0;
+}
+
+static int
+runtime_has_subinterpreters(_PyRuntimeState *runtime)
+{
+    assert(runtime != NULL);
+    HEAD_LOCK(runtime);
+    PyInterpreterState *interp = runtime->interpreters.head;
+    HEAD_UNLOCK(runtime);
+    return interp->next != NULL;
+}
+
+static void
+make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
+{
+    assert(tstate != NULL);
+    PyInterpreterState *interp = tstate->interp;
+    /* Each of these functions can start one another, e.g. a pending call
+     * could start a thread or vice versa. To ensure that we properly clean
+     * call everything, we run these in a loop until none of them run anything. */
+    for (;;) {
+        assert(!interp->runtime->stoptheworld.world_stopped);
+
+        // Wrap up existing "threading"-module-created, non-daemon threads.
+        wait_for_thread_shutdown(tstate);
+
+        // Make any remaining pending calls.
+        _Py_FinishPendingCalls(tstate);
+
+        /* The interpreter is still entirely intact at this point, and the
+        * exit funcs may be relying on that.  In particular, if some thread
+        * or exit func is still waiting to do an import, the import machinery
+        * expects Py_IsInitialized() to return true.  So don't say the
+        * runtime is uninitialized until after the exit funcs have run.
+        * Note that Threading.py uses an exit func to do a join on all the
+        * threads created thru it, so this also protects pending imports in
+        * the threads created via Threading.
+        */
+
+        _PyAtExit_Call(tstate->interp);
+
+        if (subinterpreters) {
+            /* Clean up any lingering subinterpreters.
+
+            Two preconditions need to be met here:
+
+                - This has to happen before _PyRuntimeState_SetFinalizing is
+                called, or else threads might get prematurely blocked.
+                - The world must not be stopped, as finalizers can run.
+            */
+            finalize_subinterpreters();
+        }
+
+
+        /* Stop the world to prevent other threads from creating threads or
+         * atexit callbacks. On the default build, this is simply locked by
+         * the GIL. For pending calls, we acquire the dedicated mutex, because
+         * Py_AddPendingCall() can be called without an attached thread state.
+         */
+
+        PyMutex_Lock(&interp->ceval.pending.mutex);
+        // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
+        // being stopped?
+        _PyEval_StopTheWorldAll(interp->runtime);
+        _PyRWMutex_Lock(&interp->references.lock);
+        int has_subinterpreters = subinterpreters
+                                    ? runtime_has_subinterpreters(interp->runtime)
+                                    : 0;
+        int should_continue = (interp_has_threads(interp)
+                              || interp_has_atexit_callbacks(interp)
+                              || interp_has_pending_calls(interp)
+                              || has_subinterpreters
+                              || interp->references.refcount > 0);
+        if (!should_continue) {
+            break;
+        }
+        _PyRWMutex_Unlock(&interp->references.lock);
+        _PyEval_StartTheWorldAll(interp->runtime);
+        PyMutex_Unlock(&interp->ceval.pending.mutex);
+    }
+    assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
+    ASSERT_WORLD_STOPPED(interp);
 }
 
 static int
@@ -2022,26 +2159,8 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Block some operations.
     tstate->interp->finalizing = 1;
 
-    // Wrap up existing "threading"-module-created, non-daemon threads.
-    wait_for_thread_shutdown(tstate);
-
-    // Wait for the interpreter's reference count to reach zero
-    wait_for_interp_references(tstate->interp);
-
-    // Make any remaining pending calls.
-    _Py_FinishPendingCalls(tstate);
-
-    /* The interpreter is still entirely intact at this point, and the
-     * exit funcs may be relying on that.  In particular, if some thread
-     * or exit func is still waiting to do an import, the import machinery
-     * expects Py_IsInitialized() to return true.  So don't say the
-     * runtime is uninitialized until after the exit funcs have run.
-     * Note that Threading.py uses an exit func to do a join on all the
-     * threads created thru it, so this also protects pending imports in
-     * the threads created via Threading.
-     */
-
-    _PyAtExit_Call(tstate->interp);
+    // This call stops the world and takes the pending calls lock.
+    make_pre_finalization_calls(tstate, /*subinterpreters=*/1);
 
     assert(_PyThreadState_GET() == tstate);
 
@@ -2059,7 +2178,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
 #endif
 
     /* Ensure that remaining threads are detached */
-    _PyEval_StopTheWorldAll(runtime);
+    ASSERT_WORLD_STOPPED(tstate->interp);
 
     /* Remaining daemon threads will be trapped in PyThread_hang_thread
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
@@ -2079,7 +2198,9 @@ _Py_Finalize(_PyRuntimeState *runtime)
     for (PyThreadState *p = list; p != NULL; p = p->next) {
         _PyThreadState_SetShuttingDown(p);
     }
+    _PyRWMutex_Unlock(&tstate->interp->references.lock);
     _PyEval_StartTheWorldAll(runtime);
+    PyMutex_Unlock(&tstate->interp->ceval.pending.mutex);
 
     /* Clear frames of other threads to call objects destructors. Destructors
        will be called in the current Python thread. Since
@@ -2129,9 +2250,6 @@ _Py_Finalize(_PyRuntimeState *runtime)
     /* Destroy all modules */
     _PyImport_FiniExternal(tstate->interp);
     finalize_modules(tstate);
-
-    /* Clean up any lingering subinterpreters. */
-    finalize_subinterpreters();
 
     /* Print debug stats if any */
     _PyEval_Fini();
@@ -2414,9 +2532,8 @@ Py_NewInterpreter(void)
     return tstate;
 }
 
-/* Delete an interpreter and its last thread.  This requires that the
-   given thread state is current, that the thread has no remaining
-   frames, and that it is its interpreter's only remaining thread.
+/* Delete an interpreter.  This requires that the given thread state
+   is current, and that the thread has no remaining frames.
    It is a fatal error to violate these constraints.
 
    (Py_FinalizeEx() doesn't have these constraints -- it zaps
@@ -2439,24 +2556,23 @@ Py_EndInterpreter(PyThreadState *tstate)
     }
     interp->finalizing = 1;
 
-    // Wrap up existing "threading"-module-created, non-daemon threads.
-    wait_for_thread_shutdown(tstate);
+    // This call stops the world and takes the pending calls lock.
+    make_pre_finalization_calls(tstate, /*subinterpreters=*/0);
 
-    // Wait for the interpreter's reference count to reach zero
-    wait_for_interp_references(tstate->interp);
-
-    // Make any remaining pending calls.
-    _Py_FinishPendingCalls(tstate);
-
-    _PyAtExit_Call(tstate->interp);
-
-    if (tstate != interp->threads.head || tstate->next != NULL) {
-        Py_FatalError("not the last thread");
-    }
-
+    ASSERT_WORLD_STOPPED(interp);
     /* Remaining daemon threads will automatically exit
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
+
+    PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    for (PyThreadState *p = list; p != NULL; p = p->next) {
+        _PyThreadState_SetShuttingDown(p);
+    }
+
+    _PyRWMutex_Unlock(&interp->references.lock);
+    _PyEval_StartTheWorldAll(interp->runtime);
+    PyMutex_Unlock(&interp->ceval.pending.mutex);
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/0);
 
     // XXX Call something like _PyImport_Disable() here?
 
@@ -2487,6 +2603,8 @@ finalize_subinterpreters(void)
     PyInterpreterState *main_interp = _PyInterpreterState_Main();
     assert(final_tstate->interp == main_interp);
     _PyRuntimeState *runtime = main_interp->runtime;
+    assert(!runtime->stoptheworld.world_stopped);
+    assert(_PyRuntimeState_GetFinalizing(runtime) == NULL);
     struct pyinterpreters *interpreters = &runtime->interpreters;
 
     /* Get the first interpreter in the list. */
@@ -2515,27 +2633,17 @@ finalize_subinterpreters(void)
 
     /* Clean up all remaining subinterpreters. */
     while (interp != NULL) {
-        assert(!_PyInterpreterState_IsRunningMain(interp));
-
-        /* Find the tstate to use for fini.  We assume the interpreter
-           will have at most one tstate at this point. */
-        PyThreadState *tstate = interp->threads.head;
-        if (tstate != NULL) {
-            /* Ideally we would be able to use tstate as-is, and rely
-               on it being in a ready state: no exception set, not
-               running anything (tstate->current_frame), matching the
-               current thread ID (tstate->thread_id).  To play it safe,
-               we always delete it and use a fresh tstate instead. */
-            assert(tstate != final_tstate);
-            _PyThreadState_Attach(tstate);
-            PyThreadState_Clear(tstate);
-            _PyThreadState_Detach(tstate);
-            PyThreadState_Delete(tstate);
+        /* Make a tstate for finalization. */
+        PyThreadState *tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
+        if (tstate == NULL) {
+            // XXX Some graceful way to always get a thread state?
+            Py_FatalError("thread state allocation failed");
         }
-        tstate = _PyThreadState_NewBound(interp, _PyThreadState_WHENCE_FINI);
+
+        /* Enter the subinterpreter. */
+        _PyThreadState_Attach(tstate);
 
         /* Destroy the subinterpreter. */
-        _PyThreadState_Attach(tstate);
         Py_EndInterpreter(tstate);
         assert(_PyThreadState_GET() == NULL);
 
@@ -3445,6 +3553,27 @@ Py_ExitStatusException(PyStatus status)
 }
 
 
+static void
+handle_thread_shutdown_exception(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(_PyErr_Occurred(tstate));
+    PyInterpreterState *interp = tstate->interp;
+    assert(interp->threads.head != NULL);
+    _PyEval_StopTheWorld(interp);
+
+    // We don't have to worry about locking this because the
+    // world is stopped.
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
+        if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
+            tstate->_whence = _PyThreadState_WHENCE_THREADING_DAEMON;
+        }
+    }
+
+    _PyEval_StartTheWorld(interp);
+    PyErr_FormatUnraisable("Exception ignored on threading shutdown");
+}
+
 /* Wait until threading._shutdown completes, provided
    the threading module was imported in the first place.
    The shutdown routine will wait until all non-daemon
@@ -3456,60 +3585,19 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
     if (threading == NULL) {
         if (_PyErr_Occurred(tstate)) {
-            PyErr_FormatUnraisable("Exception ignored on threading shutdown");
+            handle_thread_shutdown_exception(tstate);
         }
         /* else: threading not imported */
         return;
     }
     result = PyObject_CallMethodNoArgs(threading, &_Py_ID(_shutdown));
     if (result == NULL) {
-        PyErr_FormatUnraisable("Exception ignored on threading shutdown");
+        handle_thread_shutdown_exception(tstate);
     }
     else {
         Py_DECREF(result);
     }
     Py_DECREF(threading);
-}
-
-/* Wait for the interpreter's reference count to reach zero.
-   See PEP 788. */
-static void
-wait_for_interp_references(PyInterpreterState *interp)
-{
-    assert(interp != NULL);
-    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
-    _Py_atomic_store_int_release(&finalizing->shutting_down, 1);
-    PyMutex_Lock(&finalizing->mutex);
-    if (_Py_atomic_load_ssize_relaxed(&finalizing->countdown) == 0) {
-        // Nothing to do.
-        PyMutex_Unlock(&finalizing->mutex);
-        return;
-    }
-    PyMutex_Unlock(&finalizing->mutex);
-
-    PyTime_t wait_max = 1000 * 1000 * 100; // 100 milliseconds
-    PyTime_t wait_ns = 1000; // 1 microsecond
-
-    while (true) {
-        if (PyEvent_WaitTimed(&finalizing->finished, wait_ns, 1)) {
-            // Event set
-            break;
-        }
-
-        wait_ns *= 2;
-        wait_ns = Py_MIN(wait_ns, wait_max);
-
-        if (PyErr_CheckSignals()) {
-            PyErr_FormatUnraisable("Exception ignored while waiting on interpreter shutdown");
-            /* The user CTRL+C'd us, bail out without waiting for a reference
-               count of zero.
-
-               This will probably cause threads to crash, but maybe that's
-               better than a deadlock. It might be worth intentionally
-               leaking subinterpreters to prevent some crashes here. */
-            break;
-        }
-    }
 }
 
 int Py_AtExit(void (*func)(void))
@@ -3637,7 +3725,7 @@ PyOS_getsig(int sig)
 
 /*
  * All of the code in this function must only use async-signal-safe functions,
- * listed at `man 7 signal` or
+ * listed at `man 7 signal-safety` or
  * http://www.opengroup.org/onlinepubs/009695399/functions/xsh_chap02_04.html.
  */
 PyOS_sighandler_t

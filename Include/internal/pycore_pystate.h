@@ -331,7 +331,6 @@ _Py_RecursionLimit_GetMargin(PyThreadState *tstate)
 
 // Exports for '_testinternalcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
-PyAPI_FUNC(int) _PyInterpreterState_Incref(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

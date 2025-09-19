@@ -1,0 +1,3 @@
+A standalone docstring in a node body is optimized as a :keyword:`pass`
+statement to ensure that the node's body is never empty. There was a
+:exc:`ValueError` in :func:`compile` otherwise.

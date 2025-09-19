@@ -1,0 +1,1 @@
+Make functions in :mod:`pwd` thread-safe on the :term:`free threaded <free threading>` build.

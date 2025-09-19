@@ -509,7 +509,7 @@ Module constants
 
 .. data:: SQLITE_KEYWORDS
 
-   A :class:`tuple` containing all sqlite3 keywords.
+   A :class:`tuple` containing all SQLite keywords.
 
    This constant is only available if Python was compiled with SQLite
    3.24.0 or greater.
@@ -620,7 +620,7 @@ Connection objects
       supplied, this must be a :term:`callable` returning
       an instance of :class:`Cursor` or its subclasses.
 
-   .. method:: blobopen(table, column, row, /, *, readonly=False, name="main")
+   .. method:: blobopen(table, column, rowid, /, *, readonly=False, name="main")
 
       Open a :class:`Blob` handle to an existing
       :abbr:`BLOB (Binary Large OBject)`.
@@ -631,8 +631,8 @@ Connection objects
       :param str column:
           The name of the column where the blob is located.
 
-      :param str row:
-          The name of the row where the blob is located.
+      :param int rowid:
+          The row id where the blob is located.
 
       :param bool readonly:
           Set to ``True`` if the blob should be opened without write

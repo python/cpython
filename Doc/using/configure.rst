@@ -293,6 +293,9 @@ General Options
 
 .. option:: --disable-gil
 
+   .. c:macro:: Py_GIL_DISABLED
+      :no-typesetting:
+
    Enables support for running Python without the :term:`global interpreter
    lock` (GIL): free threading build.
 
@@ -802,6 +805,9 @@ Debug options
 .. option:: --with-address-sanitizer
 
    Enable AddressSanitizer memory error detector, ``asan`` (default is no).
+   To improve ASan detection capabilities you may also want to combine this
+   with :option:`--without-pymalloc` to disable the specialized small-object
+   allocator whose allocations are not tracked by ASan.
 
    .. versionadded:: 3.6
 

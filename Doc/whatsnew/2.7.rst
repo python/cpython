@@ -1541,7 +1541,7 @@ changes, or look through the Subversion logs for all the details.
   buffer API, which fixed a test suite failure (fix by Antoine Pitrou;
   :issue:`7133`) and automatically set
   OpenSSL's :c:macro:`!SSL_MODE_AUTO_RETRY`, which will prevent an error
-  code being returned from :meth:`recv` operations that trigger an SSL
+  code being returned from :meth:`!recv` operations that trigger an SSL
   renegotiation (fix by Antoine Pitrou; :issue:`8222`).
 
   The :func:`~ssl.SSLContext.wrap_socket` constructor function now takes a
@@ -2031,7 +2031,7 @@ version 1.3.  Some of the new features are:
 * ElementTree's code for converting trees to a string has been
   significantly reworked, making it roughly twice as fast in many
   cases.  The :meth:`ElementTree.write() <xml.etree.ElementTree.ElementTree.write>`
-  and :meth:`Element.write` methods now have a *method* parameter that can be
+  and :meth:`!Element.write` methods now have a *method* parameter that can be
   "xml" (the default), "html", or "text".  HTML mode will output empty
   elements as ``<empty></empty>`` instead of ``<empty/>``, and text
   mode will skip over elements and only output the text chunks.  If
@@ -2044,7 +2044,7 @@ version 1.3.  Some of the new features are:
   Namespace handling has also been improved.  All ``xmlns:<whatever>``
   declarations are now output on the root element, not scattered throughout
   the resulting XML.  You can set the default namespace for a tree
-  by setting the :attr:`default_namespace` attribute and can
+  by setting the :attr:`!default_namespace` attribute and can
   register new prefixes with :meth:`~xml.etree.ElementTree.register_namespace`.  In XML mode,
   you can use the true/false *xml_declaration* parameter to suppress the
   XML declaration.
@@ -2181,14 +2181,14 @@ Changes to Python's build process and to the C API include:
   discussed in :issue:`5753`, and fixed by Antoine Pitrou.
 
 * New macros: the Python header files now define the following macros:
-  :c:macro:`Py_ISALNUM`,
-  :c:macro:`Py_ISALPHA`,
-  :c:macro:`Py_ISDIGIT`,
-  :c:macro:`Py_ISLOWER`,
-  :c:macro:`Py_ISSPACE`,
-  :c:macro:`Py_ISUPPER`,
-  :c:macro:`Py_ISXDIGIT`,
-  :c:macro:`Py_TOLOWER`, and :c:macro:`Py_TOUPPER`.
+  :c:macro:`!Py_ISALNUM`,
+  :c:macro:`!Py_ISALPHA`,
+  :c:macro:`!Py_ISDIGIT`,
+  :c:macro:`!Py_ISLOWER`,
+  :c:macro:`!Py_ISSPACE`,
+  :c:macro:`!Py_ISUPPER`,
+  :c:macro:`!Py_ISXDIGIT`,
+  :c:macro:`!Py_TOLOWER`, and :c:macro:`!Py_TOUPPER`.
   All of these functions are analogous to the C
   standard macros for classifying characters, but ignore the current
   locale setting, because in
@@ -2234,7 +2234,7 @@ Changes to Python's build process and to the C API include:
 
 * When using the :c:type:`PyMemberDef` structure to define attributes
   of a type, Python will no longer let you try to delete or set a
-  :c:macro:`T_STRING_INPLACE` attribute.
+  :c:macro:`!T_STRING_INPLACE` attribute.
 
   .. rev 79644
 
@@ -2259,12 +2259,12 @@ Changes to Python's build process and to the C API include:
   :issue:`6491`.)
 
 * The :program:`configure` script now checks for floating-point rounding bugs
-  on certain 32-bit Intel chips and defines a :c:macro:`X87_DOUBLE_ROUNDING`
+  on certain 32-bit Intel chips and defines a :c:macro:`!X87_DOUBLE_ROUNDING`
   preprocessor definition.  No code currently uses this definition,
   but it's available if anyone wishes to use it.
   (Added by Mark Dickinson; :issue:`2937`.)
 
-  :program:`configure` also now sets a :envvar:`LDCXXSHARED` Makefile
+  :program:`configure` also now sets a :envvar:`!LDCXXSHARED` Makefile
   variable for supporting C++ linking.  (Contributed by Arfrever
   Frehtes Taifersar Arahesis; :issue:`1222585`.)
 

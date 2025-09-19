@@ -1086,6 +1086,11 @@ iterations of the loop.
    Pushes ``co_consts[consti]`` onto the stack.
 
 
+.. opcode:: LOAD_CONST_IMMORTAL (consti)
+
+   Works as :opcode:`LOAD_CONST`, but is more efficient for immortal objects.
+
+
 .. opcode:: LOAD_SMALL_INT (i)
 
    Pushes the integer ``i`` onto the stack.
@@ -1118,6 +1123,48 @@ iterations of the loop.
    :ref:`annotation scopes <annotation-scopes>` within class bodies.
 
    .. versionadded:: 3.12
+
+
+.. opcode:: BUILD_TEMPLATE
+
+   Constructs a new :class:`~string.templatelib.Template` instance from a tuple
+   of strings and a tuple of interpolations and pushes the resulting object
+   onto the stack::
+
+      interpolations = STACK.pop()
+      strings = STACK.pop()
+      STACK.append(_build_template(strings, interpolations))
+
+   .. versionadded:: 3.14
+
+
+.. opcode:: BUILD_INTERPOLATION (format)
+
+   Constructs a new :class:`~string.templatelib.Interpolation` instance from a
+   value and its source expression and pushes the resulting object onto the
+   stack.
+
+   If no conversion or format specification is present, ``format`` is set to
+   ``2``.
+
+   If the low bit of ``format`` is set, it indicates that the interpolation
+   contains a format specification.
+
+   If ``format >> 2`` is non-zero, it indicates that the interpolation
+   contains a conversion. The value of ``format >> 2`` is the conversion type
+   (``0`` for no conversion, ``1`` for ``!s``, ``2`` for ``!r``, and
+   ``3`` for ``!a``)::
+
+      conversion = format >> 2
+      if format & 1:
+          format_spec = STACK.pop()
+      else:
+          format_spec = None
+      expression = STACK.pop()
+      value = STACK.pop()
+      STACK.append(_build_interpolation(value, expression, conversion, format_spec))
+
+   .. versionadded:: 3.14
 
 
 .. opcode:: BUILD_TUPLE (count)

@@ -543,7 +543,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'configure_locale': True,
         'coerce_c_locale': False,
         'coerce_c_locale_warn': False,
-        'utf8_mode': False,
+        'utf8_mode': True,
     }
     if MS_WINDOWS:
         PRE_CONFIG_COMPAT.update({
@@ -560,7 +560,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         configure_locale=False,
         isolated=True,
         use_environment=False,
-        utf8_mode=False,
+        utf8_mode=True,
         dev_mode=False,
         coerce_c_locale=False,
     )
@@ -804,12 +804,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             for key in ('filesystem_encoding', 'filesystem_errors',
                         'stdio_encoding', 'stdio_errors'):
                 expected[key] = self.IGNORE_CONFIG
-
-        if not expected_preconfig['configure_locale']:
-            # UTF-8 Mode depends on the locale. There is no easy way
-            # to guess if UTF-8 Mode will be enabled or not if the locale
-            # is not configured.
-            expected_preconfig['utf8_mode'] = self.IGNORE_CONFIG
 
         if expected_preconfig['utf8_mode'] == 1:
             if expected['filesystem_encoding'] is self.GET_DEFAULT_CONFIG:

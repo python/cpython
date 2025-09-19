@@ -8,7 +8,6 @@
 #include "pycore_codecs.h"        // _PyCodec_Fini()
 #include "pycore_critical_section.h" // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
-#include "pycore_emscripten_trampoline.h" // _Py_EmscriptenTrampoline_Init()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
@@ -23,6 +22,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
+#include "pycore_uop.h"           // UOP_BUFFER_SIZE
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
 
@@ -324,7 +324,6 @@ _Py_COMP_DIAG_POP
         &(runtime)->unicode_state.ids.mutex, \
         &(runtime)->imports.extensions.mutex, \
         &(runtime)->ceval.pending_mainthread.mutex, \
-        &(runtime)->ceval.sys_trace_profile_mutex, \
         &(runtime)->atexit.mutex, \
         &(runtime)->audit_hooks.mutex, \
         &(runtime)->allocators.mutex, \
@@ -354,11 +353,6 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->main_thread = PyThread_get_thread_ident();
 
     runtime->unicode_state.ids.next_index = unicode_next_index;
-
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-    _Py_EmscriptenTrampoline_Init(runtime);
-#endif
-
     runtime->_initialized = 1;
 }
 
@@ -495,6 +489,11 @@ free_interpreter(PyInterpreterState *interp)
 static inline int check_interpreter_whence(long);
 #endif
 
+extern _Py_CODEUNIT *
+_Py_LazyJitTrampoline(
+    struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate
+);
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -552,6 +551,11 @@ init_interpreter(PyInterpreterState *interp,
 #ifdef Py_GIL_DISABLED
     _Py_brc_init_state(interp);
 #endif
+
+#ifdef _Py_TIER2
+     // Ensure the buffer is to be set as NULL.
+    interp->jit_uop_buffer = NULL;
+#endif
     llist_init(&interp->mem_free_queue.head);
     llist_init(&interp->asyncio_tasks_head);
     interp->asyncio_tasks_lock = (PyMutex){0};
@@ -565,10 +569,9 @@ init_interpreter(PyInterpreterState *interp,
         }
         interp->monitoring_tool_versions[t] = 0;
     }
-    interp->sys_profile_initialized = false;
-    interp->sys_trace_initialized = false;
     interp->_code_object_generation = 0;
     interp->jit = false;
+    interp->compiling = false;
     interp->executor_list_head = NULL;
     interp->executor_deletion_list_head = NULL;
     interp->executor_deletion_list_remaining_capacity = 0;
@@ -773,8 +776,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
             Py_CLEAR(interp->monitoring_callables[t][e]);
         }
     }
-    interp->sys_profile_initialized = false;
-    interp->sys_trace_initialized = false;
     for (int t = 0; t < PY_MONITORING_TOOL_IDS; t++) {
         Py_CLEAR(interp->monitoring_tool_names[t]);
     }
@@ -803,9 +804,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 
 #ifdef _Py_TIER2
     _Py_ClearExecutorDeletionList(interp);
+    if (interp->jit_uop_buffer != NULL) {
+        _PyObject_VirtualFree(interp->jit_uop_buffer, UOP_BUFFER_SIZE);
+        interp->jit_uop_buffer = NULL;
+    }
 #endif
     _PyAST_Fini(interp);
-    _PyWarnings_Fini(interp);
     _PyAtExit_Fini(interp);
 
     // All Python types must be destroyed before the last GC collection. Python
@@ -816,6 +820,16 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     _PyGC_CollectNoFail(tstate);
     _PyGC_Fini(interp);
 
+    // Finalize warnings after last gc so that any finalizers can
+    // access warnings state
+    _PyWarnings_Fini(interp);
+    struct _PyExecutorObject *cold = interp->cold_executor;
+    if (cold != NULL) {
+        interp->cold_executor = NULL;
+        assert(cold->vm_data.valid);
+        assert(cold->vm_data.warm);
+        _PyExecutor_Free(cold);
+    }
     /* We don't clear sysdict and builtins until the end of this function.
        Because clearing other attributes can execute arbitrary Python code
        which requires sysdict and builtins. */
@@ -1455,7 +1469,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     assert(tstate->prev == NULL);
 
     assert(tstate->_whence == _PyThreadState_WHENCE_NOTSET);
-    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_EXEC);
+    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_THREADING_DAEMON);
     tstate->_whence = whence;
 
     assert(id > 0);
@@ -1477,6 +1491,7 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->datastack_limit = NULL;
     tstate->what_event = -1;
     tstate->current_executor = NULL;
+    tstate->jit_exit = NULL;
     tstate->dict_global_version = 0;
 
     _tstate->c_stack_soft_limit = UINTPTR_MAX;
@@ -1690,13 +1705,14 @@ PyThreadState_Clear(PyThreadState *tstate)
     }
 
     if (tstate->c_profilefunc != NULL) {
-        tstate->interp->sys_profiling_threads--;
+        FT_ATOMIC_ADD_SSIZE(tstate->interp->sys_profiling_threads, -1);
         tstate->c_profilefunc = NULL;
     }
     if (tstate->c_tracefunc != NULL) {
-        tstate->interp->sys_tracing_threads--;
+        FT_ATOMIC_ADD_SSIZE(tstate->interp->sys_tracing_threads, -1);
         tstate->c_tracefunc = NULL;
     }
+
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
 
@@ -1736,22 +1752,14 @@ PyThreadState_Clear(PyThreadState *tstate)
 static void
 decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
-static int
-shutting_down_natives(PyInterpreterState *interp)
-{
-    assert(interp != NULL);
-    return _Py_atomic_load_int_relaxed(&interp->threads.finalizing.shutting_down);
-}
-
 static void
 decref_interpreter(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
-    Py_ssize_t old = _Py_atomic_add_ssize(&finalizing->countdown, -1);
-    if (old == 1 && shutting_down_natives(interp)) {
-        _PyEvent_Notify(&finalizing->finished);
-    } else if (old <= 0) {
+    _PyRWMutex_RLock(&interp->references.lock);
+    Py_ssize_t old = _Py_atomic_add_ssize(&interp->references.refcount, -1);
+    _PyRWMutex_RUnlock(&interp->references.lock);
+    if (old <= 0) {
         Py_FatalError("interpreter has negative reference count, likely due"
                       " to an extra PyInterpreterRef_Close()");
     }
@@ -2270,13 +2278,15 @@ stop_the_world(struct _stoptheworld_state *stw)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    PyMutex_Lock(&stw->mutex);
+    // gh-137433: Acquire the rwmutex first to avoid deadlocks with daemon
+    // threads that may hang when blocked on lock acquisition.
     if (stw->is_global) {
         _PyRWMutex_Lock(&runtime->stoptheworld_mutex);
     }
     else {
         _PyRWMutex_RLock(&runtime->stoptheworld_mutex);
     }
+    PyMutex_Lock(&stw->mutex);
 
     HEAD_LOCK(runtime);
     stw->requested = 1;
@@ -2342,13 +2352,13 @@ start_the_world(struct _stoptheworld_state *stw)
     }
     stw->requester = NULL;
     HEAD_UNLOCK(runtime);
+    PyMutex_Unlock(&stw->mutex);
     if (stw->is_global) {
         _PyRWMutex_Unlock(&runtime->stoptheworld_mutex);
     }
     else {
         _PyRWMutex_RUnlock(&runtime->stoptheworld_mutex);
     }
-    PyMutex_Unlock(&stw->mutex);
 }
 #endif  // Py_GIL_DISABLED
 
@@ -3141,26 +3151,24 @@ Py_ssize_t
 _PyInterpreterState_Refcount(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    return _Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown);
+    return _Py_atomic_load_ssize_relaxed(&interp->references.refcount);
 }
 
-int
-_PyInterpreterState_Incref(PyInterpreterState *interp)
+static int
+try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
 {
-    assert(interp != NULL);
-    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
-    assert(_Py_atomic_load_ssize_relaxed(&finalizing->countdown) >= 0);
-    PyMutex *mutex = &finalizing->mutex;
-    PyMutex_Lock(mutex);
-    if (_PyEvent_IsSet(&finalizing->finished)) {
-        PyMutex_Unlock(mutex);
+    _PyRWMutex_RLock(&interp->references.lock);
+    if (_PyInterpreterState_GetFinalizing(interp) == NULL) {
+        *strong_ptr = 0;
+        _PyRWMutex_RUnlock(&interp->references.lock);
         return -1;
     }
-
-    _Py_atomic_add_ssize(&interp->threads.finalizing.countdown, 1);
-    PyMutex_Unlock(mutex);
+    _Py_atomic_add_ssize(&interp->references.refcount, 1);
+    _PyRWMutex_RUnlock(&interp->references.lock);
+    *strong_ptr = (PyInterpreterRef)interp;
     return 0;
 }
+
 
 static PyInterpreterState *
 ref_as_interp(PyInterpreterRef ref)
@@ -3178,12 +3186,11 @@ PyInterpreterRef_Get(PyInterpreterRef *ref)
 {
     assert(ref != NULL);
     PyInterpreterState *interp = PyInterpreterState_Get();
-    if (_PyInterpreterState_Incref(interp) < 0) {
+    if (try_acquire_strong_ref(interp, ref)) {
         PyErr_SetString(PyExc_PythonFinalizationError,
-                        "Cannot acquire strong interpreter references anymore");
+                        "cannot acquire strong interpreter references anymore");
         return -1;
     }
-    *ref = (PyInterpreterRef)interp;
     return 0;
 }
 
@@ -3191,12 +3198,14 @@ PyInterpreterRef
 PyInterpreterRef_Dup(PyInterpreterRef ref)
 {
     PyInterpreterState *interp = ref_as_interp(ref);
-    int res = _PyInterpreterState_Incref(interp);
+    PyInterpreterRef new_ref;
+    int res = try_acquire_strong_ref(interp, &new_ref);
     (void)res;
     // We already hold a strong reference, so it shouldn't be possible
     // for the interpreter to be at a point where references don't work anymore
     assert(res == 0);
-    return (PyInterpreterRef)interp;
+    assert(new_ref != 0);
+    return new_ref;
 }
 
 #undef PyInterpreterRef_Close
@@ -3258,25 +3267,6 @@ PyInterpreterWeakRef_Close(PyInterpreterWeakRef wref_handle)
     if (--wref->refcount == 0) {
         PyMem_RawFree(wref);
     }
-}
-
-static int
-try_acquire_strong_ref(PyInterpreterState *interp, PyInterpreterRef *strong_ptr)
-{
-    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
-    PyMutex *mutex = &finalizing->mutex;
-    PyMutex_Lock(mutex); // Synchronize TOCTOU with the event flag
-    if (_PyEvent_IsSet(&finalizing->finished)) {
-        /* Interpreter has already finished threads */
-        *strong_ptr = 0;
-        return -1;
-    }
-    else {
-        _Py_atomic_add_ssize(&finalizing->countdown, 1);
-    }
-    PyMutex_Unlock(mutex);
-    *strong_ptr = (PyInterpreterRef)interp;
-    return 0;
 }
 
 int
