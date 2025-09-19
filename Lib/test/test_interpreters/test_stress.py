@@ -74,6 +74,13 @@ class StressTests(TestBase):
             start.set()
         support.gc_collect()
 
+    def create_interpreter_no_memory(self):
+        _testcapi = import_helper.import_module("_testcapi")
+
+        with self.assertRaises(MemoryError):
+            _testcapi.set_nomemory(0, 1)
+            interpreters.create()
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
