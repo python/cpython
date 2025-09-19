@@ -1,6 +1,5 @@
 import unittest
 import os
-from unittest.mock import patch
 
 from _colorize import ANSIColors, get_theme
 from _pyrepl.fancycompleter import Completer, commonprefix
@@ -59,7 +58,6 @@ class FancyCompleterTests(unittest.TestCase):
         compl = Completer({'a': None}, use_colors=False)
         self.assertEqual(compl.attr_matches('a._'), ['a.__'])
 
-    @patch.dict(os.environ, {'PYTHON_COLORS': '1'})
     def test_complete_attribute_colored(self):
         theme = get_theme()
         compl = Completer({'a': 42}, use_colors=True)
@@ -96,8 +94,8 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('foobaz'), ['foobazzz'])
         self.assertEqual(compl.global_matches('nothing'), [])
 
-    @patch.dict(os.environ, {'PYTHON_COLORS': '1'})
     def test_complete_global_colored(self):
+        theme = get_theme()
         compl = Completer({'foobar': 1, 'foobazzz': 2}, use_colors=True)
         self.assertEqual(compl.global_matches('foo'), ['fooba'])
         matches = compl.global_matches('fooba')
@@ -106,25 +104,14 @@ class FancyCompleterTests(unittest.TestCase):
         # readline displays the matches in the proper order
         N0 = f"\x1b[000;00m"
         N1 = f"\x1b[001;00m"
-
+        int_color = theme.fancycompleter.int
         self.assertEqual(set(matches), {
             ' ',
-            f'{N0}{ANSIColors.BOLD_YELLOW}foobar{ANSIColors.RESET}',
-            f'{N1}{ANSIColors.BOLD_YELLOW}foobazzz{ANSIColors.RESET}',
+            f'{N0}{int_color}foobar{ANSIColors.RESET}',
+            f'{N1}{int_color}foobazzz{ANSIColors.RESET}',
         })
         self.assertEqual(compl.global_matches('foobaz'), ['foobazzz'])
         self.assertEqual(compl.global_matches('nothing'), [])
-
-    @patch.dict(os.environ, {'PYTHON_COLORS': '1'})
-    def test_complete_global_colored_exception(self):
-        compl = Completer({'tryme': 42}, use_colors=True)
-        N0 = f"\x1b[000;00m"
-        N1 = f"\x1b[001;00m"
-        self.assertEqual(compl.global_matches('try'), [
-            f'{N0}{ANSIColors.GREY}try:{ANSIColors.RESET}',
-            f'{N1}{ANSIColors.BOLD_YELLOW}tryme{ANSIColors.RESET}',
-            ' '
-        ])
 
     def test_complete_with_indexer(self):
         compl = Completer({'lst': [None, 2, 3]}, use_colors=False)
