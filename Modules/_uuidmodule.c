@@ -21,6 +21,7 @@
 #include "pycore_long.h"          // _PyLong_FromByteArray, _PyLong_AsByteArray
 #include "pycore_pylifecycle.h"   // _PyOS_URandom()
 #include "pycore_time.h"          // PyTime_Time
+#include "pycore_runtime_init.h"  // _Py_ID()
 
 #if defined(HAVE_UUID_H)
   // AIX, FreeBSD, libuuid with pkgconf
@@ -1450,14 +1451,14 @@ _uuid_UUID___getstate___impl(uuidobject *self)
         Py_DECREF(dict);
         return NULL;
     }
-    if (PyDict_SetItemString(dict, "int", int_value) < 0) {
+    if (PyDict_SetItem(dict, &_Py_ID(int), int_value) < 0) {
         Py_DECREF(int_value);
         Py_DECREF(dict);
         return NULL;
     }
     Py_DECREF(int_value);
 
-    if (PyDict_SetItemString(dict, "is_safe", self->is_safe) < 0) {
+    if (PyDict_SetItem(dict, &_Py_ID(is_safe), self->is_safe) < 0) {
         Py_DECREF(dict);
         return NULL;
     }
@@ -1488,7 +1489,7 @@ _uuid_UUID___setstate___impl(uuidobject *self, PyObject *state)
     }
 
     // Get and set the 'int' value
-    PyObject *int_value = PyDict_GetItemString(state, "int");
+    PyObject *int_value = PyDict_GetItem(state, &_Py_ID(int));
     if (int_value == NULL) {
         PyErr_SetString(PyExc_ValueError, "state must have 'int' key");
         return NULL;
@@ -1499,7 +1500,7 @@ _uuid_UUID___setstate___impl(uuidobject *self, PyObject *state)
     }
 
     // Get and set 'is_safe' if present
-    PyObject *is_safe = PyDict_GetItemString(state, "is_safe");
+    PyObject *is_safe = PyDict_GetItem(state, &_Py_ID(is_safe));
     if (is_safe != NULL) {
         // is_safe is the integer value, we need to call SafeUUID(value)
         PyObject *safe_uuid_member = PyObject_CallOneArg(module_state->safe_uuid, is_safe);
