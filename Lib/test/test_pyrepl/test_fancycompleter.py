@@ -1,5 +1,4 @@
 import unittest
-import os
 
 from _colorize import ANSIColors, get_theme
 from _pyrepl.fancycompleter import Completer, commonprefix
