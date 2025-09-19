@@ -9,7 +9,6 @@ import importlib.util
 from importlib import _bootstrap_external
 import os
 import pathlib
-import re
 import string
 import sys
 from test import support
@@ -583,6 +582,18 @@ class PEP3147Tests:
 
     @unittest.skipIf(sys.implementation.cache_tag is None,
                      'requires sys.implementation.cache_tag to not be None')
+    def test_cache_from_source_in_root_with_pycache_prefix(self):
+        # Regression test for gh-82916
+        pycache_prefix = os.path.join(os.path.sep, 'tmp', 'bytecode')
+        path = 'qux.py'
+        expect = os.path.join(os.path.sep, 'tmp', 'bytecode',
+                              f'qux.{self.tag}.pyc')
+        with util.temporary_pycache_prefix(pycache_prefix):
+            with os_helper.change_cwd('/'):
+                self.assertEqual(self.util.cache_from_source(path), expect)
+
+    @unittest.skipIf(sys.implementation.cache_tag is None,
+                     'requires sys.implementation.cache_tag to not be None')
     def test_source_from_cache_inside_pycache_prefix(self):
         # If pycache_prefix is set and the cache path we get is inside it,
         # we return an absolute path to the py file based on the remainder of
@@ -636,7 +647,7 @@ class MagicNumberTests(unittest.TestCase):
         # stakeholders such as OS package maintainers must be notified
         # in advance. Such exceptional releases will then require an
         # adjustment to this test case.
-        EXPECTED_MAGIC_NUMBER = 3495
+        EXPECTED_MAGIC_NUMBER = 3625
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (

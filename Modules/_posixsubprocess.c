@@ -4,9 +4,11 @@
 #endif
 
 #include "Python.h"
-#include "pycore_fileutils.h"
-#include "pycore_pystate.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable_async_safe()
+#include "pycore_interp.h"        // _PyInterpreterState_GetFinalizing()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
+
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 #  define _GNU_SOURCE
 #endif
@@ -954,6 +956,7 @@ do_fork_exec(char *const exec_array[],
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _posixsubprocess.fork_exec as subprocess_fork_exec
     args as process_args: object
     executable_list: object
@@ -1014,7 +1017,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
                           PyObject *preexec_fn)
-/*[clinic end generated code: output=288464dc56e373c7 input=f311c3bcb5dd55c8]*/
+/*[clinic end generated code: output=288464dc56e373c7 input=58e0db771686f4f6]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
@@ -1198,6 +1201,19 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
         goto cleanup;
     }
     if (convert_fds_to_keep_to_c(py_fds_to_keep, c_fds_to_keep) < 0) {
+        goto cleanup;
+    }
+
+    /* NOTE: user-defined classes may be able to present different
+     * executable/argument/env lists to the eventual exec as to this hook.
+     * The audit hook receives the original object, so would nevertheless
+     * be able to detect weird behaviour, hence we do not add extra
+     * complexity or performance penalties to attempt to avoid this. */
+    if (PySys_Audit("_posixsubprocess.fork_exec",
+                    "OOO",
+                    executable_list,
+                    process_args,
+                    env_list) < 0) {
         goto cleanup;
     }
 

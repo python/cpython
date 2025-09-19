@@ -1747,7 +1747,7 @@ Interpreter Changes
 -------------------------------
 
 Two command-line options have been reserved for use by other Python
-implementations.  The :option:`-J` switch has been reserved for use by
+implementations.  The :option:`!-J` switch has been reserved for use by
 Jython for Jython-specific options, such as switches that are passed to
 the underlying JVM.  :option:`-X` has been reserved for options
 specific to a particular implementation of Python such as CPython,
@@ -3043,7 +3043,7 @@ Changes to Python's build process and to the C API include:
 
 * Importing modules simultaneously in two different threads no longer
   deadlocks; it will now raise an :exc:`ImportError`.  A new API
-  function, :c:func:`PyImport_ImportModuleNoBlock`, will look for a
+  function, :c:func:`!PyImport_ImportModuleNoBlock`, will look for a
   module in ``sys.modules`` first, then try to import it after
   acquiring an import lock.  If the import lock is held by another
   thread, an :exc:`ImportError` is raised.

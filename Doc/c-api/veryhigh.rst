@@ -361,7 +361,7 @@ the same library that the Python runtime is using.
       :py:mod:`!ast` Python module, which exports these constants under
       the same names.
 
-   .. c:var:: int CO_FUTURE_DIVISION
-
-      This bit can be set in *flags* to cause division operator ``/`` to be
-      interpreted as "true division" according to :pep:`238`.
+   The "``PyCF``" flags above can be combined with "``CO_FUTURE``" flags such
+   as :c:macro:`CO_FUTURE_ANNOTATIONS` to enable features normally
+   selectable using :ref:`future statements <future>`.
+   See :ref:`c_codeobject_flags` for a complete list.

@@ -24,7 +24,7 @@ class FunctionalTestCaseMixin:
 
     def setUp(self):
         self.loop = self.new_loop()
-        asyncio._set_event_loop(None)
+        asyncio.set_event_loop(None)
 
         self.loop.set_exception_handler(self.loop_exception_handler)
         self.__unhandled_exceptions = []
@@ -39,7 +39,7 @@ class FunctionalTestCaseMixin:
                 self.fail('unexpected calls to loop.call_exception_handler()')
 
         finally:
-            asyncio._set_event_loop(None)
+            asyncio.set_event_loop(None)
             self.loop = None
 
     def tcp_server(self, server_prog, *,
@@ -217,15 +217,14 @@ class TestThreadedServer(SocketThread):
                     pass
         finally:
             super().stop()
-
-    def run(self):
-        try:
-            with self._sock:
-                self._sock.setblocking(False)
-                self._run()
-        finally:
+            self._sock.close()
             self._s1.close()
             self._s2.close()
+
+
+    def run(self):
+        self._sock.setblocking(False)
+        self._run()
 
     def _run(self):
         while self._active:

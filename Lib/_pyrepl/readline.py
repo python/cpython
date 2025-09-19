@@ -32,7 +32,7 @@ import warnings
 from dataclasses import dataclass, field
 
 import os
-from site import gethistoryfile   # type: ignore[attr-defined]
+from site import gethistoryfile
 import sys
 from rlcompleter import Completer as RLCompleter
 from .fancycompleter import Completer as FancyCompleter
@@ -40,13 +40,15 @@ from .fancycompleter import Completer as FancyCompleter
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
+from ._module_completer import ModuleCompleter, make_default_module_completer
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
-try:
-    from .unix_console import UnixConsole as Console, _error
-except ImportError:
+
+if os.name == "nt":
     from .windows_console import WindowsConsole as Console, _error
+else:
+    from .unix_console import UnixConsole as Console, _error
 
 ENCODING = sys.getdefaultencoding() or "latin1"
 
@@ -90,6 +92,7 @@ __all__ = [
     # "set_pre_input_hook",
     "set_startup_hook",
     "write_history_file",
+    "append_history_file",
     # ---- multiline extensions ----
     "multiline_input",
 ]
@@ -100,7 +103,7 @@ __all__ = [
 class ReadlineConfig:
     readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
-
+    module_completer: ModuleCompleter = field(default_factory=make_default_module_completer)
 
 @dataclass(kw_only=True)
 class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
@@ -133,6 +136,9 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return "".join(b[p + 1 : self.pos])
 
     def get_completions(self, stem: str) -> list[str]:
+        module_completions = self.get_module_completions()
+        if module_completions is not None:
+            return module_completions
         if len(stem) == 0 and self.more_lines is not None:
             b = self.buffer
             p = self.pos
@@ -161,6 +167,10 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             # the completions before displaying them.
             result.sort()
         return result
+
+    def get_module_completions(self) -> list[str] | None:
+        line = self.get_line()
+        return self.config.module_completer.get_completions(line)
 
     def get_trimmed_history(self, maxlength: int) -> list[str]:
         if maxlength >= 0:
@@ -268,10 +278,6 @@ class maybe_accept(commands.Command):
         r: ReadlineAlikeReader
         r = self.reader  # type: ignore[assignment]
         r.dirty = True  # this is needed to hide the completion menu, if visible
-
-        if self.reader.in_bracketed_paste:
-            r.insert("\n")
-            return
 
         # if there are already several lines and the cursor
         # is not on the last one, always insert a new \n.
@@ -447,6 +453,7 @@ class _ReadlineWrapper:
                         del buffer[:]
                     if line:
                         history.append(line)
+        self.set_history_length(self.get_current_history_length())
 
     def write_history_file(self, filename: str = gethistoryfile()) -> None:
         maxlength = self.saved_history_length
@@ -457,6 +464,19 @@ class _ReadlineWrapper:
             for entry in history:
                 entry = entry.replace("\n", "\r\n")  # multiline history support
                 f.write(entry + "\n")
+
+    def append_history_file(self, filename: str = gethistoryfile()) -> None:
+        reader = self.get_reader()
+        saved_length = self.get_history_length()
+        length = self.get_current_history_length() - saved_length
+        history = reader.get_trimmed_history(length)
+        f = open(os.path.expanduser(filename), "a",
+                 encoding="utf-8", newline="\n")
+        with f:
+            for entry in history:
+                entry = entry.replace("\n", "\r\n")  # multiline history support
+                f.write(entry + "\n")
+        self.set_history_length(saved_length + length)
 
     def clear_history(self) -> None:
         del self.get_reader().history[:]
@@ -527,6 +547,7 @@ set_history_length = _wrapper.set_history_length
 get_current_history_length = _wrapper.get_current_history_length
 read_history_file = _wrapper.read_history_file
 write_history_file = _wrapper.write_history_file
+append_history_file = _wrapper.append_history_file
 clear_history = _wrapper.clear_history
 get_history_item = _wrapper.get_history_item
 remove_history_item = _wrapper.remove_history_item
@@ -593,6 +614,7 @@ def _setup(namespace: Mapping[str, Any]) -> None:
         Completer = RLCompleter
     else:
         Completer = FancyCompleter
+    _wrapper.config.module_completer = ModuleCompleter(namespace)
     _wrapper.config.readline_completer = Completer(namespace).complete
 
     # this is not really what readline.c does.  Better than nothing I guess

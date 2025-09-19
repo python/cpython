@@ -1231,10 +1231,10 @@ class StrTest(string_tests.StringLikeTest,
         self.assertEqual('{0:\x00^6}'.format(3), '\x00\x003\x00\x00\x00')
         self.assertEqual('{0:<6}'.format(3), '3     ')
 
-        self.assertEqual('{0:\x00<6}'.format(3.14), '3.14\x00\x00')
-        self.assertEqual('{0:\x01<6}'.format(3.14), '3.14\x01\x01')
-        self.assertEqual('{0:\x00^6}'.format(3.14), '\x003.14\x00')
-        self.assertEqual('{0:^6}'.format(3.14), ' 3.14 ')
+        self.assertEqual('{0:\x00<6}'.format(3.25), '3.25\x00\x00')
+        self.assertEqual('{0:\x01<6}'.format(3.25), '3.25\x01\x01')
+        self.assertEqual('{0:\x00^6}'.format(3.25), '\x003.25\x00')
+        self.assertEqual('{0:^6}'.format(3.25), ' 3.25 ')
 
         self.assertEqual('{0:\x00<12}'.format(3+2.0j), '(3+2j)\x00\x00\x00\x00\x00\x00')
         self.assertEqual('{0:\x01<12}'.format(3+2.0j), '(3+2j)\x01\x01\x01\x01\x01\x01')
@@ -2605,7 +2605,8 @@ class StrTest(string_tests.StringLikeTest,
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, str)
-        support.check_free_after_iterating(self, reversed, str)
+        if not support.Py_GIL_DISABLED:
+            support.check_free_after_iterating(self, reversed, str)
 
     def test_check_encoding_errors(self):
         # bpo-37388: str(bytes) and str.decode() must check encoding and errors

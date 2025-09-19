@@ -5,7 +5,7 @@ import unittest
 import unittest.mock
 from ctypes import CDLL, RTLD_GLOBAL
 from ctypes.util import find_library
-from test.support import os_helper
+from test.support import os_helper, thread_unsafe
 
 
 # On some systems, loading the OpenGL libraries needs the RTLD_GLOBAL mode.
@@ -78,6 +78,7 @@ class Test_OpenGL_libs(unittest.TestCase):
 @unittest.skipUnless(sys.platform.startswith('linux'),
                      'Test only valid for Linux')
 class FindLibraryLinux(unittest.TestCase):
+    @thread_unsafe('uses setenv')
     def test_find_on_libpath(self):
         import subprocess
         import tempfile

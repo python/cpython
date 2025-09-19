@@ -1,5 +1,4 @@
 """Tests for thread-local bytecode."""
-import dis
 import textwrap
 import unittest
 

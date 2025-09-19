@@ -9,7 +9,6 @@ import struct
 import time
 import unittest
 import unittest.mock
-import warnings
 
 from test import support
 from test.support import import_helper
@@ -556,13 +555,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertTrue(zi.is_package(TESTPACK))
 
-        # PEP 302
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-
-            mod = zi.load_module(TESTPACK)
-            self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
-
         # PEP 451
         spec = zi.find_spec('spam')
         self.assertIsNotNone(spec)
@@ -576,6 +568,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
+
+        sys.path.insert(0, TEMP_ZIP)
 
         existing_pack_path = importlib.import_module(TESTPACK).__path__[0]
         expected_path_path = os.path.join(TEMP_ZIP, TESTPACK)
@@ -675,11 +669,6 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(zi.archive, TEMP_ZIP)
         self.assertEqual(zi.prefix, packdir)
         self.assertTrue(zi.is_package(TESTPACK2))
-        # PEP 302
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            mod = zi.load_module(TESTPACK2)
-            self.assertEqual(zi.get_filename(TESTPACK2), mod.__file__)
         # PEP 451
         spec = zi.find_spec(TESTPACK2)
         mod = importlib.util.module_from_spec(spec)
@@ -702,9 +691,12 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         self.assertEqual(
             spec.loader.get_filename(TESTMOD), load_mod.__file__)
 
+        sys.path.insert(0, TEMP_ZIP + os.sep + TESTPACK)
+
         mod_path = TESTPACK2 + os.sep + TESTMOD
         mod_name = module_path_to_dotted_name(mod_path)
         mod = importlib.import_module(mod_name)
+
         self.assertTrue(mod_name in sys.modules)
         self.assertIsNone(zi.get_source(TESTPACK2))
         self.assertIsNone(zi.get_source(mod_path))
@@ -835,11 +827,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             s = io.StringIO()
             print_tb(tb, 1, s)
-            self.assertTrue(s.getvalue().endswith(
+            self.assertEndsWith(s.getvalue(),
                 '    def do_raise(): raise TypeError\n'
                 '' if support.has_no_debug_ranges() else
                 '                    ^^^^^^^^^^^^^^^\n'
-            ))
+            )
         else:
             raise AssertionError("This ought to be impossible")
 
@@ -1069,9 +1061,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
         z = zipimport.zipimporter(TESTMOD)
 
         try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                self.assertRaises(TypeError, z.load_module, None)
             self.assertRaises(TypeError, z.find_module, None)
             self.assertRaises(TypeError, z.find_spec, None)
             self.assertRaises(TypeError, z.exec_module, None)
@@ -1082,10 +1071,6 @@ class BadFileZipImportTestCase(unittest.TestCase):
 
             error = zipimport.ZipImportError
             self.assertIsNone(z.find_spec('abc'))
-
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-                self.assertRaises(error, z.load_module, 'abc')
             self.assertRaises(error, z.get_code, 'abc')
             self.assertRaises(OSError, z.get_data, 'abc')
             self.assertRaises(error, z.get_source, 'abc')

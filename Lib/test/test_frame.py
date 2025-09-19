@@ -346,6 +346,12 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(x, 2)
         self.assertEqual(y, 3)
 
+    def test_closure_with_inline_comprehension(self):
+        lambda: k
+        k = 1
+        lst = [locals() for k in [0]]
+        self.assertEqual(lst[0]['k'], 0)
+
     def test_as_dict(self):
         x = 1
         y = 2
@@ -590,6 +596,22 @@ class TestFrameLocals(unittest.TestCase):
             FrameLocalsProxy(123)  # wrong type
         with self.assertRaises(TypeError):
             FrameLocalsProxy(frame=sys._getframe())  # no keyword arguments
+
+    def test_overwrite_locals(self):
+        # Verify we do not crash if we overwrite a local passed as an argument
+        # from an ancestor in the call stack.
+        def f():
+            xs = [1, 2, 3]
+            ys = [4, 5, 6]
+            return g(xs)
+
+        def g(xs):
+            f = sys._getframe()
+            f.f_back.f_locals["xs"] = None
+            f.f_back.f_locals["ys"] = None
+            return xs[1]
+
+        self.assertEqual(f(), 2)
 
 
 class FrameLocalsProxyMappingTests(mapping_tests.TestHashMappingProtocol):

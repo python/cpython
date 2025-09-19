@@ -222,6 +222,10 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None,
             except ImportError:
                 pass
 
+        # gh-135335: flush stdout/stderr in case any of the preloaded modules
+        # wrote to them, otherwise children might inherit buffered data
+        util._flush_std_streams()
+
     util._close_stdin()
 
     sig_r, sig_w = os.pipe()

@@ -64,7 +64,7 @@ _RATIONAL_FORMAT = re.compile(r"""
        (?:\.(?P<decimal>\d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?      # and optional exponent
     )
-    \s*\Z                                  # and optional whitespace to finish
+    \s*\z                                  # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
@@ -168,9 +168,13 @@ _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     # A '0' that's *not* followed by another digit is parsed as a minimum width
     # rather than a zeropad flag.
     (?P<zeropad>0(?=[0-9]))?
-    (?P<minimumwidth>0|[1-9][0-9]*)?
+    (?P<minimumwidth>[0-9]+)?
     (?P<thousands_sep>[,_])?
-    (?:\.(?P<precision>0|[1-9][0-9]*))?
+    (?:\.
+        (?=[,_0-9])  # lookahead for digit or separator
+        (?P<precision>[0-9]+)?
+        (?P<frac_separators>[,_])?
+    )?
     (?P<presentation_type>[eEfFgG%])
 """, re.DOTALL | re.VERBOSE).fullmatch
 
@@ -238,11 +242,6 @@ class Fraction(numbers.Rational):
                 self._denominator = 1
                 return self
 
-            elif isinstance(numerator, numbers.Rational):
-                self._numerator = numerator.numerator
-                self._denominator = numerator.denominator
-                return self
-
             elif (isinstance(numerator, float) or
                   (not isinstance(numerator, type) and
                    hasattr(numerator, 'as_integer_ratio'))):
@@ -277,6 +276,11 @@ class Fraction(numbers.Rational):
                             denominator *= 10**-exp
                 if m.group('sign') == '-':
                     numerator = -numerator
+
+            elif isinstance(numerator, numbers.Rational):
+                self._numerator = numerator.numerator
+                self._denominator = numerator.denominator
+                return self
 
             else:
                 raise TypeError("argument should be a string or a Rational "
@@ -499,10 +503,14 @@ class Fraction(numbers.Rational):
         minimumwidth = int(match["minimumwidth"] or "0")
         thousands_sep = match["thousands_sep"]
         precision = int(match["precision"] or "6")
+        frac_sep = match["frac_separators"] or ""
         presentation_type = match["presentation_type"]
         trim_zeros = presentation_type in "gG" and not alternate_form
         trim_point = not alternate_form
         exponent_indicator = "E" if presentation_type in "EFG" else "e"
+
+        if align == '=' and fill == '0':
+            zeropad = True
 
         # Round to get the digits we need, figure out where to place the point,
         # and decide whether to use scientific notation. 'point_pos' is the
@@ -552,6 +560,9 @@ class Fraction(numbers.Rational):
         if trim_zeros:
             frac_part = frac_part.rstrip("0")
         separator = "" if trim_point and not frac_part else "."
+        if frac_sep:
+            frac_part = frac_sep.join(frac_part[pos:pos + 3]
+                                      for pos in range(0, len(frac_part), 3))
         trailing = separator + frac_part + suffix
 
         # Do zero padding if required.
@@ -905,8 +916,10 @@ class Fraction(numbers.Rational):
         else:
             return NotImplemented
 
-    def __rpow__(b, a):
+    def __rpow__(b, a, modulo=None):
         """a ** b"""
+        if modulo is not None:
+            return NotImplemented
         if b._denominator == 1 and b._numerator >= 0:
             # If a is an int, keep it that way if possible.
             return a ** b._numerator

@@ -17,7 +17,7 @@ static int
 type___instancecheck___impl(PyTypeObject *self, PyObject *instance);
 
 static PyObject *
-type___instancecheck__(PyTypeObject *self, PyObject *instance)
+type___instancecheck__(PyObject *self, PyObject *instance)
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -45,7 +45,7 @@ static int
 type___subclasscheck___impl(PyTypeObject *self, PyObject *subclass);
 
 static PyObject *
-type___subclasscheck__(PyTypeObject *self, PyObject *subclass)
+type___subclasscheck__(PyObject *self, PyObject *subclass)
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -262,4 +262,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=f7db85fd11818c63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b55c0d257e2518d2 input=a9049054013a1b77]*/

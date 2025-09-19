@@ -1,0 +1,3 @@
+Fix :class:`html.parser.HTMLParser` to not unescape character entities in
+attribute values if they are followed by an ASCII alphanumeric or an equals
+sign.

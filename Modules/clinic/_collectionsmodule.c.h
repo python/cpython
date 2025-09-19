@@ -71,7 +71,7 @@ static PyObject *
 deque_append_impl(dequeobject *deque, PyObject *item);
 
 static PyObject *
-deque_append(dequeobject *deque, PyObject *item)
+deque_append(PyObject *deque, PyObject *item)
 {
     PyObject *return_value = NULL;
 
@@ -95,7 +95,7 @@ static PyObject *
 deque_appendleft_impl(dequeobject *deque, PyObject *item);
 
 static PyObject *
-deque_appendleft(dequeobject *deque, PyObject *item)
+deque_appendleft(PyObject *deque, PyObject *item)
 {
     PyObject *return_value = NULL;
 
@@ -119,7 +119,7 @@ static PyObject *
 deque_extend_impl(dequeobject *deque, PyObject *iterable);
 
 static PyObject *
-deque_extend(dequeobject *deque, PyObject *iterable)
+deque_extend(PyObject *deque, PyObject *iterable)
 {
     PyObject *return_value = NULL;
 
@@ -143,7 +143,7 @@ static PyObject *
 deque_extendleft_impl(dequeobject *deque, PyObject *iterable);
 
 static PyObject *
-deque_extendleft(dequeobject *deque, PyObject *iterable)
+deque_extendleft(PyObject *deque, PyObject *iterable)
 {
     PyObject *return_value = NULL;
 
@@ -308,7 +308,7 @@ static PyObject *
 deque_count_impl(dequeobject *deque, PyObject *v);
 
 static PyObject *
-deque_count(dequeobject *deque, PyObject *v)
+deque_count(PyObject *deque, PyObject *v)
 {
     PyObject *return_value = NULL;
 
@@ -423,7 +423,7 @@ static PyObject *
 deque_remove_impl(dequeobject *deque, PyObject *value);
 
 static PyObject *
-deque_remove(dequeobject *deque, PyObject *value)
+deque_remove(PyObject *deque, PyObject *value)
 {
     PyObject *return_value = NULL;
 
@@ -471,9 +471,11 @@ deque_init(PyObject *deque, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(iterable), &_Py_ID(maxlen), },
     };
     #undef NUM_KEYWORDS
@@ -630,4 +632,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2d89c39288fc7389 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9d4d647c221cb9f input=a9049054013a1b77]*/

@@ -108,20 +108,19 @@ pyimport_importmodule(PyObject *Py_UNUSED(module), PyObject *args)
 }
 
 
-/* Test PyImport_ImportModuleNoBlock() */
+/* Test PyImport_ImportModuleNoBlock() (removed in 3.15) */
 static PyObject *
 pyimport_importmodulenoblock(PyObject *Py_UNUSED(module), PyObject *args)
 {
+    // Get the function from the stable ABI.
+    PyAPI_FUNC(PyObject *) PyImport_ImportModuleNoBlock(const char *name);
+
     const char *name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "z#", &name, &size)) {
         return NULL;
     }
-
-    _Py_COMP_DIAG_PUSH
-    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
     return PyImport_ImportModuleNoBlock(name);
-    _Py_COMP_DIAG_POP
 }
 
 

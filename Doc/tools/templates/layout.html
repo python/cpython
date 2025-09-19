@@ -26,11 +26,11 @@
 {% endblock %}
 
 {% block extrahead %}
-    {% if builder == "html" and enable_analytics %}
-      <script defer data-domain="docs.python.org" src="https://plausible.io/js/script.js"></script>
-    {% endif %}
-    <link rel="canonical" href="https://docs.python.org/3/{{pagename}}.html" />
-    {% if builder != "htmlhelp" %}
+    {% if builder == "html" %}
+      {% if enable_analytics %}
+      <script defer data-domain="docs.python.org" src="https://analytics.python.org/js/script.outbound-links.js"></script>
+      {% endif %}
+      <link rel="canonical" href="https://docs.python.org/3/{{pagename}}.html">
       {% if pagename == 'whatsnew/changelog' and not embedded %}
       <script type="text/javascript" src="{{ pathto('_static/changelog_search.js', 1) }}"></script>{% endif %}
     {% endif %}

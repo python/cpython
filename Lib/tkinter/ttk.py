@@ -1589,7 +1589,7 @@ class OptionMenu(Menubutton):
 
     def __init__(self, master, variable, default=None, *values, **kwargs):
         """Construct a themed OptionMenu widget with master as the parent,
-        the resource textvariable set to variable, the initially selected
+        the option textvariable set to variable, the initially selected
         value specified by the default parameter, the menu values given by
         *values and additional keywords.
 
@@ -1603,7 +1603,8 @@ class OptionMenu(Menubutton):
                 A callback that will be invoked after selecting an item.
         """
         kw = {'textvariable': variable, 'style': kwargs.pop('style', None),
-              'direction': kwargs.pop('direction', None)}
+              'direction': kwargs.pop('direction', None),
+              'name': kwargs.pop('name', None)}
         Menubutton.__init__(self, master, **kw)
         self['menu'] = tkinter.Menu(self, tearoff=False)
 

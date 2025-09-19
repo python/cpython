@@ -5,6 +5,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>
 
@@ -484,7 +485,7 @@ deque_extend_impl(dequeobject *deque, PyObject *iterable)
         PyObject *s = PySequence_List(iterable);
         if (s == NULL)
             return NULL;
-        result = deque_extend(deque, s);
+        result = deque_extend((PyObject*)deque, s);
         Py_DECREF(s);
         return result;
     }
@@ -578,7 +579,7 @@ deque_inplace_concat(PyObject *self, PyObject *other)
     PyObject *result;
 
     // deque_extend is thread-safe
-    result = deque_extend(deque, other);
+    result = deque_extend((PyObject*)deque, other);
     if (result == NULL)
         return result;
     Py_INCREF(deque);
@@ -1532,9 +1533,7 @@ deque_dealloc(PyObject *self)
     Py_ssize_t i;
 
     PyObject_GC_UnTrack(deque);
-    if (deque->weakreflist != NULL) {
-        PyObject_ClearWeakRefs(self);
-    }
+    FT_CLEAR_WEAKREFS(self, deque->weakreflist);
     if (deque->leftblock != NULL) {
         (void)deque_clear(self);
         assert(deque->leftblock != NULL);

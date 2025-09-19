@@ -691,7 +691,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_malloc_without_gil",   pyobject_malloc_without_gil,   METH_NOARGS},
     {"remove_mem_hooks",              remove_mem_hooks,              METH_NOARGS,
         PyDoc_STR("Remove memory hooks.")},
-    {"set_nomemory",                  (PyCFunction)set_nomemory,     METH_VARARGS,
+    {"set_nomemory",                  set_nomemory,                  METH_VARARGS,
         PyDoc_STR("set_nomemory(start:int, stop:int = 0)")},
     {"test_pymem_alloc0",             test_pymem_alloc0,             METH_NOARGS},
     {"test_pymem_setallocators",      test_pymem_setallocators,      METH_NOARGS},

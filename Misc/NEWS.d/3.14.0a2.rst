@@ -310,7 +310,7 @@ same manner as :data:`sys.path` is configured in workers before executing
 work items.
 
 This bug caused some forkserver module preloading to silently fail to
-preload. This manifested as a performance degration in child processes when
+preload. This manifested as a performance degradation in child processes when
 the ``sys.path`` was required due to additional repeated work in every
 worker.
 

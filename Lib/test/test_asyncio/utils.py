@@ -14,7 +14,6 @@ import sys
 import threading
 import unittest
 import weakref
-import warnings
 from ast import literal_eval
 from unittest import mock
 
@@ -29,7 +28,6 @@ except ImportError:  # pragma: no cover
 from asyncio import base_events
 from asyncio import events
 from asyncio import format_helpers
-from asyncio import futures
 from asyncio import tasks
 from asyncio.log import logger
 from test import support
@@ -105,7 +103,7 @@ def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
         loop.run_until_complete(tasks.sleep(delay))
         delay = max(delay * 2, 1.0)
     else:
-        raise futures.TimeoutError()
+        raise TimeoutError()
 
 
 def run_once(loop):
@@ -541,7 +539,7 @@ class TestCase(unittest.TestCase):
         if loop is None:
             raise AssertionError('loop is None')
         # ensure that the event loop is passed explicitly in asyncio
-        events._set_event_loop(None)
+        events.set_event_loop(None)
         if cleanup:
             self.addCleanup(self.close_loop, loop)
 
@@ -554,7 +552,7 @@ class TestCase(unittest.TestCase):
         self._thread_cleanup = threading_helper.threading_setup()
 
     def tearDown(self):
-        events._set_event_loop(None)
+        events.set_event_loop(None)
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
@@ -603,3 +601,9 @@ async def await_without_task(coro):
     await asyncio.sleep(0)
     if exc is not None:
         raise exc
+
+
+if sys.platform == 'win32':
+    DefaultEventLoopPolicy = asyncio.windows_events._DefaultEventLoopPolicy
+else:
+    DefaultEventLoopPolicy = asyncio.unix_events._DefaultEventLoopPolicy

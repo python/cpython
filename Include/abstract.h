@@ -138,7 +138,12 @@ extern "C" {
    Delete attribute named attr_name, for object o. Returns
    -1 on failure.
 
-   This is the equivalent of the Python statement: del o.attr_name. */
+   This is the equivalent of the Python statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#  define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -147,7 +152,12 @@ extern "C" {
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
-   statement: del o.attr_name. */
+   statement: del o.attr_name.
+
+   Implemented as a macro in the limited C API 3.12 and older. */
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030d0000
+#  define PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
+#endif
 
 
 /* Implemented elsewhere:
@@ -725,6 +735,15 @@ PyAPI_FUNC(PyObject *) PySequence_Tuple(PyObject *o);
 /* Returns the sequence 'o' as a list on success, and NULL on failure.
    This is equivalent to the Python expression: list(o) */
 PyAPI_FUNC(PyObject *) PySequence_List(PyObject *o);
+
+/* Return the sequence 'o' as a list, unless it's already a tuple or list.
+
+   Use PySequence_Fast_GET_ITEM to access the members of this list, and
+   PySequence_Fast_GET_SIZE to get its length.
+
+   Returns NULL on failure.  If the object does not support iteration, raises a
+   TypeError exception with 'm' as the message text. */
+PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
 
 /* Return the number of occurrences on value on 'o', that is, return
    the number of keys for which o[key] == value.

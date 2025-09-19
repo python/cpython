@@ -36,6 +36,7 @@ PyAPI_FUNC(PyObject *) PyModuleDef_Init(PyModuleDef*);
 PyAPI_DATA(PyTypeObject) PyModuleDef_Type;
 #endif
 
+#ifndef _Py_OPAQUE_PYOBJECT
 typedef struct PyModuleDef_Base {
   PyObject_HEAD
   /* The function used to re-initialize the module.
@@ -63,6 +64,7 @@ typedef struct PyModuleDef_Base {
     0,        /* m_index */      \
     _Py_NULL, /* m_copy */       \
   }
+#endif  // _Py_OPAQUE_PYOBJECT
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
 /* New in 3.5 */
@@ -104,6 +106,8 @@ struct PyModuleDef_Slot {
 PyAPI_FUNC(int) PyUnstable_Module_SetGIL(PyObject *module, void *gil);
 #endif
 
+
+#ifndef _Py_OPAQUE_PYOBJECT
 struct PyModuleDef {
   PyModuleDef_Base m_base;
   const char* m_name;
@@ -115,6 +119,7 @@ struct PyModuleDef {
   inquiry m_clear;
   freefunc m_free;
 };
+#endif  // _Py_OPAQUE_PYOBJECT
 
 #ifdef __cplusplus
 }

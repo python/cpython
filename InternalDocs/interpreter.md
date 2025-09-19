@@ -112,7 +112,7 @@ already points to the next instruction.
 Thus, jump instructions can be implemented by manipulating `next_instr`:
 
 - A jump forward (`JUMP_FORWARD`) sets `next_instr += oparg`.
-- A jump backward sets `next_instr -= oparg`.
+- A jump backward (`JUMP_BACKWARD`) sets `next_instr -= oparg`.
 
 ## Inline cache entries
 
