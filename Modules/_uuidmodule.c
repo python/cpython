@@ -193,7 +193,7 @@ typedef struct {
 #include "clinic/_uuidmodule.c.h"
 
 /*[clinic input]
-class uuid.UUID "uuidobject *" "&UuidType"
+class _uuid.UUID "uuidobject *" "&UuidType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=84ae6e2089cffd3f]*/
 
@@ -399,7 +399,7 @@ _uuid_uuid7_impl(PyObject *module)
 }
 
 /*[clinic input]
-uuid.UUID.__init__
+_uuid.UUID.__init__
 
     hex: 'U' = NULL
     bytes: 'y*' = None
@@ -1354,7 +1354,7 @@ Uuid_hash(PyObject *self)
 
 /*[clinic input]
 @classmethod
-uuid.UUID._from_int
+_uuid.UUID._from_int
 
     value: object
     /
@@ -1415,7 +1415,7 @@ static PyGetSetDef Uuid_getset[] = {
 };
 
 /*[clinic input]
-uuid.UUID.__getstate__
+_uuid.UUID.__getstate__
 
 Return the UUID's state for pickling.
 [clinic start generated code]*/
@@ -1451,7 +1451,7 @@ _uuid_UUID___getstate___impl(uuidobject *self)
 }
 
 /*[clinic input]
-uuid.UUID.__setstate__
+_uuid.UUID.__setstate__
 
     state: object
     /
