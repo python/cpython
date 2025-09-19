@@ -462,7 +462,6 @@ class InterpreterObjectTests(TestBase):
             self.assertEqual(retcode, 0)
 
 
-
 class TestInterpreterIsRunning(TestBase):
 
     def test_main(self):
