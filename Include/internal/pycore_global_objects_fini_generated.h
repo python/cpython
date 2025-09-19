@@ -1851,6 +1851,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last_type));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(last_value));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(latin1));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(lazy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(leaf_size));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(legacy));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(len));

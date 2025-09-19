@@ -4147,11 +4147,12 @@
             level = stack_pointer[-2];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyObject *res_o;
-            if (oparg & 0x01) {
+            if (!(oparg & 0x02)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
                     PyStackRef_AsPyObjectBorrow(fromlist),
-                    PyStackRef_AsPyObjectBorrow(level));
+                    PyStackRef_AsPyObjectBorrow(level),
+                    oparg & 0x01);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             } else {
                 _PyFrame_SetStackPointer(frame, stack_pointer);

@@ -574,6 +574,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(last_type)
         STRUCT_FOR_ID(last_value)
         STRUCT_FOR_ID(latin1)
+        STRUCT_FOR_ID(lazy)
         STRUCT_FOR_ID(leaf_size)
         STRUCT_FOR_ID(legacy)
         STRUCT_FOR_ID(len)

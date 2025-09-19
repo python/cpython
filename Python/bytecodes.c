@@ -2947,10 +2947,11 @@ dummy_func(
          inst(IMPORT_NAME, (level, fromlist -- res)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyObject *res_o;
-            if (oparg & 0x01) {
+            if (!(oparg & 0x02)) {
                 res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name, 
                                 PyStackRef_AsPyObjectBorrow(fromlist),
-                                PyStackRef_AsPyObjectBorrow(level));
+                                PyStackRef_AsPyObjectBorrow(level),
+                                oparg & 0x01);
 
             } else {
                 res_o = _PyEval_ImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,

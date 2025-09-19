@@ -59,7 +59,7 @@ _unpack_uint32 = _bootstrap_external._unpack_uint32
 
 from ._bootstrap import __import__
 
-from _imp import lazy_import
+from _imp import lazy_import, set_lazy_imports
 
 
 def invalidate_caches():

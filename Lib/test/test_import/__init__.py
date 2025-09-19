@@ -2548,6 +2548,8 @@ class LazyImportTests(unittest.TestCase):
             if key.startswith('test.test_import.data.lazy_imports'):
                 del sys.modules[key]
 
+        importlib.set_lazy_imports(None, None)
+
     def test_basic_unused(self):
         try:
             import test.test_import.data.lazy_imports.basic_unused
@@ -2563,6 +2565,54 @@ class LazyImportTests(unittest.TestCase):
             self.fail('lazy import failed')
 
         self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_global_off(self):
+        try:
+            import test.test_import.data.lazy_imports.global_off
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_global_on(self):
+        try:
+            import test.test_import.data.lazy_imports.global_on
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_global_filter(self):
+        try:
+            import test.test_import.data.lazy_imports.global_filter
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_global_filter_true(self):
+        try:
+            import test.test_import.data.lazy_imports.global_filter_true
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_global_filter_from(self):
+        try:
+            import test.test_import.data.lazy_imports.global_filter
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
+    def test_global_filter_from_true(self):
+        try:
+            import test.test_import.data.lazy_imports.global_filter_true
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
 
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):

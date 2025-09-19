@@ -3027,8 +3027,25 @@ _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
 
 PyObject *
 _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
-            PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level)
+            PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level, int lazy)
 {
+    // Check if global policy overrides the local syntax
+    switch (PyImport_LazyImportsEnabled()) {
+        case PyLazyImportsMode_ForcedOff:
+            lazy = 0;
+            break;
+        case PyLazyImportsMode_ForcedOn:
+            lazy = 1;
+            break;
+        case PyLazyImportsMode_Default:
+            break;
+    }
+
+    if (!lazy) {
+        // Not a lazy import or lazy imports are disabled, fallback to the regular import
+        return _PyEval_ImportName(tstate, builtins, globals, locals, name, fromlist, level);
+    }
+
     PyObject *import_func;
     if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__lazy_import__), &import_func) < 0) {
         return NULL;

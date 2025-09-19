@@ -108,6 +108,12 @@ static struct _inittab *inittab_copy = NULL;
 #define FIND_AND_LOAD(interp) \
     (interp)->imports.find_and_load
 
+#define LAZY_IMPORTS_MODE(interp) \
+    (interp)->imports.lazy_imports_mode
+
+#define LAZY_IMPORTS_FILTER(interp) \
+    (interp)->imports.lazy_imports_filter
+
 #define _IMPORT_TIME_HEADER(interp)                                           \
     do {                                                                      \
         if (FIND_AND_LOAD((interp)).header) {                                 \
@@ -3994,10 +4000,42 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         return NULL;
     }
 
+    PyInterpreterState *interp = tstate->interp;
+
     PyObject *mod = PyImport_GetModule(abs_name);
     if (mod != NULL) {
         Py_DECREF(abs_name);
         return mod;
+    }
+
+    // Check if the filter disables the lazy import
+    PyObject *filter = LAZY_IMPORTS_FILTER(interp);
+    if (filter != NULL) {
+        PyObject *modname;
+        if (PyDict_GetItemRef(globals, &_Py_ID(__name__), &modname) < 0) {
+            return NULL;
+        } else if (modname == NULL) {
+            modname = Py_None;
+        }
+        PyObject *args[] = {modname, name, fromlist};
+        PyObject *res = PyObject_Vectorcall(
+            filter,
+            args,
+            3,
+            NULL
+        );
+
+        if (res == NULL) {
+            Py_DECREF(abs_name);
+            return NULL;
+        }
+
+        if (!PyObject_IsTrue(res)) {
+            Py_DECREF(abs_name);
+            return PyImport_ImportModuleLevelObject(
+                name, globals, locals, fromlist, level
+            );
+        }
     }
 
     PyObject *res = _PyLazyImport_New(builtins, abs_name, fromlist);
@@ -4347,6 +4385,31 @@ PyImport_ImportModuleAttrString(const char *modname, const char *attrname)
     return result;
 }
 
+
+int
+PyImport_SetLazyImports(PyImport_LazyImportsMode mode, PyObject *filter)
+{
+    if (filter == Py_None) {
+        filter = NULL;
+    }
+    if (filter != NULL && !PyCallable_Check(filter)) {
+        PyErr_SetString(PyExc_ValueError, "filter provided but is not callable");
+        return -1;
+    }
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    LAZY_IMPORTS_MODE(interp) = mode;
+    Py_XSETREF(LAZY_IMPORTS_FILTER(interp), Py_XNewRef(filter));
+    return 0;
+}
+
+/* Checks if lazy imports is globally enabled or disabled. Return 1 when globally
+ * forced on, 0 when globally forced off, or -1 when */
+PyImport_LazyImportsMode PyImport_LazyImportsEnabled(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return LAZY_IMPORTS_MODE(interp);
+}
 
 /**************/
 /* the module */
@@ -4937,6 +5000,51 @@ _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source)
     return PyBytes_FromStringAndSize(hash.data, sizeof(hash.data));
 }
 
+/*[clinic input]
+_imp.set_lazy_imports
+
+    enabled: object = None
+    /
+    filter: object = NULL
+
+Programmatic API for enabling lazy imports at runtime.
+
+enabled can be:
+    None (lazy imports always respect keyword)
+    False (forced lazy imports off)
+    True (forced lazy imports on)
+
+filter is an optional callable which further disables lazy imports when they
+would otherwise be enabled. Returns True if the the import is still enabled
+or False to disable it. The callable is called with:
+
+(importing_module_name, imported_module_name, [fromlist])
+
+[clinic start generated code]*/
+
+static PyObject *
+_imp_set_lazy_imports_impl(PyObject *module, PyObject *enabled,
+                           PyObject *filter)
+/*[clinic end generated code: output=d8d5a848c041edc5 input=00b2334fae4345a3]*/
+{
+    PyImport_LazyImportsMode mode;
+    if (enabled == Py_None) {
+        mode = PyLazyImportsMode_Default;
+    } else if (enabled == Py_False) {
+        mode = PyLazyImportsMode_ForcedOff;
+    } else if (enabled == Py_True) {
+        mode = PyLazyImportsMode_ForcedOn;
+    } else {
+        PyErr_SetString(PyExc_ValueError, "expected None, True or False for enabled mode");
+        return NULL;
+    }
+
+    if (PyImport_SetLazyImports(mode, filter) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 
 PyDoc_STRVAR(doc_imp,
 "(Extremely) low-level import machinery bits as used by importlib.");
@@ -4961,6 +5069,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
     _IMP_SOURCE_HASH_METHODDEF
+    _IMP_SET_LAZY_IMPORTS_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
@@ -4980,7 +5089,7 @@ imp_module_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddObjectRef(module, "lazy_import", 
+    if (PyModule_AddObjectRef(module, "lazy_import",
                               (PyObject *)&PyLazyImport_Type) < 0) {
         return -1;
     }
