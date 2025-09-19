@@ -649,7 +649,7 @@ def create_xcframework(platform: str) -> str:
 
     print(" - build tools")
     shutil.copytree(
-        PYTHON_DIR / "Apple/iOS/Resources/build",
+        PYTHON_DIR / "Apple/testbed/Python.xcframework/build",
         package_path / "Python.xcframework/build",
     )
 

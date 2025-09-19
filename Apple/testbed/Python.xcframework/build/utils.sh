@@ -30,17 +30,24 @@ install_stdlib() {
     if [ "$EFFECTIVE_PLATFORM_NAME" = "-iphonesimulator" ]; then
         echo "Installing Python modules for iOS Simulator"
         if [ -d "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/ios-arm64-simulator" ]; then
-            SLICE_FOLDER="ios-arm64-simulator/lib-$ARCHS"
+            SLICE_FOLDER="ios-arm64-simulator"
         else
-            SLICE_FOLDER="ios-arm64_x86_64-simulator/lib-$ARCHS"
+            SLICE_FOLDER="ios-arm64_x86_64-simulator"
         fi
     else
         echo "Installing Python modules for iOS Device"
-        SLICE_FOLDER="ios-arm64/lib-$ARCHS/"
+        SLICE_FOLDER="ios-arm64"
     fi
 
-    rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
-    rsync -au "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/" "$CODESIGNING_FOLDER_PATH/python/lib/"
+    # If the XCframework has a shared lib folder, then it's a full framework.
+    # Copy both the common and slice-specific part of the lib directory.
+    # Otherwise, it's a single-arch framework; use the "full" lib folder.
+    if [ -d "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/lib" ]; then
+        rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
+        rsync -au "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/lib-$ARCHS/" "$CODESIGNING_FOLDER_PATH/python/lib/"
+    else
+        rsync -au --delete "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/$SLICE_FOLDER/lib/" "$CODESIGNING_FOLDER_PATH/python/lib/"
+    fi
 }
 
 # Convert a single .so library into a framework that iOS can load.
@@ -75,7 +82,7 @@ install_dylib () {
     if [ ! -d "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER" ]; then
         echo "Creating framework for $RELATIVE_EXT"
         mkdir -p "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER"
-        cp "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/build/dylib-Info-template.plist" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
+        cp "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/build/$PLATFORM_FAMILY_NAME-dylib-Info-template.plist" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
         plutil -replace CFBundleExecutable -string "$FULL_MODULE_NAME" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
         plutil -replace CFBundleIdentifier -string "$FRAMEWORK_BUNDLE_ID" "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/Info.plist"
     fi
