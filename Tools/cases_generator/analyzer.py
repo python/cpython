@@ -34,6 +34,7 @@ class Properties:
     side_exit: bool
     pure: bool
     uses_opcode: bool
+    needs_guard_ip: bool
     tier: int | None = None
     const_oparg: int = -1
     needs_prev: bool = False
@@ -75,6 +76,7 @@ class Properties:
             pure=all(p.pure for p in properties),
             needs_prev=any(p.needs_prev for p in properties),
             no_save_ip=all(p.no_save_ip for p in properties),
+            needs_guard_ip=any(p.needs_guard_ip for p in properties)
         )
 
     @property
@@ -102,6 +104,7 @@ SKIP_PROPERTIES = Properties(
     side_exit=False,
     pure=True,
     no_save_ip=False,
+    needs_guard_ip=False,
 )
 
 
@@ -932,6 +935,7 @@ def compute_properties(op: parser.CodeDef) -> Properties:
         no_save_ip=no_save_ip,
         tier=tier_variable(op),
         needs_prev=variable_used(op, "prev_instr"),
+        needs_guard_ip=variable_used(op, "JUMPBY") or variable_used(op, "LLTRACE_RESUME_FRAME"),
     )
 
 def expand(items: list[StackItem], oparg: int) -> list[StackItem]:

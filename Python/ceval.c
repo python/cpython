@@ -974,18 +974,99 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 }
 
 // 1 for trace full, 0 for successful write.
-static inline int
-add_to_code_trace(PyThreadState *tstate, _Py_CODEUNIT *this_instr)
+static int
+add_to_code_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *this_instr, int oparg)
 {
+    assert(frame != NULL);
     assert(tstate->interp->jit_tracer_code_curr_size < TRACE_MAX_TRACE_LENGTH);
     int curr_size = tstate->interp->jit_tracer_code_curr_size;
-    int nsize = _PyOpcode_Caches[this_instr->op.code] + 1;
-    if (curr_size + nsize > TRACE_MAX_TRACE_LENGTH) {
+    int opcode = this_instr->op.code;
+    if (opcode == ENTER_EXECUTOR) {
+        return 1;
+        // PyCodeObject *code = _PyFrame_GetCode(frame);
+        // assert(code != NULL);
+        // _PyExecutorObject *executor = code->co_executors->executors[oparg & 255];
+        // assert(executor->vm_data.code == code);
+        // assert(executor->vm_data.valid);
+        // assert(tstate->current_executor == NULL);
+        // opcode = executor->vm_data.opcode;
+        // oparg = (oparg & ~255) | executor->vm_data.oparg;
+    }
+    else {
+        oparg = this_instr->op.arg;
+    }
+    assert(opcode != 0);
+    // Check if we looped back to the start.
+    if (this_instr == tstate->interp->jit_tracer_initial_instr) {
+        if (tstate->interp->jit_tracer_seen_initial_before >= 1) {
+            tstate->interp->jit_completed_loop = true;
+            return 1;
+        }
+        tstate->interp->jit_tracer_seen_initial_before++;
+    }
+#ifdef Py_DEBUG
+    char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
+    int lltrace = 3;
+    if (python_lltrace != NULL && *python_lltrace >= '0') {
+        lltrace = *python_lltrace - '0';
+    }
+    if (lltrace >= 3) {
+        printf("%d ADD_TO_BYTECODE_TRACE: %s %d\n", curr_size, _PyOpcode_OpName[opcode], oparg);
+    }
+#endif
+    // JUMP_BACKWARD_NO_INTERRUPT is not registered with cache due to a bug in the compiler.
+    int caches = opcode == JUMP_BACKWARD_NO_INTERRUPT ? 1 : _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+    int nsize = caches + 1;
+    int needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode];
+    int total_size = nsize + (needs_guard_ip ? 5 : 0) + 5;
+    if (curr_size + total_size >= TRACE_MAX_TRACE_LENGTH) {
+#ifdef Py_DEBUG
+        if (lltrace >= 3) {
+            printf("END TRACE LENGTH: %d\n", curr_size);
+        }
+#endif
         return 1;
     }
-    for (int i = 0; i < nsize; i++) {
+    tstate->interp->jit_tracer_code_buffer[curr_size].op.code = opcode;
+    tstate->interp->jit_tracer_code_buffer[curr_size].op.arg = oparg;
+    for (int i = 1; i < nsize; i++) {
         tstate->interp->jit_tracer_code_buffer[curr_size + i] = *(this_instr + i);
     }
+    if (needs_guard_ip) {
+#ifdef Py_DEBUG
+        if (lltrace >= 3) {
+            printf("%d ADD_TO_BYTECODE_TRACE: %s %d\n", curr_size + nsize, _PyOpcode_OpName[TIER1_GUARD_IP], 0);
+        }
+#endif
+        tstate->interp->jit_tracer_code_buffer[curr_size + nsize].op.code = TIER1_GUARD_IP;
+        PyObject *func = PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+        if (Py_IsNone(func)) {
+            func = NULL; // Trampoline frames don't set their func object field.
+        }
+        assert(func == NULL || PyFunction_Check(func));
+        write_ptr(&tstate->interp->jit_tracer_code_buffer[curr_size + nsize + 1].cache, func);
+
+#ifdef Py_DEBUG
+        if (lltrace >= 3) {
+            printf("%d ADD_TO_BYTECODE_TRACE: %s %p\n", curr_size + nsize + 5, _PyOpcode_OpName[TIER1_SET_IP], frame->instr_ptr);
+        }
+#endif
+        tstate->interp->jit_tracer_code_buffer[curr_size + nsize + 5].op.code = TIER1_SET_IP;
+        write_ptr(&tstate->interp->jit_tracer_code_buffer[curr_size + nsize + 6].cache, frame->instr_ptr);
+
+    }
+    else {
+#ifdef Py_DEBUG
+        if (lltrace >= 3) {
+            printf("%d ADD_TO_BYTECODE_TRACE: %s %p\n", curr_size + nsize, _PyOpcode_OpName[TIER1_SET_IP], frame->instr_ptr);
+        }
+#endif
+        tstate->interp->jit_tracer_code_buffer[curr_size + nsize].op.code = TIER1_SET_IP;
+        write_ptr(&tstate->interp->jit_tracer_code_buffer[curr_size + nsize + 1].cache, frame->instr_ptr);
+
+    }
+
+    tstate->interp->jit_tracer_code_curr_size += total_size;
     return 0;
 }
 
@@ -1061,11 +1142,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_CODEUNIT *next_instr;
     _PyStackRef *stack_pointer;
     entry.stack[0] = PyStackRef_NULL;
+    entry.frame.f_funcobj = PyStackRef_None;
 #ifdef Py_STACKREF_DEBUG
     entry.frame.f_funcobj = PyStackRef_None;
 #elif defined(Py_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
-    entry.frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
     entry.frame.f_locals = (PyObject*)0xaaa1;
     entry.frame.frame_obj = (PyFrameObject*)0xaaa2;
     entry.frame.f_globals = (PyObject*)0xaaa3;
@@ -1199,10 +1280,11 @@ tier2_start:
     assert(next_uop->opcode == _START_EXECUTOR || next_uop->opcode == _COLD_EXIT);
 tier2_dispatch:
     for (;;) {
+        frame->lltrace = 4;
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
-        if (frame->lltrace >= 3) {
-            dump_stack(frame, stack_pointer);
+        if (1 && next_uop->opcode != _YIELD_VALUE) {
+            // dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }

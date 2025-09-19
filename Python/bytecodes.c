@@ -45,6 +45,8 @@
 
 #define USE_COMPUTED_GOTOS 0
 #include "ceval_macros.h"
+#include "../Include/internal/pycore_code.h"
+#include "../Include/internal/pycore_stackref.h"
 
 /* Flow control macros */
 
@@ -1250,6 +1252,9 @@ dummy_func(
             _PyEval_FrameClearAndPop(tstate, dying);
             RELOAD_STACK();
             LOAD_IP(frame->return_offset);
+#if TIER_TWO
+            frame->instr_ptr += frame->return_offset;
+#endif
             res = temp;
             LLTRACE_RESUME_FRAME();
         }
@@ -1437,6 +1442,9 @@ dummy_func(
             #endif
             RELOAD_STACK();
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+#if TIER_TWO
+            frame->instr_ptr += (1 + INLINE_CACHE_ENTRIES_SEND);
+#endif
             value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();
         }
@@ -2942,7 +2950,7 @@ dummy_func(
         tier1 op(_SPECIALIZE_JUMP_BACKWARD, (--)) {
         #if ENABLE_SPECIALIZATION
             if (this_instr->op.code == JUMP_BACKWARD) {
-                this_instr->op.code = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                this_instr->op.code = (tstate->interp->jit && !PyStackRef_IsNull(frame->f_funcobj)) ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
                 // Need to re-dispatch so the warmup counter isn't off by one:
                 next_instr = this_instr;
                 DISPATCH_SAME_OPARG();
@@ -2953,32 +2961,34 @@ dummy_func(
         tier1 op(_JIT, (--)) {
         #ifdef _Py_TIER2
             _Py_BackoffCounter counter = this_instr[1].counter;
-            if (backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD_JIT) {
+            if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD_JIT) {
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
-                while (oparg > 255) {
-                    oparg >>= 8;
+                int curr_oparg = oparg;
+                while (curr_oparg > 255) {
+                    curr_oparg >>= 8;
                     start--;
                 }
                 if (tstate->interp->jit_tracer_code_buffer == NULL) {
                     tstate->interp->jit_tracer_code_buffer = (_Py_CODEUNIT *)_PyObject_VirtualAlloc(TRACER_BUFFER_SIZE);
-                    tstate->interp->jit_tracer_code_curr_size = 0;
                     if (tstate->interp->jit_tracer_code_buffer == NULL) {
                         // Don't error, just go to next instruction.
                         DISPATCH();
                     }
-                }
-                if (this_instr == tstate->interp->jit_tracer_initial_instr) {
-                    // Looped back to initial instr. End tracing.
-                    LEAVE_TRACING();
-                    DISPATCH();
+                    tstate->interp->jit_tracer_code_curr_size = 0;
                 }
                 ENTER_TRACING();
                 // Nothing in the buffer, begin tracing!
                 if (tstate->interp->jit_tracer_code_curr_size == 0) {
-                    tstate->interp->jit_tracer_initial_instr = this_instr;
+                    tstate->interp->jit_tracer_initial_instr = next_instr;
+                    tstate->interp->jit_tracer_initial_code = _PyFrame_GetCode(frame);
+                    tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
+                    tstate->interp->jit_tracer_seen_initial_before = 0;
+                    tstate->interp->jit_completed_loop = false;
+                    tstate->interp->jit_tracer_initial_stack_depth = (int)STACK_LEVEL();
+                    tstate->interp->jit_tracer_initial_chain_depth = 0;
                 }
-                // Not tracing dispatch, normal dispatch because we don't record the current instruction.
+                // Don't add the JUMP_BACKWARD_JIT instruction to the trace.
                 DISPATCH();
             }
             else {
@@ -2991,17 +3001,17 @@ dummy_func(
             unused/1 +
             _SPECIALIZE_JUMP_BACKWARD +
             _CHECK_PERIODIC +
-            JUMP_BACKWARD_NO_INTERRUPT;
+            _JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_NO_JIT) =
             unused/1 +
             _CHECK_PERIODIC +
-            JUMP_BACKWARD_NO_INTERRUPT;
+            _JUMP_BACKWARD_NO_INTERRUPT;
 
         macro(JUMP_BACKWARD_JIT) =
             unused/1 +
             _CHECK_PERIODIC +
-            JUMP_BACKWARD_NO_INTERRUPT +
+            _JUMP_BACKWARD_NO_INTERRUPT +
             _JIT;
 
         pseudo(JUMP, (--)) = {
@@ -3033,7 +3043,7 @@ dummy_func(
             /* If the eval breaker is set then stay in tier 1.
              * This avoids any potentially infinite loops
              * involving _RESUME_CHECK */
-            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+            if (IS_JIT_TRACING() || _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
@@ -3050,20 +3060,18 @@ dummy_func(
             #endif /* _Py_TIER2 */
         }
 
-        replaced op(_POP_JUMP_IF_FALSE, (cond -- )) {
+        op(_POP_JUMP_IF_FALSE, (cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
             DEAD(cond);
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
+            JUMPBY(flag ? oparg : 0);
         }
 
-        replaced op(_POP_JUMP_IF_TRUE, (cond -- )) {
+        op(_POP_JUMP_IF_TRUE, (cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
             DEAD(cond);
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
-            JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
+            JUMPBY(flag ? oparg : 0);
         }
 
         op(_IS_NONE, (value -- b)) {
@@ -3085,13 +3093,18 @@ dummy_func(
 
         macro(POP_JUMP_IF_NOT_NONE) = unused/1 + _IS_NONE + _POP_JUMP_IF_FALSE;
 
-        tier1 inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
+        // This actually has 1 cache entry, but for some reason it's not factored in the oparg.
+        macro(JUMP_BACKWARD_NO_INTERRUPT) = _JUMP_BACKWARD_NO_INTERRUPT;
+
+        op(_JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
              * If there is an interrupt, we want it handled in the innermost
              * generator or coroutine, so we deliberately do not check it here.
              * (see bpo-30039).
              */
+#if TIER_ONE
             assert(oparg <= INSTR_OFFSET());
+#endif
             JUMPBY(-oparg);
         }
 
@@ -3237,7 +3250,8 @@ dummy_func(
                     ERROR_NO_POP();
                 }
                 /* iterator ended normally */
-                /* The translator sets the deopt target just past the matching END_FOR */
+                // Jump forward by oparg and skip the following END_FOR
+                TIER2_JUMPBY(oparg + 1);
                 EXIT_IF(true);
             }
             next = item;
@@ -3298,7 +3312,7 @@ dummy_func(
 #endif
         }
 
-        replaced op(_ITER_NEXT_LIST, (iter, null_or_index -- iter, null_or_index, next)) {
+        op(_ITER_NEXT_LIST, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(PyList_CheckExact(list_o));
 #ifdef Py_GIL_DISABLED
@@ -4986,6 +5000,9 @@ dummy_func(
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             LOAD_IP(frame->return_offset);
+#if TIER_TWO
+            frame->instr_ptr += (frame->return_offset);
+#endif
             RELOAD_STACK();
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
@@ -5380,19 +5397,19 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
-            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET(), 0);
         }
 
         tier2 op(_HANDLE_PENDING_AND_DEOPT, (--)) {
             int err = _Py_HandlePending(tstate);
-            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET(), 0);
         }
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
             assert(oparg == 0);
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             SYNC_SP();
-            GOTO_TIER_ONE(NULL);
+            GOTO_TIER_ONE(NULL, 0);
         }
 
         /* Progress is guaranteed if we DEOPT on the eval breaker, because
@@ -5414,7 +5431,7 @@ dummy_func(
             _Py_BackoffCounter temperature = exit->temperature;
             if (!backoff_counter_triggers(temperature)) {
                 exit->temperature = advance_backoff_counter(temperature);
-                GOTO_TIER_ONE(target);
+                GOTO_TIER_ONE(target, 0);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
@@ -5426,17 +5443,40 @@ dummy_func(
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
-                int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
-                if (optimized <= 0) {
-                    exit->temperature = restart_backoff_counter(temperature);
-                    GOTO_TIER_ONE(optimized < 0 ? NULL : target);
-                }
-                exit->temperature = initial_temperature_backoff_counter();
+                tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
+                tstate->interp->jit_tracer_initial_instr = target;
+                tstate->interp->jit_tracer_initial_code = _PyFrame_GetCode(frame);
+                tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
+                tstate->interp->jit_tracer_seen_initial_before = 0;
+                tstate->interp->jit_completed_loop = false;
+                exit->temperature = restart_backoff_counter(temperature);
+                GOTO_TIER_ONE(target, 1);
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
             TIER2_TO_TIER2(exit->executor);
         }
+
+
+        no_save_ip tier1 inst(TIER1_GUARD_IP, (func_ptr/4 --)) {
+            (void)(func_ptr);
+        }
+
+        tier2 op(_GUARD_IP, (ip/4 --)) {
+            if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
+                fprintf(stdout, "d:%p:%p\n", frame->instr_ptr, ip);
+                GOTO_TIER_ONE(frame->instr_ptr, 1);
+            }
+        }
+
+        tier2 op(_DYNAMIC_EXIT, (ip/4 --)) {
+            GOTO_TIER_ONE(frame->instr_ptr, 1);
+        }
+
+        tier1 inst(TIER1_SET_IP, (ip/4 --)) {
+            (void)(ip);
+        }
+
 
         label(pop_2_error) {
             stack_pointer -= 2;

@@ -78,12 +78,6 @@
 #   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, instruction_funcptr_table, oparg
 #endif
 
-#  define TRACING_DISPATCH_GOTO() do { \
-    if (add_to_code_trace(tstate, this_instr)) { \
-        LEAVE_TRACING(); \
-    } \
-        DISPATCH_GOTO(); \
-    } while (0);
 
 #if _Py_TAIL_CALL_INTERP
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
@@ -91,10 +85,12 @@
 #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
     Py_PRESERVE_NONE_CC typedef PyObject* (*py_tail_call_funcptr)(TAIL_CALL_PARAMS);
 
+#   define DISPATCH_TABLE_VAR instruction_funcptr_table
+#   define DISPATCH_TABLE instruction_funcptr_handler_table
+#   define TRACING_DISPATCH_TABLE instruction_funcptr_tracing_table
 #   define TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_##op(TAIL_CALL_PARAMS)
 #   define TRACING_TARGET(op) Py_PRESERVE_NONE_CC PyObject *_TAIL_CALL_TRACING_##op(TAIL_CALL_PARAMS)
-#   define LEAVE_TRACING() instruction_funcptr_table = instruction_funcptr_handler_table;
-#   define ENTER_TRACING() instruction_funcptr_table = instruction_funcptr_tracing_table
+
 #   define DISPATCH_GOTO() \
         do { \
             Py_MUSTTAIL return (((py_tail_call_funcptr *)instruction_funcptr_table)[opcode])(TAIL_CALL_ARGS); \
@@ -116,11 +112,13 @@
 #   endif
 #    define LABEL(name) TARGET(name)
 #elif USE_COMPUTED_GOTOS
+#  define DISPATCH_TABLE_VAR opcode_targets
+#  define DISPATCH_TABLE opcode_targets_table
+#  define TRACING_DISPATCH_TABLE opcode_tracing_targets_table
 #  define TARGET(op) TARGET_##op:
 #  define TRACING_TARGET(op) TARGET_TRACING_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
-#  define LEAVE_TRACING() opcode_targets = opcode_targets_table;
-#  define ENTER_TRACING() opcode_targets = opcode_tracing_targets_table;
+
 #  define JUMP_TO_LABEL(name) goto name;
 #  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
 #  define LABEL(name) name:
@@ -131,6 +129,27 @@
 #  define JUMP_TO_PREDICTED(name) goto PREDICTED_##name;
 #  define LABEL(name) name:
 #endif
+
+#if _Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS
+#  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
+#  define ENTER_TRACING() DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
+#  define LEAVE_TRACING() DISPATCH_TABLE_VAR = DISPATCH_TABLE;
+#  define BAIL_TRACING() \
+    LEAVE_TRACING(); \
+    int err = _PyOptimizer_Optimize(frame, tstate); \
+    tstate->interp->jit_tracer_code_curr_size = 0; \
+    if (err < 0) { \
+        JUMP_TO_LABEL(error); \
+    } \
+    DISPATCH();
+#  define RECORD_TRACE() do { \
+        frame->instr_ptr = next_instr; \
+        if (add_to_code_trace(tstate, frame, this_instr, oparg)) { \
+            BAIL_TRACING(); \
+        } \
+    } while (0);
+#endif
+
 
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
@@ -188,9 +207,10 @@ do { \
 #define TRACING_DISPATCH() \
     { \
         assert(frame->stackpointer == NULL); \
+        RECORD_TRACE(); \
         NEXTOPARG(); \
         PRE_DISPATCH_GOTO(); \
-        TRACING_DISPATCH_GOTO(); \
+        DISPATCH_GOTO(); \
     }
 
 /* Tuple access macros */
@@ -222,6 +242,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
  * and skipped instructions.
  */
 #define JUMPBY(x)       (next_instr += (x))
+#define TIER2_JUMPBY(x) (frame->instr_ptr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
 
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
@@ -378,10 +399,18 @@ do {                                                   \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    int keep_tracing_bit = (uintptr_t)next_instr & 1;   \
+    next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) >> 1 << 1); \
     if (next_instr == NULL) {                          \
         next_instr = frame->instr_ptr;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
+    if (keep_tracing_bit) { \
+        ENTER_TRACING(); \
+    } \
+    else { \
+        LEAVE_TRACING(); \
+    } \
     DISPATCH();                                        \
 } while (0)
 
@@ -392,13 +421,13 @@ do {                                                   \
     goto tier2_start;                                  \
 } while (0)
 
-#define GOTO_TIER_ONE(TARGET)                                         \
+#define GOTO_TIER_ONE(TARGET, SHOULD_CONTINUE_TRACING)                \
     do                                                                \
     {                                                                 \
         tstate->current_executor = NULL;                              \
         OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
         _PyFrame_SetStackPointer(frame, stack_pointer);               \
-        return TARGET;                                                \
+        return (_Py_CODEUNIT *)(((uintptr_t)(TARGET)) | SHOULD_CONTINUE_TRACING); \
     } while (0)
 
 #define CURRENT_OPARG()    (next_uop[-1].oparg)

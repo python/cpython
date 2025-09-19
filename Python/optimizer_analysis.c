@@ -527,13 +527,13 @@ _Py_uop_analyze_and_optimize(
 {
     OPT_STAT_INC(optimizer_attempts);
 
-    length = optimize_uops(
-        _PyFrame_GetFunction(frame), buffer,
-        length, curr_stacklen, dependencies);
-
-    if (length == 0) {
-        return length;
-    }
+    // length = optimize_uops(
+    //     _PyFrame_GetFunction(frame), buffer,
+    //     length, curr_stacklen, dependencies);
+    //
+    // if (length == 0) {
+    //     return length;
+    // }
 
     assert(length > 0);
 

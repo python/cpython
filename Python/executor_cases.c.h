@@ -1931,6 +1931,9 @@
             _PyEval_FrameClearAndPop(tstate, dying);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(frame->return_offset);
+            #if TIER_TWO
+            frame->instr_ptr += frame->return_offset;
+            #endif
             res = temp;
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = res;
@@ -2097,6 +2100,9 @@
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
+            #if TIER_TWO
+            frame->instr_ptr += (1 + INLINE_CACHE_ENTRIES_SEND);
+            #endif
             value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
@@ -4165,9 +4171,31 @@
             break;
         }
 
-        /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 because it is replaced */
+        case _POP_JUMP_IF_FALSE: {
+            TIER2_JUMPBY(2);
+            _PyStackRef cond;
+            oparg = CURRENT_OPARG();
+            cond = stack_pointer[-1];
+            assert(PyStackRef_BoolCheck(cond));
+            int flag = PyStackRef_IsFalse(cond);
+            TIER2_JUMPBY(flag ? oparg : 0);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
-        /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 because it is replaced */
+        case _POP_JUMP_IF_TRUE: {
+            TIER2_JUMPBY(2);
+            _PyStackRef cond;
+            oparg = CURRENT_OPARG();
+            cond = stack_pointer[-1];
+            assert(PyStackRef_BoolCheck(cond));
+            int flag = PyStackRef_IsTrue(cond);
+            TIER2_JUMPBY(flag ? oparg : 0);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _IS_NONE: {
             _PyStackRef value;
@@ -4186,6 +4214,16 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             stack_pointer[-1] = b;
+            break;
+        }
+
+        case _JUMP_BACKWARD_NO_INTERRUPT: {
+            TIER2_JUMPBY(2);
+            oparg = CURRENT_OPARG();
+            #if TIER_ONE
+            assert(oparg <= INSTR_OFFSET());
+            #endif
+            TIER2_JUMPBY(-oparg);
             break;
         }
 
@@ -4383,6 +4421,7 @@
             _PyStackRef null_or_index;
             _PyStackRef iter;
             _PyStackRef next;
+            oparg = CURRENT_OPARG();
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -4392,6 +4431,7 @@
                 if (PyStackRef_IsError(item)) {
                     JUMP_TO_ERROR();
                 }
+                TIER2_JUMPBY(oparg + 1);
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -4445,7 +4485,43 @@
             break;
         }
 
-        /* _ITER_NEXT_LIST is not a viable micro-op for tier 2 because it is replaced */
+        case _ITER_NEXT_LIST: {
+            TIER2_JUMPBY(2);
+            _PyStackRef null_or_index;
+            _PyStackRef iter;
+            _PyStackRef next;
+            oparg = CURRENT_OPARG();
+            null_or_index = stack_pointer[-1];
+            iter = stack_pointer[-2];
+            PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
+            assert(PyList_CheckExact(list_o));
+            #ifdef Py_GIL_DISABLED
+            assert(_Py_IsOwnedByCurrentThread(list_o) ||
+                  _PyObject_GC_IS_SHARED(list_o));
+            STAT_INC(FOR_ITER, hit);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            int result = _PyList_GetItemRefNoLock((PyListObject *)list_o, PyStackRef_UntagInt(null_or_index), &next);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (result < 0) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (result == 0) {
+                null_or_index = PyStackRef_TagInt(-1);
+                stack_pointer[-1] = null_or_index;
+                TIER2_JUMPBY(oparg + 1);
+                break;
+            }
+            #else
+            next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(list_o, PyStackRef_UntagInt(null_or_index)));
+            #endif
+            null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
+            stack_pointer[-1] = null_or_index;
+            stack_pointer[0] = next;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _ITER_NEXT_LIST_TIER_TWO: {
             _PyStackRef null_or_index;
@@ -6749,6 +6825,9 @@
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             LOAD_IP(frame->return_offset);
+            #if TIER_TWO
+            frame->instr_ptr += (frame->return_offset);
+            #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
@@ -7422,7 +7501,7 @@
         }
 
         case _DEOPT: {
-            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET(), 0);
             break;
         }
 
@@ -7430,7 +7509,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _Py_HandlePending(tstate);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET());
+            GOTO_TIER_ONE(err ? NULL : _PyFrame_GetBytecode(frame) + CURRENT_TARGET(), 0);
             break;
         }
 
@@ -7439,7 +7518,7 @@
             uint32_t target = (uint32_t)CURRENT_OPERAND0();
             assert(oparg == 0);
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
-            GOTO_TIER_ONE(NULL);
+            GOTO_TIER_ONE(NULL, 0);
             break;
         }
 
@@ -7467,7 +7546,7 @@
             _Py_BackoffCounter temperature = exit->temperature;
             if (!backoff_counter_triggers(temperature)) {
                 exit->temperature = advance_backoff_counter(temperature);
-                GOTO_TIER_ONE(target);
+                GOTO_TIER_ONE(target, 0);
             }
             _PyExecutorObject *executor;
             if (target->op.code == ENTER_EXECUTOR) {
@@ -7481,18 +7560,37 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = previous_executor->vm_data.chain_depth + 1;
+                tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
+                tstate->interp->jit_tracer_initial_instr = target;
+                tstate->interp->jit_tracer_initial_code = _PyFrame_GetCode(frame);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                int optimized = _PyOptimizer_Optimize(frame, target, &executor, chain_depth);
+                tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (optimized <= 0) {
-                    exit->temperature = restart_backoff_counter(temperature);
-                    GOTO_TIER_ONE(optimized < 0 ? NULL : target);
-                }
-                exit->temperature = initial_temperature_backoff_counter();
+                tstate->interp->jit_tracer_seen_initial_before = 0;
+                tstate->interp->jit_completed_loop = false;
+                exit->temperature = restart_backoff_counter(temperature);
+                GOTO_TIER_ONE(target, 1);
             }
             assert(tstate->jit_exit == exit);
             exit->executor = executor;
             TIER2_TO_TIER2(exit->executor);
+            break;
+        }
+
+        case _GUARD_IP: {
+            PyObject *ip = (PyObject *)CURRENT_OPERAND0();
+            if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                fprintf(stdout, "d:%p:%p\n", frame->instr_ptr, ip);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                GOTO_TIER_ONE(frame->instr_ptr, 1);
+            }
+            break;
+        }
+
+        case _DYNAMIC_EXIT: {
+            PyObject *ip = (PyObject *)CURRENT_OPERAND0();
+            GOTO_TIER_ONE(frame->instr_ptr, 1);
             break;
         }
 

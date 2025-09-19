@@ -41,7 +41,7 @@ typedef struct _PyUOpInstruction{
 
 // This is the length of the trace we record.
 // This includes the inline caches.
-#define TRACE_MAX_TRACE_LENGTH 1000
+#define TRACE_MAX_TRACE_LENGTH 2000
 #define TRACER_BUFFER_SIZE ((int)(TRACE_MAX_TRACE_LENGTH * sizeof(_Py_CODEUNIT)))
 
 #ifdef __cplusplus

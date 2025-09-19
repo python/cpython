@@ -2092,14 +2092,26 @@
             break;
         }
 
-        /* _POP_JUMP_IF_FALSE is not a viable micro-op for tier 2 */
+        case _POP_JUMP_IF_FALSE: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
-        /* _POP_JUMP_IF_TRUE is not a viable micro-op for tier 2 */
+        case _POP_JUMP_IF_TRUE: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _IS_NONE: {
             JitOptRef b;
             b = sym_new_not_null(ctx);
             stack_pointer[-1] = b;
+            break;
+        }
+
+        case _JUMP_BACKWARD_NO_INTERRUPT: {
             break;
         }
 
@@ -2219,7 +2231,14 @@
             break;
         }
 
-        /* _ITER_NEXT_LIST is not a viable micro-op for tier 2 */
+        case _ITER_NEXT_LIST: {
+            JitOptRef next;
+            next = sym_new_not_null(ctx);
+            stack_pointer[0] = next;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
 
         case _ITER_NEXT_LIST_TIER_TWO: {
             JitOptRef next;
@@ -3415,6 +3434,14 @@
         }
 
         case _COLD_EXIT: {
+            break;
+        }
+
+        case _GUARD_IP: {
+            break;
+        }
+
+        case _DYNAMIC_EXIT: {
             break;
         }
 

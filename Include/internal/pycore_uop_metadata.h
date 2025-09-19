@@ -205,7 +205,10 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_EXC_MATCH] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_IMPORT_NAME] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_IMPORT_FROM] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_POP_JUMP_IF_FALSE] = HAS_ARG_FLAG | HAS_JUMP_FLAG,
+    [_POP_JUMP_IF_TRUE] = HAS_ARG_FLAG | HAS_JUMP_FLAG,
     [_IS_NONE] = HAS_ESCAPES_FLAG,
+    [_JUMP_BACKWARD_NO_INTERRUPT] = HAS_ARG_FLAG | HAS_JUMP_FLAG,
     [_GET_LEN] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MATCH_CLASS] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_MATCH_MAPPING] = 0,
@@ -213,9 +216,10 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_MATCH_KEYS] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_ITER] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GET_YIELD_FROM_ITER] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
-    [_FOR_ITER_TIER_TWO] = HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
+    [_FOR_ITER_TIER_TWO] = HAS_ARG_FLAG | HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_LIST] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_LIST] = HAS_EXIT_FLAG,
+    [_ITER_NEXT_LIST] = HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_NEXT_LIST_TIER_TWO] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_ITER_CHECK_TUPLE] = HAS_EXIT_FLAG,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = HAS_EXIT_FLAG,
@@ -337,6 +341,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_ERROR_POP_N] = HAS_ARG_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_PERIODIC_FLAG,
     [_COLD_EXIT] = HAS_ESCAPES_FLAG,
+    [_GUARD_IP] = HAS_ESCAPES_FLAG,
+    [_DYNAMIC_EXIT] = 0,
 };
 
 const ReplicationRange _PyUop_Replication[MAX_UOP_ID+1] = {
@@ -443,6 +449,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_DEOPT] = "_DEOPT",
     [_DICT_MERGE] = "_DICT_MERGE",
     [_DICT_UPDATE] = "_DICT_UPDATE",
+    [_DYNAMIC_EXIT] = "_DYNAMIC_EXIT",
     [_END_FOR] = "_END_FOR",
     [_END_SEND] = "_END_SEND",
     [_ERROR_POP_N] = "_ERROR_POP_N",
@@ -471,6 +478,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
+    [_GUARD_IP] = "_GUARD_IP",
     [_GUARD_IS_FALSE_POP] = "_GUARD_IS_FALSE_POP",
     [_GUARD_IS_NONE_POP] = "_GUARD_IS_NONE_POP",
     [_GUARD_IS_NOT_NONE_POP] = "_GUARD_IS_NOT_NONE_POP",
@@ -516,9 +524,11 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
     [_ITER_CHECK_RANGE] = "_ITER_CHECK_RANGE",
     [_ITER_CHECK_TUPLE] = "_ITER_CHECK_TUPLE",
+    [_ITER_NEXT_LIST] = "_ITER_NEXT_LIST",
     [_ITER_NEXT_LIST_TIER_TWO] = "_ITER_NEXT_LIST_TIER_TWO",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
     [_ITER_NEXT_TUPLE] = "_ITER_NEXT_TUPLE",
+    [_JUMP_BACKWARD_NO_INTERRUPT] = "_JUMP_BACKWARD_NO_INTERRUPT",
     [_JUMP_TO_TOP] = "_JUMP_TO_TOP",
     [_LIST_APPEND] = "_LIST_APPEND",
     [_LIST_EXTEND] = "_LIST_EXTEND",
@@ -598,6 +608,8 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_CALL_TWO_LOAD_CONST_INLINE_BORROW",
     [_POP_EXCEPT] = "_POP_EXCEPT",
     [_POP_ITER] = "_POP_ITER",
+    [_POP_JUMP_IF_FALSE] = "_POP_JUMP_IF_FALSE",
+    [_POP_JUMP_IF_TRUE] = "_POP_JUMP_IF_TRUE",
     [_POP_TOP] = "_POP_TOP",
     [_POP_TOP_FLOAT] = "_POP_TOP_FLOAT",
     [_POP_TOP_INT] = "_POP_TOP_INT",
@@ -1041,8 +1053,14 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _IMPORT_FROM:
             return 0;
+        case _POP_JUMP_IF_FALSE:
+            return 1;
+        case _POP_JUMP_IF_TRUE:
+            return 1;
         case _IS_NONE:
             return 1;
+        case _JUMP_BACKWARD_NO_INTERRUPT:
+            return 0;
         case _GET_LEN:
             return 0;
         case _MATCH_CLASS:
@@ -1062,6 +1080,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _ITER_CHECK_LIST:
             return 0;
         case _GUARD_NOT_EXHAUSTED_LIST:
+            return 0;
+        case _ITER_NEXT_LIST:
             return 0;
         case _ITER_NEXT_LIST_TIER_TWO:
             return 0;
@@ -1304,6 +1324,10 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _TIER2_RESUME_CHECK:
             return 0;
         case _COLD_EXIT:
+            return 0;
+        case _GUARD_IP:
+            return 0;
+        case _DYNAMIC_EXIT:
             return 0;
         default:
             return -1;

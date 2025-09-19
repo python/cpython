@@ -63,6 +63,8 @@ class Tier2Emitter(Emitter):
     def __init__(self, out: CWriter, labels: dict[str, Label]):
         super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
+        self._replacers["JUMPBY"] = self.jumpby
+        self._replacers["DISPATCH"] = self.dispatch
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         # To do: Add jump targets for popping values.
@@ -134,6 +136,38 @@ class Tier2Emitter(Emitter):
         self.out.emit_at(uop.name[-1], tkn)
         return True
 
+    def jumpby(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        if storage.spilled:
+            raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
+        self.emit("TIER2_JUMPBY")
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.emit(";\n")
+        return True
+
+    def dispatch(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        if storage.spilled:
+            raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
+        self.emit("break;\n")
+        next(tkn_iter)
+        next(tkn_iter)
+        next(tkn_iter)
+        return False
 
 def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
     locals: dict[str, Local] = {}
@@ -192,6 +226,16 @@ def generate_tier2(
             )
             continue
         out.emit(f"case {uop.name}: {{\n")
+        if uop.properties.jumps:
+            containing_inst = None
+            for inst in analysis.instructions.values():
+                if uop in inst.parts:
+                    print(uop.name, inst.name)
+                    containing_inst = inst
+                    break
+            assert containing_inst is not None, uop.name
+            size = containing_inst.size
+            out.emit(f"TIER2_JUMPBY({size});\n")
         declare_variables(uop, out)
         stack = Stack()
         stack = write_uop(uop, emitter, stack)

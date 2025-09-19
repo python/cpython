@@ -53,6 +53,7 @@ class TracerEmitter(Emitter):
         if storage.spilled:
             raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
         storage.stack.flush(self.out)
+        self.out.start_line()
         self.emit("TRACING_DISPATCH")
         return False
 
