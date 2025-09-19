@@ -84,8 +84,7 @@ class Completer(rlcompleter.Completer):
             return rlcompleter.Completer.complete(self, text, state)
 
     def _callable_postfix(self, val, word):
-        # disable automatic insertion of '(' for global callables:
-        # this method exists only in Python 2.6+
+        # disable automatic insertion of '(' for global callables
         return word
 
     def global_matches(self, text):
