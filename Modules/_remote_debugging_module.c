@@ -2886,7 +2886,7 @@ _remote_debugging_RemoteUnwinder___init___impl(RemoteUnwinderObject *self,
     }
 #endif
 
-#if defined(__APPLE__) 
+#if defined(__APPLE__)
     self->thread_id_offset = 0;
 #endif
 
