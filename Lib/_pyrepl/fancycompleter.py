@@ -5,43 +5,10 @@
 """
 Colorful tab completion for Python prompt
 """
-from _colorize import ANSIColors, get_colors
+from _colorize import ANSIColors, get_colors, get_theme
 import rlcompleter
 import types
 import keyword
-
-class DefaultConfig:
-
-    consider_getitems = True
-    use_colors = 'auto'
-
-    color_by_type = {
-        types.BuiltinMethodType: ANSIColors.BOLD_CYAN,
-        types.MethodType: ANSIColors.BOLD_CYAN,
-        type((42).__add__): ANSIColors.BOLD_CYAN,
-        type(int.__add__): ANSIColors.BOLD_CYAN,
-        type(str.replace): ANSIColors.BOLD_CYAN,
-
-        types.FunctionType: ANSIColors.BOLD_BLUE,
-        types.BuiltinFunctionType: ANSIColors.BOLD_BLUE,
-
-        type: ANSIColors.BOLD_MAGENTA,
-
-        types.ModuleType: ANSIColors.CYAN,
-        types.NoneType: ANSIColors.GREY,
-        str: ANSIColors.BOLD_GREEN,
-        bytes: ANSIColors.BOLD_GREEN,
-        int: ANSIColors.BOLD_YELLOW,
-        float: ANSIColors.BOLD_YELLOW,
-        complex: ANSIColors.BOLD_YELLOW,
-        bool: ANSIColors.BOLD_YELLOW,
-    }
-
-    def setup(self):
-        if self.use_colors == 'auto':
-            colors = get_colors()
-            self.use_colors = colors.RED != ""
-
 
 class Completer(rlcompleter.Completer):
     """
@@ -51,15 +18,24 @@ class Completer(rlcompleter.Completer):
     Optionally, display the various completions in different colors
     depending on the type.
     """
-    def __init__(self, namespace=None, Config=DefaultConfig):
+    def __init__(
+        self,
+        namespace=None,
+        *,
+        use_colors='auto',
+        consider_getitems=True,
+    ):
         from _pyrepl import readline
         rlcompleter.Completer.__init__(self, namespace)
-        self.config = Config()
-        self.config.setup()
+        if use_colors == 'auto':
+            # use colors only if we can
+            use_colors = get_colors().RED != ""
+        self.use_colors = use_colors
+        self.consider_getitems = consider_getitems
 
-        if self.config.use_colors:
+        if self.use_colors:
             readline.parse_and_bind('set dont-escape-ctrl-chars on')
-        if self.config.consider_getitems:
+        if self.consider_getitems:
             delims = readline.get_completer_delims()
             delims = delims.replace('[', '')
             delims = delims.replace(']', '')
@@ -94,7 +70,7 @@ class Completer(rlcompleter.Completer):
                     values.append(eval(name, self.namespace))
                 except Exception as exc:
                     values.append(None)
-        if self.config.use_colors and names:
+        if self.use_colors and names:
             return self.colorize_matches(names, values)
         return names
 
@@ -153,7 +129,7 @@ class Completer(rlcompleter.Completer):
         if prefix and prefix != attr:
             return [f'{expr}.{prefix}']  # autocomplete prefix
 
-        if self.config.use_colors:
+        if self.use_colors:
             return self.colorize_matches(names, values)
 
         if prefix:
@@ -170,11 +146,20 @@ class Completer(rlcompleter.Completer):
 
     def color_for_obj(self, i, name, value):
         t = type(value)
-        color = self.config.color_by_type.get(t, ANSIColors.RESET)
+        color = self.color_by_type(t)
         # hack: prepend an (increasing) fake escape sequence,
         # so that readline can sort the matches correctly.
         N = f"\x1b[{i:03d};00m"
         return f"{N}{color}{name}{ANSIColors.RESET}"
+
+    def color_by_type(self, t):
+        theme = get_theme()
+        typename = t.__name__
+        # this is needed e.g. to turn method-wrapper into method_wrapper,
+        # because if we want _colorize.FancyCompleter to be "dataclassable"
+        # our keys need to be valid identifiers.
+        typename = typename.replace('-', '_').replace('.', '_')
+        return getattr(theme.fancycompleter, typename, ANSIColors.RESET)
 
 
 def commonprefix(names, base=''):
