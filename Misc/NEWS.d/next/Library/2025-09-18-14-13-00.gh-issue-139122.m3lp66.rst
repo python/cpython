@@ -25,7 +25,7 @@ Summary of changes:
   Python implementation fully.
 
 * The Python implementation stores UUID values as int objects. The C
-  implementation stores them as `uint8_t[16]` array.
+  implementation stores them as ``uint8_t[16]`` array.
 
 * The C implementation has faster hash() implementation but also caches
   the computed hash value to speedup cases when UUIDs are used as
