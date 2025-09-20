@@ -8,8 +8,10 @@ import functools
 import itertools
 import pickle
 from string.templatelib import Template
+import types
 import typing
 import unittest
+import unittest.mock
 from annotationlib import (
     Format,
     ForwardRef,
@@ -1204,6 +1206,84 @@ class TestCallEvaluateFunction(unittest.TestCase):
             annotationlib.call_evaluate_function(evaluate, Format.STRING),
             "undefined",
         )
+
+
+class TestCallAnnotateFunction(unittest.TestCase):
+    def _annotate_mock(self):
+        def annotate(format, /):
+            if format == Format.VALUE:
+                return {"x": str}
+            else:
+                raise NotImplementedError(format)
+
+        annotate_mock = unittest.mock.MagicMock(
+            wraps=annotate
+        )
+
+        # Add missing magic attributes needed
+        required_magic = [
+            "__builtins__",
+            "__closure__",
+            "__code__",
+            "__defaults__",
+            "__globals__",
+            "__kwdefaults__",
+        ]
+
+        for attrib in required_magic:
+            setattr(annotate_mock, attrib, getattr(annotate, attrib))
+
+        return annotate_mock
+
+    def test_user_annotate_value(self):
+        annotate = self._annotate_mock()
+
+        annotations = annotationlib.call_annotate_function(
+            annotate,
+            Format.VALUE,
+        )
+
+        self.assertEqual(annotations, {"x": str})
+        annotate.assert_called_once_with(Format.VALUE)
+
+    def test_user_annotate_forwardref(self):
+        annotate = self._annotate_mock()
+
+        new_annotate = None
+        functype = types.FunctionType
+
+        def functiontype_mock(*args, **kwargs):
+            nonlocal new_annotate
+            new_func = unittest.mock.MagicMock(wraps=functype(*args, **kwargs))
+            new_annotate = new_func
+            return new_func
+
+        with unittest.mock.patch("types.FunctionType", new=functiontype_mock):
+            with self.assertRaises(NotImplementedError):
+                annotations = annotationlib.call_annotate_function(
+                    annotate,
+                    Format.FORWARDREF,
+                )
+
+        # Test the direct call
+        annotate.assert_called_once_with(Format.FORWARDREF)
+
+        # Test the call on the function with fake globals
+        new_annotate.assert_called_once_with(Format.VALUE_WITH_FAKE_GLOBALS)
+
+    def test_user_annotate_string(self):
+        annotate = self._annotate_mock()
+
+        with self.assertRaises(NotImplementedError):
+            annotations = annotationlib.call_annotate_function(
+                annotate,
+                Format.STRING,
+            )
+
+        annotate.assert_has_calls([
+            unittest.mock.call(Format.STRING),
+            unittest.mock.call(Format.VALUE_WITH_FAKE_GLOBALS),
+        ])
 
 
 class MetaclassTests(unittest.TestCase):
