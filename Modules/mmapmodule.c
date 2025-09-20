@@ -933,11 +933,15 @@ static PyObject *
 mmap_flush_method(PyObject *op, PyObject *args)
 {
     Py_ssize_t offset = 0;
+    Py_ssize_t size = -1;
     mmap_object *self = mmap_object_CAST(op);
-    Py_ssize_t size = self->size;
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|nn:flush", &offset, &size))
+    if (!PyArg_ParseTuple(args, "|nn:flush", &offset, &size)) {
         return NULL;
+    }
+    if (size == -1) {
+        size = self->size - offset;
+    }
     if (size < 0 || offset < 0 || self->size - offset < size) {
         PyErr_SetString(PyExc_ValueError, "flush values out of range");
         return NULL;

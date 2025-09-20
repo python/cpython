@@ -1145,6 +1145,18 @@ class MmapTests(unittest.TestCase):
         self.assertEqual(stdout.strip(), b'')
         self.assertEqual(stderr.strip(), b'')
 
+    def test_flush_parameters(self):
+        with open(TESTFN, 'wb+') as f:
+            f.write(b'x' * PAGESIZE * 3)
+            f.flush()
+
+            m = mmap.mmap(f.fileno(), PAGESIZE * 3)
+            self.addCleanup(m.close)
+
+            m.flush()
+            m.flush(PAGESIZE)
+            m.flush(PAGESIZE, PAGESIZE)
+
 
 class LargeMmapTests(unittest.TestCase):
 
