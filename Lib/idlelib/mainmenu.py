@@ -119,7 +119,18 @@ menudefs = [
 if find_spec('turtledemo'):
     menudefs[-1][1].append(('Turtle Demo', '<<open-turtle-demo>>'))
 
-default_keydefs = idleConf.GetCurrentKeySet()
+_default_keydefs = None
+
+def get_default_keydefs():
+    global _default_keydefs
+    if _default_keydefs is None:
+        _default_keydefs = idleConf.GetCurrentKeySet()
+    return _default_keydefs
+
+def set_default_keydefs(keydefs):
+    global _default_keydefs
+    _default_keydefs = keydefs
+
 
 if __name__ == '__main__':
     from unittest import main
