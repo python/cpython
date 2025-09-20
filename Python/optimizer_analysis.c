@@ -493,7 +493,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 }
                 /* _PUSH_FRAME doesn't escape or error, but it
                  * does need the IP for the return address */
-                bool needs_ip = (opcode == _PUSH_FRAME || opcode == _YIELD_VALUE);
+                bool needs_ip = (opcode == _PUSH_FRAME || opcode == _YIELD_VALUE || opcode == _DYNAMIC_EXIT);
                 if (_PyUop_Flags[opcode] & HAS_ESCAPES_FLAG) {
                     needs_ip = true;
                     may_have_escaped = true;
@@ -507,6 +507,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
             }
             case _JUMP_TO_TOP:
             case _EXIT_TRACE:
+            case _DYNAMIC_EXIT:
                 return pc + 1;
         }
     }

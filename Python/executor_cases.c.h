@@ -7551,6 +7551,18 @@
         case _GUARD_IP: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
             if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
+                #ifdef Py_DEBUG
+                _Py_CODEUNIT *target = frame->instr_ptr;
+                if (frame->lltrace >= 2) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    printf("GUARD IP EXIT: [UOp ");
+                    _PyUOpPrint(&next_uop[-1]);
+                    printf(", target %d -> %s]\n",
+                           (int)(target - _PyFrame_GetBytecode(frame)),
+                           _PyOpcode_OpName[target->op.code]);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
+                #endif
                 GOTO_TIER_ONE(frame->instr_ptr, 1);
             }
             break;
@@ -7558,6 +7570,18 @@
 
         case _DYNAMIC_EXIT: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
+            #ifdef Py_DEBUG
+            _Py_CODEUNIT *target = frame->instr_ptr;
+            if (frame->lltrace >= 2) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                printf("GUARD IP EXIT: [UOp ");
+                _PyUOpPrint(&next_uop[-1]);
+                printf(", target %d -> %s]\n",
+                       (int)(target - _PyFrame_GetBytecode(frame)),
+                       _PyOpcode_OpName[target->op.code]);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            #endif
             GOTO_TIER_ONE(frame->instr_ptr, 1);
             break;
         }

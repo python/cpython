@@ -587,15 +587,23 @@ _PyJIT_translate_single_bytecode_to_trace(
         goto full;
     }
 
-    // Unsupported opcodes
-    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW) {
-        goto full;
-    }
-
     bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode] &&
         !(opcode == FOR_ITER_RANGE || opcode == FOR_ITER_LIST || opcode == FOR_ITER_TUPLE) &&
         !(opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_JIT) &&
         !(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_NONE || opcode == POP_JUMP_IF_NOT_NONE);
+
+
+    // Strange control-flow
+    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+        // Rewind to previous instruction and replace with _EXIT_TRACE.
+        _PyUOpInstruction *curr = &trace[trace_length-1];
+        while (curr->opcode != _SET_IP && trace_length > 0) {
+            trace_length--;
+            curr = &trace[trace_length-1];
+        }
+        curr->opcode = _EXIT_TRACE;
+        goto done;
+    }
 
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
     RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
@@ -618,6 +626,8 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     // Loop back to the start
     if (tstate->interp->jit_tracer_initial_instr == this_instr && tstate->interp->jit_tracer_code_curr_size > 2) {
+        // Undo the last few instructions.
+        trace_length = tstate->interp->jit_tracer_code_curr_size;
         ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
         goto done;
     }

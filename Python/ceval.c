@@ -1198,7 +1198,10 @@ tier2_dispatch:
         if (frame->lltrace >= 4 &&
             next_uop->opcode != _YIELD_VALUE &&
             next_uop->opcode != _FOR_ITER_GEN_FRAME &&
-            next_uop->opcode != _PUSH_FRAME) {
+            next_uop->opcode != _PUSH_FRAME &&
+            next_uop->opcode != _PY_FRAME_KW &&
+            next_uop->opcode != _SAVE_RETURN_OFFSET &&
+            next_uop->opcode != _SAVE_RETURN_OFFSET) {
             dump_stack(frame, stack_pointer);
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);

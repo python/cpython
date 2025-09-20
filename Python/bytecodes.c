@@ -5446,11 +5446,31 @@ dummy_func(
 
         tier2 op(_GUARD_IP, (ip/4 --)) {
             if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
+#ifdef Py_DEBUG
+                _Py_CODEUNIT *target = frame->instr_ptr;
+                if (frame->lltrace >= 2) {
+                    printf("GUARD IP EXIT: [UOp ");
+                    _PyUOpPrint(&next_uop[-1]);
+                    printf(", target %d -> %s]\n",
+                        (int)(target - _PyFrame_GetBytecode(frame)),
+                        _PyOpcode_OpName[target->op.code]);
+                }
+#endif
                 GOTO_TIER_ONE(frame->instr_ptr, 1);
             }
         }
 
         tier2 op(_DYNAMIC_EXIT, (ip/4 --)) {
+#ifdef Py_DEBUG
+            _Py_CODEUNIT *target = frame->instr_ptr;
+            if (frame->lltrace >= 2) {
+                printf("GUARD IP EXIT: [UOp ");
+                _PyUOpPrint(&next_uop[-1]);
+                printf(", target %d -> %s]\n",
+                    (int)(target - _PyFrame_GetBytecode(frame)),
+                    _PyOpcode_OpName[target->op.code]);
+            }
+#endif
             GOTO_TIER_ONE(frame->instr_ptr, 1);
         }
 
