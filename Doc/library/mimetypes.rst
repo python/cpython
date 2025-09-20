@@ -232,7 +232,7 @@ than one MIME-type database; it provides an interface similar to the one of the
       Tuple containing two dictionaries, mapping filename extensions to MIME types:
       the first dictionary is for the non-standards types and the second one is for
       the standard types. They are initialized by :data:`common_types` and
-      :data:`types_map`.
+      :data:`types_map`, or by :func:`init` calls.
 
 
    .. attribute:: MimeTypes.types_map_inv
@@ -240,7 +240,7 @@ than one MIME-type database; it provides an interface similar to the one of the
       Tuple containing two dictionaries, mapping MIME types to a list of filename
       extensions: the first dictionary is for the non-standards types and the
       second one is for the standard types. They are initialized by
-      :data:`common_types` and :data:`types_map`.
+      :data:`common_types` and :data:`types_map`, or by :func:`init` calls.
 
 
    .. method:: MimeTypes.guess_extension(type, strict=True)
