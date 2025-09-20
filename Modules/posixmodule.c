@@ -40,6 +40,7 @@
 
 // --- System includes ------------------------------------------------------
 
+#include <stddef.h>               // offsetof()
 #include <stdio.h>                // ctermid()
 #include <stdlib.h>               // system()
 
@@ -407,6 +408,33 @@ extern char *ctermid_r(char *);
 #  define FSTAT fstat
 #  define STRUCT_STAT struct stat
 #endif
+
+#ifdef HAVE_STATX
+#  pragma weak statx
+/* provide constants introduced later than statx itself */
+#  ifndef STATX_MNT_ID
+#    define STATX_MNT_ID 0x00001000U
+#  endif
+#  ifndef STATX_DIOALIGN
+#    define STATX_DIOALIGN 0x00002000U
+#  endif
+#  ifndef STATX_MNT_ID_UNIQUE
+#    define STATX_MNT_ID_UNIQUE 0x00004000U
+#  endif
+#  ifndef STATX_SUBVOL
+#    define STATX_SUBVOL 0x00008000U
+#  endif
+#  ifndef STATX_WRITE_ATOMIC
+#    define STATX_WRITE_ATOMIC 0x00010000U
+#  endif
+#  ifndef STATX_DIO_READ_ALIGN
+#    define STATX_DIO_READ_ALIGN 0x00020000U
+#  endif
+# define _Py_STATX_KNOWN (STATX_BASIC_STATS | STATX_BTIME | STATX_MNT_ID | \
+                          STATX_DIOALIGN | STATX_MNT_ID_UNIQUE | \
+                          STATX_SUBVOL | STATX_WRITE_ATOMIC | \
+                          STATX_DIO_READ_ALIGN)
+#endif /* HAVE_STATX */
 
 
 #if !defined(EX_OK) && defined(EXIT_SUCCESS)
@@ -1159,6 +1187,9 @@ typedef struct {
 #endif
     newfunc statresult_new_orig;
     PyObject *StatResultType;
+#ifdef HAVE_STATX
+    PyObject *StatxResultType;
+#endif
     PyObject *StatVFSResultType;
     PyObject *TerminalSizeType;
     PyObject *TimesResultType;
@@ -2539,6 +2570,9 @@ _posix_clear(PyObject *module)
     Py_CLEAR(state->SchedParamType);
 #endif
     Py_CLEAR(state->StatResultType);
+#ifdef HAVE_STATX
+    Py_CLEAR(state->StatxResultType);
+#endif
     Py_CLEAR(state->StatVFSResultType);
     Py_CLEAR(state->TerminalSizeType);
     Py_CLEAR(state->TimesResultType);
@@ -2564,6 +2598,9 @@ _posix_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->SchedParamType);
 #endif
     Py_VISIT(state->StatResultType);
+#ifdef HAVE_STATX
+    Py_VISIT(state->StatxResultType);
+#endif
     Py_VISIT(state->StatVFSResultType);
     Py_VISIT(state->TerminalSizeType);
     Py_VISIT(state->TimesResultType);
@@ -2584,12 +2621,46 @@ _posix_free(void *module)
    _posix_clear((PyObject *)module);
 }
 
+
+#define SEC_TO_NS (1000000000LL)
+static PyObject *
+nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec) {
+    /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
+    if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
+        return PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
+    }
+    else {
+        PyObject *s_in_ns = NULL;
+        PyObject *s = _PyLong_FromTime_t(sec);
+        PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+        if (s == NULL || ns_fractional == NULL) {
+            goto exit;
+        }
+
+        s_in_ns = PyNumber_Multiply(s, state->billion);
+        if (s_in_ns == NULL) {
+            goto exit;
+        }
+
+        PyObject *ns_total = PyNumber_Add(s_in_ns, ns_fractional);
+        if (ns_total == NULL) {
+            goto exit;
+        }
+        return ns_total;
+
+    exit:
+        Py_XDECREF(s);
+        Py_XDECREF(ns_fractional);
+        Py_XDECREF(s_in_ns);
+        return NULL;
+    }
+}
+
 static int
 fill_time(_posixstate *state, PyObject *v, int s_index, int f_index,
           int ns_index, time_t sec, unsigned long nsec)
 {
     assert(!PyErr_Occurred());
-#define SEC_TO_NS (1000000000LL)
     assert(nsec < SEC_TO_NS);
 
     if (s_index >= 0) {
@@ -2608,50 +2679,18 @@ fill_time(_posixstate *state, PyObject *v, int s_index, int f_index,
         PyStructSequence_SET_ITEM(v, f_index, float_s);
     }
 
-    int res = -1;
     if (ns_index >= 0) {
-        /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
-        if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
-            PyObject *ns_total = PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
-            if (ns_total == NULL) {
-                return -1;
-            }
-            PyStructSequence_SET_ITEM(v, ns_index, ns_total);
-            assert(!PyErr_Occurred());
-            res = 0;
+        PyObject *ns_total = nanosecond_timestamp(state, sec, nsec);
+        if (ns_total == NULL) {
+            return -1;
         }
-        else {
-            PyObject *s_in_ns = NULL;
-            PyObject *ns_total = NULL;
-            PyObject *s = _PyLong_FromTime_t(sec);
-            PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
-            if (s == NULL || ns_fractional == NULL) {
-                goto exit;
-            }
-
-            s_in_ns = PyNumber_Multiply(s, state->billion);
-            if (s_in_ns == NULL) {
-                goto exit;
-            }
-
-            ns_total = PyNumber_Add(s_in_ns, ns_fractional);
-            if (ns_total == NULL) {
-                goto exit;
-            }
-            PyStructSequence_SET_ITEM(v, ns_index, ns_total);
-            assert(!PyErr_Occurred());
-            res = 0;
-
-        exit:
-            Py_XDECREF(s);
-            Py_XDECREF(ns_fractional);
-            Py_XDECREF(s_in_ns);
-        }
+        PyStructSequence_SET_ITEM(v, ns_index, ns_total);
     }
 
-    return res;
-    #undef SEC_TO_NS
+    assert(!PyErr_Occurred());
+    return 0;
 }
+#undef SEC_TO_NS
 
 #ifdef MS_WINDOWS
 static PyObject*
@@ -3275,6 +3314,339 @@ os_lstat_impl(PyObject *module, path_t *path, int dir_fd)
     int follow_symlinks = 0;
     return posix_do_stat(module, "lstat", path, dir_fd, follow_symlinks);
 }
+
+
+#ifdef HAVE_STATX
+typedef struct {
+    PyObject_HEAD
+    struct statx stx;
+    double atime_sec, btime_sec, ctime_sec, mtime_sec;
+    dev_t rdev, dev;
+} statx_result;
+
+#define M(attr, type, offset, doc) \
+    {attr, type, offset, Py_READONLY, PyDoc_STR(doc)}
+#define MO(attr, type, offset, doc) \
+    M(#attr, type, offsetof(statx_result, stx) + offset, doc)
+#define MM(attr, type, member, doc) \
+    M(#attr, type, offsetof(statx_result, stx.stx_##member), doc)
+#define MX(attr, type, member, doc) \
+    M(#attr, type, offsetof(statx_result, member), doc)
+
+static PyMemberDef statx_result_members[] = {
+    MM(stx_mask, Py_T_UINT, mask, "member validity mask"),
+    MM(st_blksize, Py_T_UINT, blksize, "blocksize for filesystem I/O"),
+    MM(stx_attributes, Py_T_ULONGLONG, attributes, "Linux inode attribute bits"),
+    MM(st_nlink, Py_T_UINT, nlink, "number of hard links"),
+    MM(st_uid, Py_T_UINT, uid, "user ID of owner"),
+    MM(st_gid, Py_T_UINT, gid, "group ID of owner"),
+    MM(st_mode, Py_T_USHORT, mode, "protection bits"),
+    MM(st_ino, Py_T_ULONGLONG, ino, "inode"),
+    MM(st_size, Py_T_ULONGLONG, size, "total size, in bytes"),
+    MM(st_blocks, Py_T_ULONGLONG, blocks, "number of blocks allocated"),
+    MM(stx_attributes_mask, Py_T_ULONGLONG, attributes_mask,
+        "Linux inode attribute bits supported for this file"),
+    MX(st_atime, Py_T_DOUBLE, atime_sec, "time of last access"),
+    MX(st_birthtime, Py_T_DOUBLE, btime_sec, "time of creation"),
+    MX(st_ctime, Py_T_DOUBLE, ctime_sec, "time of last change"),
+    MX(st_mtime, Py_T_DOUBLE, mtime_sec, "time of last modification"),
+    MM(stx_rdev_major, Py_T_UINT, rdev_major, "represented device major number"),
+    MM(stx_rdev_minor, Py_T_UINT, rdev_minor, "represented device minor number"),
+    MX(st_rdev, Py_T_ULONGLONG, rdev, "device type (if inode device)"),
+    MM(stx_dev_major, Py_T_UINT, dev_major, "containing device major number"),
+    MM(stx_dev_minor, Py_T_UINT, dev_minor, "containing device minor number"),
+    MX(st_dev, Py_T_ULONGLONG, dev, "device"),
+    /* We may be building against old kernel API headers that do not have the
+       names of these members, so access them by offset.  The reserved space in
+       struct statx was originally defined as arrays of u64, so later members
+       of other types must use getters to avoid a strict aliasing violation. */
+    MO(stx_mnt_id, Py_T_ULONGLONG, 144, "mount ID"),
+    MO(stx_subvol, Py_T_ULONGLONG, 160, "subvolume ID"),
+    {NULL},
+};
+
+#undef MX
+#undef MM
+#undef MO
+#undef M
+
+#define DECLARE_GET(name, type, func) \
+    static PyObject * \
+    statx_result_get_##name(PyObject *op, void *context) { \
+        statx_result *self = (statx_result *) op; \
+        uint16_t offset = (uintptr_t)context; \
+        type val; \
+        memcpy(&val, (void *)self + offset, sizeof(val)); \
+        return func(val); \
+    }
+DECLARE_GET(u32, uint32_t, PyLong_FromUInt32)
+#undef DECLARE_GET
+
+static PyObject *
+statx_result_get_nsec(PyObject *op, void *context) {
+    statx_result *self = (statx_result *) op;
+    uint16_t offset = (uintptr_t)context;
+    struct statx_timestamp val;
+    memcpy(&val, (void *)self + offset, sizeof(val));
+    _posixstate *state = PyType_GetModuleState(Py_TYPE(op));
+    assert(state != NULL);
+    return nanosecond_timestamp(state, val.tv_sec, val.tv_nsec);
+}
+
+/* The low 16 bits of the context pointer are the offset from the start of
+   statx_result to the struct statx member. */
+#define OFFSET_CONTEXT(offset) (void *)(offsetof(statx_result, stx) + offset)
+#define MEMBER_CONTEXT(name) OFFSET_CONTEXT(offsetof(struct statx, stx_##name))
+
+#define G(attr, type, doc, context) \
+    {attr, statx_result_get_##type, NULL, PyDoc_STR(doc), context}
+#define GM(attr, type, member, doc) \
+    G(#attr, type, doc, MEMBER_CONTEXT(member))
+#define GO(attr, type, offset, doc) \
+    G(#attr, type, doc, OFFSET_CONTEXT(offset))
+
+static PyGetSetDef statx_result_getset[] = {
+    GM(st_atime_ns, nsec, atime, "time of last access in nanoseconds"),
+    GM(st_birthtime_ns, nsec, btime, "time of creation in nanoseconds"),
+    GM(st_ctime_ns, nsec, ctime, "time of last change in nanoseconds"),
+    GM(st_mtime_ns, nsec, mtime, "time of last modification in nanoseconds"),
+    GO(stx_dio_mem_align, u32, 152, "direct I/O memory buffer alignment"),
+    GO(stx_dio_offset_align, u32, 156, "direct I/O file offset alignment"),
+    GO(stx_atomic_write_unit_min, u32, 168,
+        "minimum size for direct I/O with torn-write protection"),
+    GO(stx_atomic_write_unit_max, u32, 172,
+        "maximum size for direct I/O with torn-write protection"),
+    GO(stx_atomic_write_segments_max, u32, 176,
+        "maximum iovecs for direct I/O with torn-write protection"),
+    GO(stx_dio_read_offset_align, u32, 180,
+        "direct I/O file offset alignment for reads"),
+    GO(stx_atomic_write_unit_max_opt, u32, 184,
+        "maximum optimized size for direct I/O with torn-write protection"),
+    {NULL},
+};
+
+#undef GO
+#undef GOC
+#undef GM
+#undef GMC
+#undef G
+#undef MEMBER_CONTEXT
+#undef MEMBER_CACHE_CONTEXT
+#undef OFFSET_CONTEXT
+#undef OFFSET_CACHE_CONTEXT
+
+static PyObject *
+statx_result_repr(PyObject *op) {
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        return NULL;
+    }
+#define WRITE_ASCII(s, n) \
+    do { \
+        if (PyUnicodeWriter_WriteASCII(writer, s, n) < 0) { \
+            goto error; \
+        } \
+    } while (0)
+
+    WRITE_ASCII("os.statx_result(", -1);
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(statx_result_members) - 1; ++i) {
+        if (i > 0) {
+            WRITE_ASCII(", ", 2);
+        }
+
+        PyMemberDef *d = &statx_result_members[i];
+        WRITE_ASCII(d->name, -1);
+        WRITE_ASCII("=", 1);
+
+        PyObject *o = PyMember_GetOne((const char *)op, d);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyUnicodeWriter_WriteRepr(writer, o) < 0) {
+            goto error;
+        }
+        Py_DECREF(o);
+    }
+
+    if (Py_ARRAY_LENGTH(statx_result_members) > 1
+        && Py_ARRAY_LENGTH(statx_result_getset) > 1) {
+        WRITE_ASCII(", ", 2);
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(statx_result_getset) - 1; ++i) {
+        if (i > 0) {
+            WRITE_ASCII(", ", 2);
+        }
+
+        PyGetSetDef *d = &statx_result_getset[i];
+        WRITE_ASCII(d->name, -1);
+        WRITE_ASCII("=", 1);
+
+        PyObject *o = d->get(op, d->closure);
+        if (o == NULL) {
+            goto error;
+        }
+        if (PyUnicodeWriter_WriteRepr(writer, o) < 0) {
+            goto error;
+        }
+        Py_DECREF(o);
+    }
+
+    WRITE_ASCII(")", 1);
+    return PyUnicodeWriter_Finish(writer);
+#undef WRITE_ASCII
+
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
+}
+
+static int
+statx_result_traverse(PyObject *self, visitproc visit, void *arg) {
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
+
+static void
+statx_result_dealloc(PyObject *op) {
+    statx_result *self = (statx_result *) op;
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot statx_result_slots[] = {
+    {Py_tp_repr, statx_result_repr},
+    {Py_tp_traverse, statx_result_traverse},
+    {Py_tp_dealloc, statx_result_dealloc},
+    {Py_tp_members, statx_result_members},
+    {Py_tp_getset, statx_result_getset},
+    {0, NULL},
+};
+
+static PyType_Spec statx_result_spec = {
+    .name = "statx_result",
+    .basicsize = sizeof(statx_result),
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC |
+             Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    .slots = statx_result_slots,
+};
+
+static int
+optional_bool_converter(PyObject *arg, void *addr) {
+    int value;
+    if (arg == Py_None) {
+        value = -1;
+    }
+    else {
+        value = Py_IsTrue(arg);
+        if (value < 0) {
+            return 0;
+        }
+    }
+    *((int *)addr) = value;
+    return 1;
+}
+
+/*[python input]
+class optional_bool_converter(CConverter):
+    type = 'int'
+    converter = 'optional_bool_converter'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=47de85b300eeb19e]*/
+
+/*[clinic input]
+
+os.statx
+
+    path : path_t(allow_fd=True)
+        Path to be examined; can be string, bytes, a path-like object or
+        open-file-descriptor int.
+
+    mask: unsigned_int(bitwise=True)
+        A bitmask of STATX_* constants defining the requested information.
+
+    *
+
+    dir_fd : dir_fd = None
+        If not None, it should be a file descriptor open to a directory,
+        and path should be a relative string; path will then be relative to
+        that directory.
+
+    follow_symlinks: bool = True
+        If False, and the last element of the path is a symbolic link,
+        statx will examine the symbolic link itself instead of the file
+        the link points to.
+
+    sync: optional_bool(c_default='-1') = None
+        If True, statx will return up-to-date values, even if doing so is
+        expensive.  If False, statx will return cached values if possible.
+        If None, statx lets the operating system decide.
+
+Perform a statx system call on the given path.
+
+It's an error to use dir_fd or follow_symlinks when specifying path as
+  an open file descriptor.
+
+[clinic start generated code]*/
+
+static PyObject *
+os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
+              int follow_symlinks, int sync)
+/*[clinic end generated code: output=fe385235585f3d07 input=148c4fce440ca53a]*/
+{
+    if (path_and_dir_fd_invalid("statx", path, dir_fd) ||
+        dir_fd_and_fd_invalid("statx", dir_fd, path->fd) ||
+        fd_and_follow_symlinks_invalid("statx", path->fd, follow_symlinks))
+        return NULL;
+
+    /* Future bits may refer to members beyond the current size of struct
+       statx, so we need to mask them off to prevent memory corruption. */
+    mask &= _Py_STATX_KNOWN;
+    int flags = AT_NO_AUTOMOUNT | (follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
+    if (sync != -1) {
+        flags |= sync ? AT_STATX_FORCE_SYNC : AT_STATX_DONT_SYNC;
+    }
+
+    _posixstate *state = get_posix_state(module);
+    PyTypeObject *tp = (PyTypeObject *)state->StatxResultType;
+    statx_result *v = (statx_result *)tp->tp_alloc(tp, 0);
+    if (v == NULL) {
+        return NULL;
+    }
+
+    int result;
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        result = statx(path->fd, "", flags | AT_EMPTY_PATH, mask, &v->stx);
+    }
+    else {
+        result = statx(dir_fd, path->narrow, flags, mask, &v->stx);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (result != 0) {
+        Py_DECREF(v);
+        return path_error(path);
+    }
+
+    v->atime_sec = ((double)v->stx.stx_atime.tv_sec
+                    + 1e-9 * v->stx.stx_atime.tv_nsec);
+    v->btime_sec = ((double)v->stx.stx_btime.tv_sec
+                    + 1e-9 * v->stx.stx_btime.tv_nsec);
+    v->ctime_sec = ((double)v->stx.stx_ctime.tv_sec
+                    + 1e-9 * v->stx.stx_ctime.tv_nsec);
+    v->mtime_sec = ((double)v->stx.stx_mtime.tv_sec
+                    + 1e-9 * v->stx.stx_mtime.tv_nsec);
+    v->rdev = makedev(v->stx.stx_rdev_major, v->stx.stx_rdev_minor);
+    v->dev = makedev(v->stx.stx_dev_major, v->stx.stx_dev_minor);
+
+    assert(!PyErr_Occurred());
+    return (PyObject *)v;
+}
+#endif /* HAVE_STATX */
 
 
 /*[clinic input]
@@ -17025,6 +17397,7 @@ os__emscripten_log_impl(PyObject *module, const char *arg)
 
 static PyMethodDef posix_methods[] = {
     OS_STAT_METHODDEF
+    OS_STATX_METHODDEF
     OS_ACCESS_METHODDEF
     OS_TTYNAME_METHODDEF
     OS_CHDIR_METHODDEF
@@ -17870,6 +18243,30 @@ all_ins(PyObject *m)
     if (PyModule_Add(m, "NODEV", _PyLong_FromDev(NODEV))) return -1;
 #endif
 
+#ifdef HAVE_STATX
+    if (PyModule_AddIntMacro(m, STATX_TYPE)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_MODE)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_NLINK)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_UID)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_GID)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_ATIME)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_MTIME)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_CTIME)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_INO)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_SIZE)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_BLOCKS)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_BASIC_STATS)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_BTIME)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_MNT_ID)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_DIOALIGN)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_MNT_ID_UNIQUE)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_SUBVOL)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_WRITE_ATOMIC)) return -1;
+    if (PyModule_AddIntMacro(m, STATX_DIO_READ_ALIGN)) return -1;
+    /* STATX_ALL intentionally omitted because it is deprecated */
+    /* STATX_ATTR_* constants are in the stat module */
+#endif /* HAVE_STATX */
+
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;
     if (PyModule_AddIntConstant(m, "_COPYFILE_STAT", COPYFILE_STAT)) return -1;
@@ -18136,6 +18533,34 @@ posixmodule_exec(PyObject *m)
             return -1;
         }
         if (PyDict_PopString(dct, "preadv", NULL) < 0) {
+            return -1;
+        }
+    }
+#endif
+
+#ifdef HAVE_STATX
+    /* We retract os.statx if:
+       - the weakly-linked statx wrapper function is not available (old libc)
+       - the wrapper function fails with ENOSYS (libc built without fallback
+         running on an old kernel)
+       - the wrapper function fails with EINVAL on sync flags (glibc's
+         emulation of statx via stat fails in this way) */
+    struct statx stx;
+    if (statx == NULL
+        || (statx(-1, "/", AT_STATX_DONT_SYNC, 0, &stx) == -1
+            && (errno == ENOSYS || errno == EINVAL))) {
+        PyObject* dct = PyModule_GetDict(m);
+        if (dct == NULL) {
+            return -1;
+        }
+        if (PyDict_PopString(dct, "statx", NULL) < 0) {
+            return -1;
+        }
+    }
+    else {
+        statx_result_spec.name = "os.statx_result";
+        state->StatxResultType = PyType_FromModuleAndSpec(m, &statx_result_spec, NULL);
+        if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
             return -1;
         }
     }
