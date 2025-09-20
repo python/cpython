@@ -1856,6 +1856,53 @@ make_freplacement(PyObject *object)
     return PyUnicode_FromString(freplacement);
 }
 
+#if defined(MS_WINDOWS) || defined(__ANDROID__)
+static PyObject *
+make_dash_replacement(PyObject *object, Py_UCS4 ch, PyObject *timetuple)
+{
+    PyObject *strftime = NULL;
+    PyObject *fmt_obj = NULL;
+    PyObject *res = NULL;
+    PyObject *stripped = NULL;
+
+    strftime = PyImport_ImportModuleAttrString("time", "strftime");
+    if (strftime == NULL) {
+        goto error;
+    }
+
+    fmt_obj = PyUnicode_FromFormat("%%%c", (char)ch);
+    if (fmt_obj == NULL) {
+        goto error;
+    }
+
+    res = PyObject_CallFunctionObjArgs(strftime, fmt_obj, timetuple, NULL);
+    if (res == NULL) {
+        goto error;
+    }
+
+    stripped = PyObject_CallMethod(res, "lstrip", "s", "0");
+    if (stripped == NULL) {
+        goto error;
+    }
+
+    if (PyUnicode_GET_LENGTH(stripped) == 0) {
+        stripped = PyUnicode_FromString("0");
+    }
+
+    Py_DECREF(fmt_obj);
+    Py_DECREF(strftime);
+    Py_DECREF(res);
+    return stripped;
+
+error:
+    Py_XDECREF(fmt_obj);
+    Py_XDECREF(strftime);
+    Py_XDECREF(res);
+    Py_XDECREF(stripped);
+    return NULL;
+}
+#endif
+
 /* I sure don't want to reproduce the strftime code from the time module,
  * so this imports the module and calls it.  All the hair is due to
  * giving special meanings to the %z, %:z, %Z and %f format codes via a
@@ -2002,6 +2049,17 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
             }
             continue;
         }
+        #if defined(MS_WINDOWS) || defined(__ANDROID__)
+        /* non-0-pad Windows and Android support */
+        else if (ch == '-' && i < flen) {
+            Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
+            i++;
+            replacement = make_dash_replacement(object, next_ch, timetuple);
+            if (replacement == NULL) {
+                goto Error;
+            }
+        }
+        #endif
         else {
             /* percent followed by something else */
             continue;
