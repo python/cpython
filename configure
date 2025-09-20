@@ -20187,6 +20187,12 @@ then :
   printf "%s\n" "#define HAVE_SPLICE 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "statx" "ac_cv_func_statx"
+if test "x$ac_cv_func_statx" = xyes
+then :
+  printf "%s\n" "#define HAVE_STATX 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "strftime" "ac_cv_func_strftime"
 if test "x$ac_cv_func_strftime" = xyes
 then :
