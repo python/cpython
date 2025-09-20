@@ -259,6 +259,89 @@ class ThreadedImportTests(unittest.TestCase):
                           'partial', 'pool_in_threads.py')
         script_helper.assert_python_ok(fn)
 
+    def test_hierarchical_import_deadlock(self):
+        # Regression test for bpo-38884 / gh-83065
+        # Tests that concurrent imports at different hierarchy levels
+        # don't deadlock when parent imports child in __init__.py
+
+        # Create package structure:
+        # package/__init__.py: from package import subpackage
+        # package/subpackage/__init__.py: from package.subpackage.module import *
+        # package/subpackage/module.py: class SomeClass: pass
+
+        pkg_dir = os.path.join(TESTFN, 'hier_deadlock_pkg')
+        os.makedirs(pkg_dir)
+        self.addCleanup(shutil.rmtree, TESTFN)
+
+        subpkg_dir = os.path.join(pkg_dir, 'subpackage')
+        os.makedirs(subpkg_dir)
+
+        # Create package files
+        with open(os.path.join(pkg_dir, "__init__.py"), "w") as f:
+            f.write("from hier_deadlock_pkg import subpackage\n")
+
+        with open(os.path.join(subpkg_dir, "__init__.py"), "w") as f:
+            f.write("from hier_deadlock_pkg.subpackage.module import *\n")
+
+        with open(os.path.join(subpkg_dir, "module.py"), "w") as f:
+            f.write("class SomeClass:\n    pass\n")
+
+        sys.path.insert(0, TESTFN)
+        self.addCleanup(sys.path.remove, TESTFN)
+        self.addCleanup(forget, 'hier_deadlock_pkg')
+        self.addCleanup(forget, 'hier_deadlock_pkg.subpackage')
+        self.addCleanup(forget, 'hier_deadlock_pkg.subpackage.module')
+
+        importlib.invalidate_caches()
+
+        errors = []
+        results = []
+
+        def t1():
+            try:
+                import hier_deadlock_pkg.subpackage
+                results.append('t1_success')
+            except Exception as e:
+                errors.append(('t1', e))
+
+        def t2():
+            try:
+                import hier_deadlock_pkg.subpackage.module
+                results.append('t2_success')
+            except Exception as e:
+                errors.append(('t2', e))
+
+        # Run multiple times to increase chance of hitting race condition
+        for i in range(10):
+            # Clear modules between runs
+            for mod in ['hier_deadlock_pkg', 'hier_deadlock_pkg.subpackage',
+                       'hier_deadlock_pkg.subpackage.module']:
+                sys.modules.pop(mod, None)
+
+            errors.clear()
+            results.clear()
+
+            thread1 = threading.Thread(target=t1)
+            thread2 = threading.Thread(target=t2)
+
+            thread1.start()
+            thread2.start()
+
+            thread1.join(timeout=5)
+            thread2.join(timeout=5)
+
+            # Check that both threads completed successfully
+            if thread1.is_alive() or thread2.is_alive():
+                self.fail(f"Threads deadlocked on iteration {i}")
+
+            # No deadlock errors should occur
+            for thread_name, error in errors:
+                if isinstance(error, ImportError) and "deadlock" in str(error):
+                    self.fail(f"Deadlock detected in {thread_name} on iteration {i}: {error}")
+
+            # Both imports should succeed
+            self.assertEqual(len(results), 2, f"Not all imports succeeded on iteration {i}")
+
 
 def setUpModule():
     thread_info = threading_helper.threading_setup()
