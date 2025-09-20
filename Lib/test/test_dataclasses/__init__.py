@@ -3386,6 +3386,53 @@ class TestSlots(unittest.TestCase):
             class C(Root2):
                 x: int
 
+    def test_data_descriptor_with_slots(self):
+        class DescriptorFieldType:
+            def __get__(self, instance, owner):
+                return 1
+
+            def __set__(self, instance, value):
+                ...  # this method must just be present
+
+        @dataclass
+        class Regular:
+            one: DescriptorFieldType = DescriptorFieldType()
+
+        self.assertEqual(Regular.one, 1)
+        self.assertEqual(Regular().one, 1)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            (
+                "data descriptor 'DescriptorFieldType' in 'two' "
+                "will be overriden when slots=True"
+            ),
+        ):
+            @dataclass(slots=True)
+            class WithSlots:
+                two: DescriptorFieldType = DescriptorFieldType()
+
+    def test_regular_descriptor_with_slots(self):
+        class DescriptorFieldType:
+            def __get__(self, instance, owner):
+                return 1
+
+            # no __set__
+
+        @dataclass
+        class Regular:
+            one: DescriptorFieldType = DescriptorFieldType()
+
+        self.assertEqual(Regular.one, 1)
+        self.assertEqual(Regular().one, 1)
+
+        @dataclass(slots=True)
+        class WithSlots:
+            two: DescriptorFieldType = DescriptorFieldType()
+
+        self.assertIsInstance(WithSlots.two, types.MemberDescriptorType)
+        self.assertEqual(WithSlots().two, 1)
+
     def test_returns_new_class(self):
         class A:
             x: int
