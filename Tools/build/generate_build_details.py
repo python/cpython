@@ -12,10 +12,30 @@ import json
 import os
 import sys
 import sysconfig
+from pathlib import Path
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Literal, TypeAlias
+
+    StrPath: TypeAlias = str | os.PathLike[str]
+    ValidSchemaVersion: TypeAlias = Literal['1.0']
+
+
+def write_build_details(
+    *,
+    schema_version: ValidSchemaVersion,
+    base_path: StrPath | None,
+    location: StrPath,
+) -> None:
+    data = generate_data(schema_version)
+    if base_path is not None:
+        make_paths_relative(data, base_path)
+
+    json_output = json.dumps(data, indent=2)
+    with open(location, 'w', encoding='utf-8') as f:
+        f.write(json_output)
+        f.write('\n')
 
 
 def version_info_to_dict(obj: sys._version_info) -> dict[str, Any]:
@@ -29,7 +49,9 @@ def get_dict_key(container: dict[str, Any], key: str) -> dict[str, Any]:
     return container
 
 
-def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
+def generate_data(
+    schema_version: ValidSchemaVersion
+) -> collections.defaultdict[str, Any]:
     """Generate the build-details.json data (PEP 739).
 
     :param schema_version: The schema version of the data we want to generate.
@@ -46,10 +68,16 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
 
     data['base_prefix'] = sysconfig.get_config_var('installed_base')
     #data['base_interpreter'] = sys._base_executable
-    data['base_interpreter'] = os.path.join(
-        sysconfig.get_path('scripts'),
-        'python' + sysconfig.get_config_var('VERSION'),
-    )
+    if os.name == 'nt':
+        data['base_interpreter'] = os.path.join(
+            data['base_prefix'],
+            os.path.basename(sys._base_executable),  # type: ignore[attr-defined]
+        )
+    else:
+        data['base_interpreter'] = os.path.join(
+            sysconfig.get_path('scripts'),
+            'python' + sysconfig.get_config_var('VERSION'),
+        )
     data['platform'] = sysconfig.get_platform()
 
     data['language']['version'] = sysconfig.get_python_version()
@@ -61,7 +89,10 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     if '_multiarch' in data['implementation']:
         data['implementation']['_multiarch'] = sysconfig.get_config_var('MULTIARCH')
 
-    data['abi']['flags'] = list(sys.abiflags)
+    if os.name != 'nt':
+        data['abi']['flags'] = list(sys.abiflags)
+    else:
+        data['abi']['flags'] = []
 
     data['suffixes']['source'] = importlib.machinery.SOURCE_SUFFIXES
     data['suffixes']['bytecode'] = importlib.machinery.BYTECODE_SUFFIXES
@@ -69,13 +100,19 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     #data['suffixes']['debug_bytecode'] = importlib.machinery.DEBUG_BYTECODE_SUFFIXES
     data['suffixes']['extensions'] = importlib.machinery.EXTENSION_SUFFIXES
 
-    LIBDIR = sysconfig.get_config_var('LIBDIR')
+    if os.name == 'nt':
+        LIBDIR = data['base_prefix']
+    else:
+        LIBDIR = sysconfig.get_config_var('LIBDIR')
     LDLIBRARY = sysconfig.get_config_var('LDLIBRARY')
     LIBRARY = sysconfig.get_config_var('LIBRARY')
     PY3LIBRARY = sysconfig.get_config_var('PY3LIBRARY')
     LIBPYTHON = sysconfig.get_config_var('LIBPYTHON')
     LIBPC = sysconfig.get_config_var('LIBPC')
-    INCLUDEPY = sysconfig.get_config_var('INCLUDEPY')
+    if os.name == 'nt':
+        INCLUDEPY = os.path.join(data['base_prefix'], 'include')
+    else:
+        INCLUDEPY = sysconfig.get_config_var('INCLUDEPY')
 
     if os.name == 'posix':
         # On POSIX, LIBRARY is always the static library, while LDLIBRARY is the
@@ -130,11 +167,7 @@ def generate_data(schema_version: str) -> collections.defaultdict[str, Any]:
     return data
 
 
-def make_paths_relative(data: dict[str, Any], config_path: str | None = None) -> None:
-    # Make base_prefix relative to the config_path directory
-    if config_path:
-        data['base_prefix'] = relative_path(data['base_prefix'],
-                                            os.path.dirname(config_path))
+def make_paths_relative(data: dict[str, Any], base_path: StrPath | None = None) -> None:
     base_prefix = data['base_prefix']
 
     # Update path values to make them relative to base_prefix
@@ -164,8 +197,12 @@ def make_paths_relative(data: dict[str, Any], config_path: str | None = None) ->
         new_path = os.path.join('.', new_path)
         container[child] = new_path
 
+    if base_path:
+        # Make base_prefix relative to the base_path directory
+        config_dir = Path(base_path).resolve().parent
+        data['base_prefix'] = relative_path(base_prefix, config_dir)
 
-def relative_path(path: str, base: str) -> str:
+def relative_path(path: StrPath, base: StrPath) -> str:
     if os.name != 'nt':
         return os.path.relpath(path, base)
 
@@ -175,7 +212,7 @@ def relative_path(path: str, base: str) -> str:
     if path_drv.lower() == base_drv.lower():
         return os.path.relpath(path, base)
 
-    return path
+    return os.fspath(path)
 
 
 def main() -> None:
@@ -198,15 +235,18 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-
-    data = generate_data(args.schema_version)
-    if args.relative_paths:
-        make_paths_relative(data, args.config_file_path)
-
-    json_output = json.dumps(data, indent=2)
-    with open(args.location, 'w', encoding='utf-8') as f:
-        f.write(json_output)
-        f.write('\n')
+    if os.name == 'nt':
+        # Windows builds are relocatable; always make paths relative.
+        base_path = args.config_file_path or args.location
+    elif args.relative_paths:
+        base_path = args.config_file_path
+    else:
+        base_path = None
+    write_build_details(
+        schema_version=args.schema_version,
+        base_path=base_path,
+        location=args.location,
+    )
 
 
 if __name__ == '__main__':
