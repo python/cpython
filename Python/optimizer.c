@@ -568,7 +568,7 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     target = INSTR_IP(target_instr, old_code);
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
-    max_length-=2;
+    max_length -= 2;
     if ((uint16_t)oparg != (uint64_t)oparg) {
         goto full;
     }
@@ -583,17 +583,13 @@ _PyJIT_translate_single_bytecode_to_trace(
         return 1;
     }
 
-    // Unsupported opcodes
-    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW) {
+    if (opcode == ENTER_EXECUTOR) {
         goto full;
     }
 
-    RESERVE_RAW(1, "_CHECK_VALIDITY");
-    ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
-
-    if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
-        RESERVE_RAW(2, "_SET_IP");
-        ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
+    // Unsupported opcodes
+    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW) {
+        goto full;
     }
 
     bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode] &&
@@ -601,8 +597,13 @@ _PyJIT_translate_single_bytecode_to_trace(
         !(opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_JIT) &&
         !(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_NONE || opcode == POP_JUMP_IF_NOT_NONE);
 
-    if (needs_guard_ip) {
-        RESERVE_RAW(1, "_GUARD_IP");
+    const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
+    RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
+
+    ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+
+    if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
+        ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
     }
 
     /* Special case the first instruction,
@@ -623,12 +624,10 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     if (OPCODE_HAS_EXIT(opcode)) {
         // Make space for side exit and final _EXIT_TRACE:
-        RESERVE_RAW(2, "_EXIT_TRACE");
         max_length--;
     }
     if (OPCODE_HAS_ERROR(opcode)) {
         // Make space for error stub and final _EXIT_TRACE:
-        RESERVE_RAW(2, "_ERROR_POP_N");
         max_length--;
     }
 
@@ -643,7 +642,9 @@ _PyJIT_translate_single_bytecode_to_trace(
             int bitcount = counter & 1;
             int jump_likely = bitcount;
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
-            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(target_instr, old_code));
+            _Py_CODEUNIT *next_instr = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+            _Py_CODEUNIT *false_target = next_instr + oparg;
+            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(false_target, old_code));
             break;
         }
         case JUMP_BACKWARD_JIT:
@@ -704,13 +705,6 @@ _PyJIT_translate_single_bytecode_to_trace(
                             if (uop == _TIER2_RESUME_CHECK) {
                                 target = next_inst;
                             }
-#ifdef Py_DEBUG
-                            else {
-                                uint32_t jump_target = next_inst + oparg;
-                                assert(_Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR);
-                                assert(_Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER);
-                            }
-#endif
                             break;
                         case OPERAND1_1:
                             assert(trace[trace_length-1].opcode == uop);
@@ -772,6 +766,8 @@ full:
     if (!is_terminator(&tstate->interp->jit_tracer_code_buffer[trace_length-1])) {
         // Undo the last few instructions.
         trace_length = tstate->interp->jit_tracer_code_curr_size;
+        // We previously reversed one.
+        max_length += 1;
         ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
     }
     tstate->interp->jit_tracer_code_curr_size = trace_length;
@@ -1121,10 +1117,14 @@ uop_optimize(
     char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
     bool is_noopt = true;
     if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
-        is_noopt = true;
+        is_noopt = false;
     }
     int curr_stackentries = tstate->interp->jit_tracer_initial_stack_depth;
     int length = interp->jit_tracer_code_curr_size;
+    // Trace too short, don't bother.
+    if (length <= 8) {
+        return 0;
+    }
     assert(length > 0);
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);

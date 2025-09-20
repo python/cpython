@@ -3033,7 +3033,7 @@ dummy_func(
             /* If the eval breaker is set then stay in tier 1.
              * This avoids any potentially infinite loops
              * involving _RESUME_CHECK */
-            if (IS_JIT_TRACING() || _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
+            if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                 opcode = executor->vm_data.opcode;
                 oparg = (oparg & ~255) | executor->vm_data.oparg;
                 next_instr = this_instr;
@@ -3236,6 +3236,7 @@ dummy_func(
         }
 
         op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
+            TIER2_JUMPBY(1 + INLINE_CACHE_ENTRIES_FOR_ITER);
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             if (!PyStackRef_IsValid(item)) {
                 if (PyStackRef_IsError(item)) {

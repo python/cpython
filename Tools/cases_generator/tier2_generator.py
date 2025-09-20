@@ -226,16 +226,6 @@ def generate_tier2(
             )
             continue
         out.emit(f"case {uop.name}: {{\n")
-        if uop.properties.jumps:
-            containing_inst = None
-            for inst in analysis.instructions.values():
-                if uop in inst.parts:
-                    print(uop.name, inst.name)
-                    containing_inst = inst
-                    break
-            assert containing_inst is not None, uop.name
-            size = containing_inst.size
-            out.emit(f"TIER2_JUMPBY({size});\n")
         declare_variables(uop, out)
         stack = Stack()
         stack = write_uop(uop, emitter, stack)

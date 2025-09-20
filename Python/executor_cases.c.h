@@ -4196,7 +4196,6 @@
         }
 
         case _JUMP_BACKWARD_NO_INTERRUPT: {
-            TIER2_JUMPBY(2);
             oparg = CURRENT_OPARG();
             #if TIER_ONE
             assert(oparg <= INSTR_OFFSET());
@@ -4402,6 +4401,7 @@
             oparg = CURRENT_OPARG();
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
+            TIER2_JUMPBY(1 + INLINE_CACHE_ENTRIES_FOR_ITER);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef item = _PyForIter_VirtualIteratorNext(tstate, frame, iter, &null_or_index);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -4464,7 +4464,6 @@
         }
 
         case _ITER_NEXT_LIST: {
-            TIER2_JUMPBY(2);
             _PyStackRef null_or_index;
             _PyStackRef iter;
             _PyStackRef next;
