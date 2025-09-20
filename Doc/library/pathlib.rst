@@ -1978,3 +1978,10 @@ The :mod:`pathlib.types` module provides types for static type checking.
       Return ``True`` if the path is a symbolic link (even if broken); return
       ``False`` if the path is a directory or any kind of file, or if it
       doesn't exist.
+
+   .. method:: mode(*, follow_symlinks=True)
+
+      Return the file permissions as an integer, i.e. the
+      :attr:`~os.stat_result.st_mode` with the file format bits masked out.
+
+      .. versionadded:: next

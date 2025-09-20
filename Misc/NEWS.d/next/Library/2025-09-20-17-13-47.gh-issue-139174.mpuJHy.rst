@@ -1,0 +1,2 @@
+Add :meth:`pathlib.types.PathInfo.mode`, which returns the Posix file
+permissions as an integer.
