@@ -363,7 +363,7 @@ def copy_info(info, target, follow_symlinks=True):
                 raise
 
 
-class _LocalPathInfo:
+class _PathInfoBase:
     __slots__ = ('_path',)
 
     def __init__(self, path):
@@ -416,7 +416,7 @@ class _LocalPathInfo:
 _STAT_RESULT_ERROR = []  # falsy sentinel indicating stat() failed.
 
 
-class StatResultInfo(_LocalPathInfo):
+class StatResultInfo(_PathInfoBase):
     """Implementation of pathlib.types.PathInfo that provides status
     information by querying a wrapped os.stat_result object. Don't try to
     construct it yourself."""
@@ -499,7 +499,7 @@ class StatResultInfo(_LocalPathInfo):
         return S_ISLNK(st.st_mode)
 
 
-class DirEntryInfo(_LocalPathInfo):
+class DirEntryInfo(_PathInfoBase):
     """Implementation of pathlib.types.PathInfo that provides status
     information by querying a wrapped os.DirEntry object. Don't try to
     construct it yourself."""
@@ -519,7 +519,7 @@ class DirEntryInfo(_LocalPathInfo):
             return True
         try:
             self._stat(follow_symlinks=follow_symlinks)
-        except (OSError, ValueError):
+        except OSError:
             return False
         return True
 
