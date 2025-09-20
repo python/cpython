@@ -1476,6 +1476,10 @@ invalid_match_stmt:
     | "match" subject_expr NEWLINE { CHECK_VERSION(void*, 10, "Pattern matching is", RAISE_SYNTAX_ERROR("expected ':'") ) }
     | a="match" subject=subject_expr ':' NEWLINE !INDENT {
         RAISE_INDENTATION_ERROR("expected an indented block after 'match' statement on line %d", a->lineno) }
+    | a="case" patterns guard? b=':' block {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(
+            a, b,
+            "case statement must be inside match statement") }
 invalid_case_block:
     | "case" patterns guard? NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a="case" patterns guard? ':' NEWLINE !INDENT {
