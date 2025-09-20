@@ -57,6 +57,12 @@ _bin_openflags = _text_openflags
 if hasattr(_os, 'O_BINARY'):
     _bin_openflags |= _os.O_BINARY
 
+def _get_bin_openflags(mode):
+    if "r" in mode or "+" in mode:
+        return _bin_openflags
+    else:
+        return (_bin_openflags & ~_os.O_RDWR) | _os.O_WRONLY
+
 if hasattr(_os, 'TMP_MAX'):
     TMP_MAX = _os.TMP_MAX
 else:
@@ -584,7 +590,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
 
     prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
-    flags = _bin_openflags
+    flags = _get_bin_openflags(mode)
 
     # Setting O_TEMPORARY in the flags causes the OS to delete
     # the file when it is closed.  This is only supported by Windows.
@@ -651,7 +657,7 @@ else:
 
         prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
-        flags = _bin_openflags
+        flags = _get_bin_openflags(mode)
         if _O_TMPFILE_WORKS:
             fd = None
             def opener(*args):
