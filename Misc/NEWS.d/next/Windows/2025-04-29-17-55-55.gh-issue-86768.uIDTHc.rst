@@ -1,0 +1,2 @@
+:exc:`OSError` will be raised if call :func:`os.lseek` with non seekable
+object on Windows.
