@@ -1911,7 +1911,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
         for (; ok < n; ++ok) {
             pivot = a[ok];
 
-            if (std < ok / 4) {
+            if (std < (ok >> 2)) {
                 M = mu;
                 IFLT(pivot, a[M]) {
                     L = 0;
