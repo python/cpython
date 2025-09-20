@@ -1,0 +1,2 @@
+Allow the selection of the protocol used by getaddrinfo by adding an additional, optional parameter proto_addr_info
+If not specified, use the protocol used by the socket (= previous behaviour)
