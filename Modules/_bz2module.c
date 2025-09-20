@@ -391,13 +391,6 @@ BZ2Compressor_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
-static int
-BZ2Compressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyMethodDef BZ2Compressor_methods[] = {
     _BZ2_BZ2COMPRESSOR_COMPRESS_METHODDEF
     _BZ2_BZ2COMPRESSOR_FLUSH_METHODDEF
@@ -409,7 +402,6 @@ static PyType_Slot bz2_compressor_type_slots[] = {
     {Py_tp_methods, BZ2Compressor_methods},
     {Py_tp_new, _bz2_BZ2Compressor},
     {Py_tp_doc, (char *)_bz2_BZ2Compressor__doc__},
-    {Py_tp_traverse, BZ2Compressor_traverse},
     {0, 0}
 };
 
@@ -701,13 +693,6 @@ BZ2Decompressor_dealloc(PyObject *op)
     Py_DECREF(tp);
 }
 
-static int
-BZ2Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    return 0;
-}
-
 static PyMethodDef BZ2Decompressor_methods[] = {
     _BZ2_BZ2DECOMPRESSOR_DECOMPRESS_METHODDEF
     {NULL}
@@ -738,7 +723,6 @@ static PyType_Slot bz2_decompressor_type_slots[] = {
     {Py_tp_doc, (char *)_bz2_BZ2Decompressor__doc__},
     {Py_tp_members, BZ2Decompressor_members},
     {Py_tp_new, _bz2_BZ2Decompressor},
-    {Py_tp_traverse, BZ2Decompressor_traverse},
     {0, 0}
 };
 
