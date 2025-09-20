@@ -91,7 +91,8 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 
 // Used as the threshold to trigger executor invalidation when
 // trace_run_counter is greater than this value.
-#define JIT_CLEANUP_THRESHOLD 100000
+// TODO: Test what should be the optimal value for this.
+#define JIT_CLEANUP_THRESHOLD 1000
 
 #define TRACE_STACK_SIZE 5
 
