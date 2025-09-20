@@ -1,0 +1,3 @@
+Improve handling of 421 SMTP responses in :meth:`smtplib.SMTP.sendmail` by
+covering a previously missing case in which 421 occurs while sending a DATA
+command.
