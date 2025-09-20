@@ -1,0 +1,2 @@
+Simplify implementation of :attr:`pathlib.Path.info` in preparation for
+adding new methods.
