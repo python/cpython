@@ -1668,22 +1668,23 @@ class _ActionsContainer(object):
                 raise ValueError(
                     f'invalid option string {option_string!r}: '
                     f'must start with a character {self.prefix_chars!r}')
-
-            # strings starting with two prefix characters are long options
             option_strings.append(option_string)
-            if len(option_string) > 1 and option_string[1] in self.prefix_chars:
-                long_option_strings.append(option_string)
 
         # infer destination, '--foo-bar' -> 'foo_bar' and '-x' -> 'x'
         dest = kwargs.pop('dest', None)
         if dest is None:
-            if long_option_strings:
-                dest_option_string = long_option_strings[0]
-            else:
-                dest_option_string = option_strings[0]
-            dest = dest_option_string.lstrip(self.prefix_chars)
+            short_option_dest = None
+            for option_string in option_strings:
+                if len(option_string) > 2:
+                    # long option: '--foo' or '-foo' -> 'foo'
+                    dest = option_string.lstrip(self.prefix_chars)
+                    break
+                # short option: '-x' -> 'x'
+                if not short_option_dest:
+                    short_option_dest = option_string.lstrip(self.prefix_chars)
+            dest = dest or short_option_dest
             if not dest:
-                msg = f'dest= is required for options like {option_string!r}'
+                msg = f'dest= is required for options like {repr(option_strings)[1:-1]}'
                 raise TypeError(msg)
             dest = dest.replace('-', '_')
 
