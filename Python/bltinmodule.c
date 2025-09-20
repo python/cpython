@@ -251,6 +251,7 @@ PyDoc_STRVAR(build_class_doc,
 Internal helper function used by the class statement.");
 
 /*[clinic input]
+@permit_long_docstring_body
 __import__ as builtin___import__
 
     name: object
@@ -279,7 +280,7 @@ is the number of parent directories to search relative to the current module.
 static PyObject *
 builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
                         PyObject *locals, PyObject *fromlist, int level)
-/*[clinic end generated code: output=4febeda88a0cd245 input=73f4b960ea5b9dd6]*/
+/*[clinic end generated code: output=4febeda88a0cd245 input=01a3283590eae93a]*/
 {
     return PyImport_ImportModuleLevelObject(name, globals, locals,
                                             fromlist, level);
@@ -289,17 +290,17 @@ builtin___import___impl(PyObject *module, PyObject *name, PyObject *globals,
 /*[clinic input]
 abs as builtin_abs
 
-    x: object
+    number: object
     /
 
 Return the absolute value of the argument.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_abs(PyObject *module, PyObject *x)
-/*[clinic end generated code: output=b1b433b9e51356f5 input=bed4ca14e29c20d1]*/
+builtin_abs(PyObject *module, PyObject *number)
+/*[clinic end generated code: output=861a9db97dee0595 input=a356196903543505]*/
 {
-    return PyNumber_Absolute(x);
+    return PyNumber_Absolute(number);
 }
 
 /*[clinic input]
@@ -425,7 +426,7 @@ builtin_ascii(PyObject *module, PyObject *obj)
 /*[clinic input]
 bin as builtin_bin
 
-    number: object
+    integer: object
     /
 
 Return the binary representation of an integer.
@@ -435,10 +436,10 @@ Return the binary representation of an integer.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_bin(PyObject *module, PyObject *number)
-/*[clinic end generated code: output=b6fc4ad5e649f4f7 input=53f8a0264bacaf90]*/
+builtin_bin(PyObject *module, PyObject *integer)
+/*[clinic end generated code: output=533f9388441805cc input=d16518f148341e70]*/
 {
-    return PyNumber_ToBase(number, 2);
+    return PyNumber_ToBase(integer, 2);
 }
 
 
@@ -1779,7 +1780,7 @@ builtin_hash(PyObject *module, PyObject *obj)
 /*[clinic input]
 hex as builtin_hex
 
-    number: object
+    integer: object
     /
 
 Return the hexadecimal representation of an integer.
@@ -1789,10 +1790,10 @@ Return the hexadecimal representation of an integer.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_hex(PyObject *module, PyObject *number)
-/*[clinic end generated code: output=e46b612169099408 input=e645aff5fc7d540e]*/
+builtin_hex(PyObject *module, PyObject *integer)
+/*[clinic end generated code: output=e5de857ba61aae08 input=3bef4746efc62fac]*/
 {
-    return PyNumber_ToBase(number, 16);
+    return PyNumber_ToBase(integer, 16);
 }
 
 
@@ -1846,7 +1847,7 @@ PyObject *PyAnextAwaitable_New(PyObject *, PyObject *);
 /*[clinic input]
 anext as builtin_anext
 
-    aiterator: object
+    async_iterator as aiterator: object
     default: object = NULL
     /
 
@@ -1859,7 +1860,7 @@ it is returned instead of raising StopAsyncIteration.
 static PyObject *
 builtin_anext_impl(PyObject *module, PyObject *aiterator,
                    PyObject *default_value)
-/*[clinic end generated code: output=f02c060c163a81fa input=2900e4a370d39550]*/
+/*[clinic end generated code: output=f02c060c163a81fa input=f3dc5a93f073e5ac]*/
 {
     PyTypeObject *t;
     PyObject *awaitable;
@@ -2098,7 +2099,7 @@ With two or more positional arguments, return the largest argument.");
 /*[clinic input]
 oct as builtin_oct
 
-    number: object
+    integer: object
     /
 
 Return the octal representation of an integer.
@@ -2108,10 +2109,10 @@ Return the octal representation of an integer.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_oct(PyObject *module, PyObject *number)
-/*[clinic end generated code: output=40a34656b6875352 input=ad6b274af4016c72]*/
+builtin_oct(PyObject *module, PyObject *integer)
+/*[clinic end generated code: output=8c15f2145a74c390 input=b97c377b15fedf8d]*/
 {
-    return PyNumber_ToBase(number, 8);
+    return PyNumber_ToBase(integer, 8);
 }
 
 
@@ -2198,7 +2199,7 @@ builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
 /*[clinic input]
 print as builtin_print
 
-    *args: array
+    *objects: array
     sep: object(c_default="Py_None") = ' '
         string inserted between values, default a space.
     end: object(c_default="Py_None") = '\n'
@@ -2213,10 +2214,10 @@ Prints the values to a stream, or to sys.stdout by default.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject * const *args,
-                   Py_ssize_t args_length, PyObject *sep, PyObject *end,
+builtin_print_impl(PyObject *module, PyObject * const *objects,
+                   Py_ssize_t objects_length, PyObject *sep, PyObject *end,
                    PyObject *file, int flush)
-/*[clinic end generated code: output=3cb7e5b66f1a8547 input=66ea4de1605a2437]*/
+/*[clinic end generated code: output=38d8def56c837bcc input=ff35cb3d59ee8115]*/
 {
     int i, err;
 
@@ -2257,7 +2258,7 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
         return NULL;
     }
 
-    for (i = 0; i < args_length; i++) {
+    for (i = 0; i < objects_length; i++) {
         if (i > 0) {
             if (sep == NULL) {
                 err = PyFile_WriteString(" ", file);
@@ -2270,7 +2271,7 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
                 return NULL;
             }
         }
-        err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
+        err = PyFile_WriteObject(objects[i], file, Py_PRINT_RAW);
         if (err) {
             Py_DECREF(file);
             return NULL;

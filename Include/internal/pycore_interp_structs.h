@@ -14,6 +14,7 @@ extern "C" {
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
+#include "pycore_uop.h"           // struct _PyUOpInstruction
 
 
 #define CODE_MAX_WATCHERS 8
@@ -202,12 +203,6 @@ enum _GCPhase {
 #define NUM_GENERATIONS 3
 
 struct _gc_runtime_state {
-    /* List of objects that still need to be cleaned up, singly linked
-     * via their gc headers' gc_prev pointers.  */
-    PyObject *trash_delete_later;
-    /* Current call-stack depth of tp_dealloc calls. */
-    int trash_delete_nesting;
-
     /* Is automatic collection enabled? */
     int enabled;
     int debug;
@@ -765,6 +760,7 @@ struct _Py_unique_id_pool {
 
 #endif
 
+typedef _Py_CODEUNIT *(*_PyJitEntryFuncPtr)(struct _PyExecutorObject *exec, _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate);
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
@@ -948,6 +944,8 @@ struct _is {
     struct callable_cache callable_cache;
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
+    bool compiling;
+    struct _PyUOpInstruction *jit_uop_buffer;
     struct _PyExecutorObject *executor_list_head;
     struct _PyExecutorObject *executor_deletion_list_head;
     struct _PyExecutorObject *cold_executor;

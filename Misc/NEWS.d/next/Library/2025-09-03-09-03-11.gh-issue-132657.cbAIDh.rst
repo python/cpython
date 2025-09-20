@@ -1,0 +1,1 @@
+Improve the scaling of :func:`copy.copy` and :func:`copy.deepcopy` in the free-threading build.
