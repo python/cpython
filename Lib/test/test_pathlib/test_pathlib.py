@@ -2562,6 +2562,26 @@ class PathTest(PurePathTest):
         q.unlink()
         self.assertTrue(q.info.is_symlink())
 
+    def test_info_mode_caching(self):
+        p = self.cls(self.base)
+
+        q = p / 'myfile'
+        self.assertRaises(FileNotFoundError, q.info.mode)
+        q.write_text('hullo')
+        mode = stat.S_IMODE(os.stat(q).st_mode)
+        self.assertEqual(q.info.mode(), mode)
+        new_mode = mode & ~0o222  # clear writable bit.
+        os.chmod(q, new_mode)
+        self.assertEqual(q.info.mode(), mode)
+
+        q = p / 'myfile'  # same path, new instance.
+        self.assertEqual(q.info.mode(), new_mode)
+        os.unlink(q)
+        self.assertEqual(q.info.mode(), new_mode)
+
+        q = p / 'myfile'  # same path, new instance.
+        self.assertRaises(FileNotFoundError, q.info.mode)
+
     def test_stat(self):
         statA = self.cls(self.base).joinpath('fileA').stat()
         statB = self.cls(self.base).joinpath('dirB', 'fileB').stat()

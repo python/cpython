@@ -35,17 +35,22 @@ class ZipPathGround:
         root.zip_file.close()
 
     def create_file(self, path, data=b''):
-        path.zip_file.writestr(vfspath(path), data)
+        zip_info = zipfile.ZipInfo(vfspath(path))
+        zip_info.external_attr |= 0o644 << 16
+        zip_info.external_attr |= stat.S_IFREG << 16
+        path.zip_file.writestr(zip_info, data)
 
     def create_dir(self, path):
         zip_info = zipfile.ZipInfo(vfspath(path) + '/')
+        zip_info.external_attr |= 0o755 << 16
         zip_info.external_attr |= stat.S_IFDIR << 16
         zip_info.external_attr |= stat.FILE_ATTRIBUTE_DIRECTORY
         path.zip_file.writestr(zip_info, '')
 
     def create_symlink(self, path, target):
         zip_info = zipfile.ZipInfo(vfspath(path))
-        zip_info.external_attr = stat.S_IFLNK << 16
+        zip_info.external_attr |= 0o644 << 16
+        zip_info.external_attr |= stat.S_IFLNK << 16
         path.zip_file.writestr(zip_info, target.encode())
 
     def create_hierarchy(self, p):
@@ -89,6 +94,12 @@ class ZipPathGround:
             return False
         return stat.S_ISLNK(info.external_attr >> 16)
 
+    def getmode(self, p):
+        if p.info.is_dir(follow_symlinks=False):
+            return 0o755
+        else:
+            return 0o644
+
 
 class MissingZipPathInfo(PathInfo):
     """
@@ -110,6 +121,9 @@ class MissingZipPathInfo(PathInfo):
 
     def resolve(self):
         return self
+
+    def mode(self, follow_symlinks=True):
+        raise FileNotFoundError(errno.ENOENT, "File not found", self)
 
 
 missing_zip_path_info = MissingZipPathInfo()
@@ -159,6 +173,13 @@ class ZipPathInfo(PathInfo):
             return S_ISLNK(fmt)
         else:
             return False
+
+    def mode(self, *, follow_symlinks=True):
+        if follow_symlinks and self.is_symlink():
+            return self.resolve().mode()
+        elif self.zip_info is None:
+            return 0o755
+        return stat.S_IMODE(self.zip_info.external_attr >> 16)
 
     def resolve(self, path=None, create=False, follow_symlinks=True):
         """

@@ -7,6 +7,7 @@ about local paths in tests.
 """
 
 import os
+from stat import S_IMODE
 
 from . import is_pypi
 from .lexical_path import LexicalPath
@@ -89,12 +90,16 @@ class LocalPathGround:
         with open(p, 'rb') as f:
             return f.read()
 
+    def getmode(self, p):
+        return S_IMODE(os.lstat(p).st_mode)
+
 
 class LocalPathInfo(PathInfo):
     """
     Simple implementation of PathInfo for a local path
     """
-    __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink')
+    __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink',
+                 '_stat_result', '_lstat_result')
 
     def __init__(self, path):
         self._path = os.fspath(path)
@@ -102,6 +107,8 @@ class LocalPathInfo(PathInfo):
         self._is_dir = None
         self._is_file = None
         self._is_symlink = None
+        self._stat_result = None
+        self._lstat_result = None
 
     def exists(self, *, follow_symlinks=True):
         """Whether this path exists."""
@@ -132,6 +139,19 @@ class LocalPathInfo(PathInfo):
         if self._is_symlink is None:
             self._is_symlink = os.path.islink(self._path)
         return self._is_symlink
+
+    def _stat(self, follow_symlinks):
+        if follow_symlinks:
+            if not self._stat_result:
+                self._stat_result = os.stat(self._path)
+            return self._stat_result
+        else:
+            if not self._lstat_result:
+                self._lstat_result = os.lstat(self._path)
+            return self._lstat_result
+
+    def mode(self, *, follow_symlinks=True):
+        return S_IMODE(self._stat(follow_symlinks).st_mode)
 
 
 class ReadableLocalPath(_ReadablePath, LexicalPath):

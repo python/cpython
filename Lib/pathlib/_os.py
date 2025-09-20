@@ -330,13 +330,10 @@ def copy_info(info, target, follow_symlinks=True):
                 if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
                     raise
 
-    copy_posix_permissions = (
-        hasattr(info, '_posix_permissions') and
-        (follow_symlinks or os.chmod in os.supports_follow_symlinks))
-    if copy_posix_permissions:
-        posix_permissions = info._posix_permissions(follow_symlinks=follow_symlinks)
+    if follow_symlinks or os.chmod in os.supports_follow_symlinks:
+        mode = info.mode(follow_symlinks=follow_symlinks)
         try:
-            os.chmod(target, posix_permissions, follow_symlinks=follow_symlinks)
+            os.chmod(target, mode, follow_symlinks=follow_symlinks)
         except NotImplementedError:
             # if we got a NotImplementedError, it's because
             #   * follow_symlinks=False,
@@ -407,7 +404,7 @@ class _PathInfoBase:
                     raise
             return self._lstat_result
 
-    def _posix_permissions(self, *, follow_symlinks=True):
+    def mode(self, *, follow_symlinks=True):
         """Return the POSIX file permissions."""
         return S_IMODE(self._stat(follow_symlinks=follow_symlinks).st_mode)
 
