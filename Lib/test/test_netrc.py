@@ -1,41 +1,119 @@
 import netrc, os, unittest, sys, textwrap
+from contextlib import ExitStack
 from test import support
-from test.support import os_helper
+from test.support import os_helper, subTests
+from unittest import mock
 
-temp_filename = os_helper.TESTFN
+
+class NetrcEnvironment:
+    """Context manager for setting up an isolated environment to test
+    `.netrc` file handling.
+
+    This class configures a temporary directory for the `.netrc` file and
+    environment variables, providing a controlled setup to simulate different
+    scenarios.
+    """
+
+    def __enter__(self):
+        """Enter the managed environment."""
+        self.stack = ExitStack()
+        self.environ = self.stack.enter_context(
+            os_helper.EnvironmentVarGuard(),
+        )
+        self.tmpdir = self.stack.enter_context(os_helper.temp_dir())
+        return self
+
+    def __exit__(self, *ignore_exc):
+        """Exit the managed environment and performs cleanup.
+
+        This method closes the `ExitStack`, which automatically cleans up the
+        temporary directory and environment.
+        """
+        self.stack.close()
+
+    def generate_netrc(
+        self, content, filename=".netrc", mode=0o600, encoding=None,
+    ):
+        """Create and return the path to a temporary `.netrc` file."""
+        netrc_file = os.path.join(self.tmpdir, filename)
+        write_mode = "w" if sys.platform != "cygwin" else "wt"
+        with open(netrc_file, mode=write_mode, encoding=encoding) as fp:
+            fp.write(textwrap.dedent(content))
+        if os_helper.can_chmod():
+            os.chmod(netrc_file, mode=mode)
+        return netrc_file
+
+
+def use_default_netrc_in_home(*args, **kwargs):
+    """Load an instance of netrc using the default `.netrc` file from the
+    user's home directory.
+    """
+    with NetrcEnvironment() as helper:
+        helper.generate_netrc(*args, **kwargs)
+        helper.environ.unset("NETRC")
+        helper.environ.set("HOME", helper.tmpdir)
+        with mock.patch("os.path.expanduser") as mock_expanduser:
+            def fake_expanduser(path):
+                return helper.tmpdir if path == "~" else os.path.expanduser(path)
+            mock_expanduser.side_effect = fake_expanduser
+            return netrc.netrc()
+
+
+def use_netrc_envvar(*args, **kwargs):
+    """Load an instance of the netrc using the `.netrc` file specified by
+    the `NETRC` environment variable.
+    """
+    with NetrcEnvironment() as helper:
+        netrc_file = helper.generate_netrc(*args, **kwargs)
+        helper.environ.set("NETRC", netrc_file)
+        return netrc.netrc()
+
+
+def use_file_argument(*args, **kwargs):
+    """Load an instance of `.netrc` file using the file as argument.
+    """
+    with NetrcEnvironment() as helper:
+        # Just to stress a bit more the test scenario, the NETRC envvar
+        # will contain rubish information which shouldn't be used
+        helper.environ.set("NETRC", "not-a-file.netrc")
+        netrc_file = helper.generate_netrc(*args, **kwargs)
+        return netrc.netrc(netrc_file)
+
+
+def get_all_scenarios():
+    """Return all `.netrc` loading scenarios as callables.
+
+    This method is useful for iterating through all ways the
+    `.netrc` file can be located.
+    """
+    return (use_default_netrc_in_home,
+            use_netrc_envvar,
+            use_file_argument)
+
 
 class NetrcTestCase(unittest.TestCase):
+    ALL_NETRC_FILE_SCENARIOS = get_all_scenarios()
 
-    def make_nrc(self, test_data):
-        test_data = textwrap.dedent(test_data)
-        mode = 'w'
-        if sys.platform != 'cygwin':
-            mode += 't'
-        with open(temp_filename, mode, encoding="utf-8") as fp:
-            fp.write(test_data)
-        try:
-            nrc = netrc.netrc(temp_filename)
-        finally:
-            os.unlink(temp_filename)
-        return nrc
-
-    def test_toplevel_non_ordered_tokens(self):
-        nrc = self.make_nrc("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_toplevel_non_ordered_tokens(self, make_nrc):
+        nrc = make_nrc("""\
             machine host.domain.com password pass1 login log1 account acct1
             default login log2 password pass2 account acct2
             """)
         self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
-    def test_toplevel_tokens(self):
-        nrc = self.make_nrc("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_toplevel_tokens(self, make_nrc):
+        nrc = make_nrc("""\
             machine host.domain.com login log1 password pass1 account acct1
             default login log2 password pass2 account acct2
             """)
         self.assertEqual(nrc.hosts['host.domain.com'], ('log1', 'acct1', 'pass1'))
         self.assertEqual(nrc.hosts['default'], ('log2', 'acct2', 'pass2'))
 
-    def test_macros(self):
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_macros(self, make_nrc):
         data = """\
             macdef macro1
             line1
@@ -46,14 +124,15 @@ class NetrcTestCase(unittest.TestCase):
             line4
 
         """
-        nrc = self.make_nrc(data)
+        nrc = make_nrc(data)
         self.assertEqual(nrc.macros, {'macro1': ['line1\n', 'line2\n'],
                                       'macro2': ['line3\n', 'line4\n']})
         # strip the last \n
-        self.assertRaises(netrc.NetrcParseError, self.make_nrc,
+        self.assertRaises(netrc.NetrcParseError, make_nrc,
                           data.rstrip(' ')[:-1])
 
-    def test_optional_tokens(self):
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_optional_tokens(self, make_nrc):
         data = (
             "machine host.domain.com",
             "machine host.domain.com login",
@@ -64,7 +143,7 @@ class NetrcTestCase(unittest.TestCase):
             "machine host.domain.com account \"\" password"
         )
         for item in data:
-            nrc = self.make_nrc(item)
+            nrc = make_nrc(item)
             self.assertEqual(nrc.hosts['host.domain.com'], ('', '', ''))
         data = (
             "default",
@@ -76,10 +155,11 @@ class NetrcTestCase(unittest.TestCase):
             "default account \"\" password"
         )
         for item in data:
-            nrc = self.make_nrc(item)
+            nrc = make_nrc(item)
             self.assertEqual(nrc.hosts['default'], ('', '', ''))
 
-    def test_invalid_tokens(self):
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_invalid_tokens(self, make_nrc):
         data = (
             "invalid host.domain.com",
             "machine host.domain.com invalid",
@@ -88,10 +168,10 @@ class NetrcTestCase(unittest.TestCase):
             "default host.domain.com login log password pass account acct invalid"
         )
         for item in data:
-            self.assertRaises(netrc.NetrcParseError, self.make_nrc, item)
+            self.assertRaises(netrc.NetrcParseError, make_nrc, item)
 
-    def _test_token_x(self, nrc, token, value):
-        nrc = self.make_nrc(nrc)
+    def _test_token_x(self, make_nrc, content, token, value):
+        nrc = make_nrc(content)
         if token == 'login':
             self.assertEqual(nrc.hosts['host.domain.com'], (value, 'acct', 'pass'))
         elif token == 'account':
@@ -99,168 +179,184 @@ class NetrcTestCase(unittest.TestCase):
         elif token == 'password':
             self.assertEqual(nrc.hosts['host.domain.com'], ('log', 'acct', value))
 
-    def test_token_value_quotes(self):
-        self._test_token_x("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_token_value_quotes(self, make_nrc):
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login "log" password pass account acct
             """, 'login', 'log')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass account "acct"
             """, 'account', 'acct')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password "pass" account acct
             """, 'password', 'pass')
 
-    def test_token_value_escape(self):
-        self._test_token_x("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_token_value_escape(self, make_nrc):
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login \\"log password pass account acct
             """, 'login', '"log')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login "\\"log" password pass account acct
             """, 'login', '"log')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass account \\"acct
             """, 'account', '"acct')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass account "\\"acct"
             """, 'account', '"acct')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password \\"pass account acct
             """, 'password', '"pass')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password "\\"pass" account acct
             """, 'password', '"pass')
 
-    def test_token_value_whitespace(self):
-        self._test_token_x("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_token_value_whitespace(self, make_nrc):
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login "lo g" password pass account acct
             """, 'login', 'lo g')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password "pas s" account acct
             """, 'password', 'pas s')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass account "acc t"
             """, 'account', 'acc t')
 
-    def test_token_value_non_ascii(self):
-        self._test_token_x("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_token_value_non_ascii(self, make_nrc):
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login \xa1\xa2 password pass account acct
             """, 'login', '\xa1\xa2')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass account \xa1\xa2
             """, 'account', '\xa1\xa2')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password \xa1\xa2 account acct
             """, 'password', '\xa1\xa2')
 
-    def test_token_value_leading_hash(self):
-        self._test_token_x("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_token_value_leading_hash(self, make_nrc):
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login #log password pass account acct
             """, 'login', '#log')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass account #acct
             """, 'account', '#acct')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password #pass account acct
             """, 'password', '#pass')
 
-    def test_token_value_trailing_hash(self):
-        self._test_token_x("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_token_value_trailing_hash(self, make_nrc):
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log# password pass account acct
             """, 'login', 'log#')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass account acct#
             """, 'account', 'acct#')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass# account acct
             """, 'password', 'pass#')
 
-    def test_token_value_internal_hash(self):
-        self._test_token_x("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_token_value_internal_hash(self, make_nrc):
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login lo#g password pass account acct
             """, 'login', 'lo#g')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pass account ac#ct
             """, 'account', 'ac#ct')
-        self._test_token_x("""\
+        self._test_token_x(make_nrc, """\
             machine host.domain.com login log password pa#ss account acct
             """, 'password', 'pa#ss')
 
-    def _test_comment(self, nrc, passwd='pass'):
-        nrc = self.make_nrc(nrc)
+    def _test_comment(self, make_nrc, content, passwd='pass'):
+        nrc = make_nrc(content)
         self.assertEqual(nrc.hosts['foo.domain.com'], ('bar', '', passwd))
         self.assertEqual(nrc.hosts['bar.domain.com'], ('foo', '', 'pass'))
 
-    def test_comment_before_machine_line(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_before_machine_line(self, make_nrc):
+        self._test_comment(make_nrc, """\
             # comment
             machine foo.domain.com login bar password pass
             machine bar.domain.com login foo password pass
             """)
 
-    def test_comment_before_machine_line_no_space(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_before_machine_line_no_space(self, make_nrc):
+        self._test_comment(make_nrc, """\
             #comment
             machine foo.domain.com login bar password pass
             machine bar.domain.com login foo password pass
             """)
 
-    def test_comment_before_machine_line_hash_only(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_before_machine_line_hash_only(self, make_nrc):
+        self._test_comment(make_nrc, """\
             #
             machine foo.domain.com login bar password pass
             machine bar.domain.com login foo password pass
             """)
 
-    def test_comment_after_machine_line(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_after_machine_line(self, make_nrc):
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password pass
             # comment
             machine bar.domain.com login foo password pass
             """)
-        self._test_comment("""\
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password pass
             machine bar.domain.com login foo password pass
             # comment
             """)
 
-    def test_comment_after_machine_line_no_space(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_after_machine_line_no_space(self, make_nrc):
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password pass
             #comment
             machine bar.domain.com login foo password pass
             """)
-        self._test_comment("""\
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password pass
             machine bar.domain.com login foo password pass
             #comment
             """)
 
-    def test_comment_after_machine_line_hash_only(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_after_machine_line_hash_only(self, make_nrc):
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password pass
             #
             machine bar.domain.com login foo password pass
             """)
-        self._test_comment("""\
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password pass
             machine bar.domain.com login foo password pass
             #
             """)
 
-    def test_comment_at_end_of_machine_line(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_at_end_of_machine_line(self, make_nrc):
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password pass # comment
             machine bar.domain.com login foo password pass
             """)
 
-    def test_comment_at_end_of_machine_line_no_space(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_at_end_of_machine_line_no_space(self, make_nrc):
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password pass #comment
             machine bar.domain.com login foo password pass
             """)
 
-    def test_comment_at_end_of_machine_line_pass_has_hash(self):
-        self._test_comment("""\
+    @subTests('make_nrc', ALL_NETRC_FILE_SCENARIOS)
+    def test_comment_at_end_of_machine_line_pass_has_hash(self, make_nrc):
+        self._test_comment(make_nrc, """\
             machine foo.domain.com login bar password #pass #comment
             machine bar.domain.com login foo password pass
             """, '#pass')
