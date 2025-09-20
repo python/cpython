@@ -100,7 +100,6 @@ import _colorize
 import _pyrepl.utils
 
 from contextlib import ExitStack, closing, contextmanager
-from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
 
@@ -1187,6 +1186,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
 
         # Use rlcompleter to do the completion
+        # GH-138860
+        # This needs to be lazy-imported to avoid deadlock
+        from rlcompleter import Completer
         state = 0
         matches = []
         completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
@@ -1205,6 +1207,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         try:
             old_completer = readline.get_completer()
+            # GH-138860
+            # This needs to be lazy-imported to avoid deadlock
+            from rlcompleter import Completer
             completer = Completer(ns)
             readline.set_completer(completer.complete)
             yield
