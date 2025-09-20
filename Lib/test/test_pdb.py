@@ -4692,7 +4692,7 @@ class PdbTestInline(unittest.TestCase):
         """GH-138860
         Directly or indirectly importing readline might deadlock a subprocess
         if it's launched with process_group=0 or preexec_fn=setpgrp
-        
+
         It's also a pattern that readline is never imported with just import pdb.
 
         This test is to ensure that readline is not imported for import pdb.
