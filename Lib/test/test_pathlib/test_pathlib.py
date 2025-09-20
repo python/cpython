@@ -2572,10 +2572,13 @@ class PathTest(PurePathTest):
         self.assertEqual(q.info.mode(), mode)
         new_mode = mode & ~0o222  # clear writable bit.
         os.chmod(q, new_mode)
-        self.assertEqual(q.info.mode(), mode)
+        try:
+            self.assertEqual(q.info.mode(), mode)
 
-        q = p / 'myfile'  # same path, new instance.
-        self.assertEqual(q.info.mode(), new_mode)
+            q = p / 'myfile'  # same path, new instance.
+            self.assertEqual(q.info.mode(), new_mode)
+        finally:
+            os.chmod(q, mode)
         os.unlink(q)
         self.assertEqual(q.info.mode(), new_mode)
 

@@ -337,14 +337,15 @@ class ReadTestBase:
         self.assertEqual(p.joinpath('dirA').info.mode(), dir_mode)
         self.assertRaises(FileNotFoundError, p.joinpath('non-existing').info.mode)
         if self.ground.can_symlink:
-            link_mode = self.ground.getmode(p.joinpath('linkA'))
-            self.assertEqual(p.joinpath('linkA').info.mode(follow_symlinks=False), link_mode)
+            file_link_mode = self.ground.getmode(p.joinpath('linkA'))
+            dir_link_mode = self.ground.getmode(p.joinpath('linkB'))
+            self.assertEqual(p.joinpath('linkA').info.mode(follow_symlinks=False), file_link_mode)
             self.assertEqual(p.joinpath('linkA').info.mode(), file_mode)
-            self.assertEqual(p.joinpath('linkB').info.mode(follow_symlinks=False), link_mode)
+            self.assertEqual(p.joinpath('linkB').info.mode(follow_symlinks=False), dir_link_mode)
             self.assertEqual(p.joinpath('linkB').info.mode(), dir_mode)
-            self.assertEqual(p.joinpath('brokenLink').info.mode(follow_symlinks=False), link_mode)
+            self.assertEqual(p.joinpath('brokenLink').info.mode(follow_symlinks=False), file_link_mode)
             self.assertRaises(FileNotFoundError, p.joinpath('brokenLink').info.mode)
-            self.assertEqual(p.joinpath('brokenLinkLoop').info.mode(follow_symlinks=False), link_mode)
+            self.assertEqual(p.joinpath('brokenLinkLoop').info.mode(follow_symlinks=False), file_link_mode)
             self.assertRaises(OSError, p.joinpath('brokenLinkLoop').info.mode)
 
 
