@@ -1,0 +1,2 @@
+Fix :mod:`sqlite3`'s :ref:`interactive shell <sqlite3-cli>` keeping part of
+previous commands when scrolling history.
