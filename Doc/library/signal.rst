@@ -61,12 +61,13 @@ This has consequences:
 Signals and threads
 ^^^^^^^^^^^^^^^^^^^
 
-Python signal handlers are always executed in the main Python thread of the main interpreter,
+Python signal handlers are always executed in the main Python thread of
+intepreters that support signal handling (:c:member:`PyInterpreterConfig.can_handle_signals`),
 even if the signal was received in another thread.  This means that signals
 can't be used as a means of inter-thread communication.  You can use
 the synchronization primitives from the :mod:`threading` module instead.
 
-Besides, only the main thread of the main interpreter is allowed to set a new signal handler.
+Besides, only the main thread is allowed to set a new signal handler.
 
 
 Module contents
@@ -421,7 +422,7 @@ The :mod:`signal` module defines the following functions:
    same process as the caller.  The target thread can be executing any code
    (Python or not).  However, if the target thread is executing the Python
    interpreter, the Python signal handlers will be :ref:`executed by the main
-   thread of the main interpreter <signals-and-threads>`.  Therefore, the only point of sending a
+   thread of a supporting interpreter <signals-and-threads>`.  Therefore, the only point of sending a
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
@@ -523,7 +524,7 @@ The :mod:`signal` module defines the following functions:
    any bytes from *fd* before calling poll or select again.
 
    When threads are enabled, this function can only be called
-   from :ref:`the main thread of the main interpreter <signals-and-threads>`;
+   from :ref:`the main thread of a supporting interpreter <signals-and-threads>`;
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
@@ -578,7 +579,7 @@ The :mod:`signal` module defines the following functions:
    above).  (See the Unix man page :manpage:`signal(2)` for further information.)
 
    When threads are enabled, this function can only be called
-   from :ref:`the main thread of the main interpreter <signals-and-threads>`;
+   from :ref:`the main thread of a supporting interpreter <signals-and-threads>`;
    attempting to call it from other threads will cause a :exc:`ValueError`
    exception to be raised.
 
