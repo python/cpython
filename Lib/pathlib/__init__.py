@@ -335,13 +335,8 @@ class PurePath:
             return paths[0]
         elif paths:
             # Join path segments from the initializer.
-            path = self.parser.join(*paths)
-            # Cache the joined path.
-            paths.clear()
-            paths.append(path)
-            return path
+            return self.parser.join(*paths)
         else:
-            paths.append('')
             return ''
 
     @property
