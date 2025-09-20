@@ -610,6 +610,9 @@ def extract_from_snapshots():
         'escapes.py': ('--escape', '--add-comments='),
         # Escape only ascii and let unicode pass through:
         ('escapes.py', 'ascii-escapes.pot'): ('--add-comments=',),
+        # Test input files with various encodings:
+        ('encodings/latin2.py', 'encodings/latin2.pot'): ('--add-comments=',),
+        ('encodings/latin2.py', 'encodings/latin2_escaped.pot'): ('--add-comments=', '--escape'),
     }
 
     for filename, args in snapshots.items():
