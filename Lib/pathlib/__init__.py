@@ -27,7 +27,7 @@ except ImportError:
     grp = None
 
 from pathlib._os import (
-    PathInfo, DirEntryInfo,
+    StatResultInfo, DirEntryInfo,
     vfsopen, vfspath,
     ensure_different_files, ensure_distinct_paths,
     copyfile2, copyfileobj, copy_info,
@@ -637,7 +637,7 @@ class Path(PurePath):
         try:
             return self._info
         except AttributeError:
-            self._info = PathInfo(self)
+            self._info = StatResultInfo(str(self))
             return self._info
 
     def stat(self, *, follow_symlinks=True):

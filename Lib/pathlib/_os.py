@@ -363,49 +363,19 @@ def copy_info(info, target, follow_symlinks=True):
                 raise
 
 
-class _PathInfoBase:
-    __slots__ = ('_path', '_stat_result', '_lstat_result')
+class _LocalPathInfo:
+    __slots__ = ('_path',)
 
     def __init__(self, path):
-        self._path = str(path)
+        self._path = path
 
     def __repr__(self):
         path_type = "WindowsPath" if os.name == "nt" else "PosixPath"
         return f"<{path_type}.info>"
 
-    def _stat(self, *, follow_symlinks=True, ignore_errors=False):
-        """Return the status as an os.stat_result, or None if stat() fails and
-        ignore_errors is true."""
-        if follow_symlinks:
-            try:
-                result = self._stat_result
-            except AttributeError:
-                pass
-            else:
-                if ignore_errors or result is not None:
-                    return result
-            try:
-                self._stat_result = os.stat(self._path)
-            except (OSError, ValueError):
-                self._stat_result = None
-                if not ignore_errors:
-                    raise
-            return self._stat_result
-        else:
-            try:
-                result = self._lstat_result
-            except AttributeError:
-                pass
-            else:
-                if ignore_errors or result is not None:
-                    return result
-            try:
-                self._lstat_result = os.lstat(self._path)
-            except (OSError, ValueError):
-                self._lstat_result = None
-                if not ignore_errors:
-                    raise
-            return self._lstat_result
+    def _stat(self, *, follow_symlinks=True):
+        """Return the status as an os.stat_result."""
+        raise NotImplementedError
 
     def _posix_permissions(self, *, follow_symlinks=True):
         """Return the POSIX file permissions."""
@@ -443,100 +413,93 @@ class _PathInfoBase:
                 return []
 
 
-class _WindowsPathInfo(_PathInfoBase):
+_STAT_RESULT_ERROR = []  # falsy sentinel indicating stat() failed.
+
+
+class StatResultInfo(_LocalPathInfo):
     """Implementation of pathlib.types.PathInfo that provides status
-    information for Windows paths. Don't try to construct it yourself."""
-    __slots__ = ('_exists', '_is_dir', '_is_file', '_is_symlink')
+    information by querying a wrapped os.stat_result object. Don't try to
+    construct it yourself."""
+    __slots__ = ('_stat_result', '_lstat_result')
+
+    def __init__(self, path):
+        super().__init__(path)
+        self._stat_result = None
+        self._lstat_result = None
+
+    def _stat(self, *, follow_symlinks=True):
+        """Return the status as an os.stat_result."""
+        if follow_symlinks:
+            if not self._stat_result:
+                try:
+                    self._stat_result = os.stat(self._path)
+                except (OSError, ValueError):
+                    self._stat_result = _STAT_RESULT_ERROR
+                    raise
+            return self._stat_result
+        else:
+            if not self._lstat_result:
+                try:
+                    self._lstat_result = os.lstat(self._path)
+                except (OSError, ValueError):
+                    self._lstat_result = _STAT_RESULT_ERROR
+                    raise
+            return self._lstat_result
 
     def exists(self, *, follow_symlinks=True):
         """Whether this path exists."""
-        if not follow_symlinks and self.is_symlink():
-            return True
-        try:
-            return self._exists
-        except AttributeError:
-            if os.path.exists(self._path):
-                self._exists = True
-                return True
-            else:
-                self._exists = self._is_dir = self._is_file = False
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
                 return False
-
-    def is_dir(self, *, follow_symlinks=True):
-        """Whether this path is a directory."""
-        if not follow_symlinks and self.is_symlink():
-            return False
-        try:
-            return self._is_dir
-        except AttributeError:
-            if os.path.isdir(self._path):
-                self._is_dir = self._exists = True
-                return True
-            else:
-                self._is_dir = False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
                 return False
-
-    def is_file(self, *, follow_symlinks=True):
-        """Whether this path is a regular file."""
-        if not follow_symlinks and self.is_symlink():
-            return False
         try:
-            return self._is_file
-        except AttributeError:
-            if os.path.isfile(self._path):
-                self._is_file = self._exists = True
-                return True
-            else:
-                self._is_file = False
-                return False
-
-    def is_symlink(self):
-        """Whether this path is a symbolic link."""
-        try:
-            return self._is_symlink
-        except AttributeError:
-            self._is_symlink = os.path.islink(self._path)
-            return self._is_symlink
-
-
-class _PosixPathInfo(_PathInfoBase):
-    """Implementation of pathlib.types.PathInfo that provides status
-    information for POSIX paths. Don't try to construct it yourself."""
-    __slots__ = ()
-
-    def exists(self, *, follow_symlinks=True):
-        """Whether this path exists."""
-        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
-        if st is None:
+            self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
             return False
         return True
 
     def is_dir(self, *, follow_symlinks=True):
         """Whether this path is a directory."""
-        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
-        if st is None:
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
+                return False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
+                return False
+        try:
+            st = self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
             return False
         return S_ISDIR(st.st_mode)
 
     def is_file(self, *, follow_symlinks=True):
         """Whether this path is a regular file."""
-        st = self._stat(follow_symlinks=follow_symlinks, ignore_errors=True)
-        if st is None:
+        if follow_symlinks:
+            if self._stat_result is _STAT_RESULT_ERROR:
+                return False
+        else:
+            if self._lstat_result is _STAT_RESULT_ERROR:
+                return False
+        try:
+            st = self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
             return False
         return S_ISREG(st.st_mode)
 
     def is_symlink(self):
         """Whether this path is a symbolic link."""
-        st = self._stat(follow_symlinks=False, ignore_errors=True)
-        if st is None:
+        if self._lstat_result is _STAT_RESULT_ERROR:
+            return False
+        try:
+            st = self._stat(follow_symlinks=False)
+        except (OSError, ValueError):
             return False
         return S_ISLNK(st.st_mode)
 
 
-PathInfo = _WindowsPathInfo if os.name == 'nt' else _PosixPathInfo
-
-
-class DirEntryInfo(_PathInfoBase):
+class DirEntryInfo(_LocalPathInfo):
     """Implementation of pathlib.types.PathInfo that provides status
     information by querying a wrapped os.DirEntry object. Don't try to
     construct it yourself."""
@@ -546,19 +509,19 @@ class DirEntryInfo(_PathInfoBase):
         super().__init__(entry.path)
         self._entry = entry
 
-    def _stat(self, *, follow_symlinks=True, ignore_errors=False):
-        try:
-            return self._entry.stat(follow_symlinks=follow_symlinks)
-        except OSError:
-            if not ignore_errors:
-                raise
-            return None
+    def _stat(self, *, follow_symlinks=True):
+        """Return the status as an os.stat_result."""
+        return self._entry.stat(follow_symlinks=follow_symlinks)
 
     def exists(self, *, follow_symlinks=True):
         """Whether this path exists."""
         if not follow_symlinks:
             return True
-        return self._stat(ignore_errors=True) is not None
+        try:
+            self._stat(follow_symlinks=follow_symlinks)
+        except (OSError, ValueError):
+            return False
+        return True
 
     def is_dir(self, *, follow_symlinks=True):
         """Whether this path is a directory."""
