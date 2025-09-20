@@ -3230,6 +3230,7 @@ dummy_func(
                 }
                 // Jump forward by oparg and skip the following END_FOR
                 JUMPBY(oparg + 1);
+                RECORD_JUMP_TAKEN();
                 DISPATCH();
             }
             next = item;
@@ -3291,6 +3292,7 @@ dummy_func(
                 null_or_index = PyStackRef_TagInt(-1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
+                RECORD_JUMP_TAKEN();
                 DISPATCH();
             }
 #endif
@@ -3368,6 +3370,7 @@ dummy_func(
                 null_or_index = PyStackRef_TagInt(-1);
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
+                RECORD_JUMP_TAKEN();
                 DISPATCH();
             }
         }
@@ -3412,6 +3415,7 @@ dummy_func(
             if (r->len <= 0) {
                 // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
+                RECORD_JUMP_TAKEN();
                 DISPATCH();
             }
         }

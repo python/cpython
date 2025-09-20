@@ -975,12 +975,12 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 
 // 1 for trace full, 0 for successful write.
 static int
-add_to_code_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, PyCodeObject *old_code, _Py_CODEUNIT *this_instr, _Py_CODEUNIT *next_instr, int opcode, int oparg)
+add_to_code_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, PyCodeObject *old_code, _Py_CODEUNIT *this_instr, _Py_CODEUNIT *next_instr, int opcode, int oparg, int jump_taken)
 {
     assert(frame != NULL);
     assert(tstate->interp->jit_tracer_code_curr_size < UOP_MAX_TRACE_LENGTH);
     PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    return !_PyJIT_translate_single_bytecode_to_trace(tstate, frame, this_instr, next_instr, old_code, func, opcode, oparg);
+    return !_PyJIT_translate_single_bytecode_to_trace(tstate, frame, this_instr, next_instr, old_code, func, opcode, oparg, jump_taken);
 }
 
 /* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.

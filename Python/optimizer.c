@@ -543,7 +543,8 @@ _PyJIT_translate_single_bytecode_to_trace(
     PyCodeObject *old_code,
     PyFunctionObject *func,
     int opcode,
-    int oparg)
+    int oparg,
+    int jump_taken)
 {
     if (Py_IsNone((PyObject *)func)) {
         func = NULL;
@@ -570,6 +571,12 @@ _PyJIT_translate_single_bytecode_to_trace(
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     max_length -= 2;
     if ((uint16_t)oparg != (uint64_t)oparg) {
+        // Back up over EXTENDED_ARGs
+        _PyUOpInstruction *curr = &trace[trace_length-1];
+        while (oparg > 0) {
+            oparg >>= 8;
+            trace_length--;
+        }
         goto full;
     }
 
@@ -594,13 +601,14 @@ _PyJIT_translate_single_bytecode_to_trace(
 
 
     // Strange control-flow
-    if (opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+    if (jump_taken || opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
         // Rewind to previous instruction and replace with _EXIT_TRACE.
         _PyUOpInstruction *curr = &trace[trace_length-1];
-        while (curr->opcode != _SET_IP && trace_length > 0) {
+        while (curr->opcode != _SET_IP && trace_length > 1) {
             trace_length--;
             curr = &trace[trace_length-1];
         }
+        assert(curr->opcode == _SET_IP || trace_length == 1);
         curr->opcode = _EXIT_TRACE;
         goto done;
     }
@@ -673,91 +681,91 @@ _PyJIT_translate_single_bytecode_to_trace(
         default:
         {
             const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
-            if (expansion->nuops > 0) {
-                // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
-                int nuops = expansion->nuops;
-                RESERVE(nuops + 1); /* One extra for exit */
-                uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
-                for (int i = 0; i < nuops; i++) {
-                    oparg = orig_oparg;
-                    uint32_t uop = expansion->uops[i].uop;
-                    uint64_t operand = 0;
-                    // Add one to account for the actual opcode/oparg pair:
-                    int offset = expansion->uops[i].offset + 1;
-                    switch (expansion->uops[i].size) {
-                        case OPARG_SIMPLE:
-                            assert(opcode != _JUMP_BACKWARD_NO_INTERRUPT && opcode != JUMP_BACKWARD);
-                            break;
-                        case OPARG_CACHE_1:
-                            operand = read_u16(&this_instr[offset].cache);
-                            break;
-                        case OPARG_CACHE_2:
-                            operand = read_u32(&this_instr[offset].cache);
-                            break;
-                        case OPARG_CACHE_4:
-                            operand = read_u64(&this_instr[offset].cache);
-                            break;
-                        case OPARG_TOP:  // First half of super-instr
-                            oparg = orig_oparg >> 4;
-                            break;
-                        case OPARG_BOTTOM:  // Second half of super-instr
-                            oparg = orig_oparg & 0xF;
-                            break;
-                        case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
-                            oparg = offset;
-                            assert(uop == _SAVE_RETURN_OFFSET);
-                            break;
-                        case OPARG_REPLACED:
-                            uop = _PyUOp_Replacements[uop];
-                            assert(uop != 0);
-
-                            uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + (oparg > 255);
-                            if (uop == _TIER2_RESUME_CHECK) {
-                                target = next_inst;
-                            }
-                            break;
-                        case OPERAND1_1:
-                            assert(trace[trace_length-1].opcode == uop);
-                            operand = read_u16(&this_instr[offset].cache);
-                            trace[trace_length-1].operand1 = operand;
-                            continue;
-                        case OPERAND1_2:
-                            assert(trace[trace_length-1].opcode == uop);
-                            operand = read_u32(&this_instr[offset].cache);
-                            trace[trace_length-1].operand1 = operand;
-                            continue;
-                        case OPERAND1_4:
-                            assert(trace[trace_length-1].opcode == uop);
-                            operand = read_u64(&this_instr[offset].cache);
-                            trace[trace_length-1].operand1 = operand;
-                            continue;
-                        default:
-                            fprintf(stderr,
-                                    "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
-                                    opcode, oparg, nuops, i,
-                                    expansion->uops[i].size,
-                                    expansion->uops[i].offset);
-                            Py_FatalError("garbled expansion");
-                    }
-                    if (uop == _PUSH_FRAME || uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
-                        PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
-                        if (func != NULL) {
-                            operand = (uintptr_t)func;
-                        }
-                        else if (new_code != NULL) {
-                            operand = (uintptr_t)new_code | 1;
-                        }
-                        else {
-                            operand = 0;
-                        }
-                    }
-                    // All other instructions
-                    ADD_TO_TRACE(uop, oparg, operand, target);
-                }
-                break;
+            if (expansion->nuops == 0) {
+                DPRINTF(2, "Unsupported opcode %s\n", _PyOpcode_OpName[opcode]);
+                goto full;
             }
-            DPRINTF(2, "Unsupported opcode %s\n", _PyOpcode_OpName[opcode]);
-            OPT_UNSUPPORTED_OPCODE(opcode);
+            // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
+            int nuops = expansion->nuops;
+            RESERVE(nuops + 1); /* One extra for exit */
+            uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
+            for (int i = 0; i < nuops; i++) {
+                oparg = orig_oparg;
+                uint32_t uop = expansion->uops[i].uop;
+                uint64_t operand = 0;
+                // Add one to account for the actual opcode/oparg pair:
+                int offset = expansion->uops[i].offset + 1;
+                switch (expansion->uops[i].size) {
+                    case OPARG_SIMPLE:
+                        assert(opcode != _JUMP_BACKWARD_NO_INTERRUPT && opcode != JUMP_BACKWARD);
+                        break;
+                    case OPARG_CACHE_1:
+                        operand = read_u16(&this_instr[offset].cache);
+                        break;
+                    case OPARG_CACHE_2:
+                        operand = read_u32(&this_instr[offset].cache);
+                        break;
+                    case OPARG_CACHE_4:
+                        operand = read_u64(&this_instr[offset].cache);
+                        break;
+                    case OPARG_TOP:  // First half of super-instr
+                        oparg = orig_oparg >> 4;
+                        break;
+                    case OPARG_BOTTOM:  // Second half of super-instr
+                        oparg = orig_oparg & 0xF;
+                        break;
+                    case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
+                        oparg = offset;
+                        assert(uop == _SAVE_RETURN_OFFSET);
+                        break;
+                    case OPARG_REPLACED:
+                        uop = _PyUOp_Replacements[uop];
+                        assert(uop != 0);
+
+                        uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + (oparg > 255);
+                        if (uop == _TIER2_RESUME_CHECK) {
+                            target = next_inst;
+                        }
+                        break;
+                    case OPERAND1_1:
+                        assert(trace[trace_length-1].opcode == uop);
+                        operand = read_u16(&this_instr[offset].cache);
+                        trace[trace_length-1].operand1 = operand;
+                        continue;
+                    case OPERAND1_2:
+                        assert(trace[trace_length-1].opcode == uop);
+                        operand = read_u32(&this_instr[offset].cache);
+                        trace[trace_length-1].operand1 = operand;
+                        continue;
+                    case OPERAND1_4:
+                        assert(trace[trace_length-1].opcode == uop);
+                        operand = read_u64(&this_instr[offset].cache);
+                        trace[trace_length-1].operand1 = operand;
+                        continue;
+                    default:
+                        fprintf(stderr,
+                                "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
+                                opcode, oparg, nuops, i,
+                                expansion->uops[i].size,
+                                expansion->uops[i].offset);
+                        Py_FatalError("garbled expansion");
+                }
+                if (uop == _PUSH_FRAME || uop == _RETURN_VALUE || uop == _RETURN_GENERATOR || uop == _YIELD_VALUE) {
+                    PyCodeObject *new_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
+                    if (func != NULL) {
+                        operand = (uintptr_t)func;
+                    }
+                    else if (new_code != NULL) {
+                        operand = (uintptr_t)new_code | 1;
+                    }
+                    else {
+                        operand = 0;
+                    }
+                }
+                // All other instructions
+                ADD_TO_TRACE(uop, oparg, operand, target);
+            }
+            break;
         }  // End default
 
     }  // End switch (opcode)

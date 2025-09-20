@@ -144,7 +144,7 @@
     DISPATCH();
 #  define RECORD_TRACE() do { \
         frame->instr_ptr = next_instr; \
-        if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, opcode, oparg)) { \
+        if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING(); \
         } \
     } while (0);
@@ -338,6 +338,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #else
 #define RECORD_BRANCH_TAKEN(bitset, flag)
 #endif
+
+#define RECORD_JUMP_TAKEN() _jump_taken = 1;
 
 #define UNBOUNDLOCAL_ERROR_MSG \
     "cannot access local variable '%s' where it is not associated with a value"

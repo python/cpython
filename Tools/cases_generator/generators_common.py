@@ -127,6 +127,7 @@ class Emitter:
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
             "stack_pointer": self.stack_pointer,
+            "RECORD_JUMP_TAKEN": self.record_jump_taken,
         }
         self.out = out
         self.labels = labels
@@ -471,6 +472,19 @@ class Emitter:
         if uop.instruction_size is None:
             raise analysis_error("The INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
         self.out.emit(f" {uop.instruction_size}u ")
+        return True
+
+    def record_jump_taken(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        next(tkn_iter);
+        next(tkn_iter);
+        next(tkn_iter);
         return True
 
     def _print_storage(self, reason:str, storage: Storage) -> None:

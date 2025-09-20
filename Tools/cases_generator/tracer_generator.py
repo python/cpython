@@ -57,6 +57,19 @@ class TracerEmitter(Emitter):
         self.emit("TRACING_DISPATCH")
         return False
 
+    def record_jump_taken(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.emit(tkn)
+        emit_to(self.out, tkn_iter, "SEMI")
+        self.out.emit(";\n")
+        return True
+
     def deopt_if(
         self,
         tkn: Token,
