@@ -403,3 +403,27 @@ body {
   margin: 0;
   padding: 12px 0;
 }
+
+/* Tooltip overflow fixes */
+.python-tooltip {
+  max-width: 500px !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+}
+
+/* Responsive tooltip adjustments */
+@media (max-width: 768px) {
+  .python-tooltip {
+    max-width: calc(100vw - 40px) !important;
+    max-height: calc(100vh - 80px) !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .python-tooltip {
+    max-width: calc(100vw - 20px) !important;
+    font-size: 12px !important;
+  }
+}

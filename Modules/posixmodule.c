@@ -2759,7 +2759,7 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
     SET_ITEM(ST_BLOCKS_IDX, PyLong_FromLong((long)st->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
-    SET_ITEM(ST_RDEV_IDX, PyLong_FromLong((long)st->st_rdev));
+    SET_ITEM(ST_RDEV_IDX, _PyLong_FromDev(st->st_rdev));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
     SET_ITEM(ST_GEN_IDX, PyLong_FromLong((long)st->st_gen));
@@ -11756,6 +11756,7 @@ The flags argument contains a bitwise OR of zero or more of the following flags:
 
 - RWF_HIPRI
 - RWF_NOWAIT
+- RWF_DONTCACHE
 
 Using non-zero flags requires Linux 4.6 or newer.
 [clinic start generated code]*/
@@ -11763,7 +11764,7 @@ Using non-zero flags requires Linux 4.6 or newer.
 static Py_ssize_t
 os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                int flags)
-/*[clinic end generated code: output=26fc9c6e58e7ada5 input=c1f876866fcd9d41]*/
+/*[clinic end generated code: output=26fc9c6e58e7ada5 input=34fb3b9ca06f7ba7]*/
 {
     Py_ssize_t cnt, n;
     int async_err = 0;
@@ -12413,6 +12414,7 @@ The flags argument contains a bitwise OR of zero or more of the following flags:
 - RWF_DSYNC
 - RWF_SYNC
 - RWF_APPEND
+- RWF_DONTCACHE
 
 Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
@@ -12420,7 +12422,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=99d8a21493ff76ca]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=664a67626d485665]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -17646,6 +17648,9 @@ all_ins(PyObject *m)
 #ifdef RWF_NOWAIT
     if (PyModule_AddIntConstant(m, "RWF_NOWAIT", RWF_NOWAIT)) return -1;
 #endif
+#ifdef RWF_DONTCACHE
+    if (PyModule_AddIntConstant(m, "RWF_DONTCACHE", RWF_DONTCACHE)) return -1;
+#endif
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
 #endif
@@ -17860,6 +17865,10 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, EFD_SEMAPHORE)) return -1;
 #endif
 #endif  /* HAVE_EVENTFD && EFD_CLOEXEC */
+
+#ifdef NODEV
+    if (PyModule_Add(m, "NODEV", _PyLong_FromDev(NODEV))) return -1;
+#endif
 
 #if defined(__APPLE__)
     if (PyModule_AddIntConstant(m, "_COPYFILE_DATA", COPYFILE_DATA)) return -1;

@@ -2891,7 +2891,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
                           int group_right_1, Py_buffer *buffer)
 /*[clinic end generated code: output=49b16e6406023734 input=80ed30436df01a71]*/
 {
-    PyObject *dest = NULL;
+    PyBytesWriter *writer = NULL;
     char *mem;
     size_t count = 0;
     int retval;
@@ -2918,14 +2918,16 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
     }
 
     if (!group_right_1) {
-        dest = PyBytes_FromStringAndSize(NULL, len);
-        if (dest == NULL)
-            goto error;
         if (len == 0) {
             Py_XDECREF(sock);
-            return dest;
+            return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         }
-        mem = PyBytes_AS_STRING(dest);
+
+        writer = PyBytesWriter_Create(len);
+        if (writer == NULL) {
+            goto error;
+        }
+        mem = PyBytesWriter_GetData(writer);
     }
     else {
         mem = buffer->buf;
@@ -3003,8 +3005,7 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, Py_ssize_t len,
 done:
     Py_XDECREF(sock);
     if (!group_right_1) {
-        _PyBytes_Resize(&dest, count);
-        return dest;
+        return PyBytesWriter_FinishWithSize(writer, count);
     }
     else {
         return PyLong_FromSize_t(count);
@@ -3013,8 +3014,9 @@ done:
 error:
     PySSL_ChainExceptions(self);
     Py_XDECREF(sock);
-    if (!group_right_1)
-        Py_XDECREF(dest);
+    if (!group_right_1) {
+        PyBytesWriter_Discard(writer);
+    }
     return NULL;
 }
 
@@ -5848,30 +5850,29 @@ _ssl_MemoryBIO_read_impl(PySSLMemoryBIO *self, int len)
 /*[clinic end generated code: output=a657aa1e79cd01b3 input=21046f2d7dac3a90]*/
 {
     int avail, nbytes;
-    PyObject *result;
 
     avail = (int)Py_MIN(BIO_ctrl_pending(self->bio), INT_MAX);
     if ((len < 0) || (len > avail))
         len = avail;
 
-    result = PyBytes_FromStringAndSize(NULL, len);
-    if ((result == NULL) || (len == 0))
-        return result;
+    if (len == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
 
-    nbytes = BIO_read(self->bio, PyBytes_AS_STRING(result), len);
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    nbytes = BIO_read(self->bio, PyBytesWriter_GetData(writer), len);
     if (nbytes < 0) {
         _sslmodulestate *state = get_state_mbio(self);
-        Py_DECREF(result);
+        PyBytesWriter_Discard(writer);
         _setSSLError(state, NULL, 0, __FILE__, __LINE__);
         return NULL;
     }
 
-    /* There should never be any short reads but check anyway. */
-    if (nbytes < len) {
-        _PyBytes_Resize(&result, nbytes);
-    }
-
-    return result;
+    return PyBytesWriter_FinishWithSize(writer, nbytes);
 }
 
 /*[clinic input]
