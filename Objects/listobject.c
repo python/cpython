@@ -1902,20 +1902,21 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
 
     Py_ssize_t M, L, R;
     Py_ssize_t nsorted = ok;
-    Py_ssize_t last = ok >> 1;
-    Py_ssize_t std = last;
-    Py_ssize_t mu = last;
+    Py_ssize_t mu = ok >> 1;
+    Py_ssize_t std = mu;
     Py_ssize_t nbad = 0;    // badness of fit
 
     if (adapt) {
         for (; ok < n; ++ok) {
             pivot = a[ok];
 
+            // NOTE: If abinarysort is actually working, there will be gains
+            //       And this is a relatively small insurance against adversity
+            //       However, subject to be removed if not helpful in practice
             if (std < (ok >> 2)) {
-                M = mu;
-                IFLT(pivot, a[M]) {
+                IFLT(pivot, a[mu]) {
                     L = 0;
-                    R = M;
+                    R = mu;
                     if (L < R) {
                         std += !std;
                         M = R - std;
@@ -1939,7 +1940,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
                     }
                 }
                 else {
-                    L = M + 1;
+                    L = mu + 1;
                     R = ok;
                     if (L < R) {
                         M = L + std;
@@ -2004,9 +2005,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
             // Update Adaptive runvars
             std = labs(L - mu);
             nbad += std;
-            mu = L + L - last;
-            mu = mu < 0 ? 0 : mu > ok ? ok : mu;
-            last = L;
+            mu = L;
         }
     }
     else {
@@ -2044,9 +2043,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
             // Update Adaptive runvars
             std = labs(L - mu);
             nbad += std;
-            mu = L + L - last;
-            mu = mu < 0 ? 0 : mu > ok ? ok : mu;
-            last = L;
+            mu = L;
         }
     }
 
