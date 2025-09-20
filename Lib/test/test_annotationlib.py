@@ -785,6 +785,12 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertEqual(get_annotations(isa2, eval_str=True), {})
         self.assertEqual(get_annotations(isa2, eval_str=False), {})
 
+    def test_stringized_annotations_with_star_unpack(self):
+        def f(*args: *tuple[int, ...]): ...
+        self.assertEqual(get_annotations(f, eval_str=True),
+                         {'args': (*tuple[int, ...],)[0]})
+
+
     def test_stringized_annotations_on_wrapper(self):
         isa = inspect_stringized_annotations
         wrapped = times_three(isa.function)
