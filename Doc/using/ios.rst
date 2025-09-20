@@ -328,7 +328,12 @@ App Store Compliance
 The only mechanism for distributing apps to third-party iOS devices is to
 submit the app to the iOS App Store; apps submitted for distribution must pass
 Apple's app review process. This process includes a set of automated validation
-rules that inspect the submitted application bundle for problematic code.
+rules that inspect the submitted application bundle for problematic code. There
+are some steps that must be taken to ensure that your app will be able to pass
+these validation steps.
+
+Incompatible code in the standard library
+-----------------------------------------
 
 The Python standard library contains some code that is known to violate these
 automated rules. While these violations appear to be false positives, Apple's
@@ -339,3 +344,18 @@ The Python source tree contains
 :source:`a patch file <Mac/Resources/app-store-compliance.patch>` that will remove
 all code that is known to cause issues with the App Store review process. This
 patch is applied automatically when building for iOS.
+
+Privacy manifests
+-----------------
+
+In April 2025, Apple introduced a requirement for `certain third-party
+libraries to provide a Privacy Manifest
+<https://developer.apple.com/support/third-party-SDK-requirements>`__.
+As a result, if you have a binary module that uses one of the affected
+libraries, you must provide an ``.xcprivacy`` file for that library.
+OpenSSL is one library affected by this requirement, but there are others.
+
+If you produce a binary module named ``mymodule.so``, and use you the Xcode
+build script described in step 7 above, you can place a ``mymodule.xcprivacy``
+file next to ``mymodule.so``, and the privacy manifest will be installed into
+the required location when the binary module is converted into a framework.

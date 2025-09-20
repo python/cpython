@@ -67,6 +67,9 @@ install_dylib () {
 
     # The name of the extension file
     EXT=$(basename "$FULL_EXT")
+    # The name and location of the module
+    MODULE_PATH=$(dirname "$FULL_EXT")
+    MODULE_NAME=$(echo $EXT | cut -d "." -f 1)
     # The location of the extension file, relative to the bundle
     RELATIVE_EXT=${FULL_EXT#$CODESIGNING_FOLDER_PATH/}
     # The path to the extension file, relative to the install base
@@ -93,6 +96,16 @@ install_dylib () {
     echo "$FRAMEWORK_FOLDER/$FULL_MODULE_NAME" > ${FULL_EXT%.so}.fwork
     # Create a back reference to the .so file location in the framework
     echo "${RELATIVE_EXT%.so}.fwork" > "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/$FULL_MODULE_NAME.origin"
+
+    # If the framework provides an xcprivacy file, install it.
+    if [ -e "$MODULE_PATH/$MODULE_NAME.xcprivacy" ]; then
+        echo "Installing XCPrivacy file for $FRAMEWORK_FOLDER/$FULL_MODULE_NAME"
+        XCPRIVACY_FILE="$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER/PrivacyInfo.xcprivacy"
+        if [ -e "$XCPRIVACY_FILE" ]; then
+          rm -rf "$XCPRIVACY_FILE"
+        fi
+        mv "$MODULE_PATH/$MODULE_NAME.xcprivacy" "$XCPRIVACY_FILE"
+    fi
 
     echo "Signing framework as $EXPANDED_CODE_SIGN_IDENTITY_NAME ($EXPANDED_CODE_SIGN_IDENTITY)..."
     /usr/bin/codesign --force --sign "$EXPANDED_CODE_SIGN_IDENTITY" ${OTHER_CODE_SIGN_FLAGS:-} -o runtime --timestamp=none --preserve-metadata=identifier,entitlements,flags --generate-entitlement-der "$CODESIGNING_FOLDER_PATH/$FRAMEWORK_FOLDER"
