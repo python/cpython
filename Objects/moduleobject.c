@@ -23,7 +23,7 @@
 
 
 static PyMemberDef module_members[] = {
-    {"__dict__", _Py_T_OBJECT, offsetof(PyModuleObject, md_dict), Py_READONLY},
+    {"__dict__", Py_T_OBJECT_EX, offsetof(PyModuleObject, md_dict), Py_READONLY},
     {0}
 };
 
