@@ -5809,7 +5809,11 @@
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
-            TIER1_TO_TIER2(executor);
+            if (IS_JIT_TRACING()) {
+                RECORD_TRACE();
+                BAIL_TRACING_NO_DISPATCH();
+            }
+            TIER1_TO_TIER2(executor, 1);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -18942,7 +18946,11 @@
             }
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
-            TIER1_TO_TIER2(executor);
+            if (IS_JIT_TRACING()) {
+                RECORD_TRACE();
+                BAIL_TRACING_NO_DISPATCH();
+            }
+            TIER1_TO_TIER2(executor, 1);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */

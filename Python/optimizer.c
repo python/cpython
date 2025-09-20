@@ -585,7 +585,6 @@ _PyJIT_translate_single_bytecode_to_trace(
     if (opcode == EXTENDED_ARG) {
         return 1;
     }
-    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
     if (opcode == NOP) {
         return 1;
     }
@@ -593,6 +592,8 @@ _PyJIT_translate_single_bytecode_to_trace(
     if (opcode == ENTER_EXECUTOR) {
         goto full;
     }
+
+    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
 
     bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode] &&
         !(opcode == FOR_ITER_RANGE || opcode == FOR_ITER_LIST || opcode == FOR_ITER_TUPLE) &&

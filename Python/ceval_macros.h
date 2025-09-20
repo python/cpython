@@ -134,13 +134,15 @@
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
 #  define ENTER_TRACING() DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() DISPATCH_TABLE_VAR = DISPATCH_TABLE;
-#  define BAIL_TRACING() \
+#  define BAIL_TRACING_NO_DISPATCH() \
     LEAVE_TRACING(); \
     int err = _PyOptimizer_Optimize(frame, tstate); \
     tstate->interp->jit_tracer_code_curr_size = 0; \
     if (err < 0) { \
         JUMP_TO_LABEL(error); \
-    } \
+    }
+#  define BAIL_TRACING() \
+    BAIL_TRACING_NO_DISPATCH() \
     DISPATCH();
 #  define RECORD_TRACE() do { \
         frame->instr_ptr = next_instr; \
@@ -395,7 +397,7 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
-#define TIER1_TO_TIER2(EXECUTOR)                        \
+#define TIER1_TO_TIER2(EXECUTOR, IN_ENTER_EXECUTOR)                        \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
@@ -407,7 +409,7 @@ do {                                                   \
         next_instr = frame->instr_ptr;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
-    if (keep_tracing_bit) { \
+    if (!IN_ENTER_EXECUTOR && keep_tracing_bit) { \
         ENTER_TRACING(); \
         _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0); \
     } \
