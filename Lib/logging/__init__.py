@@ -45,9 +45,6 @@ import threading
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "production"
-# The following module attributes are no longer updated.
-__version__ = "0.5.1.2"
-__date__    = "07 February 2010"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -2341,3 +2338,16 @@ def captureWarnings(capture):
         if _warnings_showwarning is not None:
             warnings.showwarning = _warnings_showwarning
             _warnings_showwarning = None
+
+
+def __getattr__(name):
+    if name in ("__version__", "__date__"):
+        from warnings import _deprecated
+
+        _deprecated(name, remove=(3, 20))
+        return {  # Do not change
+            "__version__": "0.5.1.2",
+            "__date__": "07 February 2010",
+        }[name]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
