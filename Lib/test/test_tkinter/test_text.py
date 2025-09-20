@@ -41,6 +41,47 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.search('-test', '1.0', 'end'), '1.2')
         self.assertEqual(text.search('test', '1.0', 'end'), '1.3')
 
+        text.delete('1.0', 'end')
+        text.insert('1.0',
+            'This is a test. This is only a test.\n'
+            'Another line.\n'
+            'Yet another line.')
+
+        result = text.search('line', '1.0', 'end', nolinestop=True, regexp=True)
+        self.assertEqual(result, '2.8')
+
+        strict_res = text.search('test', '1.0', '1.20', strictlimits=True)
+        self.assertEqual(strict_res, '1.10')
+
+    def test_search_all(self):
+        text = self.text
+        text.insert('1.0',
+            'ababa ababa\n'
+            'ababababa\n'
+            'aba aba')
+
+        all_res = text.search_all('aba', '1.0', 'end')
+        all_res_strs = [str(i) for i in all_res]
+        self.assertIsInstance(all_res, tuple)
+        self.assertGreaterEqual(len(all_res), 3)
+        self.assertEqual(str(all_res[0]), '1.0')
+        self.assertEqual(str(all_res[1]), '1.6')
+
+        overlap_res = text.search_all('aba', '1.0', 'end', overlap=True)
+        overlap_res_strs = [str(i) for i in overlap_res]
+        self.assertIsInstance(overlap_res, tuple)
+        self.assertGreater(len(overlap_res), len(all_res))
+
+        # Check that overlap actually finds overlapping matches
+        self.assertIn('2.0', overlap_res_strs)
+        self.assertIn('2.2', overlap_res_strs)
+        self.assertIn('2.4', overlap_res_strs)
+        self.assertNotIn('2.2', all_res_strs)
+
+        # Ensure all results are valid text indices
+        for i in overlap_res:
+            self.assertRegex(str(i), r'^\d+\.\d+$')
+
     def test_count(self):
         text = self.text
         text.insert('1.0',
@@ -93,7 +134,6 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.count('1.3', '1.5', 'update'), (2,))
         self.assertEqual(text.count('1.3', '1.3', 'update', return_ints=True), 0)
         self.assertEqual(text.count('1.3', '1.3', 'update'), None)
-
 
 if __name__ == "__main__":
     unittest.main()
