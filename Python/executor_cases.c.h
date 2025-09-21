@@ -7589,9 +7589,8 @@
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
-                int chain_depth = previous_executor->vm_data.chain_depth + 1;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth);
+                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), 0);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 GOTO_TIER_ONE(target, 1);
             }

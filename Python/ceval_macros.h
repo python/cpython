@@ -417,7 +417,6 @@ do {                                                   \
     if (keep_tracing_bit) { \
         assert(next_instr->op.code != ENTER_EXECUTOR); \
         ENTER_TRACING(); \
-        _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0); \
     } \
     else { \
         LEAVE_TRACING(); \

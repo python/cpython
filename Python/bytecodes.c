@@ -5490,8 +5490,8 @@ dummy_func(
                 }
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
-                int chain_depth = previous_executor->vm_data.chain_depth + 1;
-                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth);
+                // Set chain_depth to 0 because we want to keep tracing whatever we see next.
+                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), 0);
                 GOTO_TIER_ONE(target, 1);
             }
             exit->executor = executor;

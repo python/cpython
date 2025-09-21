@@ -805,7 +805,7 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
         lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
     }
     DPRINTF(2,
-        "Optimizing %s (%s:%d) at byte offset %d\n",
+        "Tracing %s (%s:%d) at byte offset %d\n",
         PyUnicode_AsUTF8(code->co_qualname),
         PyUnicode_AsUTF8(code->co_filename),
         code->co_firstlineno,
