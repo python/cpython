@@ -5818,7 +5818,7 @@
                 next_instr = this_instr;
                 DISPATCH_GOTO();
             }
-            TIER1_TO_TIER2(executor, 1);
+            TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -8147,7 +8147,9 @@
             {
                 #ifdef _Py_TIER2
                 _Py_BackoffCounter counter = this_instr[1].counter;
-                if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD_JIT) {
+                if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
+                    this_instr->op.code == JUMP_BACKWARD_JIT &&
+                    next_instr->op.code != ENTER_EXECUTOR) {
                     _Py_CODEUNIT *start = this_instr;
                     int curr_oparg = oparg;
                     while (curr_oparg > 255) {
@@ -18960,7 +18962,7 @@
                 next_instr = this_instr;
                 DISPATCH_GOTO();
             }
-            TIER1_TO_TIER2(executor, 1);
+            TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -21363,7 +21365,9 @@
             {
                 #ifdef _Py_TIER2
                 _Py_BackoffCounter counter = this_instr[1].counter;
-                if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD_JIT) {
+                if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
+                    this_instr->op.code == JUMP_BACKWARD_JIT &&
+                    next_instr->op.code != ENTER_EXECUTOR) {
                     _Py_CODEUNIT *start = this_instr;
                     int curr_oparg = oparg;
                     while (curr_oparg > 255) {

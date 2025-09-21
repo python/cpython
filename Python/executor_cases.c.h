@@ -7551,27 +7551,16 @@
         case _GUARD_IP: {
             PyObject *ip = (PyObject *)CURRENT_OPERAND0();
             if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
-                #ifdef Py_DEBUG
-                _Py_CODEUNIT *target = frame->instr_ptr;
-                if (frame->lltrace >= 2) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    printf("GUARD IP EXIT: [UOp ");
-                    _PyUOpPrint(&next_uop[-1]);
-                    printf(", target %d -> %s]\n",
-                           (int)(target - _PyFrame_GetBytecode(frame)),
-                           _PyOpcode_OpName[target->op.code]);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                }
-                #endif
-                GOTO_TIER_ONE(frame->instr_ptr, 1);
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
             }
             break;
         }
 
         case _DYNAMIC_EXIT: {
-            PyObject *ip = (PyObject *)CURRENT_OPERAND0();
-            #ifdef Py_DEBUG
+            PyObject *exit_p = (PyObject *)CURRENT_OPERAND0();
             _Py_CODEUNIT *target = frame->instr_ptr;
+            #ifdef Py_DEBUG
             if (frame->lltrace >= 2) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 printf("GUARD IP EXIT: [UOp ");
@@ -7582,7 +7571,32 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             #endif
-            GOTO_TIER_ONE(frame->instr_ptr, 1);
+            _PyExitData *exit = (_PyExitData *)exit_p;
+            tstate->jit_exit = exit_p;
+            _Py_BackoffCounter temperature = exit->temperature;
+            _PyExecutorObject *executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                PyCodeObject *code = _PyFrame_GetCode(frame);
+                executor = code->co_executors->executors[target->op.arg];
+                Py_INCREF(executor);
+            }
+            else {
+                if (!backoff_counter_triggers(temperature)) {
+                    exit->temperature = advance_backoff_counter(temperature);
+                    GOTO_TIER_ONE(frame->instr_ptr, 0);
+                }
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                assert(tstate->current_executor == (PyObject *)previous_executor);
+                int chain_depth = previous_executor->vm_data.chain_depth + 1;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                GOTO_TIER_ONE(target, 1);
+            }
+            exit->executor = executor;
+            TIER2_TO_TIER2(exit->executor);
             break;
         }
 

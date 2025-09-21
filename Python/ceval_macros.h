@@ -402,7 +402,7 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 /* Tier-switching macros. */
 
-#define TIER1_TO_TIER2(EXECUTOR, IN_ENTER_EXECUTOR)                        \
+#define TIER1_TO_TIER2(EXECUTOR)                        \
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
@@ -414,7 +414,8 @@ do {                                                   \
         next_instr = frame->instr_ptr;                 \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
-    if (!IN_ENTER_EXECUTOR && keep_tracing_bit) { \
+    if (keep_tracing_bit) { \
+        assert(next_instr->op.code != ENTER_EXECUTOR); \
         ENTER_TRACING(); \
         _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0); \
     } \

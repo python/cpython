@@ -842,7 +842,7 @@ count_exits(_PyUOpInstruction *buffer, int length)
     int exit_count = 0;
     for (int i = 0; i < length; i++) {
         int opcode = buffer[i].opcode;
-        if (opcode == _EXIT_TRACE) {
+        if (opcode == _EXIT_TRACE || opcode == _DYNAMIC_EXIT) {
             exit_count++;
         }
     }
@@ -898,7 +898,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             else if (exit_flags & HAS_PERIODIC_FLAG) {
                 exit_op = _HANDLE_PENDING_AND_DEOPT;
             }
-            if (opcode == _FOR_ITER_TIER_TWO) {
+            if (opcode == _FOR_ITER_TIER_TWO || opcode == _GUARD_IP) {
                 exit_op = _DYNAMIC_EXIT;
             }
             int32_t jump_target = target;
@@ -1053,7 +1053,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
         int opcode = buffer[i].opcode;
         dest--;
         *dest = buffer[i];
-        if (opcode == _EXIT_TRACE) {
+        if (opcode == _EXIT_TRACE || opcode == _DYNAMIC_EXIT) {
             _PyExitData *exit = &executor->exits[next_exit];
             exit->target = buffer[i].target;
             dest->operand0 = (uint64_t)exit;

@@ -2961,7 +2961,9 @@ dummy_func(
         tier1 op(_JIT, (--)) {
         #ifdef _Py_TIER2
             _Py_BackoffCounter counter = this_instr[1].counter;
-            if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) && this_instr->op.code == JUMP_BACKWARD_JIT) {
+            if (!IS_JIT_TRACING() && backoff_counter_triggers(counter) &&
+                this_instr->op.code == JUMP_BACKWARD_JIT &&
+                next_instr->op.code != ENTER_EXECUTOR) {
                 _Py_CODEUNIT *start = this_instr;
                 /* Back up over EXTENDED_ARGs so optimizer sees the whole instruction */
                 int curr_oparg = oparg;
@@ -3053,7 +3055,7 @@ dummy_func(
                 next_instr = this_instr;
                 DISPATCH_GOTO();
             }
-            TIER1_TO_TIER2(executor, 1);
+            TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -5458,24 +5460,12 @@ dummy_func(
         }
 
         tier2 op(_GUARD_IP, (ip/4 --)) {
-            if (frame->instr_ptr != (_Py_CODEUNIT *)ip) {
-#ifdef Py_DEBUG
-                _Py_CODEUNIT *target = frame->instr_ptr;
-                if (frame->lltrace >= 2) {
-                    printf("GUARD IP EXIT: [UOp ");
-                    _PyUOpPrint(&next_uop[-1]);
-                    printf(", target %d -> %s]\n",
-                        (int)(target - _PyFrame_GetBytecode(frame)),
-                        _PyOpcode_OpName[target->op.code]);
-                }
-#endif
-                GOTO_TIER_ONE(frame->instr_ptr, 1);
-            }
+            EXIT_IF(frame->instr_ptr != (_Py_CODEUNIT *)ip);
         }
 
-        tier2 op(_DYNAMIC_EXIT, (ip/4 --)) {
-#ifdef Py_DEBUG
+        tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
             _Py_CODEUNIT *target = frame->instr_ptr;
+#ifdef Py_DEBUG
             if (frame->lltrace >= 2) {
                 printf("GUARD IP EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
@@ -5484,7 +5474,28 @@ dummy_func(
                     _PyOpcode_OpName[target->op.code]);
             }
 #endif
-            GOTO_TIER_ONE(frame->instr_ptr, 1);
+            _PyExitData *exit = (_PyExitData *)exit_p;
+            tstate->jit_exit = exit_p;
+            _Py_BackoffCounter temperature = exit->temperature;
+            _PyExecutorObject *executor;
+            if (target->op.code == ENTER_EXECUTOR) {
+                PyCodeObject *code = _PyFrame_GetCode(frame);
+                executor = code->co_executors->executors[target->op.arg];
+                Py_INCREF(executor);
+            }
+            else {
+                if (!backoff_counter_triggers(temperature)) {
+                    exit->temperature = advance_backoff_counter(temperature);
+                    GOTO_TIER_ONE(frame->instr_ptr, 0);
+                }
+                _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
+                assert(tstate->current_executor == (PyObject *)previous_executor);
+                int chain_depth = previous_executor->vm_data.chain_depth + 1;
+                _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth);
+                GOTO_TIER_ONE(target, 1);
+            }
+            exit->executor = executor;
+            TIER2_TO_TIER2(exit->executor);
         }
 
         label(pop_2_error) {
