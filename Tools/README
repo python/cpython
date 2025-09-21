@@ -16,7 +16,7 @@ clinic          A preprocessor for CPython C files in order to automate
 
 freeze          Create a stand-alone executable from a Python program.
 
-ftscalingbench  Benchmarks for FT and finding bottlenecks.
+ftscalingbench  Benchmarks for free-threading and finding bottlenecks.
 
 gdb             Python code to be run inside gdb, to make it easier to
                 debug Python itself (by David Malcolm).
