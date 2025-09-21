@@ -168,11 +168,6 @@ typedef struct {
 
     PyObject *uint128_max;
 
-    PyObject *reserved_ncs;
-    PyObject *rfc_4122;
-    PyObject *reserved_microsoft;
-    PyObject *reserved_future;
-
     PyObject *random_func;
     PyObject *random_size_int;
     PyObject *time_func;
@@ -1046,6 +1041,19 @@ Uuid_get_hex(PyObject *o, void *closure)
 }
 
 static PyObject *
+get_variant_marker(uuid_state *state, const char *name)
+{
+    PyObject *mod = PyImport_ImportModule("uuid");
+    if (mod == NULL) {
+        return NULL;
+    }
+
+    PyObject *ret = PyObject_GetAttrString(mod, name);
+    Py_DECREF(mod);
+    return ret;
+}
+
+static PyObject *
 Uuid_get_variant(PyObject *o, void *closure)
 {
     uuidobject *self = (uuidobject *)o;
@@ -1056,23 +1064,23 @@ Uuid_get_variant(PyObject *o, void *closure)
     // xxx - three high bits of variant_byte are unknown
     if (!(variant_byte & 0x80)) {   // & 0b1000_0000
         // 0xx - RESERVED_NCS
-        return Py_NewRef(state->reserved_ncs);
+        return get_variant_marker(state, "RESERVED_NCS");
     }
 
     // 1xx -- we know that high bit must be 1
     if (!(variant_byte & 0x40)) {   // & 0b0100_0000
         // 10x - RFC_4122
-        return Py_NewRef(state->rfc_4122);
+        return get_variant_marker(state, "RFC_4122");
     }
 
     // 11x -- we know that two high bits are 1
     if (!(variant_byte & 0x20)) {   // & 0b0010_0000
         // 110 - RESERVED_MICROSOFT
-        return Py_NewRef(state->reserved_microsoft);
+        return get_variant_marker(state, "RESERVED_MICROSOFT");
     }
 
     // 111 -- we know that all three high bits are 1 - RESERVED_FUTURE
-    return Py_NewRef(state->reserved_future);
+    return get_variant_marker(state, "RESERVED_FUTURE");
 }
 
 static int
@@ -1693,10 +1701,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->UuidType);
     Py_VISIT(state->safe_uuid);
     Py_VISIT(state->uint128_max);
-    Py_VISIT(state->reserved_ncs);
-    Py_VISIT(state->rfc_4122);
-    Py_VISIT(state->reserved_microsoft);
-    Py_VISIT(state->reserved_future);
     Py_VISIT(state->random_func);
     Py_VISIT(state->time_func);
     Py_VISIT(state->random_size_int);
@@ -1711,10 +1715,6 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->UuidType);
     Py_CLEAR(state->safe_uuid);
     Py_CLEAR(state->uint128_max);
-    Py_CLEAR(state->reserved_ncs);
-    Py_CLEAR(state->rfc_4122);
-    Py_CLEAR(state->reserved_microsoft);
-    Py_CLEAR(state->reserved_future);
     Py_CLEAR(state->random_func);
     Py_CLEAR(state->time_func);
     Py_CLEAR(state->random_size_int);
@@ -1796,26 +1796,6 @@ uuid_exec(PyObject *module)
 
     state->uint128_max = compute_uuid_max();
     if (state->uint128_max == NULL) {
-        goto fail;
-    }
-
-    state->reserved_ncs = PyObject_GetAttrString(uuid_mod, "RESERVED_NCS");
-    if (state->reserved_ncs == NULL) {
-        goto fail;
-    }
-
-    state->rfc_4122 = PyObject_GetAttrString(uuid_mod, "RFC_4122");
-    if (state->rfc_4122 == NULL) {
-        goto fail;
-    }
-
-    state->reserved_microsoft = PyObject_GetAttrString(uuid_mod, "RESERVED_MICROSOFT");
-    if (state->reserved_microsoft == NULL) {
-        goto fail;
-    }
-
-    state->reserved_future = PyObject_GetAttrString(uuid_mod, "RESERVED_FUTURE");
-    if (state->reserved_future == NULL) {
         goto fail;
     }
 
