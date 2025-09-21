@@ -975,12 +975,11 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 
 // 1 for trace full, 0 for successful write.
 static int
-add_to_code_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, PyCodeObject *old_code, _Py_CODEUNIT *this_instr, _Py_CODEUNIT *next_instr, int opcode, int oparg, int jump_taken)
+add_to_code_trace(PyThreadState *tstate, _PyInterpreterFrame *frame, PyCodeObject *old_code, PyFunctionObject *old_func, _Py_CODEUNIT *this_instr, _Py_CODEUNIT *next_instr, int opcode, int oparg, int jump_taken)
 {
     assert(frame != NULL);
     assert(tstate->interp->jit_tracer_code_curr_size < UOP_MAX_TRACE_LENGTH);
-    PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-    return !_PyJIT_translate_single_bytecode_to_trace(tstate, frame, this_instr, next_instr, old_code, func, opcode, oparg, jump_taken);
+    return !_PyJIT_translate_single_bytecode_to_trace(tstate, frame, this_instr, next_instr, old_code, old_func, opcode, oparg, jump_taken);
 }
 
 /* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
@@ -1195,14 +1194,15 @@ tier2_dispatch:
     for (;;) {
         uopcode = next_uop->opcode;
 #ifdef Py_DEBUG
-        if (frame->lltrace >= 4 &&
-            next_uop->opcode != _YIELD_VALUE &&
+        if (frame->lltrace >= 4) {
+            if (next_uop->opcode != _YIELD_VALUE &&
             next_uop->opcode != _FOR_ITER_GEN_FRAME &&
             next_uop->opcode != _PUSH_FRAME &&
             next_uop->opcode != _PY_FRAME_KW &&
             next_uop->opcode != _SAVE_RETURN_OFFSET &&
             next_uop->opcode != _SAVE_RETURN_OFFSET) {
-            dump_stack(frame, stack_pointer);
+                dump_stack(frame, stack_pointer);
+            }
             if (next_uop->opcode == _START_EXECUTOR) {
                 printf("%4d uop: ", 0);
             }

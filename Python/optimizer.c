@@ -144,24 +144,19 @@ _PyOptimizer_Optimize(
         return err;
     }
     assert(executor != NULL);
-    if (progress_needed) {
-        int index = get_index_for_executor(code, start);
-        if (index < 0) {
-            /* Out of memory. Don't raise and assume that the
-             * error will show up elsewhere.
-             *
-             * If an optimizer has already produced an executor,
-             * it might get confused by the executor disappearing,
-             * but there is not much we can do about that here. */
-            Py_DECREF(executor);
-            interp->compiling = false;
-            return 0;
-        }
-        insert_executor(code, start, index, executor);
+    int index = get_index_for_executor(code, start);
+    if (index < 0) {
+        /* Out of memory. Don't raise and assume that the
+         * error will show up elsewhere.
+         *
+         * If an optimizer has already produced an executor,
+         * it might get confused by the executor disappearing,
+         * but there is not much we can do about that here. */
+        Py_DECREF(executor);
+        interp->compiling = false;
+        return 0;
     }
-    else {
-        executor->vm_data.code = NULL;
-    }
+    insert_executor(code, start, index, executor);
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
     interp->compiling = false;
@@ -590,10 +585,11 @@ _PyJIT_translate_single_bytecode_to_trace(
     }
 
     if (opcode == ENTER_EXECUTOR) {
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+        ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
+        ADD_TO_TRACE(_EXIT_TRACE, 0, 0, target);
         goto full;
     }
-
-    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
 
     bool needs_guard_ip = _PyOpcode_NeedsGuardIp[opcode] &&
         !(opcode == FOR_ITER_RANGE || opcode == FOR_ITER_LIST || opcode == FOR_ITER_TUPLE) &&
@@ -613,6 +609,8 @@ _PyJIT_translate_single_bytecode_to_trace(
         curr->opcode = _EXIT_TRACE;
         goto done;
     }
+
+    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
 
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
     RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
@@ -674,6 +672,7 @@ _PyJIT_translate_single_bytecode_to_trace(
             break;
 
         case RESUME:
+        case RESUME_CHECK:
             /* Use a special tier 2 version of RESUME_CHECK to allow traces to
              *  start with RESUME_CHECK */
             ADD_TO_TRACE(_TIER2_RESUME_CHECK, 0, 0, target);
@@ -819,6 +818,7 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_tracer_initial_code = code;
     tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
     tstate->interp->jit_tracer_seen_initial_before = 0;
+    memset(&tstate->interp->jit_tracer_dependencies.bits, 0, sizeof(tstate->interp->jit_tracer_dependencies.bits));
     tstate->interp->jit_completed_loop = false;
     tstate->interp->jit_tracer_initial_stack_depth = curr_stackdepth;
     tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
@@ -898,10 +898,11 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             else if (exit_flags & HAS_PERIODIC_FLAG) {
                 exit_op = _HANDLE_PENDING_AND_DEOPT;
             }
+            int32_t jump_target = target;
             if (opcode == _FOR_ITER_TIER_TWO || opcode == _GUARD_IP) {
                 exit_op = _DYNAMIC_EXIT;
+                jump_target = current_jump_target + 1;
             }
-            int32_t jump_target = target;
             if (is_for_iter_test[opcode]) {
                 /* Target the POP_TOP immediately after the END_FOR,
                  * leaving only the iterator on the stack. */
@@ -1057,6 +1058,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
             _PyExitData *exit = &executor->exits[next_exit];
             exit->target = buffer[i].target;
             dest->operand0 = (uint64_t)exit;
+            exit->is_dynamic = (char)(opcode == _DYNAMIC_EXIT);
             next_exit--;
         }
     }

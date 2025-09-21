@@ -36,7 +36,7 @@ class TracerEmitter(Emitter):
     cannot_escape: bool
 
     def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False):
-        super().__init__(out, labels, cannot_escape)
+        super().__init__(out, labels, cannot_escape, is_tracing=True)
         self._replacers = {
             **self._replacers,
             "DISPATCH": self.dispatch,

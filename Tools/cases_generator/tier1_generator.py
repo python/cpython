@@ -237,6 +237,8 @@ def generate_tier1_cases(
         out.emit(f"#endif\n")
         out.emit(f"PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);\n")
         out.emit(f"(void)old_code;\n")
+        out.emit(f"PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);\n")
+        out.emit(f"(void)old_func;\n")
         out.emit(f"int _jump_taken = false;\n")
         out.emit(f"(void)_jump_taken;\n")
         needs_this = is_tracing or uses_this(inst)

@@ -37,6 +37,7 @@ typedef struct {
 typedef struct _PyExitData {
     uint32_t target;
     uint16_t index;
+    char is_dynamic;
     _Py_BackoffCounter temperature;
     struct _PyExecutorObject *executor;
 } _PyExitData;
@@ -44,6 +45,7 @@ typedef struct _PyExitData {
 typedef struct _PyExecutorObject {
     PyObject_VAR_HEAD
     const _PyUOpInstruction *trace;
+    _Py_CODEUNIT *expected_entrypoint;
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
     uint32_t exit_count;
     uint32_t code_size;

@@ -130,14 +130,20 @@
 #  define LABEL(name) name:
 #endif
 
+#define TRACING_JUMP_TO_LABEL(label) \
+    RECORD_JUMP_TAKEN() \
+    RECORD_TRACE() \
+    BAIL_TRACING_NO_DISPATCH() \
+    JUMP_TO_LABEL(label);
+
 #if _Py_TAIL_CALL_INTERP || USE_COMPUTED_GOTOS
 #  define IS_JIT_TRACING() (DISPATCH_TABLE_VAR == TRACING_DISPATCH_TABLE)
 #  define ENTER_TRACING() DISPATCH_TABLE_VAR = TRACING_DISPATCH_TABLE;
 #  define LEAVE_TRACING() DISPATCH_TABLE_VAR = DISPATCH_TABLE;
 #  define BAIL_TRACING_NO_DISPATCH() \
     LEAVE_TRACING(); \
-    int err = _PyOptimizer_Optimize(frame, tstate); \
-    if (err < 0) { \
+    int _err = _PyOptimizer_Optimize(frame, tstate); \
+    if (_err < 0) { \
         JUMP_TO_LABEL(error); \
     }
 #  define BAIL_TRACING() \
@@ -145,13 +151,13 @@
     DISPATCH();
 #  define RECORD_TRACE() do { \
         frame->instr_ptr = next_instr; \
-        if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
+        if (add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING(); \
         } \
     } while (0);
 #  define RECORD_TRACE_NO_DISPATCH() do { \
         frame->instr_ptr = next_instr; \
-        if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
+        if (add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING_NO_DISPATCH(); \
         } \
     } while (0);
@@ -415,7 +421,9 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
+        assert(next_instr == frame->instr_ptr); \
         assert(next_instr->op.code != ENTER_EXECUTOR); \
+        assert(tstate->interp->jit_tracer_code_curr_size == 2); \
         ENTER_TRACING(); \
     } \
     else { \

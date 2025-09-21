@@ -107,8 +107,9 @@ class Emitter:
     labels: dict[str, Label]
     _replacers: dict[str, ReplacementFunctionType]
     cannot_escape: bool
+    tracing: str
 
-    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False):
+    def __init__(self, out: CWriter, labels: dict[str, Label], cannot_escape: bool = False, is_tracing: bool = False):
         self._replacers = {
             "EXIT_IF": self.exit_if,
             "AT_END_EXIT_IF": self.exit_if_after,
@@ -132,6 +133,7 @@ class Emitter:
         self.out = out
         self.labels = labels
         self.cannot_escape = cannot_escape
+        self.tracing = "TRACING_" if is_tracing else ""
 
     def dispatch(
         self,
@@ -199,10 +201,10 @@ class Emitter:
 
     def goto_error(self, offset: int, storage: Storage) -> str:
         if offset > 0:
-            return f"JUMP_TO_LABEL(pop_{offset}_error);"
+            return f"{self.tracing}JUMP_TO_LABEL(pop_{offset}_error);"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"JUMP_TO_LABEL(error);"
+        return f"{self.tracing}JUMP_TO_LABEL(error);"
 
     def error_if(
         self,
@@ -422,7 +424,7 @@ class Emitter:
         elif storage.spilled:
             raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
         self.out.start_line()
-        self.out.emit("JUMP_TO_LABEL(")
+        self.out.emit(f"{self.tracing}JUMP_TO_LABEL(")
         self.out.emit(label)
         self.out.emit(")")
 

@@ -25,6 +25,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -92,6 +94,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -154,6 +158,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -218,6 +224,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -282,6 +290,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -350,6 +360,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -437,6 +449,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -499,6 +513,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -563,6 +579,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -633,6 +651,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -721,6 +741,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -815,6 +837,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -891,6 +915,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -973,6 +999,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -1050,6 +1078,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -1112,6 +1142,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -1176,6 +1208,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1236,6 +1270,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1298,6 +1334,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1326,6 +1364,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1382,6 +1422,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1443,6 +1485,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1482,6 +1526,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1533,6 +1579,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1575,6 +1623,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1601,6 +1651,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1618,6 +1670,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -1800,6 +1854,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -1925,6 +1981,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -2072,6 +2130,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -2204,6 +2264,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -2313,6 +2375,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -2426,6 +2490,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -2539,6 +2605,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -2627,6 +2695,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -2798,6 +2868,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -2832,6 +2904,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -2875,6 +2949,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -2955,6 +3031,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -3141,6 +3219,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -3275,6 +3355,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -3406,6 +3488,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -3520,6 +3604,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -3596,6 +3682,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -3688,6 +3776,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -3813,6 +3903,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -3940,6 +4032,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4037,6 +4131,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4147,6 +4243,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4266,6 +4364,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4383,6 +4483,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4487,6 +4589,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4563,6 +4667,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4639,6 +4745,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4698,6 +4806,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -4773,6 +4883,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -4814,6 +4926,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -4877,6 +4991,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -4954,6 +5070,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -5013,6 +5131,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -5076,6 +5196,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -5139,6 +5261,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5203,6 +5327,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -5265,6 +5391,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -5327,6 +5455,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5363,6 +5493,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5385,6 +5517,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5410,6 +5544,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5439,6 +5575,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5465,6 +5603,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5495,6 +5635,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5524,6 +5666,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5560,6 +5704,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5596,6 +5742,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5639,6 +5787,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5686,6 +5836,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -5735,6 +5887,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             next_instr += 1;
@@ -5756,6 +5910,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5783,6 +5939,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -5832,6 +5990,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5859,6 +6019,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5879,6 +6041,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5919,6 +6083,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -5959,6 +6125,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6017,6 +6185,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -6092,6 +6262,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -6180,6 +6352,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -6251,6 +6425,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -6311,6 +6487,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6376,6 +6554,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6404,6 +6584,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6437,6 +6619,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6487,6 +6671,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6519,6 +6705,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6568,6 +6756,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6597,6 +6787,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -6640,6 +6832,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -6832,6 +7026,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7003,6 +7199,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7193,6 +7391,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7250,6 +7450,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7283,6 +7485,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7321,6 +7525,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7361,6 +7567,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7392,6 +7600,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7423,6 +7633,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7441,6 +7653,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
@@ -7485,6 +7699,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7609,6 +7825,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
@@ -7629,6 +7847,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
@@ -7658,6 +7878,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7686,6 +7908,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7721,6 +7945,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7754,6 +7980,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7782,6 +8010,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7866,6 +8096,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7922,6 +8154,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -7997,6 +8231,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8036,6 +8272,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8073,6 +8311,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8118,6 +8358,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8164,9 +8406,7 @@
                             DISPATCH();
                         }
                     }
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     ENTER_TRACING();
                     DISPATCH();
                 }
@@ -8185,6 +8425,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8204,6 +8446,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8237,6 +8481,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8253,6 +8499,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8279,6 +8527,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8330,6 +8580,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -8415,6 +8667,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8477,6 +8731,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8549,6 +8805,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8611,6 +8869,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8695,6 +8955,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8755,6 +9017,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8805,6 +9069,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8876,6 +9142,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -8954,6 +9222,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -9005,6 +9275,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -9077,6 +9349,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -9175,6 +9449,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -9248,6 +9524,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -9362,6 +9640,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9396,6 +9676,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9417,6 +9699,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9438,6 +9722,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9470,6 +9756,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9491,6 +9779,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9512,6 +9802,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9533,6 +9825,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9558,6 +9852,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9588,6 +9884,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9613,6 +9911,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9662,6 +9962,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9741,6 +10043,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9801,6 +10105,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -9885,6 +10191,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -9956,6 +10264,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -9984,6 +10294,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10011,6 +10323,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10033,6 +10347,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10083,6 +10399,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10224,6 +10542,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -10290,6 +10610,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -10372,6 +10694,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10397,6 +10721,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10434,6 +10760,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10469,6 +10797,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10525,6 +10855,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10556,6 +10888,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10579,6 +10913,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10602,6 +10938,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10617,6 +10955,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10632,6 +10972,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10657,6 +10999,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10682,6 +11026,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -10708,6 +11054,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -10755,6 +11103,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -10802,6 +11152,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -10828,6 +11180,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10850,6 +11204,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10883,6 +11239,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10903,6 +11261,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -10936,6 +11296,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -10968,6 +11330,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -10985,6 +11349,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11065,6 +11431,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -11107,6 +11475,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11153,6 +11523,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11191,6 +11563,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11300,6 +11674,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -11373,6 +11749,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11423,6 +11801,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11451,6 +11831,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11483,6 +11865,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11514,6 +11898,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11575,6 +11961,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -11655,6 +12043,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -11710,6 +12100,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -11802,6 +12194,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11825,6 +12219,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11849,6 +12245,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11876,6 +12274,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11911,6 +12311,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11940,6 +12342,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -11990,6 +12394,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12054,6 +12460,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12117,6 +12525,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12172,6 +12582,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12257,6 +12669,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12281,6 +12695,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12337,6 +12753,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12384,6 +12802,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12412,6 +12832,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12456,6 +12878,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12503,6 +12927,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12534,6 +12960,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12586,6 +13014,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12619,6 +13049,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12652,6 +13084,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12674,6 +13108,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12705,6 +13141,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12760,6 +13198,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12823,6 +13263,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12877,6 +13319,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -12932,6 +13376,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -12981,6 +13427,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -13037,6 +13485,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -13078,7 +13528,7 @@
                 PyObject *res_o = _PyEval_BinaryOps[oparg](lhs_o, rhs_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -13105,6 +13555,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13151,7 +13603,7 @@
                 ((PyFloatObject *)right_o)->ob_fval;
                 res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
                 if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    TRACING_JUMP_TO_LABEL(pop_2_error);
                 }
             }
             stack_pointer[-2] = res;
@@ -13168,6 +13620,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13233,6 +13687,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13280,7 +13736,7 @@
                 PyStackRef_CLOSE_SPECIALIZED(right, _PyUnicode_ExactDealloc);
                 PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    TRACING_JUMP_TO_LABEL(pop_2_error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -13298,6 +13754,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13367,6 +13825,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13436,7 +13896,7 @@
                 Py_DECREF(right_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (PyStackRef_IsNull(*target_local)) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 #if TIER_ONE
 
@@ -13455,6 +13915,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13501,7 +13963,7 @@
                 ((PyFloatObject *)right_o)->ob_fval;
                 res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
                 if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    TRACING_JUMP_TO_LABEL(pop_2_error);
                 }
             }
             stack_pointer[-2] = res;
@@ -13518,6 +13980,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13583,6 +14047,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13636,7 +14102,7 @@
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 if (rc <= 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -13654,6 +14120,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13743,6 +14211,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13838,6 +14308,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13897,7 +14369,7 @@
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -13915,6 +14387,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -13998,6 +14472,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14076,6 +14552,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14122,7 +14600,7 @@
                 ((PyFloatObject *)right_o)->ob_fval;
                 res = _PyFloat_FromDouble_ConsumeInputs(left, right, dres);
                 if (PyStackRef_IsNull(res)) {
-                    JUMP_TO_LABEL(pop_2_error);
+                    TRACING_JUMP_TO_LABEL(pop_2_error);
                 }
             }
             stack_pointer[-2] = res;
@@ -14139,6 +14617,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14204,6 +14684,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14249,7 +14731,7 @@
                 PyStackRef_CLOSE(container);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -14267,6 +14749,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14315,7 +14799,7 @@
             PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (interpolation_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
             stack_pointer[0] = interpolation;
@@ -14332,6 +14816,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14346,7 +14832,7 @@
             PyObject *list_o = _PyList_FromStackRefStealOnSuccess(values, oparg);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (list_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             list = PyStackRef_FromPyObjectStealMortal(list_o);
             stack_pointer[-oparg] = list;
@@ -14363,6 +14849,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14385,7 +14873,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -oparg*2;
                 assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *map_o = _PyDict_FromItems(
@@ -14405,7 +14893,7 @@
             stack_pointer += -oparg*2;
             assert(WITHIN_STACK_BOUNDS());
             if (map_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             map = PyStackRef_FromPyObjectStealMortal(map_o);
             stack_pointer[0] = map;
@@ -14422,6 +14910,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14446,7 +14936,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             int err = 0;
             for (Py_ssize_t i = 0; i < oparg; i++) {
@@ -14469,7 +14959,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_DECREF(set_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             set = PyStackRef_FromPyObjectStealMortal(set_o);
             stack_pointer[-oparg] = set;
@@ -14486,6 +14976,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14511,7 +15003,7 @@
             stack_pointer += -oparg;
             assert(WITHIN_STACK_BOUNDS());
             if (slice_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             slice = PyStackRef_FromPyObjectStealMortal(slice_o);
             stack_pointer[0] = slice;
@@ -14528,6 +15020,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14550,7 +15044,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             PyObject *str_o = _PyUnicode_JoinArray(&_Py_STR(empty), pieces_o, oparg);
             STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
@@ -14565,7 +15059,7 @@
             stack_pointer += -oparg;
             assert(WITHIN_STACK_BOUNDS());
             if (str_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             str = PyStackRef_FromPyObjectSteal(str_o);
             stack_pointer[0] = str;
@@ -14582,6 +15076,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14610,7 +15106,7 @@
             PyStackRef_CLOSE(strings);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (template_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             template = PyStackRef_FromPyObjectSteal(template_o);
             stack_pointer[0] = template;
@@ -14627,6 +15123,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14639,7 +15137,7 @@
             values = &stack_pointer[-oparg];
             PyObject *tup_o = _PyTuple_FromStackRefStealOnSuccess(values, oparg);
             if (tup_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             tup = PyStackRef_FromPyObjectStealMortal(tup_o);
             stack_pointer[-oparg] = tup;
@@ -14656,6 +15154,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14676,6 +15176,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -14751,7 +15253,7 @@
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
                     if (new_frame == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     frame->return_offset = 4u ;
                     DISPATCH_INLINED(new_frame);
@@ -14778,7 +15280,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 stack_pointer[-2 - oparg] = callable;
                 stack_pointer[-1 - oparg] = self_or_null;
@@ -14832,7 +15334,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -14845,7 +15347,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -14859,6 +15361,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -14921,7 +15425,7 @@
                 PyObject *self_o = PyType_GenericAlloc(tp, 0);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (self_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 self_or_null = PyStackRef_FromPyObjectSteal(self_o);
                 _PyStackRef temp = callable;
@@ -14954,7 +15458,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyEval_FrameClearAndPop(tstate, shim);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                 tstate->py_recursion_remaining--;
@@ -14985,6 +15489,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15133,6 +15639,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15229,7 +15737,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 new_frame = PyStackRef_Wrap(temp);
             }
@@ -15266,6 +15774,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15324,7 +15834,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
@@ -15349,7 +15859,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -15362,7 +15872,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -15376,6 +15886,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15434,7 +15946,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = _PyCFunctionFast_CAST(cfunc)(
@@ -15463,7 +15975,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -15476,7 +15988,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -15490,6 +16002,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15551,7 +16065,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = cfunc(PyCFunction_GET_SELF(callable_o), args_o, total_args, NULL);
@@ -15577,7 +16091,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -15590,7 +16104,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -15604,6 +16118,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15666,7 +16182,7 @@
                 PyStackRef_CLOSE(callable);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -15679,7 +16195,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -15693,6 +16209,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15718,13 +16236,13 @@
                     int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err < 0) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyObject *tuple_o = PySequence_Tuple(callargs_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (tuple_o == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     _PyStackRef temp = callargs;
                     callargs = PyStackRef_FromPyObjectSteal(tuple_o);
@@ -15759,7 +16277,7 @@
                         frame, this_instr, func, arg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     result_o = PyObject_Call(func, callargs, kwargs);
@@ -15807,7 +16325,7 @@
                         stack_pointer += -2;
                         assert(WITHIN_STACK_BOUNDS());
                         if (new_frame == NULL) {
-                            JUMP_TO_LABEL(error);
+                            TRACING_JUMP_TO_LABEL(error);
                         }
                         assert( 1u == 1);
                         frame->return_offset = 1;
@@ -15838,7 +16356,7 @@
                 PyStackRef_CLOSE(func_st);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (result_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 result = PyStackRef_FromPyObjectSteal(result_o);
             }
@@ -15851,7 +16369,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -15865,6 +16383,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15885,7 +16405,7 @@
             PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -15902,6 +16422,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15931,7 +16453,7 @@
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -15948,6 +16470,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -15994,7 +16518,7 @@
                 int retval = PyObject_IsInstance(inst_o, cls_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (retval < 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 (void)null;
                 stack_pointer += -1;
@@ -16029,6 +16553,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -16111,7 +16637,7 @@
                     PyStackRef_CLOSE(kwnames);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (new_frame == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     assert( 4u == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
                     frame->return_offset = 4u ;
@@ -16142,7 +16668,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -3 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 stack_pointer[-3 - oparg] = callable;
                 stack_pointer[-2 - oparg] = self_or_null;
@@ -16198,7 +16724,7 @@
                 stack_pointer += -3 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -16216,6 +16742,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -16314,7 +16842,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 new_frame = PyStackRef_Wrap(temp);
             }
@@ -16351,6 +16879,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -16420,7 +16950,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -3 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 PyObject *kwnames_o = PyStackRef_AsPyObjectBorrow(kwnames);
                 int positional_args = total_args - (int)PyTuple_GET_SIZE(kwnames_o);
@@ -16456,7 +16986,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -16469,7 +16999,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -16483,6 +17013,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -16561,7 +17093,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 new_frame = PyStackRef_Wrap(temp);
             }
@@ -16598,6 +17130,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -16642,12 +17176,12 @@
                 Py_ssize_t len_i = PyObject_Length(arg_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (len_i < 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 PyObject *res_o = PyLong_FromSsize_t(len_i);
                 assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
@@ -16675,6 +17209,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -16749,7 +17285,7 @@
                 PyStackRef_CLOSE(callable);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 #if TIER_ONE
 
@@ -16768,6 +17304,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -16840,7 +17378,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
@@ -16867,7 +17405,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -16880,7 +17418,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -16894,6 +17432,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -16967,7 +17507,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyCFunctionFastWithKeywords cfunc =
@@ -16995,7 +17535,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -17008,7 +17548,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -17022,6 +17562,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17093,7 +17635,7 @@
                 PyStackRef_CLOSE(callable);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -17106,7 +17648,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -17120,6 +17662,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17204,7 +17748,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -17217,7 +17761,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -17231,6 +17775,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17295,7 +17841,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Vectorcall(
@@ -17324,7 +17870,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -17337,7 +17883,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -17351,6 +17897,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17469,6 +18017,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17537,7 +18087,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (temp == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 new_frame = PyStackRef_Wrap(temp);
             }
@@ -17574,6 +18124,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17624,7 +18176,7 @@
                 PyStackRef_CLOSE(arg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -17637,7 +18189,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -17651,6 +18203,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17701,7 +18255,7 @@
                 PyStackRef_CLOSE(arg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -17714,7 +18268,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -17728,6 +18282,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17788,6 +18344,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17819,7 +18377,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             PyObject *match_o = NULL;
             PyObject *rest_o = NULL;
@@ -17838,11 +18396,11 @@
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             if (res < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             assert((match_o == NULL) == (rest_o == NULL));
             if (match_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (!Py_IsNone(match_o)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -17866,6 +18424,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17885,7 +18445,7 @@
             int err = _PyEval_CheckExceptTypeValid(tstate, right_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int res = PyErr_GivenExceptionMatches(left_o, right_o);
@@ -17910,6 +18470,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -17957,7 +18519,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
                 monitor_reraise(tstate, frame, this_instr);
-                JUMP_TO_LABEL(exception_unwind);
+                TRACING_JUMP_TO_LABEL(exception_unwind);
             }
             stack_pointer[0] = none;
             stack_pointer[1] = value;
@@ -17974,6 +18536,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -18022,7 +18586,7 @@
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 if (oparg & 16) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -18030,7 +18594,7 @@
                     Py_DECREF(res_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (res_bool < 0) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     res = res_bool ? PyStackRef_True : PyStackRef_False;
                 }
@@ -18052,6 +18616,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18112,6 +18678,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18176,6 +18744,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18240,6 +18810,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -18287,7 +18859,7 @@
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res < 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             }
@@ -18305,6 +18877,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18350,7 +18924,7 @@
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res < 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             }
@@ -18368,6 +18942,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18413,7 +18989,7 @@
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res < 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
             }
@@ -18431,6 +19007,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18453,7 +19031,7 @@
             PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (result_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             result = PyStackRef_FromPyObjectSteal(result_o);
             stack_pointer[0] = result;
@@ -18470,6 +19048,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18495,6 +19075,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18523,6 +19105,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18542,7 +19126,7 @@
             PyStackRef_CLOSE(owner);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             TRACING_DISPATCH();
         }
@@ -18555,6 +19139,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18568,7 +19154,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(oldobj);
@@ -18584,6 +19170,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18599,7 +19187,7 @@
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyStackRef tmp = GETLOCAL(oparg);
             GETLOCAL(oparg) = PyStackRef_NULL;
@@ -18617,6 +19205,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18629,14 +19219,14 @@
             int err = PyDict_Pop(GLOBALS(), name, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (err == 0) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcCheckArg(tstate, PyExc_NameError,
                     NAME_ERROR_MSG, name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             TRACING_DISPATCH();
         }
@@ -18649,6 +19239,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18664,7 +19256,7 @@
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals when deleting %R", name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             err = PyObject_DelItem(ns, name);
@@ -18675,7 +19267,7 @@
                     NAME_ERROR_MSG,
                     name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             TRACING_DISPATCH();
         }
@@ -18688,6 +19280,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18714,7 +19308,7 @@
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             if (err) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             TRACING_DISPATCH();
         }
@@ -18727,6 +19321,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18755,7 +19351,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(update);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -18773,6 +19369,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18805,7 +19403,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(update);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -18823,6 +19421,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18860,7 +19460,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_SetRaisedException(tstate, exc);
                 monitor_reraise(tstate, frame, this_instr);
-                JUMP_TO_LABEL(exception_unwind);
+                TRACING_JUMP_TO_LABEL(exception_unwind);
             }
             TRACING_DISPATCH();
         }
@@ -18873,6 +19473,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18897,6 +19499,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18927,6 +19531,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18977,6 +19583,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -18992,7 +19600,7 @@
                              "__init__() should return None, not '%.200s'",
                              Py_TYPE(PyStackRef_AsPyObjectBorrow(should_be_none))->tp_name);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -19007,6 +19615,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19030,6 +19640,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19051,7 +19663,7 @@
                 PyStackRef_CLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -19073,6 +19685,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19099,7 +19713,7 @@
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -19116,6 +19730,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -19152,7 +19768,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (!PyStackRef_IsValid(item)) {
                     if (PyStackRef_IsError(item)) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     JUMPBY(oparg + 1);
                     RECORD_JUMP_TAKEN();
@@ -19176,6 +19792,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19252,6 +19870,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19342,6 +19962,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19397,7 +20019,7 @@
                 r->len--;
                 PyObject *res = PyLong_FromLong(value);
                 if (res == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 next = PyStackRef_FromPyObjectSteal(res);
             }
@@ -19415,6 +20037,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19477,6 +20101,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19506,7 +20132,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(obj);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             iter_o = (*getter)(obj_o);
@@ -19517,7 +20143,7 @@
             PyStackRef_CLOSE(obj);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (iter_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (Py_TYPE(iter_o)->tp_as_async == NULL ||
                 Py_TYPE(iter_o)->tp_as_async->am_anext == NULL) {
@@ -19528,7 +20154,7 @@
                               Py_TYPE(iter_o)->tp_name);
                 Py_DECREF(iter_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             stack_pointer[0] = iter;
@@ -19545,6 +20171,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19559,7 +20187,7 @@
             PyObject *awaitable_o = _PyEval_GetANext(PyStackRef_AsPyObjectBorrow(aiter));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (awaitable_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             awaitable = PyStackRef_FromPyObjectSteal(awaitable_o);
             stack_pointer[0] = awaitable;
@@ -19576,6 +20204,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19595,7 +20225,7 @@
             PyStackRef_CLOSE(iterable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (iter_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             iter = PyStackRef_FromPyObjectSteal(iter_o);
             stack_pointer[0] = iter;
@@ -19612,6 +20242,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19644,7 +20276,7 @@
                 PyStackRef_CLOSE(iterable);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (iter_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 iter = PyStackRef_FromPyObjectSteal(iter_o);
                 index_or_null = PyStackRef_NULL;
@@ -19665,6 +20297,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19679,11 +20313,11 @@
             Py_ssize_t len_i = PyObject_Length(PyStackRef_AsPyObjectBorrow(obj));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (len_i < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             PyObject *len_o = PyLong_FromSsize_t(len_i);
             if (len_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             len = PyStackRef_FromPyObjectSteal(len_o);
             stack_pointer[0] = len;
@@ -19700,6 +20334,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19718,7 +20354,7 @@
                                      "cannot 'yield from' a coroutine object "
                                      "in a non-coroutine generator");
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 iter = iterable;
             }
@@ -19730,7 +20366,7 @@
                 PyObject *iter_o = PyObject_GetIter(iterable_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (iter_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 iter = PyStackRef_FromPyObjectSteal(iter_o);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -19752,6 +20388,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19767,7 +20405,7 @@
             PyObject *res_o = _PyEval_ImportFrom(tstate, PyStackRef_AsPyObjectBorrow(from), name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -19784,6 +20422,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19813,7 +20453,7 @@
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -19830,6 +20470,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -19889,7 +20531,7 @@
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             // _DO_CALL
@@ -19919,7 +20561,7 @@
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
                     if (new_frame == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     frame->return_offset = 4u ;
                     DISPATCH_INLINED(new_frame);
@@ -19944,7 +20586,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Vectorcall(
@@ -19996,7 +20638,7 @@
                 stack_pointer += -2 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -20009,7 +20651,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -20023,6 +20665,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20048,13 +20692,13 @@
                     int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err < 0) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     PyObject *tuple_o = PySequence_Tuple(callargs_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (tuple_o == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     _PyStackRef temp = callargs;
                     callargs = PyStackRef_FromPyObjectSteal(tuple_o);
@@ -20089,7 +20733,7 @@
                         frame, this_instr, func, arg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     result_o = PyObject_Call(func, callargs, kwargs);
@@ -20137,7 +20781,7 @@
                         stack_pointer += -2;
                         assert(WITHIN_STACK_BOUNDS());
                         if (new_frame == NULL) {
-                            JUMP_TO_LABEL(error);
+                            TRACING_JUMP_TO_LABEL(error);
                         }
                         assert( 1u == 1);
                         frame->return_offset = 1;
@@ -20168,7 +20812,7 @@
                 PyStackRef_CLOSE(func_st);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (result_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 result = PyStackRef_FromPyObjectSteal(result_o);
             }
@@ -20181,7 +20825,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -20195,6 +20839,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20251,7 +20897,7 @@
                     frame, this_instr, function, arg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             // _DO_CALL_KW
@@ -20285,7 +20931,7 @@
                     PyStackRef_CLOSE(kwnames);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (new_frame == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     assert( 4u == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
                     frame->return_offset = 4u ;
@@ -20314,7 +20960,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     stack_pointer += -3 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = PyObject_Vectorcall(
@@ -20368,7 +21014,7 @@
                 stack_pointer += -3 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 if (res_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = PyStackRef_FromPyObjectSteal(res_o);
             }
@@ -20386,6 +21032,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20430,7 +21078,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyErr_SetRaisedException(tstate, exc);
                     monitor_reraise(tstate, frame, this_instr);
-                    JUMP_TO_LABEL(exception_unwind);
+                    TRACING_JUMP_TO_LABEL(exception_unwind);
                 }
             }
             TRACING_DISPATCH();
@@ -20444,6 +21092,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20459,7 +21109,7 @@
                 int err = monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             stack_pointer += -1;
@@ -20478,6 +21128,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20496,7 +21148,7 @@
                 int err = monitor_stop_iteration(tstate, frame, this_instr, PyStackRef_AsPyObjectBorrow(value));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             val = value;
@@ -20517,6 +21169,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20535,7 +21189,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (!PyStackRef_IsValid(item)) {
                 if (PyStackRef_IsError(item)) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 JUMPBY(oparg + 1);
                 stack_pointer[-1] = null_or_index;
@@ -20558,6 +21212,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20571,7 +21227,7 @@
                 tstate, frame, this_instr);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (next_opcode < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             next_instr = this_instr;
             if (_PyOpcode_Caches[next_opcode]) {
@@ -20590,6 +21246,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20604,7 +21262,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             // _MONITOR_JUMP_BACKWARD
@@ -20622,6 +21280,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20641,6 +21301,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
@@ -20663,7 +21325,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (original_opcode < 0) {
                     next_instr = this_instr+1;
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 next_instr = frame->instr_ptr;
                 if (next_instr != this_instr) {
@@ -20686,6 +21348,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20732,7 +21396,7 @@
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         stack_pointer += -3;
                         assert(WITHIN_STACK_BOUNDS());
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                 }
                 PyObject *stack[] = {class, self};
@@ -20778,7 +21442,7 @@
                 stack_pointer += -3;
                 assert(WITHIN_STACK_BOUNDS());
                 if (super == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -20786,7 +21450,7 @@
                 Py_DECREF(super);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (attr_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
             }
@@ -20811,6 +21475,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
@@ -20832,6 +21498,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
@@ -20862,6 +21530,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20891,6 +21561,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20927,6 +21599,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20961,6 +21635,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -20990,6 +21666,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21007,7 +21685,7 @@
                     _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (bytecode == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
@@ -21033,7 +21711,7 @@
                         int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err) {
-                            JUMP_TO_LABEL(error);
+                            TRACING_JUMP_TO_LABEL(error);
                         }
                         next_instr = this_instr;
                         TRACING_DISPATCH();
@@ -21047,7 +21725,7 @@
                     int err = check_periodics(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err != 0) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                 }
             }
@@ -21058,7 +21736,7 @@
                     tstate, oparg > 0, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 if (frame->instr_ptr != this_instr) {
                     next_instr = frame->instr_ptr;
@@ -21075,6 +21753,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21094,7 +21774,7 @@
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             // _RETURN_VALUE
@@ -21132,6 +21812,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21151,7 +21833,7 @@
                     frame, this_instr, PyStackRef_AsPyObjectBorrow(val));
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 if (frame->instr_ptr != this_instr) {
                     next_instr = frame->instr_ptr;
@@ -21208,6 +21890,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21250,6 +21934,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21290,6 +21976,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -21315,7 +22003,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             // _JUMP_BACKWARD_NO_INTERRUPT
@@ -21336,6 +22024,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21351,7 +22041,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             // _JUMP_BACKWARD_NO_INTERRUPT
@@ -21382,9 +22072,7 @@
                             TRACING_DISPATCH();
                         }
                     }
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
                     ENTER_TRACING();
                     TRACING_DISPATCH();
                 }
@@ -21404,6 +22092,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21426,6 +22116,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21441,7 +22133,7 @@
                 int err = check_periodics(tstate);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err != 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             // _JUMP_BACKWARD_NO_INTERRUPT
@@ -21462,6 +22154,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21481,6 +22175,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21495,7 +22191,7 @@
             int err = _PyList_AppendTakeRef((PyListObject *)PyStackRef_AsPyObjectBorrow(list),
                 PyStackRef_AsPyObjectSteal(v));
             if (err < 0) {
-                JUMP_TO_LABEL(pop_1_error);
+                TRACING_JUMP_TO_LABEL(pop_1_error);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -21510,6 +22206,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21545,7 +22243,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(iterable_st);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             assert(Py_IsNone(none_val));
             stack_pointer += -1;
@@ -21564,6 +22262,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -21615,7 +22315,7 @@
                         PyStackRef_CLOSE(owner);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (PyStackRef_IsNull(*attr)) {
-                            JUMP_TO_LABEL(error);
+                            TRACING_JUMP_TO_LABEL(error);
                         }
                         self_or_null[0] = PyStackRef_NULL;
                         stack_pointer += 1;
@@ -21631,7 +22331,7 @@
                     PyStackRef_CLOSE(owner);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (attr_o == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     *attr = PyStackRef_FromPyObjectSteal(attr_o);
                     stack_pointer += 1;
@@ -21650,6 +22350,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21713,6 +22415,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21786,6 +22490,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21849,6 +22555,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21934,6 +22642,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -21995,6 +22705,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22046,6 +22758,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22118,6 +22832,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22197,6 +22913,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22249,6 +22967,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22322,6 +23042,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22421,6 +23143,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22495,6 +23219,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22610,6 +23336,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22623,14 +23351,14 @@
             int err = PyMapping_GetOptionalItem(BUILTINS(), &_Py_ID(__build_class__), &bc_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (bc_o == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyErr_SetString(tstate, PyExc_NameError,
                                  "__build_class__ not found");
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             bc = PyStackRef_FromPyObjectSteal(bc_o);
             stack_pointer[0] = bc;
@@ -22647,6 +23375,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22671,6 +23401,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22695,6 +23427,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22714,7 +23448,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -22730,6 +23464,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22754,6 +23490,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22778,6 +23516,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22802,6 +23542,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22830,6 +23572,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22846,7 +23590,7 @@
                     PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
                 );
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             value = PyStackRef_DUP(value_s);
             stack_pointer[0] = value;
@@ -22863,6 +23607,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22891,6 +23637,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22911,7 +23659,7 @@
             int err = PyMapping_GetOptionalItem(class_dict, name, &value_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (!value_o) {
                 PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
@@ -22920,7 +23668,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             stack_pointer += -1;
@@ -22943,6 +23691,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -22964,7 +23714,7 @@
             PyStackRef_CLOSE(mod_or_class_dict);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (v_o == NULL) {
                 if (PyDict_CheckExact(GLOBALS())
@@ -22982,7 +23732,7 @@
                                 NAME_ERROR_MSG, name);
                             stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                 }
                 else {
@@ -22990,14 +23740,14 @@
                     int err = PyMapping_GetOptionalItem(GLOBALS(), name, &v_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err < 0) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     if (v_o == NULL) {
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         int err = PyMapping_GetOptionalItem(BUILTINS(), name, &v_o);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err < 0) {
-                            JUMP_TO_LABEL(error);
+                            TRACING_JUMP_TO_LABEL(error);
                         }
                         if (v_o == NULL) {
                             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -23005,7 +23755,7 @@
                                 tstate, PyExc_NameError,
                                 NAME_ERROR_MSG, name);
                             stack_pointer = _PyFrame_GetStackPointer(frame);
-                            JUMP_TO_LABEL(error);
+                            TRACING_JUMP_TO_LABEL(error);
                         }
                     }
                 }
@@ -23025,6 +23775,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -23063,7 +23815,7 @@
                 _PyEval_LoadGlobalStackRef(GLOBALS(), BUILTINS(), name, res);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (PyStackRef_IsNull(*res)) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             // _PUSH_NULL_CONDITIONAL
@@ -23086,6 +23838,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23171,6 +23925,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23243,6 +23999,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23257,7 +24015,7 @@
                 _PyErr_SetString(tstate, PyExc_SystemError,
                                  "no locals found");
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             locals = PyStackRef_FromPyObjectNew(l);
             stack_pointer[0] = locals;
@@ -23274,6 +24032,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23287,7 +24047,7 @@
             PyObject *v_o = _PyEval_LoadName(tstate, frame, name);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (v_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             v = PyStackRef_FromPyObjectSteal(v_o);
             stack_pointer[0] = v;
@@ -23304,6 +24064,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23329,6 +24091,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23368,7 +24132,7 @@
                         _PyErr_Format(tstate, PyExc_TypeError, errfmt, owner);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                     }
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -23382,6 +24146,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -23445,7 +24211,7 @@
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         stack_pointer += -3;
                         assert(WITHIN_STACK_BOUNDS());
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                 }
                 PyObject *stack[] = {class, self};
@@ -23491,7 +24257,7 @@
                 stack_pointer += -3;
                 assert(WITHIN_STACK_BOUNDS());
                 if (super == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -23499,7 +24265,7 @@
                 Py_DECREF(super);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (attr_o == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 attr = PyStackRef_FromPyObjectSteal(attr_o);
             }
@@ -23524,6 +24290,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23574,7 +24342,7 @@
             stack_pointer += -3;
             assert(WITHIN_STACK_BOUNDS());
             if (attr == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             attr_st = PyStackRef_FromPyObjectSteal(attr);
             stack_pointer[0] = attr_st;
@@ -23591,6 +24359,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23631,7 +24401,7 @@
                 Py_TYPE(self)->tp_getattro == PyObject_GenericGetAttr ? &method_found : NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (attr_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (method_found) {
                 self_or_null = self_st;
@@ -23674,6 +24444,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23684,7 +24456,7 @@
             PyObject *initial = PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyStackRef tmp = GETLOCAL(oparg);
             GETLOCAL(oparg) = PyStackRef_FromPyObjectSteal(cell);
@@ -23702,6 +24474,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23723,7 +24497,7 @@
             PyStackRef_CLOSE(codeobj_st);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (func_obj == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyFunction_SetVersion(
                                    func_obj, ((PyCodeObject *)codeobj)->co_version);
@@ -23742,6 +24516,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23765,7 +24541,7 @@
             );
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err != 0) {
-                JUMP_TO_LABEL(pop_2_error);
+                TRACING_JUMP_TO_LABEL(pop_2_error);
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -23780,6 +24556,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23821,7 +24599,7 @@
             }
             else {
                 if (_PyErr_Occurred(tstate)) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 attrs = PyStackRef_None;
             }
@@ -23839,6 +24617,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23856,7 +24636,7 @@
                 PyStackRef_AsPyObjectBorrow(subject), PyStackRef_AsPyObjectBorrow(keys));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (values_or_none_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             values_or_none = PyStackRef_FromPyObjectSteal(values_or_none_o);
             stack_pointer[0] = values_or_none;
@@ -23873,6 +24653,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23899,6 +24681,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23925,6 +24709,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23943,6 +24729,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23961,6 +24749,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -23989,6 +24779,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24017,6 +24809,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24044,6 +24838,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24092,6 +24888,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24140,6 +24938,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24167,6 +24967,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24192,6 +24994,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24228,6 +25032,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24251,6 +25057,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24272,9 +25080,9 @@
                 assert(oparg == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_reraise(tstate, frame, this_instr);
-                JUMP_TO_LABEL(exception_unwind);
+                TRACING_JUMP_TO_LABEL(exception_unwind);
             }
-            JUMP_TO_LABEL(error);
+            TRACING_JUMP_TO_LABEL(error);
         }
 
         TRACING_TARGET(RERAISE) {
@@ -24285,6 +25093,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24307,7 +25117,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyErr_SetRaisedException(tstate, exc);
             monitor_reraise(tstate, frame, this_instr);
-            JUMP_TO_LABEL(exception_unwind);
+            TRACING_JUMP_TO_LABEL(exception_unwind);
         }
 
         TRACING_TARGET(RESERVED) {
@@ -24318,6 +25128,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24338,6 +25150,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -24356,7 +25170,7 @@
                     _PyEval_GetExecutableCode(tstate, _PyFrame_GetCode(frame));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (bytecode == NULL) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                     ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                     frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
@@ -24382,7 +25196,7 @@
                         int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         if (err) {
-                            JUMP_TO_LABEL(error);
+                            TRACING_JUMP_TO_LABEL(error);
                         }
                         next_instr = this_instr;
                         TRACING_DISPATCH();
@@ -24404,7 +25218,7 @@
                     int err = check_periodics(tstate);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                     if (err != 0) {
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                 }
             }
@@ -24419,6 +25233,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24462,6 +25278,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24476,7 +25294,7 @@
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (gen == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             assert(STACK_LEVEL() == 0);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -24511,6 +25329,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24552,6 +25372,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -24638,7 +25460,7 @@
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         PyStackRef_CLOSE(v);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
-                        JUMP_TO_LABEL(error);
+                        TRACING_JUMP_TO_LABEL(error);
                     }
                 }
                 stack_pointer += -1;
@@ -24662,6 +25484,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24736,6 +25560,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24749,20 +25575,20 @@
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "no locals found when setting up annotations");
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = PyMapping_GetOptionalItem(LOCALS(), &_Py_ID(__annotations__), &ann_dict);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (ann_dict == NULL) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 ann_dict = PyDict_New();
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (ann_dict == NULL) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 err = PyObject_SetItem(LOCALS(), &_Py_ID(__annotations__),
@@ -24770,7 +25596,7 @@
                 Py_DECREF(ann_dict);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             else {
@@ -24789,6 +25615,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24805,7 +25633,7 @@
                                         PyStackRef_AsPyObjectSteal(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err) {
-                JUMP_TO_LABEL(pop_1_error);
+                TRACING_JUMP_TO_LABEL(pop_1_error);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -24820,6 +25648,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24855,6 +25685,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -24876,7 +25708,7 @@
             PyStackRef_CLOSE(iterable);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err < 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             TRACING_DISPATCH();
         }
@@ -24889,6 +25721,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -24937,7 +25771,7 @@
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -24951,6 +25785,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25032,6 +25868,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25088,6 +25926,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25181,6 +26021,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25207,6 +26049,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25234,6 +26078,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25264,6 +26110,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25302,6 +26150,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25321,7 +26171,7 @@
             PyStackRef_CLOSE(v);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             TRACING_DISPATCH();
         }
@@ -25334,6 +26184,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25356,7 +26208,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(v);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             if (PyDict_CheckExact(ns)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -25374,7 +26226,7 @@
             PyStackRef_CLOSE(v);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             TRACING_DISPATCH();
         }
@@ -25387,6 +26239,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25440,7 +26294,7 @@
                 stack_pointer += -4;
                 assert(WITHIN_STACK_BOUNDS());
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -25454,6 +26308,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -25504,7 +26360,7 @@
                 stack_pointer += -3;
                 assert(WITHIN_STACK_BOUNDS());
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -25518,6 +26374,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25560,7 +26418,7 @@
                 PyStackRef_CLOSE(dict_st);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             TRACING_DISPATCH();
@@ -25574,6 +26432,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25660,6 +26520,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25687,6 +26549,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -25726,7 +26590,7 @@
                 PyStackRef_CLOSE(value);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err < 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
                 res = err ? PyStackRef_True : PyStackRef_False;
             }
@@ -25744,6 +26608,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25792,6 +26658,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25821,6 +26689,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25866,6 +26736,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25914,6 +26786,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25946,6 +26820,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -25999,6 +26875,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -26018,7 +26896,7 @@
             PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -26035,6 +26913,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -26054,7 +26934,7 @@
             PyStackRef_CLOSE(value);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -26071,6 +26951,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -26096,6 +26978,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -26115,7 +26999,7 @@
             Py_DECREF(seq_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res == 0) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             stack_pointer += 1 + (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
@@ -26130,6 +27014,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             frame->instr_ptr = next_instr;
@@ -26170,7 +27056,7 @@
                 Py_DECREF(seq_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (res == 0) {
-                    JUMP_TO_LABEL(error);
+                    TRACING_JUMP_TO_LABEL(error);
                 }
             }
             stack_pointer += oparg;
@@ -26186,6 +27072,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -26250,6 +27138,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -26305,6 +27195,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -26361,6 +27253,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
@@ -26396,7 +27290,7 @@
             Py_XDECREF(original_tb);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
-                JUMP_TO_LABEL(error);
+                TRACING_JUMP_TO_LABEL(error);
             }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
@@ -26413,6 +27307,8 @@
             #endif
             PyCodeObject *old_code = (PyCodeObject *)PyStackRef_AsPyObjectBorrow(frame->f_executable);
             (void)old_code;
+            PyFunctionObject *old_func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
+            (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
             _Py_CODEUNIT* const this_instr = next_instr;
