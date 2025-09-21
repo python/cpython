@@ -137,7 +137,6 @@
 #  define BAIL_TRACING_NO_DISPATCH() \
     LEAVE_TRACING(); \
     int err = _PyOptimizer_Optimize(frame, tstate); \
-    tstate->interp->jit_tracer_code_curr_size = 0; \
     if (err < 0) { \
         JUMP_TO_LABEL(error); \
     }
@@ -148,6 +147,12 @@
         frame->instr_ptr = next_instr; \
         if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING(); \
+        } \
+    } while (0);
+#  define RECORD_TRACE_NO_DISPATCH() do { \
+        frame->instr_ptr = next_instr; \
+        if (add_to_code_trace(tstate, frame, old_code, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
+            BAIL_TRACING_NO_DISPATCH(); \
         } \
     } while (0);
 #endif

@@ -3045,8 +3045,13 @@ dummy_func(
             assert(executor != tstate->interp->cold_executor);
             tstate->jit_exit = NULL;
             if (IS_JIT_TRACING()) {
-                RECORD_TRACE();
-                BAIL_TRACING_NO_DISPATCH();
+                int old_opcode = executor->vm_data.opcode;
+                int old_oparg = (oparg & ~255) | executor->vm_data.oparg;
+                RECORD_TRACE_NO_DISPATCH();
+                opcode = old_opcode;
+                oparg = old_oparg;
+                next_instr = this_instr;
+                DISPATCH_GOTO();
             }
             TIER1_TO_TIER2(executor, 1);
             #else
