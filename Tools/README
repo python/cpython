@@ -52,7 +52,7 @@ scripts         A number of useful single-file programs. See scripts/README for
 ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
                 tests against multiple installations of OpenSSL and LibreSSL.
 
-tsan            Files that contain suppressions for TSan.
+tsan            Utilities for building CPython with thread-sanitizer.
 
 tz              A script to dump timezone from /usr/share/zoneinfo.
 
