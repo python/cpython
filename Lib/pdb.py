@@ -3157,7 +3157,6 @@ class _PdbClient:
     def readline_completion(self, completer):
         try:
             import readline
-            import rlcompleter
         except ImportError:
             yield
             return
