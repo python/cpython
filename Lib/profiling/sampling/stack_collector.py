@@ -135,7 +135,7 @@ class FlamegraphCollector(StackTraceCollector):
                     "filename": filename_idx,
                     "lineno": func[1],
                     "funcname": funcname_idx,
-                    "threads": list(node.get("threads", set())),
+                    "threads": sorted(list(node.get("threads", set()))),
                 }
 
                 source = self._get_source_lines(func)

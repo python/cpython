@@ -403,26 +403,14 @@ function populateStats(data) {
   const functionMap = new Map();
 
   function collectFunctions(node) {
-    // Debug to understand the node structure
     if (!node) return;
 
-    // Try multiple ways to get the filename and function name
-    let filename = node.filename;
-    let funcname = node.funcname || node.name;
+    let filename = typeof node.filename === 'number' ? resolveString(node.filename) : node.filename;
+    let funcname = typeof node.funcname === 'number' ? resolveString(node.funcname) : node.funcname;
 
-    // If they're numbers (string indices), resolve them
-    if (typeof filename === 'number') {
-      filename = resolveString(filename);
-    }
-    if (typeof funcname === 'number') {
-      funcname = resolveString(funcname);
-    }
-
-    // If they're still undefined or null, try extracting from the name field
-    if (!filename && node.name) {
+    if (!filename || !funcname) {
       const nameStr = typeof node.name === 'number' ? resolveString(node.name) : node.name;
-      if (nameStr && nameStr.includes('(')) {
-        // Parse format: "funcname (filename:lineno)"
+      if (nameStr?.includes('(')) {
         const match = nameStr.match(/^(.+?)\s*\((.+?):(\d+)\)$/);
         if (match) {
           funcname = funcname || match[1];
@@ -431,7 +419,6 @@ function populateStats(data) {
       }
     }
 
-    // Final fallback
     filename = filename || 'unknown';
     funcname = funcname || 'unknown';
 
@@ -486,10 +473,9 @@ function populateStats(data) {
     const num = i + 1;
     if (i < hotSpots.length && hotSpots[i]) {
       const hotspot = hotSpots[i];
-      // Safe extraction with fallbacks
       const filename = hotspot.filename || 'unknown';
       const basename = filename !== 'unknown' ? filename.split('/').pop() : 'unknown';
-      const lineno = hotspot.lineno !== undefined && hotspot.lineno !== null ? hotspot.lineno : '?';
+      const lineno = hotspot.lineno ?? '?';
       let funcDisplay = hotspot.funcname || 'unknown';
       if (funcDisplay.length > 35) {
         funcDisplay = funcDisplay.substring(0, 32) + '...';
@@ -591,7 +577,6 @@ function filterByThread() {
     const threadId = parseInt(selectedThread);
     filteredData = filterDataByThread(originalData, threadId);
 
-    // Ensure string indices are resolved for the filtered data
     if (filteredData.strings) {
       stringTable = filteredData.strings;
       filteredData = resolveStringIndices(filteredData);
@@ -605,33 +590,16 @@ function filterByThread() {
 }
 
 function filterDataByThread(data, threadId) {
-  // Deep clone the data structure and filter by thread
   function filterNode(node) {
-    // Check if this node contains the thread
     if (!node.threads || !node.threads.includes(threadId)) {
       return null;
     }
 
-    // Create a filtered copy of the node, preserving all fields
     const filteredNode = {
-      name: node.name,
-      value: node.value,
-      filename: node.filename,
-      funcname: node.funcname,
-      lineno: node.lineno,
-      threads: node.threads,
-      source: node.source,
+      ...node,
       children: []
     };
 
-    // Copy any other properties that might exist
-    Object.keys(node).forEach(key => {
-      if (!(key in filteredNode)) {
-        filteredNode[key] = node[key];
-      }
-    });
-
-    // Recursively filter children
     if (node.children && Array.isArray(node.children)) {
       filteredNode.children = node.children
         .map(child => filterNode(child))
@@ -641,28 +609,22 @@ function filterDataByThread(data, threadId) {
     return filteredNode;
   }
 
-  // Create filtered root, preserving all metadata
   const filteredRoot = {
     ...data,
-    children: [],
-    strings: data.strings  // Preserve string table
+    children: []
   };
 
-  // Filter children
   if (data.children && Array.isArray(data.children)) {
     filteredRoot.children = data.children
       .map(child => filterNode(child))
       .filter(child => child !== null);
   }
 
-  // Recalculate total value based on filtered children
   function recalculateValue(node) {
     if (!node.children || node.children.length === 0) {
       return node.value || 0;
     }
-    const childrenValue = node.children.reduce((sum, child) => {
-      return sum + recalculateValue(child);
-    }, 0);
+    const childrenValue = node.children.reduce((sum, child) => sum + recalculateValue(child), 0);
     node.value = Math.max(node.value || 0, childrenValue);
     return node.value;
   }
