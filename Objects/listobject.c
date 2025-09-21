@@ -2048,6 +2048,7 @@ abinarysort(MergeState *ms, const sortslice *ss, Py_ssize_t n, Py_ssize_t ok, in
     }
 
     // Return Adaptivity measure (max 1000)
+    // This is: 1000 * nbad / sum(range(nsorted:n))
     return nbad * 2000 / ((n + 2 * nsorted - 1) * n);
 
  fail:
@@ -3277,8 +3278,6 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         } while (nremaining);
     }
     else {
-        // NOTE:WIP: Only 1% difference is due to
-        //           extra calculations in simple binary sort
         int adapt = 0;  // do not run binarysort adaptivity on 1st run
         int cs = 0;     // but do check goodness of adaptive fit
         int cd = 1;
