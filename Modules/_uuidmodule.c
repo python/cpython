@@ -165,8 +165,6 @@ typedef struct {
     PyTypeObject *UuidType;
 
     PyObject *safe_uuid;
-    PyObject *safe_uuid_safe;
-    PyObject *safe_uuid_unsafe;
     PyObject *safe_uuid_unknown;
 
     PyObject *uint128_max;
@@ -1674,8 +1672,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     uuid_state *state = get_uuid_state(mod);
     Py_VISIT(state->UuidType);
     Py_VISIT(state->safe_uuid);
-    Py_VISIT(state->safe_uuid_safe);
-    Py_VISIT(state->safe_uuid_unsafe);
     Py_VISIT(state->safe_uuid_unknown);
     Py_VISIT(state->uint128_max);
     Py_VISIT(state->reserved_ncs);
@@ -1695,8 +1691,6 @@ module_clear(PyObject *mod)
 
     Py_CLEAR(state->UuidType);
     Py_CLEAR(state->safe_uuid);
-    Py_CLEAR(state->safe_uuid_safe);
-    Py_CLEAR(state->safe_uuid_unsafe);
     Py_CLEAR(state->safe_uuid_unknown);
     Py_CLEAR(state->uint128_max);
     Py_CLEAR(state->reserved_ncs);
@@ -1779,14 +1773,6 @@ uuid_exec(PyObject *module)
     }
     safe_uuid = state->safe_uuid = PyObject_GetAttrString(uuid_mod, "SafeUUID");
     if (safe_uuid == NULL) {
-        goto fail;
-    }
-    state->safe_uuid_safe = PyObject_GetAttrString(safe_uuid, "safe");
-    if (state->safe_uuid_safe == NULL) {
-        goto fail;
-    }
-    state->safe_uuid_unsafe = PyObject_GetAttrString(safe_uuid, "unsafe");
-    if (state->safe_uuid_unsafe == NULL) {
         goto fail;
     }
     state->safe_uuid_unknown = PyObject_GetAttrString(safe_uuid, "unknown");
