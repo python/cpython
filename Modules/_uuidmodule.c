@@ -203,6 +203,7 @@ static int from_hex(uuidobject *self, PyObject *hex);
 static int from_bytes_le(uuidobject *self, Py_buffer *bytes_le);
 static int from_int(uuidobject *self, PyObject *int_value, int validate);
 static int from_fields(uuidobject *self, PyObject *fields);
+static PyObject * get_SafeUUID(uuid_state *state);
 
 static uint64_t
 uuid_getpid(void) {
@@ -517,8 +518,6 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
 /*[clinic end generated code: output=93a6881c8f79bf9b input=b9c79672fbd76a99]*/
 
 {
-    uuid_state *state = get_uuid_state_by_cls(Py_TYPE(self));
-
     int passed = 0;
     if (hex != NULL) passed++;
     if (bytes->obj != NULL) passed++;
@@ -587,13 +586,13 @@ _uuid_UUID___init___impl(uuidobject *self, PyObject *hex, Py_buffer *bytes,
         self->bytes[6] |= (version_num << 4);
     }
 
+    if (is_safe == Py_None) {
+        // Py_None is immortal; skip decref
+        is_safe = NULL;
+    }
     if (is_safe != NULL) {
-        // Validate by calling SafeUUID(is_safe) to ensure it's a valid enum member
-        PyObject *validated = PyObject_CallOneArg(state->safe_uuid, is_safe);
-        if (validated == NULL) {
-            return -1;
-        }
-        Py_XSETREF(self->is_safe, validated);
+        Py_INCREF(is_safe);
+        Py_XSETREF(self->is_safe, is_safe);
     }
 
     return 0;
@@ -940,6 +939,33 @@ get_int(uuidobject *self)
     return _PyLong_FromByteArray((unsigned char *)self->bytes, 16, 0, 0);
 }
 
+static PyObject *
+get_uuidmod_attr(uuid_state *state, const char *name)
+{
+    PyObject *mod = PyImport_ImportModule("uuid");
+    if (mod == NULL) {
+        return NULL;
+    }
+
+    PyObject *ret = PyObject_GetAttrString(mod, name);
+    Py_DECREF(mod);
+    return ret;
+}
+
+static PyObject *
+get_SafeUUID(uuid_state *state)
+{
+    if (state->safe_uuid != NULL) {
+        return Py_NewRef(state->safe_uuid);
+    }
+
+    state->safe_uuid = get_uuidmod_attr(state, "SafeUUID");
+    if (state->safe_uuid == NULL) {
+        return NULL;
+    }
+    return Py_NewRef(state->safe_uuid);
+}
+
 static uuidobject *
 make_uuid(PyTypeObject *type)
 {
@@ -1027,7 +1053,10 @@ Uuid_get_is_safe(PyObject *o, void *closure)
     uuidobject *self = (uuidobject *)o;
     uuid_state *state = get_uuid_state_by_cls(Py_TYPE(self));
     if (self->is_safe == NULL) {
-        return PyObject_GetAttrString(state->safe_uuid, "unknown");
+        PyObject *SafeUUID = get_SafeUUID(state);
+        PyObject *ret = PyObject_GetAttrString(SafeUUID, "unknown");
+        Py_DECREF(SafeUUID);
+        return ret;
     }
     return Py_NewRef(self->is_safe);
 }
@@ -1044,19 +1073,6 @@ Uuid_get_hex(PyObject *o, void *closure)
 }
 
 static PyObject *
-get_variant_marker(uuid_state *state, const char *name)
-{
-    PyObject *mod = PyImport_ImportModule("uuid");
-    if (mod == NULL) {
-        return NULL;
-    }
-
-    PyObject *ret = PyObject_GetAttrString(mod, name);
-    Py_DECREF(mod);
-    return ret;
-}
-
-static PyObject *
 Uuid_get_variant(PyObject *o, void *closure)
 {
     uuidobject *self = (uuidobject *)o;
@@ -1067,23 +1083,23 @@ Uuid_get_variant(PyObject *o, void *closure)
     // xxx - three high bits of variant_byte are unknown
     if (!(variant_byte & 0x80)) {   // & 0b1000_0000
         // 0xx - RESERVED_NCS
-        return get_variant_marker(state, "RESERVED_NCS");
+        return get_uuidmod_attr(state, "RESERVED_NCS");
     }
 
     // 1xx -- we know that high bit must be 1
     if (!(variant_byte & 0x40)) {   // & 0b0100_0000
         // 10x - RFC_4122
-        return get_variant_marker(state, "RFC_4122");
+        return get_uuidmod_attr(state, "RFC_4122");
     }
 
     // 11x -- we know that two high bits are 1
     if (!(variant_byte & 0x20)) {   // & 0b0010_0000
         // 110 - RESERVED_MICROSOFT
-        return get_variant_marker(state, "RESERVED_MICROSOFT");
+        return get_uuidmod_attr(state, "RESERVED_MICROSOFT");
     }
 
     // 111 -- we know that all three high bits are 1 - RESERVED_FUTURE
-    return get_variant_marker(state, "RESERVED_FUTURE");
+    return get_uuidmod_attr(state, "RESERVED_FUTURE");
 }
 
 static int
@@ -1746,13 +1762,11 @@ static int
 uuid_exec(PyObject *module)
 {
     uuid_state *state = get_uuid_state(module);
-    PyObject *uuid_mod = NULL;
-    PyObject *safe_uuid = NULL;
 
 #define ADD_INT(NAME, VALUE)                                        \
     do {                                                            \
         if (PyModule_AddIntConstant(module, (NAME), (VALUE)) < 0) { \
-            goto fail;                                              \
+            return -1;                                              \
         }                                                           \
     } while (0)
 
@@ -1782,24 +1796,17 @@ uuid_exec(PyObject *module)
         NULL
     );
     if (state->UuidType == NULL) {
-        goto fail;
+        return -1;
     }
     if (PyModule_AddType(module, state->UuidType) < 0) {
-        goto fail;
+        return -1;
     }
 
-    uuid_mod = PyImport_ImportModule("uuid");
-    if (uuid_mod == NULL) {
-        goto fail;
-    }
-    safe_uuid = state->safe_uuid = PyObject_GetAttrString(uuid_mod, "SafeUUID");
-    if (safe_uuid == NULL) {
-        goto fail;
-    }
+    state->safe_uuid = NULL;
 
     state->uint128_max = compute_uuid_max();
     if (state->uint128_max == NULL) {
-        goto fail;
+        return -1;
     }
 
     state->last_timestamp_v7 = 0;
@@ -1811,20 +1818,14 @@ uuid_exec(PyObject *module)
     state->random_func = NULL;
     state->random_size_int = PyLong_FromSize_t((Py_ssize_t)RANDOM_BUF_SIZE);
     if (state->random_size_int == NULL) {
-        goto fail;
+        return -1;
     }
+    state->random_idx = RANDOM_BUF_SIZE;
 
     state->freelist = NULL;
     state->freelist_size = 0;
 
-    state->random_idx = RANDOM_BUF_SIZE;
-
-    Py_CLEAR(uuid_mod);
     return 0;
-
-fail:
-    Py_CLEAR(uuid_mod);
-    return -1;
 }
 
 static PyMethodDef uuid_methods[] = {
