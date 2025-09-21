@@ -259,13 +259,14 @@ Types
       :type: str
 
       For interpolations created from t-string literals, :attr:`!expression`
-      is the source text found inside the curly braces, including any
-      whitespace, but excluding the curly braces themselves. For manually
-      created interpolations, :attr:`!expression` is an arbitrary string.
+      is the source text found inside the curly braces (``{`` & ``}``),
+      including any whitespace, but excluding the curly braces themselves.
+      For manually created interpolations, :attr:`!expression` is the arbitrary
+      string provided when constructing the interpolation instance.
 
-      It is recommended that developers manually creating
-      :class:`!Interpolation` instances use valid Python expressions or leave
-      the string empty, but this is not enforced.
+      We recommend using valid Python expressions or the empty string for the
+      ``expression`` field of manually created :class:`!Interpolation`
+      instances, although this is not enforced at runtime.
 
       >>> t'{1 + 2}'.interpolations[0].expression
       '1 + 2'
