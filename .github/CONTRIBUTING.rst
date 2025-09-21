@@ -39,7 +39,7 @@ our workflow that are not covered by a bot or status check are:
 
 Setting Expectations
 --------------------
-Due to the fact that this project is volunteer-run,
+Due to the fact that this project is run by volunteers,
 we unfortunately can make no guarantees as to if
 or when a core developer will get around to reviewing your pull request.
 If no core developer has done a review or responded to changes made because of a
