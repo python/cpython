@@ -5,7 +5,7 @@ from .collector import Collector
 
 
 class PstatsCollector(Collector):
-    def __init__(self, sample_interval_usec):
+    def __init__(self, sample_interval_usec, *, skip_idle=False):
         self.result = collections.defaultdict(
             lambda: dict(total_rec_calls=0, direct_calls=0, cumulative_calls=0)
         )
@@ -14,44 +14,35 @@ class PstatsCollector(Collector):
         self.callers = collections.defaultdict(
             lambda: collections.defaultdict(int)
         )
+        self.skip_idle = skip_idle
+
+    def _process_frames(self, frames):
+        """Process a single thread's frame stack."""
+        if not frames:
+            return
+
+        # Process each frame in the stack to track cumulative calls
+        for frame in frames:
+            location = (frame.filename, frame.lineno, frame.funcname)
+            self.result[location]["cumulative_calls"] += 1
+
+        # The top frame gets counted as an inline call (directly executing)
+        top_location = (frames[0].filename, frames[0].lineno, frames[0].funcname)
+        self.result[top_location]["direct_calls"] += 1
+
+        # Track caller-callee relationships for call graph
+        for i in range(1, len(frames)):
+            callee_frame = frames[i - 1]
+            caller_frame = frames[i]
+
+            callee = (callee_frame.filename, callee_frame.lineno, callee_frame.funcname)
+            caller = (caller_frame.filename, caller_frame.lineno, caller_frame.funcname)
+
+            self.callers[callee][caller] += 1
 
     def collect(self, stack_frames):
-        for thread_id, frames in stack_frames:
-            if not frames:
-                continue
-
-            # Process each frame in the stack to track cumulative calls
-            for frame in frames:
-                location = (frame.filename, frame.lineno, frame.funcname)
-                self.result[location]["cumulative_calls"] += 1
-
-            # The top frame gets counted as an inline call (directly executing)
-            top_frame = frames[0]
-            top_location = (
-                top_frame.filename,
-                top_frame.lineno,
-                top_frame.funcname,
-            )
-
-            self.result[top_location]["direct_calls"] += 1
-
-            # Track caller-callee relationships for call graph
-            for i in range(1, len(frames)):
-                callee_frame = frames[i - 1]
-                caller_frame = frames[i]
-
-                callee = (
-                    callee_frame.filename,
-                    callee_frame.lineno,
-                    callee_frame.funcname,
-                )
-                caller = (
-                    caller_frame.filename,
-                    caller_frame.lineno,
-                    caller_frame.funcname,
-                )
-
-                self.callers[callee][caller] += 1
+        for frames in self._iter_all_frames(stack_frames, skip_idle=self.skip_idle):
+            self._process_frames(frames)
 
     def export(self, filename):
         self.create_stats()
