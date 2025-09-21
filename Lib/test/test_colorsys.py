@@ -106,5 +106,27 @@ class ColorsysTest(unittest.TestCase):
             self.assertTripleEqual(yiq, colorsys.rgb_to_yiq(*rgb))
             self.assertTripleEqual(rgb, colorsys.yiq_to_rgb(*yiq))
 
+    def test_hsv_hue_wrapping(self):
+        """Test that HSV hue values outside [0,1) are handled correctly."""
+        # Test with hue values outside the normal range
+        test_cases = [
+            (1.0, 1.0, 1.0),   # hue = 1.0 (should wrap to 0.0)
+            (1.5, 1.0, 1.0),   # hue = 1.5 (should wrap to 0.5)
+            (2.0, 1.0, 1.0),   # hue = 2.0 (should wrap to 0.0)
+            (-0.5, 1.0, 1.0),  # hue = -0.5 (should wrap to 0.5)
+        ]
+        
+        for h, s, v in test_cases:
+            # Convert to RGB and back to HSV
+            rgb = colorsys.hsv_to_rgb(h, s, v)
+            h_out, s_out, v_out = colorsys.rgb_to_hsv(*rgb)
+            
+            # The output hue should be in [0, 1) range
+            self.assertGreaterEqual(h_out, 0.0)
+            self.assertLess(h_out, 1.0)
+            
+            # The round-trip should preserve the color (within tolerance)
+            self.assertTripleEqual(rgb, colorsys.hsv_to_rgb(h_out, s_out, v_out))
+
 if __name__ == "__main__":
     unittest.main()

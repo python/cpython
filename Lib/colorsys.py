@@ -83,7 +83,12 @@ def rgb_to_hls(r, g, b):
     if l <= 0.5:
         s = rangec / sumc
     else:
-        s = rangec / (2.0-maxc-minc)  # Not always 2.0-sumc: gh-106498.
+        # Fix for gh-106498: avoid division by zero when very close to white
+        denominator = 2.0 - maxc - minc
+        if abs(denominator) < 1e-10:  # Very close to zero
+            s = 0.0
+        else:
+            s = rangec / denominator
     rc = (maxc-r) / rangec
     gc = (maxc-g) / rangec
     bc = (maxc-b) / rangec
@@ -145,7 +150,9 @@ def rgb_to_hsv(r, g, b):
 def hsv_to_rgb(h, s, v):
     if s == 0.0:
         return v, v, v
-    i = int(h*6.0) # XXX assume int() truncates!
+    # Ensure h is in [0, 1) range for proper calculation
+    h = h % 1.0
+    i = int(h*6.0)  # This will truncate towards zero, which is correct
     f = (h*6.0) - i
     p = v*(1.0 - s)
     q = v*(1.0 - s*f)
