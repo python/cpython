@@ -1524,6 +1524,24 @@ class TestInternalsWithExtModule(BaseTestInternals, unittest.TestCase):
         self.check_node(node)
 
 
+class UuidHooks:
+
+    def __init__(self, *, start_at=0, inc_by=0, seed=0):
+        self._time = start_at
+        self._inc_by = inc_by
+        self._rnd = random.Random(seed)
+
+    def random_func (self, size) :
+        ret = b''
+        for _ in range(size) :
+            ret += self._rnd.getrandbits(8).to_bytes(1, 'big')
+        return ret
+
+    def time_func(self):
+        self._time += self._inc_by
+        return self._time
+
+
 @unittest.skipUnless(c_uuid, "requires the C _uuid module")
 class TestCImplementationCompat(unittest.TestCase):
     def test_compatibility(self):
@@ -1595,6 +1613,55 @@ class TestCImplementationCompat(unittest.TestCase):
         self.assertEqual(len(all_ps), len(all_us))
         self.assertEqual(len(all_ps), len(uuids))
 
+    def _install_hooks(self, uuid_mod, *, start_at=0, inc_by=0, seed=0):
+        py_hooks = UuidHooks(start_at=start_at, inc_by=inc_by, seed=seed)
+        uuid_mod._install_py_hooks(
+            random_func=py_hooks.random_func,
+            time_func=py_hooks.time_func
+        )
+
+        c_hooks = UuidHooks(start_at=start_at, inc_by=inc_by, seed=seed)
+        uuid_mod._install_c_hooks(
+            random_func=c_hooks.random_func,
+            time_func=c_hooks.time_func
+        )
+
+    def _reset_hooks(self, uuid_mod):
+        uuid_mod._install_c_hooks(random_func=None, time_func=None)
+        uuid_mod._install_py_hooks(random_func=None, time_func=None)
+
+    def test_exact_same_algo_uuid4(self):
+        import uuid
+
+        self._install_hooks(uuid)
+        try:
+            for seq_number in range(100):
+                with self.subTest(seq_number=seq_number):
+                    self.assertEqual(
+                        uuid._py_uuid4().hex,
+                        uuid._c_uuid4().hex,
+                    )
+        finally:
+            self._reset_hooks(uuid)
+
+    def test_exact_same_algo_uuid7(self):
+        import uuid
+
+        try:
+            for start_at, inc_by in [
+                (0, 0), (0, 10_000_000), (10_000_000 + 142, 1131827398127397)
+            ]:
+                self._install_hooks(uuid, start_at=start_at, inc_by=inc_by)
+                for seq_number in range(100):
+                    with self.subTest(
+                        seq_number=seq_number, start_at=start_at, inc_by=inc_by,
+                    ):
+                        self.assertEqual(
+                            uuid._py_uuid7().hex,
+                            uuid._c_uuid7().hex,
+                        )
+        finally:
+            self._reset_hooks(uuid)
 
 
 if __name__ == '__main__':

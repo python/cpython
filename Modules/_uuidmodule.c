@@ -176,9 +176,13 @@ typedef struct {
     PyObject *reserved_microsoft;
     PyObject *reserved_future;
 
-    // UUID v7 state
-    uint64_t last_timestamp_v7;
-    uint64_t last_counter_v7;
+    PyObject *random_func;
+    PyObject *random_size_int;
+    PyObject *time_func;
+
+    // A freelist for uuid objects -- 15-20% performance boost.
+    uuidobject *freelist;
+    uint64_t freelist_size;
 
     // We overfetch entropy to speed up successive uuid generations;
     // this enables 10x peformance boost.
@@ -186,9 +190,10 @@ typedef struct {
     uint64_t random_idx;
     uint64_t random_last_pid;
 
-    // A freelist for uuid objects -- 15-20% performance boost.
-    uuidobject *freelist;
-    uint64_t freelist_size;
+    // UUID v7 state
+    uint64_t last_timestamp_v7;
+    uint64_t last_counter_v7;
+    uint8_t last_timestamp_v7_init;
 } uuid_state;
 
 #include "clinic/_uuidmodule.c.h"
@@ -233,6 +238,27 @@ get_uuid_state_by_cls(PyTypeObject *cls)
 static PyObject *uuid_from_bytes_array(PyTypeObject *type, uint8_t bytes[16]);
 
 static int
+gen_time(uuid_state *state, PyTime_t* time)
+{
+    if (state->time_func == NULL) {
+        return PyTime_Time(time);
+    }
+
+    PyObject *ret = PyObject_CallNoArgs(state->time_func);
+    if (ret == NULL) {
+        return -1;
+    }
+
+    if (!PyLong_CheckExact(ret)) {
+        PyErr_SetString(PyExc_ValueError, "random_time must return int");
+    }
+
+    int res = PyLong_AsInt64(ret, time);
+    Py_DECREF(ret);
+    return res;
+}
+
+static int
 gen_random(uuid_state *state, uint8_t *bytes, Py_ssize_t size)
 {
     // Overfetching & caching entropy improves the performance 10x.
@@ -251,19 +277,62 @@ gen_random(uuid_state *state, uint8_t *bytes, Py_ssize_t size)
         state->random_idx = RANDOM_BUF_SIZE;
     }
 
-    if (state->random_idx + size <= RANDOM_BUF_SIZE) {
+    if (state->random_idx + size < RANDOM_BUF_SIZE) {
         memcpy(bytes, state->random_buf + state->random_idx, size);
         state->random_idx += size;
     }
     else {
-        // Pure Python implementation uses os.urandom() which
-        // wraps _PyOS_URandom
-        if (_PyOS_URandom(state->random_buf, RANDOM_BUF_SIZE) < 0) {
-            return -1;
+        if (state->random_idx < RANDOM_BUF_SIZE) {
+            // We exhaustively consume cached entropy. We do that
+            // because we have tests that compare Python and C
+            // implementations and it's important that they see incoming
+            // entropy as a continuous stream.
+            // The overhead here must be negligible, but we want the same
+            // code to be run in production and in tests.
+            Py_ssize_t partial = RANDOM_BUF_SIZE - state->random_idx;
+            memcpy(bytes, state->random_buf + state->random_idx, partial);
+            bytes += partial;
+            size -= partial;
         }
+
+        if (state->random_func != NULL) {
+            PyObject *buf = PyObject_CallOneArg(
+                state->random_func, state->random_size_int);
+            if (buf == NULL) {
+                return -1;
+            }
+
+            if (!PyBytes_CheckExact(buf)) {
+                PyErr_SetString(PyExc_ValueError, "random_func must return bytes");
+                Py_DECREF(buf);
+                return -1;
+            }
+
+            if (PyBytes_Size(buf) != (Py_ssize_t)RANDOM_BUF_SIZE) {
+                PyErr_Format(
+                    PyExc_ValueError,
+                    "random_func must return bytes of length %zd exactly",
+                    (Py_ssize_t)RANDOM_BUF_SIZE
+                );
+                Py_DECREF(buf);
+                return -1;
+            }
+
+            memcpy(state->random_buf, PyBytes_AsString(buf), RANDOM_BUF_SIZE);
+            Py_DECREF(buf);
+        }
+        else {
+            // Pure Python implementation uses os.urandom() which
+            // wraps _PyOS_URandom
+            if (_PyOS_URandom(state->random_buf, RANDOM_BUF_SIZE) < 0) {
+                return -1;
+            }
+        }
+
         memcpy(bytes, state->random_buf, size);
         state->random_idx = size;
     }
+
     return 0;
 }
 
@@ -293,25 +362,21 @@ _uuid_uuid4_impl(PyObject *module)
 }
 
 static inline int
-uuid7_get_counter_and_tail(uuid_state *state, uint64_t *counter, uint32_t *tail)
+uuid7_get_counter_and_tail(uuid_state *state, uint64_t *counter, uint8_t *tail)
 {
     uint8_t rand_bytes[10];
     if (gen_random(state, rand_bytes, 10) < 0) {
         return -1;
     }
 
-    uint16_t high = ((uint16_t)rand_bytes[0] << 8) | rand_bytes[1];
-    uint64_t low = ((uint64_t)rand_bytes[2] << 56) |
-                   ((uint64_t)rand_bytes[3] << 48) |
-                   ((uint64_t)rand_bytes[4] << 40) |
-                   ((uint64_t)rand_bytes[5] << 32) |
-                   ((uint64_t)rand_bytes[6] << 24) |
-                   ((uint64_t)rand_bytes[7] << 16) |
-                   ((uint64_t)rand_bytes[8] << 8) |
-                   ((uint64_t)rand_bytes[9]);
+    *counter = (((uint64_t)rand_bytes[0] & 0x01) << 40) |
+                ((uint64_t)rand_bytes[1] << 32) |
+                ((uint64_t)rand_bytes[2] << 24) |
+                ((uint64_t)rand_bytes[3] << 16) |
+                ((uint64_t)rand_bytes[4] << 8) |
+                ((uint64_t)rand_bytes[5]);
 
-    *counter = (((uint64_t)(high & 0x1FF) << 32) | (low >> 32)) & 0x1FFFFFFFFFF;
-    *tail = (uint32_t)low;
+    memcpy(tail, rand_bytes + 6, 4);
     return 0;
 }
 
@@ -335,16 +400,15 @@ _uuid_uuid7_impl(PyObject *module)
     uuid_state *state = get_uuid_state(module);
     uint8_t bytes[16];
     uint64_t timestamp_ms, counter;
-    uint32_t tail;
 
     PyTime_t pytime;
-    if (PyTime_Time(&pytime) < 0) {
+    if (gen_time(state, &pytime) < 0) {
         return NULL;
     }
     timestamp_ms = (uint64_t)(pytime / 1000000);
 
-    if (state->last_timestamp_v7 == 0 || timestamp_ms > state->last_timestamp_v7) {
-        if (uuid7_get_counter_and_tail(state, &counter, &tail) < 0) {
+    if (!state->last_timestamp_v7_init || timestamp_ms > state->last_timestamp_v7) {
+        if (uuid7_get_counter_and_tail(state, &counter, bytes + 12) < 0) {
             return NULL;
         }
     } else {
@@ -356,13 +420,13 @@ _uuid_uuid7_impl(PyObject *module)
         if (counter > 0x3FFFFFFFFFF) {
             // advance the 48-bit timestamp
             timestamp_ms += 1;
-            if (uuid7_get_counter_and_tail(state, &counter, &tail) < 0) {
+            if (uuid7_get_counter_and_tail(state, &counter, bytes + 12) < 0) {
                 return NULL;
             }
         } else {
             // This is the common fast path, we only need 4 bytes of entropy
             // 32-bit random data
-            if (gen_random(state, (uint8_t *)&tail, 4) < 0) {
+            if (gen_random(state,  bytes + 12, 4) < 0) {
                 return NULL;
             }
         }
@@ -388,15 +452,51 @@ _uuid_uuid7_impl(PyObject *module)
     bytes[10] = counter_lo >> 8;
     bytes[11] = counter_lo;
 
-    bytes[12] = tail >> 24;
-    bytes[13] = tail >> 16;
-    bytes[14] = tail >> 8;
-    bytes[15] = tail;
-
+    state->last_timestamp_v7_init = 1;
     state->last_timestamp_v7 = timestamp_ms;
     state->last_counter_v7 = counter;
 
     return uuid_from_bytes_array(state->UuidType, bytes);
+}
+
+/*[clinic input]
+@critical_section
+_uuid._install_c_hooks
+
+    *
+    random_func: object
+    time_func: object
+
+[clinic start generated code]*/
+
+static PyObject *
+_uuid__install_c_hooks_impl(PyObject *module, PyObject *random_func,
+                            PyObject *time_func)
+/*[clinic end generated code: output=884aa6e91b2ea832 input=6c5017297067e2ea]*/
+{
+    uuid_state *state = get_uuid_state(module);
+
+    // Reset bufferred entropy -- tests need to always start fresh
+    // when the random function is changed. Reset last_timestamp_v7 --
+    // important for repeatable tests
+    state->random_idx = RANDOM_BUF_SIZE;
+    state->last_timestamp_v7_init = 0;
+
+    if (random_func == Py_None) {
+        Py_CLEAR(state->random_func);
+    } else {
+        Py_INCREF(random_func);
+        Py_XSETREF(state->random_func, random_func);
+    }
+
+    if (time_func == Py_None) {
+        Py_CLEAR(state->time_func);
+    } else {
+        Py_INCREF(time_func);
+        Py_XSETREF(state->time_func, time_func);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -1582,6 +1682,9 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->rfc_4122);
     Py_VISIT(state->reserved_microsoft);
     Py_VISIT(state->reserved_future);
+    Py_VISIT(state->random_func);
+    Py_VISIT(state->time_func);
+    Py_VISIT(state->random_size_int);
     return 0;
 }
 
@@ -1600,6 +1703,9 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->rfc_4122);
     Py_CLEAR(state->reserved_microsoft);
     Py_CLEAR(state->reserved_future);
+    Py_CLEAR(state->random_func);
+    Py_CLEAR(state->time_func);
+    Py_CLEAR(state->random_size_int);
 
     if (state->freelist != NULL) {
         while (state->freelist != NULL) {
@@ -1714,8 +1820,16 @@ uuid_exec(PyObject *module)
     }
 
     state->last_timestamp_v7 = 0;
+    state->last_timestamp_v7_init = 0;
     state->last_counter_v7 = 0;
     state->random_last_pid = uuid_getpid();
+
+    state->time_func = NULL;
+    state->random_func = NULL;
+    state->random_size_int = PyLong_FromSize_t((Py_ssize_t)RANDOM_BUF_SIZE);
+    if (state->random_size_int == NULL) {
+        goto fail;
+    }
 
     state->freelist = NULL;
     state->freelist_size = 0;
@@ -1733,6 +1847,7 @@ fail:
 static PyMethodDef uuid_methods[] = {
     _UUID_UUID4_METHODDEF
     _UUID_UUID7_METHODDEF
+    _UUID__INSTALL_C_HOOKS_METHODDEF
 #if defined(HAVE_UUID_UUID_H) || defined(HAVE_UUID_H)
     {"generate_time_safe", py_uuid_generate_time_safe, METH_NOARGS, NULL},
 #endif
