@@ -2,6 +2,7 @@ import unittest
 from test import audiotests
 from test import support
 import io
+import os
 import struct
 import sys
 import wave
@@ -136,32 +137,6 @@ class MiscTestCase(unittest.TestCase):
         not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
         support.check__all__(self, wave, not_exported=not_exported)
 
-    def test_read_deprecations(self):
-        filename = support.findfile('pluck-pcm8.wav', subdir='audiodata')
-        with wave.open(filename) as reader:
-            with self.assertWarns(DeprecationWarning):
-                with self.assertRaises(wave.Error):
-                    reader.getmark('mark')
-            with self.assertWarns(DeprecationWarning):
-                self.assertIsNone(reader.getmarkers())
-
-    def test_write_deprecations(self):
-        with io.BytesIO(b'') as tmpfile:
-            with wave.open(tmpfile, 'wb') as writer:
-                writer.setnchannels(1)
-                writer.setsampwidth(1)
-                writer.setframerate(1)
-                writer.setcomptype('NONE', 'not compressed')
-
-                with self.assertWarns(DeprecationWarning):
-                    with self.assertRaises(wave.Error):
-                        writer.setmark(0, 0, 'mark')
-                with self.assertWarns(DeprecationWarning):
-                    with self.assertRaises(wave.Error):
-                        writer.getmark('mark')
-                with self.assertWarns(DeprecationWarning):
-                    self.assertIsNone(writer.getmarkers())
-
 
 class WaveLowLevelTest(unittest.TestCase):
 
@@ -221,6 +196,14 @@ class WaveLowLevelTest(unittest.TestCase):
         b += b'data' + struct.pack('<L', 0)
         with self.assertRaisesRegex(wave.Error, 'bad sample width'):
             wave.open(io.BytesIO(b))
+
+    def test_open_in_write_raises(self):
+        # gh-136523: Wave_write.__del__ should not throw
+        with support.catch_unraisable_exception() as cm:
+            with self.assertRaises(OSError):
+                wave.open(os.curdir, "wb")
+            support.gc_collect()
+            self.assertIsNone(cm.unraisable)
 
 
 if __name__ == '__main__':

@@ -1811,13 +1811,6 @@ _overlapped_Overlapped_WSASendTo_impl(OverlappedObject *self, HANDLE handle,
     }
 }
 
-
-
-PyDoc_STRVAR(
-    Overlapped_WSARecvFrom_doc,
-    "RecvFile(handle, size, flags) -> Overlapped[(message, (host, port))]\n\n"
-    "Start overlapped receive");
-
 /*[clinic input]
 _overlapped.Overlapped.WSARecvFrom
 

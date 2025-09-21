@@ -441,7 +441,7 @@ class TCPServer(BaseServer):
 
     socket_type = socket.SOCK_STREAM
 
-    request_queue_size = 5
+    request_queue_size = getattr(socket, "SOMAXCONN", 5)
 
     allow_reuse_address = False
 

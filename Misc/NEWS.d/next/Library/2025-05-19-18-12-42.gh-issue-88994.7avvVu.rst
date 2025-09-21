@@ -1,0 +1,3 @@
+Change :func:`datetime.datetime.now` to half-even rounding for
+consistency with :func:`datetime.datetime.fromtimestamp`.  Patch by
+John Keith Hohm.

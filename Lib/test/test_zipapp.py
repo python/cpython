@@ -113,6 +113,19 @@ class ZipAppTest(unittest.TestCase):
         with self.assertRaises(zipapp.ZipAppError):
             zipapp.create_archive(source, target)
 
+    def test_target_overwrites_filtered_source_file(self):
+        # If there's a filter that excludes the target,
+        # the overwrite check shouldn't trigger.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        target = source / 'target.pyz'
+        target.touch()
+        pyz_filter = lambda p: not p.match('*.pyz')
+        zipapp.create_archive(source, target, filter=pyz_filter)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(len(z.namelist()), 1)
+            self.assertIn('__main__.py', z.namelist())
+
     def test_create_archive_filter_exclude_dir(self):
         # Test packing a directory and using a filter to exclude a
         # subdirectory (ensures that the path supplied to include
@@ -246,7 +259,7 @@ class ZipAppTest(unittest.TestCase):
         (source / '__main__.py').touch()
         target = io.BytesIO()
         zipapp.create_archive(str(source), target, interpreter='python')
-        self.assertTrue(target.getvalue().startswith(b'#!python\n'))
+        self.assertStartsWith(target.getvalue(), b'#!python\n')
 
     def test_read_shebang(self):
         # Test that we can read the shebang line correctly.
@@ -287,7 +300,7 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(source), str(target), interpreter='python')
         new_target = io.BytesIO()
         zipapp.create_archive(str(target), new_target, interpreter='python2.7')
-        self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
+        self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
 
     def test_read_from_pathlike_obj(self):
         # Test that we can copy an archive using a path-like object
@@ -313,7 +326,7 @@ class ZipAppTest(unittest.TestCase):
         new_target = io.BytesIO()
         temp_archive.seek(0)
         zipapp.create_archive(temp_archive, new_target, interpreter='python2.7')
-        self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
+        self.assertStartsWith(new_target.getvalue(), b'#!python2.7\n')
 
     def test_remove_shebang(self):
         # Test that we can remove the shebang from a file.

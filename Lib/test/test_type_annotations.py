@@ -3,33 +3,34 @@ import inspect
 import textwrap
 import types
 import unittest
-from test.support import run_code, check_syntax_error, cpython_only
+from test.support import run_code, check_syntax_error, import_helper, cpython_only
+from test.test_inspect import inspect_stringized_annotations
 
 
 class TypeAnnotationTests(unittest.TestCase):
 
     def test_lazy_create_annotations(self):
         # type objects lazy create their __annotations__ dict on demand.
-        # the annotations dict is stored in type.__dict__.
+        # the annotations dict is stored in type.__dict__ (as __annotations_cache__).
         # a freshly created type shouldn't have an annotations dict yet.
         foo = type("Foo", (), {})
         for i in range(3):
-            self.assertFalse("__annotations__" in foo.__dict__)
+            self.assertFalse("__annotations_cache__" in foo.__dict__)
             d = foo.__annotations__
-            self.assertTrue("__annotations__" in foo.__dict__)
+            self.assertTrue("__annotations_cache__" in foo.__dict__)
             self.assertEqual(foo.__annotations__, d)
-            self.assertEqual(foo.__dict__['__annotations__'], d)
+            self.assertEqual(foo.__dict__['__annotations_cache__'], d)
             del foo.__annotations__
 
     def test_setting_annotations(self):
         foo = type("Foo", (), {})
         for i in range(3):
-            self.assertFalse("__annotations__" in foo.__dict__)
+            self.assertFalse("__annotations_cache__" in foo.__dict__)
             d = {'a': int}
             foo.__annotations__ = d
-            self.assertTrue("__annotations__" in foo.__dict__)
+            self.assertTrue("__annotations_cache__" in foo.__dict__)
             self.assertEqual(foo.__annotations__, d)
-            self.assertEqual(foo.__dict__['__annotations__'], d)
+            self.assertEqual(foo.__dict__['__annotations_cache__'], d)
             del foo.__annotations__
 
     def test_annotations_getset_raises(self):
@@ -53,9 +54,50 @@ class TypeAnnotationTests(unittest.TestCase):
             a:int=3
             b:str=4
         self.assertEqual(C.__annotations__, {"a": int, "b": str})
-        self.assertTrue("__annotations__" in C.__dict__)
+        self.assertTrue("__annotations_cache__" in C.__dict__)
         del C.__annotations__
-        self.assertFalse("__annotations__" in C.__dict__)
+        self.assertFalse("__annotations_cache__" in C.__dict__)
+
+    def test_pep563_annotations(self):
+        isa = inspect_stringized_annotations
+        self.assertEqual(
+            isa.__annotations__, {"a": "int", "b": "str"},
+        )
+        self.assertEqual(
+            isa.MyClass.__annotations__, {"a": "int", "b": "str"},
+        )
+
+    def test_explicitly_set_annotations(self):
+        class C:
+            __annotations__ = {"what": int}
+        self.assertEqual(C.__annotations__, {"what": int})
+
+    def test_explicitly_set_annotate(self):
+        class C:
+            __annotate__ = lambda format: {"what": int}
+        self.assertEqual(C.__annotations__, {"what": int})
+        self.assertIsInstance(C.__annotate__, types.FunctionType)
+        self.assertEqual(C.__annotate__(annotationlib.Format.VALUE), {"what": int})
+
+    def test_del_annotations_and_annotate(self):
+        # gh-132285
+        called = False
+        class A:
+            def __annotate__(format):
+                nonlocal called
+                called = True
+                return {'a': int}
+
+        self.assertEqual(A.__annotations__, {'a': int})
+        self.assertTrue(called)
+        self.assertTrue(A.__annotate__)
+
+        del A.__annotations__
+        called = False
+
+        self.assertEqual(A.__annotations__, {})
+        self.assertFalse(called)
+        self.assertIs(A.__annotate__, None)
 
     def test_descriptor_still_works(self):
         class C:
@@ -108,6 +150,14 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
+
+    def test_partially_executed_module(self):
+        partialexe = import_helper.import_fresh_module("test.typinganndata.partialexecution")
+        self.assertEqual(
+            partialexe.a.__annotations__,
+            {"v1": int, "v2": int},
+        )
+        self.assertEqual(partialexe.b.annos, {"v1": int})
 
     @cpython_only
     def test_no_cell(self):
@@ -259,7 +309,7 @@ class AnnotateTests(unittest.TestCase):
             print(f.__annotations__)
 
         f.__annotate__ = lambda x: 42
-        with self.assertRaisesRegex(TypeError, r"__annotate__ returned non-dict of type 'int'"):
+        with self.assertRaisesRegex(TypeError, r"__annotate__\(\) must return a dict, not int"):
             print(f.__annotations__)
 
         f.__annotate__ = lambda x: {"x": x}
@@ -276,6 +326,25 @@ class AnnotateTests(unittest.TestCase):
         # Setting f.__annotations__ also clears __annotate__
         f.__annotations__ = {"z": 43}
         self.assertIs(f.__annotate__, None)
+
+    def test_user_defined_annotate(self):
+        class X:
+            a: int
+
+            def __annotate__(format):
+                return {"a": str}
+        self.assertEqual(X.__annotate__(annotationlib.Format.VALUE), {"a": str})
+        self.assertEqual(annotationlib.get_annotations(X), {"a": str})
+
+        mod = build_module(
+            """
+            a: int
+            def __annotate__(format):
+                return {"a": str}
+            """
+        )
+        self.assertEqual(mod.__annotate__(annotationlib.Format.VALUE), {"a": str})
+        self.assertEqual(annotationlib.get_annotations(mod), {"a": str})
 
 
 class DeferredEvaluationTests(unittest.TestCase):
@@ -345,10 +414,21 @@ class DeferredEvaluationTests(unittest.TestCase):
         self.assertEqual(Outer.__annotations__, {"x": Outer.Nested})
 
     def test_no_exotic_expressions(self):
-        check_syntax_error(self, "def func(x: (yield)): ...", "yield expression cannot be used within an annotation")
-        check_syntax_error(self, "def func(x: (yield from x)): ...", "yield expression cannot be used within an annotation")
-        check_syntax_error(self, "def func(x: (y := 3)): ...", "named expression cannot be used within an annotation")
-        check_syntax_error(self, "def func(x: (await 42)): ...", "await expression cannot be used within an annotation")
+        preludes = [
+            "",
+            "class X:\n ",
+            "def f():\n ",
+            "async def f():\n ",
+        ]
+        for prelude in preludes:
+            with self.subTest(prelude=prelude):
+                check_syntax_error(self, prelude + "def func(x: (yield)): ...", "yield expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "def func(x: (yield from x)): ...", "yield expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "def func(x: (y := 3)): ...", "named expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "def func(x: (await 42)): ...", "await expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "def func(x: [y async for y in x]): ...", "asynchronous comprehension outside of an asynchronous function")
+                check_syntax_error(self, prelude + "def func(x: {y async for y in x}): ...", "asynchronous comprehension outside of an asynchronous function")
+                check_syntax_error(self, prelude + "def func(x: {y: y async for y in x}): ...", "asynchronous comprehension outside of an asynchronous function")
 
     def test_no_exotic_expressions_in_unevaluated_annotations(self):
         preludes = [
@@ -364,6 +444,9 @@ class DeferredEvaluationTests(unittest.TestCase):
                 check_syntax_error(self, prelude + "(x): (y := 3)", "named expression cannot be used within an annotation")
                 check_syntax_error(self, prelude + "(x): (__debug__ := 3)", "named expression cannot be used within an annotation")
                 check_syntax_error(self, prelude + "(x): (await 42)", "await expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "(x): [y async for y in x]", "asynchronous comprehension outside of an asynchronous function")
+                check_syntax_error(self, prelude + "(x): {y async for y in x}", "asynchronous comprehension outside of an asynchronous function")
+                check_syntax_error(self, prelude + "(x): {y: y async for y in x}", "asynchronous comprehension outside of an asynchronous function")
 
     def test_ignore_non_simple_annotations(self):
         ns = run_code("class X: (y): int")
@@ -414,6 +497,28 @@ class DeferredEvaluationTests(unittest.TestCase):
         annos = {"x": "int", "return": "int"}
         self.assertEqual(f.__annotate__(annotationlib.Format.VALUE), annos)
         self.assertEqual(f.__annotations__, annos)
+
+    def test_set_annotations(self):
+        function_code = textwrap.dedent("""
+        def f(x: int):
+            pass
+        """)
+        class_code = textwrap.dedent("""
+        class f:
+            x: int
+        """)
+        for future in (False, True):
+            for label, code in (("function", function_code), ("class", class_code)):
+                with self.subTest(future=future, label=label):
+                    if future:
+                        code = "from __future__ import annotations\n" + code
+                    ns = run_code(code)
+                    f = ns["f"]
+                    anno = "int" if future else int
+                    self.assertEqual(f.__annotations__, {"x": anno})
+
+                    f.__annotations__ = {"x": str}
+                    self.assertEqual(f.__annotations__, {"x": str})
 
     def test_name_clash_with_format(self):
         # this test would fail if __annotate__'s parameter was called "format"
@@ -667,3 +772,103 @@ class ConditionalAnnotationTests(unittest.TestCase):
         """
         expected = {"before": "before", "after": "after"}
         self.check_scopes(code, expected, expected)
+
+
+class RegressionTests(unittest.TestCase):
+    # gh-132479
+    def test_complex_comprehension_inlining(self):
+        # Test that the various repro cases from the issue don't crash
+        cases = [
+            """
+            (unique_name_0): 0
+            unique_name_1: (
+                0
+                for (
+                    0
+                    for unique_name_2 in 0
+                    for () in (0 for unique_name_3 in unique_name_4 for unique_name_5 in name_1)
+                ).name_3 in {0: 0 for name_1 in unique_name_8}
+                if name_1
+            )
+            """,
+            """
+            unique_name_0: 0
+            unique_name_1: {
+                0: 0
+                for unique_name_2 in [0 for name_0 in unique_name_4]
+                if {
+                    0: 0
+                    for unique_name_5 in 0
+                    if name_0
+                    if ((name_0 for unique_name_8 in unique_name_9) for [] in 0)
+                }
+            }
+            """,
+            """
+            0[0]: {0 for name_0 in unique_name_1}
+            unique_name_2: {
+                0: (lambda: name_0 for unique_name_4 in unique_name_5)
+                for unique_name_6 in ()
+                if name_0
+            }
+            """,
+        ]
+        for case in cases:
+            case = textwrap.dedent(case)
+            compile(case, "<test>", "exec")
+
+    def test_complex_comprehension_inlining_exec(self):
+        code = """
+            unique_name_1 = unique_name_5 = [1]
+            name_0 = 42
+            unique_name_7: {name_0 for name_0 in unique_name_1}
+            unique_name_2: {
+                0: (lambda: name_0 for unique_name_4 in unique_name_5)
+                for unique_name_6 in [1]
+                if name_0
+            }
+        """
+        mod = build_module(code)
+        annos = mod.__annotations__
+        self.assertEqual(annos.keys(), {"unique_name_7", "unique_name_2"})
+        self.assertEqual(annos["unique_name_7"], {True})
+        genexp = annos["unique_name_2"][0]
+        lamb = list(genexp)[0]
+        self.assertEqual(lamb(), 42)
+
+    # gh-138349
+    def test_module_level_annotation_plus_listcomp(self):
+        cases = [
+            """
+            def report_error():
+                pass
+            try:
+                [0 for name_2 in unique_name_0 if (lambda: name_2)]
+            except:
+                pass
+            annotated_name: 0
+            """,
+            """
+            class Generic:
+                pass
+            try:
+                [0 for name_2 in unique_name_0 if (0 for unique_name_1 in unique_name_2 for unique_name_3 in name_2)]
+            except:
+                pass
+            annotated_name: 0
+            """,
+            """
+            class Generic:
+                pass
+            annotated_name: 0
+            try:
+                [0 for name_2 in [[0]] for unique_name_1 in unique_name_2 if (lambda: name_2)]
+            except:
+                pass
+            """,
+        ]
+        for code in cases:
+            with self.subTest(code=code):
+                mod = build_module(code)
+                annos = mod.__annotations__
+                self.assertEqual(annos, {"annotated_name": 0})

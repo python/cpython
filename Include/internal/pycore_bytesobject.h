@@ -20,8 +20,9 @@ extern PyObject* _PyBytes_FromHex(
 
 // Helper for PyBytes_DecodeEscape that detects invalid escape chars.
 // Export for test_peg_generator.
-PyAPI_FUNC(PyObject*) _PyBytes_DecodeEscape(const char *, Py_ssize_t,
-                                            const char *, const char **);
+PyAPI_FUNC(PyObject*) _PyBytes_DecodeEscape2(const char *, Py_ssize_t,
+                                             const char *,
+                                             int *, const char **);
 
 
 // Substring Search.
@@ -141,6 +142,19 @@ PyAPI_FUNC(void*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
     void *str,
     const void *bytes,
     Py_ssize_t size);
+
+// Export for '_testcapi' shared extension.
+PyAPI_FUNC(PyBytesWriter*) _PyBytesWriter_CreateByteArray(
+    Py_ssize_t size);
+
+
+struct PyBytesWriter {
+    char small_buffer[256];
+    PyObject *obj;
+    Py_ssize_t size;
+    int use_bytearray;
+    int overallocate;
+};
 
 #ifdef __cplusplus
 }

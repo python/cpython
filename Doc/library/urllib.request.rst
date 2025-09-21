@@ -146,17 +146,25 @@ The :mod:`urllib.request` module defines the following functions:
    attribute to modify its position in the handlers list.
 
 
-.. function:: pathname2url(path)
+.. function:: pathname2url(path, *, add_scheme=False)
 
    Convert the given local path to a ``file:`` URL. This function uses
-   :func:`~urllib.parse.quote` function to encode the path. For historical
-   reasons, the return value omits the ``file:`` scheme prefix. This example
-   shows the function being used on Windows::
+   :func:`~urllib.parse.quote` function to encode the path.
+
+   If *add_scheme* is false (the default), the return value omits the
+   ``file:`` scheme prefix. Set *add_scheme* to true to return a complete URL.
+
+   This example shows the function being used on Windows::
 
       >>> from urllib.request import pathname2url
       >>> path = 'C:\\Program Files'
-      >>> 'file:' + pathname2url(path)
+      >>> pathname2url(path, add_scheme=True)
       'file:///C:/Program%20Files'
+
+   .. versionchanged:: 3.14
+      Windows drive letters are no longer converted to uppercase, and ``:``
+      characters not following a drive letter no longer cause an
+      :exc:`OSError` exception to be raised on Windows.
 
    .. versionchanged:: 3.14
       Paths beginning with a slash are converted to URLs with authority
@@ -164,27 +172,49 @@ The :mod:`urllib.request` module defines the following functions:
       the URL ``///etc/hosts``.
 
    .. versionchanged:: 3.14
-      Windows drive letters are no longer converted to uppercase, and ``:``
-      characters not following a drive letter no longer cause an
-      :exc:`OSError` exception to be raised on Windows.
+      The *add_scheme* parameter was added.
 
 
-.. function:: url2pathname(url)
+.. function:: url2pathname(url, *, require_scheme=False, resolve_host=False)
 
    Convert the given ``file:`` URL to a local path. This function uses
-   :func:`~urllib.parse.unquote` to decode the URL. For historical reasons,
-   the given value *must* omit the ``file:`` scheme prefix. This example shows
-   the function being used on Windows::
+   :func:`~urllib.parse.unquote` to decode the URL.
+
+   If *require_scheme* is false (the default), the given value should omit a
+   ``file:`` scheme prefix. If *require_scheme* is set to true, the given
+   value should include the prefix; a :exc:`~urllib.error.URLError` is raised
+   if it doesn't.
+
+   The URL authority is discarded if it is empty, ``localhost``, or the local
+   hostname. Otherwise, if *resolve_host* is set to true, the authority is
+   resolved using :func:`socket.gethostbyname` and discarded if it matches a
+   local IP address (as per :rfc:`RFC 8089 §3 <8089#section-3>`). If the
+   authority is still unhandled, then on Windows a UNC path is returned, and
+   on other platforms a :exc:`~urllib.error.URLError` is raised.
+
+   This example shows the function being used on Windows::
 
       >>> from urllib.request import url2pathname
       >>> url = 'file:///C:/Program%20Files'
-      >>> url2pathname(url.removeprefix('file:'))
+      >>> url2pathname(url, require_scheme=True)
       'C:\\Program Files'
 
    .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase, and ``:``
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
+
+   .. versionchanged:: 3.14
+      The URL authority is discarded if it matches the local hostname.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`~urllib.error.URLError` is raised.
+
+   .. versionchanged:: 3.14
+      The URL query and fragment components are discarded if present.
+
+   .. versionchanged:: 3.14
+      The *require_scheme* and *resolve_host* parameters were added.
 
 
 .. function:: getproxies()
@@ -802,10 +832,13 @@ The following attribute and methods should only be used by classes derived from
    errors.  It will be called automatically by the  :class:`OpenerDirector` getting
    the error, and should not normally be called in other circumstances.
 
-   *req* will be a :class:`Request` object, *fp* will be a file-like object with
-   the HTTP error body, *code* will be the three-digit code of the error, *msg*
-   will be the user-visible explanation of the code and *hdrs* will be a mapping
-   object with the headers of the error.
+   :class:`OpenerDirector` will call this method with five positional arguments:
+
+   1. a :class:`Request` object,
+   #. a file-like object with the HTTP error body,
+   #. the three-digit code of the error, as a string,
+   #. the user-visible explanation of the code, as a string, and
+   #. the headers of the error, as a mapping object.
 
    Return values and exceptions raised should be the same as those of
    :func:`urlopen`.
@@ -1094,7 +1127,7 @@ HTTPHandler Objects
 .. method:: HTTPHandler.http_open(req)
 
    Send an HTTP request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _https-handler-objects:
@@ -1106,7 +1139,7 @@ HTTPSHandler Objects
 .. method:: HTTPSHandler.https_open(req)
 
    Send an HTTPS request, which can be either GET or POST, depending on
-   ``req.has_data()``.
+   ``req.data``.
 
 
 .. _file-handler-objects:

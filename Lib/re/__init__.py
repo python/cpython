@@ -61,7 +61,7 @@ below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.
     \number  Matches the contents of the group of the same number.
     \A       Matches only at the start of the string.
-    \Z       Matches only at the end of the string.
+    \z       Matches only at the end of the string.
     \b       Matches the empty string, but only at the start or end of a word.
     \B       Matches the empty string, but not at the start or end of a word.
     \d       Matches any decimal digit; equivalent to the set [0-9] in
