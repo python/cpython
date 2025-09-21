@@ -2123,18 +2123,25 @@ make_pre_finalization_calls(PyThreadState *tstate, int subinterpreters)
         // XXX Why does _PyThreadState_DeleteList() rely on all interpreters
         // being stopped?
         _PyEval_StopTheWorldAll(interp->runtime);
+        _PyRWMutex_Lock(&interp->references.lock);
         int has_subinterpreters = subinterpreters
                                     ? runtime_has_subinterpreters(interp->runtime)
                                     : 0;
+        // TODO: The interpreter reference countdown probably isn't very efficient.
         int should_continue = (interp_has_threads(interp)
                               || interp_has_atexit_callbacks(interp)
                               || interp_has_pending_calls(interp)
-                              || has_subinterpreters);
+                              || has_subinterpreters
+                              || interp->references.refcount > 0);
         if (!should_continue) {
             break;
         }
+        // Temporarily let other threads execute
+        _PyThreadState_Detach(tstate);
+        _PyRWMutex_Unlock(&interp->references.lock);
         _PyEval_StartTheWorldAll(interp->runtime);
         PyMutex_Unlock(&interp->ceval.pending.mutex);
+        _PyThreadState_Attach(tstate);
     }
     assert(PyMutex_IsLocked(&interp->ceval.pending.mutex));
     ASSERT_WORLD_STOPPED(interp);
@@ -2195,6 +2202,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     for (PyThreadState *p = list; p != NULL; p = p->next) {
         _PyThreadState_SetShuttingDown(p);
     }
+    _PyRWMutex_Unlock(&tstate->interp->references.lock);
     _PyEval_StartTheWorldAll(runtime);
     PyMutex_Unlock(&tstate->interp->ceval.pending.mutex);
 
@@ -2564,6 +2572,7 @@ Py_EndInterpreter(PyThreadState *tstate)
         _PyThreadState_SetShuttingDown(p);
     }
 
+    _PyRWMutex_Unlock(&interp->references.lock);
     _PyEval_StartTheWorldAll(interp->runtime);
     PyMutex_Unlock(&interp->ceval.pending.mutex);
     _PyThreadState_DeleteList(list, /*is_after_fork=*/0);

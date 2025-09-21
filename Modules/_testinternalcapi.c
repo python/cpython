@@ -2386,6 +2386,61 @@ simple_pending_call(PyObject *self, PyObject *callable)
     Py_RETURN_NONE;
 }
 
+#define NUM_REFS 100
+
+static PyObject *
+test_interp_refcount(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+    PyInterpreterRef refs[NUM_REFS];
+    for (int i = 0; i < NUM_REFS; ++i) {
+        int res = PyInterpreterRef_FromCurrent(&refs[i]);
+        (void)res;
+        assert(res == 0);
+        assert(_PyInterpreterState_Refcount(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_REFS; ++i) {
+        PyInterpreterRef_Close(refs[i]);
+        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i - 1));
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_weakref_incref(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterWeakRef wref;
+    if (PyInterpreterWeakRef_FromCurrent(&wref) < 0) {
+        return NULL;
+    }
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    PyInterpreterRef refs[NUM_REFS];
+
+    for (int i = 0; i < NUM_REFS; ++i) {
+        int res = PyInterpreterWeakRef_Promote(wref, &refs[i]);
+        (void)res;
+        assert(res == 0);
+        assert(PyInterpreterRef_GetInterpreter(refs[i]) == interp);
+        assert(_PyInterpreterState_Refcount(interp) == i + 1);
+    }
+
+    for (int i = 0; i < NUM_REFS; ++i) {
+        PyInterpreterRef_Close(refs[i]);
+        assert(_PyInterpreterState_Refcount(interp) == (NUM_REFS - i - 1));
+    }
+
+    PyInterpreterWeakRef_Close(wref);
+    Py_RETURN_NONE;
+}
+
+#undef NUM_REFS
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2492,6 +2547,8 @@ static PyMethodDef module_functions[] = {
     {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
 #endif
     {"simple_pending_call", simple_pending_call, METH_O},
+    {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
+    {"test_interp_weakref_incref", test_interp_weakref_incref, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
