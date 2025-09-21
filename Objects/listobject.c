@@ -2876,6 +2876,7 @@ unsafe_tuple_compare(PyObject *v, PyObject *w, MergeState *ms)
  * duplicated).
  */
 /*[clinic input]
+@permit_long_docstring_body
 @critical_section
 list.sort
 
@@ -2896,7 +2897,7 @@ The reverse flag can be set to sort in descending order.
 
 static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
-/*[clinic end generated code: output=57b9f9c5e23fbe42 input=667bf25d0e3a3676]*/
+/*[clinic end generated code: output=57b9f9c5e23fbe42 input=e4f6b6069181ad7d]*/
 {
     MergeState ms;
     Py_ssize_t nremaining;

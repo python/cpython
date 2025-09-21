@@ -39,41 +39,41 @@ descr_name(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_repr(PyDescrObject *descr, const char *format)
+descr_repr(PyDescrObject *descr, const char *kind)
 {
     PyObject *name = NULL;
     if (descr->d_name != NULL && PyUnicode_Check(descr->d_name))
         name = descr->d_name;
 
-    return PyUnicode_FromFormat(format, name, "?", descr->d_type->tp_name);
+    if (descr->d_type == &PyBaseObject_Type) {
+        return PyUnicode_FromFormat("<%s '%V'>", kind, name, "?");
+    }
+    return PyUnicode_FromFormat("<%s '%V' of '%s' objects>",
+                                kind, name, "?", descr->d_type->tp_name);
 }
 
 static PyObject *
 method_repr(PyObject *descr)
 {
-    return descr_repr((PyDescrObject *)descr,
-                      "<method '%V' of '%s' objects>");
+    return descr_repr((PyDescrObject *)descr, "method");
 }
 
 static PyObject *
 member_repr(PyObject *descr)
 {
-    return descr_repr((PyDescrObject *)descr,
-                      "<member '%V' of '%s' objects>");
+    return descr_repr((PyDescrObject *)descr, "member");
 }
 
 static PyObject *
 getset_repr(PyObject *descr)
 {
-    return descr_repr((PyDescrObject *)descr,
-                      "<attribute '%V' of '%s' objects>");
+    return descr_repr((PyDescrObject *)descr, "attribute");
 }
 
 static PyObject *
 wrapperdescr_repr(PyObject *descr)
 {
-    return descr_repr((PyDescrObject *)descr,
-                      "<slot wrapper '%V' of '%s' objects>");
+    return descr_repr((PyDescrObject *)descr, "slot wrapper");
 }
 
 static int

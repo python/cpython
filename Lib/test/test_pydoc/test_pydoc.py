@@ -33,7 +33,7 @@ from test.support.script_helper import (assert_python_ok,
                                         assert_python_failure, spawn_python)
 from test.support import threading_helper
 from test.support import (reap_children, captured_stdout,
-                          captured_stderr, is_emscripten, is_wasi,
+                          captured_stderr, is_wasm32,
                           requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.test_pydoc import pydoc_mod
@@ -1303,6 +1303,11 @@ class PydocImportTest(PydocBaseTest):
     @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
+        if support.is_emscripten:
+            # Emscripten's readdir implementation is buggy on directories
+            # with read permission but no execute permission.
+            old_umask = os.umask(0)
+            self.addCleanup(os.umask, old_umask)
         os.mkdir(pkgdir)
         self.addCleanup(rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
@@ -1946,9 +1951,11 @@ class PydocFodderTest(unittest.TestCase):
         if not support.MISSING_C_DOCSTRINGS:
             self.assertIn(' |  get(key, default=None, /) method of builtins.dict instance', lines)
             self.assertIn(' |  dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn(' |  sin(x, /)', lines)
         else:
             self.assertIn(' |  get(...) method of builtins.dict instance', lines)
             self.assertIn(' |  dict_get = get(...) method of builtins.dict instance', lines)
+            self.assertIn(' |  sin(...)', lines)
 
         lines = self.getsection(result, f' |  Class methods {where}:', ' |  ' + '-'*70)
         self.assertIn(' |  B_classmethod(x)', lines)
@@ -2034,6 +2041,11 @@ class PydocFodderTest(unittest.TestCase):
             self.assertIn('    __repr__(...) unbound builtins.object method', lines)
             self.assertIn('    object_repr = __repr__(...) unbound builtins.object method', lines)
 
+        # builtin functions
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('    sin(x, /)', lines)
+        else:
+            self.assertIn('    sin(...)', lines)
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -2074,9 +2086,15 @@ class PydocFodderTest(unittest.TestCase):
             self.assertIn(' __repr__(...) unbound builtins.object method', lines)
             self.assertIn(' object_repr = __repr__(...) unbound builtins.object method', lines)
 
+        # builtin functions
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' sin(x, /)', lines)
+        else:
+            self.assertIn(' sin(...)', lines)
+
 
 @unittest.skipIf(
-    is_emscripten or is_wasi,
+    is_wasm32,
     "Socket server not available on Emscripten/WASI."
 )
 class PydocServerTest(unittest.TestCase):

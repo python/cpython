@@ -4078,6 +4078,104 @@ lines. With this approach, you get better output:
     WARNING:demo:    1/0
     WARNING:demo:ZeroDivisionError: division by zero
 
+How to uniformly handle newlines in logging output
+--------------------------------------------------
+
+Usually, messages that are logged (say to console or file) consist of a single
+line of text. However, sometimes there is a need to handle messages with
+multiple lines - whether because a logging format string contains newlines, or
+logged data contains newlines. If you want to handle such messages uniformly, so
+that each line in the logged message appears uniformly formatted as if it was
+logged separately, you can do this using a handler mixin, as in the following
+snippet:
+
+.. code-block:: python
+
+    # Assume this is in a module mymixins.py
+    import copy
+
+    class MultilineMixin:
+        def emit(self, record):
+            s = record.getMessage()
+            if '\n' not in s:
+                super().emit(record)
+            else:
+                lines = s.splitlines()
+                rec = copy.copy(record)
+                rec.args = None
+                for line in lines:
+                    rec.msg = line
+                    super().emit(rec)
+
+You can use the mixin as in the following script:
+
+.. code-block:: python
+
+    import logging
+
+    from mymixins import MultilineMixin
+
+    logger = logging.getLogger(__name__)
+
+    class StreamHandler(MultilineMixin, logging.StreamHandler):
+        pass
+
+    if __name__ == '__main__':
+        logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-9s %(message)s',
+                            handlers = [StreamHandler()])
+        logger.debug('Single line')
+        logger.debug('Multiple lines:\nfool me once ...')
+        logger.debug('Another single line')
+        logger.debug('Multiple lines:\n%s', 'fool me ...\ncan\'t get fooled again')
+
+The script, when run, prints something like:
+
+.. code-block:: text
+
+    2025-07-02 13:54:47,234 DEBUG     Single line
+    2025-07-02 13:54:47,234 DEBUG     Multiple lines:
+    2025-07-02 13:54:47,234 DEBUG     fool me once ...
+    2025-07-02 13:54:47,234 DEBUG     Another single line
+    2025-07-02 13:54:47,234 DEBUG     Multiple lines:
+    2025-07-02 13:54:47,234 DEBUG     fool me ...
+    2025-07-02 13:54:47,234 DEBUG     can't get fooled again
+
+If, on the other hand, you are concerned about `log injection
+<https://owasp.org/www-community/attacks/Log_Injection>`_, you can use a
+formatter which escapes newlines, as per the following example:
+
+.. code-block:: python
+
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    class EscapingFormatter(logging.Formatter):
+        def format(self, record):
+            s = super().format(record)
+            return s.replace('\n', r'\n')
+
+    if __name__ == '__main__':
+        h = logging.StreamHandler()
+        h.setFormatter(EscapingFormatter('%(asctime)s %(levelname)-9s %(message)s'))
+        logging.basicConfig(level=logging.DEBUG, handlers = [h])
+        logger.debug('Single line')
+        logger.debug('Multiple lines:\nfool me once ...')
+        logger.debug('Another single line')
+        logger.debug('Multiple lines:\n%s', 'fool me ...\ncan\'t get fooled again')
+
+You can, of course, use whatever escaping scheme makes the most sense for you.
+The script, when run, should produce output like this:
+
+.. code-block:: text
+
+    2025-07-09 06:47:33,783 DEBUG     Single line
+    2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me once ...
+    2025-07-09 06:47:33,783 DEBUG     Another single line
+    2025-07-09 06:47:33,783 DEBUG     Multiple lines:\nfool me ...\ncan't get fooled again
+
+Escaping behaviour can't be the stdlib default , as it would break backwards
+compatibility.
 
 .. patterns-to-avoid:
 

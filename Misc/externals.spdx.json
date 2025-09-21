@@ -91,21 +91,21 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "e335aeb44fa36cde60ecbb6a9f8be6f5d449d645ce9b0199ee53a7e6728d19d2"
+          "checksumValue": "fb5ab81f27612b0a7b4861ba655906c76dc85ee969e7a4905d2075aff931e8d0"
         }
       ],
-      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.49.1.0.tar.gz",
+      "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/sqlite-3.50.4.0.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.49.1.0:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:sqlite:sqlite:3.50.4.0:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
       "licenseConcluded": "NOASSERTION",
       "name": "sqlite",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "3.49.1.0"
+      "versionInfo": "3.50.4.0"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-tcl-core",

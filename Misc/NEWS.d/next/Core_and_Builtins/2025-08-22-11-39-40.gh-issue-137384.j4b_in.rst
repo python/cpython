@@ -1,0 +1,1 @@
+Fix a crash when using the :mod:`warnings` module in a finalizer at shutdown. Patch by Kumar Aditya.
