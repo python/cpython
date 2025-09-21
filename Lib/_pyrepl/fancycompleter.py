@@ -140,7 +140,8 @@ class Completer(rlcompleter.Completer):
                    in enumerate(zip(names, values))]
         # We add a space at the end to prevent the automatic completion of the
         # common prefix, which is the ANSI escape sequence.
-        return matches + [' ']
+        matches.append(' ')
+        return matches
 
     def color_for_obj(self, i, name, value):
         t = type(value)
