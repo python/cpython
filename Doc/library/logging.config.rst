@@ -586,7 +586,7 @@ configuration dictionary for the handler named ``foo``, and later (once that
 handler has been configured) it points to the configured handler instance.
 Thus, ``cfg://handlers.foo`` could resolve to either a dictionary or a handler
 instance. In general, it is wise to name handlers in a way such that dependent
-handlers are configured _after_ any handlers they depend on; that allows
+handlers are configured *after* any handlers they depend on; that allows
 something like ``cfg://handlers.foo`` to be used in configuring a handler that
 depends on handler ``foo``. If that dependent handler were named ``bar``,
 problems would result, because the configuration of ``bar`` would be attempted

@@ -322,6 +322,23 @@ class AuditTest(unittest.TestCase):
         if returncode:
             self.fail(stderr)
 
+    @support.support_remote_exec_only
+    @support.cpython_only
+    def test_sys_remote_exec(self):
+        returncode, events, stderr = self.run_python("test_sys_remote_exec")
+        self.assertTrue(any(["sys.remote_exec" in event for event in events]))
+        self.assertTrue(any(["cpython.remote_debugger_script" in event for event in events]))
+        if returncode:
+            self.fail(stderr)
+
+    def test_import_module(self):
+        self.do_test("test_import_module")
+
+    def test_builtin__import__(self):
+        self.do_test("test_builtin__import__")
+
+    def test_import_statement(self):
+        self.do_test("test_import_statement")
 
 if __name__ == "__main__":
     unittest.main()

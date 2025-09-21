@@ -1,1 +1,2 @@
-Support keyword completion in the :mod:`sqlite3` command-line interface.
+Support keyword completion in the :mod:`sqlite3` command-line interface and add
+:data:`sqlite3.SQLITE_KEYWORDS` constant.

@@ -1,0 +1,5 @@
+Fixed a regression where raw f-strings incorrectly interpreted
+escape sequences in format specifications. Raw f-strings now properly preserve
+literal backslashes in format specs, matching the behavior from Python 3.11.
+For example, ``rf"{obj:\xFF}"`` now correctly produces ``'\\xFF'`` instead of
+``'ÿ'``. Patch by Pablo Galindo.
