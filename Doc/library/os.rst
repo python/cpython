@@ -2027,7 +2027,7 @@ features:
   on should be relative; path will then be relative to that directory.  If the
   path is absolute, *dir_fd* is ignored.  (For POSIX systems, Python will call
   the variant of the function with an ``at`` suffix and possibly prefixed with
-  ``f`` (e.g. call ``faccessat`` instead of ``access``).
+  ``f`` (e.g. call ``faccessat`` instead of ``access``).)
 
   You can check whether or not *dir_fd* is supported for a particular function
   on your platform using :data:`os.supports_dir_fd`.  If it's unavailable,
