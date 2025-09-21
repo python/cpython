@@ -258,7 +258,7 @@ Types
    .. attribute:: expression
       :type: str
 
-      For interpolations created from t-string literals, :attr:`!expression`
+      For interpolations created by t-string literals, :attr:`!expression`
       is the source text found inside the curly braces (``{`` & ``}``),
       including any whitespace, but excluding the curly braces themselves.
       For manually created interpolations, :attr:`!expression` is the arbitrary
