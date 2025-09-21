@@ -1951,9 +1951,11 @@ class PydocFodderTest(unittest.TestCase):
         if not support.MISSING_C_DOCSTRINGS:
             self.assertIn(' |  get(key, default=None, /) method of builtins.dict instance', lines)
             self.assertIn(' |  dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn(' |  sin(x, /)', lines)
         else:
             self.assertIn(' |  get(...) method of builtins.dict instance', lines)
             self.assertIn(' |  dict_get = get(...) method of builtins.dict instance', lines)
+            self.assertIn(' |  sin(...)', lines)
 
         lines = self.getsection(result, f' |  Class methods {where}:', ' |  ' + '-'*70)
         self.assertIn(' |  B_classmethod(x)', lines)
@@ -2039,6 +2041,11 @@ class PydocFodderTest(unittest.TestCase):
             self.assertIn('    __repr__(...) unbound builtins.object method', lines)
             self.assertIn('    object_repr = __repr__(...) unbound builtins.object method', lines)
 
+        # builtin functions
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('    sin(x, /)', lines)
+        else:
+            self.assertIn('    sin(...)', lines)
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -2078,6 +2085,12 @@ class PydocFodderTest(unittest.TestCase):
             self.assertIn(' list_count = count(self, object, /) unbound builtins.list method', lines)
             self.assertIn(' __repr__(...) unbound builtins.object method', lines)
             self.assertIn(' object_repr = __repr__(...) unbound builtins.object method', lines)
+
+        # builtin functions
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' sin(x, /)', lines)
+        else:
+            self.assertIn(' sin(...)', lines)
 
 
 @unittest.skipIf(
