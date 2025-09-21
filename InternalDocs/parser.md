@@ -829,6 +829,10 @@ $ python parse.py file_with_source_code_to_test.py
 As the generated `parse.py` file is just Python code, you can modify it
 and add breakpoints to debug or better understand some complex situations.
 
+However, this does not work with the existing `Grammar/python.gram` file.
+See [#133560](https://github.com/python/cpython/issues/133560) 
+and [#96424](https://github.com/python/cpython/issues/96424) for more information.
+
 
 Verbose mode
 ------------
