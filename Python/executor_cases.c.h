@@ -7560,7 +7560,7 @@
         case _DYNAMIC_EXIT: {
             PyObject *exit_p = (PyObject *)CURRENT_OPERAND0();
             _Py_CODEUNIT *target = frame->instr_ptr;
-            #ifdef Py_DEBUG
+            #if defined(Py_DEBUG) && !defined(_Py_JIT)
             if (frame->lltrace >= 2) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 printf("GUARD IP EXIT: [UOp ");

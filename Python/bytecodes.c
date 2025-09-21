@@ -5465,7 +5465,7 @@ dummy_func(
 
         tier2 op(_DYNAMIC_EXIT, (exit_p/4 --)) {
             _Py_CODEUNIT *target = frame->instr_ptr;
-#ifdef Py_DEBUG
+#if defined(Py_DEBUG) && !defined(_Py_JIT)
             if (frame->lltrace >= 2) {
                 printf("GUARD IP EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
