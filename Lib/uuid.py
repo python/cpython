@@ -111,6 +111,33 @@ _RFC_4122_VERSION_6_FLAGS = ((6 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_7_FLAGS = ((7 << 76) | (0x8000 << 48))
 _RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
 
+_random_hook = None
+_time_hook = None
+
+
+def _gen_random(size):
+    if _random_hook is None:
+        return os.urandom(size)
+    else:
+        return _random_hook(size)
+
+
+def _gen_time():
+    if _time_hook is None:
+        return time.time_ns()
+    else:
+        return _time_hook()
+
+
+def _install_py_hooks(*, random_func, time_func):
+    global _random_hook
+    global _time_hook
+    global _last_timestamp_v7
+    _random_hook = random_func
+    _time_hook = time_func
+    # Reset _last_timestamp_v7 for repeatability of tests
+    _last_timestamp_v7 = None
+
 
 # Import optional C extension at toplevel, to help disabling it when testing
 try:
@@ -783,7 +810,7 @@ def uuid3(namespace, name):
 
 def uuid4():
     """Generate a random UUID."""
-    int_uuid_4 = int.from_bytes(os.urandom(16))
+    int_uuid_4 = int.from_bytes(_gen_random(16))
     int_uuid_4 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_4 |= _RFC_4122_VERSION_4_FLAGS
     return UUID._from_int(int_uuid_4)
@@ -843,7 +870,8 @@ _last_timestamp_v7 = None
 _last_counter_v7 = 0  # 42-bit counter
 
 def _uuid7_get_counter_and_tail():
-    rand = int.from_bytes(os.urandom(10))
+    rand = int.from_bytes(_gen_random(10), 'big')
+
     # 42-bit counter with MSB set to 0
     counter = (rand >> 32) & 0x1ff_ffff_ffff
     # 32-bit random data
@@ -872,7 +900,7 @@ def uuid7():
     global _last_timestamp_v7
     global _last_counter_v7
 
-    nanoseconds = time.time_ns()
+    nanoseconds = _gen_time()
     timestamp_ms = nanoseconds // 1_000_000
 
     if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
@@ -888,7 +916,7 @@ def uuid7():
             counter, tail = _uuid7_get_counter_and_tail()
         else:
             # 32-bit random data
-            tail = int.from_bytes(os.urandom(4))
+            tail = int.from_bytes(_gen_random(4))
 
     unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
     counter_msbs = counter >> 30
@@ -946,6 +974,7 @@ _py_uuid7 = uuid7
 _py_UUID = UUID
 try:
     from _uuid import UUID, uuid4, uuid7
+    from _uuid import _install_c_hooks
 except ImportError:
     _c_UUID = None
     _c_uuid4 = None
