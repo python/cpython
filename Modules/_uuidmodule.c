@@ -165,7 +165,6 @@ typedef struct {
     PyTypeObject *UuidType;
 
     PyObject *safe_uuid;
-    PyObject *safe_uuid_unknown;
 
     PyObject *uint128_max;
 
@@ -968,12 +967,7 @@ make_uuid(PyTypeObject *type)
         }
     }
 
-    // During module initialization, safe_uuid_unknown might not be set yet
-    if (state->safe_uuid_unknown != NULL) {
-        self->is_safe = Py_NewRef(state->safe_uuid_unknown);
-    } else {
-        self->is_safe = Py_NewRef(Py_None);
-    }
+    self->is_safe = NULL;
 
     self->weakreflist = NULL;
     self->cached_hash = -1;
@@ -1033,8 +1027,9 @@ static PyObject *
 Uuid_get_is_safe(PyObject *o, void *closure)
 {
     uuidobject *self = (uuidobject *)o;
+    uuid_state *state = get_uuid_state_by_cls(Py_TYPE(self));
     if (self->is_safe == NULL) {
-        Py_RETURN_NONE;
+        return PyObject_GetAttrString(state->safe_uuid, "unknown");
     }
     return Py_NewRef(self->is_safe);
 }
@@ -1579,8 +1574,6 @@ static PyObject *
 _uuid_UUID___setstate___impl(uuidobject *self, PyObject *state)
 /*[clinic end generated code: output=cdf6bd4a2a680b3f input=b1ec0744788a73a0]*/
 {
-    uuid_state *module_state = get_uuid_state_by_cls(Py_TYPE(self));
-
     if (!PyDict_Check(state)) {
         PyErr_SetString(PyExc_TypeError, "state must be a dictionary");
         return NULL;
@@ -1597,23 +1590,50 @@ _uuid_UUID___setstate___impl(uuidobject *self, PyObject *state)
         return NULL;
     }
 
-    // Get and set 'is_safe' if present
-    PyObject *is_safe = PyDict_GetItem(state, &_Py_ID(is_safe));
-    if (is_safe != NULL) {
-        // is_safe is the integer value, we need to call SafeUUID(value)
-        PyObject *safe_uuid_member = PyObject_CallOneArg(module_state->safe_uuid, is_safe);
-        if (safe_uuid_member == NULL) {
-            return NULL;
-        }
-        Py_XDECREF(self->is_safe);
-        self->is_safe = safe_uuid_member;
-    } else {
-        // No is_safe in state, set to SafeUUID.unknown
-        Py_XDECREF(self->is_safe);
-        self->is_safe = Py_NewRef(module_state->safe_uuid_unknown);
+    Py_CLEAR(self->is_safe);
+    if (PyDict_GetItemRef(state, &_Py_ID(is_safe), &self->is_safe) < 0) {
+        return NULL;
     }
 
     Py_RETURN_NONE;
+}
+
+static PyObject *
+compute_uuid_max(void)
+{
+    // Compute `(1 << 128) - 1`
+
+    PyObject *one = NULL;
+    PyObject *shift = NULL;
+    PyObject *shifted = NULL;
+
+    one = PyLong_FromLong(1);
+    if (one == NULL) {
+        goto err;
+    }
+
+    shift = PyLong_FromLong(128);
+    if (shift == NULL) {
+        goto err;
+    }
+
+    shifted = PyNumber_Lshift(one, shift);
+    if (shifted == NULL) {
+        goto err;
+    }
+    Py_DECREF(shift);
+
+    PyObject *result = PyNumber_Subtract(shifted, one);
+    Py_DECREF(shifted);
+    Py_DECREF(one);
+
+    return result;
+
+err:
+    Py_XDECREF(one);
+    Py_XDECREF(shift);
+    Py_XDECREF(shifted);
+    return NULL;
 }
 
 static PyMethodDef Uuid_methods[] = {
@@ -1672,7 +1692,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     uuid_state *state = get_uuid_state(mod);
     Py_VISIT(state->UuidType);
     Py_VISIT(state->safe_uuid);
-    Py_VISIT(state->safe_uuid_unknown);
     Py_VISIT(state->uint128_max);
     Py_VISIT(state->reserved_ncs);
     Py_VISIT(state->rfc_4122);
@@ -1691,7 +1710,6 @@ module_clear(PyObject *mod)
 
     Py_CLEAR(state->UuidType);
     Py_CLEAR(state->safe_uuid);
-    Py_CLEAR(state->safe_uuid_unknown);
     Py_CLEAR(state->uint128_max);
     Py_CLEAR(state->reserved_ncs);
     Py_CLEAR(state->rfc_4122);
@@ -1775,12 +1793,8 @@ uuid_exec(PyObject *module)
     if (safe_uuid == NULL) {
         goto fail;
     }
-    state->safe_uuid_unknown = PyObject_GetAttrString(safe_uuid, "unknown");
-    if (state->safe_uuid_unknown == NULL) {
-        goto fail;
-    }
 
-    state->uint128_max = PyObject_GetAttrString(uuid_mod, "_UINT_128_MAX");
+    state->uint128_max = compute_uuid_max();
     if (state->uint128_max == NULL) {
         goto fail;
     }
