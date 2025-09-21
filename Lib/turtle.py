@@ -2646,12 +2646,11 @@ class RawTurtle(TPen, TNavigator):
         No argument.
 
         Delete the turtle's drawings from the screen. Move the turtle
-        to position `(0, 0)`, set its heading to the default
-        (facing east in standard mode) and restore the following state
-        variables to their initial values:
+        to position `(0, 0)`, set its heading to 0 and restore
+        the following state variables to their initial values:
 
         - position: `(0, 0)`
-        - heading: `0` (east)
+        - heading: `0` (east if standard or world mode, north if logo mode)
         - pen state: down (drawing)
         - pensize: `1`
         - pencolor: black
