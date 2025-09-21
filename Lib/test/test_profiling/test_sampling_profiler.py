@@ -22,6 +22,7 @@ from test.support.os_helper import unlink
 from test.support import force_not_colorized_test_class, SHORT_TIMEOUT
 from test.support.socket_helper import find_unused_port
 from test.support import requires_subprocess, is_emscripten
+from test.support import captured_stdout, captured_stderr
 
 PROCESS_VM_READV_SUPPORTED = False
 
@@ -416,7 +417,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(test_frames2)
         collector.collect(test_frames3)
 
-        collector.export(collapsed_out.name)
+        with (captured_stdout(), captured_stderr()):
+            collector.export(collapsed_out.name)
         # Check file contents
         with open(collapsed_out.name, "r") as f:
             content = f.read()
@@ -500,7 +502,8 @@ class TestSampleProfilerComponents(unittest.TestCase):
         collector.collect(test_frames3)
 
         # Export flamegraph
-        collector.export(flamegraph_out.name)
+        with (captured_stdout(), captured_stderr()):
+            collector.export(flamegraph_out.name)
 
         # Verify file was created and contains valid data
         self.assertTrue(os.path.exists(flamegraph_out.name))
@@ -1918,7 +1921,7 @@ class TestSampleProfilerErrorHandling(unittest.TestCase):
         self.addCleanup(shutil.rmtree, tempdir.name)
 
 
-        with contextlib.chdir(tempdir.name):
+        with (contextlib.chdir(tempdir.name), captured_stdout(), captured_stderr()):
             for fmt in valid_formats:
                 try:
                     # This will likely fail with permissions, but the format should be valid
@@ -2632,6 +2635,7 @@ class TestGilModeFiltering(unittest.TestCase):
         with (
             mock.patch("profiling.sampling.sample.SampleProfiler") as mock_profiler,
             mock.patch("profiling.sampling.sample.PstatsCollector") as mock_collector,
+            captured_stdout(), captured_stderr()
         ):
             # Mock the profiler instance
             mock_instance = mock.Mock()
