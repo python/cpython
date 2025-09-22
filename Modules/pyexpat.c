@@ -176,8 +176,8 @@ set_xml_error(pyexpat_state *state,
         && set_error_attr(res, "offset", column)
     ) {
         PyErr_SetObject(state->error, res);
-        Py_DECREF(res);
     }
+    Py_XDECREF(res);
     return NULL;
 }
 
