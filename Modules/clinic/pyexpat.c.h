@@ -427,7 +427,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__,
 "The \'max_factor\' value must be a non-NaN floating point value greater than\n"
 "or equal to 1.0. Amplifications factors greater than 100 can been observed\n"
 "near the start of parsing even with benign files in practice. As such, the\n"
-"upper bound must be carefully chosen so to avoid false positives.");
+"activation threshold should be carefully chosen to avoid false positives.");
 
 #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF    \
     {"SetAllocTrackerMaximumAmplification", _PyCFunction_CAST(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__},
@@ -686,4 +686,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
     #define PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF) */
-/*[clinic end generated code: output=a6e2c3f6343636ac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50bbe2bfee799576 input=a9049054013a1b77]*/

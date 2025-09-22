@@ -249,7 +249,7 @@ well-known XML vulnerabilities.
    The *max_factor* value must be a non-NaN :class:`float` value greater than
    or equal to 1.0. Amplifications factors greater than 100 can been observed
    near the start of parsing even with benign files in practice. As such, the
-   upper bound must be carefully chosen so to avoid false positives.
+   activation threshold should be carefully chosen to avoid false positives.
 
    An :exc:`ExpatError` is raised if this method is called on a non-root
    parser or if *max_factor* is outside the valid range.
@@ -259,7 +259,8 @@ well-known XML vulnerabilities.
    .. note::
 
       The maximum amplification factor is only considered if the threshold
-      specified by :meth:`.SetAllocTrackerActivationThreshold` is reached.
+      that can be adjusted :meth:`.SetAllocTrackerActivationThreshold` is
+      exceeded.
 
    .. versionadded:: next
 

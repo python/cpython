@@ -1198,14 +1198,14 @@ hierarchy.
 The 'max_factor' value must be a non-NaN floating point value greater than
 or equal to 1.0. Amplifications factors greater than 100 can been observed
 near the start of parsing even with benign files in practice. As such, the
-upper bound must be carefully chosen so to avoid false positives.
+activation threshold should be carefully chosen to avoid false positives.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            PyTypeObject *cls,
                                                            float max_factor)
-/*[clinic end generated code: output=6e44bd48c9b112a0 input=18e8d07329c0efda]*/
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=23ca8b8f7de04462]*/
 {
     assert(self->itself != NULL);
     if (XML_SetAllocTrackerMaximumAmplification(self->itself, max_factor) == XML_TRUE) {
