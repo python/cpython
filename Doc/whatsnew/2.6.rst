@@ -378,7 +378,7 @@ be to let the user write code like this::
 
 The transaction should be committed if the code in the block runs flawlessly or
 rolled back if there's an exception. Here's the basic interface for
-:class:`DatabaseConnection` that I'll assume::
+``DatabaseConnection`` that I'll assume::
 
    class DatabaseConnection:
        # Database interface
@@ -1256,16 +1256,16 @@ metaclass in a class definition::
             ...
 
 
-In the :class:`Drawable` ABC above, the :meth:`draw_doubled` method
+In the ``Drawable`` ABC above, the ``draw_doubled`` method
 renders the object at twice its size and can be implemented in terms
-of other methods described in :class:`Drawable`.  Classes implementing
+of other methods described in ``Drawable``.  Classes implementing
 this ABC therefore don't need to provide their own implementation
-of :meth:`draw_doubled`, though they can do so.  An implementation
-of :meth:`draw` is necessary, though; the ABC can't provide
+of ``draw_doubled``, though they can do so.  An implementation
+of ``draw`` is necessary, though; the ABC can't provide
 a useful generic implementation.
 
-You can apply the ``@abstractmethod`` decorator to methods such as
-:meth:`draw` that must be implemented; Python will then raise an
+You can apply the :func:`~abc.abstractmethod` decorator to methods such as
+``draw`` that must be implemented; Python will then raise an
 exception for classes that don't define the method.
 Note that the exception is only raised when you actually
 try to create an instance of a subclass lacking the method::
@@ -1289,7 +1289,7 @@ Abstract data attributes can be declared using the
     def readonly(self):
        return self._x
 
-Subclasses must then define a :meth:`readonly` property.
+Subclasses must then define a ``readonly`` property.
 
 .. seealso::
 
