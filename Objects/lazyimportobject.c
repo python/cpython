@@ -3,6 +3,9 @@
 #include "Python.h"
 #include "pycore_import.h"
 #include "pycore_lazyimportobject.h"
+#include "pycore_frame.h"
+#include "pycore_ceval.h"
+#include "pycore_interpframe.h"
 
 PyObject *
 _PyLazyImport_New(PyObject *import_func, PyObject *from, PyObject *attr)
@@ -26,6 +29,21 @@ _PyLazyImport_New(PyObject *import_func, PyObject *from, PyObject *attr)
     m->lz_from = from;
     Py_XINCREF(attr);
     m->lz_attr = attr;
+
+    /* Capture frame information for the original import location */
+    m->lz_code = NULL;
+    m->lz_instr_offset = -1;
+
+    _PyInterpreterFrame *frame = _PyEval_GetFrame();
+    if (frame != NULL) {
+        PyCodeObject *code = _PyFrame_GetCode(frame);
+        if (code != NULL) {
+            m->lz_code = (PyCodeObject *)Py_NewRef(code);
+            /* Calculate the instruction offset from the current frame */
+            m->lz_instr_offset = _PyInterpreterFrame_LASTI(frame);
+        }
+    }
+
     PyObject_GC_Track(m);
     return (PyObject *)m;
 }
@@ -37,6 +55,7 @@ lazy_import_dealloc(PyLazyImportObject *m)
     Py_XDECREF(m->lz_import_func);
     Py_XDECREF(m->lz_from);
     Py_XDECREF(m->lz_attr);
+    Py_XDECREF(m->lz_code);
     Py_TYPE(m)->tp_free((PyObject *)m);
 }
 
@@ -72,6 +91,7 @@ lazy_import_traverse(PyLazyImportObject *m, visitproc visit, void *arg)
     Py_VISIT(m->lz_import_func);
     Py_VISIT(m->lz_from);
     Py_VISIT(m->lz_attr);
+    Py_VISIT(m->lz_code);
     return 0;
 }
 
@@ -81,6 +101,7 @@ lazy_import_clear(PyLazyImportObject *m)
     Py_CLEAR(m->lz_import_func);
     Py_CLEAR(m->lz_from);
     Py_CLEAR(m->lz_attr);
+    Py_CLEAR(m->lz_code);
     return 0;
 }
 

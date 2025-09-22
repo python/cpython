@@ -9,6 +9,8 @@
 #include "pycore_interp.h"        // struct _import_runtime_state
 #include "pycore_long.h"          // _PyLong_GetZero
 #include "pycore_lazyimportobject.h"
+#include "pycore_traceback.h"
+#include "pycore_interpframe.h"
 #include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER_TOKEN
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_namespace.h"     // _PyNamespace_Type
@@ -3779,6 +3781,75 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 error:
     Py_XDECREF(obj);
     obj = NULL;
+
+    /* If an error occurred and we have frame information, add it to the exception */
+    if (PyErr_Occurred() && lz->lz_code != NULL && lz->lz_instr_offset >= 0) {
+        /* Get the current exception - this already has the full traceback from the access point */
+        PyObject *exc = _PyErr_GetRaisedException(tstate);
+
+        /* Get import name - this can fail and set an exception */
+        PyObject *import_name = _PyLazyImport_GetName(lazy_import);
+        if (!import_name) {
+            /* Failed to get import name, just restore original exception */
+            _PyErr_SetRaisedException(tstate, exc);
+            goto ok;
+        }
+
+        /* Resolve line number from instruction offset on demand */
+        int lineno = PyCode_Addr2Line((PyCodeObject *)lz->lz_code, lz->lz_instr_offset);
+
+        /* Get strings - these can return NULL on encoding errors */
+        const char *filename_str = PyUnicode_AsUTF8(lz->lz_code->co_filename);
+        if (!filename_str) {
+            /* Unicode conversion failed - clear error and restore original exception */
+            PyErr_Clear();
+            Py_DECREF(import_name);
+            _PyErr_SetRaisedException(tstate, exc);
+            goto ok;
+        }
+
+        const char *funcname_str = PyUnicode_AsUTF8(lz->lz_code->co_name);
+        if (!funcname_str) {
+            /* Unicode conversion failed - clear error and restore original exception */
+            PyErr_Clear();
+            Py_DECREF(import_name);
+            _PyErr_SetRaisedException(tstate, exc);
+            goto ok;
+        }
+
+        /* Create a cause exception showing where the lazy import was declared */
+        PyObject *msg = PyUnicode_FromFormat(
+            "deferred import of '%U' raised an exception during resolution",
+            import_name
+        );
+        Py_DECREF(import_name);  /* Done with import_name regardless of what happens next */
+
+        if (!msg) {
+            /* Failed to create message - restore original exception */
+            _PyErr_SetRaisedException(tstate, exc);
+            goto ok;
+        }
+
+        PyObject *cause_exc = PyObject_CallOneArg(PyExc_ImportError, msg);
+        Py_DECREF(msg);  /* Done with msg */
+
+        if (!cause_exc) {
+            /* Failed to create exception - restore original */
+            _PyErr_SetRaisedException(tstate, exc);
+            goto ok;
+        }
+
+        /* Add traceback entry for the lazy import declaration */
+        _PyErr_SetRaisedException(tstate, cause_exc);
+        _PyTraceback_Add(funcname_str, filename_str, lineno);
+        PyObject *cause_with_tb = _PyErr_GetRaisedException(tstate);
+
+        /* Set the cause on the original exception */
+        PyException_SetCause(exc, cause_with_tb);  /* Steals ref to cause_with_tb */
+
+        /* Restore the original exception with its full traceback */
+        _PyErr_SetRaisedException(tstate, exc);
+    }
 
 ok:
     Py_XDECREF(fromlist);

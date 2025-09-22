@@ -17,6 +17,9 @@ typedef struct {
     PyObject *lz_import_func;
     PyObject *lz_from;
     PyObject *lz_attr;
+    /* Frame information for the original import location */
+    PyCodeObject *lz_code;     /* code object where the lazy import was created */
+    int lz_instr_offset;       /* instruction offset where the lazy import was created */
 } PyLazyImportObject;
 
 
