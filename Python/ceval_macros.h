@@ -217,6 +217,10 @@ do { \
         JUMP_TO_LABEL(start_frame);                      \
     } while (0)
 
+#define TRACING_DISPATCH_INLINED(NEW_FRAME) \
+    RECORD_TRACE_NO_DISPATCH(); \
+    DISPATCH_INLINED(NEW_FRAME);
+
 #define TRACING_DISPATCH() \
     { \
         assert(frame->stackpointer == NULL); \
@@ -421,7 +425,6 @@ do {                                                   \
         JUMP_TO_LABEL(error);                          \
     }                                                  \
     if (keep_tracing_bit) { \
-        assert(next_instr == frame->instr_ptr); \
         assert(next_instr->op.code != ENTER_EXECUTOR); \
         assert(tstate->interp->jit_tracer_code_curr_size == 2); \
         ENTER_TRACING(); \

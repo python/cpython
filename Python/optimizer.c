@@ -584,6 +584,10 @@ _PyJIT_translate_single_bytecode_to_trace(
         return 1;
     }
 
+    if (opcode == JUMP_BACKWARD_NO_INTERRUPT) {
+        return 1;
+    }
+
     if (opcode == ENTER_EXECUTOR) {
         ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
         ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)target_instr, target);
@@ -899,9 +903,13 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 exit_op = _HANDLE_PENDING_AND_DEOPT;
             }
             int32_t jump_target = target;
-            if (opcode == _FOR_ITER_TIER_TWO || opcode == _GUARD_IP) {
+            bool unique_target = false;
+            if (opcode == _FOR_ITER_TIER_TWO) {
                 exit_op = _DYNAMIC_EXIT;
-                jump_target = current_jump_target + 1;
+            }
+            else if (opcode == _GUARD_IP) {
+                exit_op = _DYNAMIC_EXIT;
+                unique_target = true;
             }
             if (is_for_iter_test[opcode]) {
                 /* Target the POP_TOP immediately after the END_FOR,
@@ -910,7 +918,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
                 int32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + extended_arg;
                 jump_target = next_inst + inst->oparg + 1;
             }
-            if (jump_target != current_jump_target || current_exit_op != exit_op) {
+            if (unique_target || jump_target != current_jump_target || current_exit_op != exit_op) {
                 make_exit(&buffer[next_spare], exit_op, jump_target);
                 current_exit_op = exit_op;
                 current_jump_target = jump_target;

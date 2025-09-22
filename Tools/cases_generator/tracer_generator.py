@@ -40,6 +40,7 @@ class TracerEmitter(Emitter):
         self._replacers = {
             **self._replacers,
             "DISPATCH": self.dispatch,
+            "DISPATCH_INLINED": self.dispatch_inlined,
         }
 
     def dispatch(
@@ -57,6 +58,20 @@ class TracerEmitter(Emitter):
         self.emit("TRACING_DISPATCH")
         return False
 
+    def dispatch_inlined(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        if storage.spilled:
+            raise analysis_error("stack_pointer needs reloading before dispatch", tkn)
+        storage.stack.flush(self.out)
+        self.out.start_line()
+        self.emit("TRACING_DISPATCH_INLINED")
+        return False
     def record_jump_taken(
         self,
         tkn: Token,

@@ -15256,7 +15256,7 @@
                         TRACING_JUMP_TO_LABEL(error);
                     }
                     frame->return_offset = 4u ;
-                    DISPATCH_INLINED(new_frame);
+                    TRACING_DISPATCH_INLINED(new_frame);
                 }
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
@@ -16329,7 +16329,7 @@
                         }
                         assert( 1u == 1);
                         frame->return_offset = 1;
-                        DISPATCH_INLINED(new_frame);
+                        TRACING_DISPATCH_INLINED(new_frame);
                     }
                     PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
                     assert(PyTuple_CheckExact(callargs));
@@ -16641,7 +16641,7 @@
                     }
                     assert( 4u == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
                     frame->return_offset = 4u ;
-                    DISPATCH_INLINED(new_frame);
+                    TRACING_DISPATCH_INLINED(new_frame);
                 }
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
@@ -20564,7 +20564,7 @@
                         TRACING_JUMP_TO_LABEL(error);
                     }
                     frame->return_offset = 4u ;
-                    DISPATCH_INLINED(new_frame);
+                    TRACING_DISPATCH_INLINED(new_frame);
                 }
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
@@ -20785,7 +20785,7 @@
                         }
                         assert( 1u == 1);
                         frame->return_offset = 1;
-                        DISPATCH_INLINED(new_frame);
+                        TRACING_DISPATCH_INLINED(new_frame);
                     }
                     PyObject *callargs = PyStackRef_AsPyObjectBorrow(callargs_st);
                     assert(PyTuple_CheckExact(callargs));
@@ -20935,7 +20935,7 @@
                     }
                     assert( 4u == 1 + INLINE_CACHE_ENTRIES_CALL_KW);
                     frame->return_offset = 4u ;
-                    DISPATCH_INLINED(new_frame);
+                    TRACING_DISPATCH_INLINED(new_frame);
                 }
                 STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
                 if (CONVERSION_FAILED(args_o)) {
@@ -22544,7 +22544,7 @@
             assert(WITHIN_STACK_BOUNDS());
             new_frame->localsplus[1] = PyStackRef_FromPyObjectNew(name);
             frame->return_offset = 10u ;
-            DISPATCH_INLINED(new_frame);
+            TRACING_DISPATCH_INLINED(new_frame);
         }
 
         TRACING_TARGET(LOAD_ATTR_INSTANCE_VALUE) {
@@ -25424,7 +25424,7 @@
                     frame->return_offset = (uint16_t)( 2u + oparg);
                     assert(gen_frame->previous == NULL);
                     gen_frame->previous = frame;
-                    DISPATCH_INLINED(gen_frame);
+                    TRACING_DISPATCH_INLINED(gen_frame);
                 }
                 if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
