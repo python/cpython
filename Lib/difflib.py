@@ -1928,7 +1928,7 @@ class HtmlDiff(object):
         css_class = ' class="diff_changed" ' if flag else ' '
 
         return f'<td class="diff_header"{id}>{linenum}</td>' \
-            + f'<td{css_class}nowrap="nowrap">{text}</td>' 
+            + f'<td{css_class}nowrap="nowrap">{text}</td>'
 
     def _make_prefix(self):
         """Create unique anchor prefixes"""
