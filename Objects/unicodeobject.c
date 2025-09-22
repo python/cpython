@@ -9030,7 +9030,7 @@ charmap_encoding_error(
                     Py_DECREF(repunicode);
                     return -1;
                 }
-            memcpy(PyBytesWriter_GetData(writer) + *respos,
+            memcpy((char*)PyBytesWriter_GetData(writer) + *respos,
                    PyBytes_AsString(repunicode),  repsize);
             *respos += repsize;
             *inpos = newpos;
