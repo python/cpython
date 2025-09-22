@@ -56,7 +56,7 @@ Python 2.6 incorporates new features and syntax from 3.0 while
 remaining compatible with existing code by not removing older features
 or syntax.  When it's not possible to do that, Python 2.6 tries to do
 what it can, adding compatibility functions in a
-:mod:`future_builtins` module and a :option:`!-3` switch to warn about
+:mod:`!future_builtins` module and a :option:`!-3` switch to warn about
 usages that will become unsupported in 3.0.
 
 Some significant new packages have been added to the standard library,
@@ -109,7 +109,7 @@ are:
 Python 3.0 adds several new built-in functions and changes the
 semantics of some existing builtins.  Functions that are new in 3.0
 such as :func:`bin` have simply been added to Python 2.6, but existing
-builtins haven't been changed; instead, the :mod:`future_builtins`
+builtins haven't been changed; instead, the :mod:`!future_builtins`
 module has versions with the new 3.0 semantics.  Code written to be
 compatible with 3.0 can do ``from future_builtins import hex, map`` as
 necessary.
@@ -2739,13 +2739,13 @@ numbers.
 
 .. ======================================================================
 
-The :mod:`future_builtins` module
+The :mod:`!future_builtins` module
 --------------------------------------
 
 Python 3.0 makes many changes to the repertoire of built-in
 functions, and most of the changes can't be introduced in the Python
 2.x series because they would break compatibility.
-The :mod:`future_builtins` module provides versions
+The :mod:`!future_builtins` module provides versions
 of these built-in functions that can be imported when writing
 3.0-compatible code.
 
