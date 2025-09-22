@@ -236,8 +236,9 @@ dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
     dbmobject *dp = dbmobject_CAST(self);
 
     if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
-        PyErr_SetString(PyExc_TypeError,
-                        "dbm mappings have bytes or string keys only");
+        PyErr_Format(PyExc_TypeError,
+                     "dbm key returned %.100s for value %R But database keys must be bytes or str, not %.100s",
+                     Py_TYPE(v)->tp_name, v, Py_TYPE(v)->tp_name);
         return -1;
     }
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
@@ -263,8 +264,9 @@ dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
         }
     } else {
         if ( !PyArg_Parse(w, "s#", &drec.dptr, &tmp_size) ) {
-            PyErr_SetString(PyExc_TypeError,
-                 "dbm mappings have bytes or string elements only");
+            PyErr_Format(PyExc_TypeError,
+                         "dbm value returned %.100s for value %R But database values must be bytes or str, not %.100s",
+                         Py_TYPE(w)->tp_name, w, Py_TYPE(w)->tp_name);
             return -1;
         }
         drec.dsize = tmp_size;
