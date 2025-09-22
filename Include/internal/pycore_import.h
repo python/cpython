@@ -56,7 +56,10 @@ extern void _PyImport_ClearCore(PyInterpreterState *interp);
 
 extern Py_ssize_t _PyImport_GetNextModuleIndex(void);
 extern const char * _PyImport_ResolveNameWithPackageContext(const char *name);
-extern const char * _PyImport_SwapPackageContext(const char *newcontext);
+
+// Exported for third party libraries that want access to our thread-local
+// package context. Ideally, this can be an unstable API at some point.
+PyAPI_FUNC(const char *) _PyImport_SwapPackageContext(const char *newcontext);
 
 extern int _PyImport_GetDLOpenFlags(PyInterpreterState *interp);
 extern void _PyImport_SetDLOpenFlags(PyInterpreterState *interp, int new_val);
