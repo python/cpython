@@ -431,7 +431,7 @@ The contextlib module
 The :mod:`contextlib` module provides some functions and a decorator that
 are useful when writing objects for use with the ':keyword:`with`' statement.
 
-The decorator is called :func:`contextmanager`, and lets you write a single
+The decorator is called :func:`~contextlib.contextmanager`, and lets you write a single
 generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
 :meth:`~object.__enter__` method, and the value yielded will be the method's return
@@ -469,7 +469,7 @@ statement both starts a database transaction and acquires a thread lock::
    with nested (db_transaction(db), lock) as (cursor, locked):
        ...
 
-Finally, the :func:`closing` function returns its argument so that it can be
+Finally, the :func:`~contextlib.closing` function returns its argument so that it can be
 bound to a variable, and calls the argument's ``.close()`` method at the end
 of the block. ::
 
