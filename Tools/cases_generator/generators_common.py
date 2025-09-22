@@ -470,7 +470,7 @@ class Emitter:
         """Replace the INSTRUCTION_SIZE macro with the size of the current instruction."""
         if uop.instruction_size is None:
             raise analysis_error("The INSTRUCTION_SIZE macro requires uop.instruction_size to be set", tkn)
-        self.out.emit(f" {uop.instruction_size} ")
+        self.out.emit(f" {uop.instruction_size}u ")
         return True
 
     def _print_storage(self, reason:str, storage: Storage) -> None:

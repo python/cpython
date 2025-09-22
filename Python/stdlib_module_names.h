@@ -215,6 +215,7 @@ static const char* _Py_stdlib_module_names[] = {
 "posixpath",
 "pprint",
 "profile",
+"profiling",
 "pstats",
 "pty",
 "pwd",

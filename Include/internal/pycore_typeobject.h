@@ -40,6 +40,7 @@ extern void _PyTypes_FiniTypes(PyInterpreterState *);
 extern void _PyTypes_FiniExtTypes(PyInterpreterState *interp);
 extern void _PyTypes_Fini(PyInterpreterState *);
 extern void _PyTypes_AfterFork(void);
+extern void _PyTypes_FiniCachedDescriptors(PyInterpreterState *);
 
 static inline PyObject **
 _PyStaticType_GET_WEAKREFS_LISTPTR(managed_static_type_state *state)
@@ -88,6 +89,9 @@ _PyType_GetModuleState(PyTypeObject *type)
 // Export for 'math' shared extension, used via _PyType_IsReady() static inline
 // function
 PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
+
+PyAPI_FUNC(PyObject *) _PyType_LookupSubclasses(PyTypeObject *);
+PyAPI_FUNC(PyObject *) _PyType_InitSubclasses(PyTypeObject *);
 
 extern PyObject * _PyType_GetBases(PyTypeObject *type);
 extern PyObject * _PyType_GetMRO(PyTypeObject *type);

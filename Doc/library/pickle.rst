@@ -732,8 +732,8 @@ or both.
      These items will be appended to the object either using
      ``obj.append(item)`` or, in batch, using ``obj.extend(list_of_items)``.
      This is primarily used for list subclasses, but may be used by other
-     classes as long as they have
-     :ref:`append and extend methods <typesseq-common>` with
+     classes as long as they have :meth:`~sequence.append`
+     and :meth:`~sequence.extend` methods with
      the appropriate signature.  (Whether :meth:`!append` or :meth:`!extend` is
      used depends on which pickle protocol version is used as well as the number
      of items to append, so both must be supported.)

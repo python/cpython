@@ -230,9 +230,11 @@ For example:
 
    callback: Callable[[str], Awaitable[None]] = on_update
 
+.. index:: single: ...; ellipsis literal
+
 The subscription syntax must always be used with exactly two values: the
 argument list and the return type.  The argument list must be a list of types,
-a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis. The return type must
+a :class:`ParamSpec`, :data:`Concatenate`, or an ellipsis (``...``). The return type must
 be a single type.
 
 If a literal ellipsis ``...`` is given as the argument list, it indicates that
@@ -375,8 +377,11 @@ accepts *any number* of type arguments::
    # but ``z`` has been assigned to a tuple of length 3
    z: tuple[int] = (1, 2, 3)
 
+.. index:: single: ...; ellipsis literal
+
 To denote a tuple which could be of *any* length, and in which all elements are
-of the same type ``T``, use ``tuple[T, ...]``. To denote an empty tuple, use
+of the same type ``T``, use the literal ellipsis ``...``: ``tuple[T, ...]``.
+To denote an empty tuple, use
 ``tuple[()]``. Using plain ``tuple`` as an annotation is equivalent to using
 ``tuple[Any, ...]``::
 
@@ -1161,6 +1166,8 @@ These can be used as types in annotations. They all support subscription using
 .. data:: Concatenate
 
    Special form for annotating higher-order functions.
+
+   .. index:: single: ...; ellipsis literal
 
    ``Concatenate`` can be used in conjunction with :ref:`Callable <annotating-callables>` and
    :class:`ParamSpec` to annotate a higher-order callable which adds, removes,
@@ -3360,6 +3367,11 @@ Introspection helpers
    See also :func:`annotationlib.get_annotations`, a lower-level function that
    returns annotations more directly.
 
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
+
    .. note::
 
       If any forward references in the annotations of *obj* are not resolvable
@@ -3505,6 +3517,11 @@ Introspection helpers
 
    See the documentation for :meth:`annotationlib.ForwardRef.evaluate` for
    the meaning of the *owner*, *globals*, *locals*, *type_params*, and *format* parameters.
+
+   .. caution::
+
+      This function may execute arbitrary code contained in annotations.
+      See :ref:`annotationlib-security` for more information.
 
    .. versionadded:: 3.14
 
@@ -3770,6 +3787,28 @@ Aliases to container ABCs in :mod:`collections.abc`
    .. deprecated:: 3.9
       :class:`collections.abc.Set` now supports subscripting (``[]``).
       See :pep:`585` and :ref:`types-genericalias`.
+
+.. class:: ByteString(Sequence[int])
+
+   Deprecated alias to :class:`collections.abc.ByteString`.
+
+   Use ``isinstance(obj, collections.abc.Buffer)`` to test if ``obj``
+   implements the :ref:`buffer protocol <bufferobjects>` at runtime. For use in
+   type annotations, either use :class:`~collections.abc.Buffer` or a union
+   that explicitly specifies the types your code supports (e.g.,
+   ``bytes | bytearray | memoryview``).
+
+   :class:`!ByteString` was originally intended to be an abstract class that
+   would serve as a supertype of both :class:`bytes` and :class:`bytearray`.
+   However, since the ABC never had any methods, knowing that an object was an
+   instance of :class:`!ByteString` never actually told you anything useful
+   about the object. Other common buffer types such as :class:`memoryview` were
+   also never understood as subtypes of :class:`!ByteString` (either at runtime
+   or by static type checkers).
+
+   See :pep:`PEP 688 <688#current-options>` for more details.
+
+   .. deprecated-removed:: 3.9 3.17
 
 .. class:: Collection(Sized, Iterable[T_co], Container[T_co])
 
@@ -4064,6 +4103,10 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.9
      - Undecided (see :ref:`deprecated-aliases` for more information)
      - :pep:`585`
+   * - :class:`typing.ByteString`
+     - 3.9
+     - 3.17
+     - :gh:`91896`
    * - :data:`typing.Text`
      - 3.11
      - Undecided

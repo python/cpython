@@ -40,8 +40,15 @@ If you're sure you want to do all of this manually, read on. You can use the
 :source:`testbed app <Android/testbed>` as a guide; each step below contains a
 link to the relevant file.
 
-* Build Python by following the instructions in :source:`Android/README.md`.
-  This will create the directory ``cross-build/HOST/prefix``.
+* First, acquire a build of Python for Android:
+
+  * The easiest way is to download an Android release from `python.org
+    <https://www.python.org/downloads/android/>`__. The ``prefix`` directory
+    mentioned below is at the top level of the package.
+
+  * Or if you want to build it yourself, follow the instructions in
+    :source:`Android/README.md`. The ``prefix`` directory will be created under
+    :samp:`cross-build/{HOST}`.
 
 * Add code to your :source:`build.gradle <Android/testbed/app/build.gradle.kts>`
   file to copy the following items into your project. All except your own Python

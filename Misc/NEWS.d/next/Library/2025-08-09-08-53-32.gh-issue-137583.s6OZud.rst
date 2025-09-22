@@ -1,0 +1,4 @@
+Fix a deadlock introduced in 3.13.6 when a call to
+:meth:`ssl.SSLSocket.recv <socket.socket.recv>` was blocked in one thread,
+and then another method on the object (such as :meth:`ssl.SSLSocket.send <socket.socket.send>`)
+was subsequently called in another thread.

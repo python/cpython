@@ -352,6 +352,13 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
             self.assertEqual(get_platform(), 'macosx-10.4-%s' % arch)
 
+        for macver in range(11, 16):
+            _osx_support._remove_original_values(get_config_vars())
+            get_config_vars()['CFLAGS'] = ('-fno-strict-overflow -Wsign-compare -Wunreachable-code'
+                                        '-arch arm64 -fno-common -dynamic -DNDEBUG -g -O3 -Wall')
+            get_config_vars()['MACOSX_DEPLOYMENT_TARGET'] = f"{macver}.0"
+            self.assertEqual(get_platform(), 'macosx-%d.0-arm64' % macver)
+
         # linux debian sarge
         os.name = 'posix'
         sys.version = ('2.3.5 (#1, Jul  4 2007, 17:28:59) '

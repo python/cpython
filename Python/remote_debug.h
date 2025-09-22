@@ -50,9 +50,11 @@ extern "C" {
 #  include <mach-o/fat.h>
 #  include <mach-o/loader.h>
 #  include <mach-o/nlist.h>
+#  include <mach/error.h>
 #  include <mach/mach.h>
 #  include <mach/mach_vm.h>
 #  include <mach/machine.h>
+#  include <mach/task_info.h>
 #  include <sys/mman.h>
 #  include <sys/proc.h>
 #  include <sys/sysctl.h>
@@ -1053,18 +1055,38 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
         (mach_vm_size_t*)&result);
 
     if (kr != KERN_SUCCESS) {
-        switch (kr) {
+        switch (err_get_code(kr)) {
         case KERN_PROTECTION_FAILURE:
             PyErr_Format(PyExc_PermissionError,
                 "Memory protection failure reading from PID %d at address "
                 "0x%lx (size %zu): insufficient permissions",
                 handle->pid, remote_address, len);
             break;
-        case KERN_INVALID_ARGUMENT:
-            PyErr_Format(PyExc_ValueError,
-                "Invalid argument to mach_vm_read_overwrite for PID %d at "
-                "address 0x%lx (size %zu)",
-                handle->pid, remote_address, len);
+        case KERN_INVALID_ARGUMENT: {
+            // Perform a task_info check to see if the invalid argument is due
+            // to the process being terminated
+            task_basic_info_data_t task_basic_info;
+            mach_msg_type_number_t task_info_count = TASK_BASIC_INFO_COUNT;
+            kern_return_t task_valid_check = task_info(handle->task, TASK_BASIC_INFO,
+                                                        (task_info_t)&task_basic_info,
+                                                        &task_info_count);
+            if (task_valid_check == KERN_INVALID_ARGUMENT) {
+                PyErr_Format(PyExc_ProcessLookupError,
+                    "Process %d is no longer accessible (process terminated)",
+                    handle->pid);
+            } else {
+                PyErr_Format(PyExc_ValueError,
+                    "Invalid argument to mach_vm_read_overwrite for PID %d at "
+                    "address 0x%lx (size %zu) - check memory permissions",
+                    handle->pid, remote_address, len);
+            }
+            break;
+        }
+        case KERN_NO_SPACE:
+        case KERN_MEMORY_ERROR:
+            PyErr_Format(PyExc_ProcessLookupError,
+                "Process %d memory space no longer available (process terminated)",
+                handle->pid);
             break;
         default:
             PyErr_Format(PyExc_RuntimeError,

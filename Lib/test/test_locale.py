@@ -1,4 +1,5 @@
 from decimal import Decimal
+from test import support
 from test.support import cpython_only, verbose, is_android, linked_to_musl, os_helper
 from test.support.warnings_helper import check_warnings
 from test.support.import_helper import ensure_lazy_imports, import_fresh_module
@@ -425,8 +426,8 @@ class NormalizeTest(unittest.TestCase):
         self.check('cs_CZ.ISO8859-2', 'cs_CZ.ISO8859-2')
 
     def test_euro_modifier(self):
-        self.check('de_DE@euro', 'de_DE.ISO8859-15')
-        self.check('en_US.ISO8859-15@euro', 'en_US.ISO8859-15')
+        self.check('de_DE@euro', 'de_DE.ISO8859-15@euro')
+        self.check('en_US.ISO8859-15@euro', 'en_US.ISO8859-15@euro')
         self.check('de_DE.utf8@euro', 'de_DE.UTF-8')
 
     def test_latin_modifier(self):
@@ -533,6 +534,105 @@ class TestRealLocales(unittest.TestCase):
         loc2 = loc.replace('.UTF-8', '.' + 'x'*16, 1)
         with self.assertRaises(locale.Error):
             locale.setlocale(locale.LC_ALL, loc2)
+
+    @support.subTests('localename,localetuple', [
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'iso885915')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'iso88591')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'ISO8859-15')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'ISO8859-1')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', None)),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'iso885915')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'iso88591')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'ISO8859-15')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'ISO8859-1')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', None)),
+        ('el_GR.ISO8859-7@euro', ('el_GR@euro', 'iso88597')),
+        ('el_GR.ISO8859-7@euro', ('el_GR@euro', 'ISO8859-7')),
+        ('el_GR.ISO8859-7@euro', ('el_GR@euro', None)),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'iso885915')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'iso88591')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'ISO8859-15')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'ISO8859-1')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', None)),
+        ('ca_ES.UTF-8@valencia', ('ca_ES@valencia', 'utf8')),
+        ('ca_ES.UTF-8@valencia', ('ca_ES@valencia', 'UTF-8')),
+        ('ca_ES.UTF-8@valencia', ('ca_ES@valencia', None)),
+        ('ks_IN.UTF-8@devanagari', ('ks_IN@devanagari', 'utf8')),
+        ('ks_IN.UTF-8@devanagari', ('ks_IN@devanagari', 'UTF-8')),
+        ('ks_IN.UTF-8@devanagari', ('ks_IN@devanagari', None)),
+        ('sd_IN.UTF-8@devanagari', ('sd_IN@devanagari', 'utf8')),
+        ('sd_IN.UTF-8@devanagari', ('sd_IN@devanagari', 'UTF-8')),
+        ('sd_IN.UTF-8@devanagari', ('sd_IN@devanagari', None)),
+        ('be_BY.UTF-8@latin', ('be_BY@latin', 'utf8')),
+        ('be_BY.UTF-8@latin', ('be_BY@latin', 'UTF-8')),
+        ('be_BY.UTF-8@latin', ('be_BY@latin', None)),
+        ('sr_RS.UTF-8@latin', ('sr_RS@latin', 'utf8')),
+        ('sr_RS.UTF-8@latin', ('sr_RS@latin', 'UTF-8')),
+        ('sr_RS.UTF-8@latin', ('sr_RS@latin', None)),
+        ('ug_CN.UTF-8@latin', ('ug_CN@latin', 'utf8')),
+        ('ug_CN.UTF-8@latin', ('ug_CN@latin', 'UTF-8')),
+        ('ug_CN.UTF-8@latin', ('ug_CN@latin', None)),
+        ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', 'utf8')),
+        ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
+        ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', None)),
+    ])
+    def test_setlocale_with_modifier(self, localename, localetuple):
+        try:
+            locale.setlocale(locale.LC_CTYPE, localename)
+        except locale.Error as exc:
+            self.skipTest(str(exc))
+        loc = locale.setlocale(locale.LC_CTYPE, localetuple)
+        self.assertEqual(loc, localename)
+
+        loctuple = locale.getlocale(locale.LC_CTYPE)
+        loc = locale.setlocale(locale.LC_CTYPE, loctuple)
+        self.assertEqual(loc, localename)
+
+    @support.subTests('localename,localetuple', [
+        ('fr_FR.iso885915@euro', ('fr_FR@euro', 'ISO8859-15')),
+        ('fr_FR.ISO8859-15@euro', ('fr_FR@euro', 'ISO8859-15')),
+        ('fr_FR@euro', ('fr_FR@euro', 'ISO8859-15')),
+        ('de_DE.iso885915@euro', ('de_DE@euro', 'ISO8859-15')),
+        ('de_DE.ISO8859-15@euro', ('de_DE@euro', 'ISO8859-15')),
+        ('de_DE@euro', ('de_DE@euro', 'ISO8859-15')),
+        ('el_GR.iso88597@euro', ('el_GR@euro', 'ISO8859-7')),
+        ('el_GR.ISO8859-7@euro', ('el_GR@euro', 'ISO8859-7')),
+        ('el_GR@euro', ('el_GR@euro', 'ISO8859-7')),
+        ('ca_ES.iso885915@euro', ('ca_ES@euro', 'ISO8859-15')),
+        ('ca_ES.ISO8859-15@euro', ('ca_ES@euro', 'ISO8859-15')),
+        ('ca_ES@euro', ('ca_ES@euro', 'ISO8859-15')),
+        ('ca_ES.utf8@valencia', ('ca_ES@valencia', 'UTF-8')),
+        ('ca_ES.UTF-8@valencia', ('ca_ES@valencia', 'UTF-8')),
+        ('ca_ES@valencia', ('ca_ES@valencia', 'UTF-8')),
+        ('ks_IN.utf8@devanagari', ('ks_IN@devanagari', 'UTF-8')),
+        ('ks_IN.UTF-8@devanagari', ('ks_IN@devanagari', 'UTF-8')),
+        ('ks_IN@devanagari', ('ks_IN@devanagari', 'UTF-8')),
+        ('sd_IN.utf8@devanagari', ('sd_IN@devanagari', 'UTF-8')),
+        ('sd_IN.UTF-8@devanagari', ('sd_IN@devanagari', 'UTF-8')),
+        ('sd_IN@devanagari', ('sd_IN@devanagari', 'UTF-8')),
+        ('be_BY.utf8@latin', ('be_BY@latin', 'UTF-8')),
+        ('be_BY.UTF-8@latin', ('be_BY@latin', 'UTF-8')),
+        ('be_BY@latin', ('be_BY@latin', 'UTF-8')),
+        ('sr_RS.utf8@latin', ('sr_RS@latin', 'UTF-8')),
+        ('sr_RS.UTF-8@latin', ('sr_RS@latin', 'UTF-8')),
+        ('sr_RS@latin', ('sr_RS@latin', 'UTF-8')),
+        ('ug_CN.utf8@latin', ('ug_CN@latin', 'UTF-8')),
+        ('ug_CN.UTF-8@latin', ('ug_CN@latin', 'UTF-8')),
+        ('ug_CN@latin', ('ug_CN@latin', 'UTF-8')),
+        ('uz_UZ.utf8@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
+        ('uz_UZ.UTF-8@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
+        ('uz_UZ@cyrillic', ('uz_UZ@cyrillic', 'UTF-8')),
+    ])
+    def test_getlocale_with_modifier(self, localename, localetuple):
+        try:
+            locale.setlocale(locale.LC_CTYPE, localename)
+        except locale.Error as exc:
+            self.skipTest(str(exc))
+        loctuple = locale.getlocale(locale.LC_CTYPE)
+        self.assertEqual(loctuple, localetuple)
+
+        locale.setlocale(locale.LC_CTYPE, loctuple)
+        self.assertEqual(locale.getlocale(locale.LC_CTYPE), localetuple)
 
 
 class TestMiscellaneous(unittest.TestCase):

@@ -34,19 +34,13 @@
 */
 
 #ifndef XmlRole_INCLUDED
-#define XmlRole_INCLUDED 1
+#  define XmlRole_INCLUDED 1
 
-#ifdef __VMS
-/*      0        1         2         3      0        1         2         3
-        1234567890123456789012345678901     1234567890123456789012345678901 */
-#  define XmlPrologStateInitExternalEntity XmlPrologStateInitExternalEnt
-#endif
+#  include "xmltok.h"
 
-#include "xmltok.h"
-
-#ifdef __cplusplus
+#  ifdef __cplusplus
 extern "C" {
-#endif
+#  endif
 
 enum {
   XML_ROLE_ERROR = -1,
@@ -107,11 +101,11 @@ enum {
   XML_ROLE_CONTENT_ELEMENT_PLUS,
   XML_ROLE_PI,
   XML_ROLE_COMMENT,
-#ifdef XML_DTD
+#  ifdef XML_DTD
   XML_ROLE_TEXT_DECL,
   XML_ROLE_IGNORE_SECT,
   XML_ROLE_INNER_PARAM_ENTITY_REF,
-#endif /* XML_DTD */
+#  endif /* XML_DTD */
   XML_ROLE_PARAM_ENTITY_REF
 };
 
@@ -120,23 +114,23 @@ typedef struct prolog_state {
                         const char *end, const ENCODING *enc);
   unsigned level;
   int role_none;
-#ifdef XML_DTD
+#  ifdef XML_DTD
   unsigned includeLevel;
   int documentEntity;
   int inEntityValue;
-#endif /* XML_DTD */
+#  endif /* XML_DTD */
 } PROLOG_STATE;
 
 void XmlPrologStateInit(PROLOG_STATE *state);
-#ifdef XML_DTD
+#  ifdef XML_DTD
 void XmlPrologStateInitExternalEntity(PROLOG_STATE *state);
-#endif /* XML_DTD */
+#  endif /* XML_DTD */
 
-#define XmlTokenRole(state, tok, ptr, end, enc)                                \
-  (((state)->handler)(state, tok, ptr, end, enc))
+#  define XmlTokenRole(state, tok, ptr, end, enc)                              \
+    (((state)->handler)(state, tok, ptr, end, enc))
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
-#endif
+#  endif
 
 #endif /* not XmlRole_INCLUDED */

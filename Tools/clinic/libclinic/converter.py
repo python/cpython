@@ -274,7 +274,7 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.modifications.append('/* modifications for ' + name + ' */\n' + modifications.rstrip())
 
         # keywords
-        if parameter.is_vararg():
+        if parameter.is_variable_length():
             pass
         elif parameter.is_positional_only():
             data.keywords.append('')

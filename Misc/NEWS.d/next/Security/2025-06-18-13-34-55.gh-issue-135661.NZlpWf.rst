@@ -1,0 +1,5 @@
+Fix CDATA section parsing in :class:`html.parser.HTMLParser` according to
+the HTML5 standard: ``] ]>`` and ``]] >`` no longer end the CDATA section.
+Add private method ``_set_support_cdata()`` which can be used to specify
+how to parse ``<[CDATA[`` --- as a CDATA section in foreign content
+(SVG or MathML) or as a bogus comment in the HTML namespace.

@@ -1,0 +1,3 @@
+Fix parsing errors in the :mod:`urllib.robotparser` module.
+Don't fail trying to parse weird paths.
+Don't fail trying to decode non-UTF-8 ``robots.txt`` files.

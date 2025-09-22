@@ -774,16 +774,16 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args('--foo --bar'.split())
     Namespace(foo=True, bar=False, baz=True)
 
-* ``'append'`` - This stores a list, and appends each argument value to the
-  list. It is useful to allow an option to be specified multiple times.
-  If the default value is non-empty, the default elements will be present
-  in the parsed value for the option, with any values from the
-  command line appended after those default values. Example usage::
+* ``'append'`` - This appends each argument value to a list.
+  It is useful for allowing an option to be specified multiple times.
+  If the default value is a non-empty list, the parsed value will start
+  with the default list's elements and any values from the command line
+  will be appended after those default values. Example usage::
 
     >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--foo', action='append')
+    >>> parser.add_argument('--foo', action='append', default=['0'])
     >>> parser.parse_args('--foo 1 --foo 2'.split())
-    Namespace(foo=['1', '2'])
+    Namespace(foo=['0', '1', '2'])
 
 * ``'append_const'`` - This stores a list, and appends the value specified by
   the const_ keyword argument to the list; note that the const_ keyword
@@ -981,8 +981,8 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   (like ``-f`` or ``--foo``) and ``nargs='?'``.  This creates an optional
   argument that can be followed by zero or one command-line arguments.
   When parsing the command line, if the option string is encountered with no
-  command-line argument following it, the value of ``const`` will be assumed to
-  be ``None`` instead.  See the nargs_ description for examples.
+  command-line argument following it, the value from ``const`` will be used.
+  See the nargs_ description for examples.
 
 .. versionchanged:: 3.11
    ``const=None`` by default, including when ``action='append_const'`` or
@@ -1142,15 +1142,20 @@ if the argument was not one of the acceptable values::
    game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
    'paper', 'scissors')
 
-Note that inclusion in the *choices* sequence is checked after any type_
-conversions have been performed, so the type of the objects in the *choices*
-sequence should match the type_ specified.
-
 Any sequence can be passed as the *choices* value, so :class:`list` objects,
 :class:`tuple` objects, and custom sequences are all supported.
 
 Use of :class:`enum.Enum` is not recommended because it is difficult to
 control its appearance in usage, help, and error messages.
+
+Note that *choices* are checked after any type_
+conversions have been performed, so objects in *choices*
+should match the type_ specified. This can make *choices*
+appear unfamiliar in usage, help, or error messages.
+
+To keep *choices* user-friendly, consider a custom type wrapper that
+converts and formats values, or omit type_ and handle conversion in
+your application code.
 
 Formatted choices override the default *metavar* which is normally derived
 from *dest*.  This is usually what you want because the user never sees the

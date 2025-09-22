@@ -22,11 +22,11 @@ def _dump_footer(
     yield "    symbol_mask trampoline_mask;"
     yield "} StencilGroup;"
     yield ""
-    yield f"static const StencilGroup shim = {groups['shim'].as_c('shim')};"
+    yield f"static const StencilGroup trampoline = {groups['trampoline'].as_c('trampoline')};"
     yield ""
     yield "static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {"
     for opname, group in sorted(groups.items()):
-        if opname == "shim":
+        if opname == "trampoline":
             continue
         yield f"    [{opname}] = {group.as_c(opname)},"
     yield "};"

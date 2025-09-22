@@ -249,6 +249,11 @@ class Completion(unittest.TestCase):
         self.assertIn(b"SELECT", output)
         self.assertIn(b"(1,)", output)
 
+        # .commands are completed without changing case
+        input_ = b".ver\t\n.quit\n"
+        output = self.write_input(input_)
+        self.assertIn(b".version", output)
+
     @unittest.skipIf(sys.platform.startswith("freebsd"),
                     "Two actual tabs are inserted when there are no matching"
                     " completions in the pseudo-terminal opened by run_pty()"

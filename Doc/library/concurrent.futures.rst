@@ -101,10 +101,10 @@ Executor Objects
       executor has started running will be completed prior to this method
       returning. The remaining futures are cancelled.
 
-      You can avoid having to call this method explicitly if you use the
-      :keyword:`with` statement, which will shutdown the :class:`Executor`
-      (waiting as if :meth:`Executor.shutdown` were called with *wait* set to
-      ``True``)::
+      You can avoid having to call this method explicitly if you use the executor
+      as a :term:`context manager` via the  :keyword:`with` statement, which
+      will shutdown the :class:`Executor` (waiting as if :meth:`Executor.shutdown`
+      were called with *wait* set to ``True``)::
 
          import shutil
          with ThreadPoolExecutor(max_workers=4) as e:

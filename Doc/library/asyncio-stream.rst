@@ -321,6 +321,9 @@ StreamWriter
          stream.write(data)
          await stream.drain()
 
+      .. note::
+         The *data* buffer should be a C contiguous one-dimensional :term:`bytes-like object <bytes-like object>`.
+
    .. method:: writelines(data)
 
       The method writes a list (or any iterable) of bytes to the underlying socket

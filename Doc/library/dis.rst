@@ -1086,6 +1086,11 @@ iterations of the loop.
    Pushes ``co_consts[consti]`` onto the stack.
 
 
+.. opcode:: LOAD_CONST_IMMORTAL (consti)
+
+   Works as :opcode:`LOAD_CONST`, but is more efficient for immortal objects.
+
+
 .. opcode:: LOAD_SMALL_INT (i)
 
    Pushes the integer ``i`` onto the stack.

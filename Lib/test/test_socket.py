@@ -52,6 +52,7 @@ MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
+SOLARIS = sys.platform.startswith("sunos")
 WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
@@ -2392,6 +2393,45 @@ class ISOTPTest(unittest.TestCase):
         socket.CAN_ISOTP
         socket.SOCK_DGRAM
 
+    @unittest.skipUnless(hasattr(socket, "SOL_CAN_ISOTP"),
+                         "missing <linux/can/isotp.h>")
+    def testISOTP(self):
+        socket.SOL_CAN_ISOTP
+
+        socket.CAN_ISOTP_OPTS
+        socket.CAN_ISOTP_RECV_FC
+
+        socket.CAN_ISOTP_TX_STMIN
+        socket.CAN_ISOTP_RX_STMIN
+        socket.CAN_ISOTP_LL_OPTS
+
+        socket.CAN_ISOTP_LISTEN_MODE
+        socket.CAN_ISOTP_EXTEND_ADDR
+        socket.CAN_ISOTP_TX_PADDING
+        socket.CAN_ISOTP_RX_PADDING
+        socket.CAN_ISOTP_CHK_PAD_LEN
+        socket.CAN_ISOTP_CHK_PAD_DATA
+        socket.CAN_ISOTP_HALF_DUPLEX
+        socket.CAN_ISOTP_FORCE_TXSTMIN
+        socket.CAN_ISOTP_FORCE_RXSTMIN
+        socket.CAN_ISOTP_RX_EXT_ADDR
+        socket.CAN_ISOTP_WAIT_TX_DONE
+        # This constant is not always available
+        # socket.CAN_ISOTP_SF_BROADCAST
+
+        socket.CAN_ISOTP_DEFAULT_FLAGS
+        socket.CAN_ISOTP_DEFAULT_EXT_ADDRESS
+        socket.CAN_ISOTP_DEFAULT_PAD_CONTENT
+        socket.CAN_ISOTP_DEFAULT_FRAME_TXTIME
+        socket.CAN_ISOTP_DEFAULT_RECV_BS
+        socket.CAN_ISOTP_DEFAULT_EXT_ADDRESS
+        socket.CAN_ISOTP_DEFAULT_RECV_STMIN
+        socket.CAN_ISOTP_DEFAULT_RECV_WFTMAX
+
+        socket.CAN_ISOTP_DEFAULT_LL_MTU
+        socket.CAN_ISOTP_DEFAULT_LL_TX_DL
+        socket.CAN_ISOTP_DEFAULT_LL_TX_FLAGS
+
     def testCreateSocket(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
             pass
@@ -3922,6 +3962,10 @@ class CmsgMacroTests(unittest.TestCase):
         # Test CMSG_SPACE() with various valid and invalid values,
         # checking the assumptions used by sendmsg().
         toobig = self.socklen_t_limit - socket.CMSG_SPACE(1) + 1
+        if SOLARIS and platform.processor() == "sparc":
+            # On Solaris SPARC, number of bytes returned by socket.CMSG_SPACE
+            # increases at different lengths; see gh-91214.
+            toobig -= 3
         values = list(range(257)) + list(range(toobig - 257, toobig))
 
         last = socket.CMSG_SPACE(0)
@@ -4068,6 +4112,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         self.createAndSendFDs(1)
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparate(self):
@@ -4079,6 +4124,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparate.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparate(self):
         fd0, fd1 = self.newFDs(2)
@@ -4092,6 +4138,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
             len(MSG))
 
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     @requireAttrs(socket, "CMSG_SPACE")
     def testFDPassSeparateMinSpace(self):
@@ -4106,6 +4153,7 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
 
     @testFDPassSeparateMinSpace.client_skip
     @unittest.skipIf(is_apple, "skipping, see issue #12958")
+    @unittest.skipIf(SOLARIS, "skipping, see gh-91214")
     @unittest.skipIf(AIX, "skipping, see issue #22397")
     def _testFDPassSeparateMinSpace(self):
         fd0, fd1 = self.newFDs(2)

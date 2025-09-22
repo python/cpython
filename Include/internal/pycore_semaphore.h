@@ -46,10 +46,8 @@ typedef struct _PySemaphore {
 } _PySemaphore;
 
 // Puts the current thread to sleep until _PySemaphore_Wakeup() is called.
-// If `detach` is true, then the thread will detach/release the GIL while
-// sleeping.
 PyAPI_FUNC(int)
-_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout_ns, int detach);
+_PySemaphore_Wait(_PySemaphore *sema, PyTime_t timeout_ns);
 
 // Wakes up a single thread waiting on sema. Note that _PySemaphore_Wakeup()
 // can be called before _PySemaphore_Wait().

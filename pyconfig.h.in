@@ -727,6 +727,9 @@
 /* Define to 1 if you have the <linux/can.h> header file. */
 #undef HAVE_LINUX_CAN_H
 
+/* Define to 1 if you have the <linux/can/isotp.h> header file. */
+#undef HAVE_LINUX_CAN_ISOTP_H
+
 /* Define to 1 if you have the <linux/can/j1939.h> header file. */
 #undef HAVE_LINUX_CAN_J1939_H
 
@@ -1749,9 +1752,6 @@
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
 
-/* Define if you want to use tail-calling interpreters in CPython. */
-#undef Py_TAIL_CALL_INTERP
-
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
 
@@ -2023,8 +2023,8 @@
 /* HACL* library can compile SIMD256 implementations */
 #undef _Py_HACL_CAN_COMPILE_VEC256
 
-/* Define if year with century should be normalized for strftime. */
-#undef _Py_NORMALIZE_CENTURY
+/* Define if you want to use tail-calling interpreters in CPython. */
+#undef _Py_TAIL_CALL_INTERP
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

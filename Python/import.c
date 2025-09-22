@@ -3681,33 +3681,6 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 
     PyTime_t t1 = 0, accumulated_copy = accumulated;
 
-    PyObject *sys_path, *sys_meta_path, *sys_path_hooks;
-    if (PySys_GetOptionalAttrString("path", &sys_path) < 0) {
-        return NULL;
-    }
-    if (PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    if (PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
-        Py_XDECREF(sys_meta_path);
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    if (_PySys_Audit(tstate, "import", "OOOOO",
-                     abs_name, Py_None, sys_path ? sys_path : Py_None,
-                     sys_meta_path ? sys_meta_path : Py_None,
-                     sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
-        Py_XDECREF(sys_path_hooks);
-        Py_XDECREF(sys_meta_path);
-        Py_XDECREF(sys_path);
-        return NULL;
-    }
-    Py_XDECREF(sys_path_hooks);
-    Py_XDECREF(sys_meta_path);
-    Py_XDECREF(sys_path);
-
-
     /* XOptions is initialized after first some imports.
      * So we can't have negative cache before completed initialization.
      * Anyway, importlib._find_and_load is much slower than
@@ -4259,6 +4232,7 @@ _imp_lock_held_impl(PyObject *module)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 _imp.acquire_lock
 
 Acquires the interpreter's import lock for the current thread.
@@ -4269,7 +4243,7 @@ modules. On platforms without threads, this function does nothing.
 
 static PyObject *
 _imp_acquire_lock_impl(PyObject *module)
-/*[clinic end generated code: output=1aff58cb0ee1b026 input=4a2d4381866d5fdc]*/
+/*[clinic end generated code: output=1aff58cb0ee1b026 input=e1a4ef049d34e7dd]*/
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyImport_AcquireLock(interp);

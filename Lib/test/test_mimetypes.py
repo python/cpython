@@ -470,13 +470,31 @@ class CommandLineTest(unittest.TestCase):
         self.assertFalse(args.lenient)
         self.assertEqual(args.type, ["foo.pic"])
 
+    def test_multiple_inputs(self):
+        result = "\n".join(mimetypes._main(shlex.split("foo.pdf foo.png")))
+        self.assertEqual(
+            result,
+            "type: application/pdf encoding: None\n"
+            "type: image/png encoding: None"
+        )
+
+    def test_multiple_inputs_error(self):
+        result = "\n".join(mimetypes._main(shlex.split("foo.pdf foo.bar_ext")))
+        self.assertEqual(
+            result,
+            "type: application/pdf encoding: None\n"
+            "error: media type unknown for foo.bar_ext"
+        )
+
+
     def test_invocation(self):
         for command, expected in [
             ("-l -e image/jpg", ".jpg"),
             ("-e image/jpeg", ".jpg"),
             ("-l foo.webp", "type: image/webp encoding: None"),
         ]:
-            self.assertEqual(mimetypes._main(shlex.split(command)), expected)
+            result = "\n".join(mimetypes._main(shlex.split(command)))
+            self.assertEqual(result, expected)
 
     def test_invocation_error(self):
         for command, expected in [
@@ -484,8 +502,8 @@ class CommandLineTest(unittest.TestCase):
             ("foo.bar_ext", "error: media type unknown for foo.bar_ext"),
         ]:
             with self.subTest(command=command):
-                with self.assertRaisesRegex(SystemExit, expected):
-                    mimetypes._main(shlex.split(command))
+                result = "\n".join(mimetypes._main(shlex.split(command)))
+                self.assertEqual(result, expected)
 
 
 if __name__ == "__main__":

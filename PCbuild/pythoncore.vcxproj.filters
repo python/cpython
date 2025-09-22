@@ -882,6 +882,15 @@
     <ClInclude Include="..\Include\internal\pycore_uniqueid.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop_ids.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop_metadata.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>

@@ -24,6 +24,7 @@ SPLITTESTDIRS: set[TestName] = {
     "test_future_stmt",
     "test_gdb",
     "test_inspect",
+    "test_io",
     "test_pydoc",
     "test_multiprocessing_fork",
     "test_multiprocessing_forkserver",

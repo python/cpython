@@ -22,6 +22,10 @@ extern void PySys_AddWarnOption(const wchar_t *s);
 extern void PySys_AddXOption(const wchar_t *s);
 extern void Py_SetPath(const wchar_t *path);
 
+// These functions were removed from Python 3.15 API but are still exported
+// for the stable ABI. We want to test them in this program.
+extern void PySys_ResetWarnOptions(void);
+
 
 int main_argc;
 char **main_argv;
@@ -1384,9 +1388,12 @@ static int test_audit_subinterpreter(void)
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_initialize();
 
-    Py_NewInterpreter();
-    Py_NewInterpreter();
-    Py_NewInterpreter();
+    PyThreadState *tstate = PyThreadState_Get();
+    for (int i = 0; i < 3; ++i)
+    {
+        Py_EndInterpreter(Py_NewInterpreter());
+        PyThreadState_Swap(tstate);
+    }
 
     Py_Finalize();
 

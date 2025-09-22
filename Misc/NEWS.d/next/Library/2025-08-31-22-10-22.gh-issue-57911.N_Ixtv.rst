@@ -1,0 +1,2 @@
+When extracting tar files on Windows, slashes in symlink targets will be
+replaced by backslashes to prevent corrupted links.

@@ -1074,6 +1074,14 @@ class TestRecursion(unittest.TestCase):
             with self.assertRaises(RecursionError):
                 c_py_recurse(100_000)
 
+    def test_recursion_with_kwargs(self):
+        # GH-137883: The interpreter forgot to check the recursion limit when
+        # calling with keywords.
+        def recurse_kw(a=0):
+            recurse_kw(a=0)
+        with self.assertRaises(RecursionError):
+            recurse_kw()
+
 
 class TestFunctionWithManyArgs(unittest.TestCase):
     def test_function_with_many_args(self):

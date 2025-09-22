@@ -71,6 +71,8 @@ whose size is determined when the object is allocated.
  *
  * Statically allocated objects might be shared between
  * interpreters, so must be marked as immortal.
+ *
+ * Before changing this, see the check in PyModuleDef_Init().
  */
 #if defined(Py_GIL_DISABLED)
 #define PyObject_HEAD_INIT(type)    \
@@ -123,18 +125,7 @@ whose size is determined when the object is allocated.
   /* PyObject is opaque */
 #elif !defined(Py_GIL_DISABLED)
 struct _object {
-#if (defined(__GNUC__) || defined(__clang__)) \
-        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
-    // On C99 and older, anonymous union is a GCC and clang extension
-    __extension__
-#endif
-#ifdef _MSC_VER
-    // Ignore MSC warning C4201: "nonstandard extension used:
-    // nameless struct/union"
-    __pragma(warning(push))
-    __pragma(warning(disable: 4201))
-#endif
-    union {
+    _Py_ANONYMOUS union {
 #if SIZEOF_VOID_P > 4
         PY_INT64_T ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
         struct {
@@ -153,9 +144,6 @@ struct _object {
 #endif
         _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, char) _aligner;
     };
-#ifdef _MSC_VER
-    __pragma(warning(pop))
-#endif
 
     PyTypeObject *ob_type;
 };
@@ -550,6 +538,9 @@ given type object has a specified feature.
  */
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
+/* Type has dictionary or weakref pointers that are managed by VM and has
+ * to allocate space to store these.
+ */
 #define Py_TPFLAGS_PREHEADER (Py_TPFLAGS_MANAGED_WEAKREF | Py_TPFLAGS_MANAGED_DICT)
 
 /* Set if instances of the type object are treated as sequences for pattern matching */
@@ -645,6 +636,7 @@ given type object has a specified feature.
 
 // Flag values for ob_flags (16 bits available, if SIZEOF_VOID_P > 4).
 #define _Py_IMMORTAL_FLAGS (1 << 0)
+#define _Py_LEGACY_ABI_CHECK_FLAG (1 << 1) /* see PyModuleDef_Init() */
 #define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
 #if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
 #define _Py_TYPE_REVEALED_FLAG (1 << 3)

@@ -82,6 +82,12 @@ extern int _PyUnicode_FormatAdvancedWriter(
     Py_ssize_t start,
     Py_ssize_t end);
 
+/* PyUnicodeWriter_Format, with va_list instead of `...` */
+extern int _PyUnicodeWriter_FormatV(
+    PyUnicodeWriter *writer,
+    const char *format,
+    va_list vargs);
+
 /* --- UTF-7 Codecs ------------------------------------------------------- */
 
 extern PyObject* _PyUnicode_EncodeUTF7(

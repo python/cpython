@@ -124,6 +124,10 @@ Functions
     need to call :func:`invalidate_caches` in order for the new module to be
     noticed by the import system.
 
+    If the module cannot be imported, :func:`import_module` will raise
+    :exc:`ImportError` or an appropriate subclass like
+    :exc:`ModuleNotFoundError`.
+
     .. versionchanged:: 3.3
        Parent packages are automatically imported.
 
@@ -393,6 +397,8 @@ ABC hierarchy::
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
        through :class:`importlib.resources.abc.TraversableResources`.
+       This class exists for backwards compatibility only with other ABCs in
+       this module.
 
     .. method:: get_data(path)
        :abstractmethod:
