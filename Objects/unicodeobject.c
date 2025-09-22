@@ -7141,41 +7141,34 @@ PyUnicode_DecodeRawUnicodeEscape(const char *s,
 PyObject *
 PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
 {
-    PyObject *repr;
-    char *p;
-    Py_ssize_t expandsize, pos;
-    int kind;
-    const void *data;
-    Py_ssize_t len;
-
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
-    kind = PyUnicode_KIND(unicode);
-    data = PyUnicode_DATA(unicode);
-    len = PyUnicode_GET_LENGTH(unicode);
+    int kind = PyUnicode_KIND(unicode);
+    const void *data = PyUnicode_DATA(unicode);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
+    if (len == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
     if (kind == PyUnicode_1BYTE_KIND) {
         return PyBytes_FromStringAndSize(data, len);
     }
 
     /* 4 byte characters can take up 10 bytes, 2 byte characters can take up 6
        bytes, and 1 byte characters 4. */
-    expandsize = kind * 2 + 2;
-
+    Py_ssize_t expandsize = kind * 2 + 2;
     if (len > PY_SSIZE_T_MAX / expandsize) {
         return PyErr_NoMemory();
     }
-    repr = PyBytes_FromStringAndSize(NULL, expandsize * len);
-    if (repr == NULL) {
+
+    PyBytesWriter *writer = PyBytesWriter_Create(expandsize * len);
+    if (writer == NULL) {
         return NULL;
     }
-    if (len == 0) {
-        return repr;
-    }
+    char *p = PyBytesWriter_GetData(writer);
 
-    p = PyBytes_AS_STRING(repr);
-    for (pos = 0; pos < len; pos++) {
+    for (Py_ssize_t pos = 0; pos < len; pos++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
 
         /* U+0000-U+00ff range: Copy 8-bit characters as-is */
@@ -7207,11 +7200,7 @@ PyUnicode_AsRawUnicodeEscapeString(PyObject *unicode)
         }
     }
 
-    assert(p > PyBytes_AS_STRING(repr));
-    if (_PyBytes_Resize(&repr, p - PyBytes_AS_STRING(repr)) < 0) {
-        return NULL;
-    }
-    return repr;
+    return PyBytesWriter_FinishWithPointer(writer, p);
 }
 
 /* --- Latin-1 Codec ------------------------------------------------------ */
