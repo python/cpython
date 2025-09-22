@@ -9077,6 +9077,9 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
     const void *data = PyUnicode_DATA(unicode);
     int kind = PyUnicode_KIND(unicode);
 
+    PyObject *error_handler_obj = NULL;
+    PyObject *exc = NULL;
+
     /* output object */
     PyBytesWriter *writer;
     /* allocate enough for a simple encoding without
@@ -9090,8 +9093,6 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
     Py_ssize_t inpos = 0;
     /* current output position */
     Py_ssize_t respos = 0;
-    PyObject *error_handler_obj = NULL;
-    PyObject *exc = NULL;
     _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 
     while (inpos<size) {
