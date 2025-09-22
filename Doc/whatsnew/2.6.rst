@@ -1029,7 +1029,7 @@ PEP 3116: New I/O Library
 
 Python's built-in file objects support a number of methods, but
 file-like objects don't necessarily support all of them.  Objects that
-imitate files usually support :meth:`read` and :meth:`write`, but they
+imitate files usually support :meth:`~io.TextIOBase.read` and :meth:`~io.TextIOBase.write`, but they
 may not support :meth:`readline`, for example.  Python 3.0 introduces
 a layered I/O library in the :mod:`io` module that separates buffering
 and text-handling features from the fundamental read and write
@@ -1038,47 +1038,47 @@ operations.
 There are three levels of abstract base classes provided by
 the :mod:`io` module:
 
-* :class:`RawIOBase` defines raw I/O operations: :meth:`read`,
-  :meth:`readinto`,
-  :meth:`write`, :meth:`seek`, :meth:`tell`, :meth:`truncate`,
-  and :meth:`close`.
+* :class:`~io.RawIOBase` defines raw I/O operations: :meth:`~io.RawIOBase.read`,
+  :meth:`~io.RawIOBase.readinto`,
+  :meth:`~io.RawIOBase.write`, :meth:`~io.IOBase.seek`, :meth:`~io.IOBase.tell`, :meth:`~io.IOBase.truncate`,
+  and :meth:`~io.IOBase.close`.
   Most of the methods of this class will often map to a single system call.
-  There are also :meth:`readable`, :meth:`writable`, and :meth:`seekable`
+  There are also :meth:`~io.IOBase.readable`, :meth:`~io.IOBase.writable`, and :meth:`~io.IOBase.seekable`
   methods for determining what operations a given object will allow.
 
   Python 3.0 has concrete implementations of this class for files and
   sockets, but Python 2.6 hasn't restructured its file and socket objects
   in this way.
 
-* :class:`BufferedIOBase` is an abstract base class that
+* :class:`~io.BufferedIOBase` is an abstract base class that
   buffers data in memory to reduce the number of
   system calls used, making I/O processing more efficient.
-  It supports all of the methods of :class:`RawIOBase`,
-  and adds a :attr:`raw` attribute holding the underlying raw object.
+  It supports all of the methods of :class:`~io.RawIOBase`,
+  and adds a :attr:`~io.BufferedIOBase.raw` attribute holding the underlying raw object.
 
   There are five concrete classes implementing this ABC.
-  :class:`BufferedWriter` and :class:`BufferedReader` are for objects
-  that support write-only or read-only usage that have a :meth:`seek`
-  method for random access.  :class:`BufferedRandom` objects support
+  :class:`~io.BufferedWriter` and :class:`~io.BufferedReader` are for objects
+  that support write-only or read-only usage that have a :meth:`~io.IOBase.seek`
+  method for random access.  :class:`~io.BufferedRandom` objects support
   read and write access upon the same underlying stream, and
-  :class:`BufferedRWPair` is for objects such as TTYs that have both
+  :class:`~io.BufferedRWPair` is for objects such as TTYs that have both
   read and write operations acting upon unconnected streams of data.
-  The :class:`BytesIO` class supports reading, writing, and seeking
+  The :class:`~io.BytesIO` class supports reading, writing, and seeking
   over an in-memory buffer.
 
   .. index::
      single: universal newlines; What's new
 
-* :class:`TextIOBase`: Provides functions for reading and writing
+* :class:`~io.TextIOBase`: Provides functions for reading and writing
   strings (remember, strings will be Unicode in Python 3.0),
-  and supporting :term:`universal newlines`.  :class:`TextIOBase` defines
+  and supporting :term:`universal newlines`.  :class:`~io.TextIOBase` defines
   the :meth:`readline` method and supports iteration upon
   objects.
 
-  There are two concrete implementations.  :class:`TextIOWrapper`
+  There are two concrete implementations.  :class:`~io.TextIOWrapper`
   wraps a buffered I/O object, supporting all of the methods for
-  text I/O and adding a :attr:`buffer` attribute for access
-  to the underlying object.  :class:`StringIO` simply buffers
+  text I/O and adding a :attr:`~io.TextIOBase.buffer` attribute for access
+  to the underlying object.  :class:`~io.StringIO` simply buffers
   everything in memory without ever writing anything to disk.
 
   (In Python 2.6, :class:`io.StringIO` is implemented in
