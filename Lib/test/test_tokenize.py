@@ -1485,6 +1485,14 @@ class TestDetectEncoding(TestCase):
         readline = self.get_readline(lines)
         self.assertRaises(SyntaxError, tokenize.detect_encoding, readline)
 
+    def test_nonascii_coding(self):
+        # gh-63161: test non-ASCII coding
+        lines = (
+            '#coding=iso8859-15 €'.encode('iso8859-15'),
+            )
+        readline = self.get_readline(lines)
+        found, consumed_lines = tokenize.detect_encoding(readline)
+        self.assertEqual(found, "iso8859-15")
 
     def test_utf8_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.

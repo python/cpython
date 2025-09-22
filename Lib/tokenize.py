@@ -386,20 +386,24 @@ def detect_encoding(readline):
             return b''
 
     def find_cookie(line):
-        try:
-            # Decode as UTF-8. Either the line is an encoding declaration,
-            # in which case it should be pure ASCII, or it must be UTF-8
-            # per default encoding.
-            line_string = line.decode('utf-8')
-        except UnicodeDecodeError:
-            msg = "invalid or missing encoding declaration"
-            if filename is not None:
-                msg = '{} for {!r}'.format(msg, filename)
-            raise SyntaxError(msg)
+        # gh-63161: Use surrogateescape error handler to escape potential
+        # non-ASCII characters after the coding declaration.
+        line_string = line.decode('utf-8', 'surrogateescape')
 
         match = cookie_re.match(line_string)
         if not match:
+            try:
+                # Decode as UTF-8. Either the line is an encoding declaration,
+                # in which case it should be pure ASCII, or it must be UTF-8
+                # per default encoding.
+                line.decode('utf-8')
+            except UnicodeDecodeError:
+                msg = "invalid or missing encoding declaration"
+                if filename is not None:
+                    msg = '{} for {!r}'.format(msg, filename)
+                raise SyntaxError(msg)
             return None
+
         encoding = _get_normal_name(match.group(1))
         try:
             codec = lookup(encoding)
