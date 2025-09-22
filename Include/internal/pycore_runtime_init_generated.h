@@ -1431,6 +1431,7 @@ extern "C" {
     INIT_ID(__itruediv__), \
     INIT_ID(__ixor__), \
     INIT_ID(__lazy_import__), \
+    INIT_ID(__lazy_modules__), \
     INIT_ID(__le__), \
     INIT_ID(__len__), \
     INIT_ID(__length_hint__), \
@@ -1849,7 +1850,6 @@ extern "C" {
     INIT_ID(last_type), \
     INIT_ID(last_value), \
     INIT_ID(latin1), \
-    INIT_ID(lazy), \
     INIT_ID(leaf_size), \
     INIT_ID(legacy), \
     INIT_ID(len), \

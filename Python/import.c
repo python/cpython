@@ -3862,11 +3862,17 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
     PyObject *package = NULL;
+    PyObject *lazy_modules = NULL;
     PyInterpreterState *interp = tstate->interp;
     int has_from;
 
     if (name == NULL) {
         _PyErr_SetString(tstate, PyExc_ValueError, "Empty module name");
+        goto error;
+    }
+
+    if (globals != NULL &&
+        PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0) {
         goto error;
     }
 
@@ -3886,6 +3892,24 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     abs_name = get_abs_name(tstate, name, globals, level);
     if (abs_name == NULL) {
         goto error;
+    }
+
+    if (lazy_modules != NULL) {
+        // Check and see if the module is opting in w/o syntax for backwards compatibility
+        // with older Python versions.
+        int contains = PySequence_Contains(lazy_modules, name);
+        if (contains < 0) {
+            goto error;
+        } else if (contains == 1) {
+            _PyInterpreterFrame *frame = _PyEval_GetFrame();
+            if (frame == NULL) {
+                PyErr_SetString(PyExc_RuntimeError, "no current frame");
+                goto error;
+            }
+            final_mod = _PyImport_LazyImportModuleLevelObject(tstate, name, frame->f_builtins, globals,
+                                                              locals, fromlist, level);
+            goto error;
+        }
     }
 
     mod = import_get_module(tstate, abs_name);
@@ -3980,6 +4004,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
   error:
+    Py_XDECREF(lazy_modules);
     Py_XDECREF(abs_name);
     Py_XDECREF(mod);
     Py_XDECREF(package);
