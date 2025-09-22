@@ -24,6 +24,8 @@ typedef struct {
     PyObject *md_weaklist;
     // for logging purposes after md_dict is cleared
     PyObject *md_name;
+    // module version we last checked for lazy values
+    uint32_t m_dict_version;
 #ifdef Py_GIL_DISABLED
     void *md_gil;
 #endif
