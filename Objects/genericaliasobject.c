@@ -525,12 +525,24 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             return NULL;
         }
         if (unpack) {
+            if (!PyTuple_Check(arg)) {
+                Py_DECREF(newargs);
+                Py_DECREF(item);
+                Py_XDECREF(tuple_args);
+                PyObject *original = PyTuple_GET_ITEM(args, iarg);
+                PyErr_Format(PyExc_TypeError,
+                             "expected __typing_subst__ of %T objects to return a tuple, not %T",
+                             original, arg);
+                Py_DECREF(arg);
+                return NULL;
+            }
             jarg = tuple_extend(&newargs, jarg,
                     &PyTuple_GET_ITEM(arg, 0), PyTuple_GET_SIZE(arg));
             Py_DECREF(arg);
             if (jarg < 0) {
                 Py_DECREF(item);
                 Py_XDECREF(tuple_args);
+                assert(newargs == NULL);
                 return NULL;
             }
         }

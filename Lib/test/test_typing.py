@@ -13,6 +13,7 @@ import os
 import pickle
 import re
 import sys
+import warnings
 from unittest import TestCase, main, skip
 from unittest.mock import patch
 from copy import copy, deepcopy
@@ -5844,6 +5845,23 @@ class GenericTests(BaseTestCase):
                     with self.assertRaises(TypeError):
                         a[int]
 
+    def test_return_non_tuple_while_unpacking(self):
+        # GH-138497: GenericAlias objects didn't ensure that __typing_subst__ actually
+        # returned a tuple
+        class EvilTypeVar:
+            __typing_is_unpacked_typevartuple__ = True
+            def __typing_prepare_subst__(*_):
+                return None  # any value
+            def __typing_subst__(*_):
+                return 42  # not tuple
+
+        evil = EvilTypeVar()
+        # Create a dummy TypeAlias that will be given the evil generic from
+        # above.
+        type type_alias[*_] = 0
+        with self.assertRaisesRegex(TypeError, ".+__typing_subst__.+tuple.+int.*"):
+            type_alias[evil][0]
+
 
 class ClassVarTests(BaseTestCase):
 
@@ -7155,6 +7173,19 @@ class GetTypeHintsTests(BaseTestCase):
         assert isinstance(get_type_hints(func)['x'], MyAlias)
         assert isinstance(get_type_hints(func)['y'], MyAlias)
 
+    def test_stringified_typeddict(self):
+        ns = run_code(
+            """
+            from __future__ import annotations
+            from typing import TypedDict
+            class TD[UniqueT](TypedDict):
+                a: UniqueT
+            """
+        )
+        TD = ns['TD']
+        self.assertEqual(TD.__annotations__, {'a': EqualToForwardRef('UniqueT', owner=TD, module=TD.__module__)})
+        self.assertEqual(get_type_hints(TD), {'a': TD.__type_params__[0]})
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -7468,6 +7499,25 @@ class CollectionsAbcTests(BaseTestCase):
     def test_mutablesequence(self):
         self.assertIsInstance([], typing.MutableSequence)
         self.assertNotIsInstance((), typing.MutableSequence)
+
+    def test_bytestring(self):
+        previous_typing_module = sys.modules.pop("typing", None)
+        self.addCleanup(sys.modules.__setitem__, "typing", previous_typing_module)
+
+        with self.assertWarns(DeprecationWarning):
+            from typing import ByteString
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(b'', ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsInstance(bytearray(b''), ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsSubclass(bytes, ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsSubclass(bytearray, ByteString)
+        with self.assertWarns(DeprecationWarning):
+            class Foo(ByteString): ...
+        with self.assertWarns(DeprecationWarning):
+            class Bar(ByteString, typing.Awaitable): ...
 
     def test_list(self):
         self.assertIsSubclass(list, typing.List)
@@ -8640,8 +8690,8 @@ class TypedDictTests(BaseTestCase):
                     child = _make_td(
                         child_future, "Child", {"child": "int"}, "Base", {"Base": base}
                     )
-                    base_anno = ForwardRef("int", module="builtins") if base_future else int
-                    child_anno = ForwardRef("int", module="builtins") if child_future else int
+                    base_anno = ForwardRef("int", module="builtins", owner=base) if base_future else int
+                    child_anno = ForwardRef("int", module="builtins", owner=child) if child_future else int
                     self.assertEqual(base.__annotations__, {'base': base_anno})
                     self.assertEqual(
                         child.__annotations__, {'child': child_anno, 'base': base_anno}
@@ -10415,6 +10465,10 @@ SpecialAttrsT = typing.TypeVar('SpecialAttrsT', int, float, complex)
 class SpecialAttrsTests(BaseTestCase):
 
     def test_special_attrs(self):
+        with warnings.catch_warnings(
+            action='ignore', category=DeprecationWarning
+        ):
+            typing_ByteString = typing.ByteString
         cls_to_check = {
             # ABC classes
             typing.AbstractSet: 'AbstractSet',
@@ -10423,6 +10477,7 @@ class SpecialAttrsTests(BaseTestCase):
             typing.AsyncIterable: 'AsyncIterable',
             typing.AsyncIterator: 'AsyncIterator',
             typing.Awaitable: 'Awaitable',
+            typing_ByteString: 'ByteString',
             typing.Callable: 'Callable',
             typing.ChainMap: 'ChainMap',
             typing.Collection: 'Collection',
@@ -10775,7 +10830,8 @@ class AllTests(BaseTestCase):
                 # there's a few types and metaclasses that aren't exported
                 not k.endswith(('Meta', '_contra', '_co')) and
                 not k.upper() == k and
-                # but export all things that have __module__ == 'typing'
+                k not in {"ByteString"} and
+                # but export all other things that have __module__ == 'typing'
                 getattr(v, '__module__', None) == typing.__name__
             )
         }
