@@ -300,7 +300,7 @@ if any('htmlhelp' in arg for arg in sys.argv):
     print("It may be removed in the future\n")
 
 # Short title used e.g. for <title> HTML tags.
-html_short_title = _(f'{release} Documentation')
+html_short_title = _('%(release)s Documentation') % {'release': release}
 
 # Deployment preview information
 # (See .readthedocs.yml and https://docs.readthedocs.io/en/stable/reference/environment-variables.html)
@@ -447,8 +447,8 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 # Options for Epub output
 # -----------------------
 
-epub_author = 'Python Documentation Authors'
-epub_publisher = 'Python Software Foundation'
+epub_author = _('Python Documentation Authors',)
+epub_publisher = _('Python Software Foundation',)
 epub_exclude_files = ('index.xhtml', 'download.xhtml')
 
 # index pages are not valid xhtml
