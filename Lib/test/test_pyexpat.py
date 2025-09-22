@@ -825,12 +825,14 @@ class ReparseDeferralTest(unittest.TestCase):
 
 class AttackProtectionTest(unittest.TestCase):
 
-    def billion_laughs(self, ncols, nrows, text='.', indent='  '):
-        """Create a billion laugh payload.
+    def exponential_expansion_payload(self, ncols, nrows, text='.'):
+        """Create a billion laughs attack payload.
 
         Be careful: the number of total items is pow(n, k), thereby
         requiring at least pow(ncols, nrows) * sizeof(text) memory!
         """
+        # 'indent' affects the peak amplification factor and allocation
+        indent = ' ' * 2
         body = textwrap.indent('\n'.join(
             f'<!ENTITY row{i + 1} "{f"&row{i};" * ncols}">'
             for i in range(nrows)
@@ -847,9 +849,9 @@ class AttackProtectionTest(unittest.TestCase):
 
     def test_set_alloc_tracker_maximum_amplification(self):
         # On WASI, the maximum amplification factor of the payload may differ,
-        # so we craft a payload that is likely to yield an allocation factor
+        # so we craft a payload that is likely to yield an amplification factor
         # way larger than 1.0 and way smaller than 10^5.
-        payload = self.billion_laughs(1, 2)
+        payload = self.exponential_expansion_payload(1, 2)
 
         p = expat.ParserCreate()
         # Unconditionally enable maximum amplification factor.
@@ -859,7 +861,7 @@ class AttackProtectionTest(unittest.TestCase):
         msg = r"out of memory: line \d+, column \d+"
         self.assertRaisesRegex(expat.ExpatError, msg, p.Parse, payload)
 
-        # # Re-create a parser as the current parser is now in an error state.
+        # Re-create a parser as the current parser is now in an error state.
         p = expat.ParserCreate()
         # Unconditionally enable maximum amplification factor.
         p.SetAllocTrackerActivationThreshold(0)
@@ -880,11 +882,11 @@ class AttackProtectionTest(unittest.TestCase):
         self.assertRaisesRegex(expat.ExpatError, msg, fsub, 1.0)
 
     def test_set_alloc_tracker_activation_threshold(self):
-        # Run the test with EXPAT_MALLOC_DEBUG=2 to detect those constants.
+        # Run the test with EXPAT_MALLOC_DEBUG=2 to find those constants.
         MAX_ALLOC = 17333
         MIN_ALLOC = 1096
 
-        payload = self.billion_laughs(10, 4)
+        payload = self.exponential_expansion_payload(10, 4)
 
         p = expat.ParserCreate()
         p.SetAllocTrackerActivationThreshold(MAX_ALLOC + 1)
