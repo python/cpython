@@ -538,7 +538,7 @@ If you don't like the default directory, it can be overridden by an
 environment variable.  :envvar:`PYTHONUSERBASE` sets the root
 directory used for all Python versions supporting this feature.  On
 Windows, the directory for application-specific data can be changed by
-setting the :envvar:`APPDATA` environment variable.  You can also
+setting the :envvar:`!APPDATA` environment variable.  You can also
 modify the :file:`site.py` file for your Python installation.
 
 The feature can be disabled entirely by running Python with the
