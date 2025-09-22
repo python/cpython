@@ -5289,6 +5289,7 @@ dummy_func(
             }
         #endif
             tstate->jit_exit = exit;
+            assert(!exit->is_dynamic);
             TIER2_TO_TIER2(exit->executor);
         }
 
@@ -5454,7 +5455,7 @@ dummy_func(
                 }
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
-                int chain_depth = 0;
+                int chain_depth = is_dynamic ? 0 : current_executor->vm_data.chain_depth + 1;
                 _PyJIT_InitializeTracing(tstate, frame, target, STACK_LEVEL(), chain_depth);
                 GOTO_TIER_ONE(target, 1);
             }

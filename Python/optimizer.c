@@ -102,7 +102,7 @@ insert_executor(PyCodeObject *code, _Py_CODEUNIT *instr, int index, _PyExecutorO
 }
 
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies);
+make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies, int chain_depth);
 
 static int
 uop_optimize(_PyInterpreterFrame *frame, PyThreadState *tstate,
@@ -128,8 +128,7 @@ _PyOptimizer_Optimize(
     // make progress in order to avoid infinite loops or excessively-long
     // side-exit chains. We can only insert the executor into the bytecode if
     // this is true, since a deopt won't infinitely re-enter the executor:
-    chain_depth %= MAX_CHAIN_DEPTH;
-    bool progress_needed = chain_depth == 0;
+    bool progress_needed = (chain_depth % MAX_CHAIN_DEPTH) == 0;
     PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_tracer_initial_func->func_code;
     assert(PyCode_Check(code));
     _Py_CODEUNIT *start = tstate->interp->jit_tracer_initial_instr;
@@ -144,19 +143,24 @@ _PyOptimizer_Optimize(
         return err;
     }
     assert(executor != NULL);
-    int index = get_index_for_executor(code, start);
-    if (index < 0) {
-        /* Out of memory. Don't raise and assume that the
-         * error will show up elsewhere.
-         *
-         * If an optimizer has already produced an executor,
-         * it might get confused by the executor disappearing,
-         * but there is not much we can do about that here. */
-        Py_DECREF(executor);
-        interp->compiling = false;
-        return 0;
+    if (progress_needed) {
+        int index = get_index_for_executor(code, start);
+        if (index < 0) {
+            /* Out of memory. Don't raise and assume that the
+             * error will show up elsewhere.
+             *
+             * If an optimizer has already produced an executor,
+             * it might get confused by the executor disappearing,
+             * but there is not much we can do about that here. */
+            Py_DECREF(executor);
+            interp->compiling = false;
+            return 0;
+        }
+        insert_executor(code, start, index, executor);
     }
-    insert_executor(code, start, index, executor);
+    else {
+        executor->vm_data.code = NULL;
+    }
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
     interp->compiling = false;
@@ -544,7 +548,8 @@ _PyJIT_translate_single_bytecode_to_trace(
     if (Py_IsNone((PyObject *)func)) {
         func = NULL;
     }
-    bool progress_needed = (tstate->interp->jit_tracer_initial_chain_depth % MAX_CHAIN_DEPTH) == 0;;
+    int is_first_instr = tstate->interp->jit_tracer_initial_instr == this_instr ;
+    bool progress_needed = (tstate->interp->jit_tracer_initial_chain_depth % MAX_CHAIN_DEPTH) == 0 && is_first_instr;;
     _PyBloomFilter *dependencies = &tstate->interp->jit_tracer_dependencies;
     _Py_BloomFilter_Add(dependencies, old_code);
     _Py_CODEUNIT *target_instr = this_instr;
@@ -629,7 +634,7 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     /* Special case the first instruction,
      * so that we can guarantee forward progress */
-    if (progress_needed && tstate->interp->jit_tracer_initial_instr == this_instr && tstate->interp->jit_tracer_code_curr_size == 0) {
+    if (progress_needed && is_first_instr && tstate->interp->jit_tracer_code_curr_size == 0) {
         if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
             opcode = _PyOpcode_Deopt[opcode];
         }
@@ -638,7 +643,7 @@ _PyJIT_translate_single_bytecode_to_trace(
     }
 
     // Loop back to the start
-    if (tstate->interp->jit_tracer_initial_instr == this_instr && tstate->interp->jit_tracer_code_curr_size > 2) {
+    if (is_first_instr && tstate->interp->jit_tracer_code_curr_size > 2) {
         // Undo the last few instructions.
         trace_length = tstate->interp->jit_tracer_code_curr_size;
         ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0, 0);
@@ -1047,7 +1052,7 @@ sanity_check(_PyExecutorObject *executor)
  * and not a NOP.
  */
 static _PyExecutorObject *
-make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies)
+make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFilter *dependencies, int chain_depth)
 {
     int exit_count = count_exits(buffer, length);
     _PyExecutorObject *executor = allocate_executor(exit_count, length);
@@ -1057,6 +1062,8 @@ make_executor_from_uops(_PyUOpInstruction *buffer, int length, const _PyBloomFil
 
     /* Initialize exits */
     _PyExecutorObject *cold = _PyExecutor_GetColdExecutor();
+    fprintf(stdout, "CHAIN DEPTH %d;\n", chain_depth);
+    cold->vm_data.chain_depth = chain_depth;
     for (int i = 0; i < exit_count; i++) {
         executor->exits[i].index = i;
         executor->exits[i].temperature = initial_temperature_backoff_counter();
@@ -1191,7 +1198,7 @@ uop_optimize(
     OPT_HIST(effective_trace_length(buffer, length), optimized_trace_length_hist);
     length = prepare_for_execution(buffer, length);
     assert(length <= UOP_MAX_TRACE_LENGTH);
-    _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies);
+    _PyExecutorObject *executor = make_executor_from_uops(buffer, length,  &dependencies, tstate->interp->jit_tracer_initial_chain_depth);
     if (executor == NULL) {
         return -1;
     }
