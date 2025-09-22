@@ -6893,46 +6893,36 @@ PyUnicode_DecodeUnicodeEscape(const char *s,
 PyObject *
 PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
 {
-    Py_ssize_t i, len;
-    PyObject *repr;
-    char *p;
-    int kind;
-    const void *data;
-    Py_ssize_t expandsize;
-
-    /* Initial allocation is based on the longest-possible character
-       escape.
-
-       For UCS1 strings it's '\xxx', 4 bytes per source character.
-       For UCS2 strings it's '\uxxxx', 6 bytes per source character.
-       For UCS4 strings it's '\U00xxxxxx', 10 bytes per source character.
-    */
-
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
     }
 
-    len = PyUnicode_GET_LENGTH(unicode);
+    Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
     if (len == 0) {
         return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
+    int kind = PyUnicode_KIND(unicode);
+    const void *data = PyUnicode_DATA(unicode);
 
-    kind = PyUnicode_KIND(unicode);
-    data = PyUnicode_DATA(unicode);
-    /* 4 byte characters can take up 10 bytes, 2 byte characters can take up 6
-       bytes, and 1 byte characters 4. */
-    expandsize = kind * 2 + 2;
+    /* Initial allocation is based on the longest-possible character
+     * escape.
+     *
+     * For UCS1 strings it's '\xxx', 4 bytes per source character.
+     * For UCS2 strings it's '\uxxxx', 6 bytes per source character.
+     * For UCS4 strings it's '\U00xxxxxx', 10 bytes per source character. */
+    Py_ssize_t expandsize = kind * 2 + 2;
     if (len > PY_SSIZE_T_MAX / expandsize) {
         return PyErr_NoMemory();
     }
-    repr = PyBytes_FromStringAndSize(NULL, expandsize * len);
-    if (repr == NULL) {
+
+    PyBytesWriter *writer = PyBytesWriter_Create(expandsize * len);
+    if (writer == NULL) {
         return NULL;
     }
+    char *p = PyBytesWriter_GetData(writer);
 
-    p = PyBytes_AS_STRING(repr);
-    for (i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
 
         /* U+0000-U+00ff range */
@@ -6998,11 +6988,7 @@ PyUnicode_AsUnicodeEscapeString(PyObject *unicode)
         }
     }
 
-    assert(p - PyBytes_AS_STRING(repr) > 0);
-    if (_PyBytes_Resize(&repr, p - PyBytes_AS_STRING(repr)) < 0) {
-        return NULL;
-    }
-    return repr;
+    return PyBytesWriter_FinishWithPointer(writer, p);
 }
 
 /* --- Raw Unicode Escape Codec ------------------------------------------- */
