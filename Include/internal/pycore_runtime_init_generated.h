@@ -1210,6 +1210,7 @@ extern "C" {
     INIT_ID(query), \
     INIT_ID(queuetype), \
     INIT_ID(quotetabs), \
+    INIT_ID(random_func), \
     INIT_ID(raw), \
     INIT_ID(read), \
     INIT_ID(read1), \
@@ -1313,6 +1314,7 @@ extern "C" {
     INIT_ID(threading), \
     INIT_ID(throw), \
     INIT_ID(time), \
+    INIT_ID(time_func), \
     INIT_ID(timeout), \
     INIT_ID(timer), \
     INIT_ID(times), \
