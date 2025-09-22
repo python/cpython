@@ -10,7 +10,7 @@ import textwrap
 import traceback
 from io import BytesIO
 from test import support
-from test.support import os_helper
+from test.support import import_helper, os_helper
 from test.support import sortdict
 from unittest import mock
 from xml.parsers import expat
@@ -825,7 +825,7 @@ class ReparseDeferralTest(unittest.TestCase):
 
 class AttackProtectionTest(unittest.TestCase):
 
-    def billion_laughs(self, ncols, nrows, text='.'):
+    def billion_laughs(self, ncols, nrows, text='.', indent='  '):
         """Create a billion laugh payload.
 
         Be careful: the number of total items is pow(n, k), thereby
@@ -834,34 +834,36 @@ class AttackProtectionTest(unittest.TestCase):
         body = textwrap.indent('\n'.join(
             f'<!ENTITY row{i + 1} "{f"&row{i};" * ncols}">'
             for i in range(nrows)
-        ), '  ')
+        ), indent)
         return f"""\
 <?xml version="1.0"?>
 <!DOCTYPE doc [
-  <!ENTITY row0 "{text}">
-  <!ELEMENT doc (#PCDATA)>
+{indent}<!ENTITY row0 "{text}">
+{indent}<!ELEMENT doc (#PCDATA)>
 {body}
 ]>
 <doc>&row{nrows};</doc>
 """
 
     def test_set_alloc_tracker_maximum_amplification(self):
-        payload = self.billion_laughs(10, 4)
+        # On WASI, the maximum amplification factor of the payload may differ,
+        # so we craft a payload that is likely to yield an allocation factor
+        # way larger than 1.0 and way smaller than 10^5.
+        payload = self.billion_laughs(1, 2)
 
         p = expat.ParserCreate()
         # Unconditionally enable maximum amplification factor.
         p.SetAllocTrackerActivationThreshold(0)
-        # At runtime, the peak amplification factor is 101.71,
-        # which is above the default threshold (100.0).
-        msg = re.escape("out of memory: line 3, column 15")
+        # Use a max amplification factor likely to be below the real one.
+        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
+        msg = r"out of memory: line \d+, column \d+"
         self.assertRaisesRegex(expat.ExpatError, msg, p.Parse, payload)
 
         # # Re-create a parser as the current parser is now in an error state.
         p = expat.ParserCreate()
         # Unconditionally enable maximum amplification factor.
         p.SetAllocTrackerActivationThreshold(0)
-        # Use a max amplification factor a bit above the actual one.
-        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(101.72))
+        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(10_000))
         self.assertIsNotNone(p.Parse(payload))
 
     def test_set_alloc_tracker_maximum_amplification_invalid_args(self):
@@ -894,20 +896,21 @@ class AttackProtectionTest(unittest.TestCase):
         p.SetAllocTrackerActivationThreshold(MIN_ALLOC - 1)
         # Check that we always reach the activation threshold.
         self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
-        msg = re.escape("out of memory: line 3, column 10")
+        msg = r"out of memory: line \d+, column \d+"
         self.assertRaisesRegex(expat.ExpatError, msg, p.Parse, payload)
+
+    def test_set_alloc_tracker_activation_threshold_overflown_args(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        parser = expat.ParserCreate()
+        f = parser.SetAllocTrackerActivationThreshold
+        self.assertRaises(OverflowError, f, _testcapi.ULLONG_MAX + 1)
 
     def test_set_alloc_tracker_activation_threshold_invalid_args(self):
         parser = expat.ParserCreate()
-        f = parser.SetAllocTrackerActivationThreshold
-
-        ULONG_LONG_MAX = 2 * sys.maxsize + 1
-        self.assertRaises(OverflowError, f, ULONG_LONG_MAX + 1)
-
         subparser = parser.ExternalEntityParserCreate(None)
-        fsub = subparser.SetAllocTrackerActivationThreshold
+        f = subparser.SetAllocTrackerActivationThreshold
         msg = re.escape("parser must be a root parser")
-        self.assertRaisesRegex(expat.ExpatError, msg, fsub, 12345)
+        self.assertRaisesRegex(expat.ExpatError, msg, f, 12345)
 
 
 if __name__ == "__main__":
