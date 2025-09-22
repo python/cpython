@@ -568,11 +568,11 @@ The :mod:`multiprocessing` module started out as an exact emulation of
 the :mod:`threading` module using processes instead of threads.  That
 goal was discarded along the path to Python 2.6, but the general
 approach of the module is still similar.  The fundamental class
-is the :class:`Process`, which is passed a callable object and
-a collection of arguments.  The :meth:`start` method
+is the :class:`~multiprocessing.Process`, which is passed a callable object and
+a collection of arguments.  The :meth:`~multiprocessing.Process.start` method
 sets the callable running in a subprocess, after which you can call
-the :meth:`is_alive` method to check whether the subprocess is still running
-and the :meth:`join` method to wait for the process to exit.
+the :meth:`~multiprocessing.Process.is_alive` method to check whether the subprocess is still running
+and the :meth:`~multiprocessing.Process.join` method to wait for the process to exit.
 
 Here's a simple example where the subprocess will calculate a
 factorial.  The function doing the calculation is written strangely so
@@ -619,12 +619,12 @@ the object to communicate.  (If the parent were to change the value of
 the global variable, the child's value would be unaffected, and vice
 versa.)
 
-Two other classes, :class:`Pool` and :class:`Manager`, provide
-higher-level interfaces.  :class:`Pool` will create a fixed number of
+Two other classes, :class:`~multiprocessing.pool.Pool` and :class:`~multiprocessing.Manager`, provide
+higher-level interfaces.  :class:`~multiprocessing.pool.Pool` will create a fixed number of
 worker processes, and requests can then be distributed to the workers
-by calling :meth:`apply` or :meth:`apply_async` to add a single request,
-and :meth:`map` or :meth:`map_async` to add a number of
-requests.  The following code uses a :class:`Pool` to spread requests
+by calling :meth:`~multiprocessing.pool.Pool.apply` or :meth:`~multiprocessing.pool.Pool.apply_async` to add a single request,
+and :meth:`map` or :meth:`~multiprocessing.pool.Pool.map_async` to add a number of
+requests.  The following code uses a :class:`~multiprocessing.pool.Pool` to spread requests
 across 5 worker processes and retrieve a list of results::
 
     from multiprocessing import Pool
@@ -646,15 +646,15 @@ This produces the following output::
     33452526613163807108170062053440751665152000000000
     ...
 
-The other high-level interface, the :class:`Manager` class, creates a
+The other high-level interface, the :class:`~multiprocessing.Manager` class, creates a
 separate server process that can hold master copies of Python data
 structures.  Other processes can then access and modify these data
 structures using proxy objects.  The following example creates a
 shared dictionary by calling the :meth:`dict` method; the worker
 processes then insert values into the dictionary.  (Locking is not
 done for you automatically, which doesn't matter in this example.
-:class:`Manager`'s methods also include :meth:`Lock`, :meth:`RLock`,
-and :meth:`Semaphore` to create shared locks.)
+:class:`~multiprocessing.Manager`'s methods also include :meth:`~multiprocessing.managers.SyncManager.Lock`, :meth:`~multiprocessing.managers.SyncManager.RLock`,
+and :meth:`~multiprocessing.managers.SyncManager.Semaphore` to create shared locks.)
 
 ::
 
