@@ -2999,13 +2999,21 @@ _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
         return NULL;
     }
 
+    PyObject *res = _PyEval_ImportNameWithImport(tstate, import_func, globals, locals, name, fromlist, level);
+    Py_DECREF(import_func);
+    return res;
+}
+
+PyObject *
+_PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func, PyObject *globals, PyObject *locals,
+                             PyObject *name, PyObject *fromlist, PyObject *level)
+{
     if (locals == NULL) {
         locals = Py_None;
     }
 
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
-        Py_DECREF(import_func);
         int ilevel = PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
@@ -3020,7 +3028,6 @@ _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
 
     PyObject* args[5] = {name, globals, locals, fromlist, level};
     PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
-    Py_DECREF(import_func);
     return res;
 }
 
@@ -3029,6 +3036,7 @@ PyObject *
 _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals,
             PyObject *locals, PyObject *name, PyObject *fromlist, PyObject *level, int lazy)
 {
+    PyObject *res = NULL;
     // Check if global policy overrides the local syntax
     switch (PyImport_LazyImportsEnabled()) {
         case PyLazyImportsMode_ForcedOff:
@@ -3047,34 +3055,42 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *glob
     }
 
     PyObject *import_func;
-    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__lazy_import__), &import_func) < 0) {
-        return NULL;
+    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__import__), &import_func) < 0) {
+        goto error;
+    } else if (import_func == NULL) {
+        _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
+        goto error;
     }
-    if (import_func == NULL) {
+
+    PyObject *lazy_import_func;
+    if (PyMapping_GetOptionalItem(builtins, &_Py_ID(__lazy_import__), &lazy_import_func) < 0) {
+        goto error;
+    } else if (lazy_import_func == NULL) {
         _PyErr_SetString(tstate, PyExc_ImportError, "__lazy_import__ not found");
-        return NULL;
+        goto error;
     }
 
     if (locals == NULL) {
         locals = Py_None;
     }
 
-    if (_PyImport_IsDefaultLazyImportFunc(tstate->interp, import_func)) {
-        Py_DECREF(import_func);
-
+    if (_PyImport_IsDefaultLazyImportFunc(tstate->interp, lazy_import_func)) {
         int ilevel = PyLong_AsInt(level);
         if (ilevel == -1 && PyErr_Occurred()) {
-            return NULL;
+            goto error;
         }
 
-        return _PyImport_LazyImportModuleLevelObject(
-            tstate, name, builtins, globals, locals, fromlist, ilevel
+        res = _PyImport_LazyImportModuleLevelObject(
+            tstate, name, import_func, globals, locals, fromlist, ilevel
         );
+        goto error;
     }
 
-    PyObject* args[5] = {name, globals, locals, fromlist, level};
-    PyObject *res = PyObject_Vectorcall(import_func, args, 5, NULL);
-    Py_DECREF(import_func);
+    PyObject* args[6] = {name, globals, locals, fromlist, level, import_func};
+    res = PyObject_Vectorcall(lazy_import_func, args, 6, NULL);
+error:
+    Py_XDECREF(lazy_import_func);
+    Py_XDECREF(import_func);
     return res;
 }
 
@@ -3256,7 +3272,7 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     if (d->lz_attr != NULL) {
         if (PyUnicode_Check(d->lz_attr)) {
             PyObject *from = PyUnicode_FromFormat("%U.%U", d->lz_from, d->lz_attr);
-            ret = _PyLazyImport_New(d->lz_builtins, from, name);
+            ret = _PyLazyImport_New(d->lz_import_func, from, name);
             Py_DECREF(from);
             return ret;
         }
@@ -3264,12 +3280,12 @@ _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
         Py_ssize_t dot = PyUnicode_FindChar(d->lz_from, '.', 0, PyUnicode_GET_LENGTH(d->lz_from), 1);
         if (dot >= 0) {
             PyObject *from = PyUnicode_Substring(d->lz_from, 0, dot);
-            ret = _PyLazyImport_New(d->lz_builtins, from, name);
+            ret = _PyLazyImport_New(d->lz_import_func, from, name);
             Py_DECREF(from);
             return ret;
         }
     }
-    ret = _PyLazyImport_New(d->lz_builtins, d->lz_from, name);
+    ret = _PyLazyImport_New(d->lz_import_func, d->lz_from, name);
     return ret;
 }
 

@@ -4,7 +4,7 @@
 #include "pycore_lazyimportobject.h"
 
 PyObject *
-_PyLazyImport_New(PyObject *builtins, PyObject *from, PyObject *attr)
+_PyLazyImport_New(PyObject *import_func, PyObject *from, PyObject *attr)
 {
     PyLazyImportObject *m;
     if (!from || !PyUnicode_Check(from)) {
@@ -19,8 +19,8 @@ _PyLazyImport_New(PyObject *builtins, PyObject *from, PyObject *attr)
     if (m == NULL) {
         return NULL;
     }
-    Py_XINCREF(builtins);
-    m->lz_builtins = builtins;
+    Py_XINCREF(import_func);
+    m->lz_import_func = import_func;
     Py_INCREF(from);
     m->lz_from = from;
     Py_XINCREF(attr);
@@ -33,7 +33,7 @@ static void
 lazy_import_dealloc(PyLazyImportObject *m)
 {
     PyObject_GC_UnTrack(m);
-    Py_XDECREF(m->lz_builtins);
+    Py_XDECREF(m->lz_import_func);
     Py_XDECREF(m->lz_from);
     Py_XDECREF(m->lz_attr);
     Py_TYPE(m)->tp_free((PyObject *)m);
@@ -68,7 +68,7 @@ lazy_import_repr(PyLazyImportObject *m)
 static int
 lazy_import_traverse(PyLazyImportObject *m, visitproc visit, void *arg)
 {
-    Py_VISIT(m->lz_builtins);
+    Py_VISIT(m->lz_import_func);
     Py_VISIT(m->lz_from);
     Py_VISIT(m->lz_attr);
     return 0;
@@ -77,7 +77,7 @@ lazy_import_traverse(PyLazyImportObject *m, visitproc visit, void *arg)
 static int
 lazy_import_clear(PyLazyImportObject *m)
 {
-    Py_CLEAR(m->lz_builtins);
+    Py_CLEAR(m->lz_import_func);
     Py_CLEAR(m->lz_from);
     Py_CLEAR(m->lz_attr);
     return 0;

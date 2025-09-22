@@ -3737,8 +3737,8 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     PyObject *globals = PyEval_GetGlobals();
 
     if (full) {
-        obj = _PyEval_ImportName(tstate,
-                                   lz->lz_builtins,
+        obj = _PyEval_ImportNameWithImport(tstate,
+                                   lz->lz_import_func,
                                    globals,
                                    globals,
                                    lz->lz_from,
@@ -3749,8 +3749,8 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
         if (name == NULL) {
             goto error;
         }
-        obj = _PyEval_ImportName(tstate,
-                                   lz->lz_builtins,
+        obj = _PyEval_ImportNameWithImport(tstate,
+                                   lz->lz_import_func,
                                    globals,
                                    globals,
                                    name,
@@ -3906,8 +3906,20 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                 PyErr_SetString(PyExc_RuntimeError, "no current frame");
                 goto error;
             }
-            final_mod = _PyImport_LazyImportModuleLevelObject(tstate, name, frame->f_builtins, globals,
+
+            PyObject *import_func;
+            if (PyMapping_GetOptionalItem(frame->f_builtins, &_Py_ID(__import__), &import_func) < 0) {
+                return NULL;
+            }
+
+            if (import_func == NULL) {
+                _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
+                return NULL;
+            }
+
+            final_mod = _PyImport_LazyImportModuleLevelObject(tstate, name, import_func, globals, 
                                                               locals, fromlist, level);
+            Py_DECREF(import_func);
             goto error;
         }
     }
@@ -4016,7 +4028,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
 
 PyObject *
 _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
-                                      PyObject *name, PyObject *builtins,
+                                      PyObject *name, PyObject *import_func,
                                       PyObject *globals, PyObject *locals,
                                       PyObject *fromlist, int level)
 {
@@ -4063,7 +4075,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate,
         }
     }
 
-    PyObject *res = _PyLazyImport_New(builtins, abs_name, fromlist);
+    PyObject *res = _PyLazyImport_New(import_func, abs_name, fromlist);
     Py_DECREF(abs_name);
     return res;
 }

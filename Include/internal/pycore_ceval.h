@@ -302,6 +302,9 @@ PyAPI_FUNC(PyObject *) _PyEval_LazyImportName(PyThreadState *tstate, PyObject *b
 PyAPI_FUNC(PyObject *) _PyEval_LazyImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name);
 PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *tstate, PyObject *builtins, PyObject *globals, PyObject *locals,
             PyObject *name, PyObject *fromlist, PyObject *level);
+PyObject *
+_PyEval_ImportNameWithImport(PyThreadState *tstate, PyObject *import_func, PyObject *globals, PyObject *locals,
+                             PyObject *name, PyObject *fromlist, PyObject *level);
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);

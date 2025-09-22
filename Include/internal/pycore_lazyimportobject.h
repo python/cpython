@@ -14,14 +14,14 @@ PyAPI_DATA(PyTypeObject) PyLazyImport_Type;
 
 typedef struct {
     PyObject_HEAD
-    PyObject *lz_builtins;
+    PyObject *lz_import_func;
     PyObject *lz_from;
     PyObject *lz_attr;
 } PyLazyImportObject;
 
 
 PyAPI_FUNC(PyObject *) _PyLazyImport_GetName(PyObject *lazy_import);
-PyAPI_FUNC(PyObject *) _PyLazyImport_New(PyObject *builtins, PyObject *from, PyObject *attr);
+PyAPI_FUNC(PyObject *) _PyLazyImport_New(PyObject *import_func, PyObject *from, PyObject *attr);
 
 #ifdef __cplusplus
 }
