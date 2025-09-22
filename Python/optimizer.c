@@ -436,12 +436,12 @@ PyTypeObject _PyUOpExecutor_Type = {
 /* TO DO -- Generate these tables */
 static const uint16_t
 _PyUOp_Replacements[MAX_UOP_ID + 1] = {
-    [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
     [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
+    [_CHECK_PERIODIC_AT_END] = _TIER2_RESUME_CHECK,
 };
 
 static const uint8_t
@@ -563,6 +563,9 @@ _PyJIT_translate_single_bytecode_to_trace(
     uint32_t target = 0;
 
     target = INSTR_IP(target_instr, old_code);
+
+    DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
+
     // One for possible _DEOPT, one because _CHECK_VALIDITY itself might _DEOPT
     max_length -= 2;
     if ((uint16_t)oparg != (uint64_t)oparg) {
@@ -575,7 +578,6 @@ _PyJIT_translate_single_bytecode_to_trace(
         goto full;
     }
 
-    DPRINTF(2, "%d: %s(%d)\n", target, _PyOpcode_OpName[opcode], oparg);
 
     if (opcode == EXTENDED_ARG) {
         return 1;
@@ -726,10 +728,17 @@ _PyJIT_translate_single_bytecode_to_trace(
                         uop = _PyUOp_Replacements[uop];
                         assert(uop != 0);
 
-                        uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + (oparg > 255);
+                        uint32_t next_inst = target + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
                         if (uop == _TIER2_RESUME_CHECK) {
                             target = next_inst;
                         }
+#ifdef Py_DEBUG
+                        else if (uop != _FOR_ITER_TIER_TWO) {
+                            uint32_t jump_target = next_inst + oparg;
+                            assert(_Py_GetBaseCodeUnit(old_code, jump_target).op.code == END_FOR);
+                            assert(_Py_GetBaseCodeUnit(old_code, jump_target+1).op.code == POP_ITER);
+                        }
+#endif
                         break;
                     case OPERAND1_1:
                         assert(trace[trace_length-1].opcode == uop);
@@ -914,8 +923,7 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
             if (is_for_iter_test[opcode]) {
                 /* Target the POP_TOP immediately after the END_FOR,
                  * leaving only the iterator on the stack. */
-                int extended_arg = inst->oparg > 255;
-                int32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER + extended_arg;
+                int32_t next_inst = target + 1 + INLINE_CACHE_ENTRIES_FOR_ITER;
                 jump_target = next_inst + inst->oparg + 1;
             }
             if (unique_target || jump_target != current_jump_target || current_exit_op != exit_op) {
