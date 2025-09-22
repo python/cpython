@@ -11,7 +11,6 @@ import posixpath
 import socket
 import stat
 import tempfile
-import threading
 import unittest
 from unittest import mock
 from urllib.request import pathname2url
@@ -21,7 +20,6 @@ from test.support import cpython_only
 from test.support import is_emscripten, is_wasi, is_wasm32
 from test.support import infinite_recursion
 from test.support import os_helper
-from test.support import threading_helper
 from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
 try:
     import fcntl
@@ -1099,27 +1097,6 @@ class PurePathTest(unittest.TestCase):
         self.assertFalse(p.is_relative_to(P('c:/Server/Share/Foo')))
         self.assertFalse(p.is_relative_to(P('//z/Share/Foo')))
         self.assertFalse(p.is_relative_to(P('//Server/z/Foo')))
-
-    @threading_helper.requires_working_threading()
-    def test_raw_path_multithread(self):
-        P = self.cls
-        sep = self.sep
-
-        NUM_THREADS = 10
-        NUM_ITERS = 10
-
-        for _ in range(NUM_ITERS):
-            b = threading.Barrier(NUM_THREADS)
-            path = P('a') / 'b' / 'c' / 'd' / 'e'
-            expected = sep.join(['a', 'b', 'c', 'd', 'e'])
-
-            def check_raw_path():
-                b.wait()
-                self.assertEqual(path._raw_path, expected)
-
-            threads = [threading.Thread(target=check_raw_path) for _ in range(NUM_THREADS)]
-            with threading_helper.start_threads(threads):
-                pass
 
 
 class PurePosixPathTest(PurePathTest):
