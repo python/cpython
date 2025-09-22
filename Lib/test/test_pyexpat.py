@@ -829,7 +829,7 @@ class AttackProtectionTest(unittest.TestCase):
         """Create a billion laugh payload.
 
         Be careful: the number of total items is pow(n, k), thereby
-        requiring at least pow(ncols, nrows) * sizeof(base) memory!
+        requiring at least pow(ncols, nrows) * sizeof(text) memory!
         """
         body = textwrap.indent('\n'.join(
             f'<!ENTITY row{i + 1} "{f"&row{i};" * ncols}">'
