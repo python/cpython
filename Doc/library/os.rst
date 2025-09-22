@@ -3618,7 +3618,8 @@ features:
      where each member is an int expressing nanoseconds.
    - If *times* is not ``None``,
      it must be a 2-tuple of the form ``(atime, mtime)``
-     where each member is an int or float expressing seconds.
+     where each member is a real number expressing seconds,
+     rounded down to nanoseconds.
    - If *times* is ``None`` and *ns* is unspecified,
      this is equivalent to specifying ``ns=(atime_ns, mtime_ns)``
      where both times are the current time.
@@ -3644,6 +3645,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Accepts any real numbers as *times*, not only integers or floats.
 
 
 .. function:: walk(top, topdown=True, onerror=None, followlinks=False)
@@ -4050,7 +4054,7 @@ Naturally, they are all only available on Linux.
    the timer will fire when the timer's clock
    (set by *clockid* in :func:`timerfd_create`) reaches *initial* seconds.
 
-   The timer's interval is set by the *interval* :py:class:`float`.
+   The timer's interval is set by the *interval* real number.
    If *interval* is zero, the timer only fires once, on the initial expiration.
    If *interval* is greater than zero, the timer fires every time *interval*
    seconds have elapsed since the previous expiration.
