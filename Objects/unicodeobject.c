@@ -6221,14 +6221,13 @@ _PyUnicode_EncodeUTF32(PyObject *str,
         Py_CLEAR(rep);
     }
 
+    Py_XDECREF(errorHandler);
+    Py_XDECREF(exc);
+
     /* Cut back to size actually needed. This is necessary for, for example,
        encoding of a string containing isolated surrogates and the 'ignore'
        handler is used. */
-    nsize = (unsigned char*) out - (unsigned char*) PyBytesWriter_GetData(writer);
-    PyObject *bytes = PyBytesWriter_FinishWithSize(writer, nsize);
-    Py_XDECREF(errorHandler);
-    Py_XDECREF(exc);
-    return bytes;
+    return PyBytesWriter_FinishWithPointer(writer, out);
 
   error:
     Py_XDECREF(rep);
