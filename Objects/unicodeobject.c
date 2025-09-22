@@ -5898,7 +5898,6 @@ unicode_fill_utf8(PyObject *unicode)
         break;
     }
     if (writer == NULL) {
-        PyBytesWriter_Discard(writer);
         return -1;
     }
 
