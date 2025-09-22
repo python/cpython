@@ -748,6 +748,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(query), "query", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(queuetype), "queuetype", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(quotetabs), "quotetabs", 9);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(random_func), "random_func", 11);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(raw), "raw", 3);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(read), "read", 4);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(read1), "read1", 5);
@@ -862,6 +863,7 @@ _PyStaticObjects_CheckAll(PyInterpreterState *interp) {
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(threading), "threading", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(throw), "throw", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(time), "time", 4);
+    _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(time_func), "time_func", 9);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(timeout), "timeout", 7);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(timer), "timer", 5);
     _PyStaticObject_CheckUnicodeSingleton((PyObject *)&_Py_ID(times), "times", 5);
