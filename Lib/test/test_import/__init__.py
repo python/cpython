@@ -2654,6 +2654,14 @@ class LazyImportTests(unittest.TestCase):
 
         self.assertFalse("test.test_import.data.lazy_imports.basic2" in sys.modules)
 
+    def test_lazy_value_get(self):
+        try:
+            import test.test_import.data.lazy_imports.lazy_get_value
+        except ImportError as e:
+            self.fail('lazy import failed')
+
+        self.assertTrue("test.test_import.data.lazy_imports.basic2" in sys.modules)
+
 
 class TestSinglePhaseSnapshot(ModuleSnapshot):
     """A representation of a single-phase init module for testing.

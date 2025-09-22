@@ -1,6 +1,7 @@
 /* Lazy object implementation */
 
 #include "Python.h"
+#include "pycore_import.h"
 #include "pycore_lazyimportobject.h"
 
 PyObject *
@@ -108,6 +109,18 @@ _PyLazyImport_GetName(PyObject *lazy_import)
     return lazy_import_name((PyLazyImportObject *)lazy_import);
 }
 
+static PyObject *
+lazy_get(PyObject *self, PyObject *args)
+{
+    return _PyImport_LoadLazyImportTstate(PyThreadState_GET(), self);
+}
+
+static PyMethodDef lazy_methods[] = {
+    {"get", lazy_get, METH_NOARGS, PyDoc_STR("gets the value that the lazy function references")},
+    {0}
+};
+
+
 PyTypeObject PyLazyImport_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "lazy_import",                              /* tp_name */
@@ -137,7 +150,7 @@ PyTypeObject PyLazyImport_Type = {
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
     0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
+    lazy_methods,                               /* tp_methods */
     0,                                          /* tp_members */
     0,                                          /* tp_getset */
     0,                                          /* tp_base */
