@@ -253,7 +253,7 @@ well-known XML vulnerabilities.
 
    An :exc:`ExpatError` is raised if this method is called by a non-root
    parser or if *max_factor* is outside the valid range. The corresponding
-   :attr:`~ExpatError.lineno` and :attr:`~ExpatError.column` should not be
+   :attr:`~.ExpatError.lineno` and :attr:`~.ExpatError.column` should not be
    used as they will have no special meaning.
 
    .. note::
@@ -272,7 +272,7 @@ well-known XML vulnerabilities.
    or equivalently 67,108,864 bytes.
 
    An :exc:`ExpatError` is raised if this method is called by a non-root parser.
-   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.column`
+   The corresponding :attr:`~.ExpatError.lineno` and :attr:`~.ExpatError.column`
    should not be used as they will have no special meaning.
 
    .. versionadded:: next
