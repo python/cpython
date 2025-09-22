@@ -251,10 +251,10 @@ well-known XML vulnerabilities.
    near the start of parsing even with benign files in practice. As such, the
    upper bound must be carefully chosen so to avoid false positives.
 
-   An :exc:`ExpatError` is raised if this method is called by a non-root
-   parser or if *max_factor* is outside the valid range. The corresponding
-   :attr:`~.ExpatError.lineno` and :attr:`~.ExpatError.column` should not be
-   used as they will have no special meaning.
+   An :exc:`ExpatError` is raised if this method is called on a non-root
+   parser or if *max_factor* is outside the valid range.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
 
    .. note::
 
@@ -271,9 +271,9 @@ well-known XML vulnerabilities.
    By default, parsers objects have an allocation activation threshold of 64 MiB,
    or equivalently 67,108,864 bytes.
 
-   An :exc:`ExpatError` is raised if this method is called by a non-root parser.
-   The corresponding :attr:`~.ExpatError.lineno` and :attr:`~.ExpatError.column`
-   should not be used as they will have no special meaning.
+   An :exc:`ExpatError` is raised if this method is called on a non-root parser.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
 
    .. versionadded:: next
 
