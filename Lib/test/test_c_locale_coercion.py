@@ -15,7 +15,7 @@ from test.support.script_helper import run_python_until_end
 # Set the list of ways we expect to be able to ask for the "C" locale.
 # 'invalid.ascii' is an invalid LOCALE name and so should get turned in to the
 # default locale, which is traditionally C.
-EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii"]
+EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "POSIX", "invalid.ascii"]
 
 # Set our expectation for the default encoding used in the C locale
 # for the filesystem encoding and the standard streams
@@ -467,8 +467,9 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
             loc = locale.setlocale(locale.LC_CTYPE, "")
         except locale.Error as e:
             self.skipTest(str(e))
-        if loc == "C":
-            self.skipTest("test requires LC_CTYPE locale different than C")
+        if loc in ("C", "POSIX"):
+            self.skipTest("test requires LC_CTYPE locale different "
+                          "than C and POSIX")
         if loc in TARGET_LOCALES :
             self.skipTest("coerced LC_CTYPE locale: %s" % loc)
 
