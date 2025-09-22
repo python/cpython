@@ -231,6 +231,53 @@ XMLParser Objects
    .. versionadded:: 3.13
 
 
+:class:`xmlparser` objects have the following methods to mitigate some
+well-known XML vulnerabilities.
+
+.. method:: xmlparser.SetAllocTrackerMaximumAmplification(max_factor, /)
+
+   Sets the maximum amplification factor between direct input and bytes
+   of dynamic memory allocated.
+
+   By default, parsers objects have a maximum amplification factor of 100.
+
+   The amplification factor is calculated as ``allocated / direct``
+   while parsing, where ``direct`` is the number of bytes read from
+   the primary document in parsing and ``allocated`` is the number
+   of bytes of dynamic memory allocated in the parser hierarchy.
+
+   The *max_factor* value must be a non-NaN :class:`float` value greater than
+   or equal to 1.0. Amplifications factors greater than 100 can been observed
+   near the start of parsing even with benign files in practice. As such, the
+   upper bound must be carefully chosen so to avoid false positives.
+
+   An :exc:`ExpatError` is raised if this method is called by a non-root
+   parser or if *max_factor* is outside the valid range. The corresponding
+   :attr:`~ExpatError.lineno` and :attr:`~ExpatError.column` should not be
+   used as they will have no special meaning.
+
+   .. note::
+
+      The maximum amplification factor is only considered if the threshold
+      specified by :meth:`.SetAllocTrackerActivationThreshold` is reached.
+
+   .. versionadded:: next
+
+.. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
+
+   Sets the number of allocated bytes of dynamic memory needed to activate
+   protection against disproportionate use of RAM.
+
+   By default, parsers objects have an allocation activation threshold of 64 MiB,
+   or equivalently 67,108,864 bytes.
+
+   An :exc:`ExpatError` is raised if this method is called by a non-root parser.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.column`
+   should not be used as they will have no special meaning.
+
+   .. versionadded:: next
+
+
 :class:`xmlparser` objects have the following attributes:
 
 
