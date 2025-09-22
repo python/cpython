@@ -207,6 +207,8 @@ set_invalid_arg(pyexpat_state *state, xmlparseobject *self, const char *errmsg)
     return NULL;
 }
 
+#undef SET_XML_ERROR
+
 static int
 have_handler(xmlparseobject *self, int type)
 {
