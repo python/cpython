@@ -6106,6 +6106,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
 #else
     int native_ordering = byteorder >= 0;
 #endif
+
     if (kind == PyUnicode_1BYTE_KIND) {
         // gh-139156: Don't use PyBytesWriter API here since it has an overhead
         // on short strings
@@ -6155,8 +6156,6 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     PyObject *rep = NULL;
 
     for (Py_ssize_t pos = 0; pos < len; ) {
-        Py_ssize_t newpos, repsize, moreunits;
-
         if (kind == PyUnicode_2BYTE_KIND) {
             pos += ucs2lib_utf32_encode((const Py_UCS2 *)data + pos, len - pos,
                                         &out, native_ordering);
@@ -6169,6 +6168,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
         if (pos == len)
             break;
 
+        Py_ssize_t newpos;
         rep = unicode_encode_call_errorhandler(
                 errors, &errorHandler,
                 encoding, "surrogates not allowed",
@@ -6176,6 +6176,7 @@ _PyUnicode_EncodeUTF32(PyObject *str,
         if (!rep)
             goto error;
 
+        Py_ssize_t repsize, moreunits;
         if (PyBytes_Check(rep)) {
             repsize = PyBytes_GET_SIZE(rep);
             if (repsize & 3) {
