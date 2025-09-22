@@ -6100,6 +6100,33 @@ _PyUnicode_EncodeUTF32(PyObject *str,
     if (len > PY_SSIZE_T_MAX / 4 - (byteorder == 0))
         return PyErr_NoMemory();
     Py_ssize_t nsize = len + (byteorder == 0);
+
+#if PY_LITTLE_ENDIAN
+    int native_ordering = byteorder <= 0;
+#else
+    int native_ordering = byteorder >= 0;
+#endif
+    if (kind == PyUnicode_1BYTE_KIND) {
+        // gh-139156: Don't use PyBytesWriter API here since it has an overhead
+        // on short strings
+        PyObject *v = PyBytes_FromStringAndSize(NULL, nsize * 4);
+        if (v == NULL) {
+            return NULL;
+        }
+
+        /* output buffer is 4-bytes aligned */
+        assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(v), 4));
+        uint32_t *out = (uint32_t *)PyBytes_AS_STRING(v);
+        if (byteorder == 0) {
+            *out++ = 0xFEFF;
+        }
+        if (len > 0) {
+            ucs1lib_utf32_encode((const Py_UCS1 *)data, len,
+                                 &out, native_ordering);
+        }
+        return v;
+    }
+
     PyBytesWriter *writer = PyBytesWriter_Create(nsize * 4);
     if (writer == NULL) {
         return NULL;
@@ -6122,16 +6149,6 @@ _PyUnicode_EncodeUTF32(PyObject *str,
         encoding = "utf-32-be";
     else
         encoding = "utf-32";
-
-#if PY_LITTLE_ENDIAN
-    int native_ordering = byteorder <= 0;
-#else
-    int native_ordering = byteorder >= 0;
-#endif
-    if (kind == PyUnicode_1BYTE_KIND) {
-        ucs1lib_utf32_encode((const Py_UCS1 *)data, len, &out, native_ordering);
-        return PyBytesWriter_Finish(writer);
-    }
 
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
