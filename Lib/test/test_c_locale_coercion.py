@@ -55,11 +55,6 @@ elif sys.platform == "vxworks":
     # VxWorks defaults to using UTF-8 for all system interfaces
     EXPECTED_C_LOCALE_STREAM_ENCODING = "utf-8"
     EXPECTED_C_LOCALE_FS_ENCODING = "utf-8"
-if sys.platform.startswith("linux"):
-    # Linux recognizes POSIX as a synonym for C.  Python will always coerce
-    # if the locale is set to POSIX, but not all platforms will use the
-    # C locale encodings if POSIX is set, so we'll only test it on linux.
-    EXPECTED_C_LOCALE_EQUIVALENTS.append("POSIX")
 
 # Note that the above expectations are still wrong in some cases, such as:
 # * Windows when PYTHONLEGACYWINDOWSFSENCODING is set
