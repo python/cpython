@@ -1663,6 +1663,17 @@ class TestCImplementationCompat(unittest.TestCase):
         finally:
             self._reset_hooks(uuid)
 
+    def test_subclassing(self):
+        import uuid
+
+        class U(uuid._c_UUID):
+            pass
+
+        u = U(int=1)
+        u_str = str(u)
+        del u
+        self.assertEqual(u_str, '00000000-0000-0000-0000-000000000001')
+
 
 if __name__ == '__main__':
     unittest.main()

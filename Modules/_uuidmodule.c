@@ -211,6 +211,8 @@ uuid_getpid(void) {
 #endif
 }
 
+static struct PyModuleDef uuidmodule;
+
 static inline uuid_state *
 get_uuid_state(PyObject *mod)
 {
@@ -222,7 +224,9 @@ get_uuid_state(PyObject *mod)
 static inline uuid_state *
 get_uuid_state_by_cls(PyTypeObject *cls)
 {
-    uuid_state *state = (uuid_state *)PyType_GetModuleState(cls);
+    PyObject *module = PyType_GetModuleByDef(cls, &uuidmodule);
+    assert(module != NULL);
+    uuid_state *state = get_uuid_state(module);
     assert(state != NULL);
     return state;
 }
@@ -1019,18 +1023,25 @@ Uuid_dealloc(PyObject *obj)
     }
     Py_CLEAR(uuid->is_safe);
 
-    int added_to_freelist = 0;
+    int skip_dealloc = 0;
+    if (type != state->UuidType) {
+        // We only apply the freelist optimization to the known C type,
+        // not any subclasses of it.
+        goto dealloc;
+    }
+
     Py_BEGIN_CRITICAL_SECTION(type);
     if (state->freelist_size < MAX_FREE_LIST_SIZE) {
         uuidobject *head = state->freelist;
         state->freelist = uuid;
         uuid->weakreflist = (PyObject *)head;
         state->freelist_size++;
-        added_to_freelist = 1;
+        skip_dealloc = 1;
     }
     Py_END_CRITICAL_SECTION();
 
-    if (!added_to_freelist) {
+dealloc:
+    if (!skip_dealloc) {
         type->tp_free(uuid);
         // UUID is a heap allocated type so we have to decref the type ref
         Py_DECREF(type);
