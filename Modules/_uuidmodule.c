@@ -837,10 +837,8 @@ extract_field(
         goto fail;
     }
 
-    int overflow;
-    uint64_t value = PyLong_AsLongLongAndOverflow(field, &overflow);
-    if (overflow || (value == (uint64_t)-1 && PyErr_Occurred())) {
-        PyErr_SetString(PyExc_ValueError, error_msg);
+    uint64_t value;
+    if (PyLong_AsUInt64(field, &value) < 0) {
         goto fail;
     }
 
