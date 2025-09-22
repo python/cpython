@@ -2,9 +2,11 @@
 # handler, are obscure and unhelpful.
 
 import os
+import re
 import sys
 import sysconfig
 import unittest
+import textwrap
 import traceback
 from io import BytesIO
 from test import support
@@ -819,6 +821,93 @@ class ReparseDeferralTest(unittest.TestCase):
 
         # The key test: Have handlers already fired?  Expecting: yes.
         self.assertEqual(started, ['doc'])
+
+
+class AttackProtectionTest(unittest.TestCase):
+
+    def billion_laughs(self, ncols, nrows, text='.'):
+        """Create a billion laugh payload.
+
+        Be careful: the number of total items is pow(n, k), thereby
+        requiring at least pow(ncols, nrows) * sizeof(base) memory!
+        """
+        body = textwrap.indent('\n'.join(
+            f'<!ENTITY row{i + 1} "{f"&row{i};" * ncols}">'
+            for i in range(nrows)
+        ), '  ')
+        return f"""\
+<?xml version="1.0"?>
+<!DOCTYPE doc [
+  <!ENTITY row0 "{text}">
+  <!ELEMENT doc (#PCDATA)>
+{body}
+]>
+<doc>&row{nrows};</doc>
+"""
+
+    def test_set_alloc_tracker_maximum_amplification(self):
+        payload = self.billion_laughs(10, 4)
+
+        p = expat.ParserCreate()
+        # Unconditionally enable maximum amplification factor.
+        p.SetAllocTrackerActivationThreshold(0)
+        # At runtime, the peak amplification factor is 101.71,
+        # which is above the default threshold (100.0).
+        msg = re.escape("out of memory: line 3, column 15")
+        self.assertRaisesRegex(expat.ExpatError, msg, p.Parse, payload)
+
+        # # Re-create a parser as the current parser is now in an error state.
+        p = expat.ParserCreate()
+        # Unconditionally enable maximum amplification factor.
+        p.SetAllocTrackerActivationThreshold(0)
+        # Use a max amplification factor a bit above the actual one.
+        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(101.72))
+        self.assertIsNotNone(p.Parse(payload))
+
+    def test_set_alloc_tracker_maximum_amplification_invalid_args(self):
+        parser = expat.ParserCreate()
+        f = parser.SetAllocTrackerMaximumAmplification
+
+        msg = re.escape("'max_factor' must be at least 1.0")
+        self.assertRaisesRegex(expat.ExpatError, msg, f, float('nan'))
+        self.assertRaisesRegex(expat.ExpatError, msg, f, 0.99)
+
+        subparser = parser.ExternalEntityParserCreate(None)
+        fsub = subparser.SetAllocTrackerMaximumAmplification
+        msg = re.escape("parser must be a root parser")
+        self.assertRaisesRegex(expat.ExpatError, msg, fsub, 1.0)
+
+    def test_set_alloc_tracker_activation_threshold(self):
+        # Run the test with EXPAT_MALLOC_DEBUG=2 to detect those constants.
+        MAX_ALLOC = 17333
+        MIN_ALLOC = 1096
+
+        payload = self.billion_laughs(10, 4)
+
+        p = expat.ParserCreate()
+        p.SetAllocTrackerActivationThreshold(MAX_ALLOC + 1)
+        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
+        # Check that we never reach the activation threshold.
+        self.assertIsNotNone(p.Parse(payload))
+
+        p = expat.ParserCreate()
+        p.SetAllocTrackerActivationThreshold(MIN_ALLOC - 1)
+        # Check that we always reach the activation threshold.
+        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
+        msg = re.escape("out of memory: line 3, column 10")
+        self.assertRaisesRegex(expat.ExpatError, msg, p.Parse, payload)
+
+    def test_set_alloc_tracker_activation_threshold_invalid_args(self):
+        parser = expat.ParserCreate()
+        f = parser.SetAllocTrackerActivationThreshold
+
+        ULONG_LONG_MAX = 2 * sys.maxsize + 1
+        self.assertRaises(OverflowError, f, ULONG_LONG_MAX + 1)
+
+        subparser = parser.ExternalEntityParserCreate(None)
+        fsub = subparser.SetAllocTrackerActivationThreshold
+        msg = re.escape("parser must be a root parser")
+        self.assertRaisesRegex(expat.ExpatError, msg, fsub, 12345)
 
 
 if __name__ == "__main__":
