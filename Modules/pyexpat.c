@@ -1182,7 +1182,6 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 }
 #endif
 
-#if XML_COMBINED_VERSION >= 20702
 /*[clinic input]
 @permit_long_summary
 @permit_long_docstring_body
@@ -1213,6 +1212,7 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            float max_factor)
 /*[clinic end generated code: output=6e44bd48c9b112a0 input=23ca8b8f7de04462]*/
 {
+#if XML_COMBINED_VERSION >= 20702
     assert(self->itself != NULL);
     if (XML_SetAllocTrackerMaximumAmplification(self->itself, max_factor) == XML_TRUE) {
         Py_RETURN_NONE;
@@ -1231,6 +1231,12 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
         ? "'max_factor' must be at least 1.0"
         : "parser must be a root parser";
     return set_invalid_arg(state, self, message);
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "SetAllocTrackerMaximumAmplification() requires "
+                    "Expat 2.7.2 or later");
+    return NULL;
+#endif
 }
 
 /*[clinic input]
@@ -1253,6 +1259,7 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
                                                           unsigned long long threshold)
 /*[clinic end generated code: output=bed7e93207ba08c5 input=8453509a137a47c0]*/
 {
+#if XML_COMBINED_VERSION >= 20702
     assert(self->itself != NULL);
     if (XML_SetAllocTrackerActivationThreshold(self->itself, threshold) == XML_TRUE) {
         Py_RETURN_NONE;
@@ -1262,8 +1269,13 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
     // by ExternalEntityParserCreate()).
     pyexpat_state *state = PyType_GetModuleState(cls);
     return set_invalid_arg(state, self, "parser must be a root parser");
-}
+#else
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "SetAllocTrackerActivationThreshold() requires "
+                    "Expat 2.7.2 or later");
+    return NULL;
 #endif
+}
 
 static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_PARSE_METHODDEF

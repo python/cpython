@@ -409,8 +409,6 @@ exit:
 
 #endif /* (XML_COMBINED_VERSION >= 19505) */
 
-#if (XML_COMBINED_VERSION >= 20702)
-
 PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__,
 "SetAllocTrackerMaximumAmplification($self, max_factor, /)\n"
 "--\n"
@@ -478,10 +476,6 @@ exit:
     return return_value;
 }
 
-#endif /* (XML_COMBINED_VERSION >= 20702) */
-
-#if (XML_COMBINED_VERSION >= 20702)
-
 PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__,
 "SetAllocTrackerActivationThreshold($self, threshold, /)\n"
 "--\n"
@@ -531,8 +525,6 @@ pyexpat_xmlparser_SetAllocTrackerActivationThreshold(PyObject *self, PyTypeObjec
 exit:
     return return_value;
 }
-
-#endif /* (XML_COMBINED_VERSION >= 20702) */
 
 PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "ParserCreate($module, /, encoding=None, namespace_separator=None,\n"
@@ -678,12 +670,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-
-#ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
-    #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
-#endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
-
-#ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
-    #define PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
-#endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF) */
-/*[clinic end generated code: output=50bbe2bfee799576 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=585e00dcfea8b399 input=a9049054013a1b77]*/
