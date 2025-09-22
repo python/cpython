@@ -868,7 +868,7 @@ class AttackProtectionTest(unittest.TestCase):
         self.assertIsNone(p.SetAllocTrackerMaximumAmplification(10_000))
         self.assertIsNotNone(p.Parse(payload))
 
-    def test_set_alloc_tracker_maximum_amplification_invalid_args(self):
+    def test_set_alloc_tracker_maximum_amplification_invalid(self):
         parser = expat.ParserCreate()
         f = parser.SetAllocTrackerMaximumAmplification
 
@@ -901,13 +901,13 @@ class AttackProtectionTest(unittest.TestCase):
         msg = r"out of memory: line \d+, column \d+"
         self.assertRaisesRegex(expat.ExpatError, msg, p.Parse, payload)
 
-    def test_set_alloc_tracker_activation_threshold_overflown_args(self):
+    def test_set_alloc_tracker_activation_threshold_overflow(self):
         _testcapi = import_helper.import_module("_testcapi")
         parser = expat.ParserCreate()
         f = parser.SetAllocTrackerActivationThreshold
         self.assertRaises(OverflowError, f, _testcapi.ULLONG_MAX + 1)
 
-    def test_set_alloc_tracker_activation_threshold_invalid_args(self):
+    def test_set_alloc_tracker_activation_threshold_invalid(self):
         parser = expat.ParserCreate()
         subparser = parser.ExternalEntityParserCreate(None)
         f = subparser.SetAllocTrackerActivationThreshold
