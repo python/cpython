@@ -1501,6 +1501,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
    - :data:`RWF_HIPRI`
    - :data:`RWF_NOWAIT`
+   - :data:`RWF_DONTCACHE`
 
    Return the total number of bytes actually read which can be less than the
    total capacity of all the objects.
@@ -1546,6 +1547,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.7
 
 
+.. data:: RWF_DONTCACHE
+
+   Use uncached buffered IO.
+
+   .. availability:: Linux >= 6.14
+
+   .. versionadded:: next
+
+
 .. function:: ptsname(fd, /)
 
    Return the name of the slave pseudo-terminal device associated with the
@@ -1587,6 +1597,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    - :data:`RWF_DSYNC`
    - :data:`RWF_SYNC`
    - :data:`RWF_APPEND`
+   - :data:`RWF_DONTCACHE`
 
    Return the total number of bytes actually written.
 
@@ -2006,8 +2017,8 @@ features:
   must be a string specifying a file path.  However, some functions now
   alternatively accept an open file descriptor for their *path* argument.
   The function will then operate on the file referred to by the descriptor.
-  (For POSIX systems, Python will call the variant of the function prefixed
-  with ``f`` (e.g. call ``fchdir`` instead of ``chdir``).)
+  For POSIX systems, Python will call the variant of the function prefixed
+  with ``f`` (e.g. call ``fchdir`` instead of ``chdir``).
 
   You can check whether or not *path* can be specified as a file descriptor
   for a particular function on your platform using :data:`os.supports_fd`.
@@ -2022,7 +2033,7 @@ features:
 * **paths relative to directory descriptors:** If *dir_fd* is not ``None``, it
   should be a file descriptor referring to a directory, and the path to operate
   on should be relative; path will then be relative to that directory.  If the
-  path is absolute, *dir_fd* is ignored.  (For POSIX systems, Python will call
+  path is absolute, *dir_fd* is ignored.  For POSIX systems, Python will call
   the variant of the function with an ``at`` suffix and possibly prefixed with
   ``f`` (e.g. call ``faccessat`` instead of ``access``).
 
@@ -2035,8 +2046,8 @@ features:
 * **not following symlinks:** If *follow_symlinks* is
   ``False``, and the last element of the path to operate on is a symbolic link,
   the function will operate on the symbolic link itself rather than the file
-  pointed to by the link.  (For POSIX systems, Python will call the ``l...``
-  variant of the function.)
+  pointed to by the link.  For POSIX systems, Python will call the ``l...``
+  variant of the function.
 
   You can check whether or not *follow_symlinks* is supported for a particular
   function on your platform using :data:`os.supports_follow_symlinks`.

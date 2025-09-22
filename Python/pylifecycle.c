@@ -2411,17 +2411,16 @@ new_interpreter(PyThreadState **tstate_p,
        interpreters: disable PyGILState_Check(). */
     runtime->gilstate.check_enabled = 0;
 
-    PyInterpreterState *interp = PyInterpreterState_New();
-    if (interp == NULL) {
-        *tstate_p = NULL;
-        return _PyStatus_OK();
-    }
-    _PyInterpreterState_SetWhence(interp, whence);
-    interp->_ready = 1;
-
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
     PyThreadState *tstate = NULL;
+    PyInterpreterState *interp;
+    status = _PyInterpreterState_New(save_tstate, &interp);
+    if (interp == NULL) {
+        goto error;
+    }
+    _PyInterpreterState_SetWhence(interp, whence);
+    interp->_ready = 1;
 
     /* From this point until the init_interp_create_gil() call,
        we must not do anything that requires that the GIL be held
@@ -2498,7 +2497,7 @@ error:
     *tstate_p = NULL;
     if (tstate != NULL) {
         Py_EndInterpreter(tstate);
-    } else {
+    } else if (interp != NULL) {
         PyInterpreterState_Delete(interp);
     }
     if (save_tstate != NULL) {
@@ -3548,6 +3547,27 @@ Py_ExitStatusException(PyStatus status)
 }
 
 
+static void
+handle_thread_shutdown_exception(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    assert(_PyErr_Occurred(tstate));
+    PyInterpreterState *interp = tstate->interp;
+    assert(interp->threads.head != NULL);
+    _PyEval_StopTheWorld(interp);
+
+    // We don't have to worry about locking this because the
+    // world is stopped.
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, tstate) {
+        if (tstate->_whence == _PyThreadState_WHENCE_THREADING) {
+            tstate->_whence = _PyThreadState_WHENCE_THREADING_DAEMON;
+        }
+    }
+
+    _PyEval_StartTheWorld(interp);
+    PyErr_FormatUnraisable("Exception ignored on threading shutdown");
+}
+
 /* Wait until threading._shutdown completes, provided
    the threading module was imported in the first place.
    The shutdown routine will wait until all non-daemon
@@ -3559,14 +3579,14 @@ wait_for_thread_shutdown(PyThreadState *tstate)
     PyObject *threading = PyImport_GetModule(&_Py_ID(threading));
     if (threading == NULL) {
         if (_PyErr_Occurred(tstate)) {
-            PyErr_FormatUnraisable("Exception ignored on threading shutdown");
+            handle_thread_shutdown_exception(tstate);
         }
         /* else: threading not imported */
         return;
     }
     result = PyObject_CallMethodNoArgs(threading, &_Py_ID(_shutdown));
     if (result == NULL) {
-        PyErr_FormatUnraisable("Exception ignored on threading shutdown");
+        handle_thread_shutdown_exception(tstate);
     }
     else {
         Py_DECREF(result);

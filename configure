@@ -4359,7 +4359,7 @@ then :
 	yes)
 		case $ac_sys_system in
 			Darwin) enableval=/Library/Frameworks ;;
-			iOS)    enableval=iOS/Frameworks/\$\(MULTIARCH\) ;;
+			iOS)    enableval=Apple/iOS/Frameworks/\$\(MULTIARCH\) ;;
 			*) as_fn_error $? "Unknown platform for framework build" "$LINENO" 5
 		esac
 	esac
@@ -4470,9 +4470,9 @@ then :
 
 				prefix=$PYTHONFRAMEWORKPREFIX
 				PYTHONFRAMEWORKINSTALLNAMEPREFIX="@rpath/$PYTHONFRAMEWORKDIR"
-				RESSRCDIR=iOS/Resources
+				RESSRCDIR=Apple/iOS/Resources
 
-				ac_config_files="$ac_config_files iOS/Resources/Info.plist"
+				ac_config_files="$ac_config_files Apple/iOS/Resources/Info.plist"
 
 				;;
 			*)
@@ -34193,6 +34193,34 @@ fi
 printf "%s\n" "$py_cv_module_xxlimited_35" >&6; }
 
 
+# Determine JIT stencils header files based on target platform
+JIT_STENCILS_H=""
+case "$host" in
+  aarch64-apple-darwin*)
+    JIT_STENCILS_H="jit_stencils-aarch64-apple-darwin.h"
+    ;;
+  x86_64-apple-darwin*)
+    JIT_STENCILS_H="jit_stencils-x86_64-apple-darwin.h"
+    ;;
+  aarch64-pc-windows-msvc)
+    JIT_STENCILS_H="jit_stencils-aarch64-pc-windows-msvc.h"
+    ;;
+  i686-pc-windows-msvc)
+    JIT_STENCILS_H="jit_stencils-i686-pc-windows-msvc.h"
+    ;;
+  x86_64-pc-windows-msvc)
+    JIT_STENCILS_H="jit_stencils-x86_64-pc-windows-msvc.h"
+    ;;
+  aarch64-*-linux-gnu)
+    JIT_STENCILS_H="jit_stencils-$host.h"
+    ;;
+  x86_64-*-linux-gnu)
+    JIT_STENCILS_H="jit_stencils-$host.h"
+    ;;
+esac
+
+
+
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 
 
@@ -35235,7 +35263,7 @@ do
     "Mac/PythonLauncher/Makefile") CONFIG_FILES="$CONFIG_FILES Mac/PythonLauncher/Makefile" ;;
     "Mac/Resources/framework/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/framework/Info.plist" ;;
     "Mac/Resources/app/Info.plist") CONFIG_FILES="$CONFIG_FILES Mac/Resources/app/Info.plist" ;;
-    "iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES iOS/Resources/Info.plist" ;;
+    "Apple/iOS/Resources/Info.plist") CONFIG_FILES="$CONFIG_FILES Apple/iOS/Resources/Info.plist" ;;
     "Makefile.pre") CONFIG_FILES="$CONFIG_FILES Makefile.pre" ;;
     "Misc/python.pc") CONFIG_FILES="$CONFIG_FILES Misc/python.pc" ;;
     "Misc/python-embed.pc") CONFIG_FILES="$CONFIG_FILES Misc/python-embed.pc" ;;
