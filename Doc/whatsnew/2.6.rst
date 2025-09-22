@@ -1162,7 +1162,7 @@ Some object-oriented languages such as Java support interfaces,
 declaring that a class has a given set of methods or supports a given
 access protocol.  Abstract Base Classes (or ABCs) are an equivalent
 feature for Python. The ABC support consists of an :mod:`abc` module
-containing a metaclass called :class:`ABCMeta`, special handling of
+containing a metaclass called :class:`~abc.ABCMeta`, special handling of
 this metaclass by the :func:`isinstance` and :func:`issubclass`
 builtins, and a collection of basic ABCs that the Python developers
 think will be widely useful.  Future versions of Python will probably
@@ -1172,17 +1172,17 @@ Let's say you have a particular class and wish to know whether it supports
 dictionary-style access.  The phrase "dictionary-style" is vague, however.
 It probably means that accessing items with ``obj[1]`` works.
 Does it imply that setting items with ``obj[2] = value`` works?
-Or that the object will have :meth:`keys`, :meth:`values`, and :meth:`items`
-methods?  What about the iterative variants  such as :meth:`iterkeys`?  :meth:`copy`
-and :meth:`update`?  Iterating over the object with :func:`iter`?
+Or that the object will have :meth:`!keys`, :meth:`!values`, and :meth:`!items`
+methods?  What about the iterative variants  such as :meth:`!iterkeys`?  :meth:`!copy`
+and :meth:`!update`?  Iterating over the object with :func:`!iter`?
 
 The Python 2.6 :mod:`collections` module includes a number of
 different ABCs that represent these distinctions.  :class:`Iterable`
-indicates that a class defines :meth:`__iter__`, and
-:class:`Container` means the class defines a :meth:`__contains__`
+indicates that a class defines :meth:`~object.__iter__`, and
+:class:`Container` means the class defines a :meth:`~object.__contains__`
 method and therefore supports ``x in y`` expressions.  The basic
 dictionary interface of getting items, setting items, and
-:meth:`keys`, :meth:`values`, and :meth:`items`, is defined by the
+:meth:`!keys`, :meth:`!values`, and :meth:`!items`, is defined by the
 :class:`MutableMapping` ABC.
 
 You can derive your own classes from a particular ABC
@@ -1196,7 +1196,7 @@ to indicate they support that ABC's interface::
 
 Alternatively, you could write the class without deriving from
 the desired ABC and instead register the class by
-calling the ABC's :meth:`register` method::
+calling the ABC's :meth:`~abc.ABCMeta.register` method::
 
     import collections
 
@@ -1206,10 +1206,10 @@ calling the ABC's :meth:`register` method::
     collections.MutableMapping.register(Storage)
 
 For classes that you write, deriving from the ABC is probably clearer.
-The :meth:`register`  method is useful when you've written a new
+The :meth:`~abc.ABCMeta.register`  method is useful when you've written a new
 ABC that can describe an existing type or class, or if you want
 to declare that some third-party class implements an ABC.
-For example, if you defined a :class:`PrintableType` ABC,
+For example, if you defined a :class:`!PrintableType` ABC,
 it's legal to do::
 
   # Register Python's types
