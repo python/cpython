@@ -819,6 +819,12 @@ directory on the CPython repository and manually call the parser generator by ex
 $ python -m pegen python <PATH TO YOUR GRAMMAR FILE>
 ```
 
+> [!CAUTION]
+> This grammar file has to be specific to Python and does not work with the existing
+> C language based`Grammar/python.gram` file.
+> See [#133560](https://github.com/python/cpython/issues/133560) 
+> and [#96424](https://github.com/python/cpython/issues/96424) for more information.
+
 This will generate a file called `parse.py` in the same directory that you
 can use to parse some input:
 
@@ -828,10 +834,6 @@ $ python parse.py file_with_source_code_to_test.py
 
 As the generated `parse.py` file is just Python code, you can modify it
 and add breakpoints to debug or better understand some complex situations.
-
-However, this does not work with the existing `Grammar/python.gram` file.
-See [#133560](https://github.com/python/cpython/issues/133560) 
-and [#96424](https://github.com/python/cpython/issues/96424) for more information.
 
 
 Verbose mode
