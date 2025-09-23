@@ -202,7 +202,6 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 void
 patch_32(unsigned char *location, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
     // Check that we're not out of range of 32 unsigned bits:
     assert(value < (1ULL << 32));
     uint32_t final_value = (uint32_t)value;
@@ -213,7 +212,6 @@ patch_32(unsigned char *location, uint64_t value)
 void
 patch_32r(unsigned char *location, uint64_t value)
 {
-    uint32_t *loc32 = (uint32_t *)location;
     value -= (uintptr_t)location;
     // Check that we're not out of range of 32 signed bits:
     assert((int64_t)value >= -(1LL << 31));
@@ -226,7 +224,6 @@ patch_32r(unsigned char *location, uint64_t value)
 void
 patch_64(unsigned char *location, uint64_t value)
 {
-    uint64_t *loc64 = (uint64_t *)location;
     memcpy(location, &value, sizeof(value));
 }
 
