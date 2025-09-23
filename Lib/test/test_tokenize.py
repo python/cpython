@@ -1491,10 +1491,10 @@ class TestDetectEncoding(TestCase):
             ['iso8859-15',
              ['#coding=iso8859-15 €'.encode('iso8859-15')]],
             ['iso8859-15',
-             [b"#!/usr/bin/python\n",
+             [b"#!/usr/bin/python",
               '#coding=iso8859-15 €'.encode('iso8859-15')]],
             ['ascii',
-             [b"#!/usr/bin/python\n",
+             ["# nonascii €".encode('utf8'),
               '#coding=ascii €'.encode('utf8')]],
             ['ascii',
              ['#coding=ascii €'.encode('utf8')]],
@@ -1504,6 +1504,12 @@ class TestDetectEncoding(TestCase):
                 readline = self.get_readline(lines)
                 found, consumed_lines = tokenize.detect_encoding(readline)
                 self.assertEqual(found, encoding)
+
+        lines = ["# nonascii €".encode('iso8859-15'),
+                 '#coding=iso8859-15 €'.encode('iso8859-15')]
+        readline = self.get_readline(lines)
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(readline)
 
     def test_utf8_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
