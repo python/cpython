@@ -3694,7 +3694,7 @@ class TestExtractionFilters(unittest.TestCase):
             else:
                 raise AssertionError('Could not determine link resolution')
         else:
-            cls.dotdot_resolves_early = True
+            cls.dotdot_resolves_early = False
 
     @contextmanager
     def check_context(self, tar, filter, *, check_flag=True):
@@ -3842,7 +3842,7 @@ class TestExtractionFilters(unittest.TestCase):
             arc.add('current', symlink_to='.')
 
             # effectively points to ./../
-            if self.dotdot_resolves_early:
+            if self.dotdot_resolves_early and os_helper.can_symlink():
                 arc.add('parent', symlink_to='current/../..')
             else:
                 arc.add('parent', symlink_to='current/..')

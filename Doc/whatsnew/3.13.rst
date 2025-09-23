@@ -2490,7 +2490,7 @@ Deprecated C APIs
 
 * Deprecate old Python initialization functions:
 
-  * :c:func:`PySys_ResetWarnOptions`:
+  * :c:func:`!PySys_ResetWarnOptions`:
     Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
   * :c:func:`!Py_GetExecPrefix`:
     Get :data:`sys.exec_prefix` instead.
