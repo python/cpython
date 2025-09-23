@@ -7988,7 +7988,7 @@ encode_code_page_flags(UINT code_page, const char *errors)
  * an OSError and returns -1 on other error.
  */
 static int
-encode_code_page_strict(UINT code_page, PyObject **outbytes,
+encode_code_page_strict(UINT code_page, PyBytesWriter **writer,
                         PyObject *unicode, Py_ssize_t offset, int len,
                         const char* errors)
 {
@@ -8034,25 +8034,21 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
         goto done;
     }
 
-    if (*outbytes == NULL) {
+    if (*writer == NULL) {
         /* Create string object */
-        *outbytes = PyBytes_FromStringAndSize(NULL, outsize);
-        if (*outbytes == NULL) {
+        *writer = PyBytesWriter_Create(outsize);
+        if (*writer == NULL) {
             goto done;
         }
-        out = PyBytes_AS_STRING(*outbytes);
+        out = PyBytesWriter_GetData(*writer);
     }
     else {
         /* Extend string object */
-        const Py_ssize_t n = PyBytes_Size(*outbytes);
-        if (outsize > PY_SSIZE_T_MAX - n) {
-            PyErr_NoMemory();
+        Py_ssize_t n = PyBytesWriter_GetSize(*writer);
+        if (PyBytesWriter_Grow(*writer, outsize) < 0) {
             goto done;
         }
-        if (_PyBytes_Resize(outbytes, n + outsize) < 0) {
-            goto done;
-        }
-        out = PyBytes_AS_STRING(*outbytes) + n;
+        out = (char*)PyBytesWriter_GetData(*writer) + n;
     }
 
     /* Do the conversion */
@@ -8089,7 +8085,7 @@ error:
  * -1 on other error.
  */
 static int
-encode_code_page_errors(UINT code_page, PyObject **outbytes,
+encode_code_page_errors(UINT code_page, PyBytesWriter **writer,
                         PyObject *unicode, Py_ssize_t unicode_offset,
                         Py_ssize_t insize, const char* errors)
 {
@@ -8108,7 +8104,7 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     PyObject *exc = NULL;
     PyObject *encoding_obj = NULL;
     const char *encoding;
-    Py_ssize_t newpos, newoutsize;
+    Py_ssize_t newpos;
     PyObject *rep;
     int ret = -1;
 
@@ -8141,23 +8137,21 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     }
     outsize = insize * Py_ARRAY_LENGTH(buffer);
 
-    if (*outbytes == NULL) {
+    if (*writer == NULL) {
         /* Create string object */
-        *outbytes = PyBytes_FromStringAndSize(NULL, outsize);
-        if (*outbytes == NULL)
+        *writer = PyBytesWriter_Create(outsize);
+        if (*writer == NULL) {
             goto error;
-        out = PyBytes_AS_STRING(*outbytes);
+        }
+        out = PyBytesWriter_GetData(*writer);
     }
     else {
         /* Extend string object */
-        Py_ssize_t n = PyBytes_Size(*outbytes);
-        if (n > PY_SSIZE_T_MAX - outsize) {
-            PyErr_NoMemory();
+        Py_ssize_t n = PyBytesWriter_GetSize(*writer);
+        if (PyBytesWriter_Grow(*writer, outsize) < 0) {
             goto error;
         }
-        if (_PyBytes_Resize(outbytes, n + outsize) < 0)
-            goto error;
-        out = PyBytes_AS_STRING(*outbytes) + n;
+        out = (char*)PyBytesWriter_GetData(*writer) + n;
     }
 
     /* Encode the string character per character */
@@ -8206,13 +8200,11 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
             outsize = PyBytes_GET_SIZE(rep);
             morebytes += outsize;
             if (morebytes > 0) {
-                Py_ssize_t offset = out - PyBytes_AS_STRING(*outbytes);
-                newoutsize = PyBytes_GET_SIZE(*outbytes) + morebytes;
-                if (_PyBytes_Resize(outbytes, newoutsize) < 0) {
+                out = PyBytesWriter_GrowAndUpdatePointer(*writer, morebytes, out);
+                if (out == NULL) {
                     Py_DECREF(rep);
                     goto error;
                 }
-                out = PyBytes_AS_STRING(*outbytes) + offset;
             }
             memcpy(out, PyBytes_AS_STRING(rep), outsize);
             out += outsize;
@@ -8225,13 +8217,11 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
             outsize = PyUnicode_GET_LENGTH(rep);
             morebytes += outsize;
             if (morebytes > 0) {
-                Py_ssize_t offset = out - PyBytes_AS_STRING(*outbytes);
-                newoutsize = PyBytes_GET_SIZE(*outbytes) + morebytes;
-                if (_PyBytes_Resize(outbytes, newoutsize) < 0) {
+                out = PyBytesWriter_GrowAndUpdatePointer(*writer, morebytes, out);
+                if (out == NULL) {
                     Py_DECREF(rep);
                     goto error;
                 }
-                out = PyBytes_AS_STRING(*outbytes) + offset;
             }
             kind = PyUnicode_KIND(rep);
             data = PyUnicode_DATA(rep);
@@ -8254,10 +8244,11 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     }
     /* write a NUL byte */
     *out = 0;
-    outsize = out - PyBytes_AS_STRING(*outbytes);
-    assert(outsize <= PyBytes_GET_SIZE(*outbytes));
-    if (_PyBytes_Resize(outbytes, outsize) < 0)
+    outsize = out - (char*)PyBytesWriter_GetData(*writer);
+    assert(outsize <= PyBytesWriter_GetSize(*writer));
+    if (PyBytesWriter_Resize(*writer, outsize) < 0) {
         goto error;
+    }
     ret = 0;
 
 error:
@@ -8267,13 +8258,14 @@ error:
     return ret;
 }
 
-static PyObject *
-encode_code_page(int code_page,
-                 PyObject *unicode,
-                 const char *errors)
+
+PyObject *
+PyUnicode_EncodeCodePage(int code_page,
+                         PyObject *unicode,
+                         const char *errors)
 {
     Py_ssize_t len;
-    PyObject *outbytes = NULL;
+    PyBytesWriter *writer = NULL;
     Py_ssize_t offset;
     int chunk_len, ret, done;
 
@@ -8307,15 +8299,15 @@ encode_code_page(int code_page,
             done = 1;
         }
 
-        ret = encode_code_page_strict(code_page, &outbytes,
+        ret = encode_code_page_strict(code_page, &writer,
                                       unicode, offset, chunk_len,
                                       errors);
         if (ret == -2)
-            ret = encode_code_page_errors(code_page, &outbytes,
+            ret = encode_code_page_errors(code_page, &writer,
                                           unicode, offset,
                                           chunk_len, errors);
         if (ret < 0) {
-            Py_XDECREF(outbytes);
+            PyBytesWriter_Discard(writer);
             return NULL;
         }
 
@@ -8323,16 +8315,9 @@ encode_code_page(int code_page,
         len -= chunk_len;
     } while (!done);
 
-    return outbytes;
+    return PyBytesWriter_Finish(writer);
 }
 
-PyObject *
-PyUnicode_EncodeCodePage(int code_page,
-                         PyObject *unicode,
-                         const char *errors)
-{
-    return encode_code_page(code_page, unicode, errors);
-}
 
 PyObject *
 PyUnicode_AsMBCSString(PyObject *unicode)
