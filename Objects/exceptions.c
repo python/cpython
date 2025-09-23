@@ -2973,31 +2973,8 @@ SimpleExtendsException(PyExc_Exception, ValueError,
  *    UnicodeError extends ValueError
  */
 
-#define PyUnicodeError_Check(PTR)   \
-    PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
-#define PyUnicodeErrorObject_CAST(op)   \
-    (assert(PyUnicodeError_Check(op)), ((PyUnicodeErrorObject *)(op)))
-
-static PyObject *
-UnicodeError_args_get(PyObject *op, void *context)
-{
-    PyUnicodeErrorObject *self = PyUnicodeErrorObject_CAST(op);
-    return Py_BuildValue("(OOnnO)",
-                         self->encoding ? self->encoding : Py_None,
-                         self->object ? self->object : Py_None,
-                         self->start,
-                         self->end,
-                         self->reason ? self->reason : Py_None);
-}
-
-static PyGetSetDef UnicodeError_getset[] = {
-    {"args", UnicodeError_args_get, NULL, NULL},
-    {NULL}
-};
-
-ComplexExtendsException(PyExc_ValueError, UnicodeError, BaseException,
-                        BaseException_new, 0, 0, UnicodeError_getset,
-                        0, "Unicode related error.");
+SimpleExtendsException(PyExc_ValueError, UnicodeError,
+                       "Unicode related error.");
 
 
 /*
@@ -3240,6 +3217,28 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
     }
     return end;
 }
+
+#define PyUnicodeError_Check(PTR)   \
+PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
+#define PyUnicodeErrorObject_CAST(op)   \
+(assert(PyUnicodeError_Check(op)), ((PyUnicodeErrorObject *)(op)))
+
+static PyObject *
+UnicodeError_args_get(PyObject *op, void *context)
+{
+    PyUnicodeErrorObject *self = PyUnicodeErrorObject_CAST(op);
+    return Py_BuildValue("(OOnnO)",
+                         self->encoding ? self->encoding : Py_None,
+                         self->object ? self->object : Py_None,
+                         self->start,
+                         self->end,
+                         self->reason ? self->reason : Py_None);
+}
+
+static PyGetSetDef UnicodeError_getset[] = {
+    {"args", UnicodeError_args_get, NULL, NULL},
+    {NULL}
+};
 
 /* Assert some properties of the adjusted 'end' value. */
 #ifndef NDEBUG

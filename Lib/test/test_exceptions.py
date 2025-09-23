@@ -502,7 +502,7 @@ class ExceptionTests(unittest.TestCase):
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', bytearray(b'\xff'), 0, 1,
                                   'ordinal not in range'), {},
-                {'args' : ('ascii', bytearray(b'\xff'), 0, 1,
+                {'args' : ('ascii', (b'\xff'), 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
