@@ -868,7 +868,7 @@ class AttackProtectionTest(unittest.TestCase):
         self.assertIsNone(p.SetAllocTrackerMaximumAmplification(10_000))
         self.assertIsNotNone(p.Parse(payload, True))
 
-    def test_set_alloc_tracker_maximum_amplification_infty(self):
+    def test_set_alloc_tracker_maximum_amplification_infinity(self):
         inf = float('inf')  # an 'inf' threshold is allowed
         parser = expat.ParserCreate()
         self.assertIsNone(parser.SetAllocTrackerMaximumAmplification(inf))

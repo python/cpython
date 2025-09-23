@@ -1193,24 +1193,24 @@ pyexpat.xmlparser.SetAllocTrackerMaximumAmplification
 
 Sets the maximum amplification factor between direct input and bytes of dynamic memory allocated.
 
-By default, parsers objects have a maximum amplification factor of 100.
-
 The amplification factor is calculated as "allocated / direct" while parsing,
 where "direct" is the number of bytes read from the primary document in parsing
 and "allocated" is the number of bytes of dynamic memory allocated in the parser
 hierarchy.
 
 The 'max_factor' value must be a non-NaN floating point value greater than
-or equal to 1.0. Amplifications factors greater than 100 can been observed
-near the start of parsing even with benign files in practice. As such, the
-activation threshold should be carefully chosen to avoid false positives.
+or equal to 1.0. Amplification factors greater than 100.0 can be observed
+near the start of parsing even with benign files in practice. In particular,
+the activation threshold should be carefully chosen to avoid false positives.
+
+By default, parser objects have a maximum amplification factor of 100.0.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            PyTypeObject *cls,
                                                            float max_factor)
-/*[clinic end generated code: output=6e44bd48c9b112a0 input=23ca8b8f7de04462]*/
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=e4f48064c79bf323]*/
 {
 #if XML_COMBINED_VERSION >= 20702
     assert(self->itself != NULL);
@@ -1250,14 +1250,14 @@ pyexpat.xmlparser.SetAllocTrackerActivationThreshold
 
 Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.
 
-By default, parsers objects have an allocation activation threshold of 64 MiB.
+By default, parser objects have an allocation activation threshold of 64 MiB.
 [clinic start generated code]*/
 
 static PyObject *
 pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
                                                           PyTypeObject *cls,
                                                           unsigned long long threshold)
-/*[clinic end generated code: output=bed7e93207ba08c5 input=8453509a137a47c0]*/
+/*[clinic end generated code: output=bed7e93207ba08c5 input=54182cd71ad69978]*/
 {
 #if XML_COMBINED_VERSION >= 20702
     assert(self->itself != NULL);

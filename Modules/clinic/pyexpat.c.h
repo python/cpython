@@ -415,17 +415,17 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__,
 "\n"
 "Sets the maximum amplification factor between direct input and bytes of dynamic memory allocated.\n"
 "\n"
-"By default, parsers objects have a maximum amplification factor of 100.\n"
-"\n"
 "The amplification factor is calculated as \"allocated / direct\" while parsing,\n"
 "where \"direct\" is the number of bytes read from the primary document in parsing\n"
 "and \"allocated\" is the number of bytes of dynamic memory allocated in the parser\n"
 "hierarchy.\n"
 "\n"
 "The \'max_factor\' value must be a non-NaN floating point value greater than\n"
-"or equal to 1.0. Amplifications factors greater than 100 can been observed\n"
-"near the start of parsing even with benign files in practice. As such, the\n"
-"activation threshold should be carefully chosen to avoid false positives.");
+"or equal to 1.0. Amplification factors greater than 100.0 can been observed\n"
+"near the start of parsing even with benign files in practice. In particular,\n"
+"the activation threshold should be carefully chosen to avoid false positives.\n"
+"\n"
+"By default, parser objects have a maximum amplification factor of 100.0.");
 
 #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF    \
     {"SetAllocTrackerMaximumAmplification", _PyCFunction_CAST(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__},
@@ -482,7 +482,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__,
 "\n"
 "Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.\n"
 "\n"
-"By default, parsers objects have an allocation activation threshold of 64 MiB.");
+"By default, parser objects have an allocation activation threshold of 64 MiB.");
 
 #define PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF    \
     {"SetAllocTrackerActivationThreshold", _PyCFunction_CAST(pyexpat_xmlparser_SetAllocTrackerActivationThreshold), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__},
@@ -670,4 +670,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=585e00dcfea8b399 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=87b2ec1d055c4e22 input=a9049054013a1b77]*/
