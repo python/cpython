@@ -1835,7 +1835,7 @@ dummy_func(
             PyObject *res_o = PyStackRef_AsPyObjectBorrow(*res);
             if (PyLazyImport_CheckExact(res_o)) {
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
-                if (PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
+                if (l_v != NULL && PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
                     JUMP_TO_LABEL(error);
                 }
                 res_o = l_v;

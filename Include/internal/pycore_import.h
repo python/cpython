@@ -57,6 +57,7 @@ _PyImport_LazyImportModuleLevelObject(PyThreadState *tstate, PyObject *name, PyO
 #define IMPORTS_INIT \
     { \
         DLOPENFLAGS_INIT \
+        .lazy_import_resolution_depth = 0, \
         .find_and_load = { \
             .header = 1, \
         }, \

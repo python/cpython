@@ -3738,6 +3738,10 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
 
     PyObject *globals = PyEval_GetGlobals();
 
+    // Increment counter to prevent recursive lazy import creation
+    PyInterpreterState *interp = tstate->interp;
+    interp->imports.lazy_import_resolution_depth++;
+
     if (full) {
         obj = _PyEval_ImportNameWithImport(tstate,
                                    lz->lz_import_func,
@@ -3749,6 +3753,7 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
     } else {
         PyObject *name = PyUnicode_Substring(lz->lz_from, 0, dot);
         if (name == NULL) {
+            interp->imports.lazy_import_resolution_depth--;
             goto error;
         }
         obj = _PyEval_ImportNameWithImport(tstate,
@@ -3760,6 +3765,9 @@ _PyImport_LoadLazyImportTstate(PyThreadState *tstate, PyObject *lazy_import)
                                    _PyLong_GetZero());
         Py_DECREF(name);
     }
+
+    // Decrement counter
+    interp->imports.lazy_import_resolution_depth--;
 
     if (obj == NULL) {
         goto error;
@@ -3942,7 +3950,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         goto error;
     }
 
-    if (globals != NULL &&
+    // Only check __lazy_modules__ if we're not already resolving a lazy import
+    if (interp->imports.lazy_import_resolution_depth == 0 && globals != NULL &&
         PyMapping_GetOptionalItem(globals, &_Py_ID(__lazy_modules__), &lazy_modules) < 0) {
         goto error;
     }
@@ -3965,7 +3974,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         goto error;
     }
 
-    if (lazy_modules != NULL) {
+    if (interp->imports.lazy_import_resolution_depth == 0 && lazy_modules != NULL) {
         // Check and see if the module is opting in w/o syntax for backwards compatibility
         // with older Python versions.
         int contains = PySequence_Contains(lazy_modules, name);
@@ -3988,7 +3997,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                 return NULL;
             }
 
-            final_mod = _PyImport_LazyImportModuleLevelObject(tstate, name, import_func, globals, 
+            final_mod = _PyImport_LazyImportModuleLevelObject(tstate, name, import_func, globals,
                                                               locals, fromlist, level);
             Py_DECREF(import_func);
             goto error;
