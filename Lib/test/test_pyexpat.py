@@ -847,10 +847,25 @@ class AttackProtectionTest(unittest.TestCase):
 <doc>&row{nrows};</doc>
 """
 
+    # With the default Expat configuration, the billion laughs protection may
+    # hit before the allocation limiter if exponential_expansion_payload() is
+    # not carefully parametrized. In particular, use the following assert_*()
+    # methods to check the error message of the active protection.
+
+    def assert_root_parser_failure(self, func, /, *args, **kwargs):
+        """Check that func(*args, **kwargs) is invalid for a sub-parser."""
+        msg = "parser must be a root parser"
+        self.assertRaisesRegex(expat.ExpatError, msg, func, *args, **kwargs)
+
+    def assert_alloc_limit_reached(self, func, /, *args, **kwargs):
+        """Check that fnuc(*args, **kwargs) hits the allocation limit."""
+        msg = r"out of memory: line \d+, column \d+"
+        self.assertRaisesRegex(expat.ExpatError, msg, func, *args, **kwargs)
+
     def test_set_alloc_tracker_maximum_amplification(self):
         # On WASI, the maximum amplification factor of the payload may differ,
         # so we craft a payload that is likely to yield an amplification factor
-        # way larger than 1.0 and way smaller than 10^5.
+        # way larger than 1.0 and way smaller than 10^4.
         payload = self.exponential_expansion_payload(1, 2)
 
         p = expat.ParserCreate()
@@ -858,22 +873,29 @@ class AttackProtectionTest(unittest.TestCase):
         p.SetAllocTrackerActivationThreshold(0)
         # Use a max amplification factor likely to be below the real one.
         self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
-        msg = r"out of memory: line \d+, column \d+"
-        self.assertRaisesRegex(expat.ExpatError, msg, p.Parse, payload, True)
+        self.assert_alloc_limit_reached(p.Parse, payload, True)
 
         # Re-create a parser as the current parser is now in an error state.
         p = expat.ParserCreate()
         # Unconditionally enable maximum amplification factor.
         p.SetAllocTrackerActivationThreshold(0)
+        # Use a max amplification factor likely to be above the real one.
         self.assertIsNone(p.SetAllocTrackerMaximumAmplification(10_000))
         self.assertIsNotNone(p.Parse(payload, True))
 
     def test_set_alloc_tracker_maximum_amplification_infinity(self):
-        inf = float('inf')  # an 'inf' threshold is allowed
+        inf = float('inf')  # an 'inf' threshold is allowed by Expat
         parser = expat.ParserCreate()
         self.assertIsNone(parser.SetAllocTrackerMaximumAmplification(inf))
 
-    def test_set_alloc_tracker_maximum_amplification_fail_for_subparser(self):
+    def test_set_alloc_tracker_maximum_amplification_arg_invalid_type(self):
+        parser = expat.ParserCreate()
+        f = parser.SetAllocTrackerMaximumAmplification
+
+        self.assertRaises(TypeError, f, None)
+        self.assertRaises(TypeError, f, 'abc')
+
+    def test_set_alloc_tracker_maximum_amplification_arg_invalid_range(self):
         parser = expat.ParserCreate()
         f = parser.SetAllocTrackerMaximumAmplification
 
@@ -881,10 +903,11 @@ class AttackProtectionTest(unittest.TestCase):
         self.assertRaisesRegex(expat.ExpatError, msg, f, float('nan'))
         self.assertRaisesRegex(expat.ExpatError, msg, f, 0.99)
 
+    def test_set_alloc_tracker_maximum_amplification_fail_for_subparser(self):
+        parser = expat.ParserCreate()
         subparser = parser.ExternalEntityParserCreate(None)
         fsub = subparser.SetAllocTrackerMaximumAmplification
-        msg = "parser must be a root parser"
-        self.assertRaisesRegex(expat.ExpatError, msg, fsub, 1.0)
+        self.assert_root_parser_failure(fsub, 123.45)
 
     def test_set_alloc_tracker_activation_threshold(self):
         # The payload is expected to have a peak allocation of
@@ -901,17 +924,17 @@ class AttackProtectionTest(unittest.TestCase):
         p.SetAllocTrackerActivationThreshold(2)
         # Check that we always reach the activation threshold.
         self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
-        msg = r"out of memory: line \d+, column \d+"
-        self.assertRaisesRegex(expat.ExpatError, msg, p.Parse, payload, True)
+        self.assert_alloc_limit_reached(p.Parse, payload, True)
 
-    def test_set_alloc_tracker_activation_threshold_arg_invalid(self):
+    def test_set_alloc_tracker_activation_threshold_arg_invalid_type(self):
         parser = expat.ParserCreate()
         f = parser.SetAllocTrackerActivationThreshold
+
         self.assertRaises(TypeError, f, 1.0)
         self.assertRaises(TypeError, f, -1.5)
         self.assertRaises(ValueError, f, -5)
 
-    def test_set_alloc_tracker_activation_threshold_arg_overflow(self):
+    def test_set_alloc_tracker_activation_threshold_arg_invalid_range(self):
         _testcapi = import_helper.import_module("_testcapi")
         parser = expat.ParserCreate()
         f = parser.SetAllocTrackerActivationThreshold
@@ -921,8 +944,7 @@ class AttackProtectionTest(unittest.TestCase):
         parser = expat.ParserCreate()
         subparser = parser.ExternalEntityParserCreate(None)
         fsub = subparser.SetAllocTrackerActivationThreshold
-        msg = "parser must be a root parser"
-        self.assertRaisesRegex(expat.ExpatError, msg, fsub, 12345)
+        self.assert_root_parser_failure(fsub, 12345)
 
 
 if __name__ == "__main__":
