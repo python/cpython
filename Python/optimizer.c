@@ -607,9 +607,12 @@ _PyJIT_translate_single_bytecode_to_trace(
         !(opcode == JUMP_BACKWARD_NO_INTERRUPT || opcode == JUMP_BACKWARD || opcode == JUMP_BACKWARD_JIT) &&
         !(opcode == POP_JUMP_IF_TRUE || opcode == POP_JUMP_IF_FALSE || opcode == POP_JUMP_IF_NONE || opcode == POP_JUMP_IF_NOT_NONE);
 
+    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
 
-    // Strange control-flow
-    if (jump_taken || opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+    const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
+
+    // Strange control-flow, unsupported opcode, etc.
+    if (jump_taken || expansion->nuops == 0 || opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
         // Rewind to previous instruction and replace with _EXIT_TRACE.
         _PyUOpInstruction *curr = &trace[trace_length-1];
         while (curr->opcode != _SET_IP && trace_length > 1) {
@@ -620,10 +623,6 @@ _PyJIT_translate_single_bytecode_to_trace(
         curr->opcode = _EXIT_TRACE;
         goto done;
     }
-
-    assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
-
-    const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
     RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
 
     ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
@@ -692,12 +691,9 @@ _PyJIT_translate_single_bytecode_to_trace(
         default:
         {
             const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
-            if (expansion->nuops == 0) {
-                DPRINTF(2, "Unsupported opcode %s\n", _PyOpcode_OpName[opcode]);
-                goto full;
-            }
             // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
             int nuops = expansion->nuops;
+            assert(nuops > 0);
             RESERVE(nuops + 1); /* One extra for exit */
             uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
             for (int i = 0; i < nuops; i++) {
@@ -906,6 +902,9 @@ prepare_for_execution(_PyUOpInstruction *buffer, int length)
     for (int i = 0; i < length; i++) {
         _PyUOpInstruction *inst = &buffer[i];
         int opcode = inst->opcode;
+        if (inst->format != UOP_FORMAT_TARGET) {
+            fprintf(stdout, "I: %d\n", i);
+        }
         int32_t target = (int32_t)uop_get_target(inst);
         uint16_t exit_flags = _PyUop_Flags[opcode] & (HAS_EXIT_FLAG | HAS_DEOPT_FLAG | HAS_PERIODIC_FLAG);
         if (exit_flags) {
