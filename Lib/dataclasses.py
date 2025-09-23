@@ -1054,6 +1054,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # Remember all of the fields on our class (including bases).  This
     # also marks this class as being a dataclass.
     setattr(cls, _FIELDS, fields)
+    # Store field names. Excludes pseudo-fields.
     setattr(cls, _FIELD_NAMES, tuple(f.name for f in fields.values()
                                      if f._field_type is _FIELD))
 
@@ -1200,11 +1201,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 # the code instead of iterating over fields.  But that can be a project for
 # another day, if performance becomes an issue.
 def _dataclass_getstate(self):
-    return [getattr(self, name) for name in _field_names(self)]
+    return [getattr(self, name) for name in self.__dataclass_field_names__]
 
 
 def _dataclass_setstate(self, state):
-    for field_name, value in zip(_field_names(self), state):
+    for field_name, value in zip(self.__dataclass_field_names__, state):
         # use setattr because dataclass may be frozen
         object.__setattr__(self, field_name, value)
 
@@ -1289,7 +1290,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
     # Create a new dict for our new class.
     cls_dict = dict(cls.__dict__)
-    field_names = _field_names(cls)
+    field_names = cls.__dataclass_field_names__
     # Make sure slots don't overlap with those in base classes.
     inherited_slots = set(
         itertools.chain.from_iterable(map(_get_slots, cls.__mro__[1:-1]))
@@ -1390,13 +1391,6 @@ def fields(class_or_instance):
     # order, so the order of the tuple is as the fields were defined.
     return tuple(f for f in fields.values() if f._field_type is _FIELD)
 
-def _field_names(class_or_instance):
-    """Return a tuple describing the field names of this dataclass.
-
-    Accepts a dataclass or an instance of one. Excludes pseudo-fields.
-    """
-    return getattr(class_or_instance, _FIELD_NAMES)
-
 
 def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
@@ -1443,12 +1437,12 @@ def _asdict_inner(obj, dict_factory):
         if dict_factory is dict:
             return {
                 name: _asdict_inner(getattr(obj, name), dict)
-                for name in _field_names(obj_type)
+                for name in obj_type.__dataclass_field_names__
             }
         else:
             return dict_factory([
                 (name, _asdict_inner(getattr(obj, name), dict_factory))
-                for name in _field_names(obj_type)
+                for name in obj_type.__dataclass_field_names__
             ])
     # handle the builtin types first for speed; subclasses handled below
     elif obj_type is list:
@@ -1532,7 +1526,7 @@ def _astuple_inner(obj, tuple_factory):
     elif _is_dataclass_instance(obj):
         return tuple_factory([
             _astuple_inner(getattr(obj, name), tuple_factory)
-            for name in _field_names(obj)
+            for name in obj.__dataclass_field_names__
         ])
     elif isinstance(obj, tuple) and hasattr(obj, '_fields'):
         # obj is a namedtuple.  Recurse into it, but the returned
