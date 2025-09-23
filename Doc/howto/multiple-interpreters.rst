@@ -159,6 +159,7 @@ In fact, a comparison with ``python -c`` is quite direct::
 
     interp = interpreters.create()
     interp.exec('print("spam!")')
+    # prints: spam!
 
 It's also fairly easy to simulate the other forms of the Python CLI::
 
@@ -180,6 +181,7 @@ It's also fairly easy to simulate the other forms of the Python CLI::
     with open('script.py') as infile:
         script = infile.read()
     interp.exec(script)
+    # prints: spam!
 
     ##################
     # python -m script
@@ -191,6 +193,7 @@ It's also fairly easy to simulate the other forms of the Python CLI::
         import runpy
         runpy.run_module('script')
         """))
+    # prints: spam!
 
 That's more or less what the ``python`` executable is doing for each
 of those cases.
@@ -314,6 +317,8 @@ In all the cases, the function will get any global variables from the
 module (in the target interpreter), like normal::
 
     from concurrent import interpreters
+    with open('mymod.py', 'w') as outfile:
+        outfile.write('def spam(): print(__name__)')
     from mymod import spam
 
     if __name__ == '__main__':
@@ -356,7 +361,7 @@ For example::
     if __name__ == '__main__':
         interp = interpreters.create()
         interp.call(spam)
-        # prints: '<fake __main__>'
+        # prints: <fake __main__>
 
 The dummy module is never added to :data:`sys.modules`, though it may
 be cached away internally.
@@ -366,8 +371,8 @@ polluting the :mod:`!__main__` module of the target interpreter.  It
 also means global state used in such a function won't be reflected
 in the interpreter's :mod:`!__main__` module::
 
-    from textwrap import dedent
     from concurrent import interpreters
+    from textwrap import dedent
 
     total = 0
 
@@ -410,6 +415,8 @@ in the interpreter's :mod:`!__main__` module::
         interp.exec('print(total)')
         # prints: -1
 
+        interp.exec('import sys; sys.stdout.flush()')
+
         print(total)
         # prints: 0
 
@@ -438,6 +445,17 @@ Pretty much any callable object may be run in an interpreter, following
 the same rules as functions::
 
     from concurrent import interpreters
+    with open('mymod.py', 'w') as outfile:
+        outfile.write("""if True:
+            class Spam:
+                @classmethod
+                def modname(cls):
+                    print(__name__)
+                def __call__(self):
+                    print(__name__)
+                def spam(self):
+                    print(__name__)
+            """)
     from mymod import Spam
 
     class Eggs:
@@ -504,32 +522,54 @@ the other interpreter and thus never automatically synchronized::
         def dec(self):
             self.value -= 1
         def show(self):
-            print(self.value)
+            print(self.value, flush=True)
+
+    def init_global(counter):
+        assert __name__ == '<fake __main__>', __name__
+        global _counter
+        _counter = counter
+
+    def inc_global():
+        assert __name__ == '<fake __main__>', __name__
+        _counter.inc()
+
+    def dec_global():
+        assert __name__ == '<fake __main__>', __name__
+        _counter.dec()
+
+    def show_global():
+        assert __name__ == '<fake __main__>', __name__
+        _counter.show()
 
     if __name__ == '__main__':
         counter = Counter(17)
         interp = interpreters.create()
 
+        interp.call(init_global, counter)
+
         interp.call(counter.show)
+        # prints: 17
+        interp.call(show_global)
         # prints: 17
         counter.show()
         # prints: 17
 
         interp.call(counter.inc)
         interp.call(counter.show)
+        # prints: 17
+        interp.call(inc_global)
+        interp.call(show_global)
         # prints: 18
         counter.show()
         # prints: 17
 
-        interp.call(counter.inc)
+        interp.call(counter.dec)
         interp.call(counter.show)
-        # prints: 18
-        counter.show()
         # prints: 17
-
-        interp.call(counter.inc)
-        interp.call(counter.show)
-        # prints: 18
+        interp.call(dec_global)
+        interp.call(dec_global)
+        interp.call(show_global)
+        # prints: 16
         counter.show()
         # prints: 17
 
@@ -578,8 +618,8 @@ Similarly::
 You can take advantage of this to prepare an interpreter ahead of time
 or use it incrementally::
 
-    from textwrap import dedent
     from concurrent import interpreters
+    from textwrap import dedent
 
     interp = interpreters.create()
 
@@ -604,7 +644,7 @@ or use it incrementally::
 
     # Show the result.
     interp.exec('print(value)')
-    # prints: 1024
+    # prints: 512
 
 In case you're curious, in a little while we'll look at how to pass
 data in and out of an interpreter (instead of just printing things).
@@ -636,6 +676,7 @@ To actually run in a new thread, you can do it explicitly::
     t = threading.Thread(target=run)
     t.start()
     t.join()
+    # prints: spam!
 
     def run():
         def script():
@@ -644,6 +685,7 @@ To actually run in a new thread, you can do it explicitly::
     t = threading.Thread(target=run)
     t.start()
     t.join()
+    # prints: spam!
 
 There's also a helper method for that::
 
@@ -656,6 +698,7 @@ There's also a helper method for that::
         interp = interpreters.create()
         t = interp.call_in_thread(script)
         t.join()
+        # prints: spam!
 
 Handling Uncaught Exceptions
 ----------------------------
@@ -676,6 +719,7 @@ an :class:`ExecutionFailed` exception is raised::
         interp.exec('1/0')
     except interpreters.ExecutionFailed:
         print('oops!')
+    # prints: oops!
 
 The exception also has some information, which you can use to handle
 it with more specificity::
@@ -695,8 +739,8 @@ it with more specificity::
 You can handle the exception in the interpreter as well, like you might
 do with threads or a script::
 
-    from textwrap import dedent
     from concurrent import interpreters
+    from textwrap import dedent
 
     interp = interpreters.create()
 
@@ -711,8 +755,8 @@ At the moment there isn't an easy way to "re-raise" an unhandled
 exception from another interpreter.  Here's one approach that works for
 exceptions that can be pickled::
 
-    from textwrap import dedent
     from concurrent import interpreters
+    from textwrap import dedent
 
     interp = interpreters.create()
 
@@ -753,6 +797,7 @@ can explicitly clean it up sooner::
         interp.exec('print("spam!")')
     finally:
         interp.close()
+    # prints: spam!
 
 
 .. _interp-tutorial-communicating:
@@ -936,8 +981,8 @@ Using Queues
 :class:`queue.Queue` interface that supports safely and efficiently
 passing data between interpreters::
 
-    import time
     from concurrent import interpreters
+    import time
 
     def push(queue, value, *extra, delay=0.1):
         queue.put(value)
@@ -1005,8 +1050,8 @@ after that::
 
 This is particularly useful when you want to use a queue in a script::
 
-    from textwrap import dedent
     from concurrent import interpreters
+    from textwrap import dedent
 
     interp = interpreters.create()
     queue = interpreters.create_queue()
@@ -1023,8 +1068,8 @@ This is particularly useful when you want to use a queue in a script::
 For basic, intrinsic data it can also make sense to use an f-string or
 format string for the script and interpolate the required values::
 
-    from textwrap import dedent
     from concurrent import interpreters
+    from textwrap import dedent
 
     interp = interpreters.create()
 
