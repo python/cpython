@@ -409,6 +409,62 @@ exit:
 
 #endif /* (XML_COMBINED_VERSION >= 19505) */
 
+#if (XML_COMBINED_VERSION >= 20702)
+
+PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__,
+"SetAllocTrackerActivationThreshold($self, threshold, /)\n"
+"--\n"
+"\n"
+"Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.\n"
+"\n"
+"By default, parser objects have an allocation activation threshold of 64 MiB.");
+
+#define PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF    \
+    {"SetAllocTrackerActivationThreshold", _PyCFunction_CAST(pyexpat_xmlparser_SetAllocTrackerActivationThreshold), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__},
+
+static PyObject *
+pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
+                                                          PyTypeObject *cls,
+                                                          unsigned long long threshold);
+
+static PyObject *
+pyexpat_xmlparser_SetAllocTrackerActivationThreshold(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
+    #else
+    #  define KWTUPLE NULL
+    #endif
+
+    static const char * const _keywords[] = {"", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "SetAllocTrackerActivationThreshold",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    unsigned long long threshold;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!_PyLong_UnsignedLongLong_Converter(args[0], &threshold)) {
+        goto exit;
+    }
+    return_value = pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl((xmlparseobject *)self, cls, threshold);
+
+exit:
+    return return_value;
+}
+
+#endif /* (XML_COMBINED_VERSION >= 20702) */
+
+#if (XML_COMBINED_VERSION >= 20702)
+
 PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__,
 "SetAllocTrackerMaximumAmplification($self, max_factor, /)\n"
 "--\n"
@@ -476,55 +532,7 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__,
-"SetAllocTrackerActivationThreshold($self, threshold, /)\n"
-"--\n"
-"\n"
-"Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.\n"
-"\n"
-"By default, parser objects have an allocation activation threshold of 64 MiB.");
-
-#define PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF    \
-    {"SetAllocTrackerActivationThreshold", _PyCFunction_CAST(pyexpat_xmlparser_SetAllocTrackerActivationThreshold), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, pyexpat_xmlparser_SetAllocTrackerActivationThreshold__doc__},
-
-static PyObject *
-pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
-                                                          PyTypeObject *cls,
-                                                          unsigned long long threshold);
-
-static PyObject *
-pyexpat_xmlparser_SetAllocTrackerActivationThreshold(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-    #  define KWTUPLE (PyObject *)&_Py_SINGLETON(tuple_empty)
-    #else
-    #  define KWTUPLE NULL
-    #endif
-
-    static const char * const _keywords[] = {"", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "SetAllocTrackerActivationThreshold",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[1];
-    unsigned long long threshold;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!_PyLong_UnsignedLongLong_Converter(args[0], &threshold)) {
-        goto exit;
-    }
-    return_value = pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl((xmlparseobject *)self, cls, threshold);
-
-exit:
-    return return_value;
-}
+#endif /* (XML_COMBINED_VERSION >= 20702) */
 
 PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "ParserCreate($module, /, encoding=None, namespace_separator=None,\n"
@@ -670,4 +678,12 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=920163f8a39927b5 input=a9049054013a1b77]*/
+
+#ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
+    #define PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
+#endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF) */
+
+#ifndef PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
+    #define PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
+#endif /* !defined(PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF) */
+/*[clinic end generated code: output=e73935658c04c83e input=a9049054013a1b77]*/

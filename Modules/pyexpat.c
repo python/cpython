@@ -1184,6 +1184,40 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
 }
 #endif
 
+#if XML_COMBINED_VERSION >= 20702
+/*[clinic input]
+@permit_long_summary
+@permit_long_docstring_body
+pyexpat.xmlparser.SetAllocTrackerActivationThreshold
+
+    cls: defining_class
+    threshold: unsigned_long_long
+    /
+
+Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.
+
+By default, parser objects have an allocation activation threshold of 64 MiB.
+[clinic start generated code]*/
+
+static PyObject *
+pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
+                                                          PyTypeObject *cls,
+                                                          unsigned long long threshold)
+/*[clinic end generated code: output=bed7e93207ba08c5 input=54182cd71ad69978]*/
+{
+    assert(self->itself != NULL);
+    if (XML_SetAllocTrackerActivationThreshold(self->itself, threshold) == XML_TRUE) {
+        Py_RETURN_NONE;
+    }
+    // XML_SetAllocTrackerActivationThreshold() can only fail if self->itself
+    // is not a root parser (currently, this is equivalent to be created
+    // by ExternalEntityParserCreate()).
+    pyexpat_state *state = PyType_GetModuleState(cls);
+    return set_invalid_arg(state, self, "parser must be a root parser");
+}
+#endif
+
+#if XML_COMBINED_VERSION >= 20702
 /*[clinic input]
 @permit_long_summary
 @permit_long_docstring_body
@@ -1214,7 +1248,6 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            float max_factor)
 /*[clinic end generated code: output=6e44bd48c9b112a0 input=3544abf9dd7ae055]*/
 {
-#if XML_COMBINED_VERSION >= 20702
     assert(self->itself != NULL);
     if (XML_SetAllocTrackerMaximumAmplification(self->itself, max_factor) == XML_TRUE) {
         Py_RETURN_NONE;
@@ -1233,51 +1266,8 @@ pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
         ? "'max_factor' must be at least 1.0"
         : "parser must be a root parser";
     return set_invalid_arg(state, self, message);
-#else
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "SetAllocTrackerMaximumAmplification() requires "
-                    "Expat 2.7.2 or later");
-    return NULL;
-#endif
 }
-
-/*[clinic input]
-@permit_long_summary
-@permit_long_docstring_body
-pyexpat.xmlparser.SetAllocTrackerActivationThreshold
-
-    cls: defining_class
-    threshold: unsigned_long_long
-    /
-
-Sets the number of allocated bytes of dynamic memory needed to activate protection against disproportionate use of RAM.
-
-By default, parser objects have an allocation activation threshold of 64 MiB.
-[clinic start generated code]*/
-
-static PyObject *
-pyexpat_xmlparser_SetAllocTrackerActivationThreshold_impl(xmlparseobject *self,
-                                                          PyTypeObject *cls,
-                                                          unsigned long long threshold)
-/*[clinic end generated code: output=bed7e93207ba08c5 input=54182cd71ad69978]*/
-{
-#if XML_COMBINED_VERSION >= 20702
-    assert(self->itself != NULL);
-    if (XML_SetAllocTrackerActivationThreshold(self->itself, threshold) == XML_TRUE) {
-        Py_RETURN_NONE;
-    }
-    // XML_SetAllocTrackerActivationThreshold() can only fail if self->itself
-    // is not a root parser (currently, this is equivalent to be created
-    // by ExternalEntityParserCreate()).
-    pyexpat_state *state = PyType_GetModuleState(cls);
-    return set_invalid_arg(state, self, "parser must be a root parser");
-#else
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "SetAllocTrackerActivationThreshold() requires "
-                    "Expat 2.7.2 or later");
-    return NULL;
 #endif
-}
 
 static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_PARSE_METHODDEF
@@ -1288,8 +1278,8 @@ static struct PyMethodDef xmlparse_methods[] = {
     PYEXPAT_XMLPARSER_EXTERNALENTITYPARSERCREATE_METHODDEF
     PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF
     PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
-    PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     PYEXPAT_XMLPARSER_SETALLOCTRACKERACTIVATIONTHRESHOLD_METHODDEF
+    PYEXPAT_XMLPARSER_SETALLOCTRACKERMAXIMUMAMPLIFICATION_METHODDEF
     PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF
     PYEXPAT_XMLPARSER_GETREPARSEDEFERRALENABLED_METHODDEF
     {NULL, NULL}  /* sentinel */
