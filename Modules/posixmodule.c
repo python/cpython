@@ -410,6 +410,7 @@ extern char *ctermid_r(char *);
 #endif
 
 #ifdef HAVE_STATX
+/* until we can assume glibc 2.28 at runtime, we must weakly link */
 #  pragma weak statx
 /* provide constants introduced later than statx itself */
 #  ifndef STATX_MNT_ID
@@ -2624,7 +2625,8 @@ _posix_free(void *module)
 
 #define SEC_TO_NS (1000000000LL)
 static PyObject *
-nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec) {
+stat_nanosecond_timestamp(_posixstate *state, time_t sec, unsigned long nsec)
+{
     /* 1677-09-21 00:12:44 to 2262-04-11 23:47:15 UTC inclusive */
     if ((LLONG_MIN/SEC_TO_NS) <= sec && sec <= (LLONG_MAX/SEC_TO_NS - 1)) {
         return PyLong_FromLongLong(sec * SEC_TO_NS + nsec);
@@ -2680,7 +2682,7 @@ fill_time(_posixstate *state, PyObject *v, int s_index, int f_index,
     }
 
     if (ns_index >= 0) {
-        PyObject *ns_total = nanosecond_timestamp(state, sec, nsec);
+        PyObject *ns_total = stat_nanosecond_timestamp(state, sec, nsec);
         if (ns_total == NULL) {
             return -1;
         }
@@ -3322,18 +3324,18 @@ typedef struct {
     struct statx stx;
     double atime_sec, btime_sec, ctime_sec, mtime_sec;
     dev_t rdev, dev;
-} statx_result;
+} Py_statx_result;
 
 #define M(attr, type, offset, doc) \
     {attr, type, offset, Py_READONLY, PyDoc_STR(doc)}
 #define MO(attr, type, offset, doc) \
-    M(#attr, type, offsetof(statx_result, stx) + offset, doc)
+    M(#attr, type, offsetof(Py_statx_result, stx) + offset, doc)
 #define MM(attr, type, member, doc) \
-    M(#attr, type, offsetof(statx_result, stx.stx_##member), doc)
+    M(#attr, type, offsetof(Py_statx_result, stx.stx_##member), doc)
 #define MX(attr, type, member, doc) \
-    M(#attr, type, offsetof(statx_result, member), doc)
+    M(#attr, type, offsetof(Py_statx_result, member), doc)
 
-static PyMemberDef statx_result_members[] = {
+static PyMemberDef pystatx_result_members[] = {
     MM(stx_mask, Py_T_UINT, mask, "member validity mask"),
     MM(st_blksize, Py_T_UINT, blksize, "blocksize for filesystem I/O"),
     MM(stx_attributes, Py_T_ULONGLONG, attributes, "Linux inode attribute bits"),
@@ -3370,42 +3372,40 @@ static PyMemberDef statx_result_members[] = {
 #undef MO
 #undef M
 
-#define DECLARE_GET(name, type, func) \
-    static PyObject * \
-    statx_result_get_##name(PyObject *op, void *context) { \
-        statx_result *self = (statx_result *) op; \
-        uint16_t offset = (uintptr_t)context; \
-        type val; \
-        memcpy(&val, (void *)self + offset, sizeof(val)); \
-        return func(val); \
-    }
-DECLARE_GET(u32, uint32_t, PyLong_FromUInt32)
-#undef DECLARE_GET
+static PyObject *
+pystatx_result_get_u32(PyObject *op, void *context) {
+    Py_statx_result *self = (Py_statx_result *) op;
+    uint16_t offset = (uintptr_t)context;
+    uint32_t val;
+    memcpy(&val, (void *)self + offset, sizeof(val));
+    return PyLong_FromUInt32(val);
+}
 
 static PyObject *
-statx_result_get_nsec(PyObject *op, void *context) {
-    statx_result *self = (statx_result *) op;
+pystatx_result_get_nsec(PyObject *op, void *context)
+{
+    Py_statx_result *self = (Py_statx_result *) op;
     uint16_t offset = (uintptr_t)context;
     struct statx_timestamp val;
     memcpy(&val, (void *)self + offset, sizeof(val));
     _posixstate *state = PyType_GetModuleState(Py_TYPE(op));
     assert(state != NULL);
-    return nanosecond_timestamp(state, val.tv_sec, val.tv_nsec);
+    return stat_nanosecond_timestamp(state, val.tv_sec, val.tv_nsec);
 }
 
 /* The low 16 bits of the context pointer are the offset from the start of
-   statx_result to the struct statx member. */
-#define OFFSET_CONTEXT(offset) (void *)(offsetof(statx_result, stx) + offset)
+   Py_statx_result to the struct statx member. */
+#define OFFSET_CONTEXT(offset) (void *)(offsetof(Py_statx_result, stx) + offset)
 #define MEMBER_CONTEXT(name) OFFSET_CONTEXT(offsetof(struct statx, stx_##name))
 
 #define G(attr, type, doc, context) \
-    {attr, statx_result_get_##type, NULL, PyDoc_STR(doc), context}
+    {attr, pystatx_result_get_##type, NULL, PyDoc_STR(doc), context}
 #define GM(attr, type, member, doc) \
     G(#attr, type, doc, MEMBER_CONTEXT(member))
 #define GO(attr, type, offset, doc) \
     G(#attr, type, doc, OFFSET_CONTEXT(offset))
 
-static PyGetSetDef statx_result_getset[] = {
+static PyGetSetDef pystatx_result_getset[] = {
     GM(st_atime_ns, nsec, atime, "time of last access in nanoseconds"),
     GM(st_birthtime_ns, nsec, btime, "time of creation in nanoseconds"),
     GM(st_ctime_ns, nsec, ctime, "time of last change in nanoseconds"),
@@ -3426,74 +3426,72 @@ static PyGetSetDef statx_result_getset[] = {
 };
 
 #undef GO
-#undef GOC
 #undef GM
-#undef GMC
 #undef G
 #undef MEMBER_CONTEXT
-#undef MEMBER_CACHE_CONTEXT
 #undef OFFSET_CONTEXT
-#undef OFFSET_CACHE_CONTEXT
 
 static PyObject *
-statx_result_repr(PyObject *op) {
+pystatx_result_repr(PyObject *op) {
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         return NULL;
     }
-#define WRITE_ASCII(s, n) \
+#define WRITE_ASCII(s) \
     do { \
-        if (PyUnicodeWriter_WriteASCII(writer, s, n) < 0) { \
+        if (PyUnicodeWriter_WriteASCII(writer, s, strlen(s)) < 0) { \
             goto error; \
         } \
     } while (0)
 
-    WRITE_ASCII("os.statx_result(", -1);
+    WRITE_ASCII("os.statx_result(");
 
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(statx_result_members) - 1; ++i) {
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(pystatx_result_members) - 1; ++i) {
         if (i > 0) {
-            WRITE_ASCII(", ", 2);
+            WRITE_ASCII(", ");
         }
 
-        PyMemberDef *d = &statx_result_members[i];
-        WRITE_ASCII(d->name, -1);
-        WRITE_ASCII("=", 1);
+        PyMemberDef *d = &pystatx_result_members[i];
+        WRITE_ASCII(d->name);
+        WRITE_ASCII("=");
 
         PyObject *o = PyMember_GetOne((const char *)op, d);
         if (o == NULL) {
             goto error;
         }
         if (PyUnicodeWriter_WriteRepr(writer, o) < 0) {
+            Py_DECREF(o);
             goto error;
         }
         Py_DECREF(o);
     }
 
-    if (Py_ARRAY_LENGTH(statx_result_members) > 1
-        && Py_ARRAY_LENGTH(statx_result_getset) > 1) {
-        WRITE_ASCII(", ", 2);
+    if (Py_ARRAY_LENGTH(pystatx_result_members) > 1
+        && Py_ARRAY_LENGTH(pystatx_result_getset) > 1) {
+        WRITE_ASCII(", ");
     }
 
-    for (size_t i = 0; i < Py_ARRAY_LENGTH(statx_result_getset) - 1; ++i) {
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(pystatx_result_getset) - 1; ++i) {
         if (i > 0) {
-            WRITE_ASCII(", ", 2);
+            WRITE_ASCII(", ");
         }
 
-        PyGetSetDef *d = &statx_result_getset[i];
-        WRITE_ASCII(d->name, -1);
-        WRITE_ASCII("=", 1);
+        PyGetSetDef *d = &pystatx_result_getset[i];
+        WRITE_ASCII(d->name);
+        WRITE_ASCII("=");
 
         PyObject *o = d->get(op, d->closure);
         if (o == NULL) {
             goto error;
         }
         if (PyUnicodeWriter_WriteRepr(writer, o) < 0) {
+            Py_DECREF(o);
             goto error;
         }
         Py_DECREF(o);
     }
 
-    WRITE_ASCII(")", 1);
+    WRITE_ASCII(")");
     return PyUnicodeWriter_Finish(writer);
 #undef WRITE_ASCII
 
@@ -3503,35 +3501,35 @@ error:
 }
 
 static int
-statx_result_traverse(PyObject *self, visitproc visit, void *arg) {
+pystatx_result_traverse(PyObject *self, visitproc visit, void *arg) {
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-statx_result_dealloc(PyObject *op) {
-    statx_result *self = (statx_result *) op;
+pystatx_result_dealloc(PyObject *op) {
+    Py_statx_result *self = (Py_statx_result *) op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
 
-static PyType_Slot statx_result_slots[] = {
-    {Py_tp_repr, statx_result_repr},
-    {Py_tp_traverse, statx_result_traverse},
-    {Py_tp_dealloc, statx_result_dealloc},
-    {Py_tp_members, statx_result_members},
-    {Py_tp_getset, statx_result_getset},
+static PyType_Slot pystatx_result_slots[] = {
+    {Py_tp_repr, pystatx_result_repr},
+    {Py_tp_traverse, pystatx_result_traverse},
+    {Py_tp_dealloc, pystatx_result_dealloc},
+    {Py_tp_members, pystatx_result_members},
+    {Py_tp_getset, pystatx_result_getset},
     {0, NULL},
 };
 
-static PyType_Spec statx_result_spec = {
+static PyType_Spec pystatx_result_spec = {
     .name = "statx_result",
-    .basicsize = sizeof(statx_result),
+    .basicsize = sizeof(Py_statx_result),
     .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAPTYPE | Py_TPFLAGS_HAVE_GC |
              Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .slots = statx_result_slots,
+    .slots = pystatx_result_slots,
 };
 
 static int
@@ -3612,7 +3610,7 @@ os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
 
     _posixstate *state = get_posix_state(module);
     PyTypeObject *tp = (PyTypeObject *)state->StatxResultType;
-    statx_result *v = (statx_result *)tp->tp_alloc(tp, 0);
+    Py_statx_result *v = (Py_statx_result *)tp->tp_alloc(tp, 0);
     if (v == NULL) {
         return NULL;
     }
@@ -18558,8 +18556,8 @@ posixmodule_exec(PyObject *m)
         }
     }
     else {
-        statx_result_spec.name = "os.statx_result";
-        state->StatxResultType = PyType_FromModuleAndSpec(m, &statx_result_spec, NULL);
+        pystatx_result_spec.name = "os.statx_result";
+        state->StatxResultType = PyType_FromModuleAndSpec(m, &pystatx_result_spec, NULL);
         if (PyModule_AddObjectRef(m, "statx_result", state->StatxResultType) < 0) {
             return -1;
         }

@@ -644,8 +644,8 @@ class StatAttributeTests(unittest.TestCase):
         # Make sure that the st_?time and st_?time_ns fields roughly agree
         # (they should always agree up to around tens-of-microseconds)
         for name in names:
-            floaty = int(getattr(result, name) * 100000)
-            nanosecondy = getattr(result, name + "_ns") // 10000
+            floaty = int(getattr(result, name) * 100_000)
+            nanosecondy = getattr(result, name + "_ns") // 10_000
             self.assertAlmostEqual(floaty, nanosecondy, delta=2, msg=name)
 
     def check_stat_attributes(self, fname):

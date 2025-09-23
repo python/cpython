@@ -3386,9 +3386,11 @@ features:
 .. function:: statx(path, mask, *, dir_fd=None, follow_symlinks=True, sync=None)
 
    Get the status of a file or file descriptor by performing a :c:func:`!statx`
-   system call on the given path. *path* may be specified as either a string or
-   bytes -- directly or indirectly through the :class:`PathLike` interface --
-   or as an open file descriptor. *mask* is a combination of the module-level
+   system call on the given path.
+
+   *path* may be specified as either a string or bytes -- directly or
+   indirectly through the :class:`PathLike` interface -- or as an open file
+   descriptor. *mask* is a combination of the module-level
    :const:`STATX_* <STATX_TYPE>` constants specifying the information to
    retrieve. Returns a :class:`statx_result` object whose
    :attr:`~os.statx_result.stx_mask` attribute specifies the information

@@ -1661,7 +1661,8 @@ class TestPosixDirFd(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'statx'), "test needs os.statx()")
     def test_statx_dir_fd(self):
-        func = lambda path, **kwargs: posix.statx(path, os.STATX_INO, **kwargs)
+        def func(path, **kwargs):
+            return posix.statx(path, os.STATX_INO, **kwargs)
         self.check_statlike_dir_fd(func)
 
     @unittest.skipUnless(os.utime in os.supports_dir_fd, "test needs dir_fd support in os.utime()")
