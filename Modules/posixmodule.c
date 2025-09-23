@@ -6678,7 +6678,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
             PyErr_SetString(PyExc_TypeError,
                          "utime: 'times' must be either"
-                         " a tuple of two ints or None");
+                         " a tuple of two numbers or None");
             return NULL;
         }
         utime.now = 0;
