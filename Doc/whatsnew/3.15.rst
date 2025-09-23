@@ -407,6 +407,14 @@ os.path
   (Contributed by Petr Viktorin for :cve:`2025-4517`.)
 
 
+pathlib
+-------
+
+* Add :meth:`pathlib.types.PathInfo.mode`, which returns the Posix file
+  permissions as an integer.
+  (Contributed by Barney Gale in :gh:`139174`.)
+
+
 resource
 --------
 
