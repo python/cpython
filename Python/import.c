@@ -3804,7 +3804,7 @@ error:
         }
 
         /* Resolve line number from instruction offset on demand */
-        int lineno = PyCode_Addr2Line((PyCodeObject *)lz->lz_code, lz->lz_instr_offset);
+        int lineno = PyCode_Addr2Line((PyCodeObject *)lz->lz_code, lz->lz_instr_offset*2);
 
         /* Get strings - these can return NULL on encoding errors */
         const char *filename_str = PyUnicode_AsUTF8(lz->lz_code->co_filename);
