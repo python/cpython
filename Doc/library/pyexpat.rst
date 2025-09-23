@@ -234,6 +234,20 @@ XMLParser Objects
 :class:`xmlparser` objects have the following methods to mitigate some
 common XML vulnerabilities.
 
+.. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
+
+   Sets the number of allocated bytes of dynamic memory needed to activate
+   protection against disproportionate use of RAM.
+
+   By default, parser objects have an allocation activation threshold of 64 MiB,
+   or equivalently 67,108,864 bytes.
+
+   An :exc:`ExpatError` is raised if this method is called on a non-root parser.
+   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
+   should not be used as they may have no special meaning.
+
+   .. versionadded:: next
+
 .. method:: xmlparser.SetAllocTrackerMaximumAmplification(max_factor, /)
 
    Sets the maximum amplification factor between direct input and bytes
@@ -261,20 +275,6 @@ common XML vulnerabilities.
       The maximum amplification factor is only considered if the threshold
       that can be adjusted :meth:`.SetAllocTrackerActivationThreshold` is
       exceeded.
-
-   .. versionadded:: next
-
-.. method:: xmlparser.SetAllocTrackerActivationThreshold(threshold, /)
-
-   Sets the number of allocated bytes of dynamic memory needed to activate
-   protection against disproportionate use of RAM.
-
-   By default, parser objects have an allocation activation threshold of 64 MiB,
-   or equivalently 67,108,864 bytes.
-
-   An :exc:`ExpatError` is raised if this method is called on a non-root parser.
-   The corresponding :attr:`~ExpatError.lineno` and :attr:`~ExpatError.offset`
-   should not be used as they may have no special meaning.
 
    .. versionadded:: next
 
