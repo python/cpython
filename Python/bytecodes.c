@@ -1835,7 +1835,9 @@ dummy_func(
             PyObject *res_o = PyStackRef_AsPyObjectBorrow(*res);
             if (PyLazyImport_CheckExact(res_o)) {
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
-                Py_DECREF(res_o);
+                if (PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
+                    JUMP_TO_LABEL(error);
+                }
                 res_o = l_v;
                 PyStackRef_CLOSE(res[0]);
                 ERROR_IF(res_o == NULL);
@@ -2948,7 +2950,7 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
             PyObject *res_o;
             if (!(oparg & 0x02)) {
-                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name, 
+                res_o = _PyEval_LazyImportName(tstate, BUILTINS(), GLOBALS(), LOCALS(), name,
                                 PyStackRef_AsPyObjectBorrow(fromlist),
                                 PyStackRef_AsPyObjectBorrow(level),
                                 oparg & 0x01);

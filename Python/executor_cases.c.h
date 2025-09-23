@@ -2490,8 +2490,10 @@
             if (PyLazyImport_CheckExact(res_o)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *l_v = _PyImport_LoadLazyImportTstate(tstate, res_o);
-                Py_DECREF(res_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (PyDict_SetItem(GLOBALS(), name, l_v) < 0) {
+                    JUMP_TO_LABEL(error);
+                }
                 res_o = l_v;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(res[0]);
