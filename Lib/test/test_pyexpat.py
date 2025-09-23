@@ -1,12 +1,12 @@
 # XXX TypeErrors on calling handlers, or on bad return values from a
 # handler, are obscure and unhelpful.
 
+import functools
 import os
 import re
 import sys
 import sysconfig
 import unittest
-import textwrap
 import traceback
 from io import BytesIO
 from test import support
@@ -823,128 +823,156 @@ class ReparseDeferralTest(unittest.TestCase):
         self.assertEqual(started, ['doc'])
 
 
-class AttackProtectionTest(unittest.TestCase):
+class AttackProtectionTestCases:
+    """Generic interface for testing XML Expat protections.
 
-    def exponential_expansion_payload(self, ncols, nrows, text='.'):
+    The protections being tested should mitigate attacks based
+    on Billion Laughs payloads.
+    """
+
+    @staticmethod
+    def exponential_expansion_payload(ncols, nrows, text='.'):
         """Create a billion laughs attack payload.
 
         Be careful: the number of total items is pow(n, k), thereby
         requiring at least pow(ncols, nrows) * sizeof(text) memory!
         """
-        # 'indent' affects the peak amplification factor and allocation
-        indent = ' ' * 2
-        body = textwrap.indent('\n'.join(
+        body = '\n'.join(
             f'<!ENTITY row{i + 1} "{f"&row{i};" * ncols}">'
             for i in range(nrows)
-        ), indent)
+        )
         return f"""\
 <?xml version="1.0"?>
 <!DOCTYPE doc [
-{indent}<!ENTITY row0 "{text}">
-{indent}<!ELEMENT doc (#PCDATA)>
+<!ENTITY row0 "{text}">
+<!ELEMENT doc (#PCDATA)>
 {body}
 ]>
-<doc>&row{nrows};</doc>
-"""
-
-    # With the default Expat configuration, the billion laughs protection may
-    # hit before the allocation limiter if exponential_expansion_payload() is
-    # not carefully parametrized. In particular, use the following assert_*()
-    # methods to check the error message of the active protection.
+<doc>&row{nrows};</doc>"""
 
     def assert_root_parser_failure(self, func, /, *args, **kwargs):
         """Check that func(*args, **kwargs) is invalid for a sub-parser."""
         msg = "parser must be a root parser"
         self.assertRaisesRegex(expat.ExpatError, msg, func, *args, **kwargs)
 
-    def assert_alloc_limit_reached(self, func, /, *args, **kwargs):
+    def assert_active_protection(self, func, /, *args, **kwargs):
+        """Assert that func(*args, **kwargs) triggers the attack protection."""
+        raise NotImplementedError
+
+    def set_activation_threshold(self, parser, threshold):
+        """Set the activation threshold for the tested protection."""
+        raise NotImplementedError
+
+    def set_maximum_amplification(self, parser, max_factor):
+        """Set the maximum amplification factor for the tested protection."""
+        raise NotImplementedError
+
+    def test_set_maximum_amplification_reached(self):
+        parser = expat.ParserCreate()
+        # Unconditionally enable maximum activation factor.
+        self.set_activation_threshold(parser, 0)
+        # Choose a max amplification factor expected to always be exceeded.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        # Craft a payload for which the peak amplification factor is > 1.0.
+        payload = self.exponential_expansion_payload(1, 2)
+        self.assert_active_protection(parser.Parse, payload, True)
+
+    def test_set_maximum_amplification_ignored(self):
+        parser = expat.ParserCreate()
+        # Unconditionally enable maximum activation factor.
+        self.set_activation_threshold(parser, 0)
+        # Choose a max amplification factor expected to never be exceeded.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1e4))
+        # Craft a payload for which the peak amplification factor is < 1e4.
+        payload = self.exponential_expansion_payload(1, 2)
+        self.assertIsNotNone(parser.Parse(payload, True))
+
+    def test_set_maximum_amplification_infinity(self):
+        inf = float('inf')  # an 'inf' threshold is allowed by Expat
+        parser = expat.ParserCreate()
+        self.assertIsNone(self.set_maximum_amplification(parser, inf))
+
+    def test_set_maximum_amplification_arg_invalid_type(self):
+        parser = expat.ParserCreate()
+        setter = functools.partial(self.set_maximum_amplification, parser)
+
+        self.assertRaises(TypeError, setter, None)
+        self.assertRaises(TypeError, setter, 'abc')
+
+    def test_set_maximum_amplification_arg_invalid_range(self):
+        parser = expat.ParserCreate()
+        setter = functools.partial(self.set_maximum_amplification, parser)
+
+        msg = re.escape("'max_factor' must be at least 1.0")
+        self.assertRaisesRegex(expat.ExpatError, msg, setter, float('nan'))
+        self.assertRaisesRegex(expat.ExpatError, msg, setter, 0.99)
+
+    def test_set_maximum_amplification_fail_for_subparser(self):
+        parser = expat.ParserCreate()
+        subparser = parser.ExternalEntityParserCreate(None)
+        setter = functools.partial(self.set_maximum_amplification, subparser)
+        self.assert_root_parser_failure(setter, 123.45)
+
+    def test_set_attack_protection_threshold_reached(self):
+        parser = expat.ParserCreate()
+        # Choose a threshold expected to be always reached.
+        self.set_activation_threshold(parser, 3)
+        # Check that the threshold is reached by choosing a small factor
+        # and a payload whose peak amplification factor exceeds it.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        payload = self.exponential_expansion_payload(10, 4)
+        self.assert_active_protection(parser.Parse, payload, True)
+
+    def test_set_attack_protection_threshold_ignored(self):
+        parser = expat.ParserCreate()
+        # Choose a threshold expected to be never reached.
+        self.set_activation_threshold(parser, pow(10, 5))
+        # Check that the threshold is reached by choosing a small factor
+        # and a payload whose peak amplification factor exceeds it.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        payload = self.exponential_expansion_payload(10, 4)
+        self.assertIsNotNone(parser.Parse(payload, True))
+
+    def test_set_attack_protection_threshold_arg_invalid_type(self):
+        parser = expat.ParserCreate()
+        setter = functools.partial(self.set_activation_threshold, parser)
+
+        self.assertRaises(TypeError, setter, 1.0)
+        self.assertRaises(TypeError, setter, -1.5)
+        self.assertRaises(ValueError, setter, -5)
+
+    def test_set_attack_protection_threshold_arg_invalid_range(self):
+        _testcapi = import_helper.import_module("_testcapi")
+        parser = expat.ParserCreate()
+        setter = functools.partial(self.set_activation_threshold, parser)
+
+        self.assertRaises(OverflowError, setter, _testcapi.ULLONG_MAX + 1)
+
+    def test_set_attack_protection_threshold_fail_for_subparser(self):
+        parser = expat.ParserCreate()
+        subparser = parser.ExternalEntityParserCreate(None)
+        setter = functools.partial(self.set_activation_threshold, subparser)
+        self.assert_root_parser_failure(setter, 12345)
+
+
+@unittest.skipIf(expat.version_info < (2, 7, 2), "requires Expat >= 2.7.2")
+class MemoryProtectionTest(AttackProtectionTestCases, unittest.TestCase):
+
+    # With the default Expat configuration, the billion laughs protection may
+    # hit before the allocation limiter if exponential_expansion_payload() is
+    # not carefully parametrized. In particular, use the following assert_*()
+    # methods to check the error message of the active protection.
+
+    def assert_active_protection(self, func, /, *args, **kwargs):
         """Check that fnuc(*args, **kwargs) hits the allocation limit."""
         msg = r"out of memory: line \d+, column \d+"
         self.assertRaisesRegex(expat.ExpatError, msg, func, *args, **kwargs)
 
-    def test_set_alloc_tracker_maximum_amplification(self):
-        # On WASI, the maximum amplification factor of the payload may differ,
-        # so we craft a payload that is likely to yield an amplification factor
-        # way larger than 1.0 and way smaller than 10^4.
-        payload = self.exponential_expansion_payload(1, 2)
+    def set_maximum_amplification(self, parser, max_factor):
+        return parser.SetAllocTrackerMaximumAmplification(max_factor)
 
-        p = expat.ParserCreate()
-        # Unconditionally enable maximum amplification factor.
-        p.SetAllocTrackerActivationThreshold(0)
-        # Use a max amplification factor likely to be below the real one.
-        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
-        self.assert_alloc_limit_reached(p.Parse, payload, True)
-
-        # Re-create a parser as the current parser is now in an error state.
-        p = expat.ParserCreate()
-        # Unconditionally enable maximum amplification factor.
-        p.SetAllocTrackerActivationThreshold(0)
-        # Use a max amplification factor likely to be above the real one.
-        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(10_000))
-        self.assertIsNotNone(p.Parse(payload, True))
-
-    def test_set_alloc_tracker_maximum_amplification_infinity(self):
-        inf = float('inf')  # an 'inf' threshold is allowed by Expat
-        parser = expat.ParserCreate()
-        self.assertIsNone(parser.SetAllocTrackerMaximumAmplification(inf))
-
-    def test_set_alloc_tracker_maximum_amplification_arg_invalid_type(self):
-        parser = expat.ParserCreate()
-        f = parser.SetAllocTrackerMaximumAmplification
-
-        self.assertRaises(TypeError, f, None)
-        self.assertRaises(TypeError, f, 'abc')
-
-    def test_set_alloc_tracker_maximum_amplification_arg_invalid_range(self):
-        parser = expat.ParserCreate()
-        f = parser.SetAllocTrackerMaximumAmplification
-
-        msg = re.escape("'max_factor' must be at least 1.0")
-        self.assertRaisesRegex(expat.ExpatError, msg, f, float('nan'))
-        self.assertRaisesRegex(expat.ExpatError, msg, f, 0.99)
-
-    def test_set_alloc_tracker_maximum_amplification_fail_for_subparser(self):
-        parser = expat.ParserCreate()
-        subparser = parser.ExternalEntityParserCreate(None)
-        fsub = subparser.SetAllocTrackerMaximumAmplification
-        self.assert_root_parser_failure(fsub, 123.45)
-
-    def test_set_alloc_tracker_activation_threshold(self):
-        # The payload is expected to have a peak allocation of
-        # at least 3 bytes but strictly less than 10^5 bytes.
-        payload = self.exponential_expansion_payload(10, 4)
-
-        p = expat.ParserCreate()
-        p.SetAllocTrackerActivationThreshold(pow(10, 5))
-        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
-        # Check that we never reach the activation threshold.
-        self.assertIsNotNone(p.Parse(payload, True))
-
-        p = expat.ParserCreate()
-        p.SetAllocTrackerActivationThreshold(2)
-        # Check that we always reach the activation threshold.
-        self.assertIsNone(p.SetAllocTrackerMaximumAmplification(1.0))
-        self.assert_alloc_limit_reached(p.Parse, payload, True)
-
-    def test_set_alloc_tracker_activation_threshold_arg_invalid_type(self):
-        parser = expat.ParserCreate()
-        f = parser.SetAllocTrackerActivationThreshold
-
-        self.assertRaises(TypeError, f, 1.0)
-        self.assertRaises(TypeError, f, -1.5)
-        self.assertRaises(ValueError, f, -5)
-
-    def test_set_alloc_tracker_activation_threshold_arg_invalid_range(self):
-        _testcapi = import_helper.import_module("_testcapi")
-        parser = expat.ParserCreate()
-        f = parser.SetAllocTrackerActivationThreshold
-        self.assertRaises(OverflowError, f, _testcapi.ULLONG_MAX + 1)
-
-    def test_set_alloc_tracker_activation_threshold_fail_for_subparser(self):
-        parser = expat.ParserCreate()
-        subparser = parser.ExternalEntityParserCreate(None)
-        fsub = subparser.SetAllocTrackerActivationThreshold
-        self.assert_root_parser_failure(fsub, 12345)
+    def set_activation_threshold(self, parser, threshold):
+        return parser.SetAllocTrackerActivationThreshold(threshold)
 
 
 if __name__ == "__main__":
