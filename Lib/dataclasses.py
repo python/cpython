@@ -1395,8 +1395,8 @@ def _field_names(class_or_instance):
 
     Accepts a dataclass or an instance of one. Excludes pseudo-fields.
     """
-
     return getattr(class_or_instance, _FIELD_NAMES)
+
 
 def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
