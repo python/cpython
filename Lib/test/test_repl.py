@@ -188,6 +188,68 @@ class TestInteractiveInterpreter(unittest.TestCase):
         ]
         self.assertEqual(traceback_lines, expected_lines)
 
+    def test_pythonstartup_error_reporting(self):
+        # errors based on https://github.com/python/cpython/issues/137576
+
+        def make_repl(env):
+            return subprocess.Popen(
+                [os.path.join(os.path.dirname(sys.executable), '<stdin>'), "-i"],
+                executable=sys.executable,
+                text=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=env,
+            )
+
+        # case 1: error in user input, but PYTHONSTARTUP is fine
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("print('from pythonstartup')" + os.linesep)
+
+            env = os.environ.copy()
+            env['PYTHONSTARTUP'] = script
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".pythonhist")
+            p = make_repl(env)
+            p.stdin.write("1/0")
+            output = kill_python(p)
+        expected = dedent("""
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+                1/0
+                ~^~
+            ZeroDivisionError: division by zero
+        """)
+        self.assertIn("from pythonstartup", output)
+        self.assertIn(expected, output)
+
+        # case 2: error in PYTHONSTARTUP triggered by user input
+        with os_helper.temp_dir() as tmpdir:
+            script = os.path.join(tmpdir, "pythonstartup.py")
+            with open(script, "w") as f:
+                f.write("def foo():\n    1/0\n")
+
+            env = os.environ.copy()
+            env['PYTHONSTARTUP'] = script
+            env["PYTHON_HISTORY"] = os.path.join(tmpdir, ".pythonhist")
+            p = make_repl(env)
+            p.stdin.write('foo()')
+            output = kill_python(p)
+        expected = dedent("""
+            Traceback (most recent call last):
+              File "<stdin>", line 1, in <module>
+                foo()
+                ~~~^^
+              File "%s", line 2, in foo
+                1/0
+                ~^~
+            ZeroDivisionError: division by zero
+        """) % script
+        self.assertIn(expected, output)
+
+
+
     def test_runsource_show_syntax_error_location(self):
         user_input = dedent("""def f(x, x): ...
                             """)

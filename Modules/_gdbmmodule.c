@@ -122,13 +122,6 @@ newgdbmobject(_gdbm_state *state, const char *file, int flags, int mode)
 }
 
 /* Methods */
-static int
-gdbm_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
-
 static void
 gdbm_dealloc(PyObject *op)
 {
@@ -377,6 +370,7 @@ gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
 }
 
 /*[clinic input]
+@permit_long_summary
 @critical_section
 _gdbm.gdbm.setdefault
 
@@ -390,7 +384,7 @@ Get value for key, or set it to default and return default if not present.
 static PyObject *
 _gdbm_gdbm_setdefault_impl(gdbmobject *self, PyObject *key,
                            PyObject *default_value)
-/*[clinic end generated code: output=f3246e880509f142 input=854374cd81ab51b6]*/
+/*[clinic end generated code: output=f3246e880509f142 input=f4008b358165bbb8]*/
 {
     PyObject *res;
 
@@ -713,7 +707,7 @@ static PyMethodDef gdbm_methods[] = {
 
 static PyType_Slot gdbmtype_spec_slots[] = {
     {Py_tp_dealloc, gdbm_dealloc},
-    {Py_tp_traverse, gdbm_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
     {Py_tp_methods, gdbm_methods},
     {Py_sq_contains, gdbm_contains},
     {Py_mp_length, gdbm_length},

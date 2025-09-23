@@ -7,7 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_long.h"          // _PyLong_UInt16_Converter()
-#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_socket_socket_close__doc__,
 "close($self, /)\n"
@@ -28,6 +28,170 @@ _socket_socket_close(PyObject *s, PyObject *Py_UNUSED(ignored))
 {
     return _socket_socket_close_impl((PySocketSockObject *)s);
 }
+
+PyDoc_STRVAR(_socket_socket_send__doc__,
+"send($self, data, flags=0, /)\n"
+"--\n"
+"\n"
+"Send a data string to the socket.\n"
+"\n"
+"For the optional flags argument, see the Unix manual.\n"
+"Return the number of bytes sent; this may be less than len(data) if the network is busy.");
+
+#define _SOCKET_SOCKET_SEND_METHODDEF    \
+    {"send", _PyCFunction_CAST(_socket_socket_send), METH_FASTCALL, _socket_socket_send__doc__},
+
+static PyObject *
+_socket_socket_send_impl(PySocketSockObject *s, Py_buffer *pbuf, int flags);
+
+static PyObject *
+_socket_socket_send(PyObject *s, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_buffer pbuf = {NULL, NULL};
+    int flags = 0;
+
+    if (!_PyArg_CheckPositional("send", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &pbuf, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    flags = PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _socket_socket_send_impl((PySocketSockObject *)s, &pbuf, flags);
+
+exit:
+    /* Cleanup for pbuf */
+    if (pbuf.obj) {
+       PyBuffer_Release(&pbuf);
+    }
+
+    return return_value;
+}
+
+PyDoc_STRVAR(_socket_socket_sendall__doc__,
+"sendall($self, data, flags=0, /)\n"
+"--\n"
+"\n"
+"Send a data string to the socket.\n"
+"\n"
+"For the optional flags argument, see the Unix manual.\n"
+"This calls send() repeatedly until all data is sent.\n"
+"If an error occurs, it\'s impossible to tell how much data has been sent.");
+
+#define _SOCKET_SOCKET_SENDALL_METHODDEF    \
+    {"sendall", _PyCFunction_CAST(_socket_socket_sendall), METH_FASTCALL, _socket_socket_sendall__doc__},
+
+static PyObject *
+_socket_socket_sendall_impl(PySocketSockObject *s, Py_buffer *pbuf,
+                            int flags);
+
+static PyObject *
+_socket_socket_sendall(PyObject *s, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    Py_buffer pbuf = {NULL, NULL};
+    int flags = 0;
+
+    if (!_PyArg_CheckPositional("sendall", nargs, 1, 2)) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &pbuf, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    flags = PyLong_AsInt(args[1]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional:
+    return_value = _socket_socket_sendall_impl((PySocketSockObject *)s, &pbuf, flags);
+
+exit:
+    /* Cleanup for pbuf */
+    if (pbuf.obj) {
+       PyBuffer_Release(&pbuf);
+    }
+
+    return return_value;
+}
+
+#if defined(CMSG_LEN)
+
+PyDoc_STRVAR(_socket_socket_sendmsg__doc__,
+"sendmsg($self, buffers, ancdata=<unrepresentable>, flags=0,\n"
+"        address=<unrepresentable>, /)\n"
+"--\n"
+"\n"
+"Send normal and ancillary data to the socket.\n"
+"\n"
+"It gathering the non-ancillary data from a series of buffers\n"
+"and concatenating it into a single message.\n"
+"The buffers argument specifies the non-ancillary\n"
+"data as an iterable of bytes-like objects (e.g. bytes objects).\n"
+"The ancdata argument specifies the ancillary data (control messages)\n"
+"as an iterable of zero or more tuples (cmsg_level, cmsg_type,\n"
+"cmsg_data), where cmsg_level and cmsg_type are integers specifying the\n"
+"protocol level and protocol-specific type respectively, and cmsg_data\n"
+"is a bytes-like object holding the associated data.  The flags\n"
+"argument defaults to 0 and has the same meaning as for send().  If\n"
+"address is supplied and not None, it sets a destination address for\n"
+"the message.  The return value is the number of bytes of non-ancillary\n"
+"data sent.");
+
+#define _SOCKET_SOCKET_SENDMSG_METHODDEF    \
+    {"sendmsg", _PyCFunction_CAST(_socket_socket_sendmsg), METH_FASTCALL, _socket_socket_sendmsg__doc__},
+
+static PyObject *
+_socket_socket_sendmsg_impl(PySocketSockObject *s, PyObject *data_arg,
+                            PyObject *cmsg_arg, int flags,
+                            PyObject *addr_arg);
+
+static PyObject *
+_socket_socket_sendmsg(PyObject *s, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *data_arg;
+    PyObject *cmsg_arg = NULL;
+    int flags = 0;
+    PyObject *addr_arg = NULL;
+
+    if (!_PyArg_CheckPositional("sendmsg", nargs, 1, 4)) {
+        goto exit;
+    }
+    data_arg = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    cmsg_arg = args[1];
+    if (nargs < 3) {
+        goto skip_optional;
+    }
+    flags = PyLong_AsInt(args[2]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (nargs < 4) {
+        goto skip_optional;
+    }
+    addr_arg = args[3];
+skip_optional:
+    return_value = _socket_socket_sendmsg_impl((PySocketSockObject *)s, data_arg, cmsg_arg, flags, addr_arg);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(CMSG_LEN) */
 
 static int
 sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
@@ -359,6 +523,10 @@ exit:
 
 #endif /* (defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)) */
 
+#ifndef _SOCKET_SOCKET_SENDMSG_METHODDEF
+    #define _SOCKET_SOCKET_SENDMSG_METHODDEF
+#endif /* !defined(_SOCKET_SOCKET_SENDMSG_METHODDEF) */
+
 #ifndef _SOCKET_INET_NTOA_METHODDEF
     #define _SOCKET_INET_NTOA_METHODDEF
 #endif /* !defined(_SOCKET_INET_NTOA_METHODDEF) */
@@ -370,4 +538,4 @@ exit:
 #ifndef _SOCKET_IF_INDEXTONAME_METHODDEF
     #define _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif /* !defined(_SOCKET_IF_INDEXTONAME_METHODDEF) */
-/*[clinic end generated code: output=07776dd21d1e3b56 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0376c46b76ae2bce input=a9049054013a1b77]*/

@@ -316,7 +316,7 @@ class IncrementalEncoder(codecs.BufferedIncrementalEncoder):
 class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
     def _buffer_decode(self, input, errors, final):
         if errors != 'strict':
-            raise UnicodeError("Unsupported error handling: {errors}")
+            raise UnicodeError(f"Unsupported error handling: {errors}")
 
         if not input:
             return ("", 0)

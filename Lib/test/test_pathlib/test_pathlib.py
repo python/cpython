@@ -17,7 +17,7 @@ from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import cpython_only
-from test.support import is_emscripten, is_wasi
+from test.support import is_emscripten, is_wasi, is_wasm32
 from test.support import infinite_recursion
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FS_NONASCII, FakePath
@@ -538,12 +538,6 @@ class PurePathTest(unittest.TestCase):
         self.assertRaises(ValueError, P('/').with_stem, 'd')
         self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
-
-    def test_is_reserved_deprecated(self):
-        P = self.cls
-        p = P('a/b')
-        with self.assertWarns(DeprecationWarning):
-            p.is_reserved()
 
     def test_full_match_case_sensitive(self):
         P = self.cls
@@ -2954,7 +2948,13 @@ class PathTest(PurePathTest):
         else:
             # ".." segments are normalized first on Windows, so this path is stat()able.
             self.assertEqual(set(p.glob("xyzzy/..")), { P(self.base, "xyzzy", "..") })
-        self.assertEqual(set(p.glob("/".join([".."] * 50))), { P(self.base, *[".."] * 50)})
+        if sys.platform == "emscripten":
+            # Emscripten will return ELOOP if there are 49 or more ..'s.
+            # Can remove when https://github.com/emscripten-core/emscripten/pull/24591 is merged.
+            NDOTDOTS = 48
+        else:
+            NDOTDOTS = 50
+        self.assertEqual(set(p.glob("/".join([".."] * NDOTDOTS))), { P(self.base, *[".."] * NDOTDOTS)})
 
     def test_glob_inaccessible(self):
         P = self.cls
@@ -3158,7 +3158,7 @@ class PathTest(PurePathTest):
         self.assertEqual(str(P('//a/b').absolute()), '//a/b')
 
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "umask is not implemented on Emscripten/WASI."
     )
     @needs_posix
@@ -3189,7 +3189,7 @@ class PathTest(PurePathTest):
             os.chdir(current_directory)
 
     @unittest.skipIf(
-        is_emscripten or is_wasi,
+        is_wasm32,
         "umask is not implemented on Emscripten/WASI."
     )
     @needs_posix
