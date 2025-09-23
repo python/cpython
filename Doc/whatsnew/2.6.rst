@@ -1048,7 +1048,7 @@ the :mod:`io` module:
 * :class:`~io.RawIOBase` defines raw I/O operations: :meth:`~io.RawIOBase.read`,
   :meth:`~io.RawIOBase.readinto`, :meth:`~io.RawIOBase.write`,
   :meth:`~io.IOBase.seek`, :meth:`~io.IOBase.tell`, :meth:`~io.IOBase.truncate`,
-   and :meth:`~io.IOBase.close`.
+  and :meth:`~io.IOBase.close`.
   Most of the methods of this class will often map to a single system call.
   There are also :meth:`~io.IOBase.readable`, :meth:`~io.IOBase.writable`,
   and :meth:`~io.IOBase.seekable` methods for determining what operations a
