@@ -951,16 +951,12 @@ class UtimeTests(unittest.TestCase):
     @staticmethod
     def ns_to_sec_decimal(ns):
         # Convert a number of nanosecond (int) to a number of seconds (Decimal).
-        # Round towards infinity by adding 0.5 nanosecond to avoid rounding
-        # issue, os.utime() rounds towards minus infinity.
-        return decimal.Decimal('1e-9') * ns + decimal.Decimal('0.5e-9')
+        return decimal.Decimal('1e-9') * ns
 
     @staticmethod
     def ns_to_sec_fraction(ns):
         # Convert a number of nanosecond (int) to a number of seconds (Fraction).
-        # Round towards infinity by adding 0.5 nanosecond to avoid rounding
-        # issue, os.utime() rounds towards minus infinity.
-        return fractions.Fraction(ns, 10**9) + fractions.Fraction(1, 2*10**9)
+        return fractions.Fraction(ns, 10**9)
 
     def test_utime_by_indexed(self):
         # pass times as floating-point seconds as the second indexed parameter
