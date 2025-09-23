@@ -868,24 +868,10 @@ class AttackProtectionTestCases:
         raise NotImplementedError
 
     def test_set_maximum_amplification_reached(self):
-        parser = expat.ParserCreate()
-        # Unconditionally enable maximum activation factor.
-        self.set_activation_threshold(parser, 0)
-        # Choose a max amplification factor expected to always be exceeded.
-        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
-        # Craft a payload for which the peak amplification factor is > 1.0.
-        payload = self.exponential_expansion_payload(1, 2)
-        self.assert_active_protection(parser.Parse, payload, True)
+        raise NotImplementedError
 
     def test_set_maximum_amplification_ignored(self):
-        parser = expat.ParserCreate()
-        # Unconditionally enable maximum activation factor.
-        self.set_activation_threshold(parser, 0)
-        # Choose a max amplification factor expected to never be exceeded.
-        self.assertIsNone(self.set_maximum_amplification(parser, 1e4))
-        # Craft a payload for which the peak amplification factor is < 1e4.
-        payload = self.exponential_expansion_payload(1, 2)
-        self.assertIsNotNone(parser.Parse(payload, True))
+        raise NotImplementedError
 
     def test_set_maximum_amplification_infinity(self):
         inf = float('inf')  # an 'inf' threshold is allowed by Expat
@@ -914,24 +900,10 @@ class AttackProtectionTestCases:
         self.assert_root_parser_failure(setter, 123.45)
 
     def test_set_attack_protection_threshold_reached(self):
-        parser = expat.ParserCreate()
-        # Choose a threshold expected to be always reached.
-        self.set_activation_threshold(parser, 3)
-        # Check that the threshold is reached by choosing a small factor
-        # and a payload whose peak amplification factor exceeds it.
-        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
-        payload = self.exponential_expansion_payload(10, 4)
-        self.assert_active_protection(parser.Parse, payload, True)
+        raise NotImplementedError
 
     def test_set_attack_protection_threshold_ignored(self):
-        parser = expat.ParserCreate()
-        # Choose a threshold expected to be never reached.
-        self.set_activation_threshold(parser, pow(10, 5))
-        # Check that the threshold is reached by choosing a small factor
-        # and a payload whose peak amplification factor exceeds it.
-        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
-        payload = self.exponential_expansion_payload(10, 4)
-        self.assertIsNotNone(parser.Parse(payload, True))
+        raise NotImplementedError
 
     def test_set_attack_protection_threshold_arg_invalid_type(self):
         parser = expat.ParserCreate()
@@ -973,6 +945,46 @@ class MemoryProtectionTest(AttackProtectionTestCases, unittest.TestCase):
 
     def set_activation_threshold(self, parser, threshold):
         return parser.SetAllocTrackerActivationThreshold(threshold)
+
+    def test_set_maximum_amplification_reached(self):
+        parser = expat.ParserCreate()
+        # Unconditionally enable maximum activation factor.
+        self.set_activation_threshold(parser, 0)
+        # Choose a max amplification factor expected to always be exceeded.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        # Craft a payload for which the peak amplification factor is > 1.0.
+        payload = self.exponential_expansion_payload(1, 2)
+        self.assert_active_protection(parser.Parse, payload, True)
+
+    def test_set_maximum_amplification_ignored(self):
+        parser = expat.ParserCreate()
+        # Unconditionally enable maximum activation factor.
+        self.set_activation_threshold(parser, 0)
+        # Choose a max amplification factor expected to never be exceeded.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1e4))
+        # Craft a payload for which the peak amplification factor is < 1e4.
+        payload = self.exponential_expansion_payload(1, 2)
+        self.assertIsNotNone(parser.Parse(payload, True))
+
+    def test_set_attack_protection_threshold_reached(self):
+        parser = expat.ParserCreate()
+        # Choose a threshold expected to be always reached.
+        self.set_activation_threshold(parser, 3)
+        # Check that the threshold is reached by choosing a small factor
+        # and a payload whose peak amplification factor exceeds it.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        payload = self.exponential_expansion_payload(10, 4)
+        self.assert_active_protection(parser.Parse, payload, True)
+
+    def test_set_attack_protection_threshold_ignored(self):
+        parser = expat.ParserCreate()
+        # Choose a threshold expected to be never reached.
+        self.set_activation_threshold(parser, pow(10, 5))
+        # Check that the threshold is reached by choosing a small factor
+        # and a payload whose peak amplification factor exceeds it.
+        self.assertIsNone(self.set_maximum_amplification(parser, 1.0))
+        payload = self.exponential_expansion_payload(10, 4)
+        self.assertIsNotNone(parser.Parse(payload, True))
 
 
 if __name__ == "__main__":
