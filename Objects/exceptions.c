@@ -3219,9 +3219,9 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
 }
 
 #define PyUnicodeError_Check(PTR)   \
-PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
+    PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
 #define PyUnicodeErrorObject_CAST(op)   \
-(assert(PyUnicodeError_Check(op)), ((PyUnicodeErrorObject *)(op)))
+    (assert(PyUnicodeError_Check(op)), ((PyUnicodeErrorObject *)(op)))
 
 static PyObject *
 UnicodeError_args_get(PyObject *op, void *context)
