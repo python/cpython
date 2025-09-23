@@ -94,7 +94,7 @@ class LocalPathInfo(PathInfo):
     """
     Simple implementation of PathInfo for a local path
     """
-    __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink')
+    __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink', '_is_junction')
 
     def __init__(self, path):
         self._path = os.fspath(path)
@@ -102,6 +102,7 @@ class LocalPathInfo(PathInfo):
         self._is_dir = None
         self._is_file = None
         self._is_symlink = None
+        self._is_junction = None
 
     def exists(self, *, follow_symlinks=True):
         """Whether this path exists."""
@@ -132,6 +133,11 @@ class LocalPathInfo(PathInfo):
         if self._is_symlink is None:
             self._is_symlink = os.path.islink(self._path)
         return self._is_symlink
+
+    def is_junction(self):
+        if self._is_junction is None:
+            self._is_junction = os.path.isjunction(self._path)
+        return self._is_junction
 
 
 class ReadableLocalPath(_ReadablePath, LexicalPath):
