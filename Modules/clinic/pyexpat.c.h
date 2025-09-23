@@ -421,7 +421,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetAllocTrackerMaximumAmplification__doc__,
 "hierarchy.\n"
 "\n"
 "The \'max_factor\' value must be a non-NaN floating point value greater than\n"
-"or equal to 1.0. Amplification factors greater than 100.0 can been observed\n"
+"or equal to 1.0. Amplification factors greater than 100.0 can be observed\n"
 "near the start of parsing even with benign files in practice. In particular,\n"
 "the activation threshold should be carefully chosen to avoid false positives.\n"
 "\n"
@@ -670,4 +670,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=87b2ec1d055c4e22 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=920163f8a39927b5 input=a9049054013a1b77]*/

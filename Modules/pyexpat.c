@@ -1212,7 +1212,7 @@ static PyObject *
 pyexpat_xmlparser_SetAllocTrackerMaximumAmplification_impl(xmlparseobject *self,
                                                            PyTypeObject *cls,
                                                            float max_factor)
-/*[clinic end generated code: output=6e44bd48c9b112a0 input=e4f48064c79bf323]*/
+/*[clinic end generated code: output=6e44bd48c9b112a0 input=3544abf9dd7ae055]*/
 {
 #if XML_COMBINED_VERSION >= 20702
     assert(self->itself != NULL);
