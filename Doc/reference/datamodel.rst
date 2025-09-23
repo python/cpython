@@ -321,8 +321,9 @@ sequence of the same type. The comment above about negative indexes also applies
 to negative slice positions.
 
 Some sequences also support "extended slicing" with a third *step* parameter:
-``a[start:stop:step]`` selects all items of *a* with index *i* where
-``i = start + n*step``, ``n >= 0`` and ``start <= i < stop``.
+``a[start:stop:step]`` selects all items of *a* with index *i*, where
+``i = start + n*step`` and ``0 <= n``, such that ``start <= i < stop`` for 
+``0 <= step``, and ``stop < i <= start`` for ``step < 0``.
 
 Sequences are distinguished according to their mutability:
 
