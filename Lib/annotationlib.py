@@ -664,6 +664,17 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # possibly constants if the annotate function uses them directly). We then
         # convert each of those into a string to get an approximation of the
         # original source.
+
+        # Attempt to call with VALUE_WITH_FAKE_GLOBALS to check if it is implemented
+        # See: https://github.com/python/cpython/issues/138764
+        # Only fail on NotImplementedError
+        try:
+            annotate(Format.VALUE_WITH_FAKE_GLOBALS)
+        except NotImplementedError:
+            raise
+        except Exception:
+            pass
+
         globals = _StringifierDict({}, format=format)
         is_class = isinstance(owner, type)
         closure = _build_closure(
@@ -722,6 +733,10 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         )
         try:
             result = func(Format.VALUE_WITH_FAKE_GLOBALS)
+        except NotImplementedError:
+            # If NotImplementedError is raised, don't try to call again with
+            # no globals.
+            raise
         except Exception:
             pass
         else:
