@@ -1,0 +1,2 @@
+#!/bin/bash
+xcrun --sdk watchsimulator${WATCHOS_SDK_VERSION} clang++ -target arm64-apple-watchos${WATCHOS_DEPLOYMENT_TARGET}-simulator "$@"

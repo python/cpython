@@ -287,13 +287,21 @@ class PlatformTest(unittest.TestCase):
             if sys.platform == "android":
                 self.assertEqual(res.system, "Android")
                 self.assertEqual(res.release, platform.android_ver().release)
-            elif sys.platform == "ios":
+            elif support.is_apple_mobile:
                 # Platform module needs ctypes for full operation. If ctypes
                 # isn't available, there's no ObjC module, and dummy values are
                 # returned.
                 if _ctypes:
-                    self.assertIn(res.system, {"iOS", "iPadOS"})
-                    self.assertEqual(res.release, platform.ios_ver().release)
+                    if sys.platform == "ios":
+                        # iPads also identify as iOS
+                        self.assertIn(res.system, {"iOS", "iPadOS"})
+                    else:
+                        # All other platforms - sys.platform is the lower case
+                        # form of system (e.g., visionOS->visionos)
+                        self.assertEqual(res.system.lower(), sys.platform)
+                    # Use the platform-specific version method
+                    platform_ver = getattr(platform, f"{sys.platform}_ver")
+                    self.assertEqual(res.release, platform_ver().release)
                 else:
                     self.assertEqual(res.system, "")
                     self.assertEqual(res.release, "")

@@ -1,0 +1,46 @@
+{
+  "configurations" : [
+    {
+      "id" : "8E3B1C52-4F0A-4D7E-9B61-2C5A7E0D9F14",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "test"
+      },
+      {
+        "argument" : "-uall"
+      },
+      {
+        "argument" : "--single-process"
+      },
+      {
+        "argument" : "--rerun"
+      },
+      {
+        "argument" : "-W"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:watchOSTestbed.xcodeproj",
+      "identifier" : "60F7C0112EB0000000A1B2C3",
+      "name" : "watchOSTestbed"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:watchOSTestbed.xcodeproj",
+        "identifier" : "60F7C0122EB0000000A1B2C3",
+        "name" : "TestbedTests"
+      }
+    }
+  ],
+  "version" : 1
+}

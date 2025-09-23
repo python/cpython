@@ -612,6 +612,7 @@ class RunStringTests(TestBase):
                     f'assert(obj == {obj!r})',
                 )
 
+    @support.requires_subprocess()
     def test_os_exec(self):
         expected = 'spam spam spam spam spam'
         subinterp = _interpreters.create()

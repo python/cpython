@@ -34,9 +34,38 @@ install_stdlib() {
         else
             SLICE_FOLDER="ios-arm64_x86_64-simulator"
         fi
-    else
+    elif [ "$EFFECTIVE_PLATFORM_NAME" = "-iphoneos" ]; then
         echo "Installing Python modules for iOS Device"
         SLICE_FOLDER="ios-arm64"
+    elif [ "$EFFECTIVE_PLATFORM_NAME" = "-appletvsimulator" ]; then
+        echo "Installing Python modules for tvOS Simulator"
+        if [ -d "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/tvos-arm64-simulator" ]; then
+            SLICE_FOLDER="tvos-arm64-simulator"
+        else
+            SLICE_FOLDER="tvos-arm64_x86_64-simulator"
+        fi
+    elif [ "$EFFECTIVE_PLATFORM_NAME" = "-appletvos" ]; then
+        echo "Installing Python modules for tvOS Device"
+        SLICE_FOLDER="tvos-arm64"
+    elif [ "$EFFECTIVE_PLATFORM_NAME" = "-watchsimulator" ]; then
+        echo "Installing Python modules for watchOS Simulator"
+        if [ -d "$PROJECT_DIR/$PYTHON_XCFRAMEWORK_PATH/watchos-arm64-simulator" ]; then
+            SLICE_FOLDER="watchos-arm64-simulator"
+        else
+            SLICE_FOLDER="watchos-arm64_x86_64-simulator"
+        fi
+    elif [ "$EFFECTIVE_PLATFORM_NAME" = "-watchos" ]; then
+        echo "Installing Python modules for watchOS Device"
+        SLICE_FOLDER="watchos-arm64_32"
+    elif [ "$EFFECTIVE_PLATFORM_NAME" = "-xrsimulator" ]; then
+        echo "Installing Python modules for visionOS Simulator"
+        SLICE_FOLDER="xros-arm64-simulator"
+    elif [ "$EFFECTIVE_PLATFORM_NAME" = "-xros" ]; then
+        echo "Installing Python modules for visionOS Device"
+        SLICE_FOLDER="xros-arm64"
+    else
+        echo "Unsupported platform name $EFFECTIVE_PLATFORM_NAME"
+        exit 1
     fi
 
     # If the XCframework has a shared lib folder, then it's a full framework.

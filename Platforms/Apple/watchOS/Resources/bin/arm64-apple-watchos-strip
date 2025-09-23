@@ -1,0 +1,2 @@
+#!/bin/sh
+xcrun --sdk watchos${WATCHOS_SDK_VERSION} strip -arch arm64 "$@"

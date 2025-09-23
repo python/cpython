@@ -217,6 +217,12 @@ IPHONEOS_DEPLOYMENT_TARGET=@IPHONEOS_DEPLOYMENT_TARGET@
 
 BUILD_DETAILS=@BUILD_DETAILS@
 
+# visionOS Deployment target is *actually* used during the build, by the
+# compiler shims; export.
+XROS_DEPLOYMENT_TARGET=@XROS_DEPLOYMENT_TARGET@
+@EXPORT_XROS_DEPLOYMENT_TARGET@export XROS_DEPLOYMENT_TARGET
+
+
 # Option to install to strip binaries
 STRIPFLAG=-s
 

@@ -1,0 +1,2 @@
+#!/bin/bash
+xcrun --sdk xrsimulator${XROS_SDK_VERSION} ar "$@"

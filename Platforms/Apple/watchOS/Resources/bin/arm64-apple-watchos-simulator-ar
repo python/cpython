@@ -1,0 +1,2 @@
+#!/bin/bash
+xcrun --sdk watchsimulator${WATCHOS_SDK_VERSION} ar "$@"

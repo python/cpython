@@ -7450,9 +7450,9 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(dt_orig, dt_rt)
 
     def test_type_check_in_subinterp(self):
-        # iOS requires the use of the custom framework loader,
+        # Apple mobile platforms require the use of the custom framework loader,
         # not the ExtensionFileLoader.
-        if sys.platform == "ios":
+        if support.is_apple_mobile:
             extension_loader = "AppleFrameworkLoader"
         else:
             extension_loader = "ExtensionFileLoader"
