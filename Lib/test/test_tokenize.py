@@ -1511,6 +1511,20 @@ class TestDetectEncoding(TestCase):
         with self.assertRaises(SyntaxError):
             tokenize.detect_encoding(readline)
 
+    def test_nonascii(self):
+        # gh-63161: test non-ASCII header with no coding marker
+        lines = ["# nonascii line 1 €".encode('utf8'),
+                 '# nonascii line 2 €'.encode('utf8')]
+        readline = self.get_readline(lines)
+        found, consumed_lines = tokenize.detect_encoding(readline)
+        self.assertEqual(found, "utf-8")
+
+        lines = ["# nonascii line 1 €".encode('iso8859-15'),
+                 '# nonascii line 2 €'.encode('iso8859-15')]
+        readline = self.get_readline(lines)
+        with self.assertRaises(SyntaxError):
+            tokenize.detect_encoding(readline)
+
     def test_utf8_normalization(self):
         # See get_normal_name() in Parser/tokenizer/helpers.c.
         encodings = ("utf-8", "utf-8-mac", "utf-8-unix")
