@@ -638,7 +638,7 @@ _PyJIT_translate_single_bytecode_to_trace(
 
     /* Special case the first instruction,
      * so that we can guarantee forward progress */
-    if (progress_needed && is_first_instr && tstate->interp->jit_tracer_code_curr_size == 0) {
+    if (progress_needed && is_first_instr) {
         if (OPCODE_HAS_EXIT(opcode) || OPCODE_HAS_DEOPT(opcode)) {
             opcode = _PyOpcode_Deopt[opcode];
         }

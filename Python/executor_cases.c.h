@@ -7537,6 +7537,7 @@
                     exit->temperature = advance_backoff_counter(temperature);
                     GOTO_TIER_ONE(target, 0);
                 }
+                exit->temperature = initial_temperature_backoff_counter();
                 _PyExecutorObject *previous_executor = _PyExecutor_FromExit(exit);
                 assert(tstate->current_executor == (PyObject *)previous_executor);
                 int chain_depth = is_dynamic ? 0 : current_executor->vm_data.chain_depth + 1;
