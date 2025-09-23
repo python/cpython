@@ -953,7 +953,7 @@ struct _is {
     int jit_tracer_initial_chain_depth;
     PyCodeObject *jit_tracer_initial_code; // Borrowed
     PyFunctionObject *jit_tracer_initial_func; // Borrowed
-    int jit_tracer_seen_initial_before;
+    struct _PyExitData *jit_tracer_previous_exit;
     bool jit_completed_loop;
     bool jit;
     bool compiling;

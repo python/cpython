@@ -161,6 +161,11 @@ _PyOptimizer_Optimize(
     else {
         executor->vm_data.code = NULL;
     }
+    if (chain_depth > 0) {
+        _PyExitData *prev_exit = tstate->interp->jit_tracer_previous_exit;
+        assert(prev_exit != NULL);
+        prev_exit->executor = executor;;
+    }
     executor->vm_data.chain_depth = chain_depth;
     assert(executor->vm_data.valid);
     interp->compiling = false;
@@ -808,7 +813,7 @@ full:
 }
 
 void
-_PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int curr_stackdepth, int chain_depth)
+_PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit)
 {
     PyCodeObject *code = _PyFrame_GetCode(frame);
 #ifdef Py_DEBUG
@@ -831,7 +836,7 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_tracer_initial_instr = next_instr;
     tstate->interp->jit_tracer_initial_code = code;
     tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
-    tstate->interp->jit_tracer_seen_initial_before = 0;
+    tstate->interp->jit_tracer_previous_exit = exit;
     memset(&tstate->interp->jit_tracer_dependencies.bits, 0, sizeof(tstate->interp->jit_tracer_dependencies.bits));
     tstate->interp->jit_completed_loop = false;
     tstate->interp->jit_tracer_initial_stack_depth = curr_stackdepth;

@@ -5976,25 +5976,7 @@
                 next_instr = this_instr;
                 DISPATCH_GOTO();
             }
-            OPT_STAT_INC(traces_executed);                     \
-            next_instr = _Py_jit_entry((executor), frame, stack_pointer, tstate); \
-            frame = tstate->current_frame;                     \
-            stack_pointer = _PyFrame_GetStackPointer(frame);   \
-            int keep_tracing_bit = (uintptr_t)next_instr & 1;   \
-            next_instr = (_Py_CODEUNIT *)(((uintptr_t)next_instr) >> 1 << 1); \
-            if (next_instr == NULL) {                          \
-                next_instr = frame->instr_ptr;                 \
-                JUMP_TO_LABEL(error);                          \
-            }                                                  \
-            if (keep_tracing_bit) { \
-                assert(next_instr->op.code != ENTER_EXECUTOR); \
-                assert(tstate->interp->jit_tracer_code_curr_size == 2); \
-                ENTER_TRACING(); \
-            } \
-            else { \
-                LEAVE_TRACING(); \
-            } \
-            DISPATCH();
+            TIER1_TO_TIER2(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
             #endif /* _Py_TIER2 */
@@ -8424,7 +8406,7 @@
                             DISPATCH();
                         }
                     }
-                    _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0);
+                    _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0, NULL);
                     ENTER_TRACING();
                     DISPATCH();
                 }
@@ -22090,7 +22072,7 @@
                             TRACING_DISPATCH();
                         }
                     }
-                    _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0);
+                    _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0, NULL);
                     ENTER_TRACING();
                     TRACING_DISPATCH();
                 }
