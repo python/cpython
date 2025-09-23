@@ -1,0 +1,2 @@
+:exc:`UnicodeError`, :exc:`UnicodeDecodeError` and :exc:`UnicodeEncodeError`
+now update the ``args`` tuple.

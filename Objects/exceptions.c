@@ -2973,8 +2973,31 @@ SimpleExtendsException(PyExc_Exception, ValueError,
  *    UnicodeError extends ValueError
  */
 
-SimpleExtendsException(PyExc_ValueError, UnicodeError,
-                       "Unicode related error.");
+#define PyUnicodeError_Check(PTR)   \
+    PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
+#define PyUnicodeErrorObject_CAST(op)   \
+    (assert(PyUnicodeError_Check(op)), ((PyUnicodeErrorObject *)(op)))
+
+static PyObject *
+UnicodeError_args_get(PyObject *op, void *context)
+{
+    PyUnicodeErrorObject *self = PyUnicodeErrorObject_CAST(op);
+    return Py_BuildValue("(OOnnO)",
+                         self->encoding ? self->encoding : Py_None,
+                         self->object ? self->object : Py_None,
+                         self->start,
+                         self->end,
+                         self->reason ? self->reason : Py_None);
+}
+
+static PyGetSetDef UnicodeError_getset[] = {
+    {"args", UnicodeError_args_get, NULL, NULL},
+    {NULL}
+};
+
+ComplexExtendsException(PyExc_ValueError, UnicodeError, BaseException,
+                        BaseException_new, 0, 0, UnicodeError_getset,
+                        0, "Unicode related error.");
 
 
 /*
@@ -3217,11 +3240,6 @@ unicode_error_adjust_end(Py_ssize_t end, Py_ssize_t objlen)
     }
     return end;
 }
-
-#define PyUnicodeError_Check(PTR)   \
-    PyObject_TypeCheck((PTR), (PyTypeObject *)PyExc_UnicodeError)
-#define PyUnicodeErrorObject_CAST(op)   \
-    (assert(PyUnicodeError_Check(op)), ((PyUnicodeErrorObject *)(op)))
 
 /* Assert some properties of the adjusted 'end' value. */
 #ifndef NDEBUG
@@ -3734,7 +3752,7 @@ static PyTypeObject _PyExc_UnicodeEncodeError = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Unicode encoding error."), UnicodeError_traverse,
     UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
-    0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
+    UnicodeError_getset, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
     UnicodeEncodeError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeEncodeError = (PyObject *)&_PyExc_UnicodeEncodeError;
@@ -3847,7 +3865,7 @@ static PyTypeObject _PyExc_UnicodeDecodeError = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     PyDoc_STR("Unicode decoding error."), UnicodeError_traverse,
     UnicodeError_clear, 0, 0, 0, 0, 0, UnicodeError_members,
-    0, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
+    UnicodeError_getset, &_PyExc_UnicodeError, 0, 0, 0, offsetof(PyUnicodeErrorObject, dict),
     UnicodeDecodeError_init, 0, BaseException_new,
 };
 PyObject *PyExc_UnicodeDecodeError = (PyObject *)&_PyExc_UnicodeDecodeError;

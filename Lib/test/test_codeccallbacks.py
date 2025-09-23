@@ -1290,6 +1290,33 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertTrue(_codecs_unregister_error(custom_name))
         self.assertRaises(LookupError, codecs.lookup_error, custom_name)
 
+    def test_unicode_error_args(self):
+        def handler_decode(exc):
+            self.assertEqual(exc.args[0], exc.encoding)
+            self.assertEqual(exc.args[1], exc.object)
+            self.assertEqual(exc.args[2], exc.start)
+            self.assertEqual(exc.args[3], exc.end)
+            self.assertEqual(exc.args[4], exc.reason)
+            return '?', exc.end
+
+        codecs.register_error('test_args', handler_decode)
+        result = b'\x80\xd0'.decode('utf-8', 'test_args')
+        self.assertEqual(result, '??')
+        self.assertTrue(_codecs_unregister_error('test_args'))
+
+        def handler_encode(exc):
+            self.assertEqual(exc.args[0], exc.encoding)
+            self.assertEqual(exc.args[1], exc.object)
+            self.assertEqual(exc.args[2], exc.start)
+            self.assertEqual(exc.args[3], exc.end)
+            self.assertEqual(exc.args[4], exc.reason)
+            return b'?', exc.end
+
+        codecs.register_error('test_args', handler_encode)
+        result = '\u1111 \u2222'.encode('ascii', 'test_args')
+        self.assertEqual(result, b'? ?')
+        self.assertTrue(_codecs_unregister_error('test_args'))
+
     def test_unregister_custom_unknown_error_handler(self):
         unknown_name = 'test.test_unregister_custom_unknown_error_handler'
         self.assertRaises(LookupError, codecs.lookup_error, unknown_name)
