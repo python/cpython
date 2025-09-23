@@ -1590,7 +1590,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(t.strftime('x'*1000), 'x'*1000) # SF bug #1556784
 
         # See gh-137165
-        if platform.system() in ('Darwin', 'iOS'):
+        if platform.system() in ('Darwin', 'iOS', 'FreeBSD'):
             self.assertEqual(t.strftime("m:%-m d:%-d y:%-y"), "m:3 d:2 y:05")
         else:
             if platform.system() == 'Windows':

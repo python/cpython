@@ -2769,8 +2769,8 @@ Notes:
    When used with the :meth:`~.datetime.strftime` method, leading zeroes are included
    by default for formats ``%d``, ``%m``, ``%H``, ``%I``, ``%M``, ``%S``, ``%j``, ``%U``,
    ``%W``, ``%V`` and ``%y``. The ``%-`` flag (for example, ``%-d``) will produce
-   non-zero-padded output, except for ``%-y`` on Apple platforms, which is still
-   zero-padded.
+   non-zero-padded output, except for ``%-y`` on Apple platforms and FreeBSD,
+   which is still zero-padded.
 
 (10)
    When parsing a month and day using :meth:`~.datetime.strptime`, always

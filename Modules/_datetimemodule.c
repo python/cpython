@@ -1886,6 +1886,7 @@ make_dash_replacement(PyObject *object, Py_UCS4 ch, PyObject *timetuple)
     }
 
     if (PyUnicode_GET_LENGTH(stripped) == 0) {
+        Py_DECREF(stripped);
         stripped = PyUnicode_FromString("0");
     }
 
