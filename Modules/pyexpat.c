@@ -9,6 +9,8 @@
 
 #include <stdbool.h>
 #include <stddef.h>               // offsetof()
+
+#include "expat_config.h"
 #include "expat.h"
 #include "pyexpat.h"
 
