@@ -25,11 +25,21 @@ from sphinx.util.docutils import SphinxDirective
 SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
+def _disable_alphabetic_and_roman(text):
+    try:
+        # docutils >= 0.22
+        from docutils.parsers.rst.states import InvalidRomanNumeralError
+        raise InvalidRomanNumeralError(text)
+    except ImportError:
+        # docutils < 0.22
+        return None
+
+
 from docutils.parsers.rst.states import Body
 Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
-    Body.enum.converters['upperroman'] = lambda x: None
+    Body.enum.converters['upperroman'] = _disable_alphabetic_and_roman
 
 
 class PyAwaitableMixin(object):
