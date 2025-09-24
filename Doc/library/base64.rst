@@ -76,7 +76,7 @@ POST request.
 
    A :exc:`binascii.Error` exception is raised if *s* contains incorrect padding.
    When *validate* is ``False`` (the default), extra padding characters and
-   discontinuous padding characters (``=`` characters in the middle of the string)
+   discontinuous padding characters (``=`` characters in the middle of the payload)
    are silently ignored. When *validate* is ``True``, such incorrect padding
    will result in a :exc:`binascii.Error`.
 
