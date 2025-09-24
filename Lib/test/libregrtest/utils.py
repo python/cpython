@@ -536,7 +536,7 @@ def normalize_test_name(test_full_name: str, *,
     if is_error and short_name in _TEST_LIFECYCLE_HOOKS:
         if test_full_name.startswith(('setUpModule (', 'tearDownModule (')):
             # if setUpModule() or tearDownModule() failed, don't filter
-            # tests with the test file name, don't use use filters.
+            # tests with the test file name, don't use filters.
             return None
 
         # This means that we have a failure in a life-cycle hook,

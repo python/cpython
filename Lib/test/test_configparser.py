@@ -986,12 +986,12 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
 
     def test_defaults_keyword(self):
         """bpo-23835 fix for ConfigParser"""
-        cf = self.newconfig(defaults={1: 2.4})
-        self.assertEqual(cf[self.default_section]['1'], '2.4')
-        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.4)
-        cf = self.newconfig(defaults={"A": 5.2})
-        self.assertEqual(cf[self.default_section]['a'], '5.2')
-        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.2)
+        cf = self.newconfig(defaults={1: 2.5})
+        self.assertEqual(cf[self.default_section]['1'], '2.5')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('1'), 2.5)
+        cf = self.newconfig(defaults={"A": 5.25})
+        self.assertEqual(cf[self.default_section]['a'], '5.25')
+        self.assertAlmostEqual(cf[self.default_section].getfloat('a'), 5.25)
 
 
 class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):

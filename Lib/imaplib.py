@@ -21,7 +21,7 @@ Public functions:       Internaldate2tuple
 # GET/SETANNOTATION contributed by Tomas Lindroos <skitta@abo.fi> June 2005.
 # IDLE contributed by Forest <forestix@nom.one> August 2024.
 
-__version__ = "2.59"
+__version__ = "2.60"
 
 import binascii, errno, random, re, socket, subprocess, sys, time, calendar
 from datetime import datetime, timezone, timedelta
@@ -725,9 +725,17 @@ class IMAP4:
     def _CRAM_MD5_AUTH(self, challenge):
         """ Authobject to use with CRAM-MD5 authentication. """
         import hmac
-        pwd = (self.password.encode('utf-8') if isinstance(self.password, str)
-                                             else self.password)
-        return self.user + " " + hmac.HMAC(pwd, challenge, 'md5').hexdigest()
+
+        if isinstance(self.password, str):
+            password = self.password.encode('utf-8')
+        else:
+            password = self.password
+
+        try:
+            authcode = hmac.HMAC(password, challenge, 'md5')
+        except ValueError:  # HMAC-MD5 is not available
+            raise self.error("CRAM-MD5 authentication is not supported")
+        return f"{self.user} {authcode.hexdigest()}"
 
 
     def logout(self):

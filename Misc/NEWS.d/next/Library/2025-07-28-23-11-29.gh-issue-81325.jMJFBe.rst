@@ -1,0 +1,2 @@
+:class:`tarfile.TarFile` now accepts a :term:`path-like <path-like object>` when working on a tar archive.
+(Contributed by Alexander Enrique Urieles Nieto in :gh:`81325`.)
