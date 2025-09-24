@@ -316,7 +316,7 @@ MAX_SIZES = {
     _abs('Python/compile.c'): (20_000, 500),
     _abs('Python/optimizer.c'): (100_000, 5_000),
     _abs('Python/parking_lot.c'): (40_000, 1000),
-    _abs('Python/pylifecycle.c'): (700_000, 5000),
+    _abs('Python/pylifecycle.c'): (750_000, 5000),
     _abs('Python/pystate.c'): (700_000, 5000),
     _abs('Python/initconfig.c'): (50_000, 500),
 
