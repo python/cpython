@@ -617,7 +617,8 @@ _PyJIT_translate_single_bytecode_to_trace(
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
 
     // Strange control-flow, unsupported opcode, etc.
-    if (jump_taken || expansion->nuops == 0 || opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+    if (jump_taken || opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+    unsupported:
         // Rewind to previous instruction and replace with _EXIT_TRACE.
         _PyUOpInstruction *curr = &trace[trace_length-1];
         while (curr->opcode != _SET_IP && trace_length > 1) {
@@ -698,6 +699,10 @@ _PyJIT_translate_single_bytecode_to_trace(
             const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
             // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
             int nuops = expansion->nuops;
+            if (nuops == 0) {
+                DPRINTF(2, "Unsupported opcode %s\n", _PyOpcode_OpName[opcode]);
+                goto unsupported;
+            }
             assert(nuops > 0);
             RESERVE(nuops + 1); /* One extra for exit */
             uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
@@ -1169,7 +1174,7 @@ uop_optimize(
     int curr_stackentries = tstate->interp->jit_tracer_initial_stack_depth;
     int length = interp->jit_tracer_code_curr_size;
     // Trace too short, don't bother.
-    if (length <= 8) {
+    if (length <= 4) {
         return 0;
     }
     assert(length > 0);
