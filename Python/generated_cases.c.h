@@ -11024,8 +11024,6 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_FALSE);
@@ -11034,7 +11032,6 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -11052,8 +11049,6 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NONE);
@@ -11082,7 +11077,6 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsTrue(cond);
-                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
                 JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
@@ -11101,8 +11095,6 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_NOT_NONE);
@@ -11131,7 +11123,6 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsFalse(cond);
-                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
                 JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
@@ -11150,8 +11141,6 @@
             (void)old_func;
             int _jump_taken = false;
             (void)_jump_taken;
-            _Py_CODEUNIT* const this_instr = next_instr;
-            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(POP_JUMP_IF_TRUE);
@@ -11160,7 +11149,6 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
             JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -24811,7 +24799,7 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+            RECORD_JUMP_TAKEN();
             JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -24860,7 +24848,7 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsTrue(cond);
-                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+                RECORD_JUMP_TAKEN();
                 JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
@@ -24910,7 +24898,7 @@
                 cond = b;
                 assert(PyStackRef_BoolCheck(cond));
                 int flag = PyStackRef_IsFalse(cond);
-                RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+                RECORD_JUMP_TAKEN();
                 JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             }
             stack_pointer += -1;
@@ -24940,7 +24928,7 @@
             cond = stack_pointer[-1];
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
-            RECORD_BRANCH_TAKEN(this_instr[1].cache, flag);
+            RECORD_JUMP_TAKEN();
             JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());

@@ -671,9 +671,7 @@ _PyJIT_translate_single_bytecode_to_trace(
         case POP_JUMP_IF_TRUE:
         {
             RESERVE(1);
-            int counter = this_instr[1].cache;
-            int bitcount = counter & 1;
-            int jump_likely = bitcount;
+            int jump_likely = jump_taken;
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
             _Py_CODEUNIT *next_instr = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
             _Py_CODEUNIT *false_target = next_instr + oparg;
