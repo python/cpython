@@ -89,6 +89,7 @@ POST request.
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
+
 .. function:: standard_b64encode(s)
 
    Encode :term:`bytes-like object` *s* using the standard Base64 alphabet
