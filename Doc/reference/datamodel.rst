@@ -326,9 +326,11 @@ Some sequences also support "extended slicing" with a third *step* parameter:
 ``0 <= step``, and ``stop < i <= start`` for ``step < 0``.
 
 Slicing parameters can be omitted:
+
 * When *step* is omitted, it defaults to 1.
 * When *start* is omitted, the selection starts from the 1st index depending on
-the *step* direction (index 0 for ``0 < step``, subscript -1 for ``step < 0``).
+  the *step* direction (index 0 for ``0 <= step``, subscript -1 for
+  ``step < 0``).
 * When *end* is omitted, the selection ends when there isn't any element left.
 
 Sequences are distinguished according to their mutability:
