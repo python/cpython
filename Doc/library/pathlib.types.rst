@@ -1,7 +1,7 @@
 :mod:`!pathlib.types` --- Types for virtual filesystem paths
 ============================================================
 
-.. module:: pathlib
+.. module:: pathlib.types
    :synopsis: pathlib types for virtual filesystem paths
 
 .. versionadded:: 3.14
