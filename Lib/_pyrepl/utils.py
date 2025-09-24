@@ -64,9 +64,9 @@ def str_width(c: str) -> int:
     if ord(c) < 128:
         return 1
     # gh-139246 for zero-width joiner and combining characters
-    category = unicodedata.category(c)
     if unicodedata.combining(c):
         return 0
+    category = unicodedata.category(c)
     if category == "Cf" and c != "\u00ad":
         return 0
     if "\u2028" <= c <= "\u2029":
