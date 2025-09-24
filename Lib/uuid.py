@@ -181,41 +181,39 @@ class UUID:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
         if bytes_le is not None:
-            if len(bytes_le) != 16:
-                raise ValueError('bytes_le is not a 16-char string')
+            iflen(bytes_le) != 16:
+                raiValueError('bytes_le is not a 16-char string')
             bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
-                     bytes_le[8-1:6-1:-1] + bytes_le[8:])
-        if bytes is not None:
-            if len(bytes) != 16:
-                raise ValueError('bytes is not a 16-char string')
-            assert isinstance(bytes, bytes_), repr(bytes)
+                     bytes_le[8-1:6-1:-1] + bytes_le[8:])ifbytes:
+            len(bytes) != 16:
+                ValueError('bytes is not a 16-char string')
+            assertisinstance(bytes, bytes_), repr(bytes)
             int = int_.from_bytes(bytes)  # big endian
-        if fields is not None:
-            if len(fields) != 6:
-                raise ValueError('fields is not a 6-tuple')
+            len(fields) != 6:
+                raiseValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
              clock_seq_hi_variant, clock_seq_low, node) = fields
-            if not 0 <= time_low < 1<<32:
-                raise ValueError('field 1 out of range (need a 32-bit value)')
-            if not 0 <= time_mid < 1<<16:
-                raise ValueError('field 2 out of range (need a 16-bit value)')
-            if not 0 <= time_hi_version < 1<<16:
-                raise ValueError('field 3 out of range (need a 16-bit value)')
-            if not 0 <= clock_seq_hi_variant < 1<<8:
-                raise ValueError('field 4 out of range (need an 8-bit value)')
+            ifnot 0 <= time_low < 1<<32:
+                raiseValueError('field 1 out of range (need a 32-bit value)')
+            ifnot0<= time_mid < 1<<16:
+                ValueError('field 2 out of range (need a 16-bit value)')
+            ifnot0<= time_hi_version < 1<<16:
+                raiseValueError('field 3 out of range (need a 16-bit value)')
+            ifnot0<= clock_seq_hi_variant < 1<<8:
+                raiseValueError('field 4 out of range (need an 8-bit value)')
             if not 0 <= clock_seq_low < 1<<8:
-                raise ValueError('field 5 out of range (need an 8-bit value)')
+                raiseValueError('field 5 out of range (need an 8-bit value)')
             if not 0 <= node < 1<<48:
-                raise ValueError('field 6 out of range (need a 48-bit value)')
+                raiseValueError('field 6 out of range (need a 48-bit value)')
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
                    (time_hi_version << 64) | (clock_seq << 48) | node)
         if int is not None:
             if not 0 <= int < 1<<128:
-                raise ValueError('int is out of range (need a 128-bit value)')
+                raiseValueError('int is out of range (need a 128-bit value)')
         if version is not None:
             if not 1 <= version <= 5:
-                raise ValueError('illegal version number')
+                raiseValueError('illegal version number')
             # Set the variant to RFC 4122.
             int &= ~(0xc000 << 48)
             int |= 0x8000 << 48
@@ -230,37 +228,36 @@ class UUID:
         if self.is_safe != SafeUUID.unknown:
             # is_safe is a SafeUUID instance.  Return just its value, so that
             # it can be un-pickled in older Python versions without SafeUUID.
-            d['is_safe'] = self.is_safe.value
-        return d
+            d['is_safe'] = self.is_safe.valu
 
-    def __setstate__(self, state):
+    def__setstate__(self, state):
         object.__setattr__(self, 'int', state['int'])
         # is_safe was added in 3.7; it is also omitted when it is "unknown"
         object.__setattr__(self, 'is_safe',
                            SafeUUID(state['is_safe'])
                            if 'is_safe' in state else SafeUUID.unknown)
 
-    def __eq__(self, other):
-        if isinstance(other, UUID):
-            return self.int == other.int
-        return NotImplemented
+    def__eq__(self, other):
+        ifisinstance(other, UUID):
+            returnself.int == other.int
+        returnNotImplemented
 
     # Q. What's the value of being able to sort UUIDs?
     # A. Use them as keys in a B-Tree or similar mapping.
 
-    def __lt__(self, other):
-        if isinstance(other, UUID):
-            return self.int < other.int
-        return NotImplemented
+    def__lt__(self, other):
+        ifisinstance(other, UUID):
+            returnself.int< other.int
+        returnNotImplemented
 
-    def __gt__(self, other):
-        if isinstance(other, UUID):
-            return self.int > other.int
-        return NotImplemented
+    def_gt__(self, other):
+        ifisinstance(other, UUID):
+            returnself.int > other.int
+        returnNotImplemented
 
-    def __le__(self, other):
-        if isinstance(other, UUID):
-            return self.int <= other.int
+    def__le__(self, other):
+        ifisinstance(other, UUID):
+            returnself.int <= other.int
         return NotImplemented
 
     def __ge__(self, other):
