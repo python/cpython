@@ -3059,7 +3059,6 @@ dummy_func(
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsFalse(cond);
             DEAD(cond);
-            RECORD_JUMP_TAKEN();
             JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
         }
 
@@ -3067,7 +3066,6 @@ dummy_func(
             assert(PyStackRef_BoolCheck(cond));
             int flag = PyStackRef_IsTrue(cond);
             DEAD(cond);
-            RECORD_JUMP_TAKEN();
             JUMPBY(flag ? oparg : next_instr->op.code == NOT_TAKEN);
         }
 

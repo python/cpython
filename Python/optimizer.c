@@ -617,7 +617,8 @@ _PyJIT_translate_single_bytecode_to_trace(
     const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
 
     // Strange control-flow, unsupported opcode, etc.
-    if (jump_taken || opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
+    if (jump_taken ||
+        opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
     unsupported:
         // Rewind to previous instruction and replace with _EXIT_TRACE.
         _PyUOpInstruction *curr = &trace[trace_length-1];
@@ -671,11 +672,11 @@ _PyJIT_translate_single_bytecode_to_trace(
         case POP_JUMP_IF_TRUE:
         {
             RESERVE(1);
-            int jump_likely = jump_taken;
+            _Py_CODEUNIT *computed_next_instr = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+            _Py_CODEUNIT *computed_jump_instr = computed_next_instr + oparg;
+            int jump_likely = computed_jump_instr == next_instr;
             uint32_t uopcode = BRANCH_TO_GUARD[opcode - POP_JUMP_IF_FALSE][jump_likely];
-            _Py_CODEUNIT *next_instr = target_instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
-            _Py_CODEUNIT *false_target = next_instr + oparg;
-            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(false_target, old_code));
+            ADD_TO_TRACE(uopcode, 0, 0, INSTR_IP(jump_likely ? computed_next_instr : computed_jump_instr, old_code));
             break;
         }
         case JUMP_BACKWARD_JIT:
