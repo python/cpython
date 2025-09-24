@@ -1094,8 +1094,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     @property
     def rlcompleter(self):
-        """Return the `Completer` class from `rlcompleter`, while avoiding all
-        the side effects from `import rlcompleter`.
+        """Return the `Completer` class from `rlcompleter`, while avoiding the
+        side effects of changing the completer from `import rlcompleter`.
 
         This is a compromise between GH-138860 and GH-139289. If GH-139289 is
         fixed, then we don't need this and we can just `import rlcompleter` in
