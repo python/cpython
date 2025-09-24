@@ -28,7 +28,7 @@ class TestUntestedModules(unittest.TestCase):
                     print("skipping tty")
 
     def test_distutils_modules(self):
-        with warnings_helper.check_warnings(quiet=True):
+        with support.check_warnings(quiet=True):
 
             path_copy = sys.path[:]
             import distutils
