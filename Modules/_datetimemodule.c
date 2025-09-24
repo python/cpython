@@ -2055,7 +2055,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         else if (ch == '-' && i < flen) {
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
             i++;
-            
+
             PyObject *tmp = make_dash_replacement(object, next_ch, timetuple);
             if (tmp == NULL) {
                 Py_DECREF(tmp);
