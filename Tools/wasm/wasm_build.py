@@ -291,7 +291,7 @@ def _check_emscripten() -> None:
 EMSCRIPTEN = Platform(
     "emscripten",
     pythonexe="python.js",
-    config_site=WASMTOOLS / "config.site-wasm32-emscripten",
+    config_site=WASMTOOLS / "emscripten" / "config.site-wasm32-emscripten",
     configure_wrapper=EMSCRIPTEN_ROOT / "emconfigure",
     ports=EMSCRIPTEN_ROOT / "embuilder",
     cc=EMSCRIPTEN_ROOT / "emcc",
@@ -319,7 +319,7 @@ def _check_wasi() -> None:
 WASI = Platform(
     "wasi",
     pythonexe="python.wasm",
-    config_site=WASMTOOLS / "config.site-wasm32-wasi",
+    config_site=WASMTOOLS / "wasi" / "config.site-wasm32-wasi",
     configure_wrapper=WASMTOOLS / "wasi-env",
     ports=None,
     cc=WASI_SDK_PATH / "bin" / "clang",
