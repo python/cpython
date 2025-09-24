@@ -2055,10 +2055,25 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         else if (ch == '-' && i < flen) {
             Py_UCS4 next_ch = PyUnicode_READ_CHAR(format, i);
             i++;
-            replacement = make_dash_replacement(object, next_ch, timetuple);
-            if (replacement == NULL) {
+            
+            PyObject *tmp = make_dash_replacement(object, next_ch, timetuple);
+            if (tmp == NULL) {
+                Py_DECREF(tmp);
                 goto Error;
             }
+
+            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
+                Py_DECREF(tmp);
+                goto Error;
+            }
+            start = i;
+            if (PyUnicodeWriter_WriteStr(writer, tmp) < 0) {
+                Py_DECREF(tmp);
+                goto Error;
+            }
+
+            Py_DECREF(tmp);
+            continue;
         }
         #endif
         else {
