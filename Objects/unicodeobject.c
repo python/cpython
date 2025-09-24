@@ -8867,7 +8867,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
     PyObject *rep;
     unsigned char replace;
     char *outstart;
-    Py_ssize_t outsize = PyBytesWriter_GetSize(writer);
+    Py_ssize_t outsize = _PyBytesWriter_GetSize(writer);
 
     if (Py_IS_TYPE(mapping, &EncodingMapType)) {
         int res = encoding_map_lookup(c, mapping);
@@ -8877,7 +8877,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
         if (outsize<requiredsize)
             if (charmapencode_resize(writer, outpos, requiredsize))
                 return enc_EXCEPTION;
-        outstart = PyBytesWriter_GetData(writer);
+        outstart = _PyBytesWriter_GetData(writer);
         outstart[(*outpos)++] = (char)res;
         return enc_SUCCESS;
     }
@@ -8896,7 +8896,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
                     Py_DECREF(rep);
                     return enc_EXCEPTION;
                 }
-            outstart = PyBytesWriter_GetData(writer);
+            outstart = _PyBytesWriter_GetData(writer);
             outstart[(*outpos)++] = (char)replace;
         }
         else {
@@ -8908,7 +8908,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
                     Py_DECREF(rep);
                     return enc_EXCEPTION;
                 }
-            outstart = PyBytesWriter_GetData(writer);
+            outstart = _PyBytesWriter_GetData(writer);
             memcpy(outstart + *outpos, repchars, repsize);
             *outpos += repsize;
         }
