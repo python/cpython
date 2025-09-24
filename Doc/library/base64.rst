@@ -74,8 +74,11 @@ POST request.
    of length 2 which specifies the alternative alphabet used instead of the
    ``+`` and ``/`` characters.
 
-   A :exc:`binascii.Error` exception is raised
-   if *s* is incorrectly padded.
+   A :exc:`binascii.Error` exception is raised if *s* contains incorrect padding. 
+   When *validate* is ``False`` (the default), extra padding characters and 
+   discontinuous padding characters (``=`` characters in the middle of the string)
+   are silently ignored. When *validate* is ``True``, such incorrect padding 
+   will result in a :exc:`binascii.Error`.
 
    If *validate* is ``False`` (the default), characters that are neither
    in the normal base-64 alphabet nor the alternative alphabet are
@@ -86,7 +89,6 @@ POST request.
    For more information about the strict base64 check, see :func:`binascii.a2b_base64`
 
    May assert or raise a :exc:`ValueError` if the length of *altchars* is not 2.
-
 .. function:: standard_b64encode(s)
 
    Encode :term:`bytes-like object` *s* using the standard Base64 alphabet
