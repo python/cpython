@@ -120,6 +120,11 @@ The :mod:`xml.parsers.expat` module contains two functions:
 XMLParser Objects
 -----------------
 
+.. class:: xmlparser
+
+   The type of an Expat XML parser created by :func:`ParserCreate`.
+
+
 :class:`xmlparser` objects have the following methods:
 
 
