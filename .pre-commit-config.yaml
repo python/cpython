@@ -22,6 +22,7 @@ repos:
         name: Run Ruff (format) on Doc/
         args: [--check]
         files: ^Doc/
+        exclude: ^Doc/howto/multiple-interpreters-run-examples.py
       - id: ruff-format
         name: Run Ruff (format) on Tools/build/check_warnings.py
         args: [--check, --config=Tools/build/.ruff.toml]
