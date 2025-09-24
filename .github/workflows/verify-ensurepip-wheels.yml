@@ -1,7 +1,7 @@
 name: Verify bundled wheels
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
   push:
     paths:
       - 'Lib/ensurepip/_bundled/**'
@@ -30,6 +30,6 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3'
+          python-version: '3.13'
       - name: Compare checksum of bundled wheels to the ones published on PyPI
         run: ./Tools/build/verify_ensurepip_wheels.py
