@@ -15,6 +15,7 @@ class TestUtils(TestCase):
             '\uffb9',
             '\N{LATIN SMALL LETTER E WITH ACUTE}',  # é
             '\N{LATIN SMALL LETTER E WITH CEDILLA}', # ȩ
+            '\u00ad',
         ]
         for c in characters:
             self.assertEqual(str_width(c), 1)
@@ -22,6 +23,8 @@ class TestUtils(TestCase):
         zero_width_characters = [
             '\N{COMBINING ACUTE ACCENT}',
             '\N{ZERO WIDTH JOINER}',
+            '\u2028',
+            '\u2029',
         ]
         for c in zero_width_characters:
             with self.subTest(character=c):
