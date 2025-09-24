@@ -188,7 +188,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         ],
     })
 
-    if TARGETW:
+    if TARGETW and STD_PEP514:
         STD_PEP514[0]["InstallPath"]["WindowedExecutablePath"] = f"%PREFIX%{TARGETW}"
 
     if ns.include_idle:
@@ -206,6 +206,8 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
             "Icon": r"%PREFIX%Lib\idlelib\Icons\idle.ico",
             "IconIndex": 0,
         })
+        if STD_PEP514:
+            STD_PEP514[0]["InstallPath"]["IdlePath"] = f"%PREFIX%Lib\\idlelib\\idle.pyw"
 
     if ns.include_html_doc:
         STD_PEP514[0]["Help"]["Main Python Documentation"] = {

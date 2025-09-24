@@ -121,8 +121,11 @@ Module contents
      :meth:`!__le__`, :meth:`!__gt__`, or :meth:`!__ge__`, then
      :exc:`TypeError` is raised.
 
-   - *unsafe_hash*: If ``False`` (the default), a :meth:`~object.__hash__` method
-     is generated according to how *eq* and *frozen* are set.
+   - *unsafe_hash*: If true, force ``dataclasses`` to create a
+     :meth:`~object.__hash__` method, even though it may not be safe to do so.
+     Otherwise, generate a :meth:`~object.__hash__` method according to how
+     *eq* and *frozen* are set.
+     The default value is ``False``.
 
      :meth:`!__hash__` is used by built-in :meth:`hash`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
@@ -158,9 +161,11 @@ Module contents
      :class:`object`, this means it will fall back to id-based hashing).
 
    - *frozen*: If true (the default is ``False``), assigning to fields will
-     generate an exception.  This emulates read-only frozen instances.  If
-     :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class, then
-     :exc:`TypeError` is raised.  See the discussion below.
+     generate an exception.  This emulates read-only frozen instances.
+     See the :ref:`discussion <dataclasses-frozen>` below.
+
+     If :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class
+     and *frozen* is true, then :exc:`TypeError` is raised.
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
@@ -304,9 +309,9 @@ Module contents
 
     .. versionadded:: 3.10
 
-   - ``doc``: optional docstring for this field.
+   - *doc*: optional docstring for this field.
 
-    .. versionadded:: 3.13
+    .. versionadded:: 3.14
 
    If the default value of a field is specified by a call to
    :func:`!field`, then the class attribute for this field will be
@@ -434,7 +439,7 @@ Module contents
    function is used.
 
    This function is not strictly required, because any Python
-   mechanism for creating a new class with :attr:`!__annotations__` can
+   mechanism for creating a new class with :attr:`~object.__annotations__` can
    then apply the :func:`@dataclass <dataclass>` function to convert that class to
    a dataclass.  This function is provided as a convenience.  For
    example::

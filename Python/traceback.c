@@ -9,7 +9,6 @@
 #include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "frameobject.h"          // PyFrame_New()
@@ -236,11 +235,9 @@ tb_dealloc(PyObject *op)
 {
     PyTracebackObject *tb = _PyTracebackObject_CAST(op);
     PyObject_GC_UnTrack(tb);
-    Py_TRASHCAN_BEGIN(tb, tb_dealloc)
     Py_XDECREF(tb->tb_next);
     Py_XDECREF(tb->tb_frame);
     PyObject_GC_Del(tb);
-    Py_TRASHCAN_END
 }
 
 static int
@@ -401,7 +398,7 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     taillen = strlen(tail);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_PySys_GetOptionalAttr(&_Py_ID(path), &syspath) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(path), &syspath) < 0) {
         PyErr_Clear();
         goto error;
     }
@@ -779,7 +776,7 @@ _PyTraceBack_Print(PyObject *v, const char *header, PyObject *f)
         PyErr_BadInternalCall();
         return -1;
     }
-    if (_PySys_GetOptionalAttrString("tracebacklimit", &limitv) < 0) {
+    if (PySys_GetOptionalAttrString("tracebacklimit", &limitv) < 0) {
         return -1;
     }
     else if (limitv != NULL && PyLong_Check(limitv)) {
@@ -996,8 +993,8 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     } else {
         PUTS(fd, "???");
     }
-
-    int lineno = PyUnstable_InterpreterFrame_GetLine(frame);
+    int lasti = PyUnstable_InterpreterFrame_GetLasti(frame);
+    int lineno = _PyCode_Addr2LineNoTstate(code, lasti);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
@@ -1329,3 +1326,13 @@ _Py_DumpStack(int fd)
     PUTS(fd, "  <cannot get C stack on this system>\n");
 }
 #endif
+
+void
+_Py_InitDumpStack(void)
+{
+#ifdef CAN_C_BACKTRACE
+    // gh-137185: Call backtrace() once to force libgcc to be loaded early.
+    void *callstack[1];
+    (void)backtrace(callstack, 1);
+#endif
+}

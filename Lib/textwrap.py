@@ -86,7 +86,7 @@ class TextWrapper:
               -(?: (?<=%(lt)s{2}-) | (?<=%(lt)s-%(lt)s-))
               (?= %(lt)s -? %(lt)s)
             | # end of word
-              (?=%(ws)s|\Z)
+              (?=%(ws)s|\z)
             | # em-dash
               (?<=%(wp)s) (?=-{2,}\w)
             )
@@ -107,7 +107,7 @@ class TextWrapper:
     sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
                                  r'[\.\!\?]'          # sentence-ending punct.
                                  r'[\"\']?'           # optional end-of-quote
-                                 r'\Z')               # end of chunk
+                                 r'\z')               # end of chunk
 
     def __init__(self,
                  width=70,

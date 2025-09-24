@@ -1,3 +1,0 @@
-:func:`!http.cookiejar.join_header_words` is now more similar to the original
-Perl version. It now quotes the same set of characters and always quote
-values that end with ``"\n"``.

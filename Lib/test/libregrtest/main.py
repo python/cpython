@@ -190,6 +190,12 @@ class Regrtest:
 
         strip_py_suffix(tests)
 
+        exclude_tests = set()
+        if self.exclude:
+            for arg in self.cmdline_args:
+                exclude_tests.add(arg)
+            self.cmdline_args = []
+
         if self.pgo:
             # add default PGO tests if no tests are specified
             setup_pgo_tests(self.cmdline_args, self.pgo_extended)
@@ -200,17 +206,15 @@ class Regrtest:
         if self.tsan_parallel:
             setup_tsan_parallel_tests(self.cmdline_args)
 
-        exclude_tests = set()
-        if self.exclude:
-            for arg in self.cmdline_args:
-                exclude_tests.add(arg)
-            self.cmdline_args = []
-
         alltests = findtests(testdir=self.test_dir,
                              exclude=exclude_tests)
 
         if not self.fromfile:
             selected = tests or self.cmdline_args
+            if exclude_tests:
+                # Support "--pgo/--tsan -x test_xxx" command
+                selected = [name for name in selected
+                            if name not in exclude_tests]
             if selected:
                 selected = split_test_packages(selected)
             else:
@@ -543,8 +547,6 @@ class Regrtest:
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
 
-        setup_process()
-
         if (runtests.hunt_refleak is not None) and (not self.num_workers):
             # gh-109739: WindowsLoadTracker thread interferes with refleak check
             use_load_tracker = False
@@ -721,10 +723,7 @@ class Regrtest:
         self._execute_python(cmd, environ)
 
     def _init(self):
-        # Set sys.stdout encoder error handler to backslashreplace,
-        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
-        # when printing a traceback or any other non-encodable character.
-        sys.stdout.reconfigure(errors="backslashreplace")
+        setup_process()
 
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)

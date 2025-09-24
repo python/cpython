@@ -145,8 +145,7 @@ class MiscSourceEncodingTest(unittest.TestCase):
             compile(input, "<string>", "exec")
         expected = "'ascii' codec can't decode byte 0xe2 in position 16: " \
                    "ordinal not in range(128)"
-        self.assertTrue(c.exception.args[0].startswith(expected),
-                        msg=c.exception.args[0])
+        self.assertStartsWith(c.exception.args[0], expected)
 
     def test_file_parse_error_multiline(self):
         # gh96611:

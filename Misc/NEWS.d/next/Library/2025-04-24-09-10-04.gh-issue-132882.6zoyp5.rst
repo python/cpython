@@ -1,2 +1,0 @@
-Fix copying of :class:`typing.Union` objects containing objects that do not
-support the ``|`` operator.

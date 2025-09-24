@@ -1,5 +1,4 @@
 import binascii
-import ctypes
 import math
 import struct
 import sys
@@ -232,7 +231,6 @@ class Test(unittest.TestCase, StructCheckMixin):
                 self.assertEqual(len(data), sizeof(TestStructure))
                 ptr = POINTER(TestStructure)
                 s = cast(data, ptr)[0]
-                del ctypes._pointer_type_cache[TestStructure]
                 self.assertEqual(s.point.x, 1)
                 self.assertEqual(s.point.y, 2)
 
@@ -270,6 +268,7 @@ class Test(unittest.TestCase, StructCheckMixin):
 
         class S(base):
             _pack_ = 1
+            _layout_ = "ms"
             _fields_ = [("b", c_byte),
                         ("h", c_short),
 
@@ -297,6 +296,7 @@ class Test(unittest.TestCase, StructCheckMixin):
 
         class S(Structure):
             _pack_ = 1
+            _layout_ = "ms"
             _fields_ = [("b", c_byte),
 
                         ("h", c_short),
@@ -371,7 +371,6 @@ class Test(unittest.TestCase, StructCheckMixin):
                 self.assertEqual(len(data), sizeof(TestUnion))
                 ptr = POINTER(TestUnion)
                 s = cast(data, ptr)[0]
-                del ctypes._pointer_type_cache[TestUnion]
                 self.assertEqual(s.point.x, 1)
                 self.assertEqual(s.point.y, 2)
 

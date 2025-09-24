@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pythonrun.h"     // _PyOS_STACK_MARGIN_SHIFT
 #include "pycore_typedefs.h"      // _PyRuntimeState
+#include "pycore_tstate.h"
 
 
 // Values for PyThreadState.state. A thread must be in the "attached" state
@@ -298,6 +300,34 @@ _Py_AssertHoldsTstateFunc(const char *func)
 #else
 #define _Py_AssertHoldsTstate()
 #endif
+
+#if !_Py__has_builtin(__builtin_frame_address) && !defined(__GNUC__) && !defined(_MSC_VER)
+static uintptr_t return_pointer_as_int(char* p) {
+    return (uintptr_t)p;
+}
+#endif
+
+static inline uintptr_t
+_Py_get_machine_stack_pointer(void) {
+#if _Py__has_builtin(__builtin_frame_address) || defined(__GNUC__)
+    return (uintptr_t)__builtin_frame_address(0);
+#elif defined(_MSC_VER)
+    return (uintptr_t)_AddressOfReturnAddress();
+#else
+    char here;
+    /* Avoid compiler warning about returning stack address */
+    return return_pointer_as_int(&here);
+#endif
+}
+
+static inline intptr_t
+_Py_RecursionLimit_GetMargin(PyThreadState *tstate)
+{
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    assert(_tstate->c_stack_hard_limit != 0);
+    intptr_t here_addr = _Py_get_machine_stack_pointer();
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, here_addr - (intptr_t)_tstate->c_stack_soft_limit, _PyOS_STACK_MARGIN_SHIFT);
+}
 
 #ifdef __cplusplus
 }

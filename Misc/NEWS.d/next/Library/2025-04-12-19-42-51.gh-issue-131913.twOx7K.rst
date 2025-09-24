@@ -1,1 +1,0 @@
-Add a shortcut function :func:`multiprocessing.Process.interrupt` alongside the existing :func:`multiprocessing.Process.terminate` and :func:`multiprocessing.Process.kill` for an improved control over child process termination.

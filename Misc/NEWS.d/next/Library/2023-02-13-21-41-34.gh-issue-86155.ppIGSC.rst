@@ -1,0 +1,2 @@
+:meth:`html.parser.HTMLParser.close` no longer loses data when the
+``<script>`` tag is not closed. Patch by Waylan Limberg.

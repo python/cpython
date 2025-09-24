@@ -17,7 +17,7 @@ typedef struct _xid_regitem {
     /* This is NULL for builtin types. */
     PyObject *weakref;
     size_t refcount;
-    xidatafunc getdata;
+    _PyXIData_getdata_t getdata;
 } _PyXIData_regitem_t;
 
 typedef struct {
@@ -30,7 +30,7 @@ typedef struct {
 PyAPI_FUNC(int) _PyXIData_RegisterClass(
     PyThreadState *,
     PyTypeObject *,
-    xidatafunc);
+    _PyXIData_getdata_t);
 PyAPI_FUNC(int) _PyXIData_UnregisterClass(
     PyThreadState *,
     PyTypeObject *);

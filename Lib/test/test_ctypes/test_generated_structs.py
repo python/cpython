@@ -10,7 +10,7 @@ Run this module to regenerate the files:
 """
 
 import unittest
-from test.support import import_helper, verbose
+from test.support import import_helper
 import re
 from dataclasses import dataclass
 from functools import cached_property
@@ -125,18 +125,21 @@ class Nested(Structure):
 class Packed1(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 1
+    _layout_ = 'ms'
 
 
 @register()
 class Packed2(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 2
+    _layout_ = 'ms'
 
 
 @register()
 class Packed3(Structure):
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 4
+    _layout_ = 'ms'
 
 
 @register()
@@ -155,6 +158,7 @@ class Packed4(Structure):
 
     _fields_ = [('a', c_int8), ('b', c_int64)]
     _pack_ = 8
+    _layout_ = 'ms'
 
 @register()
 class X86_32EdgeCase(Structure):
@@ -366,6 +370,7 @@ class Example_gh_95496(Structure):
 @register()
 class Example_gh_84039_bad(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("a0", c_uint8, 1),
                 ("a1", c_uint8, 1),
                 ("a2", c_uint8, 1),
@@ -380,6 +385,7 @@ class Example_gh_84039_bad(Structure):
 @register()
 class Example_gh_84039_good_a(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("a0", c_uint8, 1),
                 ("a1", c_uint8, 1),
                 ("a2", c_uint8, 1),
@@ -392,6 +398,7 @@ class Example_gh_84039_good_a(Structure):
 @register()
 class Example_gh_84039_good(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("a", Example_gh_84039_good_a),
                 ("b0", c_uint16, 4),
                 ("b1", c_uint16, 12)]
@@ -399,6 +406,7 @@ class Example_gh_84039_good(Structure):
 @register()
 class Example_gh_73939(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("P", c_uint16),
                 ("L", c_uint16, 9),
                 ("Pro", c_uint16, 1),
@@ -419,6 +427,7 @@ class Example_gh_86098(Structure):
 @register()
 class Example_gh_86098_pack(Structure):
     _pack_ = 1
+    _layout_ = 'ms'
     _fields_ = [("a", c_uint8, 8),
                 ("b", c_uint8, 8),
                 ("c", c_uint32, 16)]
@@ -528,7 +537,7 @@ def dump_ctype(tp, struct_or_union_tag='', variable_name='', semi=''):
             pushes.append(f'#pragma pack(push, {pack})')
             pops.append(f'#pragma pack(pop)')
         layout = getattr(tp, '_layout_', None)
-        if layout == 'ms' or pack:
+        if layout == 'ms':
             # The 'ms_struct' attribute only works on x86 and PowerPC
             requires.add(
                 'defined(MS_WIN32) || ('

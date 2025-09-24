@@ -48,5 +48,5 @@ public API of CPython:
 | ctypes.PyObj_FromPtr       | ``obj``                                   |
 +----------------------------+-------------------------------------------+
 
-.. versionadded:: next
+.. versionadded:: 3.14
    The ``_posixsubprocess.fork_exec`` internal audit event.

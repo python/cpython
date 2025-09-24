@@ -1,0 +1,2 @@
+Fix possible crash in the :mod:`compression.zstd` module related to setting
+parameter types. Patch by Jelle Zijlstra.

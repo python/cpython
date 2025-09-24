@@ -13,6 +13,9 @@ Exceptions:
 
 Functions:
 
+  get_sigalgs          -- return a list of all available TLS signature
+                          algorithms (requires OpenSSL 3.4 or later)
+
   cert_time_to_seconds -- convert time string used for certificate
                           notBefore and notAfter functions to integer
                           seconds past the Epoch (the time values
@@ -112,11 +115,12 @@ try:
 except ImportError:
     # RAND_egd is not supported on some platforms
     pass
+from _ssl import get_sigalgs
 
 
 from _ssl import (
     HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PHA
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PSK_TLS13, HAS_PHA
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
@@ -931,6 +935,18 @@ class SSLObject:
         ssl_version, secret_bits)``."""
         return self._sslobj.cipher()
 
+    def group(self):
+        """Return the currently selected key agreement group name."""
+        return self._sslobj.group()
+
+    def client_sigalg(self):
+        """Return the selected client authentication signature algorithm."""
+        return self._sslobj.client_sigalg()
+
+    def server_sigalg(self):
+        """Return the selected server handshake signature algorithm."""
+        return self._sslobj.server_sigalg()
+
     def shared_ciphers(self):
         """Return a list of ciphers shared by the client during the handshake or
         None if this is not a valid server connection.
@@ -973,6 +989,10 @@ def _sslcopydoc(func):
     """Copy docstring from SSLObject to SSLSocket"""
     func.__doc__ = getattr(SSLObject, func.__name__).__doc__
     return func
+
+
+class _GiveupOnSSLSendfile(Exception):
+    pass
 
 
 class SSLSocket(socket):
@@ -1207,6 +1227,30 @@ class SSLSocket(socket):
             return self._sslobj.cipher()
 
     @_sslcopydoc
+    def group(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.group()
+
+    @_sslcopydoc
+    def client_sigalg(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.client_sigalg()
+
+    @_sslcopydoc
+    def server_sigalg(self):
+        self._checkClosed()
+        if self._sslobj is None:
+            return None
+        else:
+            return self._sslobj.server_sigalg()
+
+    @_sslcopydoc
     def shared_ciphers(self):
         self._checkClosed()
         if self._sslobj is None:
@@ -1266,14 +1310,25 @@ class SSLSocket(socket):
             return super().sendall(data, flags)
 
     def sendfile(self, file, offset=0, count=None):
-        """Send a file, possibly by using os.sendfile() if this is a
-        clear-text socket.  Return the total number of bytes sent.
+        """Send a file, possibly by using an efficient sendfile() call if
+        the system supports it.  Return the total number of bytes sent.
         """
-        if self._sslobj is not None:
-            return self._sendfile_use_send(file, offset, count)
-        else:
-            # os.sendfile() works with plain sockets only
+        if self._sslobj is None:
             return super().sendfile(file, offset, count)
+
+        if not self._sslobj.uses_ktls_for_send():
+            return self._sendfile_use_send(file, offset, count)
+
+        sendfile = getattr(self._sslobj, "sendfile", None)
+        if sendfile is None:
+            return self._sendfile_use_send(file, offset, count)
+
+        try:
+            return self._sendfile_zerocopy(
+                sendfile, _GiveupOnSSLSendfile, file, offset, count,
+            )
+        except _GiveupOnSSLSendfile:
+            return self._sendfile_use_send(file, offset, count)
 
     def recv(self, buflen=1024, flags=0):
         self._checkClosed()

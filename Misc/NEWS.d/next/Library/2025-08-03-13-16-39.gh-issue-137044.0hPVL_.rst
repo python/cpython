@@ -1,0 +1,4 @@
+Return large limit values as positive integers instead of negative integers
+in :func:`resource.getrlimit`. Accept large values and reject negative
+values (except :data:`~resource.RLIM_INFINITY`) for limits in
+:func:`resource.setrlimit`.

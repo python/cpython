@@ -836,7 +836,7 @@ class PyLongModuleTests(unittest.TestCase):
             n = hibit | getrandbits(bits - 1)
             assert n.bit_length() == bits
             sn = str(n)
-            self.assertFalse(sn.startswith('0'))
+            self.assertNotStartsWith(sn, '0')
             self.assertEqual(n, int(sn))
             bits <<= 1
 
