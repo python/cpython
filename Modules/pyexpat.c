@@ -2285,6 +2285,13 @@ pyexpat_exec(PyObject *mod)
 #else
     capi->SetReparseDeferralEnabled = NULL;
 #endif
+#if XML_COMBINED_VERSION >= 20702
+    capi->SetAllocTrackerActivationThreshold = XML_SetAllocTrackerActivationThreshold;
+    capi->SetAllocTrackerMaximumAmplification = XML_SetAllocTrackerMaximumAmplification;
+#else
+    capi->SetAllocTrackerActivationThreshold = NULL;
+    capi->SetAllocTrackerMaximumAmplification = NULL;
+#endif
 
     /* export using capsule */
     PyObject *capi_object = PyCapsule_New(capi, PyExpat_CAPSULE_NAME,
