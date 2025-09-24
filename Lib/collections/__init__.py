@@ -932,10 +932,8 @@ class Counter(dict):
             if newcount:
                 result[elem] = newcount
         for elem, count in other.items():
-            if elem not in self:
-                newcount = abs(count)
-                if newcount:
-                    result[elem] = newcount
+            if elem not in self and count:
+                result[elem] = abs(count)
         return result
 
     def __pos__(self):
