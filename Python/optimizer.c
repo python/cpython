@@ -620,15 +620,17 @@ _PyJIT_translate_single_bytecode_to_trace(
     if (jump_taken ||
         opcode == WITH_EXCEPT_START || opcode == RERAISE || opcode == CLEANUP_THROW || opcode == PUSH_EXC_INFO) {
     unsupported:
-        // Rewind to previous instruction and replace with _EXIT_TRACE.
-        _PyUOpInstruction *curr = &trace[trace_length-1];
-        while (curr->opcode != _SET_IP && trace_length > 1) {
-            trace_length--;
-            curr = &trace[trace_length-1];
-        }
-        assert(curr->opcode == _SET_IP || trace_length == 1);
-        curr->opcode = _EXIT_TRACE;
-        goto done;
+            {
+                // Rewind to previous instruction and replace with _EXIT_TRACE.
+                _PyUOpInstruction *curr = &trace[trace_length-1];
+                while (curr->opcode != _SET_IP && trace_length > 1) {
+                    trace_length--;
+                    curr = &trace[trace_length-1];
+                }
+                assert(curr->opcode == _SET_IP || trace_length == 1);
+                curr->opcode = _EXIT_TRACE;
+                goto done;
+            }
     }
     RESERVE_RAW(expansion->nuops + needs_guard_ip + 3, "uop and various checks");
 
