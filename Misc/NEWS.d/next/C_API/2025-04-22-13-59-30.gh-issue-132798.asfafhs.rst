@@ -1,3 +1,0 @@
-Deprecated and undocumented functions :c:func:`!PyUnicode_AsEncodedObject`,
-:c:func:`!PyUnicode_AsDecodedObject`, :c:func:`!PyUnicode_AsEncodedUnicode`
-and :c:func:`!PyUnicode_AsDecodedUnicode` are scheduled for removal in 3.15.

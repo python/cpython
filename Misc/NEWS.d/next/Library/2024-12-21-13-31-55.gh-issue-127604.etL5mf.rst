@@ -1,3 +1,0 @@
-Add support for printing the C stack trace on systems that support it via
-:func:`faulthandler.dump_c_stack` or via the *c_stack* argument in
-:func:`faulthandler.enable`.

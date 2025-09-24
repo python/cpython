@@ -23,8 +23,10 @@
 #endif
 
 #include <Python.h>
+#include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_fileutils.h"     // _Py_stat_struct
+#include "pycore_weakref.h"       // FT_CLEAR_WEAKREFS()
 
 #include <stddef.h>               // offsetof()
 #ifndef MS_WINDOWS
@@ -117,21 +119,15 @@ typedef struct {
 
 #ifdef UNIX
     int fd;
-    _Bool trackfd;
+    int flags;
 #endif
 
     PyObject *weakreflist;
     access_mode access;
+    _Bool trackfd;
 } mmap_object;
 
 #define mmap_object_CAST(op)    ((mmap_object *)(op))
-
-static int
-mmap_object_traverse(PyObject *op, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(op));
-    return 0;
-}
 
 static void
 mmap_object_dealloc(PyObject *op)
@@ -163,8 +159,7 @@ mmap_object_dealloc(PyObject *op)
     Py_END_ALLOW_THREADS
 #endif /* UNIX */
 
-    if (m_obj->weakreflist != NULL)
-        PyObject_ClearWeakRefs(op);
+    FT_CLEAR_WEAKREFS(op, m_obj->weakreflist);
 
     tp->tp_free(m_obj);
     Py_DECREF(tp);
@@ -290,6 +285,24 @@ filter_page_exception_method(mmap_object *self, EXCEPTION_POINTERS *ptrs,
     }
     return EXCEPTION_CONTINUE_SEARCH;
 }
+
+static void
+_PyErr_SetFromNTSTATUS(ULONG status)
+{
+#if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
+    PyErr_SetFromWindowsErr(LsaNtStatusToWinError((NTSTATUS)status));
+#else
+    if (status & 0x80000000) {
+        // HRESULT-shaped codes are supported by PyErr_SetFromWindowsErr
+        PyErr_SetFromWindowsErr((int)status);
+    }
+    else {
+        // No mapping for NTSTATUS values, so just return it for diagnostic purposes
+        // If we provide it as winerror it could incorrectly change the type of the exception.
+        PyErr_Format(PyExc_OSError, "Operating system error NTSTATUS=0x%08lX", status);
+    }
+#endif
+}
 #endif
 
 #if defined(MS_WINDOWS) && !defined(DONT_USE_SEH)
@@ -303,9 +316,7 @@ do {                                                                       \
         assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR ||          \
                record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);        \
         if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {             \
-            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];   \
-            ULONG code = LsaNtStatusToWinError(status);                    \
-            PyErr_SetFromWindowsErr(code);                                 \
+            _PyErr_SetFromNTSTATUS((ULONG)record.ExceptionInformation[2]); \
         }                                                                  \
         else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {     \
             PyErr_SetFromWindowsErr(ERROR_NOACCESS);                       \
@@ -332,9 +343,7 @@ do {                                                                          \
         assert(record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR ||             \
                record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION);           \
         if (record.ExceptionCode == EXCEPTION_IN_PAGE_ERROR) {                \
-            NTSTATUS status = (NTSTATUS) record.ExceptionInformation[2];      \
-            ULONG code = LsaNtStatusToWinError(status);                       \
-            PyErr_SetFromWindowsErr(code);                                    \
+            _PyErr_SetFromNTSTATUS((ULONG)record.ExceptionInformation[2]);    \
         }                                                                     \
         else if (record.ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {        \
             PyErr_SetFromWindowsErr(ERROR_NOACCESS);                          \
@@ -439,7 +448,8 @@ _safe_PyBytes_ReverseFind(Py_ssize_t *out, mmap_object *self,
 }
 
 PyObject *
-_safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
+_safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes)
+{
     if (num_bytes == 1) {
         char dest;
         if (safe_byte_copy(&dest, start) < 0) {
@@ -450,14 +460,15 @@ _safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
         }
     }
     else {
-        PyObject *result = PyBytes_FromStringAndSize(NULL, num_bytes);
-        if (result == NULL) {
+        PyBytesWriter *writer = PyBytesWriter_Create(num_bytes);
+        if (writer == NULL) {
             return NULL;
         }
-        if (safe_memcpy(PyBytes_AS_STRING(result), start, num_bytes) < 0) {
-            Py_CLEAR(result);
+        if (safe_memcpy(PyBytesWriter_GetData(writer), start, num_bytes) < 0) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
         }
-        return result;
+        return PyBytesWriter_Finish(writer);
     }
 }
 
@@ -515,7 +526,7 @@ mmap_read_method(PyObject *op, PyObject *args)
     mmap_object *self = mmap_object_CAST(op);
 
     CHECK_VALID(NULL);
-    if (!PyArg_ParseTuple(args, "|n?:read", &num_bytes))
+    if (!PyArg_ParseTuple(args, "|O&:read", _Py_convert_optional_to_ssize_t, &num_bytes))
         return NULL;
     CHECK_VALID(NULL);
 
@@ -619,6 +630,7 @@ is_writable(mmap_object *self)
     return 0;
 }
 
+#if defined(MS_WINDOWS) || defined(HAVE_MREMAP)
 static int
 is_resizeable(mmap_object *self)
 {
@@ -627,13 +639,11 @@ is_resizeable(mmap_object *self)
             "mmap can't resize with extant buffers exported.");
         return 0;
     }
-#ifdef UNIX
     if (!self->trackfd) {
         PyErr_SetString(PyExc_ValueError,
             "mmap can't resize with trackfd=False.");
         return 0;
     }
-#endif
     if ((self->access == ACCESS_WRITE) || (self->access == ACCESS_DEFAULT))
         return 1;
     PyErr_Format(PyExc_TypeError,
@@ -641,6 +651,7 @@ is_resizeable(mmap_object *self)
     return 0;
 
 }
+#endif /* MS_WINDOWS || HAVE_MREMAP */
 
 
 static PyObject *
@@ -725,13 +736,11 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
             return PyLong_FromLong((long)low);
         size = (((long long)high)<<32) + low;
         return PyLong_FromLongLong(size);
-    } else {
-        return PyLong_FromSsize_t(self->size);
     }
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-    {
+    if (self->fd != -1) {
         struct _Py_stat_struct status;
         if (_Py_fstat(self->fd, &status) == -1)
             return NULL;
@@ -742,6 +751,14 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
 #endif
     }
 #endif /* UNIX */
+    else if (self->trackfd) {
+        return PyLong_FromSsize_t(self->size);
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError,
+            "can't get size with trackfd=False");
+        return NULL;
+    }
 }
 
 /* This assumes that you want the entire file mapped,
@@ -753,6 +770,7 @@ mmap_size_method(PyObject *op, PyObject *Py_UNUSED(ignored))
  / new size?
  */
 
+#if defined(MS_WINDOWS) || defined(HAVE_MREMAP)
 static PyObject *
 mmap_resize_method(PyObject *op, PyObject *args)
 {
@@ -867,13 +885,15 @@ mmap_resize_method(PyObject *op, PyObject *args)
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-#ifndef HAVE_MREMAP
-        PyErr_SetString(PyExc_SystemError,
-                        "mmap: resizing not available--no mremap()");
-        return NULL;
-#else
         void *newmap;
 
+#ifdef __linux__
+        if (self->fd == -1 && !(self->flags & MAP_PRIVATE) && new_size > self->size) {
+            PyErr_Format(PyExc_ValueError,
+                "mmap: can't expand a shared anonymous mapping on Linux");
+            return NULL;
+        }
+#endif
         if (self->fd != -1 && ftruncate(self->fd, self->offset + new_size) == -1) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
@@ -896,10 +916,10 @@ mmap_resize_method(PyObject *op, PyObject *args)
         self->data = newmap;
         self->size = new_size;
         Py_RETURN_NONE;
-#endif /* HAVE_MREMAP */
 #endif /* UNIX */
     }
 }
+#endif /* MS_WINDOWS || HAVE_MREMAP */
 
 static PyObject *
 mmap_tell_method(PyObject *op, PyObject *Py_UNUSED(ignored))
@@ -1187,7 +1207,9 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"read",            mmap_read_method,         METH_VARARGS},
     {"read_byte",       mmap_read_byte_method,    METH_NOARGS},
     {"readline",        mmap_read_line_method,    METH_NOARGS},
+#if defined(MS_WINDOWS) || defined(HAVE_MREMAP)
     {"resize",          mmap_resize_method,       METH_VARARGS},
+#endif
     {"seek",            mmap_seek_method,         METH_VARARGS},
     {"seekable",        mmap_seekable_method,     METH_NOARGS},
     {"size",            mmap_size_method,         METH_NOARGS},
@@ -1452,7 +1474,7 @@ static PyObject *
 new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict);
 
 PyDoc_STRVAR(mmap_doc,
-"Windows: mmap(fileno, length[, tagname[, access[, offset]]])\n\
+"Windows: mmap(fileno, length[, tagname[, access[, offset[, trackfd]]]])\n\
 \n\
 Maps length bytes from the file specified by the file handle fileno,\n\
 and returns a mmap object.  If length is larger than the current size\n\
@@ -1484,7 +1506,7 @@ static PyType_Slot mmap_object_slots[] = {
     {Py_tp_members, mmap_object_members},
     {Py_tp_getset, mmap_object_getset},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, mmap_object_traverse},
+    {Py_tp_traverse, _PyObject_VisitType},
 
     /* as sequence */
     {Py_sq_length, mmap_length},
@@ -1670,6 +1692,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     else {
         m_obj->fd = -1;
     }
+    m_obj->flags = flags;
 
     Py_BEGIN_ALLOW_THREADS
     m_obj->data = mmap(NULL, map_size, prot, flags, fd, offset);
@@ -1709,19 +1732,20 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     DWORD off_lo;       /* lower 32 bits of offset */
     DWORD size_hi;      /* upper 32 bits of size */
     DWORD size_lo;      /* lower 32 bits of size */
-    PyObject *tagname = NULL;
+    PyObject *tagname = Py_None;
     DWORD dwErr = 0;
     int fileno;
-    HANDLE fh = 0;
+    HANDLE fh = INVALID_HANDLE_VALUE;
     int access = (access_mode)ACCESS_DEFAULT;
+    int trackfd = 1;
     DWORD flProtect, dwDesiredAccess;
     static char *keywords[] = { "fileno", "length",
                                 "tagname",
-                                "access", "offset", NULL };
+                                "access", "offset", "trackfd", NULL };
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|U?iL", keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "in|OiL$p", keywords,
                                      &fileno, &map_size,
-                                     &tagname, &access, &offset)) {
+                                     &tagname, &access, &offset, &trackfd)) {
         return NULL;
     }
 
@@ -1788,22 +1812,27 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->map_handle = NULL;
     m_obj->tagname = NULL;
     m_obj->offset = offset;
+    m_obj->trackfd = trackfd;
 
-    if (fh) {
-        /* It is necessary to duplicate the handle, so the
-           Python code can close it on us */
-        if (!DuplicateHandle(
-            GetCurrentProcess(), /* source process handle */
-            fh, /* handle to be duplicated */
-            GetCurrentProcess(), /* target proc handle */
-            (LPHANDLE)&m_obj->file_handle, /* result */
-            0, /* access - ignored due to options value */
-            FALSE, /* inherited by child processes? */
-            DUPLICATE_SAME_ACCESS)) { /* options */
-            dwErr = GetLastError();
-            Py_DECREF(m_obj);
-            PyErr_SetFromWindowsErr(dwErr);
-            return NULL;
+    if (fh != INVALID_HANDLE_VALUE) {
+        if (trackfd) {
+            /* It is necessary to duplicate the handle, so the
+               Python code can close it on us */
+            if (!DuplicateHandle(
+                GetCurrentProcess(), /* source process handle */
+                fh, /* handle to be duplicated */
+                GetCurrentProcess(), /* target proc handle */
+                &fh, /* result */
+                0, /* access - ignored due to options value */
+                FALSE, /* inherited by child processes? */
+                DUPLICATE_SAME_ACCESS)) /* options */
+            {
+                dwErr = GetLastError();
+                Py_DECREF(m_obj);
+                PyErr_SetFromWindowsErr(dwErr);
+                return NULL;
+            }
+            m_obj->file_handle = fh;
         }
         if (!map_size) {
             DWORD low,high;
@@ -1811,7 +1840,8 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
             /* low might just happen to have the value INVALID_FILE_SIZE;
                so we need to check the last error also. */
             if (low == INVALID_FILE_SIZE &&
-                (dwErr = GetLastError()) != NO_ERROR) {
+                (dwErr = GetLastError()) != NO_ERROR)
+            {
                 Py_DECREF(m_obj);
                 return PyErr_SetFromWindowsErr(dwErr);
             }
@@ -1852,7 +1882,13 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     m_obj->weakreflist = NULL;
     m_obj->exports = 0;
     /* set the tag name */
-    if (tagname != NULL) {
+    if (!Py_IsNone(tagname)) {
+        if (!PyUnicode_Check(tagname)) {
+            Py_DECREF(m_obj);
+            return PyErr_Format(PyExc_TypeError, "expected str or None for "
+                                "'tagname', not %.200s",
+                                Py_TYPE(tagname)->tp_name);
+        }
         m_obj->tagname = PyUnicode_AsWideCharString(tagname, NULL);
         if (m_obj->tagname == NULL) {
             Py_DECREF(m_obj);
@@ -1867,7 +1903,7 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
     off_lo = (DWORD)(offset & 0xFFFFFFFF);
     /* For files, it would be sufficient to pass 0 as size.
        For anonymous maps, we have to pass the size explicitly. */
-    m_obj->map_handle = CreateFileMappingW(m_obj->file_handle,
+    m_obj->map_handle = CreateFileMappingW(fh,
                                            NULL,
                                            flProtect,
                                            size_hi,

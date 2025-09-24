@@ -121,38 +121,88 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     }
     PyObject *res = NULL;
 
-    // Check if there is a # character in the expression
+    // Look for a # character outside of string literals
     int hash_detected = 0;
+    int in_string = 0;
+    char quote_char = 0;
+
     for (Py_ssize_t i = 0; i < tok_mode->last_expr_size - tok_mode->last_expr_end; i++) {
-        if (tok_mode->last_expr_buffer[i] == '#') {
+        char ch = tok_mode->last_expr_buffer[i];
+
+        // Skip escaped characters
+        if (ch == '\\') {
+            i++;
+            continue;
+        }
+
+        // Handle quotes
+        if (ch == '"' || ch == '\'') {
+            // The following if/else block works becase there is an off number
+            // of quotes in STRING tokens and the lexer only ever reaches this
+            // function with valid STRING tokens.
+            // For example: """hello"""
+            // First quote: in_string = 1
+            // Second quote: in_string = 0
+            // Third quote: in_string = 1
+            if (!in_string) {
+                in_string = 1;
+                quote_char = ch;
+            }
+            else if (ch == quote_char) {
+                in_string = 0;
+            }
+            continue;
+        }
+
+        // Check for # outside strings
+        if (ch == '#' && !in_string) {
             hash_detected = 1;
             break;
         }
     }
-
+    // If we found a # character in the expression, we need to handle comments
     if (hash_detected) {
-        Py_ssize_t input_length = tok_mode->last_expr_size - tok_mode->last_expr_end;
-        char *result = (char *)PyMem_Malloc((input_length + 1) * sizeof(char));
+        // Allocate buffer for processed result
+        char *result = (char *)PyMem_Malloc((tok_mode->last_expr_size - tok_mode->last_expr_end + 1) * sizeof(char));
         if (!result) {
             return -1;
         }
 
-        Py_ssize_t i = 0;
-        Py_ssize_t j = 0;
+        Py_ssize_t i = 0;  // Input position
+        Py_ssize_t j = 0;  // Output position
+        in_string = 0;     // Whether we're in a string
+        quote_char = 0;    // Current string quote char
 
-        for (i = 0, j = 0; i < input_length; i++) {
-            if (tok_mode->last_expr_buffer[i] == '#') {
-                // Skip characters until newline or end of string
-                while (i < input_length && tok_mode->last_expr_buffer[i] != '\0') {
-                    if (tok_mode->last_expr_buffer[i] == '\n') {
-                        result[j++] = tok_mode->last_expr_buffer[i];
-                        break;
-                    }
+        // Process each character
+        while (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+            char ch = tok_mode->last_expr_buffer[i];
+
+            // Handle string quotes
+            if (ch == '"' || ch == '\'') {
+                // See comment above to understand this part
+                if (!in_string) {
+                    in_string = 1;
+                    quote_char = ch;
+                } else if (ch == quote_char) {
+                    in_string = 0;
+                }
+                result[j++] = ch;
+            }
+            // Skip comments
+            else if (ch == '#' && !in_string) {
+                while (i < tok_mode->last_expr_size - tok_mode->last_expr_end &&
+                       tok_mode->last_expr_buffer[i] != '\n') {
                     i++;
                 }
-            } else {
-                result[j++] = tok_mode->last_expr_buffer[i];
+                if (i < tok_mode->last_expr_size - tok_mode->last_expr_end) {
+                    result[j++] = '\n';
+                }
             }
+            // Copy other chars
+            else {
+                result[j++] = ch;
+            }
+            i++;
         }
 
         result[j] = '\0';  // Null-terminate the result string
@@ -164,11 +214,9 @@ set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
             tok_mode->last_expr_size - tok_mode->last_expr_end,
             NULL
         );
-
     }
 
-
-   if (!res) {
+    if (!res) {
         return -1;
     }
     token->metadata = res;
@@ -402,6 +450,51 @@ tok_continuation_line(struct tok_state *tok) {
         tok_backup(tok, c);
     }
     return c;
+}
+
+static int
+maybe_raise_syntax_error_for_string_prefixes(struct tok_state *tok,
+                                             int saw_b, int saw_r, int saw_u,
+                                             int saw_f, int saw_t) {
+    // Supported: rb, rf, rt (in any order)
+    // Unsupported: ub, ur, uf, ut, bf, bt, ft (in any order)
+
+#define RETURN_SYNTAX_ERROR(PREFIX1, PREFIX2)                             \
+    do {                                                                  \
+        (void)_PyTokenizer_syntaxerror_known_range(                       \
+            tok, (int)(tok->start + 1 - tok->line_start),                 \
+            (int)(tok->cur - tok->line_start),                            \
+            "'" PREFIX1 "' and '" PREFIX2 "' prefixes are incompatible"); \
+        return -1;                                                        \
+    } while (0)
+
+    if (saw_u && saw_b) {
+        RETURN_SYNTAX_ERROR("u", "b");
+    }
+    if (saw_u && saw_r) {
+        RETURN_SYNTAX_ERROR("u", "r");
+    }
+    if (saw_u && saw_f) {
+        RETURN_SYNTAX_ERROR("u", "f");
+    }
+    if (saw_u && saw_t) {
+        RETURN_SYNTAX_ERROR("u", "t");
+    }
+
+    if (saw_b && saw_f) {
+        RETURN_SYNTAX_ERROR("b", "f");
+    }
+    if (saw_b && saw_t) {
+        RETURN_SYNTAX_ERROR("b", "t");
+    }
+
+    if (saw_f && saw_t) {
+        RETURN_SYNTAX_ERROR("f", "t");
+    }
+
+#undef RETURN_SYNTAX_ERROR
+
+    return 0;
 }
 
 static int
@@ -648,22 +741,22 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         /* Process the various legal combinations of b"", r"", u"", and f"". */
         int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0, saw_t = 0;
         while (1) {
-            if (!(saw_b || saw_u || saw_f) && (c == 'b' || c == 'B'))
+            if (!saw_b && (c == 'b' || c == 'B')) {
                 saw_b = 1;
+            }
             /* Since this is a backwards compatibility support literal we don't
                want to support it in arbitrary order like byte literals. */
-            else if (!(saw_b || saw_u || saw_r || saw_f || saw_t)
-                     && (c == 'u'|| c == 'U')) {
+            else if (!saw_u && (c == 'u'|| c == 'U')) {
                 saw_u = 1;
             }
             /* ur"" and ru"" are not supported */
-            else if (!(saw_r || saw_u) && (c == 'r' || c == 'R')) {
+            else if (!saw_r && (c == 'r' || c == 'R')) {
                 saw_r = 1;
             }
-            else if (!(saw_f || saw_b || saw_u) && (c == 'f' || c == 'F')) {
+            else if (!saw_f && (c == 'f' || c == 'F')) {
                 saw_f = 1;
             }
-            else if (!(saw_t || saw_u) && (c == 't' || c == 'T')) {
+            else if (!saw_t && (c == 't' || c == 'T')) {
                 saw_t = 1;
             }
             else {
@@ -671,17 +764,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             }
             c = tok_nextc(tok);
             if (c == '"' || c == '\'') {
-                if (saw_b && saw_t) {
-                    return MAKE_TOKEN(_PyTokenizer_syntaxerror_known_range(
-                        tok, (int)(tok->start + 1 - tok->line_start),
-                        (int)(tok->cur - tok->line_start),
-                        "can't use 'b' and 't' string prefixes together"));
-                }
-                if (saw_f && saw_t) {
-                    return MAKE_TOKEN(_PyTokenizer_syntaxerror_known_range(
-                        tok, (int)(tok->start + 1 - tok->line_start),
-                        (int)(tok->cur - tok->line_start),
-                        "can't use 'f' and 't' string prefixes together"));
+                // Raise error on incompatible string prefixes:
+                int status = maybe_raise_syntax_error_for_string_prefixes(
+                    tok, saw_b, saw_r, saw_u, saw_f, saw_t);
+                if (status < 0) {
+                    return MAKE_TOKEN(ERRORTOKEN);
                 }
 
                 // Handle valid f or t string creation:
@@ -1382,7 +1469,8 @@ f_string_middle:
                     return MAKE_TOKEN(
                         _PyTokenizer_syntaxerror(
                             tok,
-                            "f-string: newlines are not allowed in format specifiers for single quoted f-strings"
+                            "%c-string: newlines are not allowed in format specifiers for single quoted %c-strings",
+                            TOK_GET_STRING_PREFIX(tok), TOK_GET_STRING_PREFIX(tok)
                         )
                     );
                 }

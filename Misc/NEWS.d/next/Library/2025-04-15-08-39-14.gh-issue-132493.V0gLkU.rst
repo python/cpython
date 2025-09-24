@@ -1,4 +1,0 @@
-:class:`typing.Protocol` now uses :func:`annotationlib.get_annotations` when
-checking whether or not an instance implements the protocol with
-:func:`isinstance`. This enables support for ``isinstance`` checks against
-classes with deferred annotations.

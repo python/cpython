@@ -1,0 +1,3 @@
+:mod:`curses`: The :meth:`curses.window.instr` and :meth:`curses.window.getstr`
+methods now allocate their internal buffer on the heap instead of the stack;
+in addition, the max buffer size is increased from 1023 to 2047.

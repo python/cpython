@@ -120,7 +120,7 @@
     <ClInclude Include="..\Include\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\lock.h">
+    <ClInclude Include="..\Include\pylock.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\longobject.h">
@@ -414,7 +414,7 @@
     <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\lock.h">
+    <ClInclude Include="..\Include\cpython\pylock.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\longintrepr.h">
@@ -882,6 +882,15 @@
     <ClInclude Include="..\Include\internal\pycore_uniqueid.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop_ids.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uop_metadata.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
       <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
@@ -1325,7 +1334,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Python</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_preprocess.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">

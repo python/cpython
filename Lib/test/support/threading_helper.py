@@ -248,3 +248,27 @@ def requires_working_threading(*, module=False):
             raise unittest.SkipTest(msg)
     else:
         return unittest.skipUnless(can_start_thread, msg)
+
+
+def run_concurrently(worker_func, nthreads, args=(), kwargs={}):
+    """
+    Run the worker function concurrently in multiple threads.
+    """
+    barrier = threading.Barrier(nthreads)
+
+    def wrapper_func(*args, **kwargs):
+        # Wait for all threads to reach this point before proceeding.
+        barrier.wait()
+        worker_func(*args, **kwargs)
+
+    with catch_threading_exception() as cm:
+        workers = [
+            threading.Thread(target=wrapper_func, args=args, kwargs=kwargs)
+            for _ in range(nthreads)
+        ]
+        with start_threads(workers):
+            pass
+
+        # If a worker thread raises an exception, re-raise it.
+        if cm.exc_value is not None:
+            raise cm.exc_value

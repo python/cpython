@@ -1,3 +1,0 @@
-In PyREPL, append a new entry to the ``PYTHON_HISTORY`` file *after* every
-statement.  This should preserve command-line history after interpreter is
-terminated.  Patch by Sergey B Kirpichev.

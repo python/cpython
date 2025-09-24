@@ -776,23 +776,26 @@ class Counter(dict):
     # When the multiplicities are all zero or one, multiset operations
     # are guaranteed to be equivalent to the corresponding operations
     # for regular sets.
+    #
     #     Given counter multisets such as:
     #         cp = Counter(a=1, b=0, c=1)
     #         cq = Counter(c=1, d=0, e=1)
+    #
     #     The corresponding regular sets would be:
     #         sp = {'a', 'c'}
     #         sq = {'c', 'e'}
+    #
     #     All of the following relations would hold:
-    #         set(cp + cq) == sp | sq
-    #         set(cp - cq) == sp - sq
-    #         set(cp | cq) == sp | sq
-    #         set(cp & cq) == sp & sq
     #         (cp == cq) == (sp == sq)
     #         (cp != cq) == (sp != sq)
     #         (cp <= cq) == (sp <= sq)
     #         (cp < cq) == (sp < sq)
     #         (cp >= cq) == (sp >= sq)
     #         (cp > cq) == (sp > sq)
+    #         set(cp + cq) == sp | sq
+    #         set(cp - cq) == sp - sq
+    #         set(cp | cq) == sp | sq
+    #         set(cp & cq) == sp & sq
 
     def __eq__(self, other):
         'True if all counts agree. Missing counts are treated as zero.'

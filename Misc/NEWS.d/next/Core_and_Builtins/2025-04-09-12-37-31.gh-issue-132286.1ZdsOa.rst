@@ -1,2 +1,0 @@
-Fix that :attr:`type.__annotate__` was not deleted, when
-:attr:`type.__annotations__` was deleted.

@@ -51,7 +51,7 @@ The token constants are:
 .. data:: NAME
 
    Token value that indicates an :ref:`identifier <identifiers>`.
-   Note that keywords are also initially tokenized an ``NAME`` tokens.
+   Note that keywords are also initially tokenized as ``NAME`` tokens.
 
 .. data:: NUMBER
 
@@ -140,7 +140,7 @@ The token constants are:
       The token string includes the prefix and the opening quote(s), but none
       of the contents of the literal.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: TSTRING_MIDDLE
 
@@ -154,7 +154,7 @@ The token constants are:
       :data:`LBRACE`, :data:`RBRACE`, :data:`EXCLAMATION` and :data:`COLON`
       tokens.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: TSTRING_END
 
@@ -164,7 +164,7 @@ The token constants are:
 
       The token string contains the closing quote(s).
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. data:: ENDMARKER
 

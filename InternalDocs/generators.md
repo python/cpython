@@ -28,9 +28,9 @@ interpreter state.
 
 The `frame` of a generator is embedded in the generator object struct as a
 [`_PyInterpreterFrame`](frames.md) (see `_PyGenObject_HEAD` in
-[`pycore_genobject.h`](../Include/internal/pycore_genobject.h)).
+[`pycore_interpframe_structs.h`](../Include/internal/pycore_interpframe_structs.h)).
 This means that we can get the frame from the generator or the generator
-from the frame (see `_PyGen_GetGeneratorFromFrame` in the same file).
+from the frame (see `_PyGen_GetGeneratorFromFrame` in [`pycore_genobject.h`](../Include/internal/pycore_genobject.h)).
 Other fields of the generator struct include metadata (such as the name of
 the generator function) and runtime state information (such as whether its
 frame is executing, suspended, cleared, etc.).
@@ -64,7 +64,7 @@ Iteration
 
 The [`FOR_ITER`](https://docs.python.org/dev/library/dis.html#opcode-FOR_ITER)
 instruction calls `__next__` on the iterator which is on the top of the stack,
-and pushes the result to the stack. It has [`specializations`](adaptive.md)
+and pushes the result to the stack. It has [`specializations`](interpreter.md)
 for a few common iterator types, including `FOR_ITER_GEN`, for iterating over
 a generator. `FOR_ITER_GEN` bypasses the call to `__next__`, and instead
 directly pushes the generator stack and resumes its execution from the

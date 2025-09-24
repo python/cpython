@@ -41,7 +41,9 @@ Homebrew won't add any of the tools to your `$PATH`. That's okay; the build scri
 
 ### Windows
 
-Install LLVM 19 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=19), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
+LLVM is downloaded automatically (along with other external binary dependencies) by `PCbuild\build.bat`.
+
+Otherwise, you can install LLVM 19 [by searching for it on LLVM's GitHub releases page](https://github.com/llvm/llvm-project/releases?q=19), clicking on "Assets", downloading the appropriate Windows installer for your platform (likely the file ending with `-win64.exe`), and running it. **When installing, be sure to select the option labeled "Add LLVM to the system PATH".**
 
 Alternatively, you can use [chocolatey](https://chocolatey.org):
 
@@ -49,16 +51,20 @@ Alternatively, you can use [chocolatey](https://chocolatey.org):
 choco install llvm --version=19.1.0
 ```
 
+### Dev Containers
+
+If you are working on CPython in a [Codespaces instance](https://devguide.python.org/getting-started/setup-building/#using-codespaces), there's no 
+need to install LLVM as the Fedora 41 base image includes LLVM 19 out of the box.
 
 ## Building
 
-For `PCbuild`-based builds, pass the new `--experimental-jit` option to `build.bat`.
+For `PCbuild`-based builds, pass the `--experimental-jit` option to `build.bat`.
 
-For all other builds, pass the new `--enable-experimental-jit` option to `configure`.
+For all other builds, pass the `--enable-experimental-jit` option to `configure`.
 
 Otherwise, just configure and build as you normally would. Cross-compiling "just works", since the JIT is built for the host platform.
 
-The JIT can also be enabled or disabled using the `PYTHON_JIT` environment variable, even on builds where it is enabled or disabled by default. More details about configuring CPython with the JIT and optional values for `--enable-experimental-jit` can be found [here](https://docs.python.org/dev/whatsnew/3.13.html#experimental-jit-compiler).
+The JIT can also be enabled or disabled using the `PYTHON_JIT` environment variable, even on builds where it is enabled or disabled by default. More details about configuring CPython with the JIT and optional values for `--enable-experimental-jit` can be found [here](https://docs.python.org/dev/using/configure.html#cmdoption-enable-experimental-jit).
 
 [^pep-744]: [PEP 744](https://peps.python.org/pep-0744/)
 

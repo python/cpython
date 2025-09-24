@@ -28,10 +28,10 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_OPCODE 7
 
 /* Remote debugger support */
-#define MAX_SCRIPT_PATH_SIZE 512
-typedef struct _remote_debugger_support {
+#define _Py_MAX_SCRIPT_PATH_SIZE 512
+typedef struct {
     int32_t debugger_pending_call;
-    char debugger_script_path[MAX_SCRIPT_PATH_SIZE];
+    char debugger_script_path[_Py_MAX_SCRIPT_PATH_SIZE];
 } _PyRemoteDebuggerSupport;
 
 typedef struct _err_stackitem {
@@ -61,6 +61,8 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+/* Minimum size of data stack chunk */
+#define _PY_DATA_STACK_CHUNK_SIZE (16*1024)
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -105,6 +107,7 @@ struct _ts {
 #  define _PyThreadState_WHENCE_THREADING 3
 #  define _PyThreadState_WHENCE_GILSTATE 4
 #  define _PyThreadState_WHENCE_EXEC 5
+#  define _PyThreadState_WHENCE_THREADING_DAEMON 6
 #endif
 
     /* Currently holds the GIL. Must be its own field to avoid data races */
@@ -155,6 +158,11 @@ struct _ts {
      */
     unsigned long native_thread_id;
 
+    /* List of objects that still need to be cleaned up, singly linked
+     * via their gc headers' gc_next pointers. The list is populated by
+     * _PyTrash_thread_deposit_object and cleaned up by
+     * _PyTrash_thread_destroy_chain.
+     */
     PyObject *delete_later;
 
     /* Tagged pointer to top-most critical section, or zero if there is no
@@ -194,7 +202,10 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
-    PyObject *previous_executor;
+    PyObject *current_executor;
+
+    /* Internal to the JIT */
+    struct _PyExitData *jit_exit;
 
     uint64_t dict_global_version;
 

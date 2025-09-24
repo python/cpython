@@ -82,6 +82,7 @@ _testcapi_exception_print_impl(PyObject *module, PyObject *exc, int legacy)
 }
 
 /*[clinic input]
+@permit_long_summary
 _testcapi.make_exception_with_doc
     name: str
     doc: str = NULL
@@ -95,7 +96,7 @@ static PyObject *
 _testcapi_make_exception_with_doc_impl(PyObject *module, const char *name,
                                        const char *doc, PyObject *base,
                                        PyObject *dict)
-/*[clinic end generated code: output=439f0d963c1ce2c4 input=23a73013f8a8795a]*/
+/*[clinic end generated code: output=439f0d963c1ce2c4 input=508b420b7f9253ed]*/
 {
     return PyErr_NewExceptionWithDoc(name, doc, base, dict);
 }
