@@ -372,6 +372,8 @@ _PyJIT_translate_single_bytecode_to_trace(
 
 void
 _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *next_instr, int curr_stackdepth, int chain_depth, _PyExitData *exit);
+
+void _PyJIT_FinalizeTracing(PyThreadState *tstate);
 #ifdef __cplusplus
 }
 #endif

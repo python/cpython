@@ -27372,6 +27372,7 @@ JUMP_TO_LABEL(error);
 
         LABEL(error)
         {
+            assert(!IS_JIT_TRACING());
             #ifdef NDEBUG
             if (!_PyErr_Occurred(tstate)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -27401,6 +27402,7 @@ JUMP_TO_LABEL(error);
 
         LABEL(exception_unwind)
         {
+            assert(!IS_JIT_TRACING());
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
             int handled = get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti);

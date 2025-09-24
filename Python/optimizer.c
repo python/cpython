@@ -129,10 +129,15 @@ _PyOptimizer_Optimize(
     // side-exit chains. We can only insert the executor into the bytecode if
     // this is true, since a deopt won't infinitely re-enter the executor:
     bool progress_needed = (chain_depth % MAX_CHAIN_DEPTH) == 0;
-    PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_tracer_initial_func->func_code;
-    assert(PyCode_Check(code));
+    PyCodeObject *code = (PyCodeObject *)tstate->interp->jit_tracer_initial_code;
     _Py_CODEUNIT *start = tstate->interp->jit_tracer_initial_instr;
     if (progress_needed && !has_space_for_executor(code, start)) {
+        interp->compiling = false;
+        return 0;
+    }
+    // We are the only one still holding a reference to this code object that
+    // is practically dead.
+    if (_PyObject_IsUniquelyReferenced(code) || _PyObject_IsUniquelyReferenced(tstate->interp->jit_tracer_initial_func)) {
         interp->compiling = false;
         return 0;
     }
@@ -840,14 +845,23 @@ _PyJIT_InitializeTracing(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_
     tstate->interp->jit_tracer_code_curr_size = 2;
     tstate->interp->jit_tracer_code_max_size = UOP_MAX_TRACE_LENGTH;
     tstate->interp->jit_tracer_initial_instr = next_instr;
-    tstate->interp->jit_tracer_initial_code = code;
-    tstate->interp->jit_tracer_initial_func = _PyFrame_GetFunction(frame);
+    tstate->interp->jit_tracer_initial_code = (PyCodeObject *)Py_NewRef(code);
+    tstate->interp->jit_tracer_initial_func = (PyFunctionObject *)Py_NewRef(_PyFrame_GetFunction(frame));
     tstate->interp->jit_tracer_previous_exit = exit;
     memset(&tstate->interp->jit_tracer_dependencies.bits, 0, sizeof(tstate->interp->jit_tracer_dependencies.bits));
     tstate->interp->jit_completed_loop = false;
     tstate->interp->jit_tracer_initial_stack_depth = curr_stackdepth;
     tstate->interp->jit_tracer_initial_chain_depth = chain_depth;
 }
+
+void
+_PyJIT_FinalizeTracing(PyThreadState *tstate)
+{
+    Py_CLEAR(tstate->interp->jit_tracer_initial_code);
+    Py_CLEAR(tstate->interp->jit_tracer_initial_func);
+    tstate->interp->jit_tracer_code_curr_size = 2;
+}
+
 
 #undef RESERVE
 #undef RESERVE_RAW

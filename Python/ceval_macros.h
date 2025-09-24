@@ -141,7 +141,10 @@
 #  define LEAVE_TRACING() DISPATCH_TABLE_VAR = DISPATCH_TABLE;
 #  define BAIL_TRACING_NO_DISPATCH() \
     LEAVE_TRACING(); \
+    _PyFrame_SetStackPointer(frame, stack_pointer); \
     int _err = _PyOptimizer_Optimize(frame, tstate); \
+    _PyJIT_FinalizeTracing(tstate); \
+    stack_pointer = _PyFrame_GetStackPointer(frame); \
     if (_err < 0) { \
         JUMP_TO_LABEL(error); \
     }
@@ -149,13 +152,11 @@
     BAIL_TRACING_NO_DISPATCH() \
     DISPATCH();
 #  define RECORD_TRACE() do { \
-        frame->instr_ptr = next_instr; \
         if (add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING(); \
         } \
     } while (0);
 #  define RECORD_TRACE_NO_DISPATCH() do { \
-        frame->instr_ptr = next_instr; \
         if (add_to_code_trace(tstate, frame, old_code, old_func, this_instr, next_instr, opcode, oparg, _jump_taken)) { \
             BAIL_TRACING_NO_DISPATCH(); \
         } \
@@ -413,6 +414,7 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 
 #define TIER1_TO_TIER2(EXECUTOR)                        \
 do {                                                   \
+    LEAVE_TRACING(); \
     OPT_STAT_INC(traces_executed);                     \
     next_instr = _Py_jit_entry((EXECUTOR), frame, stack_pointer, tstate); \
     frame = tstate->current_frame;                     \
@@ -427,9 +429,6 @@ do {                                                   \
         assert(next_instr->op.code != ENTER_EXECUTOR); \
         assert(tstate->interp->jit_tracer_code_curr_size == 2); \
         ENTER_TRACING(); \
-    } \
-    else { \
-        LEAVE_TRACING(); \
     } \
     DISPATCH();                                        \
 } while (0)
