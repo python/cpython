@@ -8842,15 +8842,13 @@ charmapencode_lookup(Py_UCS4 c, PyObject *mapping, unsigned char *replace)
 }
 
 static int
-charmapencode_resize(PyObject **outobj, Py_ssize_t *outpos, Py_ssize_t requiredsize)
+charmapencode_resize(PyBytesWriter *writer, Py_ssize_t *outpos, Py_ssize_t requiredsize)
 {
-    Py_ssize_t outsize = PyBytes_GET_SIZE(*outobj);
+    Py_ssize_t outsize = PyBytesWriter_GetSize(writer);
     /* exponentially overallocate to minimize reallocations */
-    if (requiredsize < 2*outsize)
-        requiredsize = 2*outsize;
-    if (_PyBytes_Resize(outobj, requiredsize))
-        return -1;
-    return 0;
+    if (requiredsize < 2 * outsize)
+        requiredsize = 2 * outsize;
+    return PyBytesWriter_Resize(writer, requiredsize);
 }
 
 typedef enum charmapencode_result {
@@ -8864,12 +8862,12 @@ typedef enum charmapencode_result {
    reallocation error occurred. The caller must decref the result */
 static charmapencode_result
 charmapencode_output(Py_UCS4 c, PyObject *mapping,
-                     PyObject **outobj, Py_ssize_t *outpos)
+                     PyBytesWriter *writer, Py_ssize_t *outpos)
 {
     PyObject *rep;
     unsigned char replace;
     char *outstart;
-    Py_ssize_t outsize = PyBytes_GET_SIZE(*outobj);
+    Py_ssize_t outsize = _PyBytesWriter_GetSize(writer);
 
     if (Py_IS_TYPE(mapping, &EncodingMapType)) {
         int res = encoding_map_lookup(c, mapping);
@@ -8877,9 +8875,9 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
         if (res == -1)
             return enc_FAILED;
         if (outsize<requiredsize)
-            if (charmapencode_resize(outobj, outpos, requiredsize))
+            if (charmapencode_resize(writer, outpos, requiredsize))
                 return enc_EXCEPTION;
-        outstart = PyBytes_AS_STRING(*outobj);
+        outstart = _PyBytesWriter_GetData(writer);
         outstart[(*outpos)++] = (char)res;
         return enc_SUCCESS;
     }
@@ -8894,11 +8892,11 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
         if (PyLong_Check(rep)) {
             Py_ssize_t requiredsize = *outpos+1;
             if (outsize<requiredsize)
-                if (charmapencode_resize(outobj, outpos, requiredsize)) {
+                if (charmapencode_resize(writer, outpos, requiredsize)) {
                     Py_DECREF(rep);
                     return enc_EXCEPTION;
                 }
-            outstart = PyBytes_AS_STRING(*outobj);
+            outstart = _PyBytesWriter_GetData(writer);
             outstart[(*outpos)++] = (char)replace;
         }
         else {
@@ -8906,11 +8904,11 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
             Py_ssize_t repsize = PyBytes_GET_SIZE(rep);
             Py_ssize_t requiredsize = *outpos+repsize;
             if (outsize<requiredsize)
-                if (charmapencode_resize(outobj, outpos, requiredsize)) {
+                if (charmapencode_resize(writer, outpos, requiredsize)) {
                     Py_DECREF(rep);
                     return enc_EXCEPTION;
                 }
-            outstart = PyBytes_AS_STRING(*outobj);
+            outstart = _PyBytesWriter_GetData(writer);
             memcpy(outstart + *outpos, repchars, repsize);
             *outpos += repsize;
         }
@@ -8926,7 +8924,7 @@ charmap_encoding_error(
     PyObject *unicode, Py_ssize_t *inpos, PyObject *mapping,
     PyObject **exceptionObject,
     _Py_error_handler *error_handler, PyObject **error_handler_obj, const char *errors,
-    PyObject **res, Py_ssize_t *respos)
+    PyBytesWriter *writer, Py_ssize_t *respos)
 {
     PyObject *repunicode = NULL; /* initialize to prevent gcc warning */
     Py_ssize_t size, repsize;
@@ -8981,7 +8979,7 @@ charmap_encoding_error(
 
     case _Py_ERROR_REPLACE:
         for (collpos = collstartpos; collpos<collendpos; ++collpos) {
-            x = charmapencode_output('?', mapping, res, respos);
+            x = charmapencode_output('?', mapping, writer, respos);
             if (x==enc_EXCEPTION) {
                 return -1;
             }
@@ -9002,7 +9000,7 @@ charmap_encoding_error(
             char *cp;
             sprintf(buffer, "&#%d;", (int)PyUnicode_READ_CHAR(unicode, collpos));
             for (cp = buffer; *cp; ++cp) {
-                x = charmapencode_output(*cp, mapping, res, respos);
+                x = charmapencode_output(*cp, mapping, writer, respos);
                 if (x==enc_EXCEPTION)
                     return -1;
                 else if (x==enc_FAILED) {
@@ -9022,17 +9020,17 @@ charmap_encoding_error(
             return -1;
         if (PyBytes_Check(repunicode)) {
             /* Directly copy bytes result to output. */
-            Py_ssize_t outsize = PyBytes_Size(*res);
+            Py_ssize_t outsize = PyBytesWriter_GetSize(writer);
             Py_ssize_t requiredsize;
             repsize = PyBytes_Size(repunicode);
             requiredsize = *respos + repsize;
             if (requiredsize > outsize)
                 /* Make room for all additional bytes. */
-                if (charmapencode_resize(res, respos, requiredsize)) {
+                if (charmapencode_resize(writer, respos, requiredsize)) {
                     Py_DECREF(repunicode);
                     return -1;
                 }
-            memcpy(PyBytes_AsString(*res) + *respos,
+            memcpy((char*)PyBytesWriter_GetData(writer) + *respos,
                    PyBytes_AsString(repunicode),  repsize);
             *respos += repsize;
             *inpos = newpos;
@@ -9045,7 +9043,7 @@ charmap_encoding_error(
         kind = PyUnicode_KIND(repunicode);
         for (index = 0; index < repsize; index++) {
             Py_UCS4 repch = PyUnicode_READ(kind, data, index);
-            x = charmapencode_output(repch, mapping, res, respos);
+            x = charmapencode_output(repch, mapping, writer, respos);
             if (x==enc_EXCEPTION) {
                 Py_DECREF(repunicode);
                 return -1;
@@ -9067,65 +9065,64 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
                          PyObject *mapping,
                          const char *errors)
 {
-    /* output object */
-    PyObject *res = NULL;
-    /* current input position */
-    Py_ssize_t inpos = 0;
-    Py_ssize_t size;
-    /* current output position */
-    Py_ssize_t respos = 0;
+    /* Default to Latin-1 */
+    if (mapping == NULL) {
+        return unicode_encode_ucs1(unicode, errors, 256);
+    }
+
+    Py_ssize_t size = PyUnicode_GET_LENGTH(unicode);
+    if (size == 0) {
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
+    }
+    const void *data = PyUnicode_DATA(unicode);
+    int kind = PyUnicode_KIND(unicode);
+
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
-    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
-    const void *data;
-    int kind;
 
-    size = PyUnicode_GET_LENGTH(unicode);
-    data = PyUnicode_DATA(unicode);
-    kind = PyUnicode_KIND(unicode);
-
-    /* Default to Latin-1 */
-    if (mapping == NULL)
-        return unicode_encode_ucs1(unicode, errors, 256);
-
+    /* output object */
+    PyBytesWriter *writer;
     /* allocate enough for a simple encoding without
        replacements, if we need more, we'll resize */
-    res = PyBytes_FromStringAndSize(NULL, size);
-    if (res == NULL)
+    writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         goto onError;
-    if (size == 0)
-        return res;
+    }
+
+    /* current input position */
+    Py_ssize_t inpos = 0;
+    /* current output position */
+    Py_ssize_t respos = 0;
+    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 
     while (inpos<size) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, inpos);
         /* try to encode it */
-        charmapencode_result x = charmapencode_output(ch, mapping, &res, &respos);
+        charmapencode_result x = charmapencode_output(ch, mapping, writer, &respos);
         if (x==enc_EXCEPTION) /* error */
             goto onError;
         if (x==enc_FAILED) { /* unencodable character */
             if (charmap_encoding_error(unicode, &inpos, mapping,
                                        &exc,
                                        &error_handler, &error_handler_obj, errors,
-                                       &res, &respos)) {
+                                       writer, &respos)) {
                 goto onError;
             }
         }
-        else
+        else {
             /* done with this character => adjust input position */
             ++inpos;
+        }
     }
-
-    /* Resize if we allocated to much */
-    if (respos<PyBytes_GET_SIZE(res))
-        if (_PyBytes_Resize(&res, respos) < 0)
-            goto onError;
 
     Py_XDECREF(exc);
     Py_XDECREF(error_handler_obj);
-    return res;
+
+    /* Resize if we allocated too much */
+    return PyBytesWriter_FinishWithSize(writer, respos);
 
   onError:
-    Py_XDECREF(res);
+    PyBytesWriter_Discard(writer);
     Py_XDECREF(exc);
     Py_XDECREF(error_handler_obj);
     return NULL;
