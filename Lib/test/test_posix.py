@@ -668,22 +668,65 @@ class PosixTester(unittest.TestCase):
         finally:
             fp.close()
 
-    def test_stat(self):
-        self.assertTrue(posix.stat(os_helper.TESTFN))
-        self.assertTrue(posix.stat(os.fsencode(os_helper.TESTFN)))
+    def check_statlike_path(self, func):
+        self.assertTrue(func(os_helper.TESTFN))
+        self.assertTrue(func(os.fsencode(os_helper.TESTFN)))
+        self.assertTrue(func(os_helper.FakePath(os_helper.TESTFN)))
 
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
-                posix.stat, bytearray(os.fsencode(os_helper.TESTFN)))
+                func, bytearray(os.fsencode(os_helper.TESTFN)))
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
-                posix.stat, None)
+                func, None)
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
-                posix.stat, list(os_helper.TESTFN))
+                func, list(os_helper.TESTFN))
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes, os.PathLike or integer, not',
-                posix.stat, list(os.fsencode(os_helper.TESTFN)))
+                func, list(os.fsencode(os_helper.TESTFN)))
+
+    def test_stat(self):
+        self.check_statlike_path(posix.stat)
+
+    @unittest.skipUnless(hasattr(posix, 'statx'), 'test needs posix.statx()')
+    def test_statx(self):
+        def func(path, **kwargs):
+            return posix.statx(path, posix.STATX_BASIC_STATS, **kwargs)
+        self.check_statlike_path(func)
+
+    @unittest.skipUnless(hasattr(posix, 'statx'), 'test needs posix.statx()')
+    def test_statx_flags(self):
+        # glibc's fallback implementation of statx via the stat family fails
+        # with EINVAL on the (nonzero) sync flags.  If you see this failure,
+        # update your kernel and/or seccomp syscall filter.
+        valid_flag_names = ('AT_NO_AUTOMOUNT', 'AT_STATX_SYNC_AS_STAT',
+                            'AT_STATX_FORCE_SYNC', 'AT_STATX_DONT_SYNC')
+        for flag_name in valid_flag_names:
+            flag = getattr(posix, flag_name)
+            with self.subTest(msg=flag_name, flags=flag):
+                posix.statx(os_helper.TESTFN, posix.STATX_BASIC_STATS,
+                            flags=flag)
+
+        # These flags are not exposed to Python because their functionality is
+        # implemented via kwargs instead.
+        kwarg_equivalent_flags = (
+            (0x0100, 'AT_SYMLINK_NOFOLLOW', 'follow_symlinks'),
+            (0x0400, 'AT_SYMLINK_FOLLOW', 'follow_symlinks'),
+            (0x1000, 'AT_EMPTY_PATH', 'dir_fd'),
+        )
+        for flag, flag_name, kwarg_name in kwarg_equivalent_flags:
+            with self.subTest(msg=flag_name, flags=flag):
+                with self.assertRaisesRegex(ValueError, kwarg_name):
+                    posix.statx(os_helper.TESTFN, posix.STATX_BASIC_STATS,
+                                flags=flag)
+
+        with self.subTest(msg="AT_STATX_FORCE_SYNC | AT_STATX_DONT_SYNC"):
+            with self.assertRaises(OSError) as ctx:
+                flags = posix.AT_STATX_FORCE_SYNC | posix.AT_STATX_DONT_SYNC
+                posix.statx(os_helper.TESTFN, posix.STATX_BASIC_STATS,
+                            flags=flags)
+            self.assertEqual(ctx.exception.errno, errno.EINVAL)
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
     def test_mkfifo(self):

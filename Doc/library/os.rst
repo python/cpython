@@ -3383,7 +3383,7 @@ features:
       Added the :attr:`st_birthtime` member on Windows.
 
 
-.. function:: statx(path, mask, *, dir_fd=None, follow_symlinks=True, sync=None)
+.. function:: statx(path, mask, flags=0, *, dir_fd=None, follow_symlinks=True)
 
    Get the status of a file or file descriptor by performing a :c:func:`!statx`
    system call on the given path.
@@ -3392,17 +3392,11 @@ features:
    indirectly through the :class:`PathLike` interface -- or as an open file
    descriptor. *mask* is a combination of the module-level
    :const:`STATX_* <STATX_TYPE>` constants specifying the information to
-   retrieve. Returns a :class:`statx_result` object whose
+   retrieve. *flags* is a combination of the module-level
+   :const:`AT_STATX_* <AT_STATX_FORCE_SYNC>` constants and/or
+   :const:`AT_NO_AUTOMOUNT`. Returns a :class:`statx_result` object whose
    :attr:`~os.statx_result.stx_mask` attribute specifies the information
    actually retrieved (which may differ from *mask*).
-
-   The optional parameter *sync* controls the freshness of the returned
-   information.  ``sync=True`` requests that the kernel return up-to-date
-   information, even when doing so is expensive (for example, requiring a
-   round trip to the server for a file on a network filesystem).
-   ``sync=False`` requests that the kernel return cached information if
-   available.  ``sync=None`` expresses no preference, in which case the kernel
-   will return information as fresh as :func:`~os.stat` does.
 
    This function supports :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>`, and
@@ -3512,6 +3506,49 @@ features:
    Bitflags for use as the *mask* parameter to :func:`os.statx`.
 
    .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+.. data:: AT_STATX_FORCE_SYNC
+
+   A flag for the :func:`os.statx` function.  Requests that the kernel return
+   up-to-date information even when doing so is expensive (for example,
+   requiring a round trip to the server for a file on a network filesystem).
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+.. data:: AT_STATX_DONT_SYNC
+
+   A flag for the :func:`os.statx` function.  Requests that the kernel return
+   cached information if possible.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+.. data:: AT_STATX_SYNC_AS_STAT
+
+   A flag for the :func:`os.statx` function.  This flag is defined as ``0``, so
+   it has no effect, but it can be used to explicitly indicate neither
+   :data:`AT_STATX_FORCE_SYNC` nor :data:`AT_STATX_DONT_SYNC` is being passed.
+   In the absence of the other two flags, the kernel will generally return
+   information as fresh as :func:`os.stat` would return.
+
+   .. availability:: Linux >= 4.11 with glibc >= 2.28.
+
+   .. versionadded:: next
+
+
+.. data:: AT_NO_AUTOMOUNT
+
+   If the final component of a path is an automount point, operate on the
+   automount point instead of performing the automount.  (On Linux,
+   :func:`os.stat`, :func:`os.fstat` and :func:`os.lstat` always behave this
+   way.)
+
+   .. availability:: Linux.
 
    .. versionadded:: next
 

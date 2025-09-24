@@ -812,14 +812,6 @@ class StatAttributeTests(unittest.TestCase):
     def test_statx_attributes_pathlike(self):
         self.check_statx_attributes(FakePath(self.fname))
 
-    @unittest.skipUnless(hasattr(os, 'statx'), 'test needs os.statx()')
-    def test_statx_sync(self):
-        # Test sync= kwarg parsing.  (We can't predict if or how the result
-        # will change.)
-        for sync in (False, True):
-            with self.subTest(sync=sync):
-                os.statx(self.fname, os.STATX_BASIC_STATS, sync=sync)
-
     @unittest.skipUnless(hasattr(os, 'statvfs'), 'test needs os.statvfs()')
     def test_statvfs_attributes(self):
         result = os.statvfs(self.fname)

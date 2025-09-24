@@ -3532,29 +3532,6 @@ static PyType_Spec pystatx_result_spec = {
     .slots = pystatx_result_slots,
 };
 
-static int
-optional_bool_converter(PyObject *arg, void *addr) {
-    int value;
-    if (arg == Py_None) {
-        value = -1;
-    }
-    else {
-        value = Py_IsTrue(arg);
-        if (value < 0) {
-            return 0;
-        }
-    }
-    *((int *)addr) = value;
-    return 1;
-}
-
-/*[python input]
-class optional_bool_converter(CConverter):
-    type = 'int'
-    converter = 'optional_bool_converter'
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=47de85b300eeb19e]*/
-
 /*[clinic input]
 
 os.statx
@@ -3565,6 +3542,9 @@ os.statx
 
     mask: unsigned_int(bitwise=True)
         A bitmask of STATX_* constants defining the requested information.
+
+    flags: int = 0
+        A bitmask of AT_NO_AUTOMOUNT and/or AT_STATX_* flags.
 
     *
 
@@ -3578,11 +3558,6 @@ os.statx
         statx will examine the symbolic link itself instead of the file
         the link points to.
 
-    sync: optional_bool(c_default='-1') = None
-        If True, statx will return up-to-date values, even if doing so is
-        expensive.  If False, statx will return cached values if possible.
-        If None, statx lets the operating system decide.
-
 Perform a statx system call on the given path.
 
 It's an error to use dir_fd or follow_symlinks when specifying path as
@@ -3591,22 +3566,31 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 [clinic start generated code]*/
 
 static PyObject *
-os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int dir_fd,
-              int follow_symlinks, int sync)
-/*[clinic end generated code: output=fe385235585f3d07 input=148c4fce440ca53a]*/
+os_statx_impl(PyObject *module, path_t *path, unsigned int mask, int flags,
+              int dir_fd, int follow_symlinks)
+/*[clinic end generated code: output=e3765979ac6fe15b input=7ebd6e0f93476670]*/
 {
     if (path_and_dir_fd_invalid("statx", path, dir_fd) ||
         dir_fd_and_fd_invalid("statx", dir_fd, path->fd) ||
         fd_and_follow_symlinks_invalid("statx", path->fd, follow_symlinks))
         return NULL;
 
+    /* reject flags covered by kwargs, but allow unknown flags that may be
+       future AT_STATX_* extensions */
+    if (flags & (AT_SYMLINK_NOFOLLOW | AT_SYMLINK_FOLLOW)) {
+        PyErr_Format(PyExc_ValueError,
+                     "use follow_symlinks kwarg instead of AT_SYMLINK_* flag");
+        return NULL;
+    }
+    if (flags & AT_EMPTY_PATH) {
+        PyErr_Format(PyExc_ValueError,
+                     "use dir_fd kwarg instead of AT_EMPTY_PATH flag");
+        return NULL;
+    }
+
     /* Future bits may refer to members beyond the current size of struct
        statx, so we need to mask them off to prevent memory corruption. */
     mask &= _Py_STATX_KNOWN;
-    int flags = AT_NO_AUTOMOUNT | (follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW);
-    if (sync != -1) {
-        flags |= sync ? AT_STATX_FORCE_SYNC : AT_STATX_DONT_SYNC;
-    }
 
     _posixstate *state = get_posix_state(module);
     PyTypeObject *tp = (PyTypeObject *)state->StatxResultType;
@@ -18241,6 +18225,10 @@ all_ins(PyObject *m)
     if (PyModule_Add(m, "NODEV", _PyLong_FromDev(NODEV))) return -1;
 #endif
 
+#ifdef AT_NO_AUTOMOUNT
+    if (PyModule_AddIntMacro(m, AT_NO_AUTOMOUNT)) return -1;
+#endif
+
 #ifdef HAVE_STATX
     if (PyModule_AddIntMacro(m, STATX_TYPE)) return -1;
     if (PyModule_AddIntMacro(m, STATX_MODE)) return -1;
@@ -18262,6 +18250,9 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, STATX_WRITE_ATOMIC)) return -1;
     if (PyModule_AddIntMacro(m, STATX_DIO_READ_ALIGN)) return -1;
     /* STATX_ALL intentionally omitted because it is deprecated */
+    if (PyModule_AddIntMacro(m, AT_STATX_SYNC_AS_STAT)) return -1;
+    if (PyModule_AddIntMacro(m, AT_STATX_FORCE_SYNC)) return -1;
+    if (PyModule_AddIntMacro(m, AT_STATX_DONT_SYNC)) return -1;
     /* STATX_ATTR_* constants are in the stat module */
 #endif /* HAVE_STATX */
 
@@ -18537,16 +18528,7 @@ posixmodule_exec(PyObject *m)
 #endif
 
 #ifdef HAVE_STATX
-    /* We retract os.statx if:
-       - the weakly-linked statx wrapper function is not available (old libc)
-       - the wrapper function fails with ENOSYS (libc built without fallback
-         running on an old kernel)
-       - the wrapper function fails with EINVAL on sync flags (glibc's
-         emulation of statx via stat fails in this way) */
-    struct statx stx;
-    if (statx == NULL
-        || (statx(-1, "/", AT_STATX_DONT_SYNC, 0, &stx) == -1
-            && (errno == ENOSYS || errno == EINVAL))) {
+    if (statx == NULL) {
         PyObject* dct = PyModule_GetDict(m);
         if (dct == NULL) {
             return -1;
