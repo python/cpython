@@ -4670,15 +4670,12 @@ char utf7_category[128] = {
 
 /* ENCODE_DIRECT: this character should be encoded as itself.  The
  * answer depends on whether we are encoding set O as itself, and also
- * on whether we are encoding whitespace as itself.  RFC2152 makes it
+ * on whether we are encoding whitespace as itself.  RFC 2152 makes it
  * clear that the answers to these questions vary between
  * applications, so this code needs to be flexible.  */
 
-#define ENCODE_DIRECT(c, directO, directWS)             \
-    ((c) < 128 && (c) > 0 &&                            \
-     ((utf7_category[(c)] == 0) ||                      \
-      (directWS && (utf7_category[(c)] == 2)) ||        \
-      (directO && (utf7_category[(c)] == 1))))
+#define ENCODE_DIRECT(c) \
+    ((c) < 128 && (c) > 0 && ((utf7_category[(c)] != 3)))
 
 PyObject *
 PyUnicode_DecodeUTF7(const char *s,
@@ -4895,8 +4892,6 @@ utf7Error:
 
 PyObject *
 _PyUnicode_EncodeUTF7(PyObject *str,
-                      int base64SetO,
-                      int base64WhiteSpace,
                       const char *errors)
 {
     Py_ssize_t len = PyUnicode_GET_LENGTH(str);
@@ -4923,7 +4918,7 @@ _PyUnicode_EncodeUTF7(PyObject *str,
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
 
         if (inShift) {
-            if (ENCODE_DIRECT(ch, !base64SetO, !base64WhiteSpace)) {
+            if (ENCODE_DIRECT(ch)) {
                 /* shifting out */
                 if (base64bits) { /* output remaining bits */
                     *out++ = TO_BASE64(base64buffer << (6-base64bits));
@@ -4947,7 +4942,7 @@ _PyUnicode_EncodeUTF7(PyObject *str,
                 *out++ = '+';
                         *out++ = '-';
             }
-            else if (ENCODE_DIRECT(ch, !base64SetO, !base64WhiteSpace)) {
+            else if (ENCODE_DIRECT(ch)) {
                 *out++ = (char) ch;
             }
             else {
