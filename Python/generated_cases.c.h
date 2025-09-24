@@ -8400,7 +8400,7 @@
                             DISPATCH();
                         }
                     }
-                    _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0, NULL);
+                    _PyJIT_InitializeTracing(tstate, frame, this_instr, STACK_LEVEL(), 0, NULL);
                     ENTER_TRACING();
                     DISPATCH();
                 }
@@ -22048,7 +22048,7 @@
                             TRACING_DISPATCH();
                         }
                     }
-                    _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0, NULL);
+                    _PyJIT_InitializeTracing(tstate, frame, this_instr, STACK_LEVEL(), 0, NULL);
                     ENTER_TRACING();
                     TRACING_DISPATCH();
                 }

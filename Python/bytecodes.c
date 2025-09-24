@@ -2978,7 +2978,7 @@ dummy_func(
                         DISPATCH();
                     }
                 }
-                _PyJIT_InitializeTracing(tstate, frame, next_instr, STACK_LEVEL(), 0, NULL);
+                _PyJIT_InitializeTracing(tstate, frame, this_instr, STACK_LEVEL(), 0, NULL);
                 ENTER_TRACING();
                 // Don't add the JUMP_BACKWARD_JIT instruction to the trace.
                 DISPATCH();
