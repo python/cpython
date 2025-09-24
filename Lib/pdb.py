@@ -46,12 +46,24 @@ pair ';;'.  No intelligence is applied to separating the commands; the
 input is split at the first ';;', even if it is in the middle of a
 quoted string.
 
-If a file ".pdbrc" exists in your home directory or in the current
-directory, it is read in and executed as if it had been typed at the
-debugger prompt.  This is particularly useful for aliases.  If both
-files exist, the one in the home directory is read first and aliases
-defined there can be overridden by the local file.  This behavior can be
-disabled by passing the "readrc=False" argument to the Pdb constructor.
+If a '.pdbrc' exists in any of the supported locations, it is read with 'utf-8'
+encoding and executed as if it had been typed at the debugger prompt, with the
+exception that empty lines and lines starting with '#' are ignored.  This is
+particularly useful for aliases.
+
+This behavior can be disabled by passing the 'readrc=False' argument to the Pdb
+constructor.
+
+Supported locations for '.pdbrc' file are
+
+1. '$XDG_CONFIG_HOME/pdb' (defaults to '~/.config/pdb', if environment variable
+    $XDG_CONFIG_HOME is not set)
+2. User's home directory
+3. Current working directory
+
+If '.pdbrc' files exist in multiple locations, they are processed in order, so
+that '$XDG_CONFIG_HOME/pdb/.pdbrc' is loaded first, and extended by '.pdbrc'
+files in user's home and current directory.
 
 Aside from aliases, the debugger is not directly programmable; but it
 is implemented as a class from which you can derive your own debugger
@@ -99,7 +111,7 @@ import threading
 import _colorize
 import _pyrepl.utils
 
-from contextlib import ExitStack, closing, contextmanager
+from contextlib import ExitStack, closing, contextmanager, suppress
 from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
@@ -370,19 +382,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # c.a or c['a'], it won't be recognized as a c(ontinue) command
         self.identchars = cmd.Cmd.identchars + '=.[](),"\'+-*/%@&|<>~^'
 
-        # Read ~/.pdbrc and ./.pdbrc
+        # Read $XDG_CONFIG_HOME/pdb/.pdbrc, ~/.pdbrc, and ./.pdbrc
         self.rcLines = []
         if readrc:
-            try:
-                with open(os.path.expanduser('~/.pdbrc'), encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
-            except OSError:
-                pass
-            try:
-                with open(".pdbrc", encoding='utf-8') as rcFile:
-                    self.rcLines.extend(rcFile)
-            except OSError:
-                pass
+            # $XDG_CONFIG_HOME defaults to $HOME/.config
+            config_home = os.environ.get('XDG_CONFIG_HOME', '~/.config')
+            for rc_path in (
+                os.path.expanduser(os.path.join(config_home, 'pdb', '.pdbrc')),
+                os.path.expanduser('~/.pdbrc'),
+                '.pdbrc',
+            ):
+                with suppress(OSError):
+                    with open(rc_path, encoding='utf-8') as rcFile:
+                        self.rcLines.extend(rcFile)
 
         self.commands = {} # associates a command list to breakpoint numbers
         self.commands_defining = False # True while in the process of defining
@@ -3495,8 +3507,8 @@ an executable module or package to debug can be specified using
 the -m switch. You can also attach to a running Python process
 using the -p option with its PID.
 
-Initial commands are read from .pdbrc files in your home directory
-and in the current directory, if they exist.  Commands supplied with
+Initial commands are read from .pdbrc files in "$XDG_CONFIG_HOME/pdb", your home
+directory, and in the current directory, if they exist.  Commands supplied with
 -c are executed after commands from .pdbrc files.
 
 To let the script run until an exception occurs, use "-c continue".
