@@ -804,7 +804,7 @@ build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods build-details.json
 
 .PHONY: build_emscripten
-build_emscripten: build_wasm build-details.json web_example web_example_pyrepl_jspi
+build_emscripten: build_wasm web_example web_example_pyrepl_jspi
 
 # Check that the source is clean when building out of source.
 .PHONY: check-clean-src
