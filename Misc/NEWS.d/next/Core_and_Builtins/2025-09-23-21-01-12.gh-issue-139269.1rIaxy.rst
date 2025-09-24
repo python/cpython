@@ -1,1 +1,1 @@
-Fix UB when using unaligned store in JIT's ``patch_*`` functions.
+Fix undefined behavior when using unaligned store in JIT's ``patch_*`` functions.
