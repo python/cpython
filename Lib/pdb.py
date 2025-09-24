@@ -100,7 +100,6 @@ import _colorize
 import _pyrepl.utils
 
 from contextlib import ExitStack, closing, contextmanager
-from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
 
@@ -364,6 +363,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
+
+        # GH-138860
+        # We need to lazy-import rlcompleter to avoid deadlock
+        # We cannot import it during self.complete* methods because importing
+        # rlcompleter for the first time will overwrite readline's completer
+        # So we import it here and save the Completer class
+        from rlcompleter import Completer
+        self.RlCompleter = Completer
+
         self.allow_kbdint = False
         self.nosigint = nosigint
         # Consider these characters as part of the command so when the users type
@@ -1186,10 +1194,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
             return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
 
-        # Use rlcompleter to do the completion
         state = 0
         matches = []
-        completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
+        completer = self.RlCompleter(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
@@ -1204,8 +1211,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
 
         try:
+            completer = self.RlCompleter(ns)
             old_completer = readline.get_completer()
-            completer = Completer(ns)
             readline.set_completer(completer.complete)
             yield
         finally:
