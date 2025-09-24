@@ -11,8 +11,11 @@ from .string_table import StringTable
 
 
 class StackTraceCollector(Collector):
-    def collect(self, stack_frames):
-        for frames in self._iter_all_frames(stack_frames):
+    def __init__(self, *, skip_idle=False):
+        self.skip_idle = skip_idle
+
+    def collect(self, stack_frames, skip_idle=False):
+        for frames in self._iter_all_frames(stack_frames, skip_idle=skip_idle):
             if not frames:
                 continue
             self.process_frames(frames)
@@ -22,7 +25,8 @@ class StackTraceCollector(Collector):
 
 
 class CollapsedStackCollector(StackTraceCollector):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.stack_counter = collections.Counter()
 
     def process_frames(self, frames):
@@ -46,7 +50,8 @@ class CollapsedStackCollector(StackTraceCollector):
 
 
 class FlamegraphCollector(StackTraceCollector):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.stats = {}
         self._root = {"samples": 0, "children": {}}
         self._total_samples = 0

@@ -752,6 +752,22 @@ lookup_tp_subclasses(PyTypeObject *self)
     return (PyObject *)self->tp_subclasses;
 }
 
+PyObject *
+_PyType_LookupSubclasses(PyTypeObject *self)
+{
+    return lookup_tp_subclasses(self);
+}
+
+PyObject *
+_PyType_InitSubclasses(PyTypeObject *self)
+{
+    PyObject *existing = lookup_tp_subclasses(self);
+    if (existing != NULL) {
+        return existing;
+    }
+    return init_tp_subclasses(self);
+}
+
 int
 _PyType_HasSubclasses(PyTypeObject *self)
 {
@@ -1449,15 +1465,15 @@ static PyMemberDef type_members[] = {
 static int
 check_set_special_type_attr(PyTypeObject *type, PyObject *value, const char *name)
 {
-    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
+    if (!value) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot set '%s' attribute of immutable type '%s'",
+                     "cannot delete '%s' attribute of type '%s'",
                      name, type->tp_name);
         return 0;
     }
-    if (!value) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
         PyErr_Format(PyExc_TypeError,
-                     "cannot delete '%s' attribute of immutable type '%s'",
+                     "cannot set '%s' attribute of immutable type '%s'",
                      name, type->tp_name);
         return 0;
     }

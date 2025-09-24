@@ -6678,7 +6678,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
             PyErr_SetString(PyExc_TypeError,
                          "utime: 'times' must be either"
-                         " a tuple of two ints or None");
+                         " a tuple of two numbers or None");
             return NULL;
         }
         utime.now = 0;
@@ -11756,6 +11756,7 @@ The flags argument contains a bitwise OR of zero or more of the following flags:
 
 - RWF_HIPRI
 - RWF_NOWAIT
+- RWF_DONTCACHE
 
 Using non-zero flags requires Linux 4.6 or newer.
 [clinic start generated code]*/
@@ -11763,7 +11764,7 @@ Using non-zero flags requires Linux 4.6 or newer.
 static Py_ssize_t
 os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                int flags)
-/*[clinic end generated code: output=26fc9c6e58e7ada5 input=c1f876866fcd9d41]*/
+/*[clinic end generated code: output=26fc9c6e58e7ada5 input=34fb3b9ca06f7ba7]*/
 {
     Py_ssize_t cnt, n;
     int async_err = 0;
@@ -12413,6 +12414,7 @@ The flags argument contains a bitwise OR of zero or more of the following flags:
 - RWF_DSYNC
 - RWF_SYNC
 - RWF_APPEND
+- RWF_DONTCACHE
 
 Using non-zero flags requires Linux 4.7 or newer.
 [clinic start generated code]*/
@@ -12420,7 +12422,7 @@ Using non-zero flags requires Linux 4.7 or newer.
 static Py_ssize_t
 os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
                 int flags)
-/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=99d8a21493ff76ca]*/
+/*[clinic end generated code: output=e3dd3e9d11a6a5c7 input=664a67626d485665]*/
 {
     Py_ssize_t cnt;
     Py_ssize_t result;
@@ -17645,6 +17647,9 @@ all_ins(PyObject *m)
 #endif
 #ifdef RWF_NOWAIT
     if (PyModule_AddIntConstant(m, "RWF_NOWAIT", RWF_NOWAIT)) return -1;
+#endif
+#ifdef RWF_DONTCACHE
+    if (PyModule_AddIntConstant(m, "RWF_DONTCACHE", RWF_DONTCACHE)) return -1;
 #endif
 #ifdef RWF_APPEND
     if (PyModule_AddIntConstant(m, "RWF_APPEND", RWF_APPEND)) return -1;
