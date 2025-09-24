@@ -131,8 +131,8 @@ def main(requested=None, *, verbosity=VERBOSITY, dryrun=False):
             _req = f', {len(requested)} requested'
         else:
             _req = ''
-        summary = f'# ({len(examples)} found{_req})'
-        print(summary)
+        summary = f'({len(examples)} found{_req})'
+        print('#', summary)
 
         failed = []
         for i, (lno, (text, expected)) in enumerate(examples.items(), 1):
@@ -159,15 +159,12 @@ def main(requested=None, *, verbosity=VERBOSITY, dryrun=False):
                 traceback.print_exc()
                 failed.append(str(i))
 
-        req = f'/{len(requested)}' if requested else ''
+        print()
         if failed:
-            print()
             print(f'{len(failed)} failed: {",".join(failed)}')
-            print(summary)
-        elif verbosity > VERBOSITY or dryrun:
-            print()
-            print(f'{len(failed)} failed')
-            print(summary)
+        else:
+            print(f'all succeeded')
+        print(summary)
 
         return len(failed)
     finally:

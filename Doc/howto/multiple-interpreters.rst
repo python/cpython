@@ -483,12 +483,15 @@ the same rules as functions::
         eggs = Eggs()
         res = interp.call(Eggs.modname)
         # prints: <fake __main__>
+        assert res is None
 
         res = interp.call(eggs)
         # prints: <fake __main__>
+        assert res is None
 
         res = interp.call(eggs.eggs)
         # prints: <fake __main__>
+        assert res is None
 
     ##########
     # mymod.py
@@ -595,7 +598,9 @@ left it::
         """)
     interp.exec("""if True:
         assert answer == 42
+        print('okay!')
         """)
+    # prints: okay!
 
 Similarly::
 
@@ -608,11 +613,13 @@ Similarly::
 
     def check(expected):
         assert answer == expected
+        print('okay!')
 
     if __name__ == '__main__':
         interp = interpreters.create()
         interp.call(set, 100)
         interp.call(check, 100)
+        # prints: okay!
 
 
 You can take advantage of this to prepare an interpreter ahead of time
@@ -732,9 +739,10 @@ it with more specificity::
         interp.exec('1/0')
     except interpreters.ExecutionFailed as exc:
         if exc.excinfo.type.__name__ == 'ZeroDivisionError':
-            ...
+            print('error ignored')
         else:
             raise  # re-raise
+    # prints: error ignored
 
 You can handle the exception in the interpreter as well, like you might
 do with threads or a script::
@@ -748,8 +756,9 @@ do with threads or a script::
         try:
             1/0
         except ZeroDivisionError:
-            ...
+            print('error ignored')
         """))
+    # prints: error ignored
 
 At the moment there isn't an easy way to "re-raise" an unhandled
 exception from another interpreter.  Here's one approach that works for
@@ -780,7 +789,8 @@ exceptions that can be pickled::
                 raise  # re-raise
     except ZeroDivisionError:
         # Handle it!
-        ...
+        print('error ignored')
+    # prints: error ignored
 
 Managing Interpreter Lifetime
 -----------------------------
@@ -833,7 +843,7 @@ Arguments provide a way to send information to an interpreter::
 
     def handle_request(req):
         # do the work
-        ...
+        print(req)
 
     if __name__ == '__main__':
         interp = interpreters.create()
@@ -844,8 +854,9 @@ Arguments provide a way to send information to an interpreter::
         interp.call(ident_full, 1, 2, 3, 4, 5, d=6, e=7, f=8, g=9)
         # prints: [1, 2, 3, 6, 7] (4, 5) {'f': 8, 'g': 9}
 
-        req = ...
+        req = {'x': 1, 'y': -1.3, 'misc': '???'}
         interp.call(handle_request, req)
+        # prints: {'x': 1, 'y': -1.3, 'misc': '???'}
 
 Return values are a way an interpreter can send information back::
 
@@ -862,19 +873,18 @@ Return values are a way an interpreter can send information back::
     if __name__ == '__main__':
         interp = interpreters.create()
 
-        res = interp.call(get, 'spam')
-        # res: None
+        res1 = interp.call(get, 'spam')
 
-        res = interp.call(get, 'spam', -1)
-        # res: -1
+        res2 = interp.call(get, 'spam', -1)
 
         interp.call(put, 'spam', True)
-        res = interp.call(get, 'spam')
-        # res: True
+        res3 = interp.call(get, 'spam')
 
         interp.call(put, 'spam', 42)
-        res = interp.call(get, 'spam')
-        # res: 42
+        res4 = interp.call(get, 'spam')
+
+        print(res1, res2, res3, res4)
+        # prints: None -1 True 42
 
 Don't forget that the underlying data of few objects is actually shared
 between interpreters.  That means that, nearly always, arguments are
@@ -916,6 +926,9 @@ For example::
         assert res is not data
         assert data == dict(a=1, b=2, c=3)
 
+        print('okay!')
+        # prints: okay!
+
 .. _interp-tutorial-shareable:
 
 Supported and Unsupported Objects
@@ -955,9 +968,10 @@ unpickle in the original interpreter, due to the fake module name::
         try:
             spam = interp.call(Spam, 10)
         except interpreters.NotShareableError:
-            pass
+            print('okay!')
         else:
             raise AssertionError('unexpected success')
+        # prints: okay!
 
 Sharing Data
 ------------
@@ -1002,9 +1016,17 @@ passing data between interpreters::
 
         t = interp1.call_in_thread(push, queue,
                                    'spam!', 42, 'eggs')
-        res = interp2.call(pop, queue)
-        # res: ('spam!', 42, 'eggs')
+        res1 = interp2.call(pop, queue)
+        res2 = interp2.call(pop, queue, 2)
+        try:
+            interp2.call(pop, queue, timeout=0)
+        except interpreters.ExecutionFailed:
+            pass
         t.join()
+        print(res1)
+        # prints: ('spam!',)
+        print(res2)
+        # prints: (42, 'eggs')
 
 .. _interp-script-args:
 
@@ -1028,25 +1050,29 @@ after that::
 
     interp = interpreters.create()
 
-    def run_interp(interp, name, value):
+    def prep_interp(interp, name, value):
         interp.prepare_main(**{name: value})
         interp.exec(dedent(f"""
-            ...
+            print('{name} =', {name})
             """))
-    run_interp(interp, 'spam', 42)
+    prep_interp(interp, 'spam', 42)
+    # prints: spam = 42
 
-    try:
-        infile = open('spam.txt')
-    except FileNotFoundError:
-        pass
-    else:
-        with infile:
-            interp.prepare_main(fd=infile.fileno())
-            interp.exec(dedent(f"""
-                import os
-                for line in os.fdopen(fd):
-                    print(line)
-                """))
+    with open('spam.txt', 'w') as outfile:
+        outfile.write(dedent("""\
+            line 1
+            line 2
+            EOF
+            """))
+    with open('spam.txt') as infile:
+        interp.prepare_main(fd=infile.fileno())
+        interp.exec(dedent(f"""
+            for line in open(fd, closefd=False):
+                print(line, end='')
+            """))
+    # prints: line 1
+    # prints: line 2
+    # prints: EOF
 
 This is particularly useful when you want to use a queue in a script::
 
@@ -1076,21 +1102,25 @@ format string for the script and interpolate the required values::
     def run_interp(interp, name, value):
         interp.exec(dedent(f"""
             {name} = {value!r}
-            ...
+            print('{name} =', {name})
             """))
     run_interp(interp, 'spam', 42)
+    # prints: spam = 42
 
-    try:
-        infile = open('spam.txt')
-    except FileNotFoundError:
-        pass
-    else:
-        with infile:
-            interp.exec(dedent(f"""
-                import os
-                for line in os.fdopen({infile.fileno()}):
-                    print(line)
-                """))
+    with open('spam.txt', 'w') as outfile:
+        outfile.write(dedent("""\
+            line 1
+            line 2
+            EOF
+            """))
+    with open('spam.txt') as infile:
+        interp.exec(dedent(f"""
+            for line in open({infile.fileno()}, closefd=False):
+                print(line, end='')
+            """))
+    # prints: line 1
+    # prints: line 2
+    # prints: EOF
 
 Pipes, Sockets, etc.
 --------------------
@@ -1130,13 +1160,14 @@ to another::
                     send, r_tokens, s_data, b'spam!')
             os.write(s_tokens, READY)
             msg = os.read(r_data, 20)
-            # msg: b'spam!'
             t.join()
         finally:
             os.close(r_tokens)
             os.close(s_tokens)
             os.close(r_data)
             os.close(s_data)
+        print(msg)
+        # prints: b'spam!'
 
 One interesting part of that is how the subthread blocked until
 we sent the "ready" token.  In addition to delivering the message,
@@ -1150,23 +1181,45 @@ interpreters (and use :class:`Queue` the same way)::
 
     STOP = b'\0'
     READY = b'\1'
+    INIT = b'\2'
+
+    _print = print
+    def print(*args, **kwargs):
+        _print(*args, **kwargs, flush=True)
 
     def task(tokens):
         r, s = tokens
-        while True:
-            # Do stuff.
-            ...
 
-            # Synchronize!
+        # Wait for the controller.
+        token = os.read(r, 1)
+
+        if token == INIT:
+            # Do init stuff.
+            print('<', end='')
+
+            # Unlock the controller.
+            os.write(s, READY)
+
+            # Wait for the controller.
             token = os.read(r, 1)
+
+        while token != STOP:
+            assert token == READY, token
+
+            # Do some work.
+            print('*', end='')
+
+            # Unlock the controller.
             os.write(s, token)
-            if token == STOP:
-                break
 
-            # Do other stuff.
-            ...
+            # Wait for the controller.
+            token = os.read(r, 1)
 
-    steps = [...]
+        # Clean up, and unblock the controller.
+        print('>', end='')
+        os.write(s, token)
+
+    steps = ['a', 'b', 'c', ..., 'x', 'y', 'z']
 
     if __name__ == '__main__':
         interp = interpreters.create()
@@ -1174,21 +1227,39 @@ interpreters (and use :class:`Queue` the same way)::
         r2, s2 = os.pipe()
         try:
             t = interp.call_in_thread(task, (r1, s2))
+
+            # Initialize the worker.
+            os.write(s1, INIT)
+            os.read(r2, 1)
+
+            steps = iter(steps)
+
+            # Do the first step.
             for step in steps:
                 # Do the step.
-                ...
-
-                # Synchronize!
+                print('...' if step is ... else step, end='')
+                break
+            for step in steps:
+                # Let the worker take a step.
                 os.write(s1, READY)
                 os.read(r2, 1)
+
+                # Do the step.
+                print('...' if step is ... else step, end='')
+
+            # Stop the worker.
             os.write(s1, STOP)
+
+            # Wait for it to finish.
             os.read(r2, 1)
             t.join()
+            print()
         finally:
             os.close(r1)
             os.close(s1)
             os.close(r2)
             os.close(s2)
+    # prints: <a*b*c*...*x*y*z>
 
 You can also close the pipe ends and join the thread to synchronize.
 
@@ -1217,7 +1288,8 @@ use it with multiple interpreters, via
     with InterpreterPoolExecutor(max_workers=5) as executor:
         fut = executor.submit(script)
     res = fut.result()
-    # res: 'spam!'
+    print(res)
+    # prints: spam!
 
 Capturing an interpreter's stdout
 ---------------------------------
@@ -1235,16 +1307,21 @@ interpreter manually.  Here's a basic example::
     import io
 
     def task():
+        print('before', flush=True)
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
             # Do stuff in worker!
-            ...
+            print('captured!', flush=True)
+        print('after', flush=True)
         return stdout.getvalue()
 
     if __name__ == '__main__':
         interp = interpreters.create()
         output = interp.call(task)
-        ...
+        print(output, end='')
+    # prints: before
+    # prints: after
+    # prints: captured!
 
 Here's a more elaborate example::
 
@@ -1293,12 +1370,17 @@ Here's a more elaborate example::
 
     def task():
         # Do stuff in worker!
-        ...
+        print('captured!', flush=True)
 
     if __name__ == '__main__':
         interp = interpreters.create()
+        print('before')
         with running_captured(interp, task):
             # Do stuff in main!
             ...
+        print('after')
+    # prints: before
+    # prints: captured!
+    # prints: after
 
 Using a :mod:`logger <logging>` can also help.
