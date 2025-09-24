@@ -6,6 +6,7 @@ repos:
         name: Run Ruff (lint) on Doc/
         args: [--exit-non-zero-on-fix]
         files: ^Doc/
+        exclude: ^Doc/howto/multiple-interpreters-run-examples.py
       - id: ruff
         name: Run Ruff (lint) on Lib/test/
         args: [--exit-non-zero-on-fix]
