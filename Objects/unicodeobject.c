@@ -9129,8 +9129,9 @@ enc_FAILED:
             Py_UCS4 ch = PyUnicode_READ(kind, data, inpos);
             /* try to encode it */
             charmapencode_result x = charmapencode_output(ch, mapping, writer, &respos);
-            if (x==enc_EXCEPTION) /* error */
+            if (x==enc_EXCEPTION) { /* error */
                 goto onError;
+            }
             if (x==enc_FAILED) { /* unencodable character */
                 if (charmap_encoding_error(unicode, &inpos, mapping,
                                            &exc,
