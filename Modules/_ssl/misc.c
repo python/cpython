@@ -15,7 +15,14 @@ _PySSL_BytesFromBIO(_sslmodulestate *state, BIO *bio)
         PyErr_SetString(PyExc_ValueError, "Not a memory BIO");
         return NULL;
     }
-    return PyBytes_FromStringAndSize(data, size);
+
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *str = PyBytesWriter_GetData(writer);
+    memcpy(str, data, size);
+    return PyBytesWriter_Finish(writer);
 }
 
 /* BIO_s_mem() to PyUnicode
