@@ -14,8 +14,6 @@ The :mod:`pathlib.types` module provides protocols for user-defined types that
 resemble :class:`pathlib.Path` and its associated classes. This module
 includes type annotations, so it's also useful for static type checking.
 
-.. versionadded:: 3.14
-
 
 .. class:: PathInfo()
 
