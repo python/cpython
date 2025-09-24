@@ -1773,7 +1773,7 @@ Path information
    .. method:: is_file(*, follow_symlinks=True)
    .. method:: is_symlink()
 
-      Return cached information about the path, as in
+      These methods return cached information about the path, as in
       :class:`pathlib.types.PathInfo`.
 
    .. method:: stat(*, follow_symlinks=True)
