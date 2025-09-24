@@ -942,9 +942,9 @@ class AttackProtectionTestBase(abc.ABC):
 @unittest.skipIf(expat.version_info < (2, 7, 2), "requires Expat >= 2.7.2")
 class MemoryProtectionTest(AttackProtectionTestBase, unittest.TestCase):
 
-    # With the default Expat configuration, the billion laughs protection may
-    # hit before the allocation limiter if exponential_expansion_payload() is
-    # not carefully parametrized. As such, the payloads should be chosen so
+    # NOTE: with the default Expat configuration, the billion laughs protection
+    # may hit before the allocation limiter if exponential_expansion_payload()
+    # is not carefully parametrized. As such, the payloads should be chosen so
     # that either the allocation limiter is hit before other protections are
     # triggered or no protection at all is triggered.
 
