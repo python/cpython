@@ -1583,7 +1583,7 @@ getitem_with_error(PyObject *self, PyObject *args)
 static PyObject *
 raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
 {
-    PyGenObject *gen;
+    PyObject *gen;
 
     if (!PyArg_ParseTuple(args, "O", &gen))
         return NULL;
@@ -1599,7 +1599,7 @@ raise_SIGINT_then_send_None(PyObject *self, PyObject *args)
          because we check for signals before every bytecode operation.
      */
     raise(SIGINT);
-    return PyObject_CallMethod((PyObject *)gen, "send", "O", Py_None);
+    return PyObject_CallMethod(gen, "send", "O", Py_None);
 }
 
 
