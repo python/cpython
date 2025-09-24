@@ -2417,7 +2417,7 @@ class TestCounter(unittest.TestCase):
             pp = Counter(p)
             qq = Counter(q)
             pp ^= qq
-            assert pp == r
+            self.assertEqual(pp, r)
 
 
 def load_tests(loader, tests, pattern):
