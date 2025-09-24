@@ -2435,19 +2435,6 @@ types.
       Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
       is unsupported and causes a :class:`TypeError`.
 
-   .. deprecated-removed:: 3.13 3.15
-      The undocumented keyword argument syntax for creating NamedTuple classes
-      (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
-      in 3.15. Use the class-based syntax or the functional syntax instead.
-
-   .. deprecated-removed:: 3.13 3.15
-      When using the functional syntax to create a NamedTuple class, failing to
-      pass a value to the 'fields' parameter (``NT = NamedTuple("NT")``) is
-      deprecated. Passing ``None`` to the 'fields' parameter
-      (``NT = NamedTuple("NT", None)``) is also deprecated. Both will be
-      disallowed in Python 3.15. To create a NamedTuple class with 0 fields,
-      use ``class NT(NamedTuple): pass`` or ``NT = NamedTuple("NT", [])``.
-
 .. class:: NewType(name, tp)
 
    Helper class to create low-overhead :ref:`distinct types <distinct>`.
@@ -2823,13 +2810,6 @@ types.
    .. versionchanged:: 3.13
       Support for the :data:`ReadOnly` qualifier was added.
 
-   .. deprecated-removed:: 3.13 3.15
-      When using the functional syntax to create a TypedDict class, failing to
-      pass a value to the 'fields' parameter (``TD = TypedDict("TD")``) is
-      deprecated. Passing ``None`` to the 'fields' parameter
-      (``TD = TypedDict("TD", None)``) is also deprecated. Both will be
-      disallowed in Python 3.15. To create a TypedDict class with 0 fields,
-      use ``class TD(TypedDict): pass`` or ``TD = TypedDict("TD", {})``.
 
 Protocols
 ---------
