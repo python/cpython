@@ -464,6 +464,12 @@ PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
     PyStackRef_CLOSE(ref);
 }
 
+static inline int
+PyStackRef_RefcountOnObject(_PyStackRef ref)
+{
+    return (ref.bits & Py_TAG_REFCNT) == 0;
+}
+
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef stackref)
 {
