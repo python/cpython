@@ -949,15 +949,18 @@ Subscriptions and slicing
    pair: object; dictionary
    pair: sequence; item
 
-The subscription of an instance of a :ref:`container class <sequence-types>`
-will generally select an element from the container.
-Subscripting a mapping will select a value using a key::
+:dfn:`Subscription` is an operation of selecting an element from a
+:ref:`container <sequence-types>`.
+The subscription syntax uses square brackets, which contain a :dfn:`key`,
+:dfn:`index` or :dfn:`slice` -- that is, an expression by which the requested
+element is looked up.
+For example, subscription is used to get a value from a
+:ref:`mapping <datamodel-mappings>` using a key, or to get an item from a
+:ref:`sequence <datamodel-sequences>` using an index::
 
    >>> digits_by_name = {'one': 1, 'two': 2}
    >>> digits_by_name['two']
    2
-
-Subscripting a sequence will select an item using an index::
 
    >>> number_names = ['zero', 'one', 'two', 'three', 'four', 'five']
    >>> number_names[2]
@@ -965,38 +968,48 @@ Subscripting a sequence will select an item using an index::
    >>> number_names[-2]
    'four'
 
-The subscription of a :term:`generic class <generic type>` will generally
-return a :ref:`GenericAlias <types-genericalias>` object::
+The subscription syntax is also used to provide type arguments for
+:term:`generic types <generic type>`::
 
-   >>> list[str]
-   list[str]
+   >>> seq: list[str]
 
-At the syntax level, all of these operations are equivalent.
-The object being subscribed must be a :ref:`primary <primaries>`.
-When it is subscripted, the interpreter will evaluate the primary and
-the the contents of the square brackets.
+Syntactically, the object being subscribed is a :ref:`primary <primaries>`.
+At runtime, the interpreter will evaluate the primary and
+the contents of the square brackets, and call the primary's
+:meth:`~object.__getitem__` or :meth:`~object.__class_getitem__` method.
+For more details on which of these methods is called, see
+:ref:`classgetitem-versus-getitem`.
 
-The primary must evaluate to an object that supports subscription.
-An object may support subscription through defining one or both of
-:meth:`~object.__getitem__` and :meth:`~object.__class_getitem__`.
-For more details on when ``__class_getitem__`` is called instead of
-``__getitem__``, see :ref:`classgetitem-versus-getitem`.
+To show how subscription works, we can define a custom object that
+implements :meth:`~object.__getitem__` and prints out the key it
+was subscripted with::
 
-In its simplest form, square brackets contain a single expression.
+   >>> class SubscriptionDemo:
+   ...     def __getitem__(self, key):
+   ...         print(f'subscripted with: {key!r}')
+   ...
+   >>> demo = SubscriptionDemo()
+   >>> demo[1]
+   subscripted with: 1
+
+In the simplest form of subscription, the square brackets contain a single
+expression.
 The evaluated result of this expression will be passed to the
-:meth:`~object.__getitem__` or :meth:`~object.__getitem__` method.
+:meth:`~object.__getitem__` or :meth:`~object.__class_getitem__` method::
 
-The square brackets can also contain up to three expressions separated by
-colons::
+   >>> demo[1 + 2]
+   subscripted with: 3
+
+A more advanced form of subscription, :dfn:`slicing`, is commonly used
+to extract a portion of a :ref:`sequence <datamodel-sequences>`.
+In this form, the square brackets contain a :term:`slice`: up to three
+expressions separated by colons.
+Any of the expressions may be omitted, but a slice must contain at least one
+colon::
 
    >>> number_names = ['zero', 'one', 'two', 'three', 'four', 'five']
    >>> number_names[1:3]
    ['one', 'two']
-
-This form of subscription is called :term:`slicing`.
-Any of the expressions may be omitted, but at least one colon is necessary
-for this form::
-
    >>> number_names[1:]
    ['one', two', 'three', 'four', 'five']
    >>> number_names[:3]
@@ -1006,35 +1019,27 @@ for this form::
    >>> number_names[::2]
    ['zero', 'two', 'four']
 
-When such a :term:`slice` is evaluated, the interpreter constructs a
-:class:`slice` objects whose :attr:`~slice.start`, :attr:`~slice.stop` and
+When a slice is evaluated, the interpreter constructs a :class:`slice` object
+whose :attr:`~slice.start`, :attr:`~slice.stop` and
 :attr:`~slice.step` attributes, respectively, are the results of the
 expressions between the colons.
 Any missing expression evaluates to :const:`None`.
 This :class:`!slice` object is then passed to the :meth:`~object.__getitem__`
-or :meth:`~object.__getitem__` method, as above.
+or :meth:`~object.__class_getitem__` method, as above. ::
 
-For clarity, here is a custom object that prints out the key it was subscripted
-with::
-
-   >>> class SubscriptionDemo:
-   ...     def __getitem__(self, key):
-   ...         print(f'subscripted with: {key!r}')
-   ...
-   >>> demo = SubscriptionDemo()
-   >>> demo[1]
-   subscripted with: 1
    >>> demo[2:3]
    subscripted with: slice(2, 3, None)
    >>> demo[::'spam']
-   subscripted with slice(None, None, 'spam')
+   subscripted with: slice(None, None, 'spam')
 
-The square brackets used for slicing can also contain two or more
+The square brackets used for subscription can also contain two or more
 comma-separated expressions or slices, or one expression or slice followed
 by a comma.
-In this case, the interpreter constructs a tuple of the results of the
+This form is commonly used with numerical libraries for slicing
+multi-dimensional data.
+In this case, the interpreter constructs a :class:`tuple` of the results of the
 expressions or slices, and passes this tuple to the :meth:`~object.__getitem__`
-or :meth:`~object.__getitem__` method, as above::
+or :meth:`~object.__class_getitem__` method, as above::
 
    >>> demo[1, 2, 3]
    subscripted with (1, 2, 3)
@@ -1043,10 +1048,16 @@ or :meth:`~object.__getitem__` method, as above::
 
 The square brackets can also contain a starred expression.
 In this case, the interpreter unpacks the result into a tuple, and passes
-this tuple to :meth:`~object.__getitem__` or :meth:`~object.__getitem__`::
+this tuple to :meth:`~object.__getitem__` or :meth:`~object.__class_getitem__`::
 
    >>> demo[*range(10)]
    subscripted with (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+Starred expressions may be combined with comma-separated expressions
+and slices:::
+
+   >>> demo['a', 'b', *range(3), 'c']
+  subscripted with: ('a', 'b', 0, 1, 2, 'c')
 
 
 

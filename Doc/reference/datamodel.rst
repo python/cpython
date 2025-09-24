@@ -294,6 +294,7 @@ floating-point numbers.  The same caveats apply as for floating-point numbers.
 The real and imaginary parts of a complex number ``z`` can be retrieved through
 the read-only attributes ``z.real`` and ``z.imag``.
 
+.. _datamodel-sequences:
 
 Sequences
 ---------
@@ -464,6 +465,8 @@ Frozen sets
    :term:`hashable`, it can be used again as an element of another set, or as
    a dictionary key.
 
+
+.. _datamodel-mappings:
 
 Mappings
 --------
