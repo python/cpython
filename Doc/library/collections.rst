@@ -404,7 +404,7 @@ or subtracting from an empty counter.
 .. versionadded:: 3.3
     Added support for unary plus, unary minus, and in-place multiset operations.
 
-.. versionadded:: 3.15
+.. versionadded:: next
     Added support for the symmetric difference multiset operation, ``c ^ d``.
 
 .. note::
