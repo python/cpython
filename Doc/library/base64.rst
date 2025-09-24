@@ -74,10 +74,10 @@ POST request.
    of length 2 which specifies the alternative alphabet used instead of the
    ``+`` and ``/`` characters.
 
-   A :exc:`binascii.Error` exception is raised if *s* contains incorrect padding. 
-   When *validate* is ``False`` (the default), extra padding characters and 
+   A :exc:`binascii.Error` exception is raised if *s* contains incorrect padding.
+   When *validate* is ``False`` (the default), extra padding characters and
    discontinuous padding characters (``=`` characters in the middle of the string)
-   are silently ignored. When *validate* is ``True``, such incorrect padding 
+   are silently ignored. When *validate* is ``True``, such incorrect padding
    will result in a :exc:`binascii.Error`.
 
    If *validate* is ``False`` (the default), characters that are neither
