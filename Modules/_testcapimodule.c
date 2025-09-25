@@ -3252,6 +3252,30 @@ static PyType_Spec ManagedWeakrefNoGC_spec = {
     .slots = ManagedWeakrefNoGC_slots,
 };
 
+typedef struct {
+    PyObject_HEAD
+} ManagedDictNoGCObject;
+
+static void
+ManagedDictNoGC_dealloc(PyObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot ManagedDictNoGC_slots[] = {
+    {Py_tp_dealloc, ManagedDictNoGC_dealloc},
+    {0, 0}
+};
+
+static PyType_Spec ManagedDictNoGC_spec = {
+    .name = "_testcapi.ManagedDictNoGCType",
+    .basicsize = sizeof(ManagedDictNoGCObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_MANAGED_DICT),
+    .slots = ManagedDictNoGC_slots,
+};
+
 
 static PyObject *
 create_managed_dict_type(void)
@@ -3263,6 +3287,12 @@ static PyObject *
 create_managed_weakref_no_gc_type(void)
 {
    return PyType_FromSpec(&ManagedWeakrefNoGC_spec);
+}
+
+static PyObject *
+create_managed_dict_no_gc_type(void)
+{
+   return PyType_FromSpec(&ManagedDictNoGC_spec);
 }
 
 static int
@@ -3402,6 +3432,13 @@ _testcapi_exec(PyObject *m)
         return -1;
     }
 
+    PyObject *managed_dict_no_gc_type = create_managed_dict_no_gc_type();
+    if (managed_dict_no_gc_type == NULL) {
+        return -1;
+    }
+    if (PyModule_Add(m, "ManagedDictNoGCType", managed_dict_no_gc_type) < 0) {
+        return -1;
+    }
 
     /* Include tests from the _testcapi/ directory */
     if (_PyTestCapi_Init_Vectorcall(m) < 0) {

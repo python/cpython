@@ -276,10 +276,15 @@ class TypeTests(unittest.TestCase):
         self.assertEqual(obj.__dict__, {'bar': 3})
         self.assertEqual(obj.bar, 3)
 
-    def test_type_have_weakref_and_no_gc(self):
+    def test_type_have_managed_weakref_and_no_gc(self):
         ManagedWeakrefNoGCType = _testcapi.ManagedWeakrefNoGCType
         obj = ManagedWeakrefNoGCType()
         wr = weakref.ref(obj)
 
         del obj # shouldn't segfault
         del wr
+
+    def test_type_have_managed_dict_and_no_gc(self):
+        ManagedDictNoGCType = _testcapi.ManagedDictNoGCType
+        obj = ManagedDictNoGCType()
+        del obj # shouldn't segfault

@@ -4832,7 +4832,12 @@
             _PyStackRef owner;
             owner = stack_pointer[-1];
             uint16_t dictoffset = (uint16_t)CURRENT_OPERAND0();
-            char *ptr = ((char *)PyStackRef_AsPyObjectBorrow(owner)) + MANAGED_DICT_OFFSET + dictoffset;
+            PyObject *borrowed = PyStackRef_AsPyObjectBorrow(owner);
+            Py_ssize_t offset = MANAGED_DICT_OFFSET;
+            if (!PyType_IS_GC(Py_TYPE(borrowed))) {
+                offset = MANAGED_DICT_OFFSET_NO_GC;
+            }
+            char *ptr = ((char *)borrowed) + offset + dictoffset;
             PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*(PyObject **)ptr);
             if (dict != NULL) {
                 UOP_STAT_INC(uopcode, miss);

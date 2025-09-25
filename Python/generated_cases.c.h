@@ -8175,7 +8175,12 @@
             // _CHECK_ATTR_METHOD_LAZY_DICT
             {
                 uint16_t dictoffset = read_u16(&this_instr[4].cache);
-                char *ptr = ((char *)PyStackRef_AsPyObjectBorrow(owner)) + MANAGED_DICT_OFFSET + dictoffset;
+                PyObject *borrowed = PyStackRef_AsPyObjectBorrow(owner);
+                Py_ssize_t offset = MANAGED_DICT_OFFSET;
+                if (!PyType_IS_GC(Py_TYPE(borrowed))) {
+                    offset = MANAGED_DICT_OFFSET_NO_GC;
+                }
+                char *ptr = ((char *)borrowed) + offset + dictoffset;
                 PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*(PyObject **)ptr);
                 if (dict != NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);

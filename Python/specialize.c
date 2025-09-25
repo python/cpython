@@ -1626,7 +1626,12 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
     else {
         Py_ssize_t dictoffset;
         if (tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-            dictoffset = MANAGED_DICT_OFFSET;
+            if (tp_flags & Py_TPFLAGS_HAVE_GC) {
+                dictoffset = MANAGED_DICT_OFFSET;
+            }
+            else {
+                dictoffset = MANAGED_DICT_OFFSET_NO_GC;
+            }
         }
         else {
             dictoffset = owner_cls->tp_dictoffset;
