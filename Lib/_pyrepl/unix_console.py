@@ -350,8 +350,7 @@ class UnixConsole(Console):
             self.__svtermstate = tcgetattr(self.input_fd)
         self.__buffer = []
 
-        self.__svtermstate = tcgetattr(self.input_fd)
-        raw = self.__svtermstate.copy()
+        raw = tcgetattr(self.input_fd).copy()
         raw.iflag &= ~(termios.INPCK | termios.ISTRIP | termios.IXON)
         raw.oflag &= ~(termios.OPOST)
         raw.cflag &= ~(termios.CSIZE | termios.PARENB)
