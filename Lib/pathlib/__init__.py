@@ -209,14 +209,12 @@ class PurePath:
         try:
             return self._hash
         except AttributeError:
-            hash_data = self._tail
-            if self._drv or self._root:
-                hash_data = [self._drv + self._root] + self._tail
-            elif self._tail and self.parser.splitdrive(self._tail[0])[0]:
-                hash_data = ['.'] + self._tail
-            if self.parser is not posixpath:
-                hash_data = [part.lower() for part in hash_data]
-            self._hash = hash(tuple(hash_data))
+            if self.parser is posixpath:
+                self._hash = hash((self.root, tuple(self._tail)))
+            else:
+                self._hash = hash((self.drive.lower(),
+                                   self.root.lower(),
+                                   tuple([part.lower() for part in self._tail])))
             return self._hash
 
     def __eq__(self, other):
