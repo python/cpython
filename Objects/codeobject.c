@@ -1006,7 +1006,7 @@ failed:
  ******************/
 
 int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
+_PyCode_Addr2LineNoTstate(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
@@ -1018,6 +1018,16 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
     PyCodeAddressRange bounds;
     _PyCode_InitAddressRange(co, &bounds);
     return _PyCode_CheckLineNumber(addrq, &bounds);
+}
+
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
+{
+    int lineno;
+    Py_BEGIN_CRITICAL_SECTION(co);
+    lineno = _PyCode_Addr2LineNoTstate(co, addrq);
+    Py_END_CRITICAL_SECTION();
+    return lineno;
 }
 
 void

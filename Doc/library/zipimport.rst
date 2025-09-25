@@ -30,6 +30,9 @@ Any files may be present in the ZIP archive, but importers are only invoked for
 corresponding :file:`.pyc` file, meaning that if a ZIP archive
 doesn't contain :file:`.pyc` files, importing may be rather slow.
 
+.. versionchanged:: next
+   Zstandard (*zstd*) compressed zip file entries are supported.
+
 .. versionchanged:: 3.13
    ZIP64 is supported
 

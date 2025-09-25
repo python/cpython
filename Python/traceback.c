@@ -993,8 +993,8 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     } else {
         PUTS(fd, "???");
     }
-
-    int lineno = PyUnstable_InterpreterFrame_GetLine(frame);
+    int lasti = PyUnstable_InterpreterFrame_GetLasti(frame);
+    int lineno = _PyCode_Addr2LineNoTstate(code, lasti);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);

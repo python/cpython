@@ -811,7 +811,7 @@ dummy_func(
             assert(next_instr->op.code == STORE_FAST);
             next_oparg = next_instr->op.arg;
         #else
-            next_oparg = CURRENT_OPERAND0();
+            next_oparg = (int)CURRENT_OPERAND0();
         #endif
             _PyStackRef *target_local = &GETLOCAL(next_oparg);
             assert(PyUnicode_CheckExact(left_o));
@@ -1219,7 +1219,7 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
-#if !Py_TAIL_CALL_INTERP
+#if !_Py_TAIL_CALL_INTERP
             assert(frame == &entry.frame);
 #endif
 #ifdef _Py_TIER2
@@ -1509,7 +1509,7 @@ dummy_func(
 
         tier1 inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
-            #if !Py_TAIL_CALL_INTERP
+            #if !_Py_TAIL_CALL_INTERP
             assert(throwflag);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
@@ -2940,9 +2940,10 @@ dummy_func(
         };
 
         tier1 op(_SPECIALIZE_JUMP_BACKWARD, (--)) {
-        #if ENABLE_SPECIALIZATION
+        #if ENABLE_SPECIALIZATION_FT
             if (this_instr->op.code == JUMP_BACKWARD) {
-                this_instr->op.code = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                uint8_t desired = tstate->interp->jit ? JUMP_BACKWARD_JIT : JUMP_BACKWARD_NO_JIT;
+                FT_ATOMIC_STORE_UINT8_RELAXED(this_instr->op.code, desired);
                 // Need to re-dispatch so the warmup counter isn't off by one:
                 next_instr = this_instr;
                 DISPATCH_SAME_OPARG();
@@ -5250,7 +5251,7 @@ dummy_func(
             if (frame->lltrace >= 2) {
                 printf("SIDE EXIT: [UOp ");
                 _PyUOpPrint(&next_uop[-1]);
-                printf(", exit %lu, temp %d, target %d -> %s]\n",
+                printf(", exit %tu, temp %d, target %d -> %s]\n",
                     exit - current_executor->exits, exit->temperature.value_and_backoff,
                     (int)(target - _PyFrame_GetBytecode(frame)),
                     _PyOpcode_OpName[target->op.code]);
@@ -5343,12 +5344,6 @@ dummy_func(
             new = old;
             DEAD(old);
             value = PyStackRef_FromPyObjectBorrow(ptr);
-        }
-
-        tier2 op(_CHECK_FUNCTION, (func_version/2 -- )) {
-            assert(PyStackRef_FunctionCheck(frame->f_funcobj));
-            PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
-            DEOPT_IF(func->func_version != func_version);
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
@@ -5521,7 +5516,7 @@ dummy_func(
             }
 #endif
             RELOAD_STACK();
-#if Py_TAIL_CALL_INTERP
+#if _Py_TAIL_CALL_INTERP
             int opcode;
 #endif
             DISPATCH();
@@ -5539,7 +5534,7 @@ dummy_func(
             if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
-#if !Py_TAIL_CALL_INTERP
+#if !_Py_TAIL_CALL_INTERP
                 assert(frame == &entry.frame);
 #endif
 #ifdef _Py_TIER2
@@ -5575,7 +5570,7 @@ dummy_func(
             assert(!_PyErr_Occurred(tstate));
         #endif
             RELOAD_STACK();
-#if Py_TAIL_CALL_INTERP
+#if _Py_TAIL_CALL_INTERP
             int opcode;
 #endif
             DISPATCH();
