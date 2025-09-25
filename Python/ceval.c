@@ -451,6 +451,13 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     SetThreadStackGuarantee(&guarantee);
     _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + _PyOS_STACK_MARGIN_BYTES;
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES;
+#elif defined(__APPLE__)
+    pthread_t this_thread = pthread_self();
+    void *stack_addr = pthread_get_stackaddr_np(this_thread); // top of the stack
+    size_t stack_size = pthread_get_stacksize_np(this_thread);
+    _tstate->c_stack_top = (uintptr_t)stack_addr;
+    _tstate->c_stack_hard_limit = _tstate->c_stack_top - stack_size;
+    _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + _PyOS_STACK_MARGIN_BYTES;
 #else
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
 /// XXX musl supports HAVE_PTHRED_GETATTR_NP, but the resulting stack size

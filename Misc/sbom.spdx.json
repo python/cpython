@@ -1730,14 +1730,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "17aa6cfc5c4c219c09287abfc10bc13f0c06f30bb654b28bfe6f567ca646eb79"
+          "checksumValue": "13d42a125897329bfeecab899cb9b5a3ec8c26072994b5cd4c41f28241f5bce7"
         }
       ],
-      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_6_3/expat-2.6.3.tar.gz",
+      "downloadLocation": "https://github.com/libexpat/libexpat/releases/download/R_2_7_2/expat-2.7.2.tar.gz",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.6.3:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:libexpat_project:libexpat:2.7.2:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1745,7 +1745,7 @@
       "name": "expat",
       "originator": "Organization: Expat development team",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "2.6.3"
+      "versionInfo": "2.7.2"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-hacl-star",
