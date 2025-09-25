@@ -228,7 +228,7 @@ body {
 }
 
 .thread-filter-wrapper {
-  display: inline-flex;
+  display: none;
   align-items: center;
   margin-left: 16px;
   background: white;

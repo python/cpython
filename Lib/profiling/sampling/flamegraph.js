@@ -536,10 +536,6 @@ function initThreadFilter(data) {
   const threadWrapper = document.querySelector('.thread-filter-wrapper');
 
   if (!threadFilter || !data.threads) {
-    // Hide thread filter if no thread data
-    if (threadWrapper) {
-      threadWrapper.style.display = 'none';
-    }
     return;
   }
 
@@ -555,9 +551,9 @@ function initThreadFilter(data) {
     threadFilter.appendChild(option);
   });
 
-  // Hide filter if only one thread or no threads
-  if (threads.length <= 1 && threadWrapper) {
-    threadWrapper.style.display = 'none';
+  // Show filter if more than one thread
+  if (threads.length > 1 && threadWrapper) {
+    threadWrapper.style.display = 'inline-flex';
   }
 }
 
