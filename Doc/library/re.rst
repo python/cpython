@@ -915,10 +915,15 @@ Functions
 
    .. note::
 
-      The compiled versions of the most recent patterns passed to
-      :func:`re.compile` and the module-level matching functions are cached, so
-      programs that use only a few regular expressions at a time needn't worry
-      about compiling regular expressions.
+      In addition to caching patterns passed to :func:`re.compile`,
+      the module maintains a small internal cache of regular
+      expressions passed to matching functions such as
+      :func:`re.search`, :func:`re.match`, and :func:`findall`,
+      even if the regular expressions were passed to
+      those functions as strings. Therefore, programs that use only
+      a few regular expressions at a time needn't worry about
+      compiling regular expressions.
+
 
 
 .. function:: search(pattern, string, flags=0)
