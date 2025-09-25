@@ -872,7 +872,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the AsyncioDebug section in the process.");
         _PyErr_ChainExceptions1(exc);
     }
-#elif defined(__linux__)
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
     // On Linux, search for asyncio debug in executable or DLL
     address = search_linux_map_for_section(handle, "AsyncioDebug", "python");
     if (address == 0) {
