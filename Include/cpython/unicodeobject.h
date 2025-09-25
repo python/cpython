@@ -734,28 +734,28 @@ PyAPI_FUNC(int) _PyUnicode_IsAlpha(
     );
 
 PyAPI_FUNC(Py_ssize_t) PyUCS4_ToLower(
-    Py_UCS4 ch,     /* Unicode character */
-    Py_UCS4 *res,   /* Output buffer */
-    Py_ssize_t size        /* Buffer size */
-    );
+    const Py_UCS4 *str,    /* Unicode string */
+    Py_ssize_t str_size,   /* Unicode string size (UCS-4 characters) */
+    Py_UCS4 *buf,          /* Output buffer */
+    Py_ssize_t buf_size);  /* Buffer size (UCS-4 characters) */
 
 PyAPI_FUNC(Py_ssize_t) PyUCS4_ToUpper(
-    Py_UCS4 ch,     /* Unicode character */
-    Py_UCS4 *res,   /* Output buffer */
-    Py_ssize_t size        /* Buffer size */
-    );
+    const Py_UCS4 *str,    /* Unicode string */
+    Py_ssize_t str_size,   /* Unicode string size (UCS-4 characters) */
+    Py_UCS4 *buf,          /* Output buffer */
+    Py_ssize_t buf_size);  /* Buffer size (UCS-4 characters) */
 
 PyAPI_FUNC(Py_ssize_t) PyUCS4_ToTitle(
-    Py_UCS4 ch,     /* Unicode character */
-    Py_UCS4 *res,   /* Output buffer */
-    Py_ssize_t size        /* Buffer size */
-    );
+    const Py_UCS4 *str,    /* Unicode string */
+    Py_ssize_t str_size,   /* Unicode string size (UCS-4 characters) */
+    Py_UCS4 *buf,          /* Output buffer */
+    Py_ssize_t buf_size);  /* Buffer size (UCS-4 characters) */
 
 PyAPI_FUNC(Py_ssize_t) PyUCS4_ToFolded(
-    Py_UCS4 ch,     /* Unicode character */
-    Py_UCS4 *res,   /* Output buffer */
-    Py_ssize_t size        /* Buffer size */
-    );
+    const Py_UCS4 *str,    /* Unicode string */
+    Py_ssize_t str_size,   /* Unicode string size (UCS-4 characters) */
+    Py_UCS4 *buf,          /* Output buffer */
+    Py_ssize_t buf_size);  /* Buffer size (UCS-4 characters) */
 
 
 // Helper array used by Py_UNICODE_ISSPACE().

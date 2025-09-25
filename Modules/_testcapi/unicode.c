@@ -221,22 +221,36 @@ unicode_copycharacters(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-unicode_case_operation(PyObject *str, Py_ssize_t (*function)(Py_UCS4, Py_UCS4 *, Py_ssize_t),
-                       Py_UCS4 *buf, Py_ssize_t size)
+unicode_case_operation(PyObject *str,
+                       Py_ssize_t (*function)(const Py_UCS4*, Py_ssize_t, Py_UCS4 *, Py_ssize_t),
+                       int buf_too_small)
 {
     if (!PyUnicode_Check(str)) {
         PyErr_Format(PyExc_TypeError, "expect str type, got %T", str);
         return NULL;
     }
+    Py_ssize_t len = PyUnicode_GET_LENGTH(str);
 
-    if (PyUnicode_GET_LENGTH(str) != 1) {
-        PyErr_SetString(PyExc_ValueError, "expecting 1-character strings only");
+    Py_UCS4 *ucs4 = PyUnicode_AsUCS4Copy(str);
+    if (ucs4 == NULL) {
         return NULL;
     }
 
-    Py_UCS4 c = PyUnicode_READ_CHAR(str, 0);
+    Py_ssize_t buf_size;
+    if (!buf_too_small) {
+        buf_size = len * PyUCS4_CASE_CONVERSION_BUFFER_SIZE;
+    }
+    else {
+        buf_size = len * 1;
+    }
+    Py_UCS4 *buf = PyMem_Malloc(buf_size * sizeof(Py_UCS4));
+    if (buf == NULL) {
+        PyMem_Free(ucs4);
+        return NULL;
+    }
 
-    Py_ssize_t chars = function(c, buf, size);
+    Py_ssize_t chars = function(ucs4, len, buf, buf_size);
+    PyMem_Free(ucs4);
     if (chars < 0) {
         return NULL;
     }
@@ -248,8 +262,7 @@ unicode_case_operation(PyObject *str, Py_ssize_t (*function)(Py_UCS4, Py_UCS4 *,
 static PyObject *
 unicode_tolower(PyObject *self, PyObject *arg)
 {
-    Py_UCS4 buf[PyUCS4_CASE_CONVERSION_BUFFER_SIZE];
-    return unicode_case_operation(arg, PyUCS4_ToLower, buf, PyUCS4_CASE_CONVERSION_BUFFER_SIZE);
+    return unicode_case_operation(arg, PyUCS4_ToLower, 0);
 }
 
 
@@ -257,32 +270,28 @@ unicode_tolower(PyObject *self, PyObject *arg)
 static PyObject *
 unicode_toupper(PyObject *self, PyObject *arg)
 {
-    Py_UCS4 buf[PyUCS4_CASE_CONVERSION_BUFFER_SIZE];
-    return unicode_case_operation(arg, PyUCS4_ToUpper, buf, PyUCS4_CASE_CONVERSION_BUFFER_SIZE);
+    return unicode_case_operation(arg, PyUCS4_ToUpper, 0);
 }
 
 /* Test PyUCS4_ToUpper() with a small buffer */
 static PyObject *
 unicode_toupper_buffer_too_small(PyObject *self, PyObject *arg)
 {
-    Py_UCS4 buf;
-    return unicode_case_operation(arg, PyUCS4_ToUpper, &buf, 1);
+    return unicode_case_operation(arg, PyUCS4_ToUpper, 1);
 }
 
 /* Test PyUCS4_ToLower() */
 static PyObject *
 unicode_totitle(PyObject *self, PyObject *arg)
 {
-    Py_UCS4 buf[PyUCS4_CASE_CONVERSION_BUFFER_SIZE];
-    return unicode_case_operation(arg, PyUCS4_ToTitle, buf, PyUCS4_CASE_CONVERSION_BUFFER_SIZE);
+    return unicode_case_operation(arg, PyUCS4_ToTitle, 0);
 }
 
 /* Test PyUCS4_ToLower() */
 static PyObject *
 unicode_tofolded(PyObject *self, PyObject *arg)
 {
-    Py_UCS4 buf[PyUCS4_CASE_CONVERSION_BUFFER_SIZE];
-    return unicode_case_operation(arg, PyUCS4_ToFolded, buf, PyUCS4_CASE_CONVERSION_BUFFER_SIZE);
+    return unicode_case_operation(arg, PyUCS4_ToFolded, 0);
 }
 
 

@@ -307,53 +307,61 @@ These APIs can be used for fast direct character conversions:
    possible.  This function does not raise exceptions.
 
 
-.. c:function:: Py_ssize_t PyUCS4_ToLower(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUCS4_ToLower(const Py_UCS4 *str, Py_ssize_t str_size, Py_UCS4 *buffer, Py_ssize_t buf_size)
 
-   Convert *ch* to lower case, store result in *buffer*, which should be
-   able to hold as many characters needed for *ch* to be lower cased, and
+   Convert *str* characters to lower case, store result in *buffer*, which should be
+   able to hold as many characters needed for *str* to be lower cased, and
    return the number of characters stored. If at some point a buffer overflow
    is detected, an :exc:`ValueError` is raised and ``-1`` is returned.
 
-   In Unicode 16.0, any character can be lowercased into a buffer of *size* ``2``.
+   *str_size*, *buf_size* and the result are number of UCS-4 characters.
+
+   In Unicode 16.0, any character can be lowercased into a buffer of *buf_size* ``2``.
    See also :c:macro:`PyUCS4_CASE_CONVERSION_BUFFER_SIZE`.
 
    .. versionadded:: next
 
 
-.. c:function:: Py_ssize_t PyUCS4_ToUpper(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUCS4_ToUpper(const Py_UCS4 *str, Py_ssize_t str_size, Py_UCS4 *buffer, Py_ssize_t buf_size)
 
-   Convert *ch* to upper case, store result in *buffer*, which should be
-   able to hold as many characters needed for *ch* to be upper cased, and
+   Convert *str* characters to upper case, store result in *buffer*, which should be
+   able to hold as many characters needed for *str* to be upper cased, and
    return the number of characters stored. If at some point a buffer overflow
    is detected, an :exc:`ValueError` is raised and ``-1`` is returned.
 
-   In Unicode 16.0, any character can be uppercased into a buffer of *size* ``3``.
+   *str_size*, *buf_size* and the result are number of UCS-4 characters.
+
+   In Unicode 16.0, any character can be uppercased into a buffer of *buf_size* ``3``.
    See also :c:macro:`PyUCS4_CASE_CONVERSION_BUFFER_SIZE`.
 
    .. versionadded:: next
 
 
-.. c:function:: Py_ssize_t PyUCS4_ToTitle(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUCS4_ToTitle(const Py_UCS4 *str, Py_ssize_t str_size, Py_UCS4 *buffer, Py_ssize_t buf_size)
 
-   Convert *ch* to title case, store result in *buffer*, which should be
-   able to hold as many characters needed for *ch* to be title cased, and
+   Convert *str* characters to title case, store result in *buffer*, which should be
+   able to hold as many characters needed for *str* to be title cased, and
    return the number of characters stored. If at some point a buffer overflow
    is detected, an :exc:`ValueError` is raised and ``-1`` is returned.
 
-   In Unicode 16.0, any character can be titlecased into a buffer of *size* ``3``.
+   *str_size*, *buf_size* and the result are number of UCS-4 characters.
+
+   In Unicode 16.0, any character can be titlecased into a buffer of *buf_size* ``3``.
    See also :c:macro:`PyUCS4_CASE_CONVERSION_BUFFER_SIZE`.
 
    .. versionadded:: next
 
 
-.. c:function:: Py_ssize_t PyUCS4_ToFolded(Py_UCS4 ch, Py_UCS4 *buffer, Py_ssize_t size)
+.. c:function:: Py_ssize_t PyUCS4_ToFolded(const Py_UCS4 *str, Py_ssize_t str_size, Py_UCS4 *buffer, Py_ssize_t buf_size)
 
-   Foldcase *ch*, store result in *buffer*, which should be
-   able to hold as many characters needed for *ch* to be foldcased, and
+   Foldcase *str* characters, store result in *buffer*, which should be
+   able to hold as many characters needed for *str* to be foldcased, and
    return the number of characters stored. If at some point a buffer overflow
    is detected, an :exc:`ValueError` is raised and ``-1`` is returned.
 
-   In Unicode 16.0, any character can be foldcased into a buffer of *size* ``3``.
+   *str_size*, *buf_size* and the result are number of UCS-4 characters.
+
+   In Unicode 16.0, any character can be foldcased into a buffer of *buf_size* ``3``.
    See also :c:macro:`PyUCS4_CASE_CONVERSION_BUFFER_SIZE`.
 
    .. versionadded:: next
