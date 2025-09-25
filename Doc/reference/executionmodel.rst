@@ -403,23 +403,46 @@ and :keyword:`raise` statement in section :ref:`raise`.
 Runtime Components
 ==================
 
-Python's execution model does not operate in a vacuum.  It runs on a
-computer.  When a program runs, the conceptual layers of how it runs
-on the computer look something like this::
+General Computing Model
+-----------------------
 
-   host machine and operating system (OS)
-     process
-       OS thread (runs machine code)
+Python's execution model does not operate in a vacuum.  It runs on
+a host machine and through that host's runtime environment, including
+its operating system (OS), if there is one.  When a program runs,
+the conceptual layers of how it runs on the host look something
+like this::
 
-Hosts and processes are isolated and independent from one another.
-However, threads are not.
+   **host machine**
+     **process** (global resources)
+       **thread** (runs machine code)
 
-A program always starts with exactly one thread, known as the "main"
-thread, it may grow to run in multiple.  Not all platforms support
-threads, but most do.  For those that do, all threads in a process
-share all the process' resources, including memory.
+Each process represents a program running on the host.  Think of each
+process itself as the data part of its program.  Think of the process'
+threads as the execution part of the program.  This distinction will
+be important to understand the conceptual Python runtime.
 
-The fundamental point of threads is that each thread does *run*
+The process, as the data part, is the execution context in which the
+program runs.  It mostly consists of the set of resources assigned to
+the program by the host, including memory, signals, file handles,
+sockets, and environment variables.
+
+Processes are isolated and independent from one another.  (The same
+is true for hosts.)  The host manages the process' access to its
+assigned resources, in addition to coordinating between processes.
+
+Each thread represents the actual execution of the program's machine
+code, running relative to the resources assigned to the program's
+process.  It's strictly up to the host how and when that execution
+takes place.
+
+From the point of view of Python, a program always starts with exactly
+one thread.  However, the program may grow to run in multiple
+simultaneous threads.  Not all hosts support multiple threads per
+process, but most do.  Unlike processes, threads in a process are not
+isolated and independent from one another.  Specifically, all threads
+in a process share all of the process' resources.
+
+The fundamental point of threads is that each one does *run*
 independently, at the same time as the others.  That may be only
 conceptually at the same time ("concurrently") or physically
 ("in parallel").  Either way, the threads effectively run
@@ -427,7 +450,7 @@ at a non-synchronized rate.
 
 .. note::
 
-   That non-synchronized rate means none of the global state is
+   That non-synchronized rate means none of the process' memory is
    guaranteed to stay consistent for the code running in any given
    thread.  Thus multi-threaded programs must take care to coordinate
    access to intentionally shared resources.  Likewise, they must take
@@ -438,62 +461,109 @@ at a non-synchronized rate.
    Python runtime.
 
    The cost of this broad, unstructured requirement is the tradeoff for
-   the concurrency and, especially, parallelism that threads provide.
-   The alternative generally means dealing with non-deterministic bugs
-   and data corruption.
+   the kind of raw concurrency that threads provide.  The alternative
+   to the required discipline generally means dealing with
+   non-deterministic bugs and data corruption.
 
-The same layers apply to each Python program, with some extra layers
-specific to Python::
+Python Runtime Model
+--------------------
 
-   host
-     process
-       Python runtime
-         interpreter
-           Python thread (runs bytecode)
+The same conceptual layers apply to each Python program, with some
+extra data layers specific to Python::
 
-When a Python program starts, it looks exactly like that, with one
-of each.  The process has a single global runtime to manage Python's
-process-global resources.  The runtime may grow to include multiple
-interpreters and each interpreter may grow to include multiple Python
-threads.  The initial interpreter is known as the "main" interpreter,
-and the initial thread, where the runtime was initialized, is known
-as the "main" thread.
+   **host machine**
+     **process** (global resources)
+       globl runtime (*state*)
+         interpreter (*state*)
+           **thread** (runs "C-API" and Python bytecode)
+             thread *state*
 
-An interpreter completely encapsulates all of the non-process-global
-runtime state that the interpreter's Python threads share.  For example,
-all its threads share :data:`sys.modules`, but each interpreter has its
-own :data:`sys.modules`.
+At the conceptual level: when a Python program starts, it looks exactly
+like that diagram, with one of each.  The runtime may grow to include
+multiple interpreters, and each interpreter may grow to include
+multiple thread states.
 
 .. note::
 
-   The interpreter here is not the same as the "bytecode interpreter",
-   which is what regularly runs in threads, executing compiled Python code.
-
-A Python thread represents the state necessary for the Python runtime
-to *run* in an OS thread.  It also represents the execution of Python
-code (or any supported C-API) in that OS thread.  Depending on the
-implementation, this probably includes the current exception and
-the Python call stack.  The Python thread always identifies the
-interpreter it belongs to, meaning the state it shares
-with other threads.
+   A Python implementation won't necessarily implement the runtime
+   layers distinctly or even concretely.  The only exception is places
+   where distinct layers are directly specified or exposed to users,
+   like through the :mod:`threading` module.
 
 .. note::
 
-   Here "Python thread" does not necessarily refer to a thread created
-   using the :mod:`threading` module.
+   The initial interpreter is typically called the "main" interpreter.
+   Some Python implementations, like CPython, assign special roles
+   to the main interpreter.
 
-Each Python thread is associated with a single OS thread, which is where
-it can run.  In the opposite direction, a single OS thread can have many
-Python threads associated with it.  However, only one of those Python
-threads is "active" in the OS thread at time.  The runtime will operate
-in the OS thread relative to the active Python thread.
+   Likewise, the host thread where the runtime was initialized is known
+   as the "main" thread.  It may be different from the process' initial
+   thread, though they are often the same.  In some cases "main thread"
+   may be even more specific and refer to the initial thread state.
+   A Python runtime might assign specific responsibilities
+   to the main thread, such as handling signals.
 
-For an interpreter to be used in an OS thread, it must have a
-corresponding active Python thread.  Thus switching between interpreters
-means changing the active Python thread.  An interpreter can have Python
-threads, active or inactive, for as many OS threads as it needs.  It may
-even have multiple Python threads for the same OS thread, though at most
-one can be active at a time.
+As a whole, the Python runtime consists of the global runtime state,
+interpreters, and thread states.  The runtime ensures all that state
+stays consistent over its lifetime, particularly when used with
+multiple host threads.  The runtime also exposes a way for host threads
+to "call into Python", which will be covered in the next subsection.
+
+The global runtime, at the conceptual level, is just a set of
+interpreters.  While they are otherwise isolated and independent from
+one another, they may share some data or other resources.  The runtime
+is responsible for managing these global resources safely.  The actual
+nature and management of these resources is implementation-specific.
+Ultimately, the external utility of the global runtime is limited
+to managing interpreters.
+
+In contrast, an "interpreter" is conceptually what we would normally
+think of as the (full-featured) "Python runtime".  When machine code
+executing in a host thread interacts with the Python runtime, it calls
+into Python in the context of a specific interpreter.
+
+.. note::
+
+   The term "interpreter" here is not the same as the "bytecode
+   interpreter", which is what regularly runs in threads, executing
+   compiled Python code.
+
+   In an ideal world, "Python runtime" would refer to what we currently
+   call "interpreter".  However, it's been called "interpreter" at least
+   since introduced in 1997 (a027efa5b).
+
+Each interpreter completely encapsulates all of the non-process-global,
+non-thread-specific state needed for the Python runtime to work.
+Notably, the interpreter's state persists between uses.  It includes
+fundamental data like :data:`sys.modules`.  The runtime ensures
+multiple threads using the same interpreter will safely
+share it between them.
+
+A Python implementation may support using multiple interpreters at the
+same time in the same process.  They are independent and isolated from
+one another.  For example, each interpreter has its own
+:data:`sys.modules`.
+
+For thread-specific runtime state, each interpreter has a set of thread
+states, which it manages, in the same way the global runtime contains
+a set of interpreters.  It can have thread states for as many host
+threads as it needs.  It may even have multiple thread states for
+the same host thread, though that isn't as common.
+
+Each thread state, conceptually, has all the thread-specific runtime
+data an interpreter needs to operate in one host thread.  The thread
+state includes the current raised exception and the thread's Python
+call stack.  It may include other thread-specific resources.
+
+.. note::
+
+   The term "Python thread" can sometimes refer to a thread state, but
+   normally it means a thread created using the :mod:`threading` module.
+
+Each thread state, over its lifetime, is always tied to exactly one
+interpreter and exactly one host thread.  It will only ever be used in
+that thread.  In the other direction, a host thread may have many
+Python thread states tied to it, for different interpreters.
 
 Once a program is running, new Python threads can be created using the
 :mod:`threading` module (on platforms and Python implementations that
@@ -501,7 +571,42 @@ support threads).  Additional processes can be created using the
 :mod:`os`, :mod:`subprocess`, and :mod:`multiprocessing` modules.
 You can run coroutines (async) in the main thread using :mod:`asyncio`.
 Interpreters can be created and used with the
-:mod:`concurrent.interpreters` module.
+:mod:`~concurrent.interpreters` module.
+
+Calls into Python
+-----------------
+
+A "call into Python" is an abstraction of "ask the Python runtime
+to do something".  It necessarily involves targeting a single runtime
+context, whether global, interpreter, or thread.  The layer depends
+on the desired operation.  Most operations require a thread state.
+
+When a running host thread calls into Python, the actual mechanism
+is implementation-specific.  For example, CPython provides a C-API and
+the thread will literally call into Python through a C-API function.
+
+.. drop paragraph?
+
+Some thread-specific operations must only target a new thread state,
+while others may target any thread state, including one with a Python
+call already on its stack or a current exception set.
+
+A thread-specific call into Python can target only one thread state.
+That means, when there are multiple Python thread states tied to the
+current host thread, only one of them can be in use at a time.  It
+doesn't matter if the thread states belong to different interpreters
+or the same interpreter.
+
+Calls into Python can be nested.  Even if a thread has already called
+into Python, that operation could be interrupted by another call into
+Python targeting a different runtime context.  For example, the
+implementation of the outer call might make the inner call directly.
+Alternately, the host or Python runtime might trigger some
+asyncronous callback that calls into Python.
+
+Regardless, at the point of the inner call, the target is swapped.
+When the inner call finishes, the target is swapped back and the outer
+call resumes.
 
 
 .. rubric:: Footnotes
