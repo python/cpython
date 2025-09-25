@@ -1316,6 +1316,21 @@ init_interp_main(PyThreadState *tstate)
         }
     }
 
+    // Initialize lazy imports based on configuration
+    // Do this after site module is imported to avoid circular imports during startup
+    if (config->lazy_imports != -1) {
+        PyImport_LazyImportsMode lazy_mode;
+        if (config->lazy_imports == 1) {
+            lazy_mode = PyLazyImportsMode_ForcedOn;
+        } else {
+            lazy_mode = PyLazyImportsMode_ForcedOff;
+        }
+        if (PyImport_SetLazyImports(lazy_mode, NULL) < 0) {
+            return _PyStatus_ERR("failed to set lazy imports mode");
+        }
+    }
+    // If config->lazy_imports == -1, use the default mode (no change needed)
+
     if (is_main_interp) {
 #ifndef MS_WINDOWS
         emit_stderr_warning_for_legacy_locale(interp->runtime);

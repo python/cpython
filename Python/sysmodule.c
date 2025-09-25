@@ -3361,6 +3361,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"gil",                     "-X gil"},
     {"thread_inherit_context",  "-X thread_inherit_context"},
     {"context_aware_warnings",    "-X context_aware_warnings"},
+    {"lazy_imports",            "-X lazy_imports"},
     {0}
 };
 
@@ -3370,7 +3371,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    18
+    19
 };
 
 static void
@@ -3463,6 +3464,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 #endif
     SetFlag(config->thread_inherit_context);
     SetFlag(config->context_aware_warnings);
+    SetFlag(config->lazy_imports);
 #undef SetFlagObj
 #undef SetFlag
     return 0;

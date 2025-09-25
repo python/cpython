@@ -111,6 +111,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(base_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_prefix")),
     SPEC(bytes_warning, UINT, PUBLIC, SYS_FLAG(9)),
     SPEC(cpu_count, INT, PUBLIC, NO_SYS),
+    SPEC(lazy_imports, INT, PUBLIC, NO_SYS),
     SPEC(exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("exec_prefix")),
     SPEC(executable, WSTR_OPT, PUBLIC, SYS_ATTR("executable")),
     SPEC(inspect, BOOL, PUBLIC, SYS_FLAG(1)),
@@ -317,6 +318,8 @@ The following implementation-specific options are available:\n\
 "\
 -X importtime[=2]: show how long each import takes; use -X importtime=2 to\n\
          log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
+-X lazy_imports=[on|off|default]: control global lazy imports; default is auto;\n\
+         also PYTHON_LAZY_IMPORTS\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
@@ -431,6 +434,7 @@ static const char usage_envvars[] =
 "PYTHON_PRESITE: import this module before site (-X presite)\n"
 #endif
 "PYTHONPROFILEIMPORTTIME: show how long each import takes (-X importtime)\n"
+"PYTHON_LAZY_IMPORTS: control global lazy imports (-X lazy_imports)\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files\n"
 "                  (-X pycache_prefix)\n"
 "PYTHONSAFEPATH  : don't prepend a potentially unsafe path to sys.path.\n"
@@ -939,6 +943,8 @@ config_check_consistency(const PyConfig *config)
     assert(config->int_max_str_digits >= 0);
     // cpu_count can be -1 if the user doesn't override it.
     assert(config->cpu_count != 0);
+    // lazy_imports can be -1 (default), 0 (off), or 1 (on).
+    assert(config->lazy_imports >= -1 && config->lazy_imports <= 1);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
     assert(config->thread_inherit_context >= 0);
@@ -1050,6 +1056,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
+    config->lazy_imports = -1;
 #ifdef Py_GIL_DISABLED
     config->thread_inherit_context = 1;
     config->context_aware_warnings = 1;
@@ -2285,6 +2292,49 @@ config_init_import_time(PyConfig *config)
 }
 
 static PyStatus
+config_init_lazy_imports(PyConfig *config)
+{
+    int lazy_imports = -1;
+
+    const char *env = config_get_env(config, "PYTHON_LAZY_IMPORTS");
+    if (env) {
+        if (strcmp(env, "on") == 0) {
+            lazy_imports = 1;
+        }
+        else if (strcmp(env, "off") == 0) {
+            lazy_imports = 0;
+        }
+        else if (strcmp(env, "default") == 0) {
+            lazy_imports = -1;
+        }
+        else {
+            return _PyStatus_ERR("PYTHON_LAZY_IMPORTS: invalid value; "
+                                 "expected 'on', 'off', or 'default'");
+        }
+        config->lazy_imports = lazy_imports;
+    }
+
+    const wchar_t *x_value = config_get_xoption_value(config, L"lazy_imports");
+    if (x_value) {
+        if (wcscmp(x_value, L"on") == 0) {
+            lazy_imports = 1;
+        }
+        else if (wcscmp(x_value, L"off") == 0) {
+            lazy_imports = 0;
+        }
+        else if (wcscmp(x_value, L"default") == 0) {
+            lazy_imports = -1;
+        }
+        else {
+            return _PyStatus_ERR("-X lazy_imports: invalid value; "
+                                 "expected 'on', 'off', or 'default'");
+        }
+        config->lazy_imports = lazy_imports;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
 config_read_complex_options(PyConfig *config)
 {
     /* More complex options configured by env var and -X option */
@@ -2302,6 +2352,13 @@ config_read_complex_options(PyConfig *config)
     PyStatus status;
     if (config->import_time < 0) {
         status = config_init_import_time(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->lazy_imports < 0) {
+        status = config_init_lazy_imports(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2695,6 +2752,9 @@ config_read(PyConfig *config, int compute_path_config)
     }
     if (config->tracemalloc < 0) {
         config->tracemalloc = 0;
+    }
+    if (config->lazy_imports < 0) {
+        config->lazy_imports = -1;  // Default is auto/unset
     }
     if (config->perf_profiling < 0) {
         config->perf_profiling = 0;
