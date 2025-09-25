@@ -11,6 +11,7 @@ import unittest
 from platform import win32_is_iot
 from test.support import os_helper
 
+
 @unittest.skipIf(sys.platform == "win32", "Posix specific tests")
 class Pep383Tests(unittest.TestCase):
     def setUp(self):
@@ -85,6 +86,7 @@ class Pep383Tests(unittest.TestCase):
         for fn in self.unicodefn:
             os.stat(os.path.join(self.dir, fn))
 
+
 class FSEncodingTests(unittest.TestCase):
     def test_nop(self):
         self.assertEqual(os.fsencode(b'abc\xff'), b'abc\xff')
@@ -100,7 +102,6 @@ class FSEncodingTests(unittest.TestCase):
             self.assertEqual(os.fsdecode(bytesfn), fn)
 
 
-
 class DeviceEncodingTests(unittest.TestCase):
 
     def test_bad_fd(self):
@@ -111,7 +112,7 @@ class DeviceEncodingTests(unittest.TestCase):
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires a tty and either Windows or nl_langinfo(CODESET)')
     def test_device_encoding(self):
-        encoding = os.device_encoding(0)
+        ncoding = os.device_encoding(0)
         self.assertIsNotNone(encoding)
         self.assertTrue(codecs.lookup(encoding))
 
