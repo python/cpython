@@ -1,0 +1,1 @@
+Support was added for building against `zlib-rs <https://github.com/trifectatechfoundation/zlib-rs/>`__ and `libbzip2-rs <https://github.com/trifectatechfoundation/libbzip2-rs>`__.
