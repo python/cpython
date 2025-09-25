@@ -3049,6 +3049,17 @@ _PyEval_LazyImportName(PyThreadState *tstate, PyObject *builtins, PyObject *glob
             break;
     }
 
+    // Always make star imports eager regardless of lazy setting
+    if (fromlist && PyTuple_Check(fromlist) && PyTuple_GET_SIZE(fromlist) == 1) {
+        PyObject *item = PyTuple_GET_ITEM(fromlist, 0);
+        if (PyUnicode_Check(item)) {
+            const char *item_str = PyUnicode_AsUTF8(item);
+            if (item_str && strcmp(item_str, "*") == 0) {
+                lazy = 0;  // Force star imports to be eager
+            }
+        }
+    }
+
     if (!lazy) {
         // Not a lazy import or lazy imports are disabled, fallback to the regular import
         return _PyEval_ImportName(tstate, builtins, globals, locals, name, fromlist, level);
