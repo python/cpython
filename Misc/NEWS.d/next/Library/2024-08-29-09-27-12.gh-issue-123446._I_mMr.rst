@@ -1,3 +1,0 @@
-Fix empty function name in :exc:`TypeError` when :func:`csv.reader`,
-:func:`csv.writer`, or :func:`csv.register_dialect` are used without the
-required args.

@@ -76,7 +76,7 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
-        return tempfile.mktemp(prefix='listener-', dir=util.get_temp_dir())
+        return tempfile.mktemp(prefix='sock-', dir=util.get_temp_dir())
     elif family == 'AF_PIPE':
         return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
                                (os.getpid(), next(_mmap_counter)), dir="")
@@ -180,6 +180,10 @@ class _ConnectionBase:
                 self._close()
             finally:
                 self._handle = None
+
+    def _detach(self):
+        """Stop managing the underlying file descriptor or handle."""
+        self._handle = None
 
     def send_bytes(self, buf, offset=0, size=None):
         """Send the bytes data from a bytes-like object"""
@@ -318,22 +322,32 @@ if _winapi:
                 try:
                     ov, err = _winapi.ReadFile(self._handle, bsize,
                                                 overlapped=True)
+
+                    sentinel = object()
+                    return_value = sentinel
                     try:
-                        if err == _winapi.ERROR_IO_PENDING:
-                            waitres = _winapi.WaitForMultipleObjects(
-                                [ov.event], False, INFINITE)
-                            assert waitres == WAIT_OBJECT_0
+                        try:
+                            if err == _winapi.ERROR_IO_PENDING:
+                                waitres = _winapi.WaitForMultipleObjects(
+                                    [ov.event], False, INFINITE)
+                                assert waitres == WAIT_OBJECT_0
+                        except:
+                            ov.cancel()
+                            raise
+                        finally:
+                            nread, err = ov.GetOverlappedResult(True)
+                            if err == 0:
+                                f = io.BytesIO()
+                                f.write(ov.getbuffer())
+                                return_value = f
+                            elif err == _winapi.ERROR_MORE_DATA:
+                                return_value = self._get_more_data(ov, maxsize)
                     except:
-                        ov.cancel()
-                        raise
-                    finally:
-                        nread, err = ov.GetOverlappedResult(True)
-                        if err == 0:
-                            f = io.BytesIO()
-                            f.write(ov.getbuffer())
-                            return f
-                        elif err == _winapi.ERROR_MORE_DATA:
-                            return self._get_more_data(ov, maxsize)
+                        if return_value is sentinel:
+                            raise
+
+                    if return_value is not sentinel:
+                        return return_value
                 except OSError as e:
                     if e.winerror == _winapi.ERROR_BROKEN_PIPE:
                         raise EOFError
@@ -849,7 +863,7 @@ _MD5_DIGEST_LEN = 16
 _LEGACY_LENGTHS = (_MD5ONLY_MESSAGE_LENGTH, _MD5_DIGEST_LEN)
 
 
-def _get_digest_name_and_payload(message: bytes) -> (str, bytes):
+def _get_digest_name_and_payload(message):  # type: (bytes) -> tuple[str, bytes]
     """Returns a digest name and the payload for a response hash.
 
     If a legacy protocol is detected based on the message length
@@ -959,7 +973,7 @@ def answer_challenge(connection, authkey: bytes):
                 f'Protocol error, expected challenge: {message=}')
     message = message[len(_CHALLENGE):]
     if len(message) < _MD5ONLY_MESSAGE_LENGTH:
-        raise AuthenticationError('challenge too short: {len(message)} bytes')
+        raise AuthenticationError(f'challenge too short: {len(message)} bytes')
     digest = _create_response(authkey, message)
     connection.send_bytes(digest)
     response = connection.recv_bytes(256)        # reject large message

@@ -3,8 +3,11 @@
  */
 
 #include "parts.h"
-
 #include "pycore_critical_section.h"
+
+#ifdef MS_WINDOWS
+#  include <windows.h>            // Sleep()
+#endif
 
 #ifdef Py_GIL_DISABLED
 #define assert_nogil assert

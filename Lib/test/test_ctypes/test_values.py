@@ -7,9 +7,8 @@ import importlib.util
 import sys
 import unittest
 from ctypes import (Structure, CDLL, POINTER, pythonapi,
-                    _pointer_type_cache,
                     c_ubyte, c_char_p, c_int)
-from test.support import import_helper
+from test.support import import_helper, thread_unsafe
 
 
 class ValuesTestCase(unittest.TestCase):
@@ -18,6 +17,7 @@ class ValuesTestCase(unittest.TestCase):
         _ctypes_test = import_helper.import_module("_ctypes_test")
         self.ctdll = CDLL(_ctypes_test.__file__)
 
+    @thread_unsafe("static global variables aren't thread-safe")
     def test_an_integer(self):
         # This test checks and changes an integer stored inside the
         # _ctypes_test dll/shared lib.
@@ -46,6 +46,7 @@ class PythonValuesTestCase(unittest.TestCase):
         opt = c_int.in_dll(pythonapi, "Py_OptimizeFlag").value
         self.assertEqual(opt, sys.flags.optimize)
 
+    @thread_unsafe('overrides frozen modules')
     def test_frozentable(self):
         # Python exports a PyImport_FrozenModules symbol. This is a
         # pointer to an array of struct _frozen entries.  The end of the
@@ -95,8 +96,6 @@ class PythonValuesTestCase(unittest.TestCase):
         self.assertEqual(modules, expected,
                          "_PyImport_FrozenBootstrap example "
                          "in Doc/library/ctypes.rst may be out of date")
-
-        del _pointer_type_cache[struct_frozen]
 
     def test_undefined(self):
         self.assertRaises(ValueError, c_int.in_dll, pythonapi,

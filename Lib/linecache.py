@@ -11,6 +11,7 @@ __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 # The cache. Maps filenames to either a thunk which will provide source code,
 # or a tuple (size, mtime, lines, fullname) once loaded.
 cache = {}
+_interactive_cache = {}
 
 
 def clearcache():
@@ -32,10 +33,9 @@ def getlines(filename, module_globals=None):
     """Get the lines for a Python source file from the cache.
     Update the cache if it doesn't contain an entry for this file already."""
 
-    if filename in cache:
-        entry = cache[filename]
-        if len(entry) != 1:
-            return cache[filename][2]
+    entry = cache.get(filename, None)
+    if entry is not None and len(entry) != 1:
+        return entry[2]
 
     try:
         return updatecache(filename, module_globals)
@@ -44,20 +44,46 @@ def getlines(filename, module_globals=None):
         return []
 
 
+def _getline_from_code(filename, lineno):
+    lines = _getlines_from_code(filename)
+    if 1 <= lineno <= len(lines):
+        return lines[lineno - 1]
+    return ''
+
+def _make_key(code):
+    return (code.co_filename, code.co_qualname, code.co_firstlineno)
+
+def _getlines_from_code(code):
+    code_id = _make_key(code)
+    entry = _interactive_cache.get(code_id, None)
+    if entry is not None and len(entry) != 1:
+        return entry[2]
+    return []
+
+
+def _source_unavailable(filename):
+    """Return True if the source code is unavailable for such file name."""
+    return (
+        not filename
+        or (filename.startswith('<')
+            and filename.endswith('>')
+            and not filename.startswith('<frozen '))
+    )
+
+
 def checkcache(filename=None):
     """Discard cache entries that are out of date.
     (This is not checked upon each call!)"""
 
     if filename is None:
-        filenames = list(cache.keys())
-    elif filename in cache:
-        filenames = [filename]
+        # get keys atomically
+        filenames = cache.copy().keys()
     else:
-        return
+        filenames = [filename]
 
     for filename in filenames:
-        entry = cache[filename]
-        if len(entry) == 1:
+        entry = cache.get(filename, None)
+        if entry is None or len(entry) == 1:
             # lazy cache entry, leave it lazy.
             continue
         size, mtime, lines, fullname = entry
@@ -85,17 +111,26 @@ def updatecache(filename, module_globals=None):
     # These imports are not at top level because linecache is in the critical
     # path of the interpreter startup and importing os and sys take a lot of time
     # and slows down the startup sequence.
-    import os
-    import sys
-    import tokenize
-
-    if filename in cache:
-        if len(cache[filename]) != 1:
-            cache.pop(filename, None)
-    if not filename or (filename.startswith('<') and filename.endswith('>')):
+    try:
+        import os
+        import sys
+        import tokenize
+    except ImportError:
+        # These import can fail if the interpreter is shutting down
         return []
 
-    fullname = filename
+    entry = cache.pop(filename, None)
+    if _source_unavailable(filename):
+        return []
+
+    if filename.startswith('<frozen ') and module_globals is not None:
+        # This is a frozen module, so we need to use the filename
+        # from the module globals.
+        fullname = module_globals.get('__file__')
+        if fullname is None:
+            return []
+    else:
+        fullname = filename
     try:
         stat = os.stat(fullname)
     except OSError:
@@ -103,9 +138,12 @@ def updatecache(filename, module_globals=None):
 
         # Realise a lazy loader based lookup if there is one
         # otherwise try to lookup right now.
-        if lazycache(filename, module_globals):
+        lazy_entry = entry if entry is not None and len(entry) == 1 else None
+        if lazy_entry is None:
+            lazy_entry = _make_lazycache_entry(filename, module_globals)
+        if lazy_entry is not None:
             try:
-                data = cache[filename][0]()
+                data = lazy_entry[0]()
             except (ImportError, OSError):
                 pass
             else:
@@ -113,13 +151,14 @@ def updatecache(filename, module_globals=None):
                     # No luck, the PEP302 loader cannot find the source
                     # for this module.
                     return []
-                cache[filename] = (
+                entry = (
                     len(data),
                     None,
                     [line + '\n' for line in data.splitlines()],
                     fullname
                 )
-                return cache[filename][2]
+                cache[filename] = entry
+                return entry[2]
 
         # Try looking through the module search path, which is only useful
         # when handling a relative filename.
@@ -168,13 +207,20 @@ def lazycache(filename, module_globals):
         get_source method must be found, the filename must be a cacheable
         filename, and the filename must not be already cached.
     """
-    if filename in cache:
-        if len(cache[filename]) == 1:
-            return True
-        else:
-            return False
+    entry = cache.get(filename, None)
+    if entry is not None:
+        return len(entry) == 1
+
+    lazy_entry = _make_lazycache_entry(filename, module_globals)
+    if lazy_entry is not None:
+        cache[filename] = lazy_entry
+        return True
+    return False
+
+
+def _make_lazycache_entry(filename, module_globals):
     if not filename or (filename.startswith('<') and filename.endswith('>')):
-        return False
+        return None
     # Try for a __loader__, if available
     if module_globals and '__name__' in module_globals:
         spec = module_globals.get('__spec__')
@@ -187,14 +233,21 @@ def lazycache(filename, module_globals):
         if name and get_source:
             def get_lines(name=name, *args, **kwargs):
                 return get_source(name, *args, **kwargs)
-            cache[filename] = (get_lines,)
-            return True
-    return False
+            return (get_lines,)
+    return None
+
 
 
 def _register_code(code, string, name):
-    cache[code] = (
-            len(string),
-            None,
-            [line + '\n' for line in string.splitlines()],
-            name)
+    entry = (len(string),
+             None,
+             [line + '\n' for line in string.splitlines()],
+             name)
+    stack = [code]
+    while stack:
+        code = stack.pop()
+        for const in code.co_consts:
+            if isinstance(const, type(code)):
+                stack.append(const)
+        key = _make_key(code)
+        _interactive_cache[key] = entry

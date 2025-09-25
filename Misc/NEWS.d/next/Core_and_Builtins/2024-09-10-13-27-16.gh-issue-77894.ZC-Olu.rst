@@ -1,4 +1,0 @@
-Fix possible crash in the garbage collector when it tries to break a
-reference loop containing a :class:`memoryview` object. Now a
-:class:`!memoryview` object can only be cleared if there are no buffers that
-refer it.

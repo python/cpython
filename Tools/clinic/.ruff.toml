@@ -1,5 +1,4 @@
-target-version = "py310"
-fix = true
+extend = "../../.ruff.toml"  # Inherit the project-wide settings
 
 [lint]
 select = [

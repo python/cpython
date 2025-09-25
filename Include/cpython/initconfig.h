@@ -102,15 +102,14 @@ typedef struct PyPreConfig {
 
     /* Enable UTF-8 mode? (PEP 540)
 
-       Disabled by default (equals to 0).
+      If equal to 1, use the UTF-8 encoding and use "surrogateescape" for the
+      stdin & stdout error handlers.
 
-       Set to 1 by "-X utf8" and "-X utf8=1" command line options.
-       Set to 1 by PYTHONUTF8=1 environment variable.
+      Enabled by default (equal to 1; PEP 686), or if Py_UTF8Mode=1,
+      or if "-X utf8=1" or PYTHONUTF8=1.
 
-       Set to 0 by "-X utf8=0" and PYTHONUTF8=0.
-
-       If equals to -1, it is set to 1 if the LC_CTYPE locale is "C" or
-       "POSIX", otherwise it is set to 0. Inherit Py_UTF8Mode value value. */
+       Set to 0 by "-X utf8=0" or PYTHONUTF8=0.
+    */
     int utf8_mode;
 
     /* If non-zero, enable the Python Development Mode.
@@ -143,6 +142,7 @@ typedef struct PyConfig {
     int faulthandler;
     int tracemalloc;
     int perf_profiling;
+    int remote_debug;
     int import_time;
     int code_debug_ranges;
     int show_ref_count;
@@ -179,10 +179,16 @@ typedef struct PyConfig {
     int use_frozen_modules;
     int safe_path;
     int int_max_str_digits;
+    int thread_inherit_context;
+    int context_aware_warnings;
+#ifdef __APPLE__
+    int use_system_logger;
+#endif
 
     int cpu_count;
 #ifdef Py_GIL_DISABLED
     int enable_gil;
+    int tlbc_enabled;
 #endif
 
     /* --- Path configuration inputs ------------ */

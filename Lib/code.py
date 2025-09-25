@@ -136,7 +136,8 @@ class InteractiveInterpreter:
         # Set the line of text that the exception refers to
         lines = source.splitlines()
         if (source and typ is SyntaxError
-                and not value.text and len(lines) >= value.lineno):
+                and not value.text and value.lineno is not None
+                and len(lines) >= value.lineno):
             value.text = lines[value.lineno - 1]
         sys.last_exc = sys.last_value = value
         if sys.excepthook is sys.__excepthook__:
@@ -218,12 +219,17 @@ class InteractiveConsole(InteractiveInterpreter):
         """
         try:
             sys.ps1
+            delete_ps1_after = False
         except AttributeError:
             sys.ps1 = ">>> "
+            delete_ps1_after = True
         try:
             sys.ps2
+            delete_ps2_after = False
         except AttributeError:
             sys.ps2 = "... "
+            delete_ps2_after = True
+
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
         if banner is None:
             self.write("Python %s on %s\n%s\n(%s)\n" %
@@ -285,6 +291,12 @@ class InteractiveConsole(InteractiveInterpreter):
 
             if _quit is not None:
                 builtins.quit = _quit
+
+            if delete_ps1_after:
+                del sys.ps1
+
+            if delete_ps2_after:
+                del sys.ps2
 
             if exitmsg is None:
                 self.write('now exiting %s...\n' % self.__class__.__name__)
@@ -373,7 +385,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(color=True)
     parser.add_argument('-q', action='store_true',
                        help="don't print version and copyright messages")
     args = parser.parse_args()

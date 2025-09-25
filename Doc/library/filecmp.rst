@@ -189,7 +189,7 @@ The :class:`dircmp` class
          are the same type as *self*, if *self* is a subclass of
          :class:`dircmp`.
 
-.. attribute:: DEFAULT_IGNORES
+.. data:: DEFAULT_IGNORES
 
    .. versionadded:: 3.4
 

@@ -150,7 +150,7 @@ special_type(double d)
 #define P14 0.25*Py_MATH_PI
 #define P12 0.5*Py_MATH_PI
 #define P34 0.75*Py_MATH_PI
-#define INF Py_HUGE_VAL
+#define INF Py_INFINITY
 #define N Py_NAN
 #define U -9.5426319407711027e33 /* unlikely value, used as placeholder */
 
@@ -1035,6 +1035,7 @@ cmath_rect_impl(PyObject *module, double r, double phi)
 }
 
 /*[clinic input]
+@permit_long_summary
 cmath.isfinite = cmath.polar
 
 Return True if both the real and imaginary parts of z are finite, else False.
@@ -1042,7 +1043,7 @@ Return True if both the real and imaginary parts of z are finite, else False.
 
 static PyObject *
 cmath_isfinite_impl(PyObject *module, Py_complex z)
-/*[clinic end generated code: output=ac76611e2c774a36 input=848e7ee701895815]*/
+/*[clinic end generated code: output=ac76611e2c774a36 input=e224f5c36d94f5da]*/
 {
     return PyBool_FromLong(isfinite(z.real) && isfinite(z.imag));
 }
@@ -1074,6 +1075,7 @@ cmath_isinf_impl(PyObject *module, Py_complex z)
 }
 
 /*[clinic input]
+@permit_long_docstring_body
 cmath.isclose -> bool
 
     a: Py_complex
@@ -1100,7 +1102,7 @@ not close to anything, even itself. inf and -inf are only close to themselves.
 static int
 cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
                    double rel_tol, double abs_tol)
-/*[clinic end generated code: output=8a2486cc6e0014d1 input=df9636d7de1d4ac3]*/
+/*[clinic end generated code: output=8a2486cc6e0014d1 input=0d45feea7c626f47]*/
 {
     double diff;
 

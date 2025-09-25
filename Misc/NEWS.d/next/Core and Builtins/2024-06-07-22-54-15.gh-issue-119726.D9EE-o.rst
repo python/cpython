@@ -1,1 +1,0 @@
-JIT: Re-use trampolines on AArch64 when creating stencils. Patch by Diego Russo

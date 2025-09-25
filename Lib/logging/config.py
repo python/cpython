@@ -499,7 +499,7 @@ class BaseConfigurator(object):
 
 def _is_queue_like_object(obj):
     """Check that *obj* implements the Queue API."""
-    if isinstance(obj, queue.Queue):
+    if isinstance(obj, (queue.Queue, queue.SimpleQueue)):
         return True
     # defer importing multiprocessing as much as possible
     from multiprocessing.queues import Queue as MPQueue
@@ -516,13 +516,13 @@ def _is_queue_like_object(obj):
     # Ideally, we would have wanted to simply use strict type checking
     # instead of a protocol-based type checking since the latter does
     # not check the method signatures.
-    queue_interface = [
-        'empty', 'full', 'get', 'get_nowait',
-        'put', 'put_nowait', 'join', 'qsize',
-        'task_done',
-    ]
+    #
+    # Note that only 'put_nowait' and 'get' are required by the logging
+    # queue handler and queue listener (see gh-124653) and that other
+    # methods are either optional or unused.
+    minimal_queue_interface = ['put_nowait', 'get']
     return all(callable(getattr(obj, method, None))
-               for method in queue_interface)
+               for method in minimal_queue_interface)
 
 class DictConfigurator(BaseConfigurator):
     """
@@ -865,6 +865,8 @@ class DictConfigurator(BaseConfigurator):
             else:
                 factory = klass
         kwargs = {k: config[k] for k in config if (k != '.' and valid_ident(k))}
+        # When deprecation ends for using the 'strm' parameter, remove the
+        # "except TypeError ..."
         try:
             result = factory(**kwargs)
         except TypeError as te:
@@ -876,6 +878,15 @@ class DictConfigurator(BaseConfigurator):
             #(e.g. by Django)
             kwargs['strm'] = kwargs.pop('stream')
             result = factory(**kwargs)
+
+            import warnings
+            warnings.warn(
+                "Support for custom logging handlers with the 'strm' argument "
+                "is deprecated and scheduled for removal in Python 3.16. "
+                "Define handlers with the 'stream' argument instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         if formatter:
             result.setFormatter(formatter)
         if level is not None:
@@ -1007,7 +1018,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         """
 
         allow_reuse_address = True
-        allow_reuse_port = True
+        allow_reuse_port = False
 
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):

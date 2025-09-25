@@ -1,2 +1,0 @@
-Improve import time of :mod:`socket` by lazy importing modules and
-writing :data:`!socket.errorTab` as a constant.

@@ -10,9 +10,6 @@ on:
     - 'Doc/**'
     - '.github/workflows/doc.yml'
 
-permissions:
-  pull-requests: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -20,6 +17,10 @@ concurrency:
 jobs:
   documentation-links:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    timeout-minutes: 5
+
     steps:
       - uses: readthedocs/actions/preview@v1
         with:

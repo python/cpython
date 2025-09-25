@@ -271,7 +271,10 @@ class RunPyMixin:
     @contextlib.contextmanager
     def script(self, content, encoding="utf-8"):
         file = Path(tempfile.mktemp(dir=os.getcwd()) + ".py")
-        file.write_text(content, encoding=encoding)
+        if isinstance(content, bytes):
+            file.write_bytes(content)
+        else:
+            file.write_text(content, encoding=encoding)
         try:
             yield file
         finally:
@@ -440,7 +443,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         except subprocess.CalledProcessError:
             raise unittest.SkipTest("requires at least one Python 3.x install")
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "3.")
 
     def test_search_major_3_32(self):
         try:
@@ -450,8 +453,8 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 raise unittest.SkipTest("requires at least one 32-bit Python 3.x install")
             raise
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("3."), data["env.tag"])
-        self.assertTrue(data["env.tag"].endswith("-32"), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "3.")
+        self.assertEndsWith(data["env.tag"], "-32")
 
     def test_search_major_2(self):
         try:
@@ -460,7 +463,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             if not is_installed("2.7"):
                 raise unittest.SkipTest("requires at least one Python 2.x install")
         self.assertEqual("PythonCore", data["env.company"])
-        self.assertTrue(data["env.tag"].startswith("2."), data["env.tag"])
+        self.assertStartsWith(data["env.tag"], "2.")
 
     def test_py_default(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -623,6 +626,25 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
         self.assertEqual(f'X.Y.exe -prearg "{script}" -postarg', data["stdout"].strip())
+
+    def test_py_shebang_valid_bom(self):
+        with self.py_ini(TEST_PY_DEFAULTS):
+            content = "#! /usr/bin/python -prearg".encode("utf-8")
+            with self.script(b"\xEF\xBB\xBF" + content) as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {quote(script)} -postarg", data["stdout"].strip())
+
+    def test_py_shebang_invalid_bom(self):
+        with self.py_ini(TEST_PY_DEFAULTS):
+            content = "#! /usr/bin/python3 -prearg".encode("utf-8")
+            with self.script(b"\xEF\xAA\xBF" + content) as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertIn("Invalid BOM", data["stderr"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe {quote(script)} -postarg", data["stdout"].strip())
 
     def test_py_handle_64_in_ini(self):
         with self.py_ini("\n".join(["[defaults]", "python=3.999-64"])):

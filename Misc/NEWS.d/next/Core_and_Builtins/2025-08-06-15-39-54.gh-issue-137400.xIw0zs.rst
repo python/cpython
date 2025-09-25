@@ -1,0 +1,4 @@
+Fix a crash in the :term:`free threading` build when disabling profiling or tracing
+across all threads with :c:func:`PyEval_SetProfileAllThreads` or
+:c:func:`PyEval_SetTraceAllThreads` or their Python equivalents
+:func:`threading.settrace_all_threads` and :func:`threading.setprofile_all_threads`.

@@ -49,7 +49,7 @@
 
 /* Py_HUGE_VAL should always be the same as Py_INFINITY.  But historically
  * this was not reliable and Python did not require IEEE floats and C99
- * conformity.  Prefer Py_INFINITY for new code.
+ * conformity.  The macro was soft deprecated in Python 3.14, use Py_INFINITY instead.
  */
 #ifndef Py_HUGE_VAL
 #  define Py_HUGE_VAL HUGE_VAL
@@ -57,9 +57,24 @@
 
 /* Py_NAN: Value that evaluates to a quiet Not-a-Number (NaN).  The sign is
  * undefined and normally not relevant, but e.g. fixed for float("nan").
+ *
+ * Note: On Solaris, NAN is a function address, hence arithmetic is impossible.
+ * For that reason, we instead use the built-in call if available or fallback
+ * to a generic NaN computed from strtod() as a last resort.
+ *
+ * See https://github.com/python/cpython/issues/136006 for details.
  */
 #if !defined(Py_NAN)
-#    define Py_NAN ((double)NAN)
+#  if defined(__sun)
+#    if _Py__has_builtin(__builtin_nanf)
+#       define Py_NAN   ((double)__builtin_nanf(""))
+#    else
+#       include <stdlib.h>
+#       define Py_NAN   (strtod("NAN", NULL))
+#    endif
+#  else
+#    define Py_NAN      ((double)NAN)
+#  endif
 #endif
 
 #endif /* Py_PYMATH_H */

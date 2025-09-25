@@ -4237,8 +4237,8 @@ by :mod:`asyncio` to AIX platform only.
 .. nonce: 4dzB80
 .. section: Library
 
-Set :attr:`doctest.DocTest.lineno` to ``None`` when object does not have
-:attr:`__doc__`.
+Set :attr:`doctest.DocTest.lineno` to ``None`` when an object does not have
+:attr:`~definition.__doc__`.
 
 ..
 
@@ -4330,7 +4330,7 @@ and ``sendfile`` inside ``IocpProactor``.
 .. nonce: GsBL9-
 .. section: Library
 
-Fixed :meth:`collections.UserDict.get` to not call :meth:`__missing__` when
+Fixed :meth:`collections.UserDict.get` to not call :meth:`~object.__missing__` when
 a value is not found. This matches the behavior of :class:`dict`. Patch by
 Bar Harel.
 

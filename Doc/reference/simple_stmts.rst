@@ -408,9 +408,9 @@ The extended form, ``assert expression1, expression2``, is equivalent to ::
 
 These equivalences assume that :const:`__debug__` and :exc:`AssertionError` refer to
 the built-in variables with those names.  In the current implementation, the
-built-in variable :const:`__debug__` is ``True`` under normal circumstances,
+built-in variable ``__debug__`` is ``True`` under normal circumstances,
 ``False`` when optimization is requested (command line option :option:`-O`).  The current
-code generator emits no code for an assert statement when optimization is
+code generator emits no code for an :keyword:`assert` statement when optimization is
 requested at compile time.  Note that it is unnecessary to include the source
 code for the expression that failed in the error message; it will be displayed
 as part of the stack trace.
@@ -465,8 +465,8 @@ Deletion of a target list recursively deletes each target, from left to right.
 
 Deletion of a name removes the binding of that name from the local or global
 namespace, depending on whether the name occurs in a :keyword:`global` statement
-in the same code block.  If the name is unbound, a :exc:`NameError` exception
-will be raised.
+in the same code block.  Trying to delete an unbound name raises a
+:exc:`NameError` exception.
 
 .. index:: pair: attribute; deletion
 
@@ -533,8 +533,8 @@ The :keyword:`!yield` statement
    yield_stmt: `yield_expression`
 
 A :keyword:`yield` statement is semantically equivalent to a :ref:`yield
-expression <yieldexpr>`. The yield statement can be used to omit the parentheses
-that would otherwise be required in the equivalent yield expression
+expression <yieldexpr>`. The ``yield`` statement can be used to omit the
+parentheses that would otherwise be required in the equivalent yield expression
 statement. For example, the yield statements ::
 
   yield <expr>
@@ -546,7 +546,7 @@ are equivalent to the yield expression statements ::
   (yield from <expr>)
 
 Yield expressions and statements are only used when defining a :term:`generator`
-function, and are only used in the body of the generator function.  Using yield
+function, and are only used in the body of the generator function.  Using :keyword:`yield`
 in a function definition is sufficient to cause that definition to create a
 generator function instead of a normal function.
 
@@ -831,6 +831,9 @@ where the :keyword:`import` statement occurs.
 
 .. index:: single: __all__ (optional module attribute)
 
+.. attribute:: module.__all__
+   :no-typesetting:
+
 The *public names* defined by a module are determined by checking the module's
 namespace for a variable named ``__all__``; if defined, it must be a sequence
 of strings which are names defined or imported by that module.  The names
@@ -966,25 +969,21 @@ The :keyword:`!global` statement
 .. productionlist:: python-grammar
    global_stmt: "global" `identifier` ("," `identifier`)*
 
-The :keyword:`global` statement is a declaration which holds for the entire
-current code block.  It means that the listed identifiers are to be interpreted
-as globals.  It would be impossible to assign to a global variable without
+The :keyword:`global` statement causes the listed identifiers to be interpreted
+as globals. It would be impossible to assign to a global variable without
 :keyword:`!global`, although free variables may refer to globals without being
 declared global.
 
-Names listed in a :keyword:`global` statement must not be used in the same code
-block textually preceding that :keyword:`!global` statement.
+The :keyword:`!global` statement applies to the entire current scope
+(module, function body or class definition).
+A :exc:`SyntaxError` is raised if a variable is used or
+assigned to prior to its global declaration in the scope.
 
-Names listed in a :keyword:`global` statement must not be defined as formal
-parameters, or as targets in :keyword:`with` statements or :keyword:`except` clauses, or in a :keyword:`for` target list, :keyword:`class`
-definition, function definition, :keyword:`import` statement, or
-:term:`variable annotations <variable annotation>`.
-
-.. impl-detail::
-
-   The current implementation does not enforce some of these restrictions, but
-   programs should not abuse this freedom, as future implementations may enforce
-   them or silently change the meaning of the program.
+At the module level, all variables are global, so a :keyword:`!global`
+statement has no effect.
+However, variables must still not be used or
+assigned to prior to their :keyword:`!global` declaration.
+This requirement is relaxed in the interactive prompt (:term:`REPL`).
 
 .. index::
    pair: built-in function; exec
@@ -1020,7 +1019,7 @@ identifiers.  If a name is bound in more than one nonlocal scope, the
 nearest binding is used. If a name is not bound in any nonlocal scope,
 or if there is no nonlocal scope, a :exc:`SyntaxError` is raised.
 
-The nonlocal statement applies to the entire scope of a function or
+The :keyword:`nonlocal` statement applies to the entire scope of a function or
 class body. A :exc:`SyntaxError` is raised if a variable is used or
 assigned to prior to its nonlocal declaration in the scope.
 
