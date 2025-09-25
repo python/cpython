@@ -6435,6 +6435,8 @@ _PyUnicode_EncodeUTF16(PyObject *str,
 #endif
 
     if (kind == PyUnicode_1BYTE_KIND) {
+        // gh-139156: Don't use PyBytesWriter API here since it has an overhead
+        // on short strings
         PyObject *v = PyBytes_FromStringAndSize(NULL, nsize * 2);
         if (v == NULL) {
             return NULL;
@@ -8852,11 +8854,15 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
     if (Py_IS_TYPE(mapping, &EncodingMapType)) {
         int res = encoding_map_lookup(c, mapping);
         Py_ssize_t requiredsize = *outpos+1;
-        if (res == -1)
+        if (res == -1) {
             return enc_FAILED;
-        if (outsize<requiredsize)
-            if (charmapencode_resize(writer, outpos, requiredsize))
+        }
+
+        if (outsize<requiredsize) {
+            if (charmapencode_resize(writer, outpos, requiredsize)) {
                 return enc_EXCEPTION;
+            }
+        }
         outstart = _PyBytesWriter_GetData(writer);
         outstart[(*outpos)++] = (char)res;
         return enc_SUCCESS;
@@ -8897,7 +8903,7 @@ charmapencode_output(Py_UCS4 c, PyObject *mapping,
     return enc_SUCCESS;
 }
 
-/* handle an error in PyUnicode_EncodeCharmap
+/* handle an error in _PyUnicode_EncodeCharmap()
    Return 0 on success, -1 on error */
 static int
 charmap_encoding_error(
@@ -9075,23 +9081,64 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
     Py_ssize_t respos = 0;
     _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 
-    while (inpos<size) {
-        Py_UCS4 ch = PyUnicode_READ(kind, data, inpos);
-        /* try to encode it */
-        charmapencode_result x = charmapencode_output(ch, mapping, writer, &respos);
-        if (x==enc_EXCEPTION) /* error */
-            goto onError;
-        if (x==enc_FAILED) { /* unencodable character */
+    if (Py_IS_TYPE(mapping, &EncodingMapType)) {
+        char *outstart = _PyBytesWriter_GetData(writer);
+        Py_ssize_t outsize = _PyBytesWriter_GetSize(writer);
+
+        while (inpos<size) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, inpos);
+
+            /* try to encode it */
+            int res = encoding_map_lookup(ch, mapping);
+            Py_ssize_t requiredsize = respos+1;
+            if (res == -1) {
+                goto enc_FAILED;
+            }
+
+            if (outsize<requiredsize) {
+                if (charmapencode_resize(writer, &respos, requiredsize)) {
+                    goto onError;
+                }
+                outstart = _PyBytesWriter_GetData(writer);
+                outsize = _PyBytesWriter_GetSize(writer);
+            }
+            outstart[respos++] = (char)res;
+
+            /* done with this character => adjust input position */
+            ++inpos;
+            continue;
+
+enc_FAILED:
             if (charmap_encoding_error(unicode, &inpos, mapping,
                                        &exc,
                                        &error_handler, &error_handler_obj, errors,
                                        writer, &respos)) {
                 goto onError;
             }
+            outstart = _PyBytesWriter_GetData(writer);
+            outsize = _PyBytesWriter_GetSize(writer);
         }
-        else {
-            /* done with this character => adjust input position */
-            ++inpos;
+    }
+    else {
+        while (inpos<size) {
+            Py_UCS4 ch = PyUnicode_READ(kind, data, inpos);
+            /* try to encode it */
+            charmapencode_result x = charmapencode_output(ch, mapping, writer, &respos);
+            if (x==enc_EXCEPTION) { /* error */
+                goto onError;
+            }
+            if (x==enc_FAILED) { /* unencodable character */
+                if (charmap_encoding_error(unicode, &inpos, mapping,
+                                           &exc,
+                                           &error_handler, &error_handler_obj, errors,
+                                           writer, &respos)) {
+                    goto onError;
+                }
+            }
+            else {
+                /* done with this character => adjust input position */
+                ++inpos;
+            }
         }
     }
 
