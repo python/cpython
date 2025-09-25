@@ -26,7 +26,7 @@ PyDoc_STRVAR(select_select__doc__,
 "gotten from a fileno() method call on one of those.\n"
 "\n"
 "The optional 4th argument specifies a timeout in seconds; it may be\n"
-"a floating-point number to specify fractions of seconds.  If it is absent\n"
+"a non-integer to specify fractions of seconds.  If it is absent\n"
 "or None, the call will never time out.\n"
 "\n"
 "The return value is a tuple of three lists corresponding to the first three\n"
@@ -973,7 +973,7 @@ PyDoc_STRVAR(select_epoll_poll__doc__,
 "Wait for events on the epoll file descriptor.\n"
 "\n"
 "  timeout\n"
-"    the maximum time to wait in seconds (as float);\n"
+"    the maximum time to wait in seconds (with fractions);\n"
 "    a timeout of None or -1 makes poll wait indefinitely\n"
 "  maxevents\n"
 "    the maximum number of events returned; -1 means no limit\n"
@@ -1262,7 +1262,7 @@ PyDoc_STRVAR(select_kqueue_control__doc__,
 "    The maximum number of events that the kernel will return.\n"
 "  timeout\n"
 "    The maximum time to wait in seconds, or else None to wait forever.\n"
-"    This accepts floats for smaller timeouts, too.");
+"    This accepts non-integers for smaller timeouts, too.");
 
 #define SELECT_KQUEUE_CONTROL_METHODDEF    \
     {"control", _PyCFunction_CAST(select_kqueue_control), METH_FASTCALL, select_kqueue_control__doc__},
@@ -1399,4 +1399,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=2a66dd831f22c696 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae54d65938513132 input=a9049054013a1b77]*/

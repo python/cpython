@@ -92,8 +92,6 @@ extern int _PyUnicodeWriter_FormatV(
 
 extern PyObject* _PyUnicode_EncodeUTF7(
     PyObject *unicode,          /* Unicode object */
-    int base64SetO,             /* Encode RFC2152 Set O characters in base64 */
-    int base64WhiteSpace,       /* Encode whitespace (sp, ht, nl, cr) in base64 */
     const char *errors);        /* error handling */
 
 /* --- UTF-8 Codecs ------------------------------------------------------- */

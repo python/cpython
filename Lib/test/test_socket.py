@@ -8,7 +8,9 @@ from test.support.import_helper import ensure_lazy_imports
 import _thread as thread
 import array
 import contextlib
+import decimal
 import errno
+import fractions
 import gc
 import io
 import itertools
@@ -1310,10 +1312,20 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(s.gettimeout(), None)
 
         # Set the default timeout to 10, and see if it propagates
-        with socket_setdefaulttimeout(10):
-            self.assertEqual(socket.getdefaulttimeout(), 10)
+        with socket_setdefaulttimeout(10.125):
+            self.assertEqual(socket.getdefaulttimeout(), 10.125)
             with socket.socket() as sock:
-                self.assertEqual(sock.gettimeout(), 10)
+                self.assertEqual(sock.gettimeout(), 10.125)
+
+            socket.setdefaulttimeout(decimal.Decimal('11.125'))
+            self.assertEqual(socket.getdefaulttimeout(), 11.125)
+            with socket.socket() as sock:
+                self.assertEqual(sock.gettimeout(), 11.125)
+
+            socket.setdefaulttimeout(fractions.Fraction(97, 8))
+            self.assertEqual(socket.getdefaulttimeout(), 12.125)
+            with socket.socket() as sock:
+                self.assertEqual(sock.gettimeout(), 12.125)
 
             # Reset the default timeout to None, and see if it propagates
             socket.setdefaulttimeout(None)

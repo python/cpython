@@ -374,6 +374,8 @@ class ZipFixtures:
         # Add self.zip_name to the front of sys.path.
         self.resources = contextlib.ExitStack()
         self.addCleanup(self.resources.close)
+        # workaround for #138313
+        self.addCleanup(lambda: None)
 
 
 def parameterize(*args_set):

@@ -891,7 +891,7 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
             handle->pid);
         _PyErr_ChainExceptions1(exc);
     }
-#elif defined(__linux__)
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
     // On Linux, search for 'python' in executable or DLL
     address = search_linux_map_for_section(handle, "PyRuntime", "python");
     if (address == 0) {

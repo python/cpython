@@ -2017,8 +2017,8 @@ features:
   must be a string specifying a file path.  However, some functions now
   alternatively accept an open file descriptor for their *path* argument.
   The function will then operate on the file referred to by the descriptor.
-  (For POSIX systems, Python will call the variant of the function prefixed
-  with ``f`` (e.g. call ``fchdir`` instead of ``chdir``).)
+  For POSIX systems, Python will call the variant of the function prefixed
+  with ``f`` (e.g. call ``fchdir`` instead of ``chdir``).
 
   You can check whether or not *path* can be specified as a file descriptor
   for a particular function on your platform using :data:`os.supports_fd`.
@@ -2033,7 +2033,7 @@ features:
 * **paths relative to directory descriptors:** If *dir_fd* is not ``None``, it
   should be a file descriptor referring to a directory, and the path to operate
   on should be relative; path will then be relative to that directory.  If the
-  path is absolute, *dir_fd* is ignored.  (For POSIX systems, Python will call
+  path is absolute, *dir_fd* is ignored.  For POSIX systems, Python will call
   the variant of the function with an ``at`` suffix and possibly prefixed with
   ``f`` (e.g. call ``faccessat`` instead of ``access``).
 
@@ -2046,8 +2046,8 @@ features:
 * **not following symlinks:** If *follow_symlinks* is
   ``False``, and the last element of the path to operate on is a symbolic link,
   the function will operate on the symbolic link itself rather than the file
-  pointed to by the link.  (For POSIX systems, Python will call the ``l...``
-  variant of the function.)
+  pointed to by the link.  For POSIX systems, Python will call the ``l...``
+  variant of the function.
 
   You can check whether or not *follow_symlinks* is supported for a particular
   function on your platform using :data:`os.supports_follow_symlinks`.
@@ -3618,7 +3618,8 @@ features:
      where each member is an int expressing nanoseconds.
    - If *times* is not ``None``,
      it must be a 2-tuple of the form ``(atime, mtime)``
-     where each member is an int or float expressing seconds.
+     where each member is a real number expressing seconds,
+     rounded down to nanoseconds.
    - If *times* is ``None`` and *ns* is unspecified,
      this is equivalent to specifying ``ns=(atime_ns, mtime_ns)``
      where both times are the current time.
@@ -3644,6 +3645,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      Accepts any real numbers as *times*, not only integers or floats.
 
 
 .. function:: walk(top, topdown=True, onerror=None, followlinks=False)
@@ -4050,7 +4054,7 @@ Naturally, they are all only available on Linux.
    the timer will fire when the timer's clock
    (set by *clockid* in :func:`timerfd_create`) reaches *initial* seconds.
 
-   The timer's interval is set by the *interval* :py:class:`float`.
+   The timer's interval is set by the *interval* real number.
    If *interval* is zero, the timer only fires once, on the initial expiration.
    If *interval* is greater than zero, the timer fires every time *interval*
    seconds have elapsed since the previous expiration.

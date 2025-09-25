@@ -2,6 +2,7 @@ from test import support
 from test.support import warnings_helper
 import decimal
 import enum
+import fractions
 import math
 import platform
 import sys
@@ -170,10 +171,12 @@ class TimeTestCase(unittest.TestCase):
         # Improved exception #81267
         with self.assertRaises(TypeError) as errmsg:
             time.sleep([])
-        self.assertIn("integer or float", str(errmsg.exception))
+        self.assertIn("real number", str(errmsg.exception))
 
     def test_sleep(self):
-        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2]:
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2,
+                      decimal.Decimal('0.02'),
+                      fractions.Fraction(1, 50)]:
             with self.subTest(value=value):
                 time.sleep(value)
 

@@ -1,0 +1,2 @@
+Fix compilation problems in ``_remote_debugging_module.c`` when the system
+doesn't have ``process_vm_readv``. Patch by Pablo Galindo

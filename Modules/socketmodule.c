@@ -4191,6 +4191,7 @@ sock_recvfrom(PyObject *self, PyObject *args)
     }
 
     ret = PyTuple_Pack(2, buf, addr);
+    Py_DECREF(buf);
 
 finally:
     Py_XDECREF(addr);
@@ -7181,7 +7182,7 @@ socket_setdefaulttimeout(PyObject *self, PyObject *arg)
 PyDoc_STRVAR(setdefaulttimeout_doc,
 "setdefaulttimeout(timeout)\n\
 \n\
-Set the default timeout in seconds (float) for new socket objects.\n\
+Set the default timeout in seconds (real number) for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
 When the socket module is first imported, the default is None.");
 

@@ -11,7 +11,6 @@ import keyword
 import _pickle
 import pkgutil
 import re
-import stat
 import tempfile
 import test.support
 import time
@@ -1300,27 +1299,16 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
 
-    @os_helper.skip_unless_working_chmod
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
-        if support.is_emscripten:
-            # Emscripten's readdir implementation is buggy on directories
-            # with read permission but no execute permission.
-            old_umask = os.umask(0)
-            self.addCleanup(os.umask, old_umask)
         os.mkdir(pkgdir)
         self.addCleanup(rmtree, pkgdir)
         init_path = os.path.join(pkgdir, '__init__.py')
         with open(init_path, 'w') as fobj:
             fobj.write("foo = 1")
-        current_mode = stat.S_IMODE(os.stat(pkgdir).st_mode)
-        try:
-            os.chmod(pkgdir, current_mode & ~stat.S_IEXEC)
-            with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
-                pydoc.apropos('')
-            self.assertIn('walkpkg', stdout.getvalue())
-        finally:
-            os.chmod(pkgdir, current_mode)
+        with self.restrict_walk_packages(path=[TESTFN]), captured_stdout() as stdout:
+            pydoc.apropos('')
+        self.assertIn('walkpkg', stdout.getvalue())
 
     def test_url_search_package_error(self):
         # URL handler search should cope with packages that raise exceptions
@@ -1951,9 +1939,11 @@ class PydocFodderTest(unittest.TestCase):
         if not support.MISSING_C_DOCSTRINGS:
             self.assertIn(' |  get(key, default=None, /) method of builtins.dict instance', lines)
             self.assertIn(' |  dict_get = get(key, default=None, /) method of builtins.dict instance', lines)
+            self.assertIn(' |  sin(x, /)', lines)
         else:
             self.assertIn(' |  get(...) method of builtins.dict instance', lines)
             self.assertIn(' |  dict_get = get(...) method of builtins.dict instance', lines)
+            self.assertIn(' |  sin(...)', lines)
 
         lines = self.getsection(result, f' |  Class methods {where}:', ' |  ' + '-'*70)
         self.assertIn(' |  B_classmethod(x)', lines)
@@ -2039,6 +2029,11 @@ class PydocFodderTest(unittest.TestCase):
             self.assertIn('    __repr__(...) unbound builtins.object method', lines)
             self.assertIn('    object_repr = __repr__(...) unbound builtins.object method', lines)
 
+        # builtin functions
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn('    sin(x, /)', lines)
+        else:
+            self.assertIn('    sin(...)', lines)
 
     def test_html_doc_routines_in_module(self):
         doc = pydoc.HTMLDoc()
@@ -2078,6 +2073,12 @@ class PydocFodderTest(unittest.TestCase):
             self.assertIn(' list_count = count(self, object, /) unbound builtins.list method', lines)
             self.assertIn(' __repr__(...) unbound builtins.object method', lines)
             self.assertIn(' object_repr = __repr__(...) unbound builtins.object method', lines)
+
+        # builtin functions
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertIn(' sin(x, /)', lines)
+        else:
+            self.assertIn(' sin(...)', lines)
 
 
 @unittest.skipIf(
