@@ -677,7 +677,8 @@ class GNUTranslationParsingTest(GettextBaseTest):
             )
         with self.assertRaisesRegex(
             ValueError,
-            "expected 'charset=' in Content-Type metadata in gettext.mo, got 'text/plain; charste=UTF-8'"
+            "expected 'charset=' in Content-Type metadata in xx/LC_MESSAGES/gettext.mo, "
+            "got 'text/plain; charste=UTF-8'"
         ):
             with open(MOFILE, 'rb') as fp:
                 gettext.GNUTranslations(fp)
@@ -687,15 +688,36 @@ class GNUTranslationParsingTest(GettextBaseTest):
             # below is msgfmt run on such a PO file:
             # msgid ""
             # msgstr ""
-            # "Content-Type: text/plain; charset=UTF-8\n"
             # "Plural-Forms: \n"
             fp.write(
                 b'\xde\x12\x04\x95\x00\x00\x00\x00\x01\x00\x00\x00\x1c\x00\x00\x00$\x00\x00\x00\x03\x00\x00\x00,\x00'
-                b'\x00\x00\x00\x00\x00\x008\x00\x00\x007\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00'
-                b'\x00\x00\x00\x00Content-Type: text/plain; charset=UTF-8\nPlural-Forms: \n\x00'
+                b'\x00\x00\x00\x00\x00\x008\x00\x00\x00\x0f\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00Plural-Forms: \n\x00'
             )
         with self.assertRaisesRegex(
-            ValueError, "expected ';' and 'plural=' in Plural-Forms metadata in gettext.mo, got ''"
+            ValueError,
+            "expected ';' and 'plural=' in Plural-Forms metadata in xx/LC_MESSAGES/gettext.mo, got ''"
+        ):
+            with open(MOFILE, 'rb') as fp:
+                gettext.GNUTranslations(fp)
+
+
+    def test_raise_descriptive_error_for_incorrect_plural_forms_with_semicolon(self):
+        with open(MOFILE, 'wb') as fp:
+            # below is msgfmt run on such a PO file:
+            # msgid ""
+            # msgstr ""
+            # "Plural-Forms: nplurals=1; prulal=0;\n"
+            fp.write(
+                b'\xde\x12\x04\x95\x00\x00\x00\x00\x01\x00\x00\x00\x1c\x00\x00\x00$\x00\x00\x00\x03\x00\x00\x00,\x00'
+                b'\x00\x00\x00\x00\x00\x008\x00\x00\x00$\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00Plural-Forms: nplurals=1; prulal=0;\n\x00'
+
+            )
+        with self.assertRaisesRegex(
+            ValueError,
+            "expected ';' and 'plural=' in Plural-Forms metadata in xx/LC_MESSAGES/gettext.mo, "
+            "got 'nplurals=1; prulal=0;'"
         ):
             with open(MOFILE, 'rb') as fp:
                 gettext.GNUTranslations(fp)

@@ -419,7 +419,8 @@ class GNUTranslations(NullTranslations):
                             plural = v[1].split('plural=')[1]
                         except IndexError:
                             raise ValueError(
-                                f"expected ';' and 'plural=' in Plural-Forms metadata in {filename}, got {v!r}"
+                                f"expected ';' and 'plural=' in Plural-Forms metadata in {filename}, "
+                                f"got {';'.join(v)!r}"
                             ) from None
                         self.plural = c2py(plural)
             # Note: we unconditionally convert both msgids and msgstrs to
