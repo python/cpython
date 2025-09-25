@@ -100,7 +100,6 @@ import _colorize
 import _pyrepl.utils
 
 from contextlib import ExitStack, closing, contextmanager
-from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
 
@@ -364,6 +363,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
+
+        # GH-138860
+        # We need to lazy-import rlcompleter to avoid deadlock
+        # We cannot import it during self.complete* methods because importing
+        # rlcompleter for the first time will overwrite readline's completer
+        # So we import it here and save the Completer class
+        from rlcompleter import Completer
+        self.RlCompleter = Completer
+
         self.allow_kbdint = False
         self.nosigint = nosigint
         # Consider these characters as part of the command so when the users type
@@ -1186,10 +1194,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
             return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
 
-        # Use rlcompleter to do the completion
         state = 0
         matches = []
-        completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
+        completer = self.RlCompleter(self.curframe.f_globals | self.curframe.f_locals)
         while (match := completer.complete(text, state)) is not None:
             matches.append(match)
             state += 1
@@ -1204,8 +1211,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
 
         try:
+            completer = self.RlCompleter(ns)
             old_completer = readline.get_completer()
-            completer = Completer(ns)
             readline.set_completer(completer.complete)
             yield
         finally:
@@ -3504,6 +3511,20 @@ To let the script run up to a given line X in the debugged file, use
 "-c 'until X'"."""
 
 
+def exit_with_permission_help_text():
+    """
+    Prints a message pointing to platform-specific permission help text and exits the program.
+    This function is called when a PermissionError is encountered while trying
+    to attach to a process.
+    """
+    print(
+        "Error: The specified process cannot be attached to due to insufficient permissions.\n"
+        "See the Python documentation for details on required privileges and troubleshooting:\n"
+        "https://docs.python.org/3.14/howto/remote_debugging.html#permission-requirements\n"
+    )
+    sys.exit(1)
+
+
 def main():
     import argparse
 
@@ -3537,7 +3558,10 @@ def main():
         opts = parser.parse_args()
         if opts.module:
             parser.error("argument -m: not allowed with argument --pid")
-        attach(opts.pid, opts.commands)
+        try:
+            attach(opts.pid, opts.commands)
+        except PermissionError as e:
+            exit_with_permission_help_text()
         return
     elif opts.module:
         # If a module is being debugged, we consider the arguments after "-m module" to

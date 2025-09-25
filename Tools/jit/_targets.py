@@ -71,6 +71,9 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((self.pyconfig_dir / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
+            # Exclude cache files from digest computation to ensure reproducible builds.
+            if dirpath.endswith("__pycache__"):
+                continue
             for filename in filenames:
                 hasher.update(pathlib.Path(dirpath, filename).read_bytes())
         return hasher.hexdigest()
@@ -116,7 +119,7 @@ class _Target(typing.Generic[_S, _R]):
         raise NotImplementedError(type(self))
 
     def _handle_relocation(
-        self, base: int, relocation: _R, raw: bytes | bytearray
+        self, base: int, relocation: _R, raw: bytearray
     ) -> _stencils.Hole:
         raise NotImplementedError(type(self))
 
@@ -191,8 +194,8 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("shim", TOOLS_JIT / "shim.c", work)
-                tasks.append(group.create_task(coro, name="shim"))
+                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
+                tasks.append(group.create_task(coro, name="trampoline"))
                 template = TOOLS_JIT_TEMPLATE_C.read_text()
                 for case, opname in cases_and_opnames:
                     # Write out a copy of the template with *only* this case
@@ -294,10 +297,7 @@ class _COFF(
         return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: _schema.COFFRelocation,
-        raw: bytes | bytearray,
+        self, base: int, relocation: _schema.COFFRelocation, raw: bytearray
     ) -> _stencils.Hole:
         match relocation:
             case {
@@ -407,10 +407,7 @@ class _ELF(
             }, section_type
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: _schema.ELFRelocation,
-        raw: bytes | bytearray,
+        self, base: int, relocation: _schema.ELFRelocation, raw: bytearray
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -489,10 +486,7 @@ class _MachO(
             stencil.holes.append(hole)
 
     def _handle_relocation(
-        self,
-        base: int,
-        relocation: _schema.MachORelocation,
-        raw: bytes | bytearray,
+        self, base: int, relocation: _schema.MachORelocation, raw: bytearray
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -557,38 +551,45 @@ def get_target(host: str) -> _COFF32 | _COFF64 | _ELF | _MachO:
     optimizer: type[_optimizers.Optimizer]
     target: _COFF32 | _COFF64 | _ELF | _MachO
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
+        host = "aarch64-apple-darwin"
         condition = "defined(__aarch64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerAArch64
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll", "-fplt"]
+        host = "aarch64-pc-windows-msvc"
         condition = "defined(_M_ARM64)"
+        args = ["-fms-runtime-lib=dll", "-fplt"]
         optimizer = _optimizers.OptimizerAArch64
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
+        host = "aarch64-unknown-linux-gnu"
+        condition = "defined(__aarch64__) && defined(__linux__)"
         # -mno-outline-atomics: Keep intrinsics from being emitted.
         args = ["-fpic", "-mno-outline-atomics"]
-        condition = "defined(__aarch64__) && defined(__linux__)"
         optimizer = _optimizers.OptimizerAArch64
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
+        host = "i686-pc-windows-msvc"
+        condition = "defined(_M_IX86)"
         # -Wno-ignored-attributes: __attribute__((preserve_none)) is not supported here.
         args = ["-DPy_NO_ENABLE_SHARED", "-Wno-ignored-attributes"]
         optimizer = _optimizers.OptimizerX86
-        condition = "defined(_M_IX86)"
         target = _COFF32(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-apple-darwin.*", host):
+        host = "x86_64-apple-darwin"
         condition = "defined(__x86_64__) && defined(__APPLE__)"
         optimizer = _optimizers.OptimizerX86
         target = _MachO(host, condition, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll"]
+        host = "x86_64-pc-windows-msvc"
         condition = "defined(_M_X64)"
+        args = ["-fms-runtime-lib=dll"]
         optimizer = _optimizers.OptimizerX86
         target = _COFF64(host, condition, args=args, optimizer=optimizer)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
+        host = "x86_64-unknown-linux-gnu"
         condition = "defined(__x86_64__) && defined(__linux__)"
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         optimizer = _optimizers.OptimizerX86
         target = _ELF(host, condition, args=args, optimizer=optimizer)
     else:

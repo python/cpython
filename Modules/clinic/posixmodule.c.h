@@ -215,8 +215,8 @@ PyDoc_STRVAR(os_access__doc__,
 "  NotImplementedError.\n"
 "\n"
 "Note that most operations will use the effective uid/gid, therefore this\n"
-"  routine can be used in a suid/sgid environment to test if the invoking user\n"
-"  has the specified access to the path.");
+"  routine can be used in a suid/sgid environment to test if the invoking\n"
+"  user has the specified access to the path.");
 
 #define OS_ACCESS_METHODDEF    \
     {"access", _PyCFunction_CAST(os_access), METH_FASTCALL|METH_KEYWORDS, os_access__doc__},
@@ -7814,6 +7814,7 @@ PyDoc_STRVAR(os_preadv__doc__,
 "\n"
 "- RWF_HIPRI\n"
 "- RWF_NOWAIT\n"
+"- RWF_DONTCACHE\n"
 "\n"
 "Using non-zero flags requires Linux 4.6 or newer.");
 
@@ -8100,6 +8101,11 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -8206,6 +8212,11 @@ os_sendfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     return_value = os_sendfile_impl(module, out_fd, in_fd, offobj, count);
 
@@ -8545,6 +8556,7 @@ PyDoc_STRVAR(os_pwritev__doc__,
 "- RWF_DSYNC\n"
 "- RWF_SYNC\n"
 "- RWF_APPEND\n"
+"- RWF_DONTCACHE\n"
 "\n"
 "Using non-zero flags requires Linux 4.7 or newer.");
 
@@ -8689,6 +8701,11 @@ os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -8807,6 +8824,11 @@ os_splice(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *k
             goto exit;
         }
         count = ival;
+        if (count < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "count cannot be negative");
+            goto exit;
+        }
     }
     if (!noptargs) {
         goto skip_optional_pos;
@@ -11237,6 +11259,11 @@ os_urandom(PyObject *module, PyObject *arg)
             goto exit;
         }
         size = ival;
+        if (size < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "size cannot be negative");
+            goto exit;
+        }
     }
     return_value = os_urandom_impl(module, size);
 
@@ -13419,4 +13446,4 @@ exit:
 #ifndef OS__EMSCRIPTEN_LOG_METHODDEF
     #define OS__EMSCRIPTEN_LOG_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_LOG_METHODDEF) */
-/*[clinic end generated code: output=b1e2615384347102 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b5b370c499174f85 input=a9049054013a1b77]*/

@@ -34,7 +34,7 @@ To write a t-string, use a ``'t'`` prefix instead of an ``'f'``, like so:
    >>> pi = 3.14
    >>> t't-strings are new in Python {pi!s}!'
    Template(
-      strings=('t-strings are new in Python ', '.'),
+      strings=('t-strings are new in Python ', '!'),
       interpolations=(Interpolation(3.14, 'pi', 's', ''),)
    )
 
