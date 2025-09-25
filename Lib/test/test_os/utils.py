@@ -1,7 +1,6 @@
 import errno
 import os
 import unittest
-from test.support import os_helper
 
 
 def _supports_sched():
