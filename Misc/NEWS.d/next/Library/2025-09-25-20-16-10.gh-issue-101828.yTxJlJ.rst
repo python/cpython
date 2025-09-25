@@ -1,0 +1,2 @@
+Fix ``'shift_jisx0213'`` and ``'shift_jis_2004'`` codecs truncating null char
+as it was treated as part of a multi-character sequence.
