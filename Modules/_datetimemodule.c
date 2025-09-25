@@ -1959,6 +1959,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         i++;
         /* A % has been seen and ch is the character after it. */
         PyObject *replacement = NULL;
+        int need_decref_replacement = 0;
+
         if (ch == 'z') {
             /* %z -> +HHMM */
             if (zreplacement == NULL) {
@@ -2058,22 +2060,11 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
 
             PyObject *tmp = make_dash_replacement(object, next_ch, timetuple);
             if (tmp == NULL) {
-                Py_DECREF(tmp);
                 goto Error;
             }
 
-            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
-                Py_DECREF(tmp);
-                goto Error;
-            }
-            start = i;
-            if (PyUnicodeWriter_WriteStr(writer, tmp) < 0) {
-                Py_DECREF(tmp);
-                goto Error;
-            }
-
-            Py_DECREF(tmp);
-            continue;
+            replacement = tmp;
+            need_decref_replacement = 1;
         }
         #endif
         else {
@@ -2083,11 +2074,20 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
         assert(replacement != NULL);
         assert(PyUnicode_Check(replacement));
         if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
+            if (need_decref_replacement) {
+                Py_DECREF(replacement);
+            }
             goto Error;
         }
         start = i;
         if (PyUnicodeWriter_WriteStr(writer, replacement) < 0) {
+            if (need_decref_replacement) {
+                Py_DECREF(replacement);
+            }
             goto Error;
+        }
+        if (need_decref_replacement) {
+            Py_DECREF(replacement);
         }
     }  /* end while() */
 
