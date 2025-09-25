@@ -126,7 +126,6 @@ class Test_SJIS_2004(multibytecodec_support.TestBase, unittest.TestCase):
                 self.assertEqual(encode_w_null_2.count(b'\x00'), 2)
                 self.assertEqual(encode_w_null_2, encode_plus_null_2)
 
-
 class Test_SJISX0213(multibytecodec_support.TestBase, unittest.TestCase):
     encoding = 'shift_jisx0213'
     tstring = multibytecodec_support.load_teststring('shift_jisx0213')
@@ -142,6 +141,7 @@ class Test_SJISX0213(multibytecodec_support.TestBase, unittest.TestCase):
         "\xab\u211c\xbb = \u2329\u1234\u232a",
         b"\x85G&real;\x85Q = &lang;&#4660;&rang;"
     )
+
     def test_null_terminator(self):
         # see gh-101828
         cases = (
@@ -161,7 +161,6 @@ class Test_SJISX0213(multibytecodec_support.TestBase, unittest.TestCase):
                 encode_plus_null_2 = encode_plus_null + encode_plus_null
                 self.assertEqual(encode_w_null_2.count(b'\x00'), 2)
                 self.assertEqual(encode_w_null_2, encode_plus_null_2)
-
 
 if __name__ == "__main__":
     unittest.main()
