@@ -1,0 +1,1 @@
+Make binarysort adaptative. Give an initial value to M before entering the outer loop, and move the M calculation to the end of the inner loop.
