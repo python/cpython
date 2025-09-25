@@ -506,8 +506,7 @@ multiple thread states.
 As a whole, the Python runtime consists of the global runtime state,
 interpreters, and thread states.  The runtime ensures all that state
 stays consistent over its lifetime, particularly when used with
-multiple host threads.  The runtime also exposes a way for host threads
-to "call into Python", which will be covered in the next subsection.
+multiple host threads.
 
 The global runtime, at the conceptual level, is just a set of
 interpreters.  While they are otherwise isolated and independent from
@@ -563,7 +562,9 @@ call stack.  It may include other thread-specific resources.
 Each thread state, over its lifetime, is always tied to exactly one
 interpreter and exactly one host thread.  It will only ever be used in
 that thread.  In the other direction, a host thread may have many
-Python thread states tied to it, for different interpreters.
+Python thread states tied to it, for different interpreters or even the
+same interpreter.  However, for any given host thread, only one of the
+thread states tied to it can be used by the thread at a time.
 
 Once a program is running, new Python threads can be created using the
 :mod:`threading` module (on platforms and Python implementations that
@@ -572,41 +573,6 @@ support threads).  Additional processes can be created using the
 You can run coroutines (async) in the main thread using :mod:`asyncio`.
 Interpreters can be created and used with the
 :mod:`~concurrent.interpreters` module.
-
-Calls into Python
------------------
-
-A "call into Python" is an abstraction of "ask the Python runtime
-to do something".  It necessarily involves targeting a single runtime
-context, whether global, interpreter, or thread.  The layer depends
-on the desired operation.  Most operations require a thread state.
-
-When a running host thread calls into Python, the actual mechanism
-is implementation-specific.  For example, CPython provides a C-API and
-the thread will literally call into Python through a C-API function.
-
-.. drop paragraph?
-
-Some thread-specific operations must only target a new thread state,
-while others may target any thread state, including one with a Python
-call already on its stack or a current exception set.
-
-A thread-specific call into Python can target only one thread state.
-That means, when there are multiple Python thread states tied to the
-current host thread, only one of them can be in use at a time.  It
-doesn't matter if the thread states belong to different interpreters
-or the same interpreter.
-
-Calls into Python can be nested.  Even if a thread has already called
-into Python, that operation could be interrupted by another call into
-Python targeting a different runtime context.  For example, the
-implementation of the outer call might make the inner call directly.
-Alternately, the host or Python runtime might trigger some
-asyncronous callback that calls into Python.
-
-Regardless, at the point of the inner call, the target is swapped.
-When the inner call finishes, the target is swapped back and the outer
-call resumes.
 
 
 .. rubric:: Footnotes
