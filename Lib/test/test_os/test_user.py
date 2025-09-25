@@ -1,3 +1,7 @@
+"""
+Test user functions: getuid(), setgid(), getgroups(), getlogin(), etc.
+"""
+
 import errno
 import os
 import posix

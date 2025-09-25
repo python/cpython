@@ -1,9 +1,13 @@
-import socket
-import unittest
-import os
-import errno
-import sys
+"""
+Test os.sendfile().
+"""
+
 import asyncio
+import errno
+import os
+import socket
+import sys
+import unittest
 from test.support import os_helper
 from test.support import socket_helper
 from .utils import create_file

@@ -1,13 +1,13 @@
 """
-Test the terminal: os.get_terminal_size(), os.openpty().
+Test the terminal: os.get_terminal_size(), os.openpty(), etc.
 """
 
-import os
-import unittest
-import subprocess
 import errno
+import os
+import subprocess
 import sys
 import textwrap
+import unittest
 from test import support
 from test.support import os_helper
 from test.support import warnings_helper

@@ -1,11 +1,15 @@
+"""
+Test os.stat(), os.fstat(), etc.
+"""
+
 import errno
 import os
+import pickle
 import posix
 import stat
-import unittest
-import pickle
-import sys
 import subprocess
+import sys
+import unittest
 from test.support import os_helper
 from .utils import create_file
 

@@ -1,3 +1,7 @@
+"""
+Test the environment: os.environ, putenv(), etc.
+"""
+
 import os
 import posix
 import subprocess

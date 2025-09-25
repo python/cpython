@@ -1,3 +1,7 @@
+"""
+Test the timerfd API.
+"""
+
 import errno
 import os
 import select

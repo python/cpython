@@ -1,3 +1,7 @@
+"""
+Test symbolic and hard links: os.link(), os.symlink(), etc.
+"""
+
 import os
 import posix
 import shutil

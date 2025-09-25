@@ -1,3 +1,7 @@
+"""
+Test file descriptors: pipe(), set_blocking(), memfd_create(), eventfd, etc.
+"""
+
 import errno
 import itertools
 import os

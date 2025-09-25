@@ -1,3 +1,7 @@
+"""
+Test files: open(), read(), pwritev(), truncate(), etc.
+"""
+
 import errno
 import os
 import posix

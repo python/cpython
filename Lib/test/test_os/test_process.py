@@ -1,6 +1,7 @@
 """
-Tests on processes: spawn(), exec(), fork(), waitpid(), etc.
+Tests processes: spawn(), exec(), fork(), waitpid(), etc.
 """
+
 import contextlib
 import errno
 import os

@@ -1,3 +1,7 @@
+"""
+Test encodings: filename encoding, os.fsencode(), device_encoding(), etc.
+"""
+
 import codecs
 import locale
 import os

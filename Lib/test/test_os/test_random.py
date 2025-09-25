@@ -1,3 +1,7 @@
+"""
+Test random bytes: getrandom(), urandom(), etc.
+"""
+
 import errno
 import os
 import resource

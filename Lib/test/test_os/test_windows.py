@@ -1,3 +1,7 @@
+"""
+Test Windows functions.
+"""
+
 import sys
 import unittest
 
@@ -14,11 +18,11 @@ import subprocess
 import textwrap
 import time
 import uuid
+import _winapi
 from test import support
 from test.support import import_helper
 from test.support import os_helper
 from .utils import create_file
-import _winapi
 
 
 class FileTests(unittest.TestCase):

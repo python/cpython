@@ -1,6 +1,6 @@
-import unittest
 import os
 import types
+import unittest
 from test.support.os_helper import FakePath
 
 

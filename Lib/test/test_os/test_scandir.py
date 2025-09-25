@@ -1,3 +1,7 @@
+"""
+Test os.scandir() and os.DirEntry.
+"""
+
 import os
 import stat
 import sys

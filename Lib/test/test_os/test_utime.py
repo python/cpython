@@ -1,3 +1,7 @@
+"""
+Test the os.utime() function.
+"""
+
 import decimal
 import fractions
 import os

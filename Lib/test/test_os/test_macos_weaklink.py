@@ -1,7 +1,11 @@
-import unittest
+"""
+Test macOS weak linking.
+"""
+
 import os
-import sys
 import posix
+import sys
+import unittest
 from test.support import os_helper
 
 
