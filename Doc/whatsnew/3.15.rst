@@ -869,6 +869,11 @@ Removed C APIs
   of :c:func:`PyImport_ImportModule`.
   (Contributed by Bénédikt Tran in :gh:`133644`.)
 
+* :c:func:`!PyWeakref_GetObject` and :c:macro:`!PyWeakref_GET_OBJECT`:
+  use :c:func:`PyWeakref_GetRef` instead. The |pythoncapi_compat_project|
+  can be used to get :c:func:`!PyWeakref_GetRef` on Python 3.12 and older.
+  (Contributed by Bénédikt Tran in :gh:`133644`.)
+
 * Remove deprecated :c:func:`!PySys_ResetWarnOptions`.
   Clear :data:`sys.warnoptions` and :data:`!warnings.filters` instead.
 
