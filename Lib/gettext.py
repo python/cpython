@@ -411,7 +411,7 @@ class GNUTranslations(NullTranslations):
                             self._charset = v.split('charset=')[1]
                         except IndexError:
                             raise ValueError(
-                                f"invalid content-type syntax in '{filename}': '{v}'. Expected 'charset='."
+                                f"expected 'charset=' in Content-Type metadata in {filename}, got {v!r}"
                             ) from None
                     elif k == 'plural-forms':
                         v = v.split(';')
@@ -419,7 +419,7 @@ class GNUTranslations(NullTranslations):
                             plural = v[1].split('plural=')[1]
                         except IndexError:
                             raise ValueError(
-                                f"invalid plural forms syntax in '{filename}': '{v}'. Expected ';' and 'plural='."
+                                f"expected ';' and 'plural=' in Plural-Forms metadata in {filename}, got {v!r}"
                             ) from None
                         self.plural = c2py(plural)
             # Note: we unconditionally convert both msgids and msgstrs to

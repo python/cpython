@@ -675,7 +675,10 @@ class GNUTranslationParsingTest(GettextBaseTest):
                 b'\x00\x00\x00\x00\x00\x008\x00\x00\x00(\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00'
                 b'\x00\x00\x00\x00Content-Type: text/plain; charste=UTF-8\n\x00'
             )
-        with self.assertRaisesRegex(ValueError, "invalid content-type syntax"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "expected 'charset=' in Content-Type metadata in gettext.mo, got 'text/plain; charste=UTF-8'"
+        ):
             with open(MOFILE, 'rb') as fp:
                 gettext.GNUTranslations(fp)
 
@@ -691,7 +694,9 @@ class GNUTranslationParsingTest(GettextBaseTest):
                 b'\x00\x00\x00\x00\x00\x008\x00\x00\x007\x00\x00\x009\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00'
                 b'\x00\x00\x00\x00Content-Type: text/plain; charset=UTF-8\nPlural-Forms: \n\x00'
             )
-        with self.assertRaisesRegex(ValueError, "invalid plural forms syntax"):
+        with self.assertRaisesRegex(
+            ValueError, "expected ';' and 'plural=' in Plural-Forms metadata in gettext.mo, got ''"
+        ):
             with open(MOFILE, 'rb') as fp:
                 gettext.GNUTranslations(fp)
 
