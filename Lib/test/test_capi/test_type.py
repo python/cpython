@@ -1,5 +1,6 @@
 from test.support import import_helper, Py_GIL_DISABLED, refleak_helper
 import unittest
+import weakref
 
 _testcapi = import_helper.import_module('_testcapi')
 
@@ -274,3 +275,11 @@ class TypeTests(unittest.TestCase):
         obj.__dict__ = {'bar': 3}
         self.assertEqual(obj.__dict__, {'bar': 3})
         self.assertEqual(obj.bar, 3)
+
+    def test_type_have_weakref_and_no_gc(self):
+        ManagedWeakrefNoGCType = _testcapi.ManagedWeakrefNoGCType
+        obj = ManagedWeakrefNoGCType()
+        wr = weakref.ref(obj)
+
+        del obj # shouldn't segfault
+        del wr

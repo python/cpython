@@ -939,6 +939,7 @@ extern int _PyType_CacheInitForSpecialization(PyHeapTypeObject *type,
 #else
 #  define MANAGED_DICT_OFFSET    (((Py_ssize_t)sizeof(PyObject *))*-3)
 #  define MANAGED_WEAKREF_OFFSET (((Py_ssize_t)sizeof(PyObject *))*-4)
+#  define MANAGED_WEAKREF_OFFSET_NO_GC (((Py_ssize_t)sizeof(PyObject *))*-2)
 #endif
 
 typedef union {
