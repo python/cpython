@@ -57,7 +57,7 @@ typedef unsigned short mode_t;
  * Only the names are defined by POSIX but not their value. All common file
  * types seems to have the same numeric value on all platforms, though.
  *
- * pyport.h guarantees S_IFMT, S_IFDIR, S_IFCHR, S_IFREG and S_IFLNK
+ * fileutils.h guarantees S_IFMT, S_IFDIR, S_IFCHR, S_IFREG and S_IFLNK
  */
 
 #ifndef S_IFBLK
@@ -86,7 +86,7 @@ typedef unsigned short mode_t;
 
 
 /* S_ISXXX()
- * pyport.h defines S_ISDIR(), S_ISREG() and S_ISCHR()
+ * fileutils.h defines S_ISDIR(), S_ISREG() and S_ISCHR()
  */
 
 #ifndef S_ISBLK

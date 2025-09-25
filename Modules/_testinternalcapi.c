@@ -21,6 +21,7 @@
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GET_BUILTINS
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_import.h"        // _PyImport_ClearExtension()
@@ -120,10 +121,22 @@ get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate = _PyThreadState_GET();
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit) / _PyOS_STACK_MARGIN_BYTES * 50);
     return PyLong_FromLong(remaining);
 }
 
+static PyObject*
+get_stack_pointer(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    return PyLong_FromSize_t(here_addr);
+}
+
+static PyObject*
+get_stack_margin(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return PyLong_FromSize_t(_PyOS_STACK_MARGIN_BYTES);
+}
 
 static PyObject*
 test_bswap(PyObject *self, PyObject *Py_UNUSED(args))
@@ -1022,7 +1035,7 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }
@@ -1190,7 +1203,7 @@ verify_stateless_code(PyObject *self, PyObject *args, PyObject *kwargs)
             globalsns = PyFunction_GET_GLOBALS(codearg);
         }
         if (builtinsns == NULL) {
-            builtinsns = PyFunction_GET_BUILTINS(codearg);
+            builtinsns = _PyFunction_GET_BUILTINS(codearg);
         }
         codearg = PyFunction_GET_CODE(codearg);
     }
@@ -2206,8 +2219,7 @@ get_code(PyObject *obj)
         return (PyCodeObject *)PyFunction_GetCode(obj);
     }
     return (PyCodeObject *)PyErr_Format(
-        PyExc_TypeError, "expected function or code object, got %s",
-        Py_TYPE(obj)->tp_name);
+        PyExc_TypeError, "expected function or code object, got %T", obj);
 }
 
 static PyObject *
@@ -2345,10 +2357,53 @@ incref_decref_delayed(PyObject *self, PyObject *op)
     Py_RETURN_NONE;
 }
 
+#ifdef __EMSCRIPTEN__
+#include "emscripten.h"
+
+EM_JS(int, emscripten_set_up_async_input_device_js, (void), {
+    let idx = 0;
+    const encoder = new TextEncoder();
+    const bufs = [
+        encoder.encode("ab\n"),
+        encoder.encode("fi\n"),
+        encoder.encode("xy\n"),
+    ];
+    function sleep(t) {
+        return new Promise(res => setTimeout(res, t));
+    }
+    FS.createAsyncInputDevice("/dev", "blah", async () => {
+        await sleep(5);
+        return bufs[(idx ++) % 3];
+    });
+    return !!WebAssembly.promising;
+});
+
+static PyObject *
+emscripten_set_up_async_input_device(PyObject *self, PyObject *Py_UNUSED(ignored)) {
+    if (emscripten_set_up_async_input_device_js()) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+#endif
+
+static PyObject *
+simple_pending_call(PyObject *self, PyObject *callable)
+{
+    if (_PyEval_AddPendingCall(_PyInterpreterState_GET(), _pending_callback, Py_NewRef(callable), 0) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"get_c_recursion_remaining", get_c_recursion_remaining, METH_NOARGS},
+    {"get_stack_pointer", get_stack_pointer, METH_NOARGS},
+    {"get_stack_margin", get_stack_margin, METH_NOARGS},
     {"test_bswap", test_bswap, METH_NOARGS},
     {"test_popcount", test_popcount, METH_NOARGS},
     {"test_bit_length", test_bit_length, METH_NOARGS},
@@ -2447,6 +2502,10 @@ static PyMethodDef module_functions[] = {
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
     GET_NEXT_DICT_KEYS_VERSION_METHODDEF
+#ifdef __EMSCRIPTEN__
+    {"emscripten_set_up_async_input_device", emscripten_set_up_async_input_device, METH_NOARGS},
+#endif
+    {"simple_pending_call", simple_pending_call, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

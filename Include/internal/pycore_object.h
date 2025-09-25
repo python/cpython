@@ -614,7 +614,7 @@ static inline PyObject *
 _Py_XGetRef(PyObject **ptr)
 {
     for (;;) {
-        PyObject *value = _Py_atomic_load_ptr(ptr);
+        PyObject *value = _PyObject_CAST(_Py_atomic_load_ptr(ptr));
         if (value == NULL) {
             return value;
         }
@@ -629,7 +629,7 @@ _Py_XGetRef(PyObject **ptr)
 static inline PyObject *
 _Py_TryXGetRef(PyObject **ptr)
 {
-    PyObject *value = _Py_atomic_load_ptr(ptr);
+    PyObject *value = _PyObject_CAST(_Py_atomic_load_ptr(ptr));
     if (value == NULL) {
         return value;
     }
@@ -918,7 +918,7 @@ extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
 extern unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
 
-extern int _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
+PyAPI_FUNC(int) _PyObject_GetMethodStackRef(PyThreadState *ts, PyObject *obj,
                                        PyObject *name, _PyStackRef *method);
 
 // Cache the provided init method in the specialization cache of type if the
@@ -1032,6 +1032,20 @@ enum _PyAnnotateFormat {
 };
 
 int _PyObject_SetDict(PyObject *obj, PyObject *value);
+
+#ifndef Py_GIL_DISABLED
+static inline Py_ALWAYS_INLINE void _Py_INCREF_MORTAL(PyObject *op)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    op->ob_refcnt++;
+    _Py_INCREF_STAT_INC();
+#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
+    if (!_Py_IsImmortal(op)) {
+        _Py_INCREF_IncRefTotal();
+    }
+#endif
+}
+#endif
 
 #ifdef __cplusplus
 }

@@ -109,7 +109,7 @@ struct _PyUnicodeObject_state {
    immediately follow the structure. utf8_length can be found
    in the length field; the utf8 pointer is equal to the data pointer. */
 typedef struct {
-    /* There are 4 forms of Unicode strings:
+    /* There are 3 forms of Unicode strings:
 
        - compact ascii:
 

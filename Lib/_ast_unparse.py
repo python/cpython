@@ -626,35 +626,11 @@ class Unparser(NodeVisitor):
             )
         self._ftstring_helper(fstring_parts)
 
-    def _tstring_helper(self, node):
-        if not node.values:
-            self._write_ftstring([], "t")
-            return
-        last_idx = 0
-        for i, value in enumerate(node.values):
-            # This can happen if we have an implicit concat of a t-string
-            # with an f-string
-            if isinstance(value, FormattedValue):
-                if i > last_idx:
-                    # Write t-string until here
-                    self._write_ftstring(node.values[last_idx:i], "t")
-                    self.write(" ")
-                # Write f-string with the current formatted value
-                self._write_ftstring([node.values[i]], "f")
-                if i + 1 < len(node.values):
-                    # Only add a space if there are more values after this
-                    self.write(" ")
-                last_idx = i + 1
-
-        if last_idx < len(node.values):
-            # Write t-string from last_idx to end
-            self._write_ftstring(node.values[last_idx:], "t")
-
     def visit_JoinedStr(self, node):
         self._write_ftstring(node.values, "f")
 
     def visit_TemplateStr(self, node):
-        self._tstring_helper(node)
+        self._write_ftstring(node.values, "t")
 
     def _write_ftstring_inner(self, node, is_format_spec=False):
         if isinstance(node, JoinedStr):
